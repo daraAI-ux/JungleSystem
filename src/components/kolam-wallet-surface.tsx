@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -30,6 +31,10 @@ import {
   type KolamWalletController,
 } from '../hooks/use-kolam-wallet-controller';
 import { formatRupiah } from '../lib/money';
+import {
+  pickNativeAssetFile,
+  pickNativeImageFile,
+} from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -39,6 +44,11 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+
+type WalletProofPick = {
+  name: string;
+  uri: string;
+};
 
 const WALLET_COLUMNS = [
   { id: 'name', label: 'Nama', flex: 1.2 },
@@ -100,7 +110,11 @@ export function KolamWalletSurface({
         preselectedWalletId={
           controller.mode === 'detail' ? controller.documentId ?? undefined : undefined
         }
-        wallets={controller.wallets}
+        wallets={
+          controller.allWallets.length > 0
+            ? controller.allWallets
+            : controller.wallets
+        }
       />
     </View>
   );
@@ -180,15 +194,82 @@ function WalletDetailMode({
 }
 
 function WalletSummaryStrip({ controller }: { controller: KolamWalletController }) {
+  const stats = controller.summaryStats;
+  const mainBalance = stats.mainWallet?.currentBalance ?? 0;
+  const txTotal = controller.txPagination.total;
+
   return (
     <View style={styles.cardsRow}>
-      <KolamCardFrame style={styles.card}>
-        <Text style={styles.cardLabel}>Saldo bersih</Text>
-        <Text style={styles.cardValue}>{formatRupiah(controller.totalBalance)}</Text>
+      <KolamCardFrame style={styles.summaryCard}>
+        <View
+          style={[
+            styles.summaryAccent,
+            stats.totalBalance < 0 ? styles.accentDanger : styles.accentPrimary,
+          ]}
+        />
+        <View style={styles.summaryBody}>
+          <Text style={styles.cardLabel}>Saldo Bersih</Text>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.cardValue,
+              stats.totalBalance < 0 ? styles.valueDanger : styles.valuePrimary,
+            ]}
+          >
+            {formatRupiah(stats.totalBalance)}
+          </Text>
+          <Text numberOfLines={2} style={styles.cardHint}>
+            {formatRupiah(stats.positiveBalance)} dana positif,{' '}
+            {formatRupiah(stats.negativeBalance)} eksposur negatif
+          </Text>
+        </View>
       </KolamCardFrame>
-      <KolamCardFrame style={styles.card}>
-        <Text style={styles.cardLabel}>Dompet</Text>
-        <Text style={styles.cardValue}>{String(controller.wallets.length)}</Text>
+
+      <KolamCardFrame style={styles.summaryCard}>
+        <View style={[styles.summaryAccent, styles.accentSuccess]} />
+        <View style={styles.summaryBody}>
+          <Text style={styles.cardLabel}>Cakupan Dompet</Text>
+          <Text style={styles.cardValue}>{String(stats.walletCount)}</Text>
+          <Text numberOfLines={1} style={styles.cardHint}>
+            {stats.virtualCount} virtual, {stats.cashCount} tunai
+          </Text>
+        </View>
+      </KolamCardFrame>
+
+      <KolamCardFrame style={styles.summaryCard}>
+        <View
+          style={[
+            styles.summaryAccent,
+            mainBalance < 0 ? styles.accentDanger : styles.accentWarning,
+          ]}
+        />
+        <View style={styles.summaryBody}>
+          <Text style={styles.cardLabel}>Dompet Utama</Text>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.cardValue,
+              mainBalance < 0 ? styles.valueDanger : styles.valuePrimary,
+            ]}
+          >
+            {formatRupiah(mainBalance)}
+          </Text>
+          <Text numberOfLines={1} style={styles.cardHint}>
+            {stats.mainWallet?.name ?? 'Dompet utama belum dikonfigurasi'}
+          </Text>
+        </View>
+      </KolamCardFrame>
+
+      <KolamCardFrame style={styles.summaryCard}>
+        <View style={[styles.summaryAccent, styles.accentInfo]} />
+        <View style={styles.summaryBody}>
+          <Text style={styles.cardLabel}>Transaksi</Text>
+          <Text style={styles.cardValue}>{String(txTotal)}</Text>
+          <Text numberOfLines={1} style={styles.cardHint}>
+            {controller.txTypeCounts.credit} kredit,{' '}
+            {controller.txTypeCounts.debit} debit pada tampilan ini
+          </Text>
+        </View>
       </KolamCardFrame>
     </View>
   );
@@ -831,31 +912,62 @@ function DepositForm({
   );
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [proofs, setProofs] = useState<WalletProofPick[]>([]);
+  const [formError, setFormError] = useState('');
+  const selectedWallet = wallets.find(wallet => wallet.id === walletId);
+  const numericAmount = Number(amount);
+  const safeAmount =
+    Number.isFinite(numericAmount) && numericAmount > 0 ? numericAmount : 0;
+  const projectedBalance = (selectedWallet?.currentBalance ?? 0) + safeAmount;
   const walletOptions = wallets.map(wallet => ({
-    label: wallet.name,
+    label: `${wallet.name} · ${formatRupiah(wallet.currentBalance)}`,
     value: wallet.id,
   }));
+  const requiresProof = Boolean(selectedWallet?.requireDepositProof);
+  const canSubmit =
+    Boolean(walletId) &&
+    safeAmount > 0 &&
+    (!requiresProof || proofs.length > 0) &&
+    !controller.submitting;
 
   return (
     <WalletFormShell
+      error={formError}
       onClose={onClose}
       onSubmit={() => {
-        const numericAmount = Number(amount);
-        if (!walletId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+        setFormError('');
+        if (!canSubmit) {
+          if (requiresProof && proofs.length === 0) {
+            setFormError('Bukti setoran wajib untuk dompet ini.');
+          }
           return;
         }
-        void controller.onDeposit({ walletId, amount: numericAmount, note });
+        void controller.onDeposit({
+          walletId,
+          amount: safeAmount,
+          note,
+          proofLocalUris: proofs.map(proof => proof.uri),
+        });
       }}
+      submitDisabled={!canSubmit}
       submitLabel={controller.submitting ? 'Memproses…' : 'Drop Dana'}
       title="Drop Dana"
     >
       <KolamDropdownSelect
-        label="Dompet"
+        label="Wallet Tujuan"
         menuPlacement="inline"
         onChange={setWalletId}
         options={walletOptions}
         value={walletId}
       />
+      {selectedWallet ? (
+        <View style={styles.balanceInfo}>
+          <Text style={styles.metaText}>Saldo saat ini</Text>
+          <Text style={styles.balanceInfoValue}>
+            {formatRupiah(selectedWallet.currentBalance)}
+          </Text>
+        </View>
+      ) : null}
       <KolamFormTextField
         keyboardType="numeric"
         onChangeText={setAmount}
@@ -867,6 +979,19 @@ function DepositForm({
         placeholder="Catatan"
         value={note}
       />
+      <WalletProofPicker
+        onChange={setProofs}
+        proofs={proofs}
+        required={requiresProof}
+      />
+      {selectedWallet && safeAmount > 0 ? (
+        <View style={styles.balanceInfo}>
+          <Text style={styles.metaText}>Saldo setelah drop</Text>
+          <Text style={styles.balanceInfoValue}>
+            {formatRupiah(projectedBalance)}
+          </Text>
+        </View>
+      ) : null}
     </WalletFormShell>
   );
 }
@@ -887,31 +1012,59 @@ function WithdrawForm({
   );
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [proofs, setProofs] = useState<WalletProofPick[]>([]);
+  const [formError, setFormError] = useState('');
+  const selectedWallet = wallets.find(wallet => wallet.id === walletId);
+  const numericAmount = Number(amount);
+  const safeAmount =
+    Number.isFinite(numericAmount) && numericAmount > 0 ? numericAmount : 0;
+  const projectedBalance = (selectedWallet?.currentBalance ?? 0) - safeAmount;
   const walletOptions = wallets.map(wallet => ({
-    label: wallet.name,
+    label: `${wallet.name} · ${formatRupiah(wallet.currentBalance)}`,
     value: wallet.id,
   }));
+  const canSubmit =
+    Boolean(walletId) && safeAmount > 0 && !controller.submitting;
 
   return (
     <WalletFormShell
+      error={formError}
       onClose={onClose}
       onSubmit={() => {
-        const numericAmount = Number(amount);
-        if (!walletId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+        setFormError('');
+        if (!canSubmit) {
           return;
         }
-        void controller.onWithdraw({ walletId, amount: numericAmount, note });
+        if (selectedWallet && safeAmount > selectedWallet.currentBalance) {
+          setFormError('Jumlah melebihi saldo saat ini.');
+          return;
+        }
+        void controller.onWithdraw({
+          walletId,
+          amount: safeAmount,
+          note,
+          proofLocalUris: proofs.map(proof => proof.uri),
+        });
       }}
+      submitDisabled={!canSubmit}
       submitLabel={controller.submitting ? 'Memproses…' : 'Tarik Dana'}
       title="Tarik Dana"
     >
       <KolamDropdownSelect
-        label="Dompet"
+        label="Wallet Sumber"
         menuPlacement="inline"
         onChange={setWalletId}
         options={walletOptions}
         value={walletId}
       />
+      {selectedWallet ? (
+        <View style={styles.balanceInfo}>
+          <Text style={styles.metaText}>Saldo saat ini</Text>
+          <Text style={styles.balanceInfoValue}>
+            {formatRupiah(selectedWallet.currentBalance)}
+          </Text>
+        </View>
+      ) : null}
       <KolamFormTextField
         keyboardType="numeric"
         onChangeText={setAmount}
@@ -923,6 +1076,20 @@ function WithdrawForm({
         placeholder="Catatan"
         value={note}
       />
+      <WalletProofPicker onChange={setProofs} proofs={proofs} />
+      {selectedWallet && safeAmount > 0 ? (
+        <View style={styles.balanceInfo}>
+          <Text style={styles.metaText}>Saldo setelah tarik</Text>
+          <Text
+            style={[
+              styles.balanceInfoValue,
+              projectedBalance < 0 ? styles.valueDanger : null,
+            ]}
+          >
+            {formatRupiah(projectedBalance)}
+          </Text>
+        </View>
+      ) : null}
     </WalletFormShell>
   );
 }
@@ -937,56 +1104,91 @@ function TransferForm({
   wallets: KolamWallet[];
 }) {
   const [fromWalletId, setFromWalletId] = useState(wallets[0]?.id ?? '');
-  const [toWalletId, setToWalletId] = useState(wallets[1]?.id ?? wallets[0]?.id ?? '');
+  const [toWalletId, setToWalletId] = useState(
+    wallets.find(wallet => wallet.id !== wallets[0]?.id)?.id ?? '',
+  );
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const walletOptions = wallets.map(wallet => ({
-    label: wallet.name,
-    value: wallet.id,
-  }));
+  const [proofs, setProofs] = useState<WalletProofPick[]>([]);
+  const [formError, setFormError] = useState('');
+  const fromWallet = wallets.find(wallet => wallet.id === fromWalletId);
+  const toWallet = wallets.find(wallet => wallet.id === toWalletId);
+  const numericAmount = Number(amount);
+  const safeAmount =
+    Number.isFinite(numericAmount) && numericAmount > 0 ? numericAmount : 0;
+  const isSameWallet =
+    Boolean(fromWalletId) &&
+    Boolean(toWalletId) &&
+    fromWalletId === toWalletId;
+  const fromProjected = (fromWallet?.currentBalance ?? 0) - safeAmount;
+  const toProjected = (toWallet?.currentBalance ?? 0) + safeAmount;
+  const fromOptions = wallets
+    .filter(wallet => wallet.id !== toWalletId)
+    .map(wallet => ({
+      label: `${wallet.name} · ${formatRupiah(wallet.currentBalance)}`,
+      value: wallet.id,
+    }));
+  const toOptions = wallets
+    .filter(wallet => wallet.id !== fromWalletId)
+    .map(wallet => ({
+      label: `${wallet.name} · ${formatRupiah(wallet.currentBalance)}`,
+      value: wallet.id,
+    }));
+  const canSubmit =
+    Boolean(fromWalletId) &&
+    Boolean(toWalletId) &&
+    !isSameWallet &&
+    safeAmount > 0 &&
+    !controller.submitting;
 
   return (
     <WalletFormShell
+      error={formError}
       onClose={onClose}
       onSubmit={() => {
-        const numericAmount = Number(amount);
-        if (
-          !fromWalletId ||
-          !toWalletId ||
-          fromWalletId === toWalletId ||
-          !Number.isFinite(numericAmount) ||
-          numericAmount <= 0
-        ) {
+        setFormError('');
+        if (!canSubmit) {
+          if (isSameWallet) {
+            setFormError('Tidak bisa transfer ke wallet yang sama');
+          }
           return;
         }
         void controller.onTransfer({
           fromWalletId,
           toWalletId,
-          amount: numericAmount,
+          amount: safeAmount,
           note,
+          proofLocalUris: proofs.map(proof => proof.uri),
         });
       }}
+      submitDisabled={!canSubmit}
       submitLabel={controller.submitting ? 'Memproses…' : 'Transfer'}
-      title="Transfer"
+      title="Transfer Antar Wallet"
     >
       <KolamDropdownSelect
-        label="Dari"
+        label="Dari Wallet"
         menuPlacement="inline"
         onChange={setFromWalletId}
-        options={walletOptions}
+        options={fromOptions}
         value={fromWalletId}
       />
       <KolamDropdownSelect
-        label="Ke"
+        label="Ke Wallet"
         menuPlacement="inline"
         onChange={setToWalletId}
-        options={walletOptions}
+        options={toOptions}
         value={toWalletId}
       />
+      {isSameWallet ? (
+        <KolamStatusBadge
+          intent="danger"
+          label="Tidak bisa transfer ke wallet yang sama"
+        />
+      ) : null}
       <KolamFormTextField
         keyboardType="numeric"
         onChangeText={setAmount}
-        placeholder="Jumlah"
+        placeholder="Jumlah Transfer"
         value={amount}
       />
       <KolamFormTextField
@@ -994,30 +1196,146 @@ function TransferForm({
         placeholder="Catatan"
         value={note}
       />
+      <WalletProofPicker onChange={setProofs} proofs={proofs} />
+      {fromWallet && toWallet && safeAmount > 0 && !isSameWallet ? (
+        <View style={styles.previewBlock}>
+          <Text style={styles.previewTitle}>Preview Saldo</Text>
+          <View style={styles.balanceInfo}>
+            <Text style={styles.metaText}>{fromWallet.name}</Text>
+            <Text
+              style={[
+                styles.balanceInfoValue,
+                fromProjected < 0 ? styles.valueDanger : null,
+              ]}
+            >
+              {formatRupiah(fromProjected)}
+            </Text>
+          </View>
+          <View style={styles.balanceInfo}>
+            <Text style={styles.metaText}>{toWallet.name}</Text>
+            <Text style={styles.balanceInfoValue}>
+              {formatRupiah(toProjected)}
+            </Text>
+          </View>
+        </View>
+      ) : null}
     </WalletFormShell>
+  );
+}
+
+function WalletProofPicker({
+  onChange,
+  proofs,
+  required = false,
+}: {
+  onChange: (next: WalletProofPick[]) => void;
+  proofs: WalletProofPick[];
+  required?: boolean;
+}) {
+  const pickProof = async () => {
+    if (proofs.length >= 3) {
+      return;
+    }
+    try {
+      let result;
+      try {
+        result = await pickNativeAssetFile();
+      } catch {
+        result = await pickNativeImageFile();
+      }
+      if (result.cancelled || !result.uri) {
+        return;
+      }
+      onChange([
+        ...proofs,
+        {
+          uri: result.uri,
+          name: result.name?.trim() || `bukti-${proofs.length + 1}`,
+        },
+      ].slice(0, 3));
+    } catch {
+      // Native picker may be unavailable in non-Windows/test runtime.
+    }
+  };
+
+  return (
+    <View style={styles.proofBlock}>
+      <Text style={styles.proofLabel}>
+        Bukti {required ? '(wajib)' : '(opsional)'}
+      </Text>
+      <View style={styles.proofActions}>
+        <KolamButton
+          disabled={proofs.length >= 3}
+          intent="secondary"
+          label="Upload Bukti"
+          onPress={() => {
+            void pickProof();
+          }}
+        />
+        <Text style={styles.metaText}>{proofs.length}/3 file</Text>
+      </View>
+      {proofs.length > 0 ? (
+        <View style={styles.proofList}>
+          {proofs.map((proof, index) => (
+            <View key={`${proof.uri}-${index}`} style={styles.proofItem}>
+              {/\.(png|jpe?g|webp|gif)$/i.test(proof.name) ||
+              proof.uri.startsWith('file:') ? (
+                <Image source={{uri: proof.uri}} style={styles.proofThumb} />
+              ) : (
+                <View style={styles.proofFallback}>
+                  <Text style={styles.metaText}>FILE</Text>
+                </View>
+              )}
+              <Text numberOfLines={1} style={styles.proofName}>
+                {proof.name}
+              </Text>
+              <KolamButton
+                intent="secondary"
+                label="Hapus"
+                onPress={() =>
+                  onChange(proofs.filter((_, itemIndex) => itemIndex !== index))
+                }
+              />
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 function WalletFormShell({
   children,
+  error,
   onClose,
   onSubmit,
+  submitDisabled,
   submitLabel,
   title,
 }: {
   children: React.ReactNode;
+  error?: string;
   onClose: () => void;
   onSubmit: () => void;
+  submitDisabled?: boolean;
   submitLabel: string;
   title: string;
 }) {
   return (
     <ScrollView contentContainerStyle={styles.formBody}>
       <Text style={styles.formTitle}>{title}</Text>
+      {error ? (
+        <KolamStatusBadge intent="danger" label={error} numberOfLines={3} />
+      ) : null}
       {children}
       <View style={styles.formActions}>
         <KolamButton intent="secondary" label="Batal" onPress={onClose} />
-        <KolamButton intent="primary" label={submitLabel} onPress={onSubmit} />
+        <KolamButton
+          disabled={submitDisabled}
+          intent="primary"
+          label={submitLabel}
+          onPress={onSubmit}
+        />
       </View>
     </ScrollView>
   );
@@ -1058,6 +1376,43 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  summaryCard: {
+    flexBasis: 200,
+    flexGrow: 1,
+    minWidth: 180,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  summaryAccent: {
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+    bottom: 10,
+    left: 0,
+    position: 'absolute',
+    top: 10,
+    width: 3,
+  },
+  accentPrimary: {
+    backgroundColor: V.colors.primary,
+  },
+  accentSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  accentWarning: {
+    backgroundColor: V.colors.warning,
+  },
+  accentDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  accentInfo: {
+    backgroundColor: V.colors.info,
+  },
+  summaryBody: {
+    gap: 2,
+    paddingHorizontal: 14,
+    paddingLeft: 16,
+    paddingVertical: 12,
+  },
   card: {
     flexGrow: 1,
     minWidth: 160,
@@ -1066,7 +1421,10 @@ const styles = StyleSheet.create({
   cardLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   cardValue: {
     color: V.colors.fg,
@@ -1074,6 +1432,89 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginTop: 4,
+  },
+  cardHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  valuePrimary: {
+    color: V.colors.primary,
+  },
+  valueDanger: {
+    color: V.colors.danger,
+  },
+  balanceInfo: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  balanceInfoValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  previewBlock: {
+    gap: 8,
+  },
+  previewTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  proofBlock: {
+    gap: 8,
+  },
+  proofLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  proofActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  proofList: {
+    gap: 8,
+  },
+  proofItem: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    padding: 8,
+  },
+  proofThumb: {
+    borderRadius: 6,
+    height: 40,
+    width: 40,
+  },
+  proofFallback: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  proofName: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
   },
   actionBar: {
     flexDirection: 'row',

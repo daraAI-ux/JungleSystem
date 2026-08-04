@@ -1,4 +1,6 @@
 import {
+  buildKolamWalletSummaryStats,
+  countKolamWalletTxByType,
   formatKolamWalletTxSourceLabel,
   formatKolamWalletTypeLabel,
   getKolamWalletRouteId,
@@ -27,7 +29,7 @@ describe('kolam wallet domain', () => {
     expect(formatKolamWalletTypeLabel('main')).toBe('Dompet Utama');
     expect(formatKolamWalletTxSourceLabel('deposit')).toBe('Drop Dana');
     expect(formatKolamWalletTxSourceLabel('unknown_source')).toBe(
-      'unknown_source',
+      'unknown source',
     );
   });
 
@@ -103,5 +105,92 @@ describe('kolam wallet domain', () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.type).toBe('debit');
     expect(result.pagination.totalPages).toBe(1);
+  });
+
+  it('builds wallet summary stats from all wallets', () => {
+    const stats = buildKolamWalletSummaryStats([
+      {
+        id: '1',
+        name: 'Utama',
+        type: 'main',
+        initialBalance: 0,
+        currentBalance: 1000,
+        note: '',
+        provider: '',
+        requireDepositProof: false,
+        accountNumber: '',
+        accountName: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+      {
+        id: '2',
+        name: 'Virtual',
+        type: 'virtual',
+        initialBalance: 0,
+        currentBalance: -50,
+        note: '',
+        provider: '',
+        requireDepositProof: false,
+        accountNumber: '',
+        accountName: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+      {
+        id: '3',
+        name: 'Tunai',
+        type: 'cash',
+        initialBalance: 0,
+        currentBalance: 200,
+        note: '',
+        provider: '',
+        requireDepositProof: false,
+        accountNumber: '',
+        accountName: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ]);
+    expect(stats.totalBalance).toBe(1150);
+    expect(stats.positiveBalance).toBe(1200);
+    expect(stats.negativeBalance).toBe(-50);
+    expect(stats.walletCount).toBe(3);
+    expect(stats.virtualCount).toBe(1);
+    expect(stats.cashCount).toBe(1);
+    expect(stats.mainWallet?.name).toBe('Utama');
+    expect(countKolamWalletTxByType([
+      {
+        id: 'a',
+        walletId: '1',
+        walletName: 'Utama',
+        type: 'credit',
+        source: 'deposit',
+        amount: 1,
+        note: '',
+        confirmStatus: 'confirmed',
+        confirmedAt: '',
+        confirmNote: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+      {
+        id: 'b',
+        walletId: '1',
+        walletName: 'Utama',
+        type: 'debit',
+        source: 'withdraw',
+        amount: 1,
+        note: '',
+        confirmStatus: 'unconfirmed',
+        confirmedAt: '',
+        confirmNote: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ])).toEqual({ credit: 1, debit: 1 });
+    expect(formatKolamWalletTxSourceLabel('sale_revenue')).toBe(
+      'Pendapatan penjualan',
+    );
   });
 });

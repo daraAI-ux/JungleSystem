@@ -235,7 +235,86 @@ export function formatKolamWalletTxSourceLabel(source: string): string {
   const match = KOLAM_WALLET_TX_SOURCE_OPTIONS.find(
     option => option.value === source,
   );
-  return match?.label ?? (source || '—');
+  if (match) {
+    return match.label;
+  }
+  switch (source) {
+    case 'sale_revenue':
+      return 'Pendapatan penjualan';
+    case 'shipping_collected':
+      return 'Titipan pass-through';
+    case 'shipping_passthrough':
+      return 'Auto-passthrough ongkir';
+    case 'shipping_settlement':
+      return 'Settlement pass-through';
+    case 'cost_of_sale':
+      return 'HPP / COGS';
+    default:
+      return source ? source.replace(/_/g, ' ') : '—';
+  }
+}
+
+export type KolamWalletSummaryStats = {
+  totalBalance: number;
+  positiveBalance: number;
+  negativeBalance: number;
+  walletCount: number;
+  virtualCount: number;
+  cashCount: number;
+  mainWallet: KolamWallet | null;
+};
+
+export function buildKolamWalletSummaryStats(
+  wallets: KolamWallet[],
+): KolamWalletSummaryStats {
+  let totalBalance = 0;
+  let positiveBalance = 0;
+  let negativeBalance = 0;
+  let virtualCount = 0;
+  let cashCount = 0;
+  let mainWallet: KolamWallet | null = null;
+
+  for (const wallet of wallets) {
+    const balance = wallet.currentBalance;
+    totalBalance += balance;
+    positiveBalance += Math.max(balance, 0);
+    negativeBalance += Math.min(balance, 0);
+    if (wallet.type === 'virtual') {
+      virtualCount += 1;
+    }
+    if (wallet.type === 'cash') {
+      cashCount += 1;
+    }
+    if (wallet.type === 'main' && !mainWallet) {
+      mainWallet = wallet;
+    }
+  }
+
+  return {
+    totalBalance,
+    positiveBalance,
+    negativeBalance,
+    walletCount: wallets.length,
+    virtualCount,
+    cashCount,
+    mainWallet,
+  };
+}
+
+export function countKolamWalletTxByType(transactions: KolamWalletTransaction[]): {
+  credit: number;
+  debit: number;
+} {
+  let credit = 0;
+  let debit = 0;
+  for (const tx of transactions) {
+    if (tx.type === 'credit') {
+      credit += 1;
+    } else if (tx.type === 'debit') {
+      debit += 1;
+    }
+  }
+  return { credit, debit };
 }
 
 export function formatKolamWalletConfirmStatusLabel(

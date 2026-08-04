@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
+  buildKolamWalletSummaryStats,
+  countKolamWalletTxByType,
   createInitialWalletListFilters,
   createInitialWalletTxFilters,
   getKolamWalletRouteId,
@@ -9,6 +11,7 @@ import {
   type KolamWallet,
   type KolamWalletListFilters,
   type KolamWalletPagination,
+  type KolamWalletSummaryStats,
   type KolamWalletSurfaceMode,
   type KolamWalletTab,
   type KolamWalletTransaction,
@@ -20,6 +23,7 @@ import {
   depositKolamWallet,
   fetchKolamWalletById,
   fetchKolamWalletTransactions,
+  fetchKolamWalletsAll,
   fetchKolamWalletsPaginated,
   transferKolamWallet,
   withdrawKolamWallet,
@@ -34,13 +38,17 @@ export interface KolamWalletController {
   walletFilters: KolamWalletListFilters;
   txFilters: KolamWalletTxFilters;
   wallets: KolamWallet[];
+  allWallets: KolamWallet[];
   filteredWallets: KolamWallet[];
   walletPagination: KolamWalletPagination;
   transactions: KolamWalletTransaction[];
   txPagination: KolamWalletPagination;
   detailWallet: KolamWallet | null;
+  summaryStats: KolamWalletSummaryStats;
+  txTypeCounts: { credit: number; debit: number };
   totalBalance: number;
   loadingWallets: boolean;
+  loadingSummary: boolean;
   loadingTransactions: boolean;
   loadingDetail: boolean;
   submitting: boolean;
@@ -68,17 +76,20 @@ export interface KolamWalletController {
     walletId: string;
     amount: number;
     note?: string;
+    proofLocalUris?: string[];
   }) => Promise<void>;
   onWithdraw: (input: {
     walletId: string;
     amount: number;
     note?: string;
+    proofLocalUris?: string[];
   }) => Promise<void>;
   onTransfer: (input: {
     fromWalletId: string;
     toWalletId: string;
     amount: number;
     note?: string;
+    proofLocalUris?: string[];
   }) => Promise<void>;
   onConfirmTransaction: (tx: KolamWalletTransaction) => Promise<void>;
   clearStatusMessage: () => void;
@@ -97,6 +108,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
     createInitialWalletTxFilters(documentId ?? ''),
   );
   const [wallets, setWallets] = useState<KolamWallet[]>([]);
+  const [allWallets, setAllWallets] = useState<KolamWallet[]>([]);
   const [walletPagination, setWalletPagination] =
     useState<KolamWalletPagination>({
       page: 1,
@@ -115,6 +127,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
   });
   const [detailWallet, setDetailWallet] = useState<KolamWallet | null>(null);
   const [loadingWallets, setLoadingWallets] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -156,10 +169,28 @@ export function useKolamWalletController(route: string): KolamWalletController {
     });
   }, [walletFilters.search, wallets]);
 
-  const totalBalance = useMemo(
-    () => wallets.reduce((sum, wallet) => sum + wallet.currentBalance, 0),
-    [wallets],
+  const summaryStats = useMemo(
+    () => buildKolamWalletSummaryStats(allWallets),
+    [allWallets],
   );
+  const txTypeCounts = useMemo(
+    () => countKolamWalletTxByType(transactions),
+    [transactions],
+  );
+  const totalBalance = summaryStats.totalBalance;
+
+  const refreshAllWallets = useCallback(async () => {
+    setLoadingSummary(true);
+    try {
+      const items = await fetchKolamWalletsAll();
+      setAllWallets(items);
+    } catch (err) {
+      setAllWallets([]);
+      setError(getErrorMessage(err, 'Gagal memuat ringkasan dompet.'));
+    } finally {
+      setLoadingSummary(false);
+    }
+  }, []);
 
   const refreshWallets = useCallback(async () => {
     setLoadingWallets(true);
@@ -225,6 +256,10 @@ export function useKolamWalletController(route: string): KolamWalletController {
   }, [documentId]);
 
   useEffect(() => {
+    void refreshAllWallets();
+  }, [refreshAllWallets]);
+
+  useEffect(() => {
     void refreshWallets();
   }, [
     walletFilters.page,
@@ -240,9 +275,6 @@ export function useKolamWalletController(route: string): KolamWalletController {
   }, [mode, refreshDetail]);
 
   useEffect(() => {
-    if (mode === 'list' && activeTab !== 'transactions') {
-      return;
-    }
     void refreshTransactions();
   }, [
     mode,
@@ -315,10 +347,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
   }, []);
 
   const runMutation = useCallback(
-    async (
-      action: () => Promise<void>,
-      successMessage: string,
-    ) => {
+    async (action: () => Promise<void>, successMessage: string) => {
       setSubmitting(true);
       setError('');
       setStatusMessage('');
@@ -327,6 +356,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
         setStatusMessage(successMessage);
         setActionModal(null);
         await Promise.all([
+          refreshAllWallets(),
           refreshWallets(),
           refreshTransactions(),
           mode === 'detail' ? refreshDetail() : Promise.resolve(),
@@ -337,11 +367,16 @@ export function useKolamWalletController(route: string): KolamWalletController {
         setSubmitting(false);
       }
     },
-    [mode, refreshDetail, refreshTransactions, refreshWallets],
+    [mode, refreshAllWallets, refreshDetail, refreshTransactions, refreshWallets],
   );
 
   const onDeposit = useCallback(
-    async (input: { walletId: string; amount: number; note?: string }) => {
+    async (input: {
+      walletId: string;
+      amount: number;
+      note?: string;
+      proofLocalUris?: string[];
+    }) => {
       await runMutation(async () => {
         await depositKolamWallet(input);
       }, 'Drop dana berhasil.');
@@ -350,7 +385,12 @@ export function useKolamWalletController(route: string): KolamWalletController {
   );
 
   const onWithdraw = useCallback(
-    async (input: { walletId: string; amount: number; note?: string }) => {
+    async (input: {
+      walletId: string;
+      amount: number;
+      note?: string;
+      proofLocalUris?: string[];
+    }) => {
       await runMutation(async () => {
         await withdrawKolamWallet(input);
       }, 'Tarik dana berhasil.');
@@ -364,6 +404,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
       toWalletId: string;
       amount: number;
       note?: string;
+      proofLocalUris?: string[];
     }) => {
       await runMutation(async () => {
         await transferKolamWallet(input);
@@ -386,6 +427,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
         await Promise.all([
           refreshTransactions(),
           refreshWallets(),
+          refreshAllWallets(),
           mode === 'detail' ? refreshDetail() : Promise.resolve(),
         ]);
       } catch (err) {
@@ -394,7 +436,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
         setConfirmingTxId(null);
       }
     },
-    [mode, refreshDetail, refreshTransactions, refreshWallets],
+    [mode, refreshAllWallets, refreshDetail, refreshTransactions, refreshWallets],
   );
 
   return {
@@ -404,13 +446,17 @@ export function useKolamWalletController(route: string): KolamWalletController {
     walletFilters,
     txFilters,
     wallets,
+    allWallets,
     filteredWallets,
     walletPagination,
     transactions,
     txPagination,
     detailWallet,
+    summaryStats,
+    txTypeCounts,
     totalBalance,
     loadingWallets,
+    loadingSummary,
     loadingTransactions,
     loadingDetail,
     submitting,
@@ -443,11 +489,11 @@ export function useKolamWalletController(route: string): KolamWalletController {
 }
 
 function getErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof ApiError) {
-    return err.message;
+  if (err instanceof ApiError && err.message.trim()) {
+    return err.message.trim();
   }
   if (err instanceof Error && err.message.trim()) {
-    return err.message;
+    return err.message.trim();
   }
   return fallback;
 }

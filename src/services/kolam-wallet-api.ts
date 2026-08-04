@@ -25,12 +25,14 @@ export type KolamWalletDepositBody = {
   walletId: string;
   amount: number;
   note?: string;
+  proofLocalUris?: string[];
 };
 
 export type KolamWalletWithdrawBody = {
   walletId: string;
   amount: number;
   note?: string;
+  proofLocalUris?: string[];
 };
 
 export type KolamWalletTransferBody = {
@@ -38,7 +40,13 @@ export type KolamWalletTransferBody = {
   toWalletId: string;
   amount: number;
   note?: string;
+  proofLocalUris?: string[];
 };
+
+export async function fetchKolamWalletsAll(): Promise<KolamWallet[]> {
+  const payload = await kolamRequest<unknown>('/wallet');
+  return normalizeKolamWalletList(payload).items;
+}
 
 export async function fetchKolamWalletsPaginated(
   filters: Pick<KolamWalletListFilters, 'page' | 'limit' | 'type'>,
@@ -109,10 +117,11 @@ export async function depositKolamWallet(
     `/wallet/${encodeURIComponent(body.walletId)}/deposit`,
     {
       method: 'POST',
-      body: {
+      body: createWalletMoneyMoveFormData({
         amount: body.amount,
-        ...(body.note?.trim() ? { note: body.note.trim() } : {}),
-      },
+        note: body.note,
+        proofLocalUris: body.proofLocalUris,
+      }),
     },
   );
   return extractWalletTransaction(payload);
@@ -125,10 +134,11 @@ export async function withdrawKolamWallet(
     `/wallet/${encodeURIComponent(body.walletId)}/withdraw`,
     {
       method: 'POST',
-      body: {
+      body: createWalletMoneyMoveFormData({
         amount: body.amount,
-        ...(body.note?.trim() ? { note: body.note.trim() } : {}),
-      },
+        note: body.note,
+        proofLocalUris: body.proofLocalUris,
+      }),
     },
   );
   return extractWalletTransaction(payload);
@@ -137,14 +147,16 @@ export async function withdrawKolamWallet(
 export async function transferKolamWallet(
   body: KolamWalletTransferBody,
 ): Promise<unknown> {
+  const formData = createWalletMoneyMoveFormData({
+    amount: body.amount,
+    note: body.note,
+    proofLocalUris: body.proofLocalUris,
+  });
+  formData.append('fromWalletId', body.fromWalletId);
+  formData.append('toWalletId', body.toWalletId);
   return kolamRequest<unknown>('/wallet/transfer', {
     method: 'POST',
-    body: {
-      fromWalletId: body.fromWalletId,
-      toWalletId: body.toWalletId,
-      amount: body.amount,
-      ...(body.note?.trim() ? { note: body.note.trim() } : {}),
-    },
+    body: formData,
   });
 }
 
@@ -164,6 +176,60 @@ export async function confirmKolamWalletTransaction(
       ? (payload as { data: unknown }).data
       : payload;
   return normalizeKolamWalletTransaction(row);
+}
+
+function createWalletMoneyMoveFormData(input: {
+  amount: number;
+  note?: string;
+  proofLocalUris?: string[];
+}): FormData {
+  const formData = new FormData();
+  formData.append('amount', String(input.amount));
+  if (input.note?.trim()) {
+    formData.append('note', input.note.trim());
+  }
+  const proofs = (input.proofLocalUris ?? [])
+    .map(uri => uri.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  proofs.forEach((localUri, index) => {
+    formData.append(
+      'proofs',
+      createReactNativeFilePart(
+        localUri,
+        `wallet-proof-${index + 1}.jpg`,
+      ) as unknown as Blob,
+    );
+  });
+  return formData;
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const cleanUri = localUri.trim();
+  const fileName =
+    cleanUri.split(/[\\/]/).pop()?.split('?')[0]?.trim() || fallbackName;
+  return {
+    uri: cleanUri,
+    name: fileName,
+    type: guessMimeType(fileName),
+  };
+}
+
+function guessMimeType(fileName: string): string {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith('.png')) {
+    return 'image/png';
+  }
+  if (lower.endsWith('.webp')) {
+    return 'image/webp';
+  }
+  if (lower.endsWith('.gif')) {
+    return 'image/gif';
+  }
+  if (lower.endsWith('.pdf')) {
+    return 'application/pdf';
+  }
+  return 'image/jpeg';
 }
 
 function extractWalletTransaction(payload: unknown): KolamWalletTransaction | null {
