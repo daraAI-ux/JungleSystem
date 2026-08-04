@@ -7,6 +7,8 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 const GAUGE_R = 36;
 const GAUGE_C = 2 * Math.PI * GAUGE_R;
 const GAUGE_SIZE = 78;
+const GAUGE_CX = 44;
+const GAUGE_CY = 44;
 
 function gaugeOffset(pct: number) {
   return GAUGE_C * (1 - Math.min(100, Math.max(0, pct)) / 100);
@@ -24,7 +26,8 @@ function toneStroke(tone: KolamDaraSeoKpiTone) {
 
 /**
  * FE parity: DA-Dara-Plugin `CircularKpi` donut gauge on SEO dashboard.
- * Scoped to DARA SEO — does not change shared KolamStatsCardStrip.
+ * Rotate via Circle origin (not View transform) — RN Windows View rotate
+ * uses top-left origin and pushes the ring over the label.
  */
 export function KolamDaraSeoCircularKpi({
   display,
@@ -50,24 +53,23 @@ export function KolamDaraSeoCircularKpi({
         {label}
       </Text>
       <View style={styles.gauge}>
-        <Svg
-          height={GAUGE_SIZE}
-          style={styles.gaugeSvg}
-          viewBox="0 0 88 88"
-          width={GAUGE_SIZE}>
+        <Svg height={GAUGE_SIZE} viewBox="0 0 88 88" width={GAUGE_SIZE}>
           <Circle
-            cx={44}
-            cy={44}
+            cx={GAUGE_CX}
+            cy={GAUGE_CY}
             fill="none"
             r={GAUGE_R}
             stroke={V.colors.border}
             strokeWidth={8}
           />
           <Circle
-            cx={44}
-            cy={44}
+            cx={GAUGE_CX}
+            cy={GAUGE_CY}
             fill="none"
+            originX={GAUGE_CX}
+            originY={GAUGE_CY}
             r={GAUGE_R}
+            rotation={-90}
             stroke={stroke}
             strokeDasharray={`${GAUGE_C}`}
             strokeDashoffset={gaugeOffset(pct)}
@@ -75,7 +77,7 @@ export function KolamDaraSeoCircularKpi({
             strokeWidth={8}
           />
         </Svg>
-        <View style={styles.gaugeCenter} pointerEvents="none">
+        <View pointerEvents="none" style={styles.gaugeCenter}>
           <Text numberOfLines={1} style={styles.display}>
             {display}
           </Text>
@@ -117,6 +119,7 @@ const styles = StyleSheet.create({
     flexBasis: 0,
     gap: 8,
     minWidth: 0,
+    overflow: 'hidden',
     paddingHorizontal: 10,
     paddingVertical: 12,
   },
@@ -133,11 +136,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: GAUGE_SIZE,
     justifyContent: 'center',
+    overflow: 'hidden',
     position: 'relative',
     width: GAUGE_SIZE,
-  },
-  gaugeSvg: {
-    transform: [{rotate: '-90deg'}],
   },
   gaugeCenter: {
     ...StyleSheet.absoluteFillObject,
