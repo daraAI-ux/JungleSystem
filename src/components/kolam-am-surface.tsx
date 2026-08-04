@@ -6868,6 +6868,7 @@ const styles = StyleSheet.create({
   },
   pageStack: {
     width: '100%',
+    alignSelf: 'stretch',
     gap: 16,
   },
   actionRow: {
@@ -6878,6 +6879,7 @@ const styles = StyleSheet.create({
   },
   metricGrid: {
     width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -6914,6 +6916,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     width: '100%',
+    alignSelf: 'stretch',
     flexGrow: 1,
     flexBasis: 0,
     minWidth: 0,
@@ -6926,13 +6929,14 @@ const styles = StyleSheet.create({
   },
   panelGrid: {
     width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignSelf: 'stretch',
+    flexDirection: 'column',
     alignItems: 'stretch',
     gap: 12,
   },
   dashboardRecentPanel: {
     width: '100%',
+    alignSelf: 'stretch',
     flexBasis: '100%',
     flexGrow: 0,
     minWidth: 0,
@@ -6945,6 +6949,7 @@ const styles = StyleSheet.create({
   },
   overviewGrid: {
     width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'stretch',
@@ -7189,6 +7194,7 @@ const styles = StyleSheet.create({
   },
   tablePanel: {
     width: '100%',
+    alignSelf: 'stretch',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7435,25 +7441,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   recentAmountCol: {
-    flex: 0.85,
+    flex: 1,
     minWidth: 0,
-    maxWidth: 124,
     flexShrink: 1,
     overflow: 'hidden',
     textAlign: 'right',
   },
   recentStatusCol: {
-    flex: 0.72,
+    flex: 0.8,
     minWidth: 0,
-    maxWidth: 92,
     flexShrink: 1,
     alignItems: 'flex-start',
     overflow: 'hidden',
   },
   recentDateCol: {
-    flex: 0.82,
+    flex: 1,
     minWidth: 0,
-    maxWidth: 108,
     flexShrink: 1,
     overflow: 'hidden',
     textAlign: 'right',

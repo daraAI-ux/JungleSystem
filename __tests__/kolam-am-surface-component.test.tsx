@@ -472,8 +472,25 @@ describe('KolamAmSurface', () => {
     expect(amRecentPanels.length).toBeGreaterThanOrEqual(2);
     expect(amRecentPanels.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%';
+      return style?.width === '100%' && style?.alignSelf === 'stretch';
     })).toBe(true);
+    const dashboardPanelStack = renderer!.root
+      .findAllByType(View)
+      .find(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.width === '100%' &&
+          style?.alignSelf === 'stretch' &&
+          style?.flexDirection === 'column' &&
+          style?.alignItems === 'stretch';
+      });
+    expect(dashboardPanelStack).toBeTruthy();
+    const recentAmountTexts = renderer!.root
+      .findAllByType(Text)
+      .filter(node => flattenText(node.props.children).join('').includes('Rp'));
+    expect(recentAmountTexts.some(node => {
+      const style = StyleSheet.flatten(node.props.style);
+      return style?.maxWidth === 124;
+    })).toBe(false);
     const verticalAmScroll = renderer!.root
       .findAllByType(ScrollView)
       .find(scroll => !scroll.props.horizontal);
