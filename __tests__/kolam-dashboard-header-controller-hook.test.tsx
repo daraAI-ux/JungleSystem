@@ -2,6 +2,7 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import type { AppModule, ShellModuleRouteEntry } from '../src/domain/app-shell';
 import { getShellModuleRouteEntry } from '../src/domain/app-shell';
+import type { KolamNavigationItem } from '../src/domain/kolam-navigation';
 import { useKolamDashboardHeaderController } from '../src/hooks/use-kolam-dashboard-header-controller';
 import {
   seedUnifiedDataset,
@@ -23,6 +24,7 @@ function requireController(controller: DashboardHeaderController | null) {
 function HeaderHarness({
   activeModule,
   activeModuleRoute,
+  activeNavigationItem,
   messages,
   dataset = seedUnifiedDataset,
   onRender,
@@ -32,6 +34,7 @@ function HeaderHarness({
 }: {
   activeModule: AppModule;
   activeModuleRoute?: ShellModuleRouteEntry | null;
+  activeNavigationItem?: KolamNavigationItem | null;
   messages: string[];
   dataset?: UnifiedDataset;
   onRender: (controller: DashboardHeaderController) => void;
@@ -43,6 +46,7 @@ function HeaderHarness({
     accessScope: { kolam: true, pos: true },
     activeModule,
     activeModuleRoute,
+    activeNavigationItem,
     displayName: 'Offline Operator',
     dataset,
     onMessage: message => messages.push(message),
@@ -56,7 +60,7 @@ function HeaderHarness({
 }
 
 describe('Kolam dashboard header controller hook', () => {
-  it('builds Beranda header props without quick-create actions', async () => {
+  it('builds Beranda header props with the media action', async () => {
     const messages: string[] = [];
     let latest: DashboardHeaderController | null = null;
     let selectedModule: AppModule | null = null;
@@ -81,8 +85,44 @@ describe('Kolam dashboard header controller hook', () => {
     expect(controller.displayInitials).toBe('OO');
     expect(controller.dashboardHeader.eyebrow).toBe('Beranda');
     expect(controller.dashboardHeader.title).toContain('Offline Operator');
-    expect(controller.dashboardHeader.actions).toEqual([]);
+    expect(controller.dashboardHeader.actions.map(action => action.id)).toEqual([
+      'media-library',
+    ]);
     expect(selectedModule).toBeNull();
+  });
+
+  it('keeps the media action visible on Kolam route headers', async () => {
+    const messages: string[] = [];
+    let latest: DashboardHeaderController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <HeaderHarness
+          activeModule="kolam"
+          activeNavigationItem={{
+            description: 'Browse all images and videos in the media folder',
+            label: 'Media',
+            requiredAccess: ['kolam'],
+            route: '/media',
+          }}
+          messages={messages}
+          onRender={controller => {
+            latest = controller;
+          }}
+          onSelectModule={() => undefined}
+        />,
+      );
+    });
+
+    expect(requireController(latest).dashboardHeader).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Kolam Route',
+        title: 'Media',
+      }),
+    );
+    expect(
+      requireController(latest).dashboardHeader.actions.map(action => action.id),
+    ).toEqual(['media-library']);
   });
 
   it('uses the native module title outside Beranda', async () => {
