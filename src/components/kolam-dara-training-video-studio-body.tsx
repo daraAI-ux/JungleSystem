@@ -43,6 +43,8 @@ import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
 
+const VIDEO_STUDIO_JOB_HISTORY_LIMIT = 5;
+
 /** FE `DaraVideoStudioTab`. */
 export function KolamDaraTrainingVideoStudioBody({
   canManage,
@@ -83,7 +85,7 @@ export function KolamDaraTrainingVideoStudioBody({
     try {
       const [cfg, history] = await Promise.all([
         fetchKolamDaraTrainingVideoStudioConfig(),
-        listKolamDaraTrainingVideoStudioJobs(5),
+        listKolamDaraTrainingVideoStudioJobs(VIDEO_STUDIO_JOB_HISTORY_LIMIT),
       ]);
       setConfig(cfg);
       setJobs(history);
@@ -261,7 +263,12 @@ export function KolamDaraTrainingVideoStudioBody({
         uploadToken: upload?.uploadToken,
       });
       setActiveJob(job);
-      setJobs(current => [job, ...current.filter(row => row.id !== job.id)]);
+      setJobs(current =>
+        [job, ...current.filter(row => row.id !== job.id)].slice(
+          0,
+          VIDEO_STUDIO_JOB_HISTORY_LIMIT,
+        ),
+      );
       setNotice('Task BytePlus dikirim');
       void pollUntilTerminal(job);
     } catch (err) {
