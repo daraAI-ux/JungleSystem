@@ -65,17 +65,22 @@ export const kolamDetailMetaStripStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   stripCard: {
+    alignSelf: 'stretch',
+    minWidth: '100%',
     overflow: 'hidden',
     paddingLeft: 12,
     paddingRight: 0,
     paddingVertical: 0,
+    width: '100%',
   },
   stripRow: {
     alignItems: 'stretch',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
     minHeight: 72,
+    width: '100%',
   },
   stripItem: {
     gap: 4,

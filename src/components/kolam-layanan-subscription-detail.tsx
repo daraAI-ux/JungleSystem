@@ -588,9 +588,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   content: {
+    alignItems: 'stretch',
     gap: 12,
     paddingBottom: 24,
-    paddingHorizontal: 8,
   },
   banner: {
     alignSelf: 'stretch',

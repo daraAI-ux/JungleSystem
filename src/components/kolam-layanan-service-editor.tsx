@@ -31,6 +31,11 @@ import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDescriptionList } from './kolam-description-list';
+import {
+  KolamDetailMetaStrip,
+  KolamDetailMetaStripItem,
+  kolamDetailMetaStripStyles,
+} from './kolam-detail-meta-strip';
 import { KolamDetailTermsTemplatesPanel } from './kolam-detail-more-panels';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -309,27 +314,29 @@ function KolamLayananServiceDetail({
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.statusStrip}>
-        <View style={styles.statusStripItem}>
-          <Text style={styles.statusStripLabel}>Status jual</Text>
+      <KolamDetailMetaStrip>
+        <KolamDetailMetaStripItem label="Status jual">
           <KolamStatusBadge
             intent={service.sellable ? 'success' : 'secondary'}
             label={service.sellable ? 'Dijual' : 'Nonaktif'}
           />
-        </View>
-        <View style={[styles.statusStripItem, styles.statusStripDivider]}>
-          <Text style={styles.statusStripLabel}>Komisi</Text>
-          <Text style={styles.statusStripValue}>
+        </KolamDetailMetaStripItem>
+        <KolamDetailMetaStripItem label="Komisi">
+          <Text style={kolamDetailMetaStripStyles.stripValue}>
             {formatKolamLayananCommission(service)}
           </Text>
-        </View>
-        <View style={styles.statusStripItem}>
-          <Text style={styles.statusStripLabel}>Poin</Text>
-          <Text style={[styles.statusStripValue, styles.statusStripPoints]}>
+        </KolamDetailMetaStripItem>
+        <KolamDetailMetaStripItem label="Poin">
+          <Text
+            style={[
+              kolamDetailMetaStripStyles.stripValue,
+              styles.statusStripPoints,
+            ]}
+          >
             {formatKolamLayananMemberPoints(service)}
           </Text>
-        </View>
-      </View>
+        </KolamDetailMetaStripItem>
+      </KolamDetailMetaStrip>
 
       <View style={styles.detailColumns}>
         <View style={styles.detailMain}>
@@ -1214,9 +1221,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   content: {
+    alignItems: 'stretch',
     gap: 16,
     paddingBottom: 32,
-    paddingHorizontal: 8,
   },
   toolbarTitle: {
     color: V.colors.fg,
@@ -1269,40 +1276,6 @@ const styles = StyleSheet.create({
   metaText: {
     color: V.colors.mutedFg,
     fontSize: 12,
-  },
-  statusStrip: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  statusStripItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statusStripDivider: {
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 1,
-    paddingLeft: 12,
-  },
-  statusStripLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  statusStripValue: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '600',
   },
   statusStripPoints: {
     color: V.colors.success,

@@ -1368,6 +1368,7 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   detailContent: {
+    alignItems: 'stretch',
     gap: 12,
     paddingBottom: 24,
   },
