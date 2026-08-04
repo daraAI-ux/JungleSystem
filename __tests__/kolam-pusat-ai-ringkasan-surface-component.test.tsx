@@ -12,6 +12,11 @@ import {
   fetchKolamShippingOpsLog,
 } from '../src/services/kolam-dara-shipping-copilot-api';
 import {
+  fetchKolamPoCopilotStats,
+  fetchKolamPoOpsLog,
+  fetchKolamRajaAnemonHealth,
+} from '../src/services/kolam-dara-po-copilot-api';
+import {
   getKolamTeamChatRooms,
   getKolamWebSetting,
 } from '../src/services/kolam-api';
@@ -39,6 +44,12 @@ jest.mock('../src/services/kolam-dara-shipping-copilot-api', () => ({
   fetchKolamShippingDeliveryStats: jest.fn(),
   fetchKolamShippingOpsLog: jest.fn(),
   fetchKolamKatakTerbangHealth: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-dara-po-copilot-api', () => ({
+  fetchKolamPoCopilotStats: jest.fn(),
+  fetchKolamPoOpsLog: jest.fn(),
+  fetchKolamRajaAnemonHealth: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-api', () => ({
@@ -76,6 +87,15 @@ const fetchOpsMock = fetchKolamShippingOpsLog as jest.MockedFunction<
 const fetchHealthMock = fetchKolamKatakTerbangHealth as jest.MockedFunction<
   typeof fetchKolamKatakTerbangHealth
 >;
+const fetchPoStatsMock = fetchKolamPoCopilotStats as jest.MockedFunction<
+  typeof fetchKolamPoCopilotStats
+>;
+const fetchPoOpsMock = fetchKolamPoOpsLog as jest.MockedFunction<
+  typeof fetchKolamPoOpsLog
+>;
+const fetchRajaHealthMock = fetchKolamRajaAnemonHealth as jest.MockedFunction<
+  typeof fetchKolamRajaAnemonHealth
+>;
 const getRoomsMock = getKolamTeamChatRooms as jest.MockedFunction<
   typeof getKolamTeamChatRooms
 >;
@@ -107,6 +127,9 @@ describe('KolamPusatAiRingkasanSurface', () => {
     fetchStatsMock.mockReset();
     fetchOpsMock.mockReset();
     fetchHealthMock.mockReset();
+    fetchPoStatsMock.mockReset();
+    fetchPoOpsMock.mockReset();
+    fetchRajaHealthMock.mockReset();
     getRoomsMock.mockReset();
     getWebSettingMock.mockReset();
     getSourcesMock.mockReset();
@@ -119,6 +142,10 @@ describe('KolamPusatAiRingkasanSurface', () => {
       katakTerbangWorkerPhotoUrl: '',
       transaksiCopilotChatNotifyEnabled: true,
       transaksiCopilotTeamRoomId: 'room-ops',
+      rajaAnemonWorkerName: 'Raja',
+      rajaAnemonWorkerPhotoUrl: '',
+      poCopilotChatNotifyEnabled: true,
+      poCopilotTeamRoomId: 'room-ops',
     } as never);
     getSourcesMock.mockResolvedValue({
       items: [],
@@ -186,6 +213,81 @@ describe('KolamPusatAiRingkasanSurface', () => {
         name: 'Ops Transaksi',
         webHref: '/team-chat?room=room-ops',
       },
+    });
+    fetchPoStatsMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      range: 'month',
+      note: 'PO closed vs gagal',
+      closed: {
+        metric: 'closed',
+        value: 7,
+        change: 12,
+        data: [{timestamp: '2026-08-01T00:00:00.000Z', value: 2}],
+      },
+      failed: {
+        metric: 'failed',
+        value: 3,
+        change: -4,
+        data: [],
+      },
+      rajaAnemonProfile: {name: 'Raja', photoUrl: ''},
+    });
+    fetchPoOpsMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      note: '',
+      dara: [
+        {
+          id: 'po1',
+          at: '2026-08-03T11:00:00.000Z',
+          eventType: 'quote',
+          action: '',
+          status: 'ok',
+          detail: 'Quote diterima',
+          phase: '',
+          invoiceCode: '',
+          controller: 'dara',
+          executor: '',
+          poCode: 'PO-1',
+          vendorName: 'Vendor A',
+          conversationId: '',
+          messageId: '',
+          dispatchTaskId: '',
+          error: '',
+          badges: [
+            {label: 'PO', value: 'PO-1'},
+            {label: 'vendor', value: 'Vendor A'},
+          ],
+        },
+      ],
+      bot: [],
+    });
+    fetchRajaHealthMock.mockResolvedValue({
+      checkedAt: '2026-08-03T12:00:00.000Z',
+      overallHealthy: true,
+      overallState: 'ready',
+      platforms: [
+        {
+          platform: 'procurement',
+          enabled: true,
+          healthy: true,
+          state: 'ready',
+          reason: '',
+        },
+      ],
+      procurementAgent: {
+        enabled: true,
+        modelTier: 'fast',
+        approvalGuard: true,
+        paymentGuard: 'notify',
+        note: '',
+        guardrailBadges: [{label: 'invoice', value: 'explicit'}],
+      },
+      notifyRoom: {
+        id: 'room-ops',
+        name: 'Ops Transaksi',
+        webHref: '/team-chat?room=room-ops',
+      },
+      note: '',
     });
     fetchLogMock.mockResolvedValue({
       generatedAt: '2026-08-03T12:00:00.000Z',
@@ -462,6 +564,34 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(fetchStatsMock).toHaveBeenCalled();
     expect(fetchOpsMock).toHaveBeenCalled();
     expect(fetchHealthMock).toHaveBeenCalled();
+  });
+
+  it('loads PO Copilot dashboard for admin', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface route="/pusat-ai?tab=po-copilot" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).not.toContain('Belum tersedia');
+    expect(text).toContain('PO Copilot');
+    expect(text).toContain('Room log PO DARA');
+    expect(text).toContain('Kesehatan Bot — Raja Anemon');
+    expect(text).toContain('Profil Bot — Raja Anemon');
+    expect(text).toContain('PO Closed (berhasil)');
+    expect(text).toContain('PO gagal (rejected / cancelled)');
+    expect(text).toContain('DARA Procurement Agent');
+    expect(text).toContain('Console operasi');
+    expect(text).toContain('7 PO');
+    expect(fetchPoStatsMock).toHaveBeenCalled();
+    expect(fetchPoOpsMock).toHaveBeenCalled();
+    expect(fetchRajaHealthMock).toHaveBeenCalled();
   });
 
   it('hides admin tabs for non-admin roles', async () => {

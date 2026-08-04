@@ -14,6 +14,12 @@ export interface KolamKatakTerbangWorkerPhotoResponse {
   katakTerbangWorkerPhotoUrl?: string;
 }
 
+export interface KolamRajaAnemonWorkerPhotoResponse {
+  success?: boolean;
+  message?: string;
+  rajaAnemonWorkerPhotoUrl?: string;
+}
+
 export function createKolamDaraKnowledge(body: KolamDaraKnowledgeBody) {
   return kolamPost('/dara/knowledge', body);
 }
@@ -24,6 +30,16 @@ export function uploadKolamKatakTerbangWorkerPhoto(localUri: string) {
 
   return kolamPost<KolamKatakTerbangWorkerPhotoResponse>(
     '/websetting/katak-terbang-worker-photo',
+    body,
+  );
+}
+
+export function uploadKolamRajaAnemonWorkerPhoto(localUri: string) {
+  const body = new FormData();
+  body.append('image', createImageFilePart(localUri) as unknown as Blob);
+
+  return kolamPost<KolamRajaAnemonWorkerPhotoResponse>(
+    '/websetting/raja-anemon-worker-photo',
     body,
   );
 }
