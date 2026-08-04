@@ -147,3 +147,19 @@ describe('kolam-dara-training-vision domain', () => {
     expect(resolveKolamDaraTrainingVisionMatchIntent('weak')).toBe('danger');
   });
 });
+
+describe('resolveKolamDaraTrainingVisionImageUri', () => {
+  it('uses fileBaseUrl like FE getFileUrl (not /api)', () => {
+    const {
+      resolveKolamDaraTrainingVisionImageUri,
+    } = require('../src/services/kolam-dara-training-vision-api');
+    const {appConfig} = require('../src/config/app');
+    expect(
+      resolveKolamDaraTrainingVisionImageUri('/media/frog-a.jpg'),
+    ).toBe(`${appConfig.fileBaseUrl}/media/frog-a.jpg`);
+    expect(resolveKolamDaraTrainingVisionImageUri(null)).toBeNull();
+    expect(
+      resolveKolamDaraTrainingVisionImageUri('https://cdn.example/x.jpg'),
+    ).toBe('https://cdn.example/x.jpg');
+  });
+});

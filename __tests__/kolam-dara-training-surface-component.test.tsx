@@ -694,7 +694,9 @@ describe('KolamDaraTrainingSurface', () => {
 
     let text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Foto katalog — klik untuk pilih');
-    expect(text).toContain('Atau path foto manual');
+    expect(text).toContain('Pilih foto katalog, lalu Tambah foto');
+    expect(text).not.toContain('Atau path foto manual');
+    expect(text).not.toContain('Path foto');
     expect(text).toContain('Tambah foto');
     expect(text).toContain('Tutup');
     expect(visionProductPhotosMock).toHaveBeenCalledWith('p1');

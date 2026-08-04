@@ -257,7 +257,6 @@ export function KolamDaraTrainingVisionBody({
   const [baselineDays, setBaselineDays] = useState(30);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
-  const [addKey, setAddKey] = useState('');
   const [selectedCatalogKeys, setSelectedCatalogKeys] = useState<string[]>([]);
   const [negKey, setNegKey] = useState('');
   const [negType, setNegType] = useState('lainnya');
@@ -355,7 +354,6 @@ export function KolamDaraTrainingVisionBody({
     setSelectedSpecies(row);
     setSelectedProduct(null);
     setSelectedCatalogKeys([]);
-    setAddKey(row.catalogPhotos[0] || '');
     try {
       setSpeciesPhotos(
         await listKolamDaraTrainingVisionSpeciesPhotos(row.speciesId),
@@ -375,7 +373,6 @@ export function KolamDaraTrainingVisionBody({
     setSelectedProduct(row);
     setSelectedSpecies(null);
     setSelectedCatalogKeys([]);
-    setAddKey(row.catalogPhotos[0] || '');
     try {
       setProductPhotos(
         await listKolamDaraTrainingVisionProductPhotos(row.productId),
@@ -406,14 +403,9 @@ export function KolamDaraTrainingVisionBody({
   };
 
   const savePhoto = async () => {
-    const keys =
-      selectedCatalogKeys.length > 0 ?
-        selectedCatalogKeys
-      : addKey.trim() ?
-        [addKey.trim()]
-      : [];
+    const keys = selectedCatalogKeys;
     if (!keys.length) {
-      setNotice('Pilih foto');
+      setNotice('Pilih foto katalog');
       return;
     }
     setPhotoSaving(true);
@@ -425,9 +417,7 @@ export function KolamDaraTrainingVisionBody({
             selectedProduct.productId,
             {
               photoKey: key,
-              source: selectedProduct.catalogPhotos.includes(key)
-                ? 'catalog'
-                : 'manual',
+              source: 'catalog',
             },
           );
           added += 1;
@@ -436,16 +426,13 @@ export function KolamDaraTrainingVisionBody({
             selectedSpecies.speciesId,
             {
               photoKey: key,
-              source: selectedSpecies.catalogPhotos.includes(key)
-                ? 'catalog'
-                : 'manual',
+              source: 'catalog',
             },
           );
           added += 1;
         }
       }
       setSelectedCatalogKeys([]);
-      setAddKey('');
       if (selectedProduct) {
         await openProduct(selectedProduct);
       } else if (selectedSpecies) {
@@ -1515,7 +1502,9 @@ export function KolamDaraTrainingVisionBody({
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{photoModalTitle}</Text>
-              <Text style={styles.meta}>Foto katalog atau path /media/…</Text>
+              <Text style={styles.meta}>
+                Pilih foto katalog, lalu Tambah foto
+              </Text>
             </View>
 
             <ScrollView style={styles.modalScroll}>
@@ -1561,31 +1550,8 @@ export function KolamDaraTrainingVisionBody({
                       })}
                     </View>
                   </View>
-                ) : null}
-
-                {canManage ? (
-                  <View style={styles.modalSection}>
-                    <Text style={styles.fieldLabel}>
-                      {modalCatalogPhotos.length > 0
-                        ? 'Atau path foto manual'
-                        : 'Path foto'}
-                    </Text>
-                    <TextInput
-                      onChangeText={setAddKey}
-                      placeholder="/media/..."
-                      style={styles.textInput}
-                      value={addKey}
-                    />
-                    <KolamButton
-                      disabled={photoSaving}
-                      intent="primary"
-                      label={photoSaving ? 'Menyimpan…' : 'Tambah foto'}
-                      onPress={() => {
-                        void savePhoto();
-                      }}
-                      size="sm"
-                    />
-                  </View>
+                ) : canManage ? (
+                  <Text style={styles.meta}>Tidak ada foto katalog</Text>
                 ) : null}
 
                 <View style={styles.modalSection}>
@@ -1606,6 +1572,17 @@ export function KolamDaraTrainingVisionBody({
             </ScrollView>
 
             <View style={styles.modalFooter}>
+              {canManage && modalCatalogPhotos.length > 0 ? (
+                <KolamButton
+                  disabled={photoSaving || selectedCatalogKeys.length === 0}
+                  intent="primary"
+                  label={photoSaving ? 'Menyimpan…' : 'Tambah foto'}
+                  onPress={() => {
+                    void savePhoto();
+                  }}
+                  size="sm"
+                />
+              ) : null}
               <KolamButton
                 disabled={photoSaving}
                 intent="outline"
@@ -1955,9 +1932,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   modalFooter: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     borderTopColor: V.colors.border,
     borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
     paddingTop: 10,
   },
   catalogGrid: {

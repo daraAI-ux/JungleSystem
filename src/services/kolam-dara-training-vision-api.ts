@@ -1,4 +1,5 @@
 import {appConfig} from '../config/app';
+import {getKolamFileUrl} from '../lib/file-url';
 import {
   normalizeKolamDaraTrainingVisionActionResult,
   normalizeKolamDaraTrainingVisionBaselineKpi,
@@ -331,22 +332,11 @@ export async function fetchKolamDaraTrainingVisionBaselineKpi(
   return normalizeKolamDaraTrainingVisionBaselineKpi(payload);
 }
 
-/** Resolve relative media path for KolamRemoteImage. */
+/** Resolve media path like FE `getFileUrl` (host root, not `/api`). */
 export function resolveKolamDaraTrainingVisionImageUri(
   raw?: string | null,
 ): string | null {
-  const value = String(raw || '').trim();
-  if (!value) {
-    return null;
-  }
-  if (/^https?:\/\//i.test(value) || value.startsWith('file:')) {
-    return value;
-  }
-  const base = appConfig.kolamApiBaseUrl.replace(/\/+$/, '');
-  if (value.startsWith('/')) {
-    return `${base}${value}`;
-  }
-  return `${base}/${value}`;
+  return getKolamFileUrl(raw);
 }
 
 function kolamRequest<T>(
