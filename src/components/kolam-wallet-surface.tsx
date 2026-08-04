@@ -1623,7 +1623,7 @@ function WalletActionModal({
           accessibilityLabel="Tutup"
           accessibilityRole="button"
           onPress={controller.onCloseActionModal}
-          style={styles.actionModalDim}
+          style={styles.actionModalDismiss}
         />
         <View style={styles.actionModalCard}>
           {modal === 'deposit' ? (
@@ -2699,28 +2699,31 @@ const styles = StyleSheet.create({
   },
   actionModalRoot: {
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 12,
-  },
-  actionModalDim: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    flex: 1,
+    height: '100%',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    width: '100%',
+  },
+  actionModalDismiss: {
+    ...StyleSheet.absoluteFillObject,
   },
   actionModalCard: {
+    alignSelf: 'center',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     elevation: 0,
-    maxHeight: '88%',
-    maxWidth: 400,
-    overflow: 'hidden',
+    maxHeight: '90%',
+    maxWidth: '100%',
     shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
-    width: '100%',
+    width: 448,
     zIndex: 2,
   },
   actionDropdownMenu: {
@@ -2746,18 +2749,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   actionFormBody: {
-    gap: 8,
-    padding: 12,
+    gap: 10,
+    padding: 16,
   },
   actionFormTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   actionFormActions: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     justifyContent: 'flex-end',
     marginTop: 4,
   },
