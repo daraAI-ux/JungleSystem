@@ -82,23 +82,21 @@ function StatBox({
   );
 }
 
-/** Soft row metrics for Status pipeline — not the FE tile grid. */
-function PipelineStat({
-  hint,
-  label,
-  value,
+function PipelineGroup({
+  title,
+  lines,
 }: {
-  hint?: string;
-  label: string;
-  value: string | number;
+  title: string;
+  lines: string[];
 }) {
   return (
-    <View style={styles.pipelineStat}>
-      <View style={styles.pipelineStatMain}>
-        <Text style={styles.pipelineStatLabel}>{label}</Text>
-        <Text style={styles.pipelineStatValue}>{value}</Text>
-      </View>
-      {hint ? <Text style={styles.pipelineStatHint}>{hint}</Text> : null}
+    <View style={styles.pipelineGroup}>
+      <Text style={styles.pipelineGroupTitle}>{title}</Text>
+      {lines.map(line => (
+        <Text key={line} style={styles.pipelineLine}>
+          {line}
+        </Text>
+      ))}
     </View>
   );
 }
@@ -460,73 +458,41 @@ export function KolamDaraTrainingVisionBody({
       {section === 'ringkasan' && stats ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Status pipeline</Text>
-          <View style={styles.pipelineList}>
-            <PipelineStat
-              label="Closed-world"
-              value={stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'}
+          <View style={styles.pipelineGroups}>
+            <PipelineGroup
+              lines={[
+                `Closed-world ${stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'} · Embed ${stats.embedFamily || 'siglip'}${stats.embedModelId.split('/').pop() ? ` (${stats.embedModelId.split('/').pop()})` : ''} · Threshold ${stats.embedMinScore ?? '—'}`,
+                `Indeks model OK ${stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}${(stats.embedIndexStale ?? 0) > 0 ? ` · Perlu rebuild ${stats.embedIndexStale}` : ''}`,
+              ]}
+              title="Model"
             />
-            <PipelineStat
-              hint={stats.embedModelId.split('/').pop()}
-              label="Embed aktif"
-              value={stats.embedFamily || 'siglip'}
+            <PipelineGroup
+              lines={[
+                `Detect/crop ${stats.detectCropMode || 'auto'}${
+                  stats.detectCropBackend === 'sam' ?
+                    ` · ${stats.detectCropModel.split('/').pop() || 'mobile_sam'}`
+                  : ` · ${stats.detectCropModel.split('/').pop() || 'yolov8n'}`
+                }`,
+                `OCR ${stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}${stats.ocrEngine ? ` · ${stats.ocrEngine}` : ''}`,
+              ]}
+              title="Deteksi"
             />
-            <PipelineStat label="Threshold min" value={stats.embedMinScore ?? '—'} />
-            <PipelineStat
-              label="Indeks model OK"
-              value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
+            <PipelineGroup
+              lines={[
+                `Foto species ${stats.speciesTrainingPhotos ?? stats.trainingPhotos} · Foto produk ${stats.productTrainingPhotos ?? 0}`,
+                `YOLO species ${stats.yoloModelReady ? 'Aktif' : 'Belum'} · YOLO produk ${stats.yoloProductModelReady ? 'Aktif' : 'Belum'}${
+                  stats.yoloProductClassCount ?
+                    ` · ${stats.yoloProductClassCount} SKU`
+                  : ` · Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
+                }`,
+              ]}
+              title="Training"
             />
-            <PipelineStat
-              hint={
-                (stats.embedIndexStale ?? 0) > 0 ?
-                  'Jalankan rebuild dual'
-                : undefined
-              }
-              label="Perlu rebuild"
-              value={stats.embedIndexStale ?? 0}
-            />
-            <PipelineStat
-              hint={
-                stats.detectCropBackend === 'sam' ?
-                  stats.detectCropModel.split('/').pop() || 'mobile_sam'
-                : stats.detectCropModel.split('/').pop() || 'yolov8n'
-              }
-              label="Detect/crop"
-              value={stats.detectCropMode || 'auto'}
-            />
-            <PipelineStat
-              hint={stats.ocrEngine || undefined}
-              label="OCR unified"
-              value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
-            />
-            <PipelineStat
-              label="Foto training species"
-              value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
-            />
-            <PipelineStat
-              label="Foto training produk"
-              value={stats.productTrainingPhotos ?? 0}
-            />
-            <PipelineStat
-              label="YOLO species"
-              value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
-            />
-            <PipelineStat
-              hint={
-                stats.yoloProductClassCount ?
-                  `${stats.yoloProductClassCount} SKU`
-                : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
-              }
-              label="YOLO produk"
-              value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
-            />
-            <PipelineStat
-              hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
-              label="Koreksi inbox"
-              value={stats.feedbackTotal ?? 0}
-            />
-            <PipelineStat
-              label="Antrian feedback"
-              value={stats.feedbackPending ?? 0}
+            <PipelineGroup
+              lines={[
+                `Koreksi ${stats.feedbackTotal ?? 0} (species ${stats.feedbackSpeciesTotal ?? '—'} · produk ${stats.feedbackProductTotal ?? '—'}) · Antrian ${stats.feedbackPending ?? 0}`,
+              ]}
+              title="Inbox"
             />
           </View>
         </View>
@@ -1498,45 +1464,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  pipelineList: {
-    alignSelf: 'stretch',
-    gap: 6,
+  pipelineGroups: {
+    gap: 14,
     width: '100%',
   },
-  pipelineStat: {
-    backgroundColor: V.colors.muted,
-    borderRadius: V.radius.md,
-    gap: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  pipelineGroup: {
+    gap: 4,
   },
-  pipelineStatMain: {
-    alignItems: 'baseline',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  pipelineStatLabel: {
+  pipelineGroupTitle: {
     color: V.colors.mutedFg,
-    flexShrink: 1,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '500',
-    paddingRight: 8,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
-  pipelineStatValue: {
+  pipelineLine: {
     color: V.colors.fg,
-    flexShrink: 0,
     fontFamily: V.fontFamily,
     fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  pipelineStatHint: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    lineHeight: 14,
+    lineHeight: 19,
   },
   statGrid: {
     alignItems: 'stretch',
