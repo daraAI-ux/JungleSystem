@@ -4216,6 +4216,17 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'admin/users');
 
+    let text = renderText(renderer!).join(' ');
+    expect(text).toContain('No users found');
+    expect(text).toContain('Create a user to get started.');
+
+    await act(async () => {
+      renderer!.root.findAllByType(TextInput)[0].props.onChangeText('missing');
+    });
+
+    text = renderText(renderer!).join(' ');
+    expect(text).toContain('Try a different search term.');
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
     });

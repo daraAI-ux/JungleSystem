@@ -5520,6 +5520,11 @@ function AmUsersPage() {
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat users AM..." emptyText="No users found" />
+        {!isLoading && !users.length ? (
+          <Text style={styles.rowMeta}>
+            {search.trim() ? 'Try a different search term.' : 'Create a user to get started.'}
+          </Text>
+        ) : null}
         {users.map(user => (
           <View key={user._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.accountWideCol]} numberOfLines={1}>{user.fullName}</Text>
