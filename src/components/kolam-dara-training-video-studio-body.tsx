@@ -823,9 +823,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   promptInput: {
-    height: 160,
-    maxHeight: 160,
-    textAlignVertical: 'top',
+    minHeight: 160,
   },
   dropdownGrid: {
     flexDirection: 'row',
