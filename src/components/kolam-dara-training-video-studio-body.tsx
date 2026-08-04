@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -82,7 +83,7 @@ export function KolamDaraTrainingVideoStudioBody({
     try {
       const [cfg, history] = await Promise.all([
         fetchKolamDaraTrainingVideoStudioConfig(),
-        listKolamDaraTrainingVideoStudioJobs(30),
+        listKolamDaraTrainingVideoStudioJobs(5),
       ]);
       setConfig(cfg);
       setJobs(history);
@@ -699,7 +700,9 @@ export function KolamDaraTrainingVideoStudioBody({
                   size="sm"
                 />
               </View>
-              <View style={styles.historyList}>
+              <ScrollView
+                nestedScrollEnabled
+                style={styles.historyList}>
                 {jobs.length ? (
                   jobs.map(job => (
                     <Pressable
@@ -733,7 +736,7 @@ export function KolamDaraTrainingVideoStudioBody({
                 ) : (
                   <Text style={styles.emptyHistory}>Belum ada histori.</Text>
                 )}
-              </View>
+              </ScrollView>
             </View>
           </View>
         </View>
@@ -918,8 +921,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   historyList: {
-    gap: 0,
-    maxHeight: 520,
+    maxHeight: 260,
   },
   historyRow: {
     borderBottomColor: V.colors.border,

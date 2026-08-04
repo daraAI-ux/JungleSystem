@@ -116,7 +116,7 @@ describe('KolamDaraTrainingVideoStudioBody', () => {
     expect(text).toContain('Download hasil');
     expect(text).toContain('Putar hasil Video Studio');
     expect(configMock).toHaveBeenCalled();
-    expect(jobsMock).toHaveBeenCalledWith(30);
+    expect(jobsMock).toHaveBeenCalledWith(5);
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

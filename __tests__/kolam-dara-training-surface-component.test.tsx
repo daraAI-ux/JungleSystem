@@ -825,7 +825,7 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Upload RAW');
     expect(text).toContain('Histori job');
     expect(videoStudioConfigMock).toHaveBeenCalled();
-    expect(videoStudioJobsMock).toHaveBeenCalledWith(30);
+    expect(videoStudioJobsMock).toHaveBeenCalledWith(5);
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
