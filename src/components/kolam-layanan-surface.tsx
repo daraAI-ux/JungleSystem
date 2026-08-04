@@ -177,9 +177,11 @@ function KolamLayananList({
       contentContainerStyle={styles.listContent}
       style={styles.stack}
     >
-      <KolamStatsCardStrip cards={kpiCards} />
+      <View style={styles.fullWidth}>
+        <KolamStatsCardStrip cards={kpiCards} />
+      </View>
 
-      <View style={kolamTableToolbarStyles.shell}>
+      <View style={[kolamTableToolbarStyles.shell, styles.fullWidth]}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
             {KOLAM_LAYANAN_LIST_TABS.map(tab => (
@@ -867,15 +869,31 @@ function formatAlertTime(value?: string | null) {
 
 const styles = StyleSheet.create({
   surface: {
+    alignSelf: 'stretch',
     flex: 1,
     gap: 8,
+    minWidth: 0,
+    width: '100%',
   },
   stack: {
+    alignSelf: 'stretch',
     flex: 1,
+    minWidth: 0,
+    width: '100%',
   },
   listContent: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
+    flexGrow: 1,
     gap: 8,
+    minWidth: 0,
     paddingBottom: 24,
+    width: '100%',
+  },
+  fullWidth: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
   },
   errorBadge: {
     alignSelf: 'stretch',
