@@ -43,6 +43,37 @@ export async function fetchKolamDaraJob(
   return jobs[0];
 }
 
+/** POST /dara-jobs/start — FE `startDaraJob`. */
+export async function startKolamDaraJob(body: {
+  module: KolamDaraJobModule;
+  jobType: string;
+  params?: Record<string, unknown>;
+  label?: string;
+}): Promise<{jobId: string; job: KolamDaraAsyncJob | null}> {
+  const payload = await kolamRequest<unknown>('/dara-jobs/start', {
+    method: 'POST',
+    body,
+  });
+  const root =
+    payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : {};
+  const data =
+    root.data && typeof root.data === 'object' && !Array.isArray(root.data)
+      ? (root.data as Record<string, unknown>)
+      : root;
+  const jobId =
+    typeof data.jobId === 'string'
+      ? data.jobId
+      : typeof data.id === 'string'
+        ? data.id
+        : '';
+  const jobs = data.job
+    ? normalizeKolamDaraJobList({data: {jobs: [data.job]}})
+    : [];
+  return {jobId, job: jobs[0] ?? null};
+}
+
 /** POST /dara-seo/suggestions/normalize-target-types — FE `normalizeSeoTargetTypes`. */
 export async function normalizeKolamDaraSeoTargetTypes(
   dryRun = false,
