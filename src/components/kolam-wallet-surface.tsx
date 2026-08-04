@@ -1626,12 +1626,7 @@ function WalletActionModal({
       visible
     >
       <View style={styles.actionModalRoot}>
-        <Pressable
-          accessibilityLabel="Tutup"
-          accessibilityRole="button"
-          onPress={controller.onCloseActionModal}
-          style={styles.actionModalDismiss}
-        />
+        <KolamModalBackdrop onPress={controller.onCloseActionModal} />
         <View style={styles.actionModalCard}>
           {modal === 'deposit' ? (
             <DepositForm
@@ -2709,31 +2704,24 @@ const styles = StyleSheet.create({
   },
   actionModalRoot: {
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 32,
   },
-  actionModalDismiss: {
-    ...StyleSheet.absoluteFillObject,
-  },
   actionModalCard: {
-    alignSelf: 'center',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     elevation: 0,
-    maxHeight: 560,
-    maxWidth: 448,
-    minWidth: 360,
-    overflow: 'visible',
+    maxHeight: '80%',
+    maxWidth: '86%',
     shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
-    width: '92%',
+    width: 420,
     zIndex: 2,
   },
   actionDropdownMenu: {
@@ -2760,7 +2748,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   actionFormShell: {
-    maxHeight: 560,
     width: '100%',
   },
   actionFormHeader: {
@@ -2773,7 +2760,7 @@ const styles = StyleSheet.create({
   },
   actionFormScroll: {
     flexGrow: 0,
-    maxHeight: 400,
+    maxHeight: 360,
   },
   actionFormBody: {
     gap: 10,
