@@ -5,20 +5,17 @@ import {KolamDashboardHeaderActionIcon} from '../src/components/kolam-dashboard-
 import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 
 describe('KolamDashboardHeaderActionIcon', () => {
-  it.each(['camera', 'package', 'plus'] as const)(
-    'renders the %s glyph',
-    async kind => {
-      let renderer: ReactTestRenderer.ReactTestRenderer;
+  it.each(['package', 'plus'] as const)('renders the %s glyph', async kind => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
 
-      await ReactTestRenderer.act(async () => {
-        renderer = ReactTestRenderer.create(
-          <KolamDashboardHeaderActionIcon kind={kind} intent="outline" />,
-        );
-      });
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamDashboardHeaderActionIcon kind={kind} intent="outline" />,
+      );
+    });
 
-      expect(renderer!.root.findAllByType(View).length).toBeGreaterThan(1);
-    },
-  );
+    expect(renderer!.root.findAllByType(View).length).toBeGreaterThan(1);
+  });
 
   it('uses primary foreground tint for primary action glyphs', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;

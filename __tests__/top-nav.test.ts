@@ -310,6 +310,12 @@ describe('topNavUserMenuItems', () => {
           'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
       },
       {
+        id: 'media',
+        label: 'Media library',
+        sourceComponent:
+          'E:\\Projects\\da-inventory-frontend\\src\\components\\desktop-topbar-actions.tsx',
+      },
+      {
         id: 'task-manager',
         label: 'Task Manager',
         sourceComponent:

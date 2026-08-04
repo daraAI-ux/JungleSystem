@@ -141,6 +141,7 @@ export function useKolamShellChromeController({
     });
   const { attentionCount, topNavigation } = useKolamTopNavigationController({
     activeModule,
+    accessScope,
     activeAmSurface,
     activeKolamSurface,
     activeModuleRoute,

@@ -65,10 +65,10 @@ export function useKolamDashboardHeaderController({
     const eyebrow =
       routeContext?.eyebrow ??
       (activeModule === 'kolam' ? 'Beranda' : undefined);
+    const isBeranda = activeModule === 'kolam' && !routeContext;
 
     return {
-      actions:
-        activeModule === 'kolam' ? getDashboardHeaderActions(accessScope) : [],
+      actions: isBeranda ? getDashboardHeaderActions(accessScope) : [],
       eyebrow,
       title:
         routeContext?.title ??

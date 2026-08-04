@@ -14,9 +14,9 @@ import type {
 export type DashboardHeaderRequiredArea = 'kolam' | 'pos';
 
 export interface DashboardHeaderAction {
-  id: 'media-library' | 'new-product' | 'new-order';
+  id: 'new-product' | 'new-order';
   label: string;
-  iconKind: 'camera' | 'package' | 'plus';
+  iconKind: 'package' | 'plus';
   intent: KolamButtonIntent;
   buttonTone: KolamButtonTone;
   requiredArea: DashboardHeaderRequiredArea;
@@ -391,25 +391,10 @@ function getDashboardHeaderSyncIntent(
 }
 
 export function getDashboardHeaderActions(
-  accessScope?: Pick<AccessScope, 'kolam' | 'pos'>,
+  _accessScope?: Pick<AccessScope, 'kolam' | 'pos'>,
 ): DashboardHeaderAction[] {
-  if (!accessScope?.kolam) {
-    return [];
-  }
-
-  return [
-    {
-      id: 'media-library',
-      label: 'Media',
-      iconKind: 'camera',
-      intent: 'secondary',
-      buttonTone: 'default',
-      requiredArea: 'kolam',
-      targetModule: 'kolam',
-      sourceRoute: '/media',
-      accessibilityLabel: 'Media library',
-    },
-  ];
+  // Beranda no longer exposes quick-create actions (Produk Baru / Order Baru).
+  return [];
 }
 
 export function getDashboardHeaderVisualContract(): DashboardHeaderVisualContract {

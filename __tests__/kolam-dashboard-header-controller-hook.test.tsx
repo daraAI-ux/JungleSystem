@@ -60,7 +60,7 @@ function HeaderHarness({
 }
 
 describe('Kolam dashboard header controller hook', () => {
-  it('builds Beranda header props with the media action', async () => {
+  it('builds Beranda header props without quick-create actions', async () => {
     const messages: string[] = [];
     let latest: DashboardHeaderController | null = null;
     let selectedModule: AppModule | null = null;
@@ -85,44 +85,8 @@ describe('Kolam dashboard header controller hook', () => {
     expect(controller.displayInitials).toBe('OO');
     expect(controller.dashboardHeader.eyebrow).toBe('Beranda');
     expect(controller.dashboardHeader.title).toContain('Offline Operator');
-    expect(controller.dashboardHeader.actions.map(action => action.id)).toEqual([
-      'media-library',
-    ]);
+    expect(controller.dashboardHeader.actions).toEqual([]);
     expect(selectedModule).toBeNull();
-  });
-
-  it('keeps the media action visible on Kolam route headers', async () => {
-    const messages: string[] = [];
-    let latest: DashboardHeaderController | null = null;
-
-    await ReactTestRenderer.act(async () => {
-      ReactTestRenderer.create(
-        <HeaderHarness
-          activeModule="kolam"
-          activeNavigationItem={{
-            description: 'Browse all images and videos in the media folder',
-            label: 'Media',
-            requiredAccess: ['kolam'],
-            route: '/media',
-          }}
-          messages={messages}
-          onRender={controller => {
-            latest = controller;
-          }}
-          onSelectModule={() => undefined}
-        />,
-      );
-    });
-
-    expect(requireController(latest).dashboardHeader).toEqual(
-      expect.objectContaining({
-        eyebrow: 'Kolam Route',
-        title: 'Media',
-      }),
-    );
-    expect(
-      requireController(latest).dashboardHeader.actions.map(action => action.id),
-    ).toEqual(['media-library']);
   });
 
   it('uses the native module title outside Beranda', async () => {

@@ -4,6 +4,7 @@ import type {KolamChatUnreadCounts} from '../hooks/use-kolam-chat-notification-h
 import {KolamTopNavigationAvatarButton} from './kolam-top-navigation-avatar-button';
 import {KolamTopNavigationCashflowHost} from './kolam-top-navigation-cashflow-host';
 import {KolamTopNavigationChatButton} from './kolam-top-navigation-chat-button';
+import {KolamTopNavigationMediaIcon} from './kolam-top-navigation-media-icon';
 import {KolamTopNavigationNotificationButton} from './kolam-top-navigation-notification-button';
 import {KolamTopNavigationTaskIcon} from './kolam-top-navigation-task-icon';
 import {KolamIconButton} from './kolam-icon-button';
@@ -54,6 +55,18 @@ export function KolamTopNavigationRightControl({
         size={32}
         radius="full">
         <KolamTopNavigationTaskIcon />
+      </KolamIconButton>
+    );
+  }
+
+  if (control.id === 'media') {
+    return (
+      <KolamIconButton
+        accessibilityLabel={control.label}
+        onPress={() => onCashflowNavigate?.('/media')}
+        size={32}
+        radius="full">
+        <KolamTopNavigationMediaIcon />
       </KolamIconButton>
     );
   }

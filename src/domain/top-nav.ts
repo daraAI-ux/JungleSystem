@@ -3,6 +3,7 @@ import {
   type AppModule,
   type ShellModuleRouteEntry,
 } from './app-shell';
+import type { AccessScope } from './auth';
 import type { KolamNavigationItem } from './kolam-navigation';
 import type { SettingsTabItem } from './settings-surface';
 import type { PluginRouteEntry, UnifiedSurface } from './unified';
@@ -44,6 +45,7 @@ export interface TopNavRightControl {
     | 'cashflow'
     | 'chat-inbox'
     | 'chat-team'
+    | 'media'
     | 'task-manager'
     | 'notifications'
     | 'avatar';
@@ -138,8 +140,10 @@ export function getTopNavUserMenuPreview(
     .join(' / ');
 }
 
-export function getTopNavRightControls(): TopNavRightControl[] {
-  return [
+export function getTopNavRightControls(
+  accessScope?: Pick<AccessScope, 'kolam'>,
+): TopNavRightControl[] {
+  const controls: TopNavRightControl[] = [
     {
       id: 'cashflow',
       label: 'Sesi tunai',
@@ -158,6 +162,16 @@ export function getTopNavRightControls(): TopNavRightControl[] {
       sourceComponent:
         'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
     },
+    ...(accessScope?.kolam === false
+      ? []
+      : [
+          {
+            id: 'media' as const,
+            label: 'Media library',
+            sourceComponent:
+              'E:\\Projects\\da-inventory-frontend\\src\\components\\desktop-topbar-actions.tsx',
+          },
+        ]),
     {
       id: 'task-manager',
       label: 'Task Manager',
@@ -173,6 +187,8 @@ export function getTopNavRightControls(): TopNavRightControl[] {
       label: 'User menu',
     },
   ];
+
+  return controls;
 }
 
 export function getTopNavUserMenuCloseControl(): TopNavUserMenuCloseControl {

@@ -2,6 +2,7 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import type {AppModule} from '../src/domain/app-shell';
 import type {AttentionPanelItem} from '../src/domain/attention-panel';
+import type {AccessScope} from '../src/domain/auth';
 import type {SettingsTabItem} from '../src/domain/settings-surface';
 import {settingsTabItems} from '../src/domain/settings-surface';
 import {useKolamTopNavigationController} from '../src/hooks/use-kolam-top-navigation-controller';
@@ -21,17 +22,20 @@ function requireController(controller: TopNavigationController | null) {
 function TopNavigationHarness({
   activeModule,
   activeSettingsTab,
+  accessScope = {kolam: true},
   attentionItems,
   onRender,
 }: {
   activeModule: AppModule;
   activeSettingsTab?: SettingsTabItem | null;
+  accessScope?: Pick<AccessScope, 'kolam'>;
   attentionItems: AttentionPanelItem[];
   onRender: (controller: TopNavigationController) => void;
 }) {
   const controller = useKolamTopNavigationController({
     activeModule,
     activeSettingsTab,
+    accessScope,
     attentionItems,
     displayInitials: 'DA',
     onAvatarPress: () => undefined,
@@ -77,6 +81,37 @@ describe('Kolam top navigation controller hook', () => {
     ]);
     expect(controller.topNavigation.displayInitials).toBe('DA');
     expect(controller.topNavigation.rightControls.map(control => control.id)).toEqual([
+      'cashflow',
+      'chat-inbox',
+      'chat-team',
+      'media',
+      'task-manager',
+      'notifications',
+      'avatar',
+    ]);
+  });
+
+  it('hides media when Kolam access is unavailable', async () => {
+    let latest: TopNavigationController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <TopNavigationHarness
+          accessScope={{kolam: false}}
+          activeModule="kolam"
+          attentionItems={[]}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    expect(
+      requireController(latest).topNavigation.rightControls.map(
+        control => control.id,
+      ),
+    ).toEqual([
       'cashflow',
       'chat-inbox',
       'chat-team',

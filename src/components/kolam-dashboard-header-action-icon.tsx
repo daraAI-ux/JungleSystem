@@ -30,16 +30,6 @@ export function KolamDashboardHeaderActionIcon({
     );
   }
 
-  if (kind === 'camera') {
-    return (
-      <View style={styles.cameraIcon}>
-        <View style={[styles.cameraBody, strokeStyle]} />
-        <View style={[styles.cameraTop, strokeStyle]} />
-        <View style={[styles.cameraLens, strokeStyle]} />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.packageIcon}>
       <View style={[styles.packageBox, strokeStyle]} />
@@ -83,41 +73,6 @@ const styles = StyleSheet.create({
   packageIcon: {
     width: 16,
     height: 16,
-  },
-  cameraIcon: {
-    width: 16,
-    height: 16,
-  },
-  cameraBody: {
-    position: 'absolute',
-    left: 1,
-    right: 1,
-    bottom: 3,
-    height: 10,
-    borderWidth: 2,
-    borderRadius: 3,
-    backgroundColor: 'transparent',
-  },
-  cameraTop: {
-    position: 'absolute',
-    left: 4,
-    top: 2,
-    width: 7,
-    height: 4,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderTopLeftRadius: 2,
-    borderTopRightRadius: 2,
-    backgroundColor: 'transparent',
-  },
-  cameraLens: {
-    position: 'absolute',
-    left: 6,
-    top: 7,
-    width: 4,
-    height: 4,
-    borderRadius: 999,
   },
   packageBox: {
     position: 'absolute',
