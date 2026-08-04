@@ -696,6 +696,7 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Foto katalog — klik untuk pilih');
     expect(text).toContain('Atau path foto manual');
     expect(text).toContain('Tambah foto');
+    expect(text).toContain('Tutup');
     expect(visionProductPhotosMock).toHaveBeenCalledWith('p1');
 
     const catalogThumb = tree!.root.find(
@@ -706,6 +707,15 @@ describe('KolamDaraTrainingSurface', () => {
     await ReactTestRenderer.act(async () => {
       catalogThumb.props.onPress();
     });
+    const thumbStyles = ([] as unknown[]).concat(catalogThumb.props.style ?? []);
+    expect(
+      thumbStyles.some(
+        style =>
+          style != null &&
+          typeof style === 'object' &&
+          (style as {borderWidth?: number}).borderWidth === 2,
+      ),
+    ).toBe(true);
 
     const tambah = tree!.root.find(
       node =>

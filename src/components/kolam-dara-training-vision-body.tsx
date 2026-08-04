@@ -68,6 +68,49 @@ import {KolamStatusBadge} from './kolam-status-badge';
 const THUMB = {width: 48, height: 48, borderRadius: 6} as const;
 const CATALOG_THUMB = {width: 56, height: 56, borderRadius: 6} as const;
 
+/** Training thumb: image non-interactive; delete overlay on hover (FE trash). */
+function VisionTrainingPhotoThumb({
+  canDelete,
+  onDelete,
+  photoKey,
+}: {
+  canDelete: boolean;
+  onDelete: () => void;
+  photoKey: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <Pressable
+      accessibilityLabel={photoKey}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      onPress={() => {
+        if (canDelete) {
+          setHovered(true);
+        }
+      }}
+      style={styles.trainingThumb}>
+      <View pointerEvents="none">
+        <KolamRemoteImage
+          accessibilityLabel={photoKey}
+          sourceUri={resolveKolamDaraTrainingVisionImageUri(photoKey)}
+          style={CATALOG_THUMB}
+        />
+      </View>
+      {canDelete && hovered ? (
+        <Pressable
+          accessibilityLabel="Hapus"
+          accessibilityRole="button"
+          onPress={onDelete}
+          style={styles.trainingDelete}>
+          <Text style={styles.trainingDeleteText}>✕</Text>
+        </Pressable>
+      ) : null}
+    </Pressable>
+  );
+}
+
 function StatBox({
   hint,
   label,
@@ -1470,111 +1513,107 @@ export function KolamDaraTrainingVisionBody({
         <View style={styles.modalRoot}>
           <KolamModalBackdrop onPress={closePhotoModal} />
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{photoModalTitle}</Text>
-            <Text style={styles.meta}>Foto katalog atau path /media/…</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{photoModalTitle}</Text>
+              <Text style={styles.meta}>Foto katalog atau path /media/…</Text>
+            </View>
 
             <ScrollView style={styles.modalScroll}>
-              {canManage && modalCatalogPhotos.length > 0 ? (
-                <View style={styles.modalSection}>
-                  <Text style={styles.fieldLabel}>
-                    Foto katalog — klik untuk pilih (abu = sudah di training)
-                  </Text>
-                  <View style={styles.catalogGrid}>
-                    {modalCatalogPhotos.map(photoKey => {
-                      const exists = modalPhotos.some(
-                        photo => photo.photoKey === photoKey,
-                      );
-                      const picked = selectedCatalogKeys.includes(photoKey);
-                      return (
-                        <Pressable
-                          key={photoKey}
-                          accessibilityLabel={photoKey}
-                          accessibilityRole="button"
-                          disabled={exists || photoSaving}
-                          onPress={() => {
-                            if (!exists) {
-                              toggleCatalogKey(photoKey);
-                            }
-                          }}
-                          style={[
-                            styles.catalogThumb,
-                            picked ? styles.catalogThumbPicked : null,
-                            exists ? styles.catalogThumbExists : null,
-                          ]}>
-                          <KolamRemoteImage
+              <View style={styles.modalBody}>
+                {canManage && modalCatalogPhotos.length > 0 ? (
+                  <View style={styles.modalSection}>
+                    <Text style={styles.fieldLabel}>
+                      Foto katalog — klik untuk pilih (abu = sudah di training)
+                    </Text>
+                    <View style={styles.catalogGrid}>
+                      {modalCatalogPhotos.map(photoKey => {
+                        const exists = modalPhotos.some(
+                          photo => photo.photoKey === photoKey,
+                        );
+                        const picked = selectedCatalogKeys.includes(photoKey);
+                        return (
+                          <Pressable
+                            key={photoKey}
                             accessibilityLabel={photoKey}
-                            sourceUri={resolveKolamDaraTrainingVisionImageUri(
-                              photoKey,
-                            )}
-                            style={CATALOG_THUMB}
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-              ) : null}
-
-              {canManage ? (
-                <View style={styles.modalSection}>
-                  <Text style={styles.fieldLabel}>
-                    {modalCatalogPhotos.length > 0
-                      ? 'Atau path foto manual'
-                      : 'Path foto'}
-                  </Text>
-                  <TextInput
-                    onChangeText={setAddKey}
-                    placeholder="/media/..."
-                    style={styles.textInput}
-                    value={addKey}
-                  />
-                  <KolamButton
-                    disabled={photoSaving}
-                    label={photoSaving ? 'Menyimpan…' : 'Tambah foto'}
-                    onPress={() => {
-                      void savePhoto();
-                    }}
-                    size="sm"
-                  />
-                </View>
-              ) : null}
-
-              <View style={styles.modalSection}>
-                <View style={styles.catalogGrid}>
-                  {modalPhotos.map(photo => (
-                    <View key={photo.id} style={styles.trainingThumb}>
-                      <KolamRemoteImage
-                        accessibilityLabel={photo.photoKey}
-                        sourceUri={resolveKolamDaraTrainingVisionImageUri(
-                          photo.photoKey,
-                        )}
-                        style={CATALOG_THUMB}
-                      />
-                      {canManage ? (
-                        <Pressable
-                          accessibilityLabel="Hapus"
-                          accessibilityRole="button"
-                          disabled={photoSaving}
-                          onPress={() => {
-                            void deletePhoto(photo.id);
-                          }}
-                          style={styles.trainingDelete}>
-                          <Text style={styles.trainingDeleteText}>Hapus</Text>
-                        </Pressable>
-                      ) : null}
+                            accessibilityRole="button"
+                            disabled={exists || photoSaving}
+                            onPress={() => {
+                              if (!exists) {
+                                toggleCatalogKey(photoKey);
+                              }
+                            }}
+                            style={[
+                              styles.catalogThumb,
+                              picked ? styles.catalogThumbPicked : null,
+                              exists ? styles.catalogThumbExists : null,
+                            ]}>
+                            <View pointerEvents="none">
+                              <KolamRemoteImage
+                                accessibilityLabel={photoKey}
+                                sourceUri={resolveKolamDaraTrainingVisionImageUri(
+                                  photoKey,
+                                )}
+                                style={CATALOG_THUMB}
+                              />
+                            </View>
+                          </Pressable>
+                        );
+                      })}
                     </View>
-                  ))}
+                  </View>
+                ) : null}
+
+                {canManage ? (
+                  <View style={styles.modalSection}>
+                    <Text style={styles.fieldLabel}>
+                      {modalCatalogPhotos.length > 0
+                        ? 'Atau path foto manual'
+                        : 'Path foto'}
+                    </Text>
+                    <TextInput
+                      onChangeText={setAddKey}
+                      placeholder="/media/..."
+                      style={styles.textInput}
+                      value={addKey}
+                    />
+                    <KolamButton
+                      disabled={photoSaving}
+                      intent="primary"
+                      label={photoSaving ? 'Menyimpan…' : 'Tambah foto'}
+                      onPress={() => {
+                        void savePhoto();
+                      }}
+                      size="sm"
+                    />
+                  </View>
+                ) : null}
+
+                <View style={styles.modalSection}>
+                  <View style={styles.catalogGrid}>
+                    {modalPhotos.map(photo => (
+                      <VisionTrainingPhotoThumb
+                        key={photo.id}
+                        canDelete={canManage && !photoSaving}
+                        onDelete={() => {
+                          void deletePhoto(photo.id);
+                        }}
+                        photoKey={photo.photoKey}
+                      />
+                    ))}
+                  </View>
                 </View>
               </View>
             </ScrollView>
 
-            <KolamButton
-              disabled={photoSaving}
-              intent="secondary"
-              label="Tutup"
-              onPress={closePhotoModal}
-              size="sm"
-            />
+            <View style={styles.modalFooter}>
+              <KolamButton
+                disabled={photoSaving}
+                intent="outline"
+                label="Tutup"
+                onPress={closePhotoModal}
+                size="sm"
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -1899,11 +1938,27 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   modalScroll: {
-    maxHeight: 420,
+    flexGrow: 0,
+    maxHeight: 440,
+  },
+  modalBody: {
+    gap: 16,
+    paddingVertical: 4,
   },
   modalSection: {
     gap: 8,
-    marginTop: 8,
+  },
+  modalHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingBottom: 10,
+  },
+  modalFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
   },
   catalogGrid: {
     flexDirection: 'row',
@@ -1914,7 +1969,9 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 6,
     borderWidth: 1,
+    height: 56,
     overflow: 'hidden',
+    width: 56,
   },
   catalogThumbPicked: {
     borderColor: V.colors.primary,
@@ -1927,8 +1984,10 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 6,
     borderWidth: 1,
+    height: 56,
     overflow: 'hidden',
     position: 'relative',
+    width: 56,
   },
   trainingDelete: {
     alignItems: 'center',
@@ -1943,7 +2002,7 @@ const styles = StyleSheet.create({
   trainingDeleteText: {
     color: '#ffffff',
     fontFamily: V.fontFamily,
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: '700',
   },
   modalRoot: {
@@ -1959,8 +2018,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
     maxHeight: '90%',
-    maxWidth: 520,
-    padding: 14,
+    maxWidth: 640,
+    padding: 16,
     width: '100%',
     zIndex: 2,
   },
