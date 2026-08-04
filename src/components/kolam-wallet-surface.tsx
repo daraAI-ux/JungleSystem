@@ -1721,7 +1721,6 @@ function DepositForm({
     >
       <KolamDropdownSelect
         label="Wallet Tujuan"
-        menuPlacement="inline"
         menuStyle={styles.actionDropdownMenu}
         onChange={setWalletId}
         options={walletOptions}
@@ -1819,7 +1818,6 @@ function WithdrawForm({
     >
       <KolamDropdownSelect
         label="Wallet Sumber"
-        menuPlacement="inline"
         menuStyle={styles.actionDropdownMenu}
         onChange={setWalletId}
         options={walletOptions}
@@ -1935,7 +1933,6 @@ function TransferForm({
     >
       <KolamDropdownSelect
         label="Dari Wallet"
-        menuPlacement="inline"
         menuStyle={styles.actionDropdownMenu}
         onChange={setFromWalletId}
         options={fromOptions}
@@ -1943,7 +1940,6 @@ function TransferForm({
       />
       <KolamDropdownSelect
         label="Ke Wallet"
-        menuPlacement="inline"
         menuStyle={styles.actionDropdownMenu}
         onChange={setToWalletId}
         options={toOptions}
@@ -2092,15 +2088,21 @@ function WalletFormShell({
   title: string;
 }) {
   return (
-    <ScrollView
-      contentContainerStyle={styles.actionFormBody}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.actionFormTitle}>{title}</Text>
-      {error ? (
-        <KolamStatusBadge intent="danger" label={error} numberOfLines={3} />
-      ) : null}
-      {children}
+    <View style={styles.actionFormShell}>
+      <View style={styles.actionFormHeader}>
+        <Text style={styles.actionFormTitle}>{title}</Text>
+        {error ? (
+          <KolamStatusBadge intent="danger" label={error} numberOfLines={2} />
+        ) : null}
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.actionFormBody}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
+        style={styles.actionFormScroll}
+      >
+        {children}
+      </ScrollView>
       <View style={styles.actionFormActions}>
         <KolamButton intent="secondary" label="Batal" onPress={onClose} />
         <KolamButton
@@ -2110,7 +2112,7 @@ function WalletFormShell({
           onPress={onSubmit}
         />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -2709,11 +2711,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     flex: 1,
-    height: '100%',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    width: '100%',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   actionModalDismiss: {
     ...StyleSheet.absoluteFillObject,
@@ -2722,20 +2722,23 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     elevation: 0,
-    maxHeight: '90%',
-    maxWidth: '100%',
+    maxHeight: 560,
+    maxWidth: 448,
+    minWidth: 360,
+    overflow: 'visible',
     shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
-    width: 448,
+    width: '92%',
     zIndex: 2,
   },
   actionDropdownMenu: {
     elevation: 0,
+    maxHeight: 220,
     shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
@@ -2756,9 +2759,26 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginTop: 8,
   },
+  actionFormShell: {
+    maxHeight: 560,
+    width: '100%',
+  },
+  actionFormHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
+  actionFormScroll: {
+    flexGrow: 0,
+    maxHeight: 400,
+  },
   actionFormBody: {
     gap: 10,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   actionFormTitle: {
     color: V.colors.fg,
@@ -2767,9 +2787,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   actionFormActions: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'flex-end',
-    marginTop: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 });
