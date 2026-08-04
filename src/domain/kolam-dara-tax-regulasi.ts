@@ -402,3 +402,22 @@ export function formatKolamDaraTaxDateTimeId(iso?: string | null) {
     minute: '2-digit',
   });
 }
+
+/** Client page size — parity DARA SEO audit / mentions. */
+export const KOLAM_DARA_TAX_AUDIT_LOGS_PAGE_SIZE = 10;
+
+export function paginateKolamDaraTaxAuditLogs(
+  list: KolamDaraTaxAuditLog[],
+  page: number,
+  pageSize = KOLAM_DARA_TAX_AUDIT_LOGS_PAGE_SIZE,
+) {
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * pageSize;
+  return {
+    page: safePage,
+    totalPages,
+    total: list.length,
+    items: list.slice(start, start + pageSize),
+  };
+}

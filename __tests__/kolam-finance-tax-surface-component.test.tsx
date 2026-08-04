@@ -334,16 +334,16 @@ describe('KolamFinanceTaxSurface', () => {
   });
 
   it('renders regulasi audit log as Waktu/Aksi/Ringkasan table', async () => {
-    auditLogsMock.mockResolvedValue([
-      {
-        id: 'a1',
-        action: 'regulation.approve',
+    auditLogsMock.mockResolvedValue(
+      Array.from({length: 12}, (_, i) => ({
+        id: `a${i + 1}`,
+        action: i === 0 ? 'regulation.approve' : `action.${i + 1}`,
         toolName: 'rms',
-        resultSummary: 'Draft disetujui',
+        resultSummary: i === 0 ? 'Draft disetujui' : `s${i + 1}`,
         success: true,
         createdAt: '2026-08-01T10:30:00.000Z',
-      },
-    ]);
+      })),
+    );
 
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
@@ -371,7 +371,9 @@ describe('KolamFinanceTaxSurface', () => {
     expect(text).toContain('Ringkasan');
     expect(text).toContain('regulation.approve');
     expect(text).toContain('Draft disetujui');
-    expect(text).not.toContain('"rms"');
+    expect(text).toContain('1 / 2 · 12');
+    expect(text).toContain('Berikutnya');
+    expect(text).not.toContain('action.11');
     expect(auditLogsMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {

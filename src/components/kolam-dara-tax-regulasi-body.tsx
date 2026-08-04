@@ -12,6 +12,7 @@ import {
   formatKolamDaraTaxDateTimeId,
   KOLAM_DARA_TAX_RMS_TABS,
   KOLAM_DARA_TAX_WATCH_STATUS_LABEL,
+  paginateKolamDaraTaxAuditLogs,
   type KolamDaraTaxAuditLog,
   type KolamDaraTaxKnowledge,
   type KolamDaraTaxKitab,
@@ -177,6 +178,7 @@ export function KolamDaraTaxRegulasiBody({
 
   const [auditLogs, setAuditLogs] = useState<KolamDaraTaxAuditLog[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [auditPage, setAuditPage] = useState(1);
 
   const [maintenanceBusy, setMaintenanceBusy] = useState(false);
 
@@ -287,6 +289,7 @@ export function KolamDaraTaxRegulasiBody({
     setAuditLoading(true);
     try {
       setAuditLogs(await fetchKolamDaraTaxAuditLogs());
+      setAuditPage(1);
     } catch (err) {
       setAuditLogs([]);
       onNotice(errorMessage(err, 'Gagal memuat audit log'));
@@ -294,6 +297,11 @@ export function KolamDaraTaxRegulasiBody({
       setAuditLoading(false);
     }
   }, [onNotice]);
+
+  const auditPaged = useMemo(
+    () => paginateKolamDaraTaxAuditLogs(auditLogs, auditPage),
+    [auditLogs, auditPage],
+  );
 
   useEffect(() => {
     if (rmsSubTab === 'kitab') {
@@ -1044,7 +1052,7 @@ export function KolamDaraTaxRegulasiBody({
                   Ringkasan
                 </Text>
               </View>
-              {auditLogs.map(row => (
+              {auditPaged.items.map(row => (
                 <View key={row.id} style={[styles.tableRow, styles.tableRowTop]}>
                   <Text style={[styles.tdMuted, styles.colAuditTime]}>
                     {formatKolamDaraTaxDateTimeId(row.createdAt)}
@@ -1057,6 +1065,27 @@ export function KolamDaraTaxRegulasiBody({
                   </Text>
                 </View>
               ))}
+              {auditPaged.totalPages > 1 ? (
+                <View style={styles.pager}>
+                  <KolamButton
+                    disabled={auditPaged.page <= 1}
+                    intent="secondary"
+                    label="Sebelumnya"
+                    onPress={() => setAuditPage(auditPaged.page - 1)}
+                    size="sm"
+                  />
+                  <Text style={styles.pageLabel}>
+                    {`${auditPaged.page} / ${auditPaged.totalPages} · ${auditPaged.total}`}
+                  </Text>
+                  <KolamButton
+                    disabled={auditPaged.page >= auditPaged.totalPages}
+                    intent="secondary"
+                    label="Berikutnya"
+                    onPress={() => setAuditPage(auditPaged.page + 1)}
+                    size="sm"
+                  />
+                </View>
+              ) : null}
             </>
           )}
         </View>
@@ -1277,6 +1306,19 @@ const styles = StyleSheet.create({
   colAuditTime: {flex: 1.1, minWidth: 96},
   colAuditAction: {flex: 1.2, minWidth: 100},
   colAuditSummary: {flex: 2, minWidth: 140},
+  pager: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+    paddingTop: 8,
+  },
+  pageLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
   link: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,

@@ -14,6 +14,7 @@ import {
   normalizeKolamDaraTaxRegulationDrafts,
   normalizeKolamDaraTaxRegulationVersions,
   normalizeKolamDaraTaxTaxStatus,
+  paginateKolamDaraTaxAuditLogs,
 } from '../src/domain/kolam-dara-tax-regulasi';
 
 describe('kolam-dara-tax domain', () => {
@@ -247,5 +248,26 @@ describe('kolam-dara-tax domain', () => {
       },
     });
     expect(kitab.rows[0]?.modul).toBe('PPN');
+  });
+
+  it('paginates tax audit logs 10 per page', () => {
+    const list = Array.from({length: 23}, (_, i) => ({
+      id: `a${i + 1}`,
+      action: `action.${i + 1}`,
+      toolName: '',
+      resultSummary: `s${i + 1}`,
+      success: true,
+      createdAt: '2026-08-01T00:00:00.000Z',
+    }));
+    const page1 = paginateKolamDaraTaxAuditLogs(list, 1);
+    expect(page1.items).toHaveLength(10);
+    expect(page1.totalPages).toBe(3);
+    expect(page1.total).toBe(23);
+    expect(page1.items[0]?.id).toBe('a1');
+
+    const page3 = paginateKolamDaraTaxAuditLogs(list, 3);
+    expect(page3.items).toHaveLength(3);
+    expect(page3.page).toBe(3);
+    expect(page3.items[0]?.id).toBe('a21');
   });
 });
