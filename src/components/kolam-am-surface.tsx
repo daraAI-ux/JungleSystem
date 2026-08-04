@@ -6412,7 +6412,7 @@ function AmStatusChip({
   tone,
 }: {
   label: string;
-  tone: 'success' | 'warning' | 'info' | 'danger' | 'muted';
+  tone: 'success' | 'warning' | 'danger' | 'muted';
 }) {
   return (
     <View
@@ -6420,7 +6420,6 @@ function AmStatusChip({
         styles.statusChip,
         tone === 'success' && styles.statusChipSuccess,
         tone === 'warning' && styles.statusChipWarning,
-        tone === 'info' && styles.statusChipInfo,
         tone === 'danger' && styles.statusChipDanger,
       ]}>
       <Text style={styles.statusChipText}>{titleCase(label)}</Text>
@@ -7025,7 +7024,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
-    marginHorizontal: -V.layout.contentPadding,
     overflow: 'hidden',
   },
   pageStack: {
@@ -7160,11 +7158,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   recentListMeta: {
-    flexBasis: 148,
+    flexBasis: 118,
     flexGrow: 0,
     flexShrink: 0,
     minWidth: 0,
-    maxWidth: 148,
+    maxWidth: 118,
     alignSelf: 'stretch',
     alignItems: 'flex-end',
     gap: 4,
@@ -7264,10 +7262,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   rowTitle: {
-    minWidth: 0,
-    maxWidth: '100%',
-    flexShrink: 1,
-    overflow: 'hidden',
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
@@ -7653,9 +7647,7 @@ const styles = StyleSheet.create({
   },
   cellText: {
     minWidth: 0,
-    maxWidth: '100%',
     flexShrink: 1,
-    overflow: 'hidden',
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
@@ -7771,9 +7763,6 @@ const styles = StyleSheet.create({
   },
   statusChipWarning: {
     backgroundColor: V.colors.warningSoft,
-  },
-  statusChipInfo: {
-    backgroundColor: V.colors.infoSoft,
   },
   statusChipDanger: {
     backgroundColor: V.colors.dangerSoft,
