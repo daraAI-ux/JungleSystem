@@ -9,15 +9,27 @@ export type KolamNotificationSoundRuntimePath =
   | 'web-audio'
   | 'unsupported';
 
+export type KolamNotificationSoundNativeResult = {
+  path?: string;
+  status?: string;
+  uri?: string;
+};
+
 export type KolamNotificationSoundNativeBridge = {
   playNotificationSound?: (
     uri: string,
     options?: KolamNotificationSoundNativePayload,
-  ) => Promise<void> | void;
+  ) =>
+    | Promise<KolamNotificationSoundNativeResult | void>
+    | KolamNotificationSoundNativeResult
+    | void;
   playSound?: (
     uri: string,
     options?: KolamNotificationSoundNativePayload,
-  ) => Promise<void> | void;
+  ) =>
+    | Promise<KolamNotificationSoundNativeResult | void>
+    | KolamNotificationSoundNativeResult
+    | void;
 };
 
 export type KolamNotificationSoundNativePayload = {
@@ -45,7 +57,14 @@ export function createKolamRuntimeNotificationSoundAdapter(
 ): KolamNotificationSoundAdapter {
   return {
     async play(uri, playOptions) {
-      await playKolamRuntimeNotificationSound(uri, playOptions, options);
+      const runtimePath = await playKolamRuntimeNotificationSound(
+        uri,
+        playOptions,
+        options,
+      );
+      if (runtimePath === 'unsupported') {
+        throw new Error('Native notification sound runtime is unavailable.');
+      }
     },
   };
 }

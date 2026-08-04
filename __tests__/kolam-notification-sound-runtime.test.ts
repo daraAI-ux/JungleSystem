@@ -101,4 +101,18 @@ describe('kolam notification sound runtime', () => {
       volume: 0.8,
     });
   });
+
+  it('rejects service playback when no runtime is available', async () => {
+    const adapter = createKolamRuntimeNotificationSoundAdapter({
+      nativeModules: {},
+      platformOS: 'windows',
+    });
+
+    await expect(
+      adapter.play('https://cdn.test/ring.wav', {
+        intent: 'assigned',
+        volume: 0.8,
+      }),
+    ).rejects.toThrow('Native notification sound runtime is unavailable.');
+  });
 });
