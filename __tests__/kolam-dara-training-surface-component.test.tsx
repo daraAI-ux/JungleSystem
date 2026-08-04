@@ -18,6 +18,14 @@ jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
 }));
 
+jest.mock('react-native-webview', () => {
+  const ReactNative = require('react-native');
+  return {
+    __esModule: true,
+    default: ReactNative.View,
+  };
+});
+
 jest.mock('../src/services/kolam-dara-training-api', () => ({
   fetchKolamDaraTrainingStats: jest.fn(),
   listKolamDaraTrainingPhrases: jest.fn(),
@@ -36,6 +44,21 @@ jest.mock('../src/services/kolam-dara-training-api', () => ({
   importKolamDaraTrainingFineTuneCandidates: jest.fn(),
   exportKolamDaraTrainingFineTuneJsonl: jest.fn(),
   updateKolamDaraTrainingFineTuneDatasetItem: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-dara-training-video-studio-api', () => ({
+  fetchKolamDaraTrainingVideoStudioConfig: jest.fn(),
+  listKolamDaraTrainingVideoStudioJobs: jest.fn(),
+  uploadKolamDaraTrainingVideoStudioRaw: jest.fn(),
+  createKolamDaraTrainingVideoStudioJob: jest.fn(),
+  refreshKolamDaraTrainingVideoStudioJob: jest.fn(),
+  pollKolamDaraTrainingVideoStudioJob: jest.fn(),
+  cancelKolamDaraTrainingVideoStudioJob: jest.fn(),
+  overlayKolamDaraTrainingVideoStudioLogo: jest.fn(),
+  buildKolamDaraTrainingVideoStudioDownloadUrl: jest.fn(
+    (id: string) =>
+      `https://amfibi.dunia-anura.com/api/dara-training/video-studio/jobs/${id}/download`,
+  ),
 }));
 
 jest.mock('../src/services/kolam-dara-training-vision-api', () => ({
@@ -82,6 +105,11 @@ import {
   fetchKolamDaraTrainingVisionLatestEvalRun,
   listKolamDaraTrainingVisionEvalRuns,
 } from '../src/services/kolam-dara-training-vision-api';
+
+import {
+  fetchKolamDaraTrainingVideoStudioConfig,
+  listKolamDaraTrainingVideoStudioJobs,
+} from '../src/services/kolam-dara-training-video-studio-api';
 
 const authMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
@@ -163,6 +191,14 @@ const visionProductPhotosMock =
 const addVisionProductPhotoMock =
   addKolamDaraTrainingVisionProductPhoto as jest.MockedFunction<
     typeof addKolamDaraTrainingVisionProductPhoto
+  >;
+const videoStudioConfigMock =
+  fetchKolamDaraTrainingVideoStudioConfig as jest.MockedFunction<
+    typeof fetchKolamDaraTrainingVideoStudioConfig
+  >;
+const videoStudioJobsMock =
+  listKolamDaraTrainingVideoStudioJobs as jest.MockedFunction<
+    typeof listKolamDaraTrainingVideoStudioJobs
   >;
 
 describe('KolamDaraTrainingSurface', () => {
@@ -422,6 +458,24 @@ describe('KolamDaraTrainingSurface', () => {
     visionEvalRunsMock.mockResolvedValue([]);
     visionBaselineMock.mockResolvedValue(null);
     visionClipJobMock.mockResolvedValue({job: null, log: []});
+    videoStudioConfigMock.mockResolvedValue({
+      apiKeyConfigured: true,
+      region: 'ap-southeast',
+      defaultModel: 'seedance-1-0-lite',
+      models: ['seedance-1-0-lite'],
+      maxUploadBytes: 104857600,
+      maxSourceDurationSeconds: 30,
+      supportedDurations: [5],
+      supportedAspectRatios: ['16:9'],
+      supportedResolutions: ['720p'],
+      cancelSupported: true,
+      modelCapabilities: {
+        'seedance-1-0-lite': {durations: [5], resolutions: ['720p']},
+      },
+      publicUploadConfigured: true,
+      preset: {name: 'species-cinematic', prompt: 'Preset prompt'},
+    });
+    videoStudioJobsMock.mockResolvedValue([]);
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -750,6 +804,28 @@ describe('KolamDaraTrainingSurface', () => {
     );
     text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Foto ditambahkan');
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders video studio body on videoStudio tab', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=videoStudio" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Dunia Anura Video Studio');
+    expect(text).toContain('Upload RAW');
+    expect(text).toContain('Histori job');
+    expect(videoStudioConfigMock).toHaveBeenCalled();
+    expect(videoStudioJobsMock).toHaveBeenCalledWith(30);
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

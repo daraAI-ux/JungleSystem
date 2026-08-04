@@ -149,8 +149,9 @@ async function apiRequestWithAuthRefresh<T>(
   }
 
   const isMultipartBody = isFormDataBody(body);
+  const isBinaryBody = isBinaryRequestBody(body);
 
-  if (body !== undefined && !isMultipartBody) {
+  if (body !== undefined && !isMultipartBody && !isBinaryBody) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -177,7 +178,7 @@ async function apiRequestWithAuthRefresh<T>(
     body:
       body === undefined
         ? undefined
-        : isMultipartBody
+        : isMultipartBody || isBinaryBody
         ? (body as BodyInit_)
         : JSON.stringify(body),
   });
@@ -374,6 +375,18 @@ function normalizeMacAddresses(values: string[] | undefined) {
 
 function isFormDataBody(body: unknown): body is FormData {
   return typeof FormData !== 'undefined' && body instanceof FormData;
+}
+
+function isBinaryRequestBody(
+  body: unknown,
+): body is Blob | ArrayBuffer | Uint8Array {
+  if (typeof Blob !== 'undefined' && body instanceof Blob) {
+    return true;
+  }
+  if (body instanceof ArrayBuffer) {
+    return true;
+  }
+  return body instanceof Uint8Array;
 }
 
 function getUrlOrigin(url: string) {
