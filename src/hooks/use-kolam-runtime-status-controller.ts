@@ -11,6 +11,8 @@ import {
   type RuntimeDeviceIdentityStatus,
 } from '../domain/runtime-identity';
 import type {UnifiedDataset} from '../services/unified-data';
+import {getAuthTokenStore} from '../services/token-store';
+import {isWindowsSecureAuthTokenStoreAvailable} from '../services/windows-secure-auth-token-store';
 
 export function useKolamRuntimeStatusController({
   dataset,
@@ -19,7 +21,14 @@ export function useKolamRuntimeStatusController({
   dataset: UnifiedDataset;
   deviceIdentityStatus?: RuntimeDeviceIdentityStatus;
 }) {
-  const readinessChecks = useMemo(() => getNativeReadinessChecks(), []);
+  const readinessChecks = useMemo(() => {
+    const storeKind = getAuthTokenStore().kind;
+    return getNativeReadinessChecks({
+      secureStorageReady:
+        storeKind === 'windows-secure' || isWindowsSecureAuthTokenStoreAvailable(),
+      localDataAuthPersistReady: storeKind === 'local-data',
+    });
+  }, []);
   const readinessSummary = useMemo(
     () => getReadinessSummary(readinessChecks),
     [readinessChecks],

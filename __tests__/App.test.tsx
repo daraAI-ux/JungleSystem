@@ -19,6 +19,8 @@ import {
   resetLocalDataStore,
   setLocalDataStore,
 } from '../src/services/local-data-store';
+import {resetAuthTokenBootstrapForTests, bootstrapAuthTokenStore} from '../src/services/auth-token-bootstrap';
+import {flushAuthTokenStorePersist} from '../src/services/flush-auth-token-store';
 import { persistUnifiedDatasetIfChanged } from '../src/services/unified-local-cache';
 import {
   seedUnifiedDataset,
@@ -39,6 +41,7 @@ const mountedRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
 beforeEach(() => {
   fetchMock.mockReset();
   globalThis.fetch = fetchMock;
+  resetAuthTokenBootstrapForTests();
   setAuthTokenStore(createMemoryAuthTokenStore());
   clearAuthToken();
   clearAuthSource();
@@ -50,8 +53,18 @@ afterEach(async () => {
     mountedRenderers.splice(0).forEach(renderer => renderer.unmount());
     await Promise.resolve();
   });
+  resetAuthTokenBootstrapForTests();
   resetLocalDataStore();
 });
+
+async function flushAppBoot(renderer: ReactTestRenderer.ReactTestRenderer) {
+  await ReactTestRenderer.act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return renderer;
+}
 
 function renderApp() {
   const renderer = ReactTestRenderer.create(<App />);
@@ -60,17 +73,21 @@ function renderApp() {
 }
 
 test('renders correctly', async () => {
+  await bootstrapAuthTokenStore();
+  let renderer: ReactTestRenderer.ReactTestRenderer;
   await ReactTestRenderer.act(async () => {
-    renderApp();
+    renderer = renderApp();
     await Promise.resolve();
   });
 });
 
 test('shows the dedicated login screen before a server session exists', async () => {
+  await bootstrapAuthTokenStore();
   let renderer: ReactTestRenderer.ReactTestRenderer;
 
   await ReactTestRenderer.act(async () => {
     renderer = renderApp();
+    await Promise.resolve();
     await Promise.resolve();
   });
 
@@ -81,20 +98,23 @@ test('shows the dedicated login screen before a server session exists', async ()
     .filter(Boolean);
 
   expect(renderedText).toEqual(
-    expect.arrayContaining([
-      'JungleSystem',
-      'Backend',
-      'Native Client',
-      'Login',
-    ]),
+    expect.arrayContaining(['Masuk']),
   );
+  expect(
+    renderer!.root.findAll(
+      node =>
+        node.props?.accessibilityLabel === 'JungleSystem login screen',
+    ).length,
+  ).toBeGreaterThan(0);
   expect(renderedText).not.toContain('Beranda');
 });
 
 test('keeps the native shell aligned with the live Kolam sidebar chrome after login restore', async () => {
   let renderer: ReactTestRenderer.ReactTestRenderer;
+  await bootstrapAuthTokenStore();
   saveAuthToken('stored-token');
   saveAuthSource('kolam');
+  await flushAuthTokenStorePersist();
   fetchMock.mockResolvedValue(
     jsonResponse({
       id: 'user-1',
@@ -112,6 +132,7 @@ test('keeps the native shell aligned with the live Kolam sidebar chrome after lo
     renderer = renderApp();
     await Promise.resolve();
     await Promise.resolve();
+    await Promise.resolve();
   });
 
   const textNodes = renderer!.root.findAllByType(Text);
@@ -121,7 +142,7 @@ test('keeps the native shell aligned with the live Kolam sidebar chrome after lo
     .filter(Boolean);
 
   expect(renderedText).toEqual(
-    expect.arrayContaining(['Kolam', 'POS', 'AM']),
+    expect.arrayContaining(['POS', 'AM']),
   );
   expect(renderedText).not.toContain('Plugin');
   expect(renderedText).not.toContain('Kolam + POS + AM');
@@ -130,8 +151,10 @@ test('keeps the native shell aligned with the live Kolam sidebar chrome after lo
 
 test('marks the active shell navigation item as selected like the live current page after login restore', async () => {
   let renderer: ReactTestRenderer.ReactTestRenderer;
+  await bootstrapAuthTokenStore();
   saveAuthToken('stored-token');
   saveAuthSource('kolam');
+  await flushAuthTokenStorePersist();
   fetchMock.mockResolvedValue(
     jsonResponse({
       id: 'user-1',
@@ -149,26 +172,27 @@ test('marks the active shell navigation item as selected like the live current p
     renderer = renderApp();
     await Promise.resolve();
     await Promise.resolve();
+    await Promise.resolve();
   });
 
   const selectedControls = renderer!.root
     .findAllByProps({ accessibilityRole: 'button' })
     .filter(node => node.props.accessibilityState?.selected === true);
-  const selectedKolamNavItems = selectedControls.filter(node =>
+  const selectedHomeItems = selectedControls.filter(node =>
     node
       .findAllByType(Text)
       .map(textNode => textNode.props.children)
       .flat()
-      .includes('Kolam'),
+      .includes('Beranda'),
   );
 
-  expect(selectedKolamNavItems.length).toBeGreaterThan(0);
+  expect(selectedHomeItems.length).toBeGreaterThan(0);
   expect(
-    selectedKolamNavItems[0]
+    selectedHomeItems[0]
       .findAllByType(Text)
       .map(node => node.props.children)
       .flat(),
-  ).toContain('Kolam');
+  ).toContain('Beranda');
 });
 
 test('shows cached Kolam dashboard first when a stored session opens the app again', async () => {
@@ -200,8 +224,10 @@ test('shows cached Kolam dashboard first when a stored session opens the app aga
     cacheOwnerId: 'user-1',
     dataset: cachedDataset,
   });
+  await bootstrapAuthTokenStore();
   saveAuthToken('stored-token');
   saveAuthSource('kolam');
+  await flushAuthTokenStorePersist();
   fetchMock.mockImplementation((url: string) => {
     if (url.endsWith('/auth/detail-user')) {
       return Promise.resolve(

@@ -7,6 +7,7 @@
 #include "KolamWindowsFilePicker.h"
 #include "KolamWindowsNotificationSound.h"
 #include "KolamWindowsSQLiteStore.h"
+#include "KolamWindowsSecureTokenStore.h"
 
 #include "AutolinkedNativeModules.g.h"
 

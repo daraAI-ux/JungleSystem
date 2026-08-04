@@ -1,7 +1,7 @@
 import {setAccessToken} from '../lib/api-client';
 import type {AuthSource} from '../domain/auth';
 
-export type AuthTokenStoreKind = 'memory' | 'windows-secure';
+export type AuthTokenStoreKind = 'memory' | 'local-data' | 'windows-secure';
 
 export interface AuthTokenStore {
   kind: AuthTokenStoreKind;

@@ -22,6 +22,7 @@ export interface ReadinessCheck {
 
 export interface NativeReadinessOptions {
   secureStorageReady?: boolean;
+  localDataAuthPersistReady?: boolean;
   windowsToolchainReady?: boolean;
 }
 
@@ -103,10 +104,16 @@ export function getNativeReadinessChecks(
       id: 'secure-token-storage',
       area: 'security',
       label: 'Secure token storage',
-      status: options.secureStorageReady ? 'ready' : 'blocked',
+      status: options.secureStorageReady
+        ? 'ready'
+        : options.localDataAuthPersistReady
+          ? 'partial'
+          : 'blocked',
       detail: options.secureStorageReady
-        ? 'Token siap disimpan lewat secure storage native.'
-        : 'Token masih runtime memory; auto-login produksi belum aman.',
+        ? 'Token disimpan di Windows Credential Manager.'
+        : options.localDataAuthPersistReady
+          ? 'Token persist lewat LocalDataStore (SQLite); Credential Manager belum aktif — rebuild Windows diperlukan.'
+          : 'Token masih runtime memory; sesi hilang saat Metro reload.',
       evidence: 'src/services/token-store.ts',
     },
     {

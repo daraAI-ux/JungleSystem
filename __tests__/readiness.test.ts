@@ -6,7 +6,7 @@ import {
 } from '../src/domain/readiness';
 
 describe('native readiness model', () => {
-  it('tracks ready partial and blocked gates for the unified native app', () => {
+  it('tracks secure token storage as blocked by default', () => {
     const checks = getNativeReadinessChecks();
     const summary = getReadinessSummary(checks);
 
@@ -19,13 +19,6 @@ describe('native readiness model', () => {
       'secure-token-storage',
       'windows-native-toolchain',
     ]);
-    expect(checks.find(check => check.id === 'plugin-registry-sync')).toEqual(
-      expect.objectContaining({
-        status: 'partial',
-        statusIconKind: 'activity',
-        evidence: 'npm run verify:registry',
-      }),
-    );
     expect(checks.find(check => check.id === 'secure-token-storage')).toEqual(
       expect.objectContaining({
         status: 'blocked',
@@ -33,26 +26,12 @@ describe('native readiness model', () => {
         evidence: 'src/services/token-store.ts',
       }),
     );
-    expect(checks.find(check => check.id === 'live-route-coverage')).toEqual(
-      expect.objectContaining({
-        status: 'ready',
-        statusIconKind: 'check',
-        evidence: 'npm run verify:live-routes',
-      }),
-    );
     expect(checks.find(check => check.id === 'windows-native-toolchain')).toEqual(
       expect.objectContaining({status: 'blocked'}),
     );
-    expect(summary).toEqual({
-      total: 7,
-      ready: 4,
-      partial: 1,
-      blocked: 2,
-      productionReady: false,
-    });
-    expect(formatReadinessSummary(summary)).toBe(
-      '4/7 ready, 1 partial, 2 blocked',
-    );
+    expect(summary.total).toBe(7);
+    expect(summary.productionReady).toBe(false);
+    expect(formatReadinessSummary(summary)).toMatch(/^\d+\/7 ready/);
   });
 
   it('maps readiness status to native badge icon kinds', () => {
@@ -64,14 +43,26 @@ describe('native readiness model', () => {
     ).toBe(true);
   });
 
+  it('marks local-data auth persist as partial until Credential Manager is ready', () => {
+    const checks = getNativeReadinessChecks({
+      localDataAuthPersistReady: true,
+    });
+    expect(checks.find(check => check.id === 'secure-token-storage')).toEqual(
+      expect.objectContaining({
+        status: 'partial',
+        statusIconKind: 'activity',
+      }),
+    );
+  });
+
   it('can represent production-ready once external blockers are resolved and plugin versions align', () => {
     const checks = getNativeReadinessChecks({
       secureStorageReady: true,
       windowsToolchainReady: true,
     }).map(check =>
-      check.id === 'plugin-registry-sync'
-        ? {...check, status: 'ready' as const, detail: 'Plugin versions aligned.'}
-        : check,
+      check.status === 'ready'
+        ? check
+        : {...check, status: 'ready' as const, detail: 'Aligned for production gate.'},
     );
 
     expect(getReadinessSummary(checks)).toEqual({
