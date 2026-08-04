@@ -11,10 +11,17 @@ import {
   isKolamDaraSeoRoute,
   normalizeKolamDaraSeoBrands,
   normalizeKolamDaraSeoDashboard,
+  normalizeKolamDaraSeoIntegrationSettings,
+  normalizeKolamDaraSeoKeywords,
   normalizeKolamDaraSeoPendingSuggestions,
+  normalizeKolamDaraSeoRankings,
+  normalizeKolamDaraSeoSentimentRows,
+  normalizeKolamDaraSeoSocialInsights,
   normalizeKolamDaraSeoStatus,
   normalizeKolamDaraSeoSuggestionDetail,
+  normalizeKolamDaraSeoWebsitePreview,
   paginateKolamDaraSeoSuggestions,
+  pickKolamDaraSeoLatestSocialSnapshot,
   resolveKolamDaraSeoAccess,
 } from '../src/domain/kolam-dara-seo';
 
@@ -53,13 +60,23 @@ describe('kolam-dara-seo domain', () => {
   it('resolves access, workflow hint, filter, and detail normalize', () => {
     expect(
       resolveKolamDaraSeoAccess({roleKey: 'admin', permissions: []}),
-    ).toEqual({canSee: true, canDraft: true, canApprove: true});
+    ).toEqual({
+      canSee: true,
+      canDraft: true,
+      canApprove: true,
+      canManageSettings: true,
+    });
     expect(
       resolveKolamDaraSeoAccess({
         roleKey: 'staff',
         permissions: [{resource: 'ai-seo', actions: ['view', 'approve']}],
       }),
-    ).toEqual({canSee: true, canDraft: false, canApprove: true});
+    ).toEqual({
+      canSee: true,
+      canDraft: false,
+      canApprove: true,
+      canManageSettings: false,
+    });
 
     expect(
       formatKolamDaraSeoWorkflowHint('pending_approval', {
@@ -192,5 +209,163 @@ describe('kolam-dara-seo domain', () => {
         pendingItemCount: 2,
       },
     ]);
+  });
+
+  it('normalizes rankings, keywords, website preview, sentiment, integration settings, and social insights', () => {
+    expect(
+      normalizeKolamDaraSeoRankings({
+        data: {
+          total: 1,
+          items: [
+            {
+              _id: 'r1',
+              keyword: 'ikan koi',
+              engine: 'google',
+              position: 3,
+              url: 'https://x.test',
+              title: 'Ikan koi',
+              snippet: 'Jual ikan koi',
+              mentionedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+      }),
+    ).toEqual({
+      total: 1,
+      items: [
+        {
+          id: 'r1',
+          keyword: 'ikan koi',
+          engine: 'google',
+          position: 3,
+          url: 'https://x.test',
+          title: 'Ikan koi',
+          snippet: 'Jual ikan koi',
+          mentionedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(
+      normalizeKolamDaraSeoKeywords({
+        data: {
+          items: [
+            {
+              _id: 'k1',
+              mainKeyword: 'pakan lele',
+              keywordType: 'opportunity',
+              opportunityScore: 60,
+              productId: 'p1',
+            },
+          ],
+        },
+      }),
+    ).toEqual([
+      {
+        id: 'k1',
+        mainKeyword: 'pakan lele',
+        keywordType: 'opportunity',
+        opportunityScore: 60,
+        productId: 'p1',
+      },
+    ]);
+
+    expect(
+      normalizeKolamDaraSeoWebsitePreview({
+        data: {
+          companyName: 'Dunia Anura',
+          websiteSeo: {
+            publicSiteUrl: 'https://duniaanura.test',
+            metaTitle: 'Judul',
+            metaDescription: 'Deskripsi',
+            keywords: ['ikan', 'koi'],
+            lastAuditedAt: '2026-01-01T00:00:00.000Z',
+            lastSeoScore: 70,
+          },
+          audit: {
+            seoScore: 75,
+            issues: [{code: 'meta', message: 'Meta kosong', severity: 'low'}],
+          },
+        },
+      }),
+    ).toEqual({
+      companyName: 'Dunia Anura',
+      publicSiteUrl: 'https://duniaanura.test',
+      metaTitle: 'Judul',
+      metaDescription: 'Deskripsi',
+      keywords: ['ikan', 'koi'],
+      lastAuditedAt: '2026-01-01T00:00:00.000Z',
+      lastSeoScore: 70,
+      auditScore: 75,
+      issues: [{code: 'meta', message: 'Meta kosong', severity: 'low'}],
+    });
+
+    expect(
+      normalizeKolamDaraSeoSentimentRows({
+        data: {
+          items: [
+            {
+              _id: 's1',
+              text: 'Produk bagus',
+              sentiment: 'positive',
+              sentimentScore: 20,
+              analyzedBy: 'dara_rules',
+              detectedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+      }),
+    ).toEqual([
+      {
+        id: 's1',
+        text: 'Produk bagus',
+        sentiment: 'positive',
+        sentimentScore: 20,
+        analyzedBy: 'dara_rules',
+        detectedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    const settings = normalizeKolamDaraSeoIntegrationSettings({
+      data: {
+        monitorKeywords: 'ikan, koi',
+        serpApi: {enabled: true, configured: true, apiKeyMasked: '******ab'},
+        duckduckgo: {enabled: false},
+        searxng: {enabled: false, baseUrl: 'https://searx.test'},
+        firecrawl: {enabled: false, baseUrl: 'https://api.firecrawl.dev'},
+        searchConsole: {enabled: false, propertyUrl: '', clientEmail: ''},
+        indexingApi: {enabled: false, clientEmail: ''},
+      },
+    });
+    expect(settings).toMatchObject({
+      monitorKeywords: 'ikan, koi',
+      serpApi: {enabled: true, configured: true, apiKeyMasked: '******ab'},
+      duckduckgo: {enabled: false},
+    });
+
+    const social = normalizeKolamDaraSeoSocialInsights({
+      data: {
+        rows: [
+          {
+            _id: 'sn1',
+            platform: 'instagram',
+            status: 'success',
+            periodDays: 7,
+            metrics: {followers: 1200, reach: 300},
+            fetchedAt: '2026-01-01T00:00:00.000Z',
+          },
+          {
+            _id: 'sn2',
+            platform: 'instagram',
+            status: 'pending',
+            periodDays: 7,
+          },
+        ],
+      },
+    });
+    expect(social.total).toBe(2);
+    expect(
+      pickKolamDaraSeoLatestSocialSnapshot(social.rows, 'instagram')?.id,
+    ).toBe('sn1');
   });
 });

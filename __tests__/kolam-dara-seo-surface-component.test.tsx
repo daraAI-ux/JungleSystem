@@ -6,9 +6,11 @@ import {
   fetchKolamDaraSeoActiveBrands,
   fetchKolamDaraSeoDashboard,
   fetchKolamDaraSeoPendingSuggestions,
+  fetchKolamDaraSeoRankings,
   fetchKolamDaraSeoStatus,
   fetchKolamDaraSeoSuggestion,
   fetchKolamDaraSeoSuggestions,
+  fetchKolamDaraSeoWebsitePreview,
 } from '../src/services/kolam-dara-seo-api';
 import {startKolamDaraJob, fetchKolamDaraJobsList, fetchKolamDaraJob} from '../src/services/kolam-dara-jobs-api';
 
@@ -30,6 +32,26 @@ jest.mock('../src/services/kolam-dara-seo-api', () => ({
   rollbackKolamDaraSeoSuggestion: jest.fn(),
   bulkApproveKolamDaraSeoSuggestions: jest.fn(),
   bulkRejectKolamDaraSeoSuggestions: jest.fn(),
+  fetchKolamDaraSeoRankings: jest.fn(),
+  fetchKolamDaraSeoKeywords: jest.fn(),
+  fetchKolamDaraSeoBrandMentions: jest.fn(),
+  fetchKolamDaraSeoSerpKeyword: jest.fn(),
+  ingestKolamDaraSeoCompetitor: jest.fn(),
+  ingestKolamDaraSeoBacklink: jest.fn(),
+  fetchKolamDaraSeoWebsitePreview: jest.fn(),
+  updateKolamDaraSeoWebsite: jest.fn(),
+  submitKolamDaraSeoGoogleIndexing: jest.fn(),
+  fetchKolamDaraSeoAuditLogs: jest.fn(),
+  fetchKolamDaraSeoSentiment: jest.fn(),
+  ingestKolamDaraSeoSentiment: jest.fn(),
+  deleteKolamDaraSeoSentiment: jest.fn(),
+  fetchKolamDaraSeoSentimentLlmEnabled: jest.fn(),
+  fetchKolamDaraSeoIntegrationSettings: jest.fn(),
+  updateKolamDaraSeoIntegrationSettings: jest.fn(),
+  testKolamDaraSeoIntegration: jest.fn(),
+  previewKolamDaraSeoIntegrationReport: jest.fn(),
+  fetchKolamDaraSeoSocialInsights: jest.fn(),
+  syncKolamDaraSeoSocialInsights: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-dara-jobs-api', () => ({
@@ -62,6 +84,12 @@ const suggestionMock = fetchKolamDaraSeoSuggestion as jest.MockedFunction<
 const jobsListMock = fetchKolamDaraJobsList as jest.MockedFunction<
   typeof fetchKolamDaraJobsList
 >;
+const rankingsMock = fetchKolamDaraSeoRankings as jest.MockedFunction<
+  typeof fetchKolamDaraSeoRankings
+>;
+const websitePreviewMock = fetchKolamDaraSeoWebsitePreview as jest.MockedFunction<
+  typeof fetchKolamDaraSeoWebsitePreview
+>;
 
 describe('KolamDaraSeoSurface', () => {
   beforeEach(() => {
@@ -72,6 +100,18 @@ describe('KolamDaraSeoSurface', () => {
     statusMock.mockResolvedValue({seoEnabled: true});
     brandsMock.mockResolvedValue({brands: [], defaultBrandId: 'all'});
     jobsListMock.mockResolvedValue([]);
+    rankingsMock.mockResolvedValue({items: [], total: 0});
+    websitePreviewMock.mockResolvedValue({
+      companyName: 'Dunia Anura',
+      publicSiteUrl: 'https://duniaanura.test',
+      metaTitle: '',
+      metaDescription: '',
+      keywords: [],
+      lastAuditedAt: '',
+      lastSeoScore: null,
+      auditScore: null,
+      issues: [],
+    });
     dashMock.mockResolvedValue({
       seoScore: 70,
       searchVisibility: 50,
@@ -238,19 +278,57 @@ describe('KolamDaraSeoSurface', () => {
     });
   });
 
-  it('shows module placeholder on later SEO tabs', async () => {
+  it('renders website SEO fields and audit action', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
         <KolamDaraSeoSurface route="/campaign/dara-seo/website" />,
       );
       await Promise.resolve();
+      await Promise.resolve();
     });
 
     const text = JSON.stringify(tree!.toJSON());
-    expect(text).toContain('Belum tersedia');
+    expect(text).toContain('Skor audit');
+    expect(text).toContain('Field homepage');
+    expect(text).toContain('Audit + draft');
+    expect(websitePreviewMock).toHaveBeenCalled();
     expect(dashMock).not.toHaveBeenCalled();
     expect(suggestionsMock).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders rankings tab and loads rows from live API', async () => {
+    rankingsMock.mockResolvedValue({
+      items: [
+        {
+          id: 'r1',
+          keyword: 'ikan koi',
+          engine: 'google',
+          position: 3,
+          url: 'https://x.test',
+          title: 'Ikan koi',
+          snippet: 'Jual ikan koi',
+          mentionedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      total: 1,
+    });
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo/rankings" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('ikan koi');
+    expect(rankingsMock).toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

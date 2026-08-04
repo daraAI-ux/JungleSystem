@@ -28,12 +28,28 @@ import {
   useKolamDaraSeoController,
   type KolamDaraSeoController,
 } from '../hooks/use-kolam-dara-seo-controller';
+import {useKolamDaraSeoAuditLogsController} from '../hooks/use-kolam-dara-seo-audit-logs-controller';
+import {useKolamDaraSeoIntegrationsController} from '../hooks/use-kolam-dara-seo-integrations-controller';
 import {
   useKolamDaraSeoJobsProgress,
   type KolamDaraSeoJobsProgressController,
 } from '../hooks/use-kolam-dara-seo-jobs-progress';
+import {useKolamDaraSeoKeywordsController} from '../hooks/use-kolam-dara-seo-keywords-controller';
+import {useKolamDaraSeoMentionsController} from '../hooks/use-kolam-dara-seo-mentions-controller';
+import {useKolamDaraSeoRankingsController} from '../hooks/use-kolam-dara-seo-rankings-controller';
+import {useKolamDaraSeoSentimentController} from '../hooks/use-kolam-dara-seo-sentiment-controller';
+import {useKolamDaraSeoSocialController} from '../hooks/use-kolam-dara-seo-social-controller';
+import {useKolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-website-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
+import {KolamDaraSeoAuditLogsBody} from './kolam-dara-seo-audit-logs-body';
+import {KolamDaraSeoIntegrationsBody} from './kolam-dara-seo-integrations-body';
+import {KolamDaraSeoKeywordsBody} from './kolam-dara-seo-keywords-body';
+import {KolamDaraSeoMentionsBody} from './kolam-dara-seo-mentions-body';
+import {KolamDaraSeoRankingsBody} from './kolam-dara-seo-rankings-body';
+import {KolamDaraSeoSentimentBody} from './kolam-dara-seo-sentiment-body';
+import {KolamDaraSeoSocialBody} from './kolam-dara-seo-social-body';
+import {KolamDaraSeoWebsiteBody} from './kolam-dara-seo-website-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
@@ -52,9 +68,18 @@ export function KolamDaraSeoSurface({
   const access = resolveKolamDaraSeoAccess({
     roleKey: authUser?.roleKey,
     permissions: authUser?.permissions,
+    isOwner: (authUser as {isOwner?: boolean} | null | undefined)?.isOwner,
   });
   const controller = useKolamDaraSeoController(route);
   const approvalsController = useKolamDaraSeoApprovalsController(route);
+  const rankingsController = useKolamDaraSeoRankingsController(route);
+  const keywordsController = useKolamDaraSeoKeywordsController(route);
+  const mentionsController = useKolamDaraSeoMentionsController(route);
+  const websiteController = useKolamDaraSeoWebsiteController(route);
+  const sentimentController = useKolamDaraSeoSentimentController(route);
+  const auditLogsController = useKolamDaraSeoAuditLogsController(route);
+  const integrationsController = useKolamDaraSeoIntegrationsController(route);
+  const socialController = useKolamDaraSeoSocialController(route);
   const jobsProgress = useKolamDaraSeoJobsProgress(route);
 
   return (
@@ -98,6 +123,40 @@ export function KolamDaraSeoSurface({
           controller={approvalsController}
           onRouteChange={onRouteChange}
         />
+      ) : selectedTab === 'rankings' ? (
+        <KolamDaraSeoRankingsBody
+          canDraft={access.canDraft}
+          controller={rankingsController}
+        />
+      ) : selectedTab === 'keywords' ? (
+        <KolamDaraSeoKeywordsBody controller={keywordsController} />
+      ) : selectedTab === 'mentions' ? (
+        <KolamDaraSeoMentionsBody
+          canDraft={access.canDraft}
+          controller={mentionsController}
+        />
+      ) : selectedTab === 'website' ? (
+        <KolamDaraSeoWebsiteBody
+          canApprove={access.canApprove}
+          canDraft={access.canDraft}
+          controller={websiteController}
+          jobsProgress={jobsProgress}
+          onRouteChange={onRouteChange}
+        />
+      ) : selectedTab === 'sentiment' ? (
+        <KolamDaraSeoSentimentBody
+          canDraft={access.canDraft}
+          controller={sentimentController}
+        />
+      ) : selectedTab === 'audit-logs' ? (
+        <KolamDaraSeoAuditLogsBody controller={auditLogsController} />
+      ) : selectedTab === 'integrations' ? (
+        <KolamDaraSeoIntegrationsBody
+          canManageSettings={access.canManageSettings}
+          controller={integrationsController}
+        />
+      ) : selectedTab === 'social-insights' ? (
+        <KolamDaraSeoSocialBody controller={socialController} />
       ) : (
         <KolamEmptyState title="Belum tersedia" />
       )}
