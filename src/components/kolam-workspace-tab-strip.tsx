@@ -66,6 +66,8 @@ function WorkspaceTabButton({
   onClose: () => void;
   onPress: () => void;
 }) {
+  const [isCloseHovered, setIsCloseHovered] = React.useState(false);
+
   return (
     <KolamInteractionFrame
       accessibilityRole="tab"
@@ -81,10 +83,12 @@ function WorkspaceTabButton({
         <KolamPressable
           accessibilityLabel={`Tutup ${label}`}
           accessibilityRole="button"
+          onHoverIn={() => setIsCloseHovered(true)}
+          onHoverOut={() => setIsCloseHovered(false)}
           onPress={onClose}
-          style={({hovered, pressed}: {hovered?: boolean; pressed?: boolean}) => [
+          style={({pressed}: {pressed?: boolean}) => [
             styles.closeButton,
-            (hovered || pressed) && styles.closeButtonHovered,
+            (isCloseHovered || pressed) && styles.closeButtonHovered,
           ]}>
           <KolamXIcon color={V.colors.primaryFg} size="sm" />
         </KolamPressable>

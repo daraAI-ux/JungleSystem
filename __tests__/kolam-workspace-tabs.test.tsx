@@ -202,9 +202,28 @@ describe('Kolam workspace tabs', () => {
     );
     expect(closeHoverStyle).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({backgroundColor: V.colors.mutedFg}),
+      ]),
+    );
+    await ReactTestRenderer.act(async () => {
+      closeButton.props.onHoverIn();
+    });
+    const hoveredCloseButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Tutup Produk',
+    });
+    const hoveredCloseStyle = hoveredCloseButton.props.style({
+      hovered: false,
+      pressed: false,
+    });
+
+    expect(hoveredCloseStyle).toEqual(
+      expect.arrayContaining([
         expect.objectContaining({backgroundColor: V.colors.danger}),
       ]),
     );
+    await ReactTestRenderer.act(async () => {
+      hoveredCloseButton.props.onHoverOut();
+    });
     expect(renderer!.root.findAllByType(KolamXIcon)[0].props.color).toBe(
       V.colors.primaryFg,
     );
