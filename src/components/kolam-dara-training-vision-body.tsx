@@ -745,6 +745,7 @@ export function KolamDaraTrainingVisionBody({
                     row.trainingCount,
                     stats?.minTrainingPhotos ??
                       KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
+                    row.catalogPhotoCount,
                   );
                   return (
                     <View key={row.speciesId} style={styles.tableRow}>
@@ -919,6 +920,7 @@ export function KolamDaraTrainingVisionBody({
                     row.trainingCount,
                     stats?.minProductTrainingPhotos ??
                       KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+                    row.catalogPhotoCount,
                   );
                   return (
                     <View key={row.productId} style={styles.tableRow}>

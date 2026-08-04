@@ -33,32 +33,56 @@ export const KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS = 5;
 export const KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS = 3;
 
 /**
- * Train-ready when **training** photo count meets the YOLO min (katalog tidak dihitung).
- * SoT: species `readyForTrain` / product export `minPhotos`.
+ * Foto yang dihitung untuk Status siap latih: Training (dataset) atau Katalog
+ * (sumber yang bisa ditambah lewat Kelola) — ambil yang lebih besar.
+ * YOLO export tetap butuh foto sudah masuk dataset Training.
+ */
+export function resolveKolamDaraTrainingVisionTrainPhotoCount(
+  trainingCount: number,
+  catalogPhotoCount: number,
+): number {
+  const training = Math.max(0, Math.floor(Number(trainingCount)) || 0);
+  const catalog = Math.max(0, Math.floor(Number(catalogPhotoCount)) || 0);
+  return Math.max(training, catalog);
+}
+
+/**
+ * Train-ready when available photo count meets the YOLO min.
+ * SoT mins: species `MIN_VISION_TRAINING_PHOTOS` (5), product `MIN_YOLO_PRODUCT_TRAIN_PHOTOS` (3).
  */
 export function isKolamDaraTrainingVisionReadyForTrain(
   trainingCount: number,
   minPhotos: number,
+  catalogPhotoCount = 0,
 ): boolean {
   const min = Math.max(
     1,
     Math.floor(Number(minPhotos)) ||
       KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   );
-  return Number(trainingCount) >= min;
+  return (
+    resolveKolamDaraTrainingVisionTrainPhotoCount(
+      trainingCount,
+      catalogPhotoCount,
+    ) >= min
+  );
 }
 
-/** Status badge: Siap latih | n/min (hanya dari kolom Training). */
+/** Status badge: Siap latih | n/min (max Training, Katalog). */
 export function formatKolamDaraTrainingVisionTrainStatusLabel(
   trainingCount: number,
   minPhotos: number,
+  catalogPhotoCount = 0,
 ): {ready: boolean; label: string} {
   const min = Math.max(
     1,
     Math.floor(Number(minPhotos)) ||
       KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   );
-  const count = Math.max(0, Math.floor(Number(trainingCount)) || 0);
+  const count = resolveKolamDaraTrainingVisionTrainPhotoCount(
+    trainingCount,
+    catalogPhotoCount,
+  );
   const ready = count >= min;
   return {
     ready,

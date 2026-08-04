@@ -623,12 +623,13 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Daftar produk');
     expect(text).toContain('Katalog');
     expect(text).toContain('Status');
-    expect(text).toContain('1/3');
     expect(text).toContain('Siap latih');
     expect(text).toContain('Kelola');
     expect(text).toContain('Frog Soil');
     expect(text).toContain('Coco Fiber');
     expect(text).not.toContain('"children":["SKU"]');
+    // Katalog 3 + Training 1 → Siap latih (Frog Soil); not stuck at training-only 1/3
+    expect(text).not.toContain('"children":["1/3"]');
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

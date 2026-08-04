@@ -47,25 +47,27 @@ describe('kolam-dara-training-vision domain', () => {
     expect(isKolamDaraTrainingVisionReadyForTrain(5, 5)).toBe(true);
     expect(
       isKolamDaraTrainingVisionReadyForTrain(
-        2,
+        0,
         KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
-      ),
-    ).toBe(false);
-    expect(
-      isKolamDaraTrainingVisionReadyForTrain(
-        3,
-        KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+        6,
       ),
     ).toBe(true);
-    expect(formatKolamDaraTrainingVisionTrainStatusLabel(1, 3)).toEqual({
-      ready: false,
-      label: '1/3',
-    });
-    expect(formatKolamDaraTrainingVisionTrainStatusLabel(3, 3)).toEqual({
+    expect(
+      isKolamDaraTrainingVisionReadyForTrain(
+        0,
+        KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+        2,
+      ),
+    ).toBe(false);
+    expect(formatKolamDaraTrainingVisionTrainStatusLabel(0, 3, 6)).toEqual({
       ready: true,
       label: 'Siap latih',
     });
-    expect(formatKolamDaraTrainingVisionTrainStatusLabel(2, 5)).toEqual({
+    expect(formatKolamDaraTrainingVisionTrainStatusLabel(1, 3, 1)).toEqual({
+      ready: false,
+      label: '1/3',
+    });
+    expect(formatKolamDaraTrainingVisionTrainStatusLabel(0, 5, 2)).toEqual({
       ready: false,
       label: '2/5',
     });
