@@ -72,7 +72,9 @@ function BonusToolbar({
   return (
     <View style={kolamTableToolbarStyles.shell}>
       <View style={kolamTableToolbarStyles.row}>
-        <View style={kolamTableToolbarStyles.filters}>
+        <View
+          style={[kolamTableToolbarStyles.filters, styles.filtersAlignEnd]}
+        >
           <KolamDropdownSelect
             label="Tahun"
             onChange={value =>
@@ -170,6 +172,9 @@ const styles = StyleSheet.create({
   },
   banner: {
     alignSelf: 'stretch',
+  },
+  filtersAlignEnd: {
+    justifyContent: 'flex-end',
   },
   toolbarButton: {
     minWidth: 96,

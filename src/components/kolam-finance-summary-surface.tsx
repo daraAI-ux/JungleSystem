@@ -167,7 +167,12 @@ function FinanceSummaryToolbar({
     <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
+          <View
+            style={[
+              kolamTableToolbarStyles.filters,
+              styles.filtersAlignEnd,
+            ]}
+          >
             <View ref={rangeTriggerRef} collapsable={false}>
               <KolamTableFilterTrigger
                 active={
@@ -539,6 +544,10 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  /** No search filler — keep filter hugs flush before actions (right side). */
+  filtersAlignEnd: {
+    justifyContent: 'flex-end',
   },
   dateInput: {
     flexGrow: 0,
