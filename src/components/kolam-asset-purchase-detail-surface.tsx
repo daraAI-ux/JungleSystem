@@ -208,16 +208,23 @@ function AssetPurchaseDetailBody({
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.toolbarContext}>
-              {detail.name || detail.code || 'Pembelian Aset'}
-            </Text>
-            {detail.code ? (
-              <KolamStatusBadge intent="secondary" label={detail.code} />
-            ) : null}
-            <KolamStatusBadge
-              intent={getFinanceExpenseStatusIntent(detail.status)}
-              label={formatFinanceExpenseStatusLabel(detail.status)}
-            />
+            <View style={styles.toolbarMeta}>
+              <Text numberOfLines={1} style={styles.toolbarContext}>
+                {detail.name || detail.code || 'Pembelian Aset'}
+              </Text>
+              {detail.code ? (
+                <KolamStatusBadge
+                  intent="secondary"
+                  label={detail.code}
+                  style={styles.toolbarBadge}
+                />
+              ) : null}
+              <KolamStatusBadge
+                intent={getFinanceExpenseStatusIntent(detail.status)}
+                label={formatFinanceExpenseStatusLabel(detail.status)}
+                style={styles.toolbarBadge}
+              />
+            </View>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
@@ -455,14 +462,26 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
   },
+  toolbarMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    gap: 6,
+    minWidth: 0,
+  },
   toolbarContext: {
     color: V.colors.fg,
     flexShrink: 1,
     fontSize: 13,
     fontWeight: '700',
+    lineHeight: 18,
     minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 4,
+    textAlignVertical: 'center',
+  },
+  toolbarBadge: {
+    alignSelf: 'center',
   },
   toolbarButton: {
     flexShrink: 0,
