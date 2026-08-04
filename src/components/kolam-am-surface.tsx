@@ -130,6 +130,9 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 const TASK_STATUS_FILTER_LABELS: Record<string, string> = {
   all: 'All Status',
 };
+const TRANSFER_STATUS_FILTER_LABELS: Record<string, string> = {
+  all: 'All statuses',
+};
 const TASK_FILTER_STATUSES: Array<Exclude<AmTaskStatus, 'queued'> | 'all'> = ['all', 'pending', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
@@ -4020,7 +4023,12 @@ function AmTransfersPage({
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
         <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search recipient..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
-        <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={handleTransferStatusChange} />
+        <AmSegmentGroup
+          active={status}
+          items={['all', 'pending', 'processing', 'success', 'failed']}
+          labels={TRANSFER_STATUS_FILTER_LABELS}
+          onSelect={handleTransferStatusChange}
+        />
         <KolamButton
           accessibilityLabel="AM New Transfer"
           label="New Transfer"
