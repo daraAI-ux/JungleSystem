@@ -120,7 +120,7 @@ describe('dashboard header copy', () => {
     );
   });
 
-  it('keeps AM route plumbing out of the visible dashboard header copy', () => {
+  it('uses AM navigation copy for AM module route headers', () => {
     expect(
       getDashboardHeaderRouteContext({
         activeModuleRoute: {
@@ -133,7 +133,29 @@ describe('dashboard header copy', () => {
           sourceRepo: 'E:\\Projects\\da-automation-management',
         },
       }),
-    ).toBeNull();
+    ).toEqual({
+      route: '/',
+      title: 'AM',
+      subtitle: 'Ringkasan akun, device, transfer, dan mutasi AM.',
+    });
+
+    expect(
+      getDashboardHeaderRouteContext({
+        activeModuleRoute: {
+          id: 'am:services',
+          area: 'am',
+          moduleId: 'am',
+          moduleLabel: 'AM',
+          route: 'services',
+          description: 'Automation management',
+          sourceRepo: 'E:\\Projects\\da-automation-management',
+        },
+      }),
+    ).toEqual({
+      route: 'services',
+      title: 'Services',
+      subtitle: 'Manage automation services. Click a row to view history.',
+    });
   });
 
   it('maps dashboard header sync indicator from active module data source', () => {

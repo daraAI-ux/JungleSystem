@@ -1,3 +1,4 @@
+import { getAmRouteByModuleRoute } from './am-navigation';
 import { getShellModule, type AppModule } from './app-shell';
 import type { AccessScope } from './auth';
 import type { ShellModuleRouteEntry } from './app-shell';
@@ -26,7 +27,7 @@ export interface DashboardHeaderAction {
 }
 
 export interface DashboardHeaderRouteContext {
-  eyebrow: string;
+  eyebrow?: string;
   route: string;
   subtitle: string;
   title: string;
@@ -213,6 +214,19 @@ export function getDashboardHeaderRouteContext({
   activeNavigationItem,
   activePluginRoute,
 }: DashboardHeaderRouteContextInput): DashboardHeaderRouteContext | null {
+  if (activeModuleRoute?.area === 'am') {
+    const amRoute = getAmRouteByModuleRoute(activeModuleRoute.route);
+
+    return {
+      route: activeModuleRoute.route,
+      title:
+        amRoute.moduleRoute === '/'
+          ? activeModuleRoute.moduleLabel
+          : amRoute.label,
+      subtitle: amRoute.description,
+    };
+  }
+
   if (activeModuleRoute && activeModuleRoute.area !== 'am') {
     return {
       eyebrow: `${activeModuleRoute.area.toUpperCase()} Route`,
