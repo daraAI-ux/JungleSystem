@@ -18,6 +18,7 @@ import {
   type KolamLayananSubscriptionSpawnVisitsResult,
   type KolamLayananTermsContext,
   type KolamLayananVisitSlot,
+  type KolamLayananVoucherAuditEntry,
   type KolamLayananVoucherDetail,
   type KolamLayananVoucherMaterialLine,
 } from '../domain/kolam-layanan';
@@ -30,8 +31,10 @@ import {
   assignKolamLayananVoucherVisitPic,
   clearKolamLayananVoucherAddonProducts,
   fulfillKolamLayananVoucherAddonStock,
+  getKolamLayananCustomerEnclosures,
   getKolamLayananSubscription,
   getKolamLayananVoucher,
+  getKolamLayananVoucherAudit,
   getKolamLayananVoucherScheduleRequirements,
   getKolamLayananVoucherTerms,
   proposeKolamLayananVoucherSchedule,
@@ -39,14 +42,24 @@ import {
   setKolamLayananVoucherProductComponents,
   setKolamLayananVoucherPurchaseContract,
   spawnKolamLayananSubscriptionVisits,
+  staffInitiateKolamLayananVoucher,
   syncKolamLayananSubscriptionFromPending,
   updateKolamLayananSubscription,
 } from '../services/kolam-layanan-api';
 
+export interface KolamLayananVoucherEnclosureOption {
+  id: string;
+  label: string;
+}
+
 export interface KolamLayananVoucherController {
+  activateEnclosureId: string;
+  auditEntries: KolamLayananVoucherAuditEntry[];
+  auditSource: 'immutable' | 'empty' | 'legacy';
   canMutateSale: boolean;
   canViewSale: boolean;
   contractDraft: KolamLayananContractDimensionsDraft;
+  enclosureOptions: KolamLayananVoucherEnclosureOption[];
   error: string | null;
   loading: boolean;
   materialLines: KolamLayananVoucherMaterialLine[];
@@ -66,6 +79,7 @@ export interface KolamLayananVoucherController {
   onAddMaterialLine: () => void;
   onApproveSchedule: () => Promise<boolean>;
   onAssignPic: () => Promise<boolean>;
+  onChangeActivateEnclosureId: (value: string) => void;
   onChangeContractDraft: (
     patch: Partial<KolamLayananContractDimensionsDraft>,
   ) => void;
@@ -89,6 +103,7 @@ export interface KolamLayananVoucherController {
   onSaveTransport: () => Promise<boolean>;
   onSetTermsAgreed: (value: boolean) => void;
   onSpawnVisits: () => Promise<boolean>;
+  onStaffInitiate: () => Promise<boolean>;
   onSyncSubscription: () => Promise<boolean>;
 }
 
@@ -128,6 +143,16 @@ export function useKolamLayananVoucherController(
       createKolamLayananContractDimensionsDraft(null),
     );
   const [transportDraft, setTransportDraft] = useState('0');
+  const [activateEnclosureId, setActivateEnclosureId] = useState('');
+  const [enclosureOptions, setEnclosureOptions] = useState<
+    KolamLayananVoucherEnclosureOption[]
+  >([]);
+  const [auditEntries, setAuditEntries] = useState<
+    KolamLayananVoucherAuditEntry[]
+  >([]);
+  const [auditSource, setAuditSource] = useState<
+    'immutable' | 'empty' | 'legacy'
+  >('empty');
   const [picId, setPicId] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [staffOptions, setStaffOptions] = useState<KolamEnclosureStaffRef[]>(
@@ -178,6 +203,38 @@ export function useKolamLayananVoucherController(
       setStaffOptions(staff);
       setSubscription(subscriptionLive);
       setTransportDraft(String(subscriptionLive?.transportCostDefault ?? 0));
+
+      const customerId =
+        live.customerId ||
+        termsLive?.customerId ||
+        subscriptionLive?.customerId ||
+        null;
+
+      const [enclosures, audit] = await Promise.all([
+        canMutateSale && customerId && live.status !== 'initiated'
+          ? getKolamLayananCustomerEnclosures(customerId).catch(() => [])
+          : Promise.resolve([]),
+        canViewSale
+          ? getKolamLayananVoucherAudit(voucherId).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      setEnclosureOptions(
+        enclosures.map(enclosure => ({
+          id: enclosure.id,
+          label: enclosure.type
+            ? `${enclosure.name} (${enclosure.type})`
+            : enclosure.name,
+        })),
+      );
+      if (audit) {
+        setAuditEntries(audit.entries);
+        setAuditSource(audit.auditSource);
+      } else {
+        setAuditEntries([]);
+        setAuditSource('empty');
+      }
+      setActivateEnclosureId('');
 
       if (scheduleLive) {
         const visits = scheduleLive.visitsPerWeek ?? 1;
@@ -419,6 +476,58 @@ export function useKolamLayananVoucherController(
     }
   }, [subscription?.id]);
 
+  const onStaffInitiate = useCallback(async () => {
+    const customerId =
+      voucher?.customerId ||
+      terms?.customerId ||
+      subscription?.customerId ||
+      null;
+    if (!customerId) {
+      setError('Pelanggan tidak ditemukan untuk voucher ini');
+      return false;
+    }
+    if (!activateEnclosureId.trim()) {
+      setError('Pilih kandang pelanggan terlebih dahulu');
+      return false;
+    }
+    const needsSchedule = schedule?.requiresScheduleFlow === true;
+    const scheduleApproved =
+      !needsSchedule || schedule?.status === 'schedule_approved';
+    const picReady = !needsSchedule || Boolean(schedule?.visitAssignedTo);
+    if (!scheduleApproved) {
+      setError('Setujui jadwal kunjungan terlebih dahulu');
+      return false;
+    }
+    if (!picReady) {
+      setError(
+        'PIC kunjungan belum ditetapkan — lengkapi di kartu Jadwal kunjungan',
+      );
+      return false;
+    }
+    const termsRequired = terms?.required === true;
+    const termsAccepted = !termsRequired || terms?.allAccepted === true;
+    if (termsRequired && !termsAccepted) {
+      setError('Setujui syarat & ketentuan layanan terlebih dahulu');
+      return false;
+    }
+    return runMutate(
+      () =>
+        staffInitiateKolamLayananVoucher(voucherId!, {
+          enclosureId: activateEnclosureId.trim(),
+          customerId,
+        }),
+      'Voucher diaktivasi ke kandang pelanggan',
+    );
+  }, [
+    activateEnclosureId,
+    runMutate,
+    schedule,
+    subscription?.customerId,
+    terms,
+    voucher?.customerId,
+    voucherId,
+  ]);
+
   const onChangeScheduleSlot = useCallback(
     (index: number, patch: Partial<KolamLayananVisitSlot>) => {
       setScheduleDraftSlots(current =>
@@ -459,9 +568,13 @@ export function useKolamLayananVoucherController(
 
   return useMemo(
     () => ({
+      activateEnclosureId,
+      auditEntries,
+      auditSource,
       canMutateSale,
       canViewSale,
       contractDraft,
+      enclosureOptions,
       error,
       loading,
       materialLines,
@@ -481,6 +594,7 @@ export function useKolamLayananVoucherController(
       onAddMaterialLine,
       onApproveSchedule,
       onAssignPic,
+      onChangeActivateEnclosureId: setActivateEnclosureId,
       onChangeContractDraft,
       onChangeMaterialLine,
       onChangePicId: setPicId,
@@ -496,12 +610,17 @@ export function useKolamLayananVoucherController(
       onSaveTransport,
       onSetTermsAgreed: setTermsAgreed,
       onSpawnVisits,
+      onStaffInitiate,
       onSyncSubscription,
     }),
     [
+      activateEnclosureId,
+      auditEntries,
+      auditSource,
       canMutateSale,
       canViewSale,
       contractDraft,
+      enclosureOptions,
       error,
       loading,
       materialLines,
@@ -521,6 +640,7 @@ export function useKolamLayananVoucherController(
       onSaveMaterials,
       onSaveTransport,
       onSpawnVisits,
+      onStaffInitiate,
       onSyncSubscription,
       picId,
       refresh,

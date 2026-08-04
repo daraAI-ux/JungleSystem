@@ -13,6 +13,7 @@ import {
   normalizeKolamLayananServiceSpawnTaskResult,
   normalizeKolamLayananTermsContext,
   normalizeKolamLayananTaskDetail,
+  normalizeKolamLayananVoucherAudit,
   normalizeKolamLayananVoucherDetail,
   type KolamLayananOpsDashboard,
   type KolamLayananPendingListQuery,
@@ -34,9 +35,12 @@ import {
   type KolamLayananTaskDetail,
   type KolamLayananTermsContext,
   type KolamLayananVisitSlot,
+  type KolamLayananVoucherAuditResult,
   type KolamLayananVoucherDetail,
   type KolamLayananVoucherMaterialChargeMode,
 } from '../domain/kolam-layanan';
+import { normalizeKolamEnclosureList } from '../domain/kolam-enclosure';
+import type { KolamEnclosure } from '../domain/kolam-enclosure';
 import { apiRequest } from '../lib/api-client';
 import { downloadKolamSaleInvoice } from './kolam-sales-api';
 
@@ -346,6 +350,43 @@ export async function setKolamLayananVoucherPurchaseContract(
       body: { purchaseVolumeDimensions },
     },
   );
+}
+
+export async function staffInitiateKolamLayananVoucher(
+  id: string,
+  body: { enclosureId: string; customerId: string },
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/staff-initiate`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+}
+
+export async function getKolamLayananVoucherAudit(
+  id: string,
+): Promise<KolamLayananVoucherAuditResult> {
+  const payload = await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/audit`,
+  );
+  return normalizeKolamLayananVoucherAudit(payload);
+}
+
+/** Enclosures linked to a customer for staff voucher activation. */
+export async function getKolamLayananCustomerEnclosures(
+  customerId: string,
+): Promise<KolamEnclosure[]> {
+  const payload = await kolamRequest<unknown>('/enclosures', {
+    query: {
+      customer: customerId,
+      clientScope: 'client_linked',
+      page: 1,
+      limit: 100,
+    },
+  });
+  return normalizeKolamEnclosureList(payload, { limit: 100, page: 1 }).data;
 }
 
 export async function clearKolamLayananVoucherAddonProducts(

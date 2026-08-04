@@ -1086,6 +1086,124 @@ export function formatKolamLayananIdr(value: number) {
   return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
 }
 
+export interface KolamLayananVoucherAuditEntry {
+  id: string;
+  action: string;
+  note: string;
+  changedAt: string | null;
+  changedByName: string;
+  metadataSummary: string | null;
+}
+
+export interface KolamLayananVoucherAuditResult {
+  entries: KolamLayananVoucherAuditEntry[];
+  auditSource: 'immutable' | 'empty' | 'legacy';
+}
+
+export const KOLAM_LAYANAN_VOUCHER_AUDIT_ACTION_LABEL: Record<string, string> = {
+  created: 'Dibuat',
+  status_change: 'Status diubah',
+  assignment: 'Penugasan / jadwal',
+  execution_completed: 'Eksekusi selesai',
+  execution_skipped: 'Eksekusi dilewati',
+  review_accepted: 'Tinjauan: diterima',
+  review_rejected: 'Tinjauan: ditolak',
+  schedule_proposed: 'Jadwal diajukan',
+  schedule_approved: 'Jadwal disetujui',
+  voucher_activated: 'Voucher diaktivasi',
+  materials_updated: 'Material diperbarui',
+  addons_updated: 'Produk tambahan diperbarui',
+  terms_accepted: 'S&K disetujui',
+  addon_stock_fulfilled: 'Stok produk tambahan diproses',
+  material_stock_out: 'Stok gudang (material)',
+  visit_hpp_calculated: 'HPP kunjungan dihitung',
+  visit_hpp_wallet: 'HPP dicatat ke dompet',
+  progress_step: 'Progres lapangan',
+  customer_verified: 'Konfirmasi pelanggan',
+  message: 'Pesan diskusi',
+  photo_upload: 'Foto diunggah',
+};
+
+export function getKolamLayananVoucherAuditActionLabel(action?: string | null) {
+  if (!action) {
+    return '—';
+  }
+  return KOLAM_LAYANAN_VOUCHER_AUDIT_ACTION_LABEL[action] || action;
+}
+
+export function normalizeKolamLayananVoucherAudit(
+  payload: unknown,
+): KolamLayananVoucherAuditResult {
+  const record = asRecord(payload);
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  const auditSourceRaw = getString(record, 'auditSource');
+  const entries = rows
+    .map(row => {
+      const item = asRecord(row);
+      const changedBy = asRecord(item.changedBy);
+      const user = asRecord(item.user);
+      const changedByName =
+        [
+          getString(changedBy, 'first_name') || getString(user, 'first_name'),
+          getString(changedBy, 'last_name') || getString(user, 'last_name'),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .trim() ||
+        getString(changedBy, 'username') ||
+        getString(user, 'username') ||
+        getString(changedBy, 'displayName') ||
+        '—';
+      const metadata = asRecord(item.metadata);
+      const metaParts: string[] = [];
+      if (getString(metadata, 'progressStep')) {
+        metaParts.push(`Langkah: ${getString(metadata, 'progressStep')}`);
+      }
+      if (getString(metadata, 'reviewStatus')) {
+        metaParts.push(`Tinjauan: ${getString(metadata, 'reviewStatus')}`);
+      }
+      const updatedFields = Array.isArray(metadata.updatedFields)
+        ? metadata.updatedFields.map(String).filter(Boolean)
+        : [];
+      if (updatedFields.length) {
+        metaParts.push(`Ubah: ${updatedFields.join(', ')}`);
+      }
+      return {
+        id:
+          getString(item, '_id') ||
+          getString(item, 'id') ||
+          `${getString(item, 'changedAt')}|${getString(item, 'action')}|${getString(item, 'note')}`,
+        action: getString(item, 'action') || 'status_change',
+        note: getString(item, 'note') || getString(item, 'message'),
+        changedAt:
+          getString(item, 'changedAt') || getString(item, 'createdAt') || null,
+        changedByName,
+        metadataSummary: metaParts.length ? metaParts.join(' · ') : null,
+      } satisfies KolamLayananVoucherAuditEntry;
+    })
+    .filter(entry => Boolean(entry.id));
+
+  entries.sort((a, b) => {
+    const ta = a.changedAt ? new Date(a.changedAt).getTime() : 0;
+    const tb = b.changedAt ? new Date(b.changedAt).getTime() : 0;
+    return tb - ta;
+  });
+
+  return {
+    entries,
+    auditSource:
+      auditSourceRaw === 'immutable' || entries.length > 0
+        ? 'immutable'
+        : auditSourceRaw === 'legacy'
+          ? 'legacy'
+          : 'empty',
+  };
+}
+
 export function getKolamLayananCapacityStatusLabel(status: string) {
   if (status === 'full') {
     return 'Penuh';

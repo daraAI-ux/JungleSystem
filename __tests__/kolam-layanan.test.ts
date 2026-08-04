@@ -36,6 +36,7 @@ import {
   normalizeKolamLayananSubscriptionVisitPreviews,
   normalizeKolamLayananTaskDetail,
   normalizeKolamLayananTermsContext,
+  normalizeKolamLayananVoucherAudit,
   normalizeKolamLayananVoucherDetail,
   createKolamLayananSubscriptionContractForm,
   createKolamLayananSubscriptionUpdatePayload,
@@ -306,6 +307,24 @@ describe('kolam-layanan domain', () => {
     expect(body.visitsPerMonth).toBe(2);
     expect(body.taskType).toBe('dosing');
     expect(body.price_m3).toBe(15000);
+  });
+
+  it('normalizes voucher audit timeline entries', () => {
+    const audit = normalizeKolamLayananVoucherAudit({
+      auditSource: 'immutable',
+      data: [
+        {
+          _id: 'a1',
+          action: 'voucher_activated',
+          note: 'Ok',
+          changedAt: '2026-08-01T10:00:00.000Z',
+          changedBy: { first_name: 'Budi', last_name: 'S' },
+        },
+      ],
+    });
+    expect(audit.auditSource).toBe('immutable');
+    expect(audit.entries[0].action).toBe('voucher_activated');
+    expect(audit.entries[0].changedByName).toBe('Budi S');
   });
 
   it('calculates contract volume m3 from unit label', () => {

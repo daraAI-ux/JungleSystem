@@ -13,6 +13,7 @@ import {
   getKolamLayananSubscriptionStatusIntent,
   getKolamLayananSubscriptionStatusLabel,
   getKolamLayananTaskTypeLabel,
+  getKolamLayananVoucherAuditActionLabel,
   getKolamLayananWeekdayLabel,
   KOLAM_LAYANAN_DIMENSION_UNIT_OPTIONS,
   KOLAM_LAYANAN_MATERIAL_CHARGE_OPTIONS,
@@ -215,6 +216,7 @@ export function KolamLayananVoucherDetail({
                 onRouteChange={onRouteChange}
               />
               <VoucherMaterialsSection controller={controller} />
+              <VoucherAuditSection controller={controller} />
             </>
           ) : (
             <View style={styles.detailColumns}>
@@ -234,6 +236,10 @@ export function KolamLayananVoucherDetail({
                 <VoucherCustomerReadinessSection controller={controller} />
                 <VoucherScheduleSection controller={controller} />
                 <VoucherTermsSection controller={controller} />
+                {controller.canMutateSale ? (
+                  <VoucherStaffActivateSection controller={controller} />
+                ) : null}
+                <VoucherAuditSection controller={controller} />
               </View>
             </View>
           )}
@@ -813,6 +819,182 @@ function VoucherCustomerReadinessSection({
   );
 }
 
+function VoucherStaffActivateSection({
+  controller,
+}: {
+  controller: KolamLayananVoucherController;
+}) {
+  const voucher = controller.voucher;
+  const terms = controller.terms;
+  const schedule = controller.schedule;
+  if (!voucher || voucher.initiated || voucher.status === 'cancelled') {
+    return null;
+  }
+
+  const customerId =
+    voucher.customerId || terms?.customerId || controller.subscription?.customerId;
+  const customerName =
+    voucher.customerName && voucher.customerName !== '—'
+      ? voucher.customerName
+      : null;
+  const termsRequired = terms?.required === true;
+  const termsAccepted = !termsRequired || terms?.allAccepted === true;
+  const needsSchedule = schedule?.requiresScheduleFlow === true;
+  const scheduleApproved =
+    !needsSchedule || schedule?.status === 'schedule_approved';
+  const picReady = !needsSchedule || Boolean(schedule?.visitAssignedTo);
+  const missingPicAfterApprove =
+    needsSchedule &&
+    schedule?.status === 'schedule_approved' &&
+    !schedule?.visitAssignedTo;
+  const activationReady = scheduleApproved && picReady;
+  const canActivate =
+    Boolean(customerId) &&
+    Boolean(controller.activateEnclosureId) &&
+    activationReady &&
+    (!termsRequired || termsAccepted);
+
+  return (
+    <FormSection title="Aktivasi atas nama pelanggan">
+      {!customerId ? (
+        <Text style={styles.warnText}>
+          Pelanggan belum teridentifikasi dari penjualan/langganan. Pastikan
+          faktur terhubung ke pelanggan.
+        </Text>
+      ) : (
+        <Text style={styles.metaText}>
+          Pelanggan:{' '}
+          <Text style={styles.primaryText}>{customerName ?? '—'}</Text>
+        </Text>
+      )}
+
+      {termsRequired ? (
+        <View style={styles.infoBox}>
+          <Text style={styles.primaryText}>Syarat &amp; ketentuan layanan</Text>
+          {termsAccepted ? (
+            <Text style={styles.metaText}>
+              Syarat &amp; ketentuan sudah disetujui.
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.metaText}>
+                Gunakan kartu Syarat &amp; ketentuan di atas untuk menyimpan
+                persetujuan staff atas nama pelanggan, lalu aktivasi di sini.
+              </Text>
+              <KolamStatusBadge intent="warning" label="Belum disetujui" />
+            </>
+          )}
+        </View>
+      ) : null}
+
+      {missingPicAfterApprove ? (
+        <Text style={styles.warnText}>
+          Jadwal sudah disetujui, tetapi PIC kunjungan belum ditetapkan. Gunakan
+          kartu Jadwal kunjungan voucher untuk memilih staff PIC.
+        </Text>
+      ) : null}
+
+      {needsSchedule &&
+      scheduleApproved &&
+      picReady &&
+      schedule?.visitAssignedToDisplayName ? (
+        <Text style={styles.metaText}>
+          PIC kunjungan:{' '}
+          <Text style={styles.primaryText}>
+            {schedule.visitAssignedToDisplayName}
+          </Text>
+        </Text>
+      ) : null}
+
+      <Text style={styles.primaryText}>Kandang pelanggan</Text>
+      {!customerId ? null : controller.enclosureOptions.length === 0 ? (
+        <Text style={styles.metaText}>
+          Belum ada kandang terhubung pelanggan untuk akun ini.
+        </Text>
+      ) : (
+        <KolamDropdownSelect
+          label="Pilih kandang"
+          onChange={controller.onChangeActivateEnclosureId}
+          options={[
+            { label: 'Pilih kandang', value: '' },
+            ...controller.enclosureOptions.map(option => ({
+              label: option.label,
+              value: option.id,
+            })),
+          ]}
+          value={controller.activateEnclosureId}
+        />
+      )}
+
+      <KolamButton
+        disabled={controller.saving || !canActivate}
+        intent="primary"
+        label="Aktivasi voucher"
+        onPress={() => {
+          void controller.onStaffInitiate();
+        }}
+      />
+    </FormSection>
+  );
+}
+
+function VoucherAuditSection({
+  controller,
+}: {
+  controller: KolamLayananVoucherController;
+}) {
+  if (!controller.canViewSale) {
+    return (
+      <FormSection title="Riwayat audit">
+        <Text style={styles.metaText}>
+          Tidak ada izin view penjualan (sale) untuk memuat audit voucher.
+        </Text>
+      </FormSection>
+    );
+  }
+
+  return (
+    <FormSection
+      description="Perubahan voucher, jadwal, material, dan aktivitas kunjungan (append-only)."
+      title="Riwayat audit"
+    >
+      {controller.auditSource === 'immutable' &&
+      controller.auditEntries.length ? (
+        <KolamStatusBadge intent="secondary" label="Audit immutable" />
+      ) : null}
+      {controller.auditEntries.length === 0 ? (
+        <Text style={styles.metaText}>Belum ada aktivitas tercatat.</Text>
+      ) : (
+        controller.auditEntries.map(entry => (
+          <View key={entry.id} style={styles.auditRow}>
+            <Text style={styles.primaryText}>
+              {getKolamLayananVoucherAuditActionLabel(entry.action)}
+            </Text>
+            <Text style={styles.metaText}>
+              {entry.changedAt
+                ? new Date(entry.changedAt).toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '—'}{' '}
+              · {entry.changedByName}
+            </Text>
+            {entry.note ? (
+              <Text style={styles.metaText}>{entry.note}</Text>
+            ) : null}
+            {entry.metadataSummary ? (
+              <Text style={styles.metaText}>{entry.metadataSummary}</Text>
+            ) : null}
+          </View>
+        ))
+      )}
+    </FormSection>
+  );
+}
+
 function VoucherScheduleSection({
   controller,
 }: {
@@ -1381,6 +1563,13 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
     paddingTop: 10,
+  },
+  auditRow: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+    padding: 10,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
