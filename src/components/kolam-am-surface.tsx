@@ -266,12 +266,10 @@ export function KolamAmSurface({
 
   return (
     <ScrollView contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
-      <View style={styles.moduleBackRow}>
-        <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-      </View>
       {activeRoute === 'dashboard' ? (
         <AmDashboardPage
           dashboard={dataset.am.dashboard}
+          onBackToCenter={onBackToCenter}
           onModuleRouteSelect={onModuleRouteSelect}
         />
       ) : activeRoute === 'tasks' ? (
@@ -415,9 +413,11 @@ function isConcreteRouteSegment(segment?: string) {
 
 function AmDashboardPage({
   dashboard,
+  onBackToCenter,
   onModuleRouteSelect,
 }: {
   dashboard?: AmDashboardData | null;
+  onBackToCenter?: () => void;
   onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
 }) {
   const [data, setData] = React.useState<AmDashboardData | null>(dashboard ?? null);
@@ -490,9 +490,12 @@ function AmDashboardPage({
   if (!data) {
     return (
       <View style={styles.emptyPanel}>
+        <View style={styles.actionRow}>
+          <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
+          <KolamButton label="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
+        </View>
         <Text style={styles.panelTitle}>{isLoading ? 'Memuat dashboard AM' : 'Menunggu data AM'}</Text>
         <AmInlineError error={error} title="AM dashboard belum bisa dibaca" />
-        <KolamButton label="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
       </View>
     );
   }
@@ -501,6 +504,7 @@ function AmDashboardPage({
     <View style={styles.pageStack}>
       <Text style={styles.panelText}>Welcome back, {displayName}</Text>
       <View style={styles.actionRow}>
+        <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
         <KolamButton
           disabled={isLoading}
           label={isLoading ? 'Refreshing...' : 'Refresh'}
@@ -7118,18 +7122,13 @@ const styles = StyleSheet.create({
     paddingTop: DASHBOARD_LAYOUT_VISUAL.page.paddingTop,
     paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
   },
-  moduleBackRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 16,
-  },
   pageStack: {
     gap: 16,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     gap: 12,
   },
   metricGrid: {
