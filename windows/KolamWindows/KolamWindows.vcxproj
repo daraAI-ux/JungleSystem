@@ -103,6 +103,7 @@
     <ClInclude Include="KolamWindows.h" />
     <ClInclude Include="KolamWindowsDeviceIdentity.h" />
     <ClInclude Include="KolamWindowsFilePicker.h" />
+    <ClInclude Include="KolamWindowsNotificationSound.h" />
     <ClInclude Include="KolamWindowsSQLiteStore.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="AutolinkedNativeModules.g.h" />
@@ -113,6 +114,7 @@
     <ClCompile Include="KolamWindows.cpp" />
     <ClCompile Include="KolamWindowsDeviceIdentity.cpp" />
     <ClCompile Include="KolamWindowsFilePicker.cpp" />
+    <ClCompile Include="KolamWindowsNotificationSound.cpp" />
     <ClCompile Include="KolamWindowsSQLiteStore.cpp" />
     <ClCompile Include="AutolinkedNativeModules.g.cpp" />
     <ClCompile Include="pch.cpp">
