@@ -7,9 +7,7 @@ export type AmRouteId =
   | 'transactions'
   | 'mutasi'
   | 'users'
-  | 'settings-account'
-  | 'activity-log'
-  | 'login';
+  | 'activity-log';
 
 export interface AmRouteItem {
   id: AmRouteId;
@@ -96,24 +94,6 @@ export const AM_ROUTES: AmRouteItem[] = [
     description:
       'Catatan setiap akses halaman dan API request. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.',
   },
-  {
-    id: 'settings-account',
-    label: 'Account Settings',
-    section: 'Administration',
-    path: '/settings/account',
-    moduleRoute: 'settings/account',
-    description: 'Manage your personal information, photo, and other profile details.',
-    sidebar: false,
-  },
-  {
-    id: 'login',
-    label: 'Login',
-    section: 'Administration',
-    path: '/login',
-    moduleRoute: 'login',
-    description: 'Masuk ke AM BE live.',
-    sidebar: false,
-  },
 ];
 
 export const AM_ROUTE_SECTIONS = [
@@ -154,7 +134,5 @@ function getAmParentRoute(route: string) {
   if (route.startsWith('webhooks')) return 'webhooks';
   if (route.startsWith('admin/users')) return 'admin/users';
   if (route.startsWith('admin/activity-log')) return 'admin/activity-log';
-  if (route.startsWith('settings/account')) return 'settings/account';
-  if (route.startsWith('login')) return 'login';
   return route;
 }

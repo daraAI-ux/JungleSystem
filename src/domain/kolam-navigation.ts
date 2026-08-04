@@ -390,9 +390,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Intel Pasar DARA',
+        label: 'DARA AI Market Intelligence',
         route: '/campaign/dara-market-intel',
-        description: 'Market intelligence workspace and approvals',
+        description:
+          'Monitor harga & supplier, rekomendasi pricing/pembelian. Semua saran butuh approval — terapkan harga manual di produk setelah disetujui.',
         group: 'Kampanye',
         requiredAccess: ['kolam'],
       },
@@ -1663,27 +1664,34 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/campaign/dara-market-intel',
-    labelSuffix: 'Approvals',
+    labelSuffix: 'Persetujuan',
+    label: 'Persetujuan Market Intelligence',
     route: '/campaign/dara-market-intel/approvals',
-    description: 'DARA market intel approvals page from live Kolam',
+    description:
+      'Review dan setujui rekomendasi pricing/pembelian — harga diterapkan manual di produk.',
   },
   {
     baseRoute: '/campaign/dara-market-intel',
-    labelSuffix: 'Competitors',
+    labelSuffix: 'Kompetitor',
+    label: 'Monitor kompetitor',
     route: '/campaign/dara-market-intel/competitors',
-    description: 'DARA market intel competitors page from live Kolam',
+    description: 'Daftar kompetitor dan barang yang dimonitor per channel.',
   },
   {
     baseRoute: '/campaign/dara-market-intel',
-    labelSuffix: 'Kesehatan',
+    labelSuffix: 'Kesehatan Toko',
+    label: 'Kesehatan Toko',
     route: '/campaign/dara-market-intel/kesehatan',
-    description: 'DARA market intel kesehatan page from live Kolam',
+    description:
+      'Scan kelengkapan field Edit Produk — produk skor 100% tidak ditampilkan. Brand dinilai sebagai parameter, bukan filter.',
   },
   {
     baseRoute: '/campaign/dara-market-intel',
     labelSuffix: 'Peralatan',
+    label: 'DARA Peralatan',
     route: '/campaign/dara-market-intel/peralatan',
-    description: 'DARA market intel peralatan page from live Kolam',
+    description:
+      'Bulk harga & monitor biaya platform Shopee/Tokopedia — profil toko, URL regulasi, mapping AI fee untuk estimasi HPP.',
   },
   {
     baseRoute: '/campaign/dara-seo',

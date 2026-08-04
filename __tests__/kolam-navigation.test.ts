@@ -397,6 +397,38 @@ describe('kolamNavigationSections', () => {
     expect(getKolamNavigationItemByRoute('/missing-route')).toBeNull();
   });
 
+  it('uses FE DARA Market Intel shell titles and descriptions', () => {
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-market-intel'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'DARA AI Market Intelligence',
+        description:
+          'Monitor harga & supplier, rekomendasi pricing/pembelian. Semua saran butuh approval — terapkan harga manual di produk setelah disetujui.',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute(
+        '/campaign/dara-market-intel/approvals',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Persetujuan Market Intelligence',
+        description:
+          'Review dan setujui rekomendasi pricing/pembelian — harga diterapkan manual di produk.',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute(
+        '/campaign/dara-market-intel/competitors',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Monitor kompetitor',
+      }),
+    );
+  });
+
   it('uses FE DARA SEO shell titles and descriptions', () => {
     expect(getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo')).toEqual(
       expect.objectContaining({
