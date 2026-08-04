@@ -67,6 +67,11 @@ import { formatRupiah } from '../lib/money';
 import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import {
+  KolamDetailMetaStrip,
+  KolamDetailMetaStripItem,
+  kolamDetailMetaStripStyles,
+} from './kolam-detail-meta-strip';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -339,77 +344,75 @@ export function KolamSalesOpsDetail({
         </KolamCardFrame>
       ) : null}
 
-      <KolamCardFrame style={styles.stripCard} variant="compact">
-        <View style={styles.stripRow}>
-          <View style={styles.stripItem}>
-            <Text style={styles.stripLabel}>Pembayaran</Text>
-            <KolamStatusBadge
-              intent={getKolamSalePaymentStatusIntent(sale.status)}
-              label={formatKolamSalePaymentStatusLabel(sale.status)}
-            />
-          </View>
-          <View style={styles.stripItem}>
-            <Text style={styles.stripLabel}>
-              {skipShipping ? (posSale ? 'POS' : 'Layanan') : 'Pengiriman'}
-            </Text>
-            <KolamStatusBadge
-              intent={
-                sale.status === 'cancelled'
-                  ? 'danger'
-                  : skipShipping
-                    ? 'info'
-                    : getKolamSaleDeliveryStatusIntent(
-                        sale.deliveryStatus,
-                        sale.status,
-                      )
-              }
-              label={
-                sale.status === 'cancelled'
-                  ? 'Dibatalkan'
-                  : skipShipping
-                    ? getKolamNoShippingDeliveryLabel(sale)
-                    : formatKolamSaleDeliveryStatusLabel(
-                        sale.deliveryStatus,
-                        sale.status,
-                        sale,
-                      )
-              }
-            />
-          </View>
-          <View style={styles.stripItem}>
-            <Text style={styles.stripLabel}>Total</Text>
-            <Text style={styles.stripValue}>
-              {formatRupiah(sale.finalTotal)}
-            </Text>
-          </View>
-          {!marketplaceManaged && sale.pointsEarned > 0 ? (
-            <View style={styles.stripItem}>
-              <Text style={styles.stripLabel}>Poin</Text>
-              <Text style={styles.stripValue}>
-                {sale.pointsEarned.toLocaleString('id-ID')}
-              </Text>
-            </View>
-          ) : null}
-          {marketplaceManaged && sale.marketplaceOrderId ? (
-            <View style={styles.stripItem}>
-              <Text style={styles.stripLabel}>Order ID</Text>
-              <Text style={styles.stripValue}>{sale.marketplaceOrderId}</Text>
-            </View>
-          ) : null}
-          {sourceLogoUri ? (
-            <View style={styles.stripSourceSlot}>
+      <KolamDetailMetaStrip
+        trailing={
+          sourceLogoUri ? (
+            <View style={kolamDetailMetaStripStyles.stripSourceSlot}>
               <KolamRemoteImage
                 accessibilityLabel={
                   sale.sourceRef?.name || 'Sumber penjualan'
                 }
                 resizeMode="contain"
                 sourceUri={sourceLogoUri}
-                style={styles.stripSourceLogo}
+                style={kolamDetailMetaStripStyles.stripSourceLogo}
               />
             </View>
-          ) : null}
-        </View>
-      </KolamCardFrame>
+          ) : null
+        }
+      >
+        <KolamDetailMetaStripItem label="Pembayaran">
+          <KolamStatusBadge
+            intent={getKolamSalePaymentStatusIntent(sale.status)}
+            label={formatKolamSalePaymentStatusLabel(sale.status)}
+          />
+        </KolamDetailMetaStripItem>
+        <KolamDetailMetaStripItem
+          label={skipShipping ? (posSale ? 'POS' : 'Layanan') : 'Pengiriman'}
+        >
+          <KolamStatusBadge
+            intent={
+              sale.status === 'cancelled'
+                ? 'danger'
+                : skipShipping
+                  ? 'info'
+                  : getKolamSaleDeliveryStatusIntent(
+                      sale.deliveryStatus,
+                      sale.status,
+                    )
+            }
+            label={
+              sale.status === 'cancelled'
+                ? 'Dibatalkan'
+                : skipShipping
+                  ? getKolamNoShippingDeliveryLabel(sale)
+                  : formatKolamSaleDeliveryStatusLabel(
+                      sale.deliveryStatus,
+                      sale.status,
+                      sale,
+                    )
+            }
+          />
+        </KolamDetailMetaStripItem>
+        <KolamDetailMetaStripItem label="Total">
+          <Text style={kolamDetailMetaStripStyles.stripValue}>
+            {formatRupiah(sale.finalTotal)}
+          </Text>
+        </KolamDetailMetaStripItem>
+        {!marketplaceManaged && sale.pointsEarned > 0 ? (
+          <KolamDetailMetaStripItem label="Poin">
+            <Text style={kolamDetailMetaStripStyles.stripValue}>
+              {sale.pointsEarned.toLocaleString('id-ID')}
+            </Text>
+          </KolamDetailMetaStripItem>
+        ) : null}
+        {marketplaceManaged && sale.marketplaceOrderId ? (
+          <KolamDetailMetaStripItem label="Order ID">
+            <Text style={kolamDetailMetaStripStyles.stripValue}>
+              {sale.marketplaceOrderId}
+            </Text>
+          </KolamDetailMetaStripItem>
+        ) : null}
+      </KolamDetailMetaStrip>
 
       {skipShipping ? (
         <Text style={styles.infoNote}>
@@ -1393,49 +1396,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  stripCard: {
-    overflow: 'hidden',
-    paddingVertical: 0,
-    paddingLeft: 12,
-    paddingRight: 0,
-  },
-  stripRow: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    minHeight: 72,
-  },
-  stripItem: {
-    gap: 4,
-    justifyContent: 'center',
-    minWidth: 120,
-    paddingVertical: 12,
-  },
-  stripLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  stripValue: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  stripSourceSlot: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    justifyContent: 'center',
-    marginLeft: 'auto',
-    minHeight: 72,
-    width: 88,
-  },
-  stripSourceLogo: {
-    height: 72,
-    width: 88,
   },
   infoNote: {
     color: V.colors.mutedFg,

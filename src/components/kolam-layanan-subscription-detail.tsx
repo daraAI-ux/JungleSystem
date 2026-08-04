@@ -9,9 +9,13 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamLayananSubscriptionController } from '../hooks/use-kolam-layanan-subscription-controller';
 import { KolamButton } from './kolam-button';
-import { KolamCardFrame } from './kolam-card-frame';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  KolamDetailMetaStrip,
+  KolamDetailMetaStripItem,
+  kolamDetailMetaStripStyles,
+} from './kolam-detail-meta-strip';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -219,41 +223,37 @@ export function KolamLayananSubscriptionDetail({
         />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <KolamCardFrame style={styles.stripCard} variant="compact">
-            <View style={styles.stripRow}>
-              <View style={styles.stripItem}>
-                <Text style={styles.stripLabel}>Status</Text>
-                <KolamStatusBadge
-                  intent={getKolamLayananSubscriptionStatusIntent(
-                    subscription.status,
-                  )}
-                  label={getKolamLayananSubscriptionStatusLabel(
-                    subscription.status,
-                  )}
-                />
-              </View>
-              <View style={styles.stripItem}>
-                <Text style={styles.stripLabel}>Pelanggan</Text>
-                <Text style={styles.stripValue}>
-                  {subscription.customerName || '—'}
-                </Text>
-              </View>
-              <View style={styles.stripItem}>
-                <Text style={styles.stripLabel}>Periode</Text>
-                <Text style={[styles.stripValue, styles.tabular]}>
-                  {formatDate(subscription.startDate)} –{' '}
-                  {formatDate(subscription.endDate)}
-                </Text>
-              </View>
-              <View style={styles.stripItem}>
-                <Text style={styles.stripLabel}>Perpanjang otomatis</Text>
-                <KolamStatusBadge
-                  intent={subscription.autoRenew ? 'success' : 'secondary'}
-                  label={subscription.autoRenew ? 'Ya' : 'Tidak'}
-                />
-              </View>
-            </View>
-          </KolamCardFrame>
+          <KolamDetailMetaStrip>
+            <KolamDetailMetaStripItem label="Status">
+              <KolamStatusBadge
+                intent={getKolamLayananSubscriptionStatusIntent(
+                  subscription.status,
+                )}
+                label={getKolamLayananSubscriptionStatusLabel(
+                  subscription.status,
+                )}
+              />
+            </KolamDetailMetaStripItem>
+            <KolamDetailMetaStripItem label="Pelanggan">
+              <Text style={kolamDetailMetaStripStyles.stripValue}>
+                {subscription.customerName || '—'}
+              </Text>
+            </KolamDetailMetaStripItem>
+            <KolamDetailMetaStripItem label="Periode">
+              <Text
+                style={[kolamDetailMetaStripStyles.stripValue, styles.tabular]}
+              >
+                {formatDate(subscription.startDate)} –{' '}
+                {formatDate(subscription.endDate)}
+              </Text>
+            </KolamDetailMetaStripItem>
+            <KolamDetailMetaStripItem label="Perpanjang otomatis">
+              <KolamStatusBadge
+                intent={subscription.autoRenew ? 'success' : 'secondary'}
+                label={subscription.autoRenew ? 'Ya' : 'Tidak'}
+              />
+            </KolamDetailMetaStripItem>
+          </KolamDetailMetaStrip>
 
           <View style={styles.detailColumns}>
             <View style={styles.detailMain}>
@@ -595,37 +595,6 @@ const styles = StyleSheet.create({
   banner: {
     alignSelf: 'stretch',
     marginHorizontal: 4,
-  },
-  stripCard: {
-    overflow: 'hidden',
-    paddingLeft: 12,
-    paddingRight: 0,
-    paddingVertical: 0,
-  },
-  stripRow: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    minHeight: 72,
-  },
-  stripItem: {
-    gap: 4,
-    justifyContent: 'center',
-    minWidth: 120,
-    paddingVertical: 12,
-  },
-  stripLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  stripValue: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '700',
   },
   detailColumns: {
     alignItems: 'flex-start',
