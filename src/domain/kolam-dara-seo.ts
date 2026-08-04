@@ -966,6 +966,7 @@ export type KolamDaraSeoSocialSnapshot = {
 export const KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE = 10;
 export const KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE = 10;
 export const KOLAM_DARA_SEO_SOCIAL_PAGE_SIZE = 10;
+export const KOLAM_DARA_SEO_AUDIT_LOGS_PAGE_SIZE = 10;
 
 export function formatKolamDaraSeoKeywordDifficulty(score: number) {
   const level = resolveKolamDaraSeoKeywordDifficulty(score);
@@ -1049,6 +1050,22 @@ export function paginateKolamDaraSeoSocialSnapshots(
   list: KolamDaraSeoSocialSnapshot[],
   page: number,
   pageSize = KOLAM_DARA_SEO_SOCIAL_PAGE_SIZE,
+) {
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * pageSize;
+  return {
+    page: safePage,
+    totalPages,
+    total: list.length,
+    items: list.slice(start, start + pageSize),
+  };
+}
+
+export function paginateKolamDaraSeoAuditLogs(
+  list: KolamDaraSeoAuditLogRow[],
+  page: number,
+  pageSize = KOLAM_DARA_SEO_AUDIT_LOGS_PAGE_SIZE,
 ) {
   const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
   const safePage = Math.min(Math.max(1, page), totalPages);

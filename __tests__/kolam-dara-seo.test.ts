@@ -22,6 +22,7 @@ import {
   normalizeKolamDaraSeoStatus,
   normalizeKolamDaraSeoSuggestionDetail,
   normalizeKolamDaraSeoWebsitePreview,
+  paginateKolamDaraSeoAuditLogs,
   paginateKolamDaraSeoMentions,
   paginateKolamDaraSeoSocialSnapshots,
   paginateKolamDaraSeoSuggestions,
@@ -82,6 +83,20 @@ describe('kolam-dara-seo domain', () => {
     expect(paginateKolamDaraSeoSocialSnapshots(rows as never, 2).items).toHaveLength(
       1,
     );
+  });
+
+  it('paginates audit logs 10 per page', () => {
+    const rows = Array.from({length: 12}, (_, i) => ({
+      id: `a${i}`,
+      action: `action-${i}`,
+      productId: `p${i}`,
+      createdAt: '',
+    }));
+    const page1 = paginateKolamDaraSeoAuditLogs(rows, 1);
+    expect(page1.items).toHaveLength(10);
+    expect(page1.totalPages).toBe(2);
+    expect(page1.total).toBe(12);
+    expect(paginateKolamDaraSeoAuditLogs(rows, 2).items).toHaveLength(2);
   });
 
   it('matches SEO routes and resolves tabs', () => {
