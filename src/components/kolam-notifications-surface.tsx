@@ -78,6 +78,14 @@ function KolamNotificationListSurface({
               void controller.markAllAsRead();
             }}
           />
+          <KolamButton
+            label="Delete All"
+            intent="danger"
+            disabled={controller.stats.total <= 0}
+            onPress={() => {
+              void controller.deleteAll();
+            }}
+          />
         </View>
       </View>
       {controller.errorMessage ? (

@@ -101,6 +101,15 @@ export async function markAllKolamNotificationsRead(
   });
 }
 
+export async function deleteAllKolamNotifications(
+  category?: string,
+): Promise<void> {
+  await kolamNotificationRequest<unknown>('/notification/all', {
+    method: 'DELETE',
+    body: category ? {category} : {},
+  });
+}
+
 function kolamNotificationRequest<T>(
   path: string,
   options: {

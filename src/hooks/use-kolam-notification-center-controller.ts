@@ -16,6 +16,7 @@ import {
 import {
   getKolamNotifications,
   getKolamNotificationStats,
+  deleteAllKolamNotifications,
   markAllKolamNotificationsRead,
   markKolamNotificationRead,
 } from '../services/kolam-notifications-api';
@@ -230,6 +231,15 @@ export function useKolamNotificationCenterController({
     await Promise.all([refreshStats(), refreshList()]);
   }, [enabled, refreshList, refreshStats]);
 
+  const deleteAll = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
+
+    await deleteAllKolamNotifications();
+    await Promise.all([refreshStats(), refreshList()]);
+  }, [enabled, refreshList, refreshStats]);
+
   const attentionItems = useMemo(
     () =>
       result.data.length
@@ -249,6 +259,7 @@ export function useKolamNotificationCenterController({
 
   return {
     attentionItems,
+    deleteAll,
     errorMessage,
     isLoading,
     isRefreshing,
