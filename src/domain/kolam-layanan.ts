@@ -434,11 +434,20 @@ export interface KolamLayananExecutionDetail {
   checkInAt: string | null;
 }
 
+export interface KolamLayananTaskMessage {
+  id: string;
+  message: string;
+  senderType: 'staff' | 'client' | string;
+  senderName: string;
+  createdAt: string | null;
+}
+
 export interface KolamLayananTaskDetail {
   id: string;
   taskType: 'dosing' | 'maintenance';
   name: string;
   executions: KolamLayananExecutionDetail[];
+  messages: KolamLayananTaskMessage[];
 }
 
 export const KOLAM_LAYANAN_EXECUTION_STATUS_LABEL: Record<string, string> = {
@@ -2622,6 +2631,7 @@ export function normalizeKolamLayananTaskDetail(
   const executionsRaw = Array.isArray(record.executions)
     ? record.executions
     : [];
+  const messagesRaw = Array.isArray(record.messages) ? record.messages : [];
   return {
     id: getString(record, '_id') || getString(record, 'id'),
     taskType,
@@ -2631,6 +2641,33 @@ export function normalizeKolamLayananTaskDetail(
       (taskType === 'dosing' ? 'Tugas dosing' : 'Tugas pemeliharaan'),
     executions: executionsRaw
       .map(normalizeKolamLayananExecutionDetail)
+      .filter(item => Boolean(item.id)),
+    messages: messagesRaw
+      .map(row => {
+        const item = asRecord(row);
+        const sender = asRecord(item.sender);
+        const senderName =
+          [
+            getString(sender, 'first_name'),
+            getString(sender, 'last_name'),
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .trim() ||
+          getString(sender, 'username') ||
+          '—';
+        const senderTypeRaw = getString(item, 'senderType');
+        return {
+          id:
+            getString(item, '_id') ||
+            getString(item, 'id') ||
+            `${getString(item, 'createdAt')}|${getString(item, 'message')}`,
+          message: getString(item, 'message'),
+          senderType: senderTypeRaw || 'staff',
+          senderName,
+          createdAt: getString(item, 'createdAt') || null,
+        } satisfies KolamLayananTaskMessage;
+      })
       .filter(item => Boolean(item.id)),
   };
 }

@@ -6,9 +6,12 @@ import {
   formatKolamLayananIdr,
   formatKolamLayananPurchaseDimensions,
   formatKolamLayananPurchaseVolumeM3,
+  canKolamLayananSupervisorReview,
+  getKolamLayananExecutionStatusLabel,
   getKolamLayananMaterialChargeLabel,
   getKolamLayananPendingStatusIntent,
   getKolamLayananPendingStatusLabel,
+  getKolamLayananReviewStatusLabel,
   getKolamLayananScheduleStatusLabel,
   getKolamLayananSubscriptionStatusIntent,
   getKolamLayananSubscriptionStatusLabel,
@@ -17,10 +20,12 @@ import {
   getKolamLayananWeekdayLabel,
   KOLAM_LAYANAN_DIMENSION_UNIT_OPTIONS,
   KOLAM_LAYANAN_MATERIAL_CHARGE_OPTIONS,
+  KOLAM_LAYANAN_REJECTION_DECISION_OPTIONS,
   KOLAM_LAYANAN_ROOT,
   KOLAM_LAYANAN_WEEKDAY_OPTIONS,
   parseKolamLayananDimInput,
   type KolamLayananContractDurationUnit,
+  type KolamLayananRejectionDecision,
   type KolamLayananVoucherDetail,
   type KolamLayananVoucherMaterialLine,
 } from '../domain/kolam-layanan';
@@ -200,24 +205,31 @@ export function KolamLayananVoucherDetail({
           </KolamDetailMetaStrip>
 
           {voucher.initiated ? (
-            <>
-              <FormSection title="Voucher aktif">
-                <Text style={styles.metaText}>
-                  Voucher sudah diinisiasi. Detail eksekusi kunjungan menyusul di
-                  batch berikutnya.
-                </Text>
-              </FormSection>
-              <VoucherInfoSection
-                onRouteChange={onRouteChange}
-                voucher={voucher}
-              />
-              <VoucherSubscriptionSection
-                controller={controller}
-                onRouteChange={onRouteChange}
-              />
-              <VoucherMaterialsSection controller={controller} />
-              <VoucherAuditSection controller={controller} />
-            </>
+            <View style={styles.detailColumns}>
+              <View style={styles.detailMain}>
+                <VoucherInfoSection
+                  onRouteChange={onRouteChange}
+                  voucher={voucher}
+                />
+                <VoucherInitiatedTaskPanels
+                  controller={controller}
+                  onRouteChange={onRouteChange}
+                  voucherId={voucher.id}
+                />
+              </View>
+              <View style={styles.detailSide}>
+                <VoucherSubscriptionSection
+                  controller={controller}
+                  onRouteChange={onRouteChange}
+                />
+                <VoucherExecutionHistorySection
+                  controller={controller}
+                  onRouteChange={onRouteChange}
+                  voucherId={voucher.id}
+                />
+                <VoucherAuditSection controller={controller} />
+              </View>
+            </View>
           ) : (
             <View style={styles.detailColumns}>
               <View style={styles.detailMain}>
@@ -246,6 +258,307 @@ export function KolamLayananVoucherDetail({
         </ScrollView>
       )}
     </View>
+  );
+}
+
+
+function formatDateTime(value?: string | null) {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function VoucherInitiatedTaskPanels({
+  controller,
+  onRouteChange,
+  voucherId,
+}: {
+  controller: KolamLayananVoucherController;
+  onRouteChange?: (route: string) => void;
+  voucherId: string;
+}) {
+  const task = controller.task;
+  if (controller.taskLoading && !task) {
+    return (
+      <FormSection title="Ringkasan tugas">
+        <Text style={styles.metaText}>Memuat data tugas…</Text>
+      </FormSection>
+    );
+  }
+  if (!task) {
+    return (
+      <FormSection title="Ringkasan tugas">
+        <Text style={styles.warnText}>
+          Data tugas tidak ditemukan untuk voucher ini.
+        </Text>
+      </FormSection>
+    );
+  }
+
+  const upcoming = task.executions.filter(
+    item => item.status === 'pending' || item.status === 'now',
+  );
+  const doneCount = task.executions.filter(
+    item => item.status === 'completed' || item.status === 'skipped',
+  ).length;
+
+  return (
+    <>
+      <FormSection title="Ringkasan tugas">
+        <View style={styles.summaryGrid}>
+          <DetailField label="Nama tugas">
+            <Text style={styles.summaryValue}>{task.name || '—'}</Text>
+          </DetailField>
+          <DetailField label="Progres">
+            <Text style={styles.summaryValue}>
+              {task.executions.length
+                ? `${doneCount} / ${task.executions.length} kunjungan`
+                : '—'}
+            </Text>
+          </DetailField>
+        </View>
+      </FormSection>
+
+      <FormSection title="Jadwal akan datang">
+        {upcoming.length === 0 ? (
+          <Text style={styles.metaText}>Tidak ada jadwal mendatang.</Text>
+        ) : (
+          upcoming.map(execution => (
+            <View key={execution.id} style={styles.auditRow}>
+              <View style={styles.stripRow}>
+                <KolamStatusBadge
+                  intent={execution.status === 'now' ? 'success' : 'secondary'}
+                  label={getKolamLayananExecutionStatusLabel(execution.status)}
+                />
+                <Text style={styles.monoText}>
+                  #{execution.id.slice(-6)}
+                </Text>
+              </View>
+              <Text style={styles.metaText}>
+                Jadwal: {formatDateTime(execution.scheduledTime)}
+              </Text>
+              <Text style={styles.metaText}>
+                PIC: {execution.assignedToName || '—'}
+              </Text>
+              <Pressable
+                accessibilityRole="link"
+                onPress={() =>
+                  onRouteChange?.(
+                    `${KOLAM_LAYANAN_ROOT}/voucher/${voucherId}/execution/${execution.id}`,
+                  )
+                }
+              >
+                <Text style={styles.linkText}>Buka detail eksekusi</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
+      </FormSection>
+
+      <FormSection
+        description={`${task.messages.length} pesan`}
+        title="Diskusi"
+      >
+        {task.messages.length === 0 ? (
+          <Text style={styles.metaText}>
+            Belum ada pesan. Mulai percakapan.
+          </Text>
+        ) : (
+          task.messages.map(message => (
+            <View key={message.id} style={styles.auditRow}>
+              <View style={styles.stripRow}>
+                <Text style={styles.primaryText}>{message.senderName}</Text>
+                <KolamStatusBadge
+                  intent={
+                    message.senderType === 'staff' ? 'info' : 'secondary'
+                  }
+                  label={message.senderType === 'staff' ? 'Staff' : 'Klien'}
+                />
+              </View>
+              <Text style={styles.metaText}>
+                {formatDateTime(message.createdAt)}
+              </Text>
+              <Text style={styles.summaryValue}>{message.message}</Text>
+            </View>
+          ))
+        )}
+        <FieldShell label="Pesan baru">
+          <KolamFormTextField
+            multiline
+            onChangeText={controller.onChangeDiscussionDraft}
+            placeholder="Tulis pesan…"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+            ]}
+            value={controller.discussionDraft}
+          />
+        </FieldShell>
+        <KolamButton
+          disabled={controller.saving || !controller.discussionDraft.trim()}
+          intent="primary"
+          label="Kirim pesan"
+          onPress={() => {
+            void controller.onSendDiscussion();
+          }}
+        />
+      </FormSection>
+    </>
+  );
+}
+
+function VoucherExecutionHistorySection({
+  controller,
+  onRouteChange,
+  voucherId,
+}: {
+  controller: KolamLayananVoucherController;
+  onRouteChange?: (route: string) => void;
+  voucherId: string;
+}) {
+  const task = controller.task;
+  const completed =
+    task?.executions.filter(
+      item =>
+        item.status === 'completed' ||
+        item.status === 'skipped' ||
+        item.status === 'missed',
+    ) ?? [];
+
+  return (
+    <FormSection title="Riwayat eksekusi">
+      {!task ? (
+        <Text style={styles.metaText}>
+          {controller.taskLoading
+            ? 'Memuat riwayat…'
+            : 'Belum ada riwayat eksekusi.'}
+        </Text>
+      ) : completed.length === 0 ? (
+        <Text style={styles.metaText}>Belum ada riwayat eksekusi.</Text>
+      ) : (
+        completed.map(execution => {
+          const canReview = canKolamLayananSupervisorReview(execution);
+          const rejecting = controller.rejectExecutionId === execution.id;
+          return (
+            <View key={execution.id} style={styles.auditRow}>
+              <View style={styles.stripRow}>
+                <Text style={styles.monoText}>
+                  #{execution.id.slice(-6)}
+                </Text>
+                <KolamStatusBadge
+                  intent="secondary"
+                  label={getKolamLayananExecutionStatusLabel(execution.status)}
+                />
+                {execution.reviewStatus ? (
+                  <KolamStatusBadge
+                    intent={
+                      execution.reviewStatus === 'accepted'
+                        ? 'success'
+                        : execution.reviewStatus === 'rejected'
+                          ? 'danger'
+                          : 'warning'
+                    }
+                    label={getKolamLayananReviewStatusLabel(
+                      execution.reviewStatus,
+                    )}
+                  />
+                ) : null}
+              </View>
+              <Text style={styles.metaText}>
+                Jadwal: {formatDateTime(execution.scheduledTime)}
+              </Text>
+              <Text style={styles.metaText}>
+                Selesai: {formatDateTime(execution.executionTime)}
+              </Text>
+              <Pressable
+                accessibilityRole="link"
+                onPress={() =>
+                  onRouteChange?.(
+                    `${KOLAM_LAYANAN_ROOT}/voucher/${voucherId}/execution/${execution.id}`,
+                  )
+                }
+              >
+                <Text style={styles.linkText}>Detail</Text>
+              </Pressable>
+              {canReview ? (
+                <View style={styles.actionRow}>
+                  <KolamButton
+                    disabled={controller.saving}
+                    intent="primary"
+                    label="Terima"
+                    onPress={() => {
+                      void controller.onAcceptExecutionReview(execution.id);
+                    }}
+                  />
+                  <KolamButton
+                    disabled={controller.saving}
+                    label="Tolak"
+                    onPress={() =>
+                      controller.onOpenRejectExecution(execution.id)
+                    }
+                  />
+                </View>
+              ) : null}
+              {rejecting ? (
+                <View style={styles.infoBox}>
+                  <FieldShell label="Alasan penolakan">
+                    <KolamFormTextField
+                      multiline
+                      onChangeText={controller.onChangeRejectReason}
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                      ]}
+                      value={controller.rejectReason}
+                    />
+                  </FieldShell>
+                  <KolamDropdownSelect
+                    label="Keputusan"
+                    onChange={value =>
+                      controller.onChangeRejectDecision(
+                        value as KolamLayananRejectionDecision,
+                      )
+                    }
+                    options={KOLAM_LAYANAN_REJECTION_DECISION_OPTIONS.map(
+                      option => ({
+                        label: option.label,
+                        value: option.id,
+                      }),
+                    )}
+                    value={controller.rejectDecision}
+                  />
+                  <View style={styles.actionRow}>
+                    <KolamButton
+                      disabled={controller.saving}
+                      intent="primary"
+                      label="Simpan penolakan"
+                      onPress={() => {
+                        void controller.onConfirmRejectExecution();
+                      }}
+                    />
+                    <KolamButton
+                      label="Batal"
+                      onPress={controller.onCancelRejectExecution}
+                    />
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          );
+        })
+      )}
+    </FormSection>
   );
 }
 

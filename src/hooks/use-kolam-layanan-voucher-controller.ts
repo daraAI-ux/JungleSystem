@@ -16,11 +16,13 @@ import {
   type KolamLayananScheduleRequirements,
   type KolamLayananSubscriptionDetail,
   type KolamLayananSubscriptionSpawnVisitsResult,
+  type KolamLayananTaskDetail,
   type KolamLayananTermsContext,
   type KolamLayananVisitSlot,
   type KolamLayananVoucherAuditEntry,
   type KolamLayananVoucherDetail,
   type KolamLayananVoucherMaterialLine,
+  type KolamLayananRejectionDecision,
 } from '../domain/kolam-layanan';
 import type { KolamEnclosureStaffRef } from '../domain/kolam-enclosure';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
@@ -33,12 +35,15 @@ import {
   fulfillKolamLayananVoucherAddonStock,
   getKolamLayananCustomerEnclosures,
   getKolamLayananSubscription,
+  getKolamLayananTaskDetail,
   getKolamLayananVoucher,
   getKolamLayananVoucherAudit,
   getKolamLayananVoucherScheduleRequirements,
   getKolamLayananVoucherTerms,
   proposeKolamLayananVoucherSchedule,
   rejectKolamLayananVoucherSchedule,
+  sendKolamLayananTaskMessage,
+  setKolamLayananExecutionReview,
   setKolamLayananVoucherProductComponents,
   setKolamLayananVoucherPurchaseContract,
   spawnKolamLayananSubscriptionVisits,
@@ -71,6 +76,12 @@ export interface KolamLayananVoucherController {
   staffOptions: KolamEnclosureStaffRef[];
   subscription: KolamLayananSubscriptionDetail | null;
   syncingSubscription: boolean;
+  task: KolamLayananTaskDetail | null;
+  taskLoading: boolean;
+  discussionDraft: string;
+  rejectDecision: KolamLayananRejectionDecision;
+  rejectExecutionId: string | null;
+  rejectReason: string;
   terms: KolamLayananTermsContext | null;
   termsAgreed: boolean;
   transportDraft: string;
@@ -105,6 +116,14 @@ export interface KolamLayananVoucherController {
   onSpawnVisits: () => Promise<boolean>;
   onStaffInitiate: () => Promise<boolean>;
   onSyncSubscription: () => Promise<boolean>;
+  onSendDiscussion: () => Promise<boolean>;
+  onChangeDiscussionDraft: (value: string) => void;
+  onAcceptExecutionReview: (executionId: string) => Promise<boolean>;
+  onOpenRejectExecution: (executionId: string) => void;
+  onCancelRejectExecution: () => void;
+  onChangeRejectReason: (value: string) => void;
+  onChangeRejectDecision: (value: KolamLayananRejectionDecision) => void;
+  onConfirmRejectExecution: () => Promise<boolean>;
 }
 
 export function useKolamLayananVoucherController(
@@ -153,6 +172,15 @@ export function useKolamLayananVoucherController(
   const [auditSource, setAuditSource] = useState<
     'immutable' | 'empty' | 'legacy'
   >('empty');
+  const [task, setTask] = useState<KolamLayananTaskDetail | null>(null);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [discussionDraft, setDiscussionDraft] = useState('');
+  const [rejectExecutionId, setRejectExecutionId] = useState<string | null>(
+    null,
+  );
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectDecision, setRejectDecision] =
+    useState<KolamLayananRejectionDecision>('rework');
   const [picId, setPicId] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [staffOptions, setStaffOptions] = useState<KolamEnclosureStaffRef[]>(
@@ -235,6 +263,33 @@ export function useKolamLayananVoucherController(
         setAuditSource('empty');
       }
       setActivateEnclosureId('');
+
+      if (live.initiated) {
+        const taskId =
+          live.initiatedDosingId || live.initiatedMaintenanceId;
+        const taskType: 'dosing' | 'maintenance' =
+          live.taskType === 'maintenance' ||
+          (!live.initiatedDosingId && Boolean(live.initiatedMaintenanceId))
+            ? 'maintenance'
+            : 'dosing';
+        if (taskId) {
+          setTaskLoading(true);
+          try {
+            const liveTask = await getKolamLayananTaskDetail(taskType, taskId);
+            setTask(liveTask);
+          } catch {
+            setTask(null);
+          } finally {
+            setTaskLoading(false);
+          }
+        } else {
+          setTask(null);
+          setTaskLoading(false);
+        }
+      } else {
+        setTask(null);
+        setTaskLoading(false);
+      }
 
       if (scheduleLive) {
         const visits = scheduleLive.visitsPerWeek ?? 1;
@@ -562,6 +617,111 @@ export function useKolamLayananVoucherController(
     ]);
   }, []);
 
+
+  const onSendDiscussion = useCallback(async () => {
+    if (!task) {
+      setError('Data tugas tidak ditemukan untuk voucher ini.');
+      return false;
+    }
+    const message = discussionDraft.trim();
+    if (!message) {
+      setError('Tulis pesan diskusi terlebih dahulu.');
+      return false;
+    }
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await sendKolamLayananTaskMessage({
+        taskType: task.taskType,
+        taskId: task.id,
+        message,
+      });
+      setDiscussionDraft('');
+      setNotice('Pesan terkirim');
+      await refresh();
+      return true;
+    } catch (sendError) {
+      setError(getErrorMessage(sendError));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [discussionDraft, refresh, task]);
+
+  const onAcceptExecutionReview = useCallback(
+    async (executionId: string) => {
+      if (!task) {
+        return false;
+      }
+      setSaving(true);
+      setError(null);
+      setNotice(null);
+      try {
+        await setKolamLayananExecutionReview({
+          taskType: task.taskType,
+          taskId: task.id,
+          executionId,
+          reviewStatus: 'accepted',
+        });
+        setNotice('Hasil diterima');
+        await refresh();
+        return true;
+      } catch (reviewError) {
+        setError(getErrorMessage(reviewError));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refresh, task],
+  );
+
+  const onOpenRejectExecution = useCallback((executionId: string) => {
+    setRejectExecutionId(executionId);
+    setRejectReason('');
+    setRejectDecision('rework');
+  }, []);
+
+  const onCancelRejectExecution = useCallback(() => {
+    setRejectExecutionId(null);
+    setRejectReason('');
+    setRejectDecision('rework');
+  }, []);
+
+  const onConfirmRejectExecution = useCallback(async () => {
+    if (!task || !rejectExecutionId) {
+      return false;
+    }
+    if (!rejectReason.trim()) {
+      setError('Isi alasan penolakan.');
+      return false;
+    }
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await setKolamLayananExecutionReview({
+        taskType: task.taskType,
+        taskId: task.id,
+        executionId: rejectExecutionId,
+        reviewStatus: 'rejected',
+        rejectionReason: rejectReason.trim(),
+        rejectionDecision: rejectDecision,
+      });
+      setRejectExecutionId(null);
+      setRejectReason('');
+      setNotice('Tinjauan ditolak');
+      await refresh();
+      return true;
+    } catch (reviewError) {
+      setError(getErrorMessage(reviewError));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [refresh, rejectDecision, rejectExecutionId, rejectReason, task]);
+
   const onRemoveMaterialLine = useCallback((key: string) => {
     setMaterialLines(current => current.filter(line => line.key !== key));
   }, []);
@@ -574,18 +734,24 @@ export function useKolamLayananVoucherController(
       canMutateSale,
       canViewSale,
       contractDraft,
+      discussionDraft,
       enclosureOptions,
       error,
       loading,
       materialLines,
       notice,
       picId,
+      rejectDecision,
+      rejectExecutionId,
+      rejectReason,
       saving,
       schedule,
       scheduleDraftSlots,
       staffOptions,
       subscription,
       syncingSubscription,
+      task,
+      taskLoading,
       terms,
       termsAgreed,
       transportDraft,
@@ -612,6 +778,14 @@ export function useKolamLayananVoucherController(
       onSpawnVisits,
       onStaffInitiate,
       onSyncSubscription,
+      onSendDiscussion,
+      onChangeDiscussionDraft: setDiscussionDraft,
+      onAcceptExecutionReview,
+      onOpenRejectExecution,
+      onCancelRejectExecution,
+      onChangeRejectReason: setRejectReason,
+      onChangeRejectDecision: setRejectDecision,
+      onConfirmRejectExecution,
     }),
     [
       activateEnclosureId,
@@ -642,14 +816,25 @@ export function useKolamLayananVoucherController(
       onSpawnVisits,
       onStaffInitiate,
       onSyncSubscription,
+      onSendDiscussion,
+      onAcceptExecutionReview,
+      onOpenRejectExecution,
+      onCancelRejectExecution,
+      onConfirmRejectExecution,
       picId,
       refresh,
+      rejectDecision,
+      rejectExecutionId,
+      rejectReason,
       saving,
       schedule,
       scheduleDraftSlots,
       staffOptions,
       subscription,
       syncingSubscription,
+      task,
+      taskLoading,
+      discussionDraft,
       terms,
       termsAgreed,
       transportDraft,

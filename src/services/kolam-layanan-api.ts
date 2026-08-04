@@ -443,6 +443,23 @@ export async function getKolamLayananTaskDetail(
   return normalizeKolamLayananTaskDetail(payload, taskType);
 }
 
+export async function sendKolamLayananTaskMessage(params: {
+  taskType: 'dosing' | 'maintenance';
+  taskId: string;
+  message: string;
+}): Promise<void> {
+  const body = new FormData();
+  body.append('message', params.message.trim());
+  body.append('senderType', 'staff');
+  await kolamRequest<unknown>(
+    `${taskBasePath(params.taskType)}/${encodeURIComponent(params.taskId)}/messages`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+}
+
 export async function setKolamLayananExecutionReview(params: {
   taskType: 'dosing' | 'maintenance';
   taskId: string;
