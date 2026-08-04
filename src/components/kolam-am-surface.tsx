@@ -421,7 +421,6 @@ function AmDashboardPage({
   onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
 }) {
   const [data, setData] = React.useState<AmDashboardData | null>(dashboard ?? null);
-  const [currentUser, setCurrentUser] = React.useState<AmCurrentUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(!dashboard);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -444,14 +443,6 @@ function AmDashboardPage({
 
   React.useEffect(() => {
     let mounted = true;
-
-    getAmCurrentUser()
-      .then(user => {
-        if (mounted) {
-          setCurrentUser(user);
-        }
-      })
-      .catch(() => undefined);
 
     const load = async () => {
       try {
@@ -478,8 +469,6 @@ function AmDashboardPage({
     };
   }, []);
 
-  const displayName = currentUser?.fullName ?? currentUser?.username ?? 'User';
-
   const openAmRoute = React.useCallback((route: string, templateRoute = route) => {
     const entry = getConcreteAmRouteEntry(route, templateRoute);
     if (entry) {
@@ -502,7 +491,6 @@ function AmDashboardPage({
 
   return (
     <View style={styles.pageStack}>
-      <Text style={styles.panelText}>Welcome back, {displayName}</Text>
       <View style={styles.actionRow}>
         <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
         <KolamButton

@@ -414,8 +414,7 @@ describe('KolamAmSurface', () => {
     const joinedText = text.join(' ');
 
     expect(text).toContain('Kembali');
-    expect(joinedText.replace(/\s+/g, ' ')).toContain('Welcome back, Current AM User');
-    expect(joinedText).not.toContain('Welcome back, User');
+    expect(joinedText).not.toContain('Welcome back');
     expect(text).toContain("Today's Incoming");
     expect(text).toContain("Today's Outgoing");
     expect(text).toContain("Today's Transfers");
@@ -3277,7 +3276,7 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: undefined,
     });
-    expect(getAmCurrentUser).toHaveBeenCalledTimes(3);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
   });
 
   it('renders activity log stats, detail, filters, and pagination from live metadata', async () => {
