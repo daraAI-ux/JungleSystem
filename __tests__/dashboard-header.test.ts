@@ -115,12 +115,30 @@ describe('dashboard header copy', () => {
       getDashboardHeaderRouteContext({ activeAmSurface: taskSurface }),
     ).toEqual(
       expect.objectContaining({
-        eyebrow: 'AM Surface',
-        route: 'am-fe/(dashboard)/tasks / am-be/routes/task',
-        subtitle: '',
+        route: taskSurface.route,
+        subtitle: taskSurface.description,
         title: 'Tasks',
       }),
     );
+    expect(
+      getDashboardHeaderRouteContext({ activeAmSurface: taskSurface })?.eyebrow,
+    ).toBeUndefined();
+  });
+
+  it('uses AM surface copy without technical eyebrow labels', () => {
+    const taskSurface = amSurfaces.find(surface => surface.id === 'tasks');
+
+    if (!taskSurface) {
+      throw new Error('AM task surface fixture is missing.');
+    }
+
+    expect(
+      getDashboardHeaderRouteContext({ activeAmSurface: taskSurface }),
+    ).toEqual({
+      route: taskSurface.route,
+      title: 'Tasks',
+      subtitle: taskSurface.description,
+    });
   });
 
   it('uses AM navigation copy for AM module route headers', () => {

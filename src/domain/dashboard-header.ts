@@ -253,10 +253,9 @@ export function getDashboardHeaderRouteContext({
 
   if (activeAmSurface) {
     return {
-      eyebrow: 'AM Surface',
       route: activeAmSurface.route,
       title: activeAmSurface.label,
-      subtitle: '',
+      subtitle: activeAmSurface.description,
     };
   }
 
