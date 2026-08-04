@@ -8,9 +8,12 @@ import {
   formatKolamDaraMarketIntelIdr,
   formatKolamDaraMarketIntelTaxSource,
   getKolamDaraMarketIntelTab,
+  groupKolamDaraMarketIntelCompetitors,
   isKolamDaraMarketIntelApprovable,
+  isKolamDaraMarketIntelMongoObjectId,
   isKolamDaraMarketIntelRoute,
   normalizeKolamDaraMarketIntelBrands,
+  normalizeKolamDaraMarketIntelCompetitorLinks,
   normalizeKolamDaraMarketIntelDashboard,
   normalizeKolamDaraMarketIntelRecommendations,
   normalizeKolamDaraMarketIntelStatus,
@@ -253,5 +256,53 @@ describe('kolam-dara-market-intel domain', () => {
     });
     expect(lines.some(line => line.label === 'Harga ideal')).toBe(true);
     expect(lines.some(line => line.label === 'Margin')).toBe(true);
+  });
+
+  it('normalizes competitor links and groups by name', () => {
+    expect(isKolamDaraMarketIntelMongoObjectId('507f1f77bcf86cd799439011')).toBe(
+      true,
+    );
+    const links = normalizeKolamDaraMarketIntelCompetitorLinks({
+      data: [
+        {
+          _id: 'l1',
+          competitorName: 'Toko X',
+          platform: 'tokopedia',
+          productId: {_id: 'p1', name: 'Filter'},
+          lastFetchedPrice: 120000,
+          monitor: {ourPrice: 100000, priceDeltaPct: 20, minSafePrice: 90000},
+        },
+        {
+          _id: 'l2',
+          competitorName: 'Toko X',
+          platform: 'shopee',
+          productId: {_id: 'p1', name: 'Filter'},
+        },
+        {
+          _id: 'l3',
+          competitorName: 'Toko Y',
+          platform: 'website',
+          productId: {_id: 'p2', name: 'Pompa'},
+        },
+      ],
+    });
+    expect(links).toHaveLength(3);
+    const groups = groupKolamDaraMarketIntelCompetitors(links);
+    expect(groups).toEqual([
+      {
+        name: 'Toko X',
+        itemCount: 1,
+        tokopedia: true,
+        shopee: true,
+        website: false,
+      },
+      {
+        name: 'Toko Y',
+        itemCount: 1,
+        tokopedia: false,
+        shopee: false,
+        website: true,
+      },
+    ]);
   });
 });

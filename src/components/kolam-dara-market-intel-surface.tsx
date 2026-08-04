@@ -17,9 +17,11 @@ import {
 } from '../domain/kolam-pusat-ai-jobs';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamDaraMarketIntelApprovalsController} from '../hooks/use-kolam-dara-market-intel-approvals-controller';
+import {useKolamDaraMarketIntelCompetitorsController} from '../hooks/use-kolam-dara-market-intel-competitors-controller';
 import {useKolamDaraMarketIntelDashboardController} from '../hooks/use-kolam-dara-market-intel-dashboard-controller';
 import {useKolamDaraMarketIntelJobsProgress} from '../hooks/use-kolam-dara-market-intel-jobs-progress';
 import {KolamDaraMarketIntelApprovalsBody} from './kolam-dara-market-intel-approvals-body';
+import {KolamDaraMarketIntelCompetitorsBody} from './kolam-dara-market-intel-competitors-body';
 import {KolamDaraMarketIntelDashboardBody} from './kolam-dara-market-intel-dashboard-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
@@ -44,6 +46,9 @@ export function KolamDaraMarketIntelSurface({
   const approvalsController = useKolamDaraMarketIntelApprovalsController(
     access.canSee ? route : '',
     access.canViewMargin,
+  );
+  const competitorsController = useKolamDaraMarketIntelCompetitorsController(
+    access.canSee ? route : '',
   );
   const jobsProgress = useKolamDaraMarketIntelJobsProgress(
     access.canSee ? route : '',
@@ -108,6 +113,11 @@ export function KolamDaraMarketIntelSurface({
           canApprove={access.canApprove}
           canViewMargin={access.canViewMargin}
           controller={approvalsController}
+        />
+      ) : selectedTab === 'competitors' ? (
+        <KolamDaraMarketIntelCompetitorsBody
+          canDraft={access.canDraft}
+          controller={competitorsController}
         />
       ) : (
         <KolamDaraMarketIntelPlaceholderTab tabId={selectedTab} />

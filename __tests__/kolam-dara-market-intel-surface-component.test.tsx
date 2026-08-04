@@ -6,6 +6,7 @@ import {
   approveKolamDaraMarketIntelRecommendation,
   bulkApproveKolamDaraMarketIntelRecommendations,
   fetchKolamDaraMarketIntelActiveBrands,
+  fetchKolamDaraMarketIntelCompetitorLinks,
   fetchKolamDaraMarketIntelDashboard,
   fetchKolamDaraMarketIntelRecommendations,
   fetchKolamDaraMarketIntelStatus,
@@ -15,6 +16,7 @@ import {
   fetchKolamDaraJobsList,
   startKolamDaraJob,
 } from '../src/services/kolam-dara-jobs-api';
+import {getKolamProducts} from '../src/services/kolam-product-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
@@ -29,6 +31,16 @@ jest.mock('../src/services/kolam-dara-market-intel-api', () => ({
   approveKolamDaraMarketIntelRecommendation: jest.fn(),
   rejectKolamDaraMarketIntelRecommendation: jest.fn(),
   bulkApproveKolamDaraMarketIntelRecommendations: jest.fn(),
+  fetchKolamDaraMarketIntelCompetitorLinks: jest.fn(),
+  fetchKolamDaraMarketIntelCompetitorBaseline: jest.fn(),
+  saveKolamDaraMarketIntelCompetitorLink: jest.fn(),
+  deleteKolamDaraMarketIntelCompetitorLink: jest.fn(),
+  fetchKolamDaraMarketIntelCompetitorLinkPrice: jest.fn(),
+  sendKolamDaraMarketIntelCompetitorReport: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-product-api', () => ({
+  getKolamProducts: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-dara-jobs-api', () => ({
@@ -51,6 +63,12 @@ const dashMock = fetchKolamDaraMarketIntelDashboard as jest.MockedFunction<
 >;
 const recsMock = fetchKolamDaraMarketIntelRecommendations as jest.MockedFunction<
   typeof fetchKolamDaraMarketIntelRecommendations
+>;
+const linksMock = fetchKolamDaraMarketIntelCompetitorLinks as jest.MockedFunction<
+  typeof fetchKolamDaraMarketIntelCompetitorLinks
+>;
+const productsMock = getKolamProducts as jest.MockedFunction<
+  typeof getKolamProducts
 >;
 const jobsListMock = fetchKolamDaraJobsList as jest.MockedFunction<
   typeof fetchKolamDaraJobsList
@@ -77,6 +95,35 @@ describe('KolamDaraMarketIntelSurface', () => {
       defaultBrandId: 'all',
     });
     jobsListMock.mockResolvedValue([]);
+    linksMock.mockResolvedValue([
+      {
+        id: 'l1',
+        competitorName: 'Toko X',
+        platform: 'tokopedia',
+        listingUrl: 'https://tokopedia.test/x',
+        websiteUrl: '',
+        compareWith: 'marketplace',
+        lastIngestedAt: '',
+        lastFetchStatus: 'ok',
+        lastFetchError: '',
+        lastFetchedPrice: 120000,
+        active: true,
+        product: {id: 'p1', name: 'Filter', sku: 'F1'},
+        latestSnapshotPrice: null,
+        monitor: {
+          ourPrice: 100000,
+          hpp: 50000,
+          minSafePrice: 90000,
+          suggestedPrice: null,
+          priceDelta: 20000,
+          priceDeltaPct: 20,
+        },
+      },
+    ]);
+    productsMock.mockResolvedValue({
+      data: [],
+      pagination: {page: 1, limit: 250, total: 0, totalPages: 0},
+    });
     dashMock.mockResolvedValue({
       pendingApprovals: 2,
       tooCheap: [
@@ -193,20 +240,44 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
   });
 
-  it('shows placeholder on unimplemented tabs', async () => {
+  it('renders competitors list from links API', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
         <KolamDaraMarketIntelSurface route="/campaign/dara-market-intel/competitors" />,
       );
       await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Toko X');
+    expect(text).toContain('Daftar kompetitor');
+    expect(text).toContain('+ Add kompetitor');
+    expect(text).toContain('Laporkan DARA');
+    expect(linksMock).toHaveBeenCalledWith({brandId: 'all', enriched: true});
+    expect(dashMock).not.toHaveBeenCalled();
+    expect(recsMock).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('shows placeholder on unimplemented tabs', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraMarketIntelSurface route="/campaign/dara-market-intel/kesehatan" />,
+      );
+      await Promise.resolve();
     });
 
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Belum tersedia');
-    expect(text).toContain('Kompetitor');
+    expect(text).toContain('Kesehatan Toko');
     expect(dashMock).not.toHaveBeenCalled();
     expect(recsMock).not.toHaveBeenCalled();
+    expect(linksMock).not.toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

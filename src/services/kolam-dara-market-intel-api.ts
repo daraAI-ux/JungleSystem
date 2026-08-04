@@ -2,12 +2,18 @@ import {appConfig} from '../config/app';
 import {
   normalizeKolamDaraMarketIntelBrands,
   normalizeKolamDaraMarketIntelBulkActionResults,
+  normalizeKolamDaraMarketIntelCompetitorBaseline,
+  normalizeKolamDaraMarketIntelCompetitorFetchResult,
+  normalizeKolamDaraMarketIntelCompetitorLinks,
   normalizeKolamDaraMarketIntelDashboard,
   normalizeKolamDaraMarketIntelRecommendation,
   normalizeKolamDaraMarketIntelRecommendations,
   normalizeKolamDaraMarketIntelStatus,
   type KolamDaraMarketIntelBrand,
   type KolamDaraMarketIntelBulkActionResult,
+  type KolamDaraMarketIntelCompetitorBaseline,
+  type KolamDaraMarketIntelCompetitorFetchResult,
+  type KolamDaraMarketIntelCompetitorLink,
   type KolamDaraMarketIntelDashboard,
   type KolamDaraMarketIntelRecommendation,
   type KolamDaraMarketIntelStatus,
@@ -131,6 +137,94 @@ export async function bulkApproveKolamDaraMarketIntelRecommendations(
     },
   );
   return normalizeKolamDaraMarketIntelBulkActionResults(payload);
+}
+
+/** GET /dara-market-intel/competitors/links — FE `fetchCompetitorLinks`. */
+export async function fetchKolamDaraMarketIntelCompetitorLinks(params?: {
+  productId?: string;
+  competitorName?: string;
+  brandId?: string;
+  enriched?: boolean;
+}): Promise<KolamDaraMarketIntelCompetitorLink[]> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-market-intel/competitors/links',
+    {
+      query: {
+        ...(params?.productId ? {productId: params.productId} : {}),
+        ...(params?.competitorName
+          ? {competitorName: params.competitorName}
+          : {}),
+        ...(params?.brandId && params.brandId !== 'all'
+          ? {brandId: params.brandId}
+          : {}),
+        ...(params?.enriched === false ? {} : {enriched: '1'}),
+      },
+    },
+  );
+  return normalizeKolamDaraMarketIntelCompetitorLinks(payload);
+}
+
+/** GET /dara-market-intel/competitors/product-baseline */
+export async function fetchKolamDaraMarketIntelCompetitorBaseline(
+  productId: string,
+): Promise<KolamDaraMarketIntelCompetitorBaseline> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-market-intel/competitors/product-baseline',
+    {query: {productId}},
+  );
+  const baseline = normalizeKolamDaraMarketIntelCompetitorBaseline(payload);
+  if (!baseline) {
+    throw new Error('Baseline produk kosong');
+  }
+  return baseline;
+}
+
+/** POST /dara-market-intel/competitors/links — FE `saveCompetitorLink`. */
+export async function saveKolamDaraMarketIntelCompetitorLink(body: {
+  productId: string;
+  competitorName: string;
+  platform?: string;
+  listingUrl?: string;
+  websiteUrl?: string;
+  compareWith?: 'website' | 'marketplace';
+  ingestIntervalDays?: number;
+}) {
+  await kolamRequest('/dara-market-intel/competitors/links', {
+    method: 'POST',
+    body,
+  });
+}
+
+/** DELETE /dara-market-intel/competitors/links/:id */
+export async function deleteKolamDaraMarketIntelCompetitorLink(id: string) {
+  await kolamRequest(
+    `/dara-market-intel/competitors/links/${encodeURIComponent(id)}`,
+    {method: 'DELETE'},
+  );
+}
+
+/**
+ * POST /dara-market-intel/competitors/links/:id/fetch
+ * Long-running — caller must keep busy state per-row (FE 90s timeout).
+ */
+export async function fetchKolamDaraMarketIntelCompetitorLinkPrice(
+  linkId: string,
+): Promise<KolamDaraMarketIntelCompetitorFetchResult> {
+  const payload = await kolamRequest<unknown>(
+    `/dara-market-intel/competitors/links/${encodeURIComponent(linkId)}/fetch`,
+    {method: 'POST', body: {}},
+  );
+  return normalizeKolamDaraMarketIntelCompetitorFetchResult(payload);
+}
+
+/** POST /dara-market-intel/competitors/report */
+export async function sendKolamDaraMarketIntelCompetitorReport(
+  brandId?: string,
+) {
+  await kolamRequest('/dara-market-intel/competitors/report', {
+    method: 'POST',
+    body: brandId && brandId !== 'all' ? {brandId} : {},
+  });
 }
 
 function kolamRequest<T>(

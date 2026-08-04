@@ -874,3 +874,300 @@ function normalizeSpeciesRef(
     'Species';
   return {id, name};
 }
+
+export type KolamDaraMarketIntelCompetitorChannelId =
+  | 'website'
+  | 'tokopedia'
+  | 'shopee';
+
+export const KOLAM_DARA_MARKET_INTEL_COMPETITOR_CHANNELS: Array<{
+  id: KolamDaraMarketIntelCompetitorChannelId;
+  label: string;
+  platform: string;
+  compareWith: 'website' | 'marketplace';
+}> = [
+  {
+    id: 'website',
+    label: 'Website',
+    platform: 'website',
+    compareWith: 'website',
+  },
+  {
+    id: 'tokopedia',
+    label: 'Tokopedia',
+    platform: 'tokopedia',
+    compareWith: 'marketplace',
+  },
+  {
+    id: 'shopee',
+    label: 'Shopee',
+    platform: 'shopee',
+    compareWith: 'marketplace',
+  },
+];
+
+export type KolamDaraMarketIntelCompetitorLinkMonitor = {
+  ourPrice: number | null;
+  hpp: number | null;
+  minSafePrice: number | null;
+  suggestedPrice: number | null;
+  priceDelta: number | null;
+  priceDeltaPct: number | null;
+};
+
+export type KolamDaraMarketIntelCompetitorLink = {
+  id: string;
+  competitorName: string;
+  platform: string;
+  listingUrl: string;
+  websiteUrl: string;
+  compareWith: string;
+  lastIngestedAt: string;
+  lastFetchStatus: string;
+  lastFetchError: string;
+  lastFetchedPrice: number | null;
+  active: boolean;
+  product: KolamDaraMarketIntelEntityRef | null;
+  latestSnapshotPrice: number | null;
+  monitor: KolamDaraMarketIntelCompetitorLinkMonitor | null;
+};
+
+export type KolamDaraMarketIntelCompetitorGroup = {
+  name: string;
+  itemCount: number;
+  tokopedia: boolean;
+  shopee: boolean;
+  website: boolean;
+};
+
+export type KolamDaraMarketIntelCompetitorBaseline = {
+  webPrice: number;
+  onlinePrice: number;
+  hpp: number;
+};
+
+export type KolamDaraMarketIntelCompetitorFetchResult = {
+  ok: boolean;
+  price: number | null;
+  error: string;
+};
+
+/** FE `isMongoObjectId`. */
+export function isKolamDaraMarketIntelMongoObjectId(value: string) {
+  return /^[a-f\d]{24}$/i.test(String(value || '').trim());
+}
+
+/** FE `matchProductDigitFilter`. */
+export function matchKolamDaraMarketIntelProductDigitFilter(
+  sku: string,
+  name: string,
+  digits: string,
+) {
+  const filter = String(digits || '').replace(/\D/g, '');
+  if (!filter) {
+    return true;
+  }
+  const hay = `${sku || ''} ${name || ''}`;
+  try {
+    const pattern = filter
+      .split('')
+      .map(digit => `${digit}[\\w-]*`)
+      .join('');
+    return new RegExp(pattern, 'i').test(hay);
+  } catch {
+    return hay.includes(filter);
+  }
+}
+
+export function formatKolamDaraMarketIntelCompetitorPlatform(platform: string) {
+  if (platform === 'website') {
+    return 'Website';
+  }
+  if (platform === 'tokopedia') {
+    return 'Tokopedia';
+  }
+  if (platform === 'shopee') {
+    return 'Shopee';
+  }
+  return platform || '—';
+}
+
+export function formatKolamDaraMarketIntelCompetitorFetchStatus(status: string) {
+  if (status === 'ok') {
+    return 'OK';
+  }
+  if (status === 'failed') {
+    return 'Gagal';
+  }
+  if (status === 'skipped') {
+    return 'Skip';
+  }
+  return '—';
+}
+
+export function formatKolamDaraMarketIntelCompetitorFetchTime(
+  iso?: string | null,
+) {
+  if (!iso) {
+    return '—';
+  }
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function resolveKolamDaraMarketIntelCompetitorPrice(
+  link: Pick<
+    KolamDaraMarketIntelCompetitorLink,
+    'lastFetchedPrice' | 'latestSnapshotPrice'
+  >,
+) {
+  if (link.lastFetchedPrice != null && link.lastFetchedPrice > 0) {
+    return link.lastFetchedPrice;
+  }
+  return link.latestSnapshotPrice;
+}
+
+/** FE `groupCompetitors`. */
+export function groupKolamDaraMarketIntelCompetitors(
+  links: KolamDaraMarketIntelCompetitorLink[],
+): KolamDaraMarketIntelCompetitorGroup[] {
+  const map = new Map<
+    string,
+    {products: Set<string>; platforms: Set<string>}
+  >();
+  for (const link of links) {
+    const name = link.competitorName.trim();
+    if (!name) {
+      continue;
+    }
+    if (!map.has(name)) {
+      map.set(name, {products: new Set(), platforms: new Set()});
+    }
+    const group = map.get(name)!;
+    const productId = link.product?.id || '';
+    if (productId) {
+      group.products.add(productId);
+    }
+    group.platforms.add(link.platform);
+  }
+  return [...map.entries()]
+    .map(([name, group]) => ({
+      name,
+      itemCount: group.products.size,
+      tokopedia: group.platforms.has('tokopedia'),
+      shopee: group.platforms.has('shopee'),
+      website: group.platforms.has('website'),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'id'));
+}
+
+export function normalizeKolamDaraMarketIntelCompetitorLinks(
+  payload: unknown,
+): KolamDaraMarketIntelCompetitorLink[] {
+  const root = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+      ? root.data
+      : Array.isArray(root.items)
+        ? root.items
+        : [];
+  return list
+    .map(normalizeKolamDaraMarketIntelCompetitorLink)
+    .filter(
+      (item): item is KolamDaraMarketIntelCompetitorLink => item != null,
+    );
+}
+
+export function normalizeKolamDaraMarketIntelCompetitorLink(
+  payload: unknown,
+): KolamDaraMarketIntelCompetitorLink | null {
+  const row = asRecord(payload);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  const monitorRaw = row.monitor;
+  const monitor =
+    monitorRaw && typeof monitorRaw === 'object' && !Array.isArray(monitorRaw)
+      ? asRecord(monitorRaw)
+      : null;
+  const snapshot = asRecord(row.latestSnapshot);
+  const snapshotPrice =
+    snapshot.price == null || snapshot.price === ''
+      ? null
+      : toFiniteNumber(snapshot.price);
+
+  return {
+    id,
+    competitorName: String(row.competitorName || '').trim(),
+    platform: String(row.platform || '').trim(),
+    listingUrl: String(row.listingUrl || '').trim(),
+    websiteUrl: String(row.websiteUrl || '').trim(),
+    compareWith: String(row.compareWith || '').trim(),
+    lastIngestedAt: String(row.lastIngestedAt || '').trim(),
+    lastFetchStatus: String(row.lastFetchStatus || '').trim(),
+    lastFetchError: String(row.lastFetchError || '').trim(),
+    lastFetchedPrice:
+      row.lastFetchedPrice == null || row.lastFetchedPrice === ''
+        ? null
+        : toFiniteNumber(row.lastFetchedPrice),
+    active: row.active !== false,
+    product: normalizeEntityRef(row.productId, 'name'),
+    latestSnapshotPrice: snapshotPrice,
+    monitor: monitor
+      ? {
+          ourPrice: nullableNumber(monitor.ourPrice),
+          hpp: nullableNumber(monitor.hpp),
+          minSafePrice: nullableNumber(monitor.minSafePrice),
+          suggestedPrice: nullableNumber(monitor.suggestedPrice),
+          priceDelta: nullableNumber(monitor.priceDelta),
+          priceDeltaPct: nullableNumber(monitor.priceDeltaPct),
+        }
+      : null,
+  };
+}
+
+export function normalizeKolamDaraMarketIntelCompetitorBaseline(
+  payload: unknown,
+): KolamDaraMarketIntelCompetitorBaseline | null {
+  const data = unwrapDataRecord(payload);
+  if (!Object.keys(data).length) {
+    return null;
+  }
+  return {
+    webPrice: toFiniteNumber(data.webPrice),
+    onlinePrice: toFiniteNumber(data.onlinePrice),
+    hpp: toFiniteNumber(data.hpp),
+  };
+}
+
+export function normalizeKolamDaraMarketIntelCompetitorFetchResult(
+  payload: unknown,
+): KolamDaraMarketIntelCompetitorFetchResult {
+  const data = unwrapDataRecord(payload);
+  return {
+    ok: data.ok === true,
+    price:
+      data.price == null || data.price === ''
+        ? null
+        : toFiniteNumber(data.price),
+    error: String(data.error || '').trim(),
+  };
+}
+
+function nullableNumber(value: unknown): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
