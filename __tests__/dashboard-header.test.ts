@@ -150,6 +150,26 @@ describe('dashboard header copy', () => {
     );
   });
 
+  it('re-resolves stale asset-purchase detail labels from the live catalog', () => {
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'Asset Purchases Detail',
+          route: '/asset-purchase/abc123',
+          description: 'Asset purchase detail page from live Kolam',
+          group: 'Pengeluaran & Pemasukan',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        title: 'Detail Pembelian Aset',
+        subtitle: 'Detail dan informasi pembelian aset',
+        route: '/asset-purchase/abc123',
+      }),
+    );
+  });
+
   it('builds route-aware page header context for native route surfaces', () => {
     const saleDraftRoute = getShellModuleRouteEntry('checkout', 'sale-draft');
     const teamChatRoute = getPluginRouteIndex(pluginRegistry).find(

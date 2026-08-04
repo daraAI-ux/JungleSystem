@@ -3,6 +3,7 @@ import { getShellModule, type AppModule } from './app-shell';
 import type { AccessScope } from './auth';
 import type { ShellModuleRouteEntry } from './app-shell';
 import {
+  getKolamNavigationItemByRuntimeRoute,
   getKolamNavigationSectionTitleForRoute,
   type KolamNavigationItem,
 } from './kolam-navigation';
@@ -272,14 +273,32 @@ export function getDashboardHeaderRouteContext({
   }
 
   if (activeNavigationItem && activeNavigationItem.route !== '/') {
+    const routePath =
+      activeNavigationItem.route.split('?')[0].replace(/\/+$/, '') || '/';
+    const isAssetPurchaseRoute =
+      routePath === '/asset-purchase' ||
+      routePath.startsWith('/asset-purchase/');
+    // Asset-purchase header copy is owned by the live catalog. Refresh it so
+    // Fast Refresh / tab snapshots cannot keep stale English labels.
+    const catalogItem = isAssetPurchaseRoute
+      ? getKolamNavigationItemByRuntimeRoute(activeNavigationItem.route)
+      : null;
+    const resolvedItem = catalogItem
+      ? {
+          ...activeNavigationItem,
+          label: catalogItem.label,
+          description: catalogItem.description,
+        }
+      : activeNavigationItem;
+
     return {
       eyebrow:
-        activeNavigationItem.group ??
-        getKolamNavigationSectionTitleForRoute(activeNavigationItem.route) ??
+        resolvedItem.group ??
+        getKolamNavigationSectionTitleForRoute(resolvedItem.route) ??
         undefined,
-      route: activeNavigationItem.route,
-      title: getDashboardRouteTitle(activeNavigationItem),
-      subtitle: activeNavigationItem.description ?? '',
+      route: resolvedItem.route,
+      title: getDashboardRouteTitle(resolvedItem),
+      subtitle: resolvedItem.description ?? '',
     };
   }
 

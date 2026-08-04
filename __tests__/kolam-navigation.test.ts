@@ -503,7 +503,9 @@ describe('kolamNavigationSections', () => {
         }),
         expect.objectContaining({
           baseRoute: '/asset-purchase',
+          label: 'Buat Pembelian Aset',
           route: '/asset-purchase/create',
+          description: 'Buat pembelian aset',
         }),
         expect.objectContaining({
           baseRoute: '/customers',
