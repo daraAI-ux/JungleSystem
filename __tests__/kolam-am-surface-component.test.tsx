@@ -512,15 +512,15 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 148 &&
-          style?.maxWidth === 180 &&
+        return style?.flexBasis === 132 &&
+          style?.maxWidth === '42%' &&
           style?.alignItems === 'flex-end';
       });
     expect(recentMetaColumns.length).toBeGreaterThan(0);
     expect(recentMetaColumns.every(view => {
       const style = StyleSheet.flatten(view.props.style);
       return style?.minWidth === 0 &&
-        style?.flexShrink === 0 &&
+        style?.flexShrink === 1 &&
         style?.overflow === 'hidden';
     })).toBe(true);
     const recentAmountTexts = renderer!.root
@@ -554,7 +554,7 @@ describe('KolamAmSurface', () => {
     expect(dashboardRecentRows.length).toBeGreaterThan(0);
     expect(dashboardRecentRows.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.alignItems === 'center' && style?.gap === 12;
+      return style?.alignItems === 'flex-start' && style?.gap === 12;
     })).toBe(true);
     const dashboardTableHeaders = renderer!.root
       .findAllByType(View)

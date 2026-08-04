@@ -493,7 +493,7 @@ function AmDashboardPage({
   }
 
   return (
-    <View style={styles.pageStack}>
+    <View style={[styles.pageStack, styles.dashboardPageStack]}>
       <View style={styles.actionRow}>
         <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
         <KolamButton
@@ -7016,6 +7016,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     gap: 16,
   },
+  dashboardPageStack: {
+    flexGrow: 1,
+    flexBasis: 'auto',
+  },
   actionRow: {
     width: '100%',
     alignSelf: 'stretch',
@@ -7038,6 +7042,7 @@ const styles = StyleSheet.create({
     flexBasis: 190,
     minWidth: 190,
     flexGrow: 1,
+    flexShrink: 1,
     borderWidth: 1,
     borderColor: V.colors.border,
     borderRadius: 8,
@@ -7089,6 +7094,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dashboardRecentPanel: {
+    width: '100%',
     alignSelf: 'stretch',
     flexBasis: 420,
     flexGrow: 1,
@@ -7116,7 +7122,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     minWidth: 0,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
     overflow: 'hidden',
@@ -7131,10 +7137,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   recentListMeta: {
-    flexBasis: 148,
-    flexShrink: 0,
+    flexBasis: 132,
+    flexShrink: 1,
     minWidth: 0,
-    maxWidth: 180,
+    maxWidth: '42%',
     alignSelf: 'stretch',
     alignItems: 'flex-end',
     gap: 4,
