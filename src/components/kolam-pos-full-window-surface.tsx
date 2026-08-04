@@ -22,16 +22,17 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import type {WorkflowStep} from '../lib/workflow';
 import type {CreateCustomerBody} from '../services/pos-api';
+import {KolamShellChromeContext} from '../context/kolam-app-contexts';
 import {KolamButton} from './kolam-button';
-import {KolamDashboardHeaderCopy} from './kolam-dashboard-header-copy';
-import {dashboardHeaderStyles} from './kolam-dashboard-header-styles';
-import {KolamHeaderFrame} from './kolam-header-frame';
+import {KolamDashboardHeader} from './kolam-dashboard-header';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamNavItem} from './kolam-nav-item';
+import {KolamOverlaySurface} from './kolam-overlay-surface';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamQuickSearch} from './kolam-quick-search';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSidebarBrand} from './kolam-sidebar-brand';
+import {KolamTopNavigation} from './kolam-top-navigation';
 
 export interface KolamPosFullWindowSurfaceProps {
   activeSession?: CashflowSession | null;
@@ -148,6 +149,7 @@ export function KolamPosFullWindowSurface({
   workflowSteps = [],
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
+  const shellChrome = React.useContext(KolamShellChromeContext);
   const categoryScrollRef = React.useRef<ScrollView>(null);
   const categoryScrollOffsetRef = React.useRef(0);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
@@ -288,6 +290,7 @@ export function KolamPosFullWindowSurface({
       <PosSidebar
         activeType={activeType}
         activeView={activeView}
+        onBackToCenter={onBackToCenter}
         onQuickSearch={handleSidebarQuickSearch}
         onSelectCashflow={() => setActiveView('cashflow')}
         onSelectCustomers={() => setActiveView('customers')}
@@ -301,24 +304,20 @@ export function KolamPosFullWindowSurface({
           onTypeChange('species');
         }}
       />
-      <View style={styles.catalogPane}>
-        <KolamHeaderFrame variant="dashboardHeader" style={styles.posHeader}>
-          <KolamDashboardHeaderCopy
-            eyebrow="POS"
-            title="POS"
-          />
-          <View style={dashboardHeaderStyles.headerControls}>
-            <KolamButton
-              label="Kembali"
-              intent="outline"
-              size="sm"
-              onPress={onBackToCenter}
-            />
-          </View>
-        </KolamHeaderFrame>
-
-        {isCatalogView ? (
+      <View style={styles.posMain}>
+        {shellChrome ? (
           <>
+            <KolamTopNavigation {...shellChrome.topNavigation} />
+            <KolamOverlaySurface {...shellChrome.overlay} />
+            <View style={styles.posDashboardHeader}>
+              <KolamDashboardHeader {...shellChrome.dashboardHeader} />
+            </View>
+          </>
+        ) : null}
+        <View style={styles.posWorkspace}>
+          <View style={styles.catalogPane}>
+            {isCatalogView ? (
+              <>
             <View style={styles.categoryBar}>
               <KolamInteractionFrame
                 onPress={() => scrollCategories('left')}
@@ -419,27 +418,27 @@ export function KolamPosFullWindowSurface({
             {!hasCashflowSession ? (
               <PosCashflowLockOverlay onOpenCashflow={() => setActiveView('cashflow')} />
             ) : null}
-          </>
-        ) : (
-          <PosSubview
-            activeView={activeView}
-            activeSession={activeSession}
-            customerForm={customerForm}
-            customers={customers}
-            isCreatingCustomer={isCreatingCustomer}
-            paymentMethods={paymentMethods}
-            recentSales={recentSales}
-            selectedCustomerId={checkout.customerId}
-            selectedPaymentId={checkout.paymentMethodId}
-            onCreateCustomer={onCreateCustomer}
-            onCustomerFormChange={onCustomerFormChange}
-            onSelectCustomer={onSelectCustomer}
-            onSelectPaymentMethod={onSelectPaymentMethod}
-          />
-        )}
-      </View>
+              </>
+            ) : (
+              <PosSubview
+                activeView={activeView}
+                activeSession={activeSession}
+                customerForm={customerForm}
+                customers={customers}
+                isCreatingCustomer={isCreatingCustomer}
+                paymentMethods={paymentMethods}
+                recentSales={recentSales}
+                selectedCustomerId={checkout.customerId}
+                selectedPaymentId={checkout.paymentMethodId}
+                onCreateCustomer={onCreateCustomer}
+                onCustomerFormChange={onCustomerFormChange}
+                onSelectCustomer={onSelectCustomer}
+                onSelectPaymentMethod={onSelectPaymentMethod}
+              />
+            )}
+          </View>
 
-      <View style={orderPaneStyle}>
+          <View style={orderPaneStyle}>
         <View style={styles.orderHeader}>
           <Text style={styles.orderTitle}>Pesanan</Text>
           <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
@@ -557,6 +556,8 @@ export function KolamPosFullWindowSurface({
             </View>
           </View>
         ) : null}
+          </View>
+        </View>
       </View>
       {isSavedOrdersOpen ? (
         <PosSavedOrdersPanel
@@ -638,6 +639,7 @@ const POS_CASHFLOW_NAV_MODULE: ShellModule = {
 function PosSidebar({
   activeType,
   activeView,
+  onBackToCenter,
   onSelectCashflow,
   onSelectCustomers,
   onSelectProduct,
@@ -647,6 +649,7 @@ function PosSidebar({
 }: {
   activeType: CatalogItemType | 'all';
   activeView: PosWindowView;
+  onBackToCenter: () => void;
   onQuickSearch: () => void;
   onSelectCashflow: () => void;
   onSelectCustomers: () => void;
@@ -692,6 +695,13 @@ function PosSidebar({
           active={activeView === 'cashflow'}
           module={POS_CASHFLOW_NAV_MODULE}
           onPress={onSelectCashflow}
+        />
+        <KolamButton
+          label="Kembali"
+          intent="outline"
+          size="sm"
+          onPress={onBackToCenter}
+          style={styles.posBackButton}
         />
       </ScrollView>
     </View>
@@ -2254,17 +2264,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: V.colors.bg,
   },
+  posMain: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: V.colors.mainSurface,
+  },
+  posDashboardHeader: {
+    paddingHorizontal: V.layout.contentPadding,
+    paddingTop: V.layout.contentPadding,
+    backgroundColor: V.colors.mainSurface,
+  },
+  posWorkspace: {
+    flex: 1,
+    minHeight: 0,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
   catalogPane: {
     flex: 1,
     minWidth: 0,
     borderRightColor: V.colors.border,
     borderRightWidth: 1,
-  },
-  posHeader: {
-    marginBottom: 0,
-    paddingHorizontal: 16,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
     backgroundColor: V.colors.bg,
   },
   posSidebar: {
@@ -2288,6 +2308,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
+  },
+  posBackButton: {
+    marginTop: 10,
   },
   categoryBar: {
     minHeight: 46,
