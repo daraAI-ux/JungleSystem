@@ -1244,7 +1244,14 @@ function WalletTransactionPanel({
     <View style={styles.panel}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={[kolamTableToolbarStyles.row, styles.txToolbarRow]}>
-          <View style={[kolamTableToolbarStyles.filters, styles.txToolbarFilters]}>
+          <ScrollView
+            horizontal
+            contentContainerStyle={styles.txToolbarFiltersContent}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
+            style={styles.txToolbarFiltersScroll}
+          >
             {showWalletFilter ? (
               <KolamButton
                 intent={
@@ -1312,31 +1319,31 @@ function WalletTransactionPanel({
               }}
               style={styles.filterTrigger}
             />
-            <View style={styles.txDateRange}>
-              <KolamDateField
-                accessibilityLabel="Tanggal mulai"
-                label="Dari"
-                onChange={value =>
-                  controller.onChangeTxFilters({ startDate: value })
-                }
-                placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
-                value={controller.txFilters.startDate}
-              />
-              <KolamDateField
-                accessibilityLabel="Tanggal sampai"
-                label="Sampai"
-                onChange={value =>
-                  controller.onChangeTxFilters({ endDate: value })
-                }
-                placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
-                value={controller.txFilters.endDate}
-              />
-            </View>
-          </View>
+            <KolamDateField
+              accessibilityLabel="Tanggal mulai"
+              label="Dari"
+              onChange={value =>
+                controller.onChangeTxFilters({ startDate: value })
+              }
+              placeholder="Dari"
+              showLabelInTrigger={false}
+              style={styles.dateField}
+              triggerStyle={styles.dateFieldTrigger}
+              value={controller.txFilters.startDate}
+            />
+            <KolamDateField
+              accessibilityLabel="Tanggal sampai"
+              label="Sampai"
+              onChange={value =>
+                controller.onChangeTxFilters({ endDate: value })
+              }
+              placeholder="Sampai"
+              showLabelInTrigger={false}
+              style={styles.dateField}
+              triggerStyle={styles.dateFieldTrigger}
+              value={controller.txFilters.endDate}
+            />
+          </ScrollView>
           <WalletToolbarActions
             controller={controller}
             onRouteChange={onRouteChange}
@@ -2566,30 +2573,29 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   toolbarActionsCompact: {
+    borderLeftWidth: 0,
     flexGrow: 0,
     flexShrink: 0,
     flexWrap: 'nowrap',
     gap: 4,
+    paddingLeft: 0,
   },
   txToolbarRow: {
     alignItems: 'center',
     flexWrap: 'nowrap',
     gap: 4,
   },
-  txToolbarFilters: {
-    alignItems: 'center',
+  txToolbarFiltersScroll: {
     flexGrow: 1,
     flexShrink: 1,
-    flexWrap: 'nowrap',
-    gap: 4,
     minWidth: 0,
   },
-  txDateRange: {
+  txToolbarFiltersContent: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexGrow: 0,
-    flexShrink: 0,
+    flexWrap: 'nowrap',
     gap: 4,
+    paddingRight: 4,
   },
   walletFilterActive: {
     maxWidth: 112,
@@ -2620,9 +2626,11 @@ const styles = StyleSheet.create({
   dateField: {
     flexGrow: 0,
     flexShrink: 0,
-    maxWidth: 140,
-    minWidth: 120,
-    width: 120,
+    width: 96,
+  },
+  dateFieldTrigger: {
+    minWidth: 96,
+    paddingHorizontal: 8,
   },
   row: {
     alignItems: 'center',

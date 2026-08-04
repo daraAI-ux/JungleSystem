@@ -36,6 +36,7 @@ export function KolamDateField({
   placeholder = 'Pilih tanggal',
   showLabelInTrigger = true,
   style,
+  triggerStyle,
   value,
 }: {
   accessibilityLabel?: string;
@@ -44,6 +45,7 @@ export function KolamDateField({
   placeholder?: string;
   showLabelInTrigger?: boolean;
   style?: StyleProp<ViewStyle>;
+  triggerStyle?: StyleProp<ViewStyle>;
   value: string;
 }) {
   const selectedDate = parseKolamIsoDate(value);
@@ -139,7 +141,7 @@ export function KolamDateField({
         accessibilityRole="button"
         accessibilityState={{expanded: open}}
         onPress={openCalendar}
-        style={[styles.trigger, kolamFormControlStyles.trigger]}
+        style={[styles.trigger, kolamFormControlStyles.trigger, triggerStyle]}
       >
         <Text numberOfLines={1} style={styles.triggerText}>
           {triggerLabel}
