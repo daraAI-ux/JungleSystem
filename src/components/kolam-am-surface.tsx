@@ -4292,21 +4292,14 @@ function AmTransferDetailPanel({
             <AmMetricCard label="Recipient" value={transfer.recipientName || '-'} meta={`${transfer.recipientBank ?? '-'} ${transfer.recipientAccount}`} />
           </View>
           <View style={styles.detailList}>
+            <Text style={styles.panelTitle}>Transfer Info</Text>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Source Account</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatBankAccount(transfer.accountId)}</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created At</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.createdAt)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Device</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceRef(transfer.deviceId)}</Text>
-            </View>
-            <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Box / Rack</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceLocation(transfer.deviceId)}</Text>
-            </View>
-            <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Server IP</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferServerIp(transfer.deviceId)}</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created By</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferCreatedBy(transfer.createdBy)}</Text>
             </View>
             {transfer.transferMethod ? (
               <View style={styles.detailListRow}>
@@ -4320,13 +4313,30 @@ function AmTransferDetailPanel({
                 <Text style={[styles.cellText, styles.recipientCol]}>{transfer.transactionPurpose}</Text>
               </View>
             ) : null}
+            <Text style={styles.panelTitle}>Source & Device</Text>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created By</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferCreatedBy(transfer.createdBy)}</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatBankAccount(transfer.accountId)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.createdAt)}</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Account Type</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatAccountType(transfer.accountId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Account Number</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatAccountNumber(transfer.accountId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Device</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceRef(transfer.deviceId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Box / Rack</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceLocation(transfer.deviceId)}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Server IP</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferServerIp(transfer.deviceId)}</Text>
             </View>
             <View style={styles.detailListRow}>
               <Text style={[styles.tableHeaderText, styles.accountCol]}>Started</Text>
@@ -6741,6 +6751,11 @@ function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountI
 function formatAccountNumber(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
   if (!account || typeof account === 'string') return '-';
   return account.accountNumber || account.account_number || '-';
+}
+
+function formatAccountType(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
+  if (!account || typeof account === 'string') return '-';
+  return account.platform || account.type || '-';
 }
 
 function formatMutasiAccountOption(account: AmServiceAccount) {

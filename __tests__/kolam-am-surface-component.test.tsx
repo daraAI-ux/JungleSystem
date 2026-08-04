@@ -4863,10 +4863,15 @@ describe('KolamAmSurface', () => {
     const joinedText = text.join(' ');
     expect(text).toContain('Transfer Detail');
     expect(text).toContain('Vendor Detail');
+    expect(text).toContain('Transfer Info');
     expect(joinedText).toMatch(/Total\s+Rp\s*252\.500/);
     expect(joinedText).toContain('Transfer Method BI FAST');
     expect(joinedText).toContain('Transaction Purpose Payment');
+    expect(joinedText).toContain('Created At');
     expect(joinedText).toContain('Created By Admin User');
+    expect(joinedText).toContain('Source & Device');
+    expect(joinedText).toContain('Account Type bca');
+    expect(joinedText).toContain('Account Number 123');
     expect(joinedText).toContain('Box / Rack Box A / Rack Blue');
     expect(joinedText).toContain('Server IP 10.10.10.5');
     expect(joinedText).toContain('Webhook Delivery Logs');
