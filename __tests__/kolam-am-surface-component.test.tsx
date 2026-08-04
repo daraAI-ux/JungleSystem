@@ -413,7 +413,8 @@ describe('KolamAmSurface', () => {
     const joinedText = text.join(' ');
 
     expect(text).toContain('Kembali');
-    expect(joinedText).toContain('Welcome back, User');
+    expect(joinedText.replace(/\s+/g, ' ')).toContain('Welcome back, Current AM User');
+    expect(joinedText).not.toContain('Welcome back, User');
     expect(text).toContain("Today's Incoming");
     expect(text).toContain("Today's Outgoing");
     expect(text).toContain("Today's Transfers");
@@ -3304,7 +3305,7 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: undefined,
     });
-    expect(getAmCurrentUser).toHaveBeenCalledTimes(3);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(4);
   });
 
   it('renders activity log stats, detail, filters, and pagination from live metadata', async () => {
@@ -3903,7 +3904,7 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'settings/account');
 
     const text = renderText(renderer!);
-    expect(getAmCurrentUser).toHaveBeenCalledTimes(1);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
     expect(text).toContain('Profile information');
     expect(text).toContain('Change password');
     expect(text).toContain('Update your current password to keep your account secure.');
