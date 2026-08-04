@@ -238,10 +238,38 @@ export type KolamAssetPurchaseDetail = {
   walletLabel: string;
   locationId: string;
   locationLabel: string;
+  locationType: string;
   executedAt: string;
   reason: string;
   status: KolamFinanceExpenseVerifyStatus | '';
+  createdAt: string;
+  updatedAt: string;
+  hasLinkedAsset: boolean;
 };
+
+export type KolamAssetPurchaseDetailTab =
+  | 'details'
+  | 'pricing'
+  | 'depreciation'
+  | 'history';
+
+export type KolamAssetPurchaseHistoryItem = {
+  id: string;
+  title: string;
+  at: string;
+  atLabel: string;
+  lines: string[];
+};
+
+export const KOLAM_ASSET_PURCHASE_DETAIL_TABS: Array<{
+  id: KolamAssetPurchaseDetailTab;
+  label: string;
+}> = [
+  { id: 'details', label: 'Detail' },
+  { id: 'pricing', label: 'Rincian Harga' },
+  { id: 'depreciation', label: 'Penyusutan' },
+  { id: 'history', label: 'Riwayat' },
+];
 
 export type KolamAssetPurchaseWritePayload = {
   name: string;
@@ -294,6 +322,100 @@ export function getKolamAssetPurchaseIdFromRoute(route: string): string | null {
 
 export function getKolamAssetPurchaseEditRoute(id: string): string {
   return `${KOLAM_ASSET_PURCHASE_ROOT}/${encodeURIComponent(id)}/edit`;
+}
+
+export function getKolamAssetPurchaseDetailTab(
+  route: string,
+): KolamAssetPurchaseDetailTab {
+  const query = parseFinanceExpenseRouteQuery(route);
+  const tab = String(query.tab ?? '')
+    .trim()
+    .toLowerCase();
+  if (
+    tab === 'pricing' ||
+    tab === 'depreciation' ||
+    tab === 'history' ||
+    tab === 'details'
+  ) {
+    return tab;
+  }
+  return 'details';
+}
+
+export function buildKolamAssetPurchaseDetailRoute(
+  id: string,
+  tab: KolamAssetPurchaseDetailTab = 'details',
+): string {
+  const base = `${KOLAM_ASSET_PURCHASE_ROOT}/${encodeURIComponent(id)}`;
+  if (tab === 'details') {
+    return base;
+  }
+  return `${base}?tab=${tab}`;
+}
+
+export function formatFinanceExpenseDateTime(value: string): string {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function buildKolamAssetPurchaseHistoryItems(
+  detail: KolamAssetPurchaseDetail,
+): KolamAssetPurchaseHistoryItem[] {
+  const items: KolamAssetPurchaseHistoryItem[] = [];
+  const createdAt = detail.createdAt || detail.executedAt;
+  const updatedAt = detail.updatedAt || createdAt;
+
+  if (createdAt && updatedAt && createdAt !== updatedAt) {
+    items.push({
+      id: 'updated',
+      title: 'Pembelian Diperbarui',
+      at: updatedAt,
+      atLabel: formatFinanceExpenseDateTime(updatedAt),
+      lines: [],
+    });
+  }
+
+  const createLines = [
+    `Aset: ${detail.name || '—'}`,
+    `Total Investasi: ${formatAssetPurchaseHistoryMoney(detail.total)}`,
+  ];
+  if (detail.reason.trim()) {
+    const reason =
+      detail.reason.length > 100
+        ? `${detail.reason.slice(0, 100)}...`
+        : detail.reason;
+    createLines.push(`Alasan: ${reason}`);
+  }
+
+  items.push({
+    id: 'created',
+    title: 'Pembelian Aset Dibuat',
+    at: createdAt,
+    atLabel: formatFinanceExpenseDateTime(createdAt),
+    lines: createLines,
+  });
+
+  return items;
+}
+
+function formatAssetPurchaseHistoryMoney(value: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(value || 0);
 }
 
 export function createEmptyKolamAssetPurchaseForm(
@@ -433,6 +555,9 @@ export function normalizeKolamAssetPurchaseDetail(
     : [];
   const executedAt =
     getString(record, 'executedAt') || getString(record, 'createdAt');
+  const createdAt = getString(record, 'createdAt') || executedAt;
+  const updatedAt = getString(record, 'updatedAt') || createdAt;
+  const assetId = resolveEntityId(record.asset);
 
   return {
     id: getString(record, '_id') || getString(record, 'id'),
@@ -448,9 +573,13 @@ export function normalizeKolamAssetPurchaseDetail(
     walletLabel: resolveWalletLabel(record.wallet),
     locationId: resolveEntityId(record.location),
     locationLabel: resolveLocationLabel(record.location),
+    locationType: resolveLocationType(record.location),
     executedAt,
     reason: getString(record, 'reason'),
     status: status === 'verified' || status === 'unverified' ? status : '',
+    createdAt,
+    updatedAt,
+    hasLinkedAsset: Boolean(assetId),
   };
 }
 
@@ -470,6 +599,13 @@ function resolveEntityId(value: unknown): string {
   }
   const record = asRecord(value);
   return getString(record, '_id') || getString(record, 'id');
+}
+
+function resolveLocationType(value: unknown): string {
+  if (typeof value === 'string') {
+    return '';
+  }
+  return getString(asRecord(value), 'type');
 }
 
 function formatFinanceExpenseIsoDate(date: Date): string {

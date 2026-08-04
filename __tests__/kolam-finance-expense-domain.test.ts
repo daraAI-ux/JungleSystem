@@ -9,10 +9,13 @@ import {
 import {
   buildFinanceExpenseListRoute,
   buildKolamAssetPurchaseCreatePayload,
+  buildKolamAssetPurchaseDetailRoute,
+  buildKolamAssetPurchaseHistoryItems,
   createEmptyKolamAssetPurchaseForm,
   createInitialFinanceExpenseListFilters,
   createKolamAssetPurchaseFormFromDetail,
   getAssetPurchaseFormTotal,
+  getKolamAssetPurchaseDetailTab,
   getKolamAssetPurchaseEditRoute,
   getKolamAssetPurchaseIdFromRoute,
   getKolamAssetPurchaseSurfaceMode,
@@ -229,17 +232,22 @@ describe('Kolam finance expense domain', () => {
         shippingCost: 50000,
         total: 10050000,
         wallet: { _id: 'w1', name: 'Kas' },
-        location: { _id: 'loc1', name: 'Gudang' },
+        location: { _id: 'loc1', name: 'Gudang', type: 'warehouse' },
         executedAt: '2026-07-01T12:00:00.000Z',
+        createdAt: '2026-07-01T10:00:00.000Z',
+        updatedAt: '2026-07-02T10:00:00.000Z',
         reason: 'Ops',
         status: 'unverified',
+        asset: null,
       },
     });
     expect(detail).toMatchObject({
       id: 'ap-1',
       walletId: 'w1',
       locationId: 'loc1',
+      locationType: 'warehouse',
       photos: ['/uploads/a.jpg'],
+      hasLinkedAsset: false,
     });
     expect(createKolamAssetPurchaseFormFromDetail(detail)).toMatchObject({
       name: 'Laptop',
@@ -249,6 +257,33 @@ describe('Kolam finance expense domain', () => {
       locationId: 'loc1',
       executedAt: '2026-07-01',
     });
+  });
+
+  it('parses detail tab query and builds history items', () => {
+    expect(
+      getKolamAssetPurchaseDetailTab('/asset-purchase/ap-1?tab=pricing'),
+    ).toBe('pricing');
+    expect(
+      getKolamAssetPurchaseDetailTab('/asset-purchase/ap-1?tab=depreciation'),
+    ).toBe('depreciation');
+    expect(buildKolamAssetPurchaseDetailRoute('ap-1', 'history')).toBe(
+      '/asset-purchase/ap-1?tab=history',
+    );
+
+    const detail = normalizeKolamAssetPurchaseDetail({
+      _id: 'ap-1',
+      name: 'Laptop',
+      total: 10050000,
+      reason: 'Ops long enough',
+      createdAt: '2026-07-01T10:00:00.000Z',
+      updatedAt: '2026-07-02T10:00:00.000Z',
+      asset: { _id: 'asset-1' },
+    });
+    expect(detail.hasLinkedAsset).toBe(true);
+    const history = buildKolamAssetPurchaseHistoryItems(detail);
+    expect(history[0]?.title).toBe('Pembelian Diperbarui');
+    expect(history[1]?.title).toBe('Pembelian Aset Dibuat');
+    expect(history[1]?.lines[0]).toContain('Laptop');
   });
 });
 

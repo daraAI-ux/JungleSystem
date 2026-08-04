@@ -19,6 +19,7 @@ import {
   type KolamFinanceExpenseListController,
 } from '../hooks/use-kolam-finance-expense-list-controller';
 import { formatRupiah } from '../lib/money';
+import { KolamAssetPurchaseDetailSurface } from './kolam-asset-purchase-detail-surface';
 import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -795,6 +796,9 @@ export function KolamAssetPurchaseSurface(props: {
   const mode = getKolamAssetPurchaseSurfaceMode(props.route);
   if (mode === 'create' || mode === 'edit') {
     return <KolamAssetPurchaseFormSurface {...props} />;
+  }
+  if (mode === 'detail') {
+    return <KolamAssetPurchaseDetailSurface {...props} />;
   }
   if (mode === 'list') {
     return (
