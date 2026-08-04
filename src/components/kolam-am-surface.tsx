@@ -5168,7 +5168,7 @@ function AmWebhooksPage() {
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>URL</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs yet" />
