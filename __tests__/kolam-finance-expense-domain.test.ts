@@ -182,6 +182,12 @@ describe('Kolam finance expense domain', () => {
             asset: { currentBookValue: 9000000 },
             executedAt: '2026-07-01T00:00:00.000Z',
             createdAt: '2026-07-01T00:00:00.000Z',
+            createdBy: {
+              first_name: 'Budi',
+              last_name: 'Santoso',
+              email: 'budi@example.com',
+              hr: { photo: '/media/users/budi.jpg' },
+            },
           },
         ],
         pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
@@ -195,6 +201,8 @@ describe('Kolam finance expense domain', () => {
       walletLabel: 'Utama',
       bookValue: 9000000,
       createdAt: '2026-07-01T00:00:00.000Z',
+      createdByLabel: 'Budi Santoso',
+      createdByPhoto: '/media/users/budi.jpg',
     });
     expect(result.data[0].createdAtLabel).toBeTruthy();
   });

@@ -76,6 +76,8 @@ export type KolamFinanceExpenseListRow = {
   reason: string;
   categoryLabel: string;
   createdByLabel: string;
+  /** Profile/HR photo path when createdBy is populated with photo fields. */
+  createdByPhoto: string;
   createdAt: string;
   createdAtLabel: string;
   locationLabel: string;
@@ -863,6 +865,7 @@ function normalizeFinanceExpenseRow(
         ? formatRoutineExpenseCategoryLabel(getString(record, 'category'))
         : '',
     createdByLabel: resolveUserLabel(record.createdBy),
+    createdByPhoto: resolveUserPhoto(record.createdBy),
     createdAt,
     createdAtLabel: formatFinanceExpenseDate(createdAt),
     locationLabel: resolveLocationLabel(record.location),
@@ -898,6 +901,19 @@ function resolveUserLabel(value: unknown): string {
     return combined;
   }
   return getString(record, 'email') || '—';
+}
+
+function resolveUserPhoto(value: unknown): string {
+  if (typeof value === 'string' || !value) {
+    return '';
+  }
+  const record = asRecord(value);
+  const hr = asRecord(record.hr);
+  return (
+    getString(record, 'profile_picture') ||
+    getString(record, 'photo') ||
+    getString(hr, 'photo')
+  );
 }
 
 function resolveLocationLabel(value: unknown): string {

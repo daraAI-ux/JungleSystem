@@ -21,6 +21,7 @@ import {
   type KolamFinanceExpenseListController,
 } from '../hooks/use-kolam-finance-expense-list-controller';
 import { formatRupiah } from '../lib/money';
+import { getKolamFileUrl } from '../lib/file-url';
 import { KolamAssetPurchaseDetailSurface } from './kolam-asset-purchase-detail-surface';
 import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
@@ -35,6 +36,8 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -255,16 +258,25 @@ function buildColumns(
     });
   }
 
-  base.push({
-    id: 'createdBy',
-    label: 'Dibuat oleh',
-    flex: 0.9,
-    render: row => (
-      <Text numberOfLines={1} style={styles.metaText}>
-        {row.createdByLabel}
-      </Text>
-    ),
-  });
+  if (kind === 'asset-purchase') {
+    base.push({
+      id: 'createdBy',
+      label: 'PIC',
+      flex: 0.55,
+      render: row => <AssetPurchasePicAvatar row={row} />,
+    });
+  } else {
+    base.push({
+      id: 'createdBy',
+      label: 'Dibuat oleh',
+      flex: 0.9,
+      render: row => (
+        <Text numberOfLines={1} style={styles.metaText}>
+          {row.createdByLabel}
+        </Text>
+      ),
+    });
+  }
 
   if (kind === 'asset-purchase') {
     base.push({
@@ -349,6 +361,47 @@ function buildAssetPurchaseRowActions(
   return actions;
 }
 
+function AssetPurchasePicAvatar({
+  onTooltipOpenChange,
+  row,
+}: {
+  onTooltipOpenChange?: (open: boolean) => void;
+  row: KolamFinanceExpenseListRow;
+}) {
+  const name =
+    row.createdByLabel && row.createdByLabel !== '—'
+      ? row.createdByLabel
+      : 'Tanpa PIC';
+  const photoUri = getKolamFileUrl(row.createdByPhoto);
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || '?';
+
+  return (
+    <View style={styles.picCell}>
+      <KolamHoverTooltip
+        align="center"
+        containerStyle={styles.picTooltip}
+        label={name}
+        onOpenChange={onTooltipOpenChange}
+      >
+        <View accessibilityLabel={`PIC ${name}`} style={styles.picAvatar}>
+          <KolamProfileAvatarContent
+            imageStyle={styles.picAvatarImage}
+            imageUrl={photoUri}
+            initials={initials}
+            textStyle={styles.picAvatarText}
+          />
+        </View>
+      </KolamHoverTooltip>
+    </View>
+  );
+}
+
 function AssetPurchaseListRow({
   columns,
   controller,
@@ -363,18 +416,34 @@ function AssetPurchaseListRow({
   onRouteChange?: (route: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [picTooltipOpen, setPicTooltipOpen] = React.useState(false);
   const actions = buildAssetPurchaseRowActions(
     item,
     controller,
     onRouteChange,
     onRequestDelete,
   );
+  const elevate = menuOpen || picTooltipOpen;
 
   return (
-    <View style={[styles.row, menuOpen ? styles.rowMenuOpen : null]}>
+    <View style={[styles.row, elevate ? styles.rowMenuOpen : null]}>
       {columns.map(column => (
-        <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-          {column.render(item)}
+        <View
+          key={column.id}
+          style={[
+            styles.cell,
+            { flex: column.flex },
+            column.id === 'createdBy' ? styles.picCellOverflow : null,
+          ]}
+        >
+          {column.id === 'createdBy' ? (
+            <AssetPurchasePicAvatar
+              onTooltipOpenChange={setPicTooltipOpen}
+              row={item}
+            />
+          ) : (
+            column.render(item)
+          )}
         </View>
       ))}
       <View style={[styles.cell, styles.actionsCell]}>
@@ -898,6 +967,39 @@ const styles = StyleSheet.create({
     minWidth: 0,
     overflow: 'visible',
     paddingHorizontal: 4,
+  },
+  picCellOverflow: {
+    overflow: 'visible',
+    zIndex: 2,
+  },
+  picCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  picTooltip: {
+    alignSelf: 'center',
+  },
+  picAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  picAvatarImage: {
+    borderRadius: 16,
+    height: 32,
+    width: 32,
+  },
+  picAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   actionsCell: {
     alignItems: 'flex-end',
