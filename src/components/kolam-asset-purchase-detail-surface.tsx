@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,12 +24,26 @@ import { KolamAssetPurchaseDepreciationTab } from './kolam-asset-purchase-deprec
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDescriptionList } from './kolam-description-list';
-import type { KolamDescriptionListRow } from './kolam-description-list-types';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+
+type AssetPurchaseInfoPresentation =
+  | 'plain'
+  | 'code'
+  | 'status'
+  | 'total'
+  | 'link';
+
+type AssetPurchaseInfoRow = {
+  id: string;
+  label: string;
+  value: string;
+  presentation: AssetPurchaseInfoPresentation;
+  onPress?: () => void;
+  statusIntent?: ReturnType<typeof getFinanceExpenseStatusIntent>;
+};
 
 export function KolamAssetPurchaseDetailSurface({
   onRouteChange,
@@ -109,7 +124,7 @@ function AssetPurchaseDetailBody({
 }) {
   const detail = controller.detail!;
 
-  const infoRows = useMemo((): KolamDescriptionListRow[] => {
+  const infoRows = useMemo((): AssetPurchaseInfoRow[] => {
     const locationValue = detail.locationLabel
       ? detail.locationType
         ? `${detail.locationLabel} (${detail.locationType})`
@@ -121,41 +136,32 @@ function AssetPurchaseDetailBody({
         id: 'code',
         label: 'Kode',
         value: detail.code || '—',
-        meta: '',
-        tone: 'default',
+        presentation: detail.code ? 'code' : 'plain',
       },
       {
         id: 'status',
         label: 'Status',
         value: formatFinanceExpenseStatusLabel(detail.status),
-        meta: '',
-        tone:
-          detail.status === 'verified'
-            ? 'success'
-            : detail.status === 'unverified'
-              ? 'warning'
-              : 'default',
+        presentation: 'status',
+        statusIntent: getFinanceExpenseStatusIntent(detail.status),
       },
       {
         id: 'name',
         label: 'Nama Aset',
         value: detail.name || '—',
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
       {
         id: 'total',
         label: 'Total',
         value: formatRupiah(detail.total),
-        meta: '',
-        tone: 'danger',
+        presentation: 'total',
       },
       {
         id: 'executedAt',
         label: 'Dieksekusi Pada',
         value: formatFinanceExpenseDateTime(detail.executedAt),
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
       {
         id: 'wallet',
@@ -163,44 +169,38 @@ function AssetPurchaseDetailBody({
         value: detail.walletId
           ? detail.walletLabel || detail.walletId
           : 'Dompet Utama Default',
-        meta: '',
-        tone: 'default',
+        presentation: detail.walletId ? 'link' : 'plain',
         onPress: detail.walletId ? controller.onOpenWallet : undefined,
       },
       {
         id: 'location',
         label: 'Lokasi',
         value: locationValue,
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
       {
         id: 'series',
         label: 'Nomor Seri',
         value: detail.series || '—',
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
       {
         id: 'reason',
         label: 'Alasan Pembelian',
         value: detail.reason || '—',
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
       {
         id: 'createdAt',
         label: 'Dibuat Pada',
         value: formatFinanceExpenseDateTime(detail.createdAt),
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
       {
         id: 'updatedAt',
         label: 'Terakhir Diperbarui',
         value: formatFinanceExpenseDateTime(detail.updatedAt),
-        meta: '',
-        tone: 'default',
+        presentation: 'plain',
       },
     ];
   }, [controller.onOpenWallet, detail]);
@@ -281,7 +281,7 @@ function AssetPurchaseDetailBody({
             selectedTabId={controller.tab}
             tabs={controller.tabs}
           />
-          <ScrollView contentContainerStyle={styles.content}>
+          <ScrollView contentContainerStyle={styles.content} style={styles.mainScroll}>
             {controller.tab === 'details' ? (
               <DetailsTab
                 customFields={detail.customFieldValues}
@@ -318,26 +318,26 @@ function DetailsTab({
   photos,
 }: {
   customFields: Array<{ label: string; value: string }>;
-  infoRows: KolamDescriptionListRow[];
+  infoRows: AssetPurchaseInfoRow[];
   photos: string[];
 }) {
   return (
     <View style={styles.tabBody}>
       <KolamContentFrame variant="nativeFormSection">
-        <KolamCopyStack
-          containerStyle={styles.sectionCopy}
-          items={[
-            {
-              id: 'title',
-              text: 'Informasi Aset',
-              style: styles.sectionTitle,
-            },
-          ]}
-        />
-        <KolamDescriptionList
-          accessibilityLabel="Informasi aset"
-          rows={infoRows}
-        />
+        <Text style={styles.sectionTitle}>Informasi Aset</Text>
+        <View style={styles.infoList}>
+          {infoRows.map((row, index) => (
+            <View
+              key={row.id}
+              style={[styles.infoRow, index === 0 ? styles.infoRowFirst : null]}
+            >
+              <Text style={styles.infoLabel}>{row.label}</Text>
+              <View style={styles.infoValue}>
+                <InfoValue row={row} />
+              </View>
+            </View>
+          ))}
+        </View>
         {customFields.length > 0 ? (
           <View style={styles.specBlock}>
             <Text style={styles.specTitle}>Spesifikasi</Text>
@@ -353,16 +353,7 @@ function DetailsTab({
 
       {photos.length > 0 ? (
         <KolamContentFrame variant="nativeFormSection">
-          <KolamCopyStack
-            containerStyle={styles.sectionCopy}
-            items={[
-              {
-                id: 'photos',
-                text: 'Foto',
-                style: styles.sectionTitle,
-              },
-            ]}
-          />
+          <Text style={styles.sectionTitle}>Foto</Text>
           <View style={styles.photoGrid}>
             {photos.map((path, index) => {
               const uri = getKolamFileUrl(path) || path;
@@ -379,6 +370,35 @@ function DetailsTab({
       ) : null}
     </View>
   );
+}
+
+function InfoValue({ row }: { row: AssetPurchaseInfoRow }) {
+  if (row.presentation === 'code') {
+    return <KolamStatusBadge intent="secondary" label={row.value} />;
+  }
+  if (row.presentation === 'status') {
+    return (
+      <KolamStatusBadge
+        intent={row.statusIntent || 'secondary'}
+        label={row.value}
+      />
+    );
+  }
+  if (row.presentation === 'total') {
+    return <KolamStatusBadge intent="danger" label={row.value} />;
+  }
+  if (row.presentation === 'link' && row.onPress) {
+    return (
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={row.value}
+        onPress={row.onPress}
+      >
+        <Text style={styles.infoLink}>{row.value}</Text>
+      </Pressable>
+    );
+  }
+  return <Text style={styles.infoText}>{row.value}</Text>;
 }
 
 function PricingTab({
@@ -435,35 +455,20 @@ function HistoryPanel({
           contentContainerStyle={styles.historyScroll}
           style={styles.historyScrollView}
         >
-          <View style={styles.timeline}>
-            {items.map(item => {
-              const isCreated = item.id === 'created';
-              return (
-                <View key={item.id} style={styles.timelineItem}>
-                  <View
-                    style={[
-                      styles.timelineDot,
-                      isCreated
-                        ? styles.timelineDotSuccess
-                        : styles.timelineDotPrimary,
-                    ]}
-                  />
-                  <View style={styles.timelineBody}>
-                    <Text style={styles.timelineTitle}>{item.title}</Text>
-                    <Text style={styles.timelineMeta}>{item.atLabel}</Text>
-                    {item.lines.map((line, index) => (
-                      <Text
-                        key={`${item.id}-${index}`}
-                        style={styles.timelineLine}
-                      >
-                        {line}
-                      </Text>
-                    ))}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+          {items.map(item => (
+            <View key={item.id} style={styles.historyRow}>
+              <Text style={styles.historyItemTitle}>{item.title}</Text>
+              <Text style={styles.historyItemMeta}>{item.atLabel}</Text>
+              {item.lines.map((line, index) => (
+                <Text
+                  key={`${item.id}-${index}`}
+                  style={styles.historyItemLine}
+                >
+                  {line}
+                </Text>
+              ))}
+            </View>
+          ))}
         </ScrollView>
       )}
     </KolamContentFrame>
@@ -493,6 +498,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   bodyRow: {
+    alignItems: 'stretch',
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -501,22 +507,26 @@ const styles = StyleSheet.create({
   },
   mainPane: {
     flex: 3,
-    flexBasis: 480,
+    flexBasis: 0,
     gap: 10,
     minHeight: 0,
-    minWidth: 280,
+    minWidth: 320,
+  },
+  mainScroll: {
+    flex: 1,
+    minHeight: 0,
   },
   historyPane: {
     flex: 1,
-    flexBasis: 220,
-    maxWidth: 360,
+    flexBasis: 0,
     minHeight: 0,
-    minWidth: 200,
+    minWidth: 240,
+    maxWidth: 320,
   },
   historyFrame: {
     flex: 1,
     gap: 10,
-    minHeight: 200,
+    minHeight: 0,
   },
   historyTitle: {
     color: V.colors.fg,
@@ -528,12 +538,31 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   historyScroll: {
-    paddingBottom: 12,
-    paddingTop: 2,
+    paddingBottom: 8,
+  },
+  historyRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 3,
+    paddingVertical: 10,
+  },
+  historyItemTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  historyItemMeta: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
+  historyItemLine: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
   },
   content: {
     gap: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
   },
   tabBody: {
     gap: 16,
@@ -545,6 +574,48 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 15,
     fontWeight: '700',
+    marginBottom: 8,
+  },
+  infoList: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  infoRow: {
+    alignItems: 'flex-start',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 16,
+    paddingVertical: 12,
+  },
+  infoRowFirst: {
+    borderTopWidth: 0,
+  },
+  infoLabel: {
+    color: V.colors.mutedFg,
+    flexShrink: 0,
+    fontSize: 13,
+    lineHeight: 20,
+    width: '38%',
+  },
+  infoValue: {
+    flex: 1,
+    minWidth: 0,
+  },
+  infoText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 20,
+    textAlign: 'left',
+  },
+  infoLink: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+    textAlign: 'left',
+    textDecorationLine: 'underline',
   },
   specBlock: {
     borderColor: V.colors.border,
@@ -623,49 +694,6 @@ const styles = StyleSheet.create({
     color: V.colors.danger,
     fontSize: 18,
     fontWeight: '700',
-  },
-  timeline: {
-    borderLeftColor: V.colors.border,
-    borderLeftWidth: 2,
-    gap: 14,
-    paddingLeft: 12,
-  },
-  timelineItem: {
-    paddingLeft: 4,
-    position: 'relative',
-  },
-  timelineDot: {
-    borderColor: V.colors.bg,
-    borderRadius: 6,
-    borderWidth: 2,
-    height: 10,
-    left: -18,
-    position: 'absolute',
-    top: 3,
-    width: 10,
-  },
-  timelineDotPrimary: {
-    backgroundColor: V.colors.primary,
-  },
-  timelineDotSuccess: {
-    backgroundColor: V.colors.success,
-  },
-  timelineBody: {
-    gap: 3,
-  },
-  timelineTitle: {
-    color: V.colors.fg,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  timelineMeta: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-  },
-  timelineLine: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    lineHeight: 15,
   },
   backButton: {
     alignSelf: 'flex-start',
