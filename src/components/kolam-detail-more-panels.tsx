@@ -28,11 +28,13 @@ export type KolamDetailMoreSeo = {
 };
 
 export function KolamDetailTermsTemplatesPanel({
+  description,
   itemId,
   itemLabel,
   itemType,
   summary,
 }: {
+  description?: string;
   itemId: string;
   itemLabel: string;
   itemType: 'product' | 'species' | 'service';
@@ -46,6 +48,11 @@ export function KolamDetailTermsTemplatesPanel({
   const [terms, setTerms] = React.useState<KolamSpeciesTermsTemplate[]>([]);
   const [loadingTerms, setLoadingTerms] = React.useState(false);
   const [termsError, setTermsError] = React.useState('');
+  const sectionDescription =
+    description ??
+    (itemType === 'service'
+      ? 'Klik judul untuk buka template di CMS.'
+      : `Template S&K yang berlaku untuk ${itemLabel} ini.`);
 
   const loadTerms = React.useCallback(async () => {
     setLoadingTerms(true);
@@ -68,7 +75,7 @@ export function KolamDetailTermsTemplatesPanel({
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleWrap}>
           <Text style={styles.sectionTitle}>Syarat & Ketentuan</Text>
-          <Text style={styles.sectionDescription}>Template S&K yang berlaku untuk {itemLabel} ini.</Text>
+          <Text style={styles.sectionDescription}>{sectionDescription}</Text>
         </View>
         <KolamButton disabled={loadingTerms} label={loadingTerms ? 'Memuat...' : 'Segarkan'} onPress={loadTerms} />
       </View>

@@ -86,7 +86,7 @@ export function KolamLayananSubscriptionDetail({
 }) {
   const controller = useKolamLayananSubscriptionController(route);
   const subscription = controller.subscription;
-  const title = subscription?.subscriptionNumber || 'Detail langganan';
+  const title = subscription?.subscriptionNumber || 'Langganan';
 
   return (
     <View style={styles.surface}>
@@ -106,7 +106,7 @@ export function KolamLayananSubscriptionDetail({
               }}
             />
             <KolamButton
-              label="Daftar"
+              label="Daftar langganan"
               onPress={() =>
                 onRouteChange?.(`${KOLAM_LAYANAN_ROOT}?tab=langganan`)
               }
@@ -168,8 +168,8 @@ export function KolamLayananSubscriptionDetail({
               intent={subscription.autoRenew ? 'success' : 'secondary'}
               label={
                 subscription.autoRenew
-                  ? 'Perpanjang otomatis'
-                  : 'Tanpa perpanjang'
+                  ? 'Perpanjang otomatis · Ya'
+                  : 'Perpanjang otomatis · Tidak'
               }
             />
             <KolamStatusBadge
@@ -178,10 +178,7 @@ export function KolamLayananSubscriptionDetail({
             />
           </View>
 
-          <FormSection
-            description="Batch 6 read-only — ubah kontrak menyusul."
-            title="Ringkasan langganan"
-          >
+          <FormSection title="Ringkasan langganan">
             <KolamDescriptionList
               rows={[
                 desc('number', 'Nomor', subscription.subscriptionNumber),
@@ -246,8 +243,8 @@ export function KolamLayananSubscriptionDetail({
 
           {controller.pendingVerifications.length ? (
             <FormSection
-              description="Menunggu konfirmasi pelanggan."
-              title="Konfirmasi kunjungan"
+              description="Pelanggan dapat mengonfirmasi lewat beranda marketplace atau tautan detail kunjungan."
+              title="Menunggu konfirmasi pelanggan"
             >
               {controller.pendingVerifications.map(row => (
                 <Pressable
@@ -274,7 +271,10 @@ export function KolamLayananSubscriptionDetail({
           ) : null}
 
           {subscription.status === 'active' ? (
-            <FormSection title="Jadwal kunjungan mendatang">
+            <FormSection
+              description="Pratinjau slot yang akan dibuat di Kontrol Layanan (cron harian 00:15 WIB)."
+              title="Jadwal kunjungan"
+            >
               {controller.upcomingVisits.length === 0 ? (
                 <Text style={styles.metaText}>
                   Belum ada pratinjau jadwal, atau slot belum digenerate.
@@ -294,7 +294,14 @@ export function KolamLayananSubscriptionDetail({
                 ))
               )}
             </FormSection>
-          ) : null}
+          ) : (
+            <FormSection title="Jadwal kunjungan">
+              <Text style={styles.metaText}>
+                Jadwal otomatis aktif setelah status langganan Aktif dan voucher
+                sudah diaktivasi di Enclonura.
+              </Text>
+            </FormSection>
+          )}
         </ScrollView>
       )}
     </View>

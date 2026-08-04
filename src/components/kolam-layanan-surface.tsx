@@ -93,7 +93,7 @@ const SUBSCRIPTION_COLUMNS: KolamTableColumn[] = [
   { id: 'products', label: 'Voucher', align: 'left', width: 120 },
   { id: 'status', label: 'Periode', align: 'left', width: 150 },
   { id: 'notes', label: 'Status', align: 'left', width: 120 },
-  { id: 'marketplace', label: 'Auto', align: 'left', width: 70 },
+  { id: 'marketplace', label: 'Perpanjang otomatis', align: 'left', width: 130 },
   {
     id: 'actions',
     label: '',
@@ -196,7 +196,7 @@ function KolamLayananList({
                 onChangeText={controller.onSearchChange}
                 placeholder={
                   controller.activeTab === 'langganan'
-                    ? 'Cari nomor / kode paket…'
+                    ? 'Nomor / kode paket'
                     : 'Cari layanan…'
                 }
                 value={controller.search}
@@ -213,7 +213,7 @@ function KolamLayananList({
                   )
                 }
                 options={[
-                  { label: 'Status', value: 'all' },
+                  { label: 'Semua status', value: 'all' },
                   ...KOLAM_LAYANAN_SUBSCRIPTION_STATUS_OPTIONS.map(option => ({
                     label: option.label,
                     value: option.id,

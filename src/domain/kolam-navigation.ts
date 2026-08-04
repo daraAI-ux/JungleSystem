@@ -209,7 +209,8 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Layanan',
         route: '/layanan',
-        description: 'Katalog paket, operasional, dan langganan',
+        description:
+          'Ringkasan operasional, katalog paket, dan langganan pelanggan.',
         group: 'Layanan',
         requiredAccess: ['kolam'],
       },
@@ -898,7 +899,7 @@ const dashboardRuntimeRouteContexts: KolamNavigationItem[] = [
   {
     label: 'Layanan',
     route: '/layanan',
-    description: 'Dashboard service count route mapped to Kolam Services',
+    description: 'Ringkasan operasional, katalog paket, dan langganan pelanggan.',
     group: 'Layanan',
     requiredAccess: ['kolam'],
   },
@@ -1847,37 +1848,37 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/layanan',
     labelSuffix: 'Create',
     route: '/layanan/create',
-    description: 'Create layanan page from live Kolam',
+    description: 'Buat paket layanan baru',
   },
   {
     baseRoute: '/layanan',
     labelSuffix: 'Detail',
     route: '/layanan/:id',
-    description: 'Layanan detail page from live Kolam',
+    description: 'Detail paket layanan',
   },
   {
     baseRoute: '/layanan',
     labelSuffix: 'Edit',
     route: '/layanan/:id/edit',
-    description: 'Edit layanan page from live Kolam',
+    description: 'Ubah paket layanan',
   },
   {
     baseRoute: '/layanan',
     labelSuffix: 'Langganan',
     route: '/layanan/langganan/:id',
-    description: 'Layanan subscription page from live Kolam',
+    description: 'Detail langganan',
   },
   {
     baseRoute: '/layanan',
     labelSuffix: 'Voucher',
     route: '/layanan/voucher/:id',
-    description: 'Layanan voucher page from live Kolam',
+    description: 'Detail voucher layanan',
   },
   {
     baseRoute: '/layanan',
     labelSuffix: 'Voucher Execution',
     route: '/layanan/voucher/:id/execution/:executionId',
-    description: 'Layanan voucher execution page from live Kolam',
+    description: 'Detail eksekusi kunjungan',
   },
   {
     baseRoute: '/notifications',

@@ -503,7 +503,7 @@ describe('kolam-layanan navigation', () => {
   it('keeps /layanan on kolam module with Indonesian copy', () => {
     const item = getKolamNavigationItemByRoute('/layanan');
     expect(item?.label).toBe('Layanan');
-    expect(item?.description).toContain('Katalog paket');
+    expect(item?.description).toContain('Ringkasan operasional');
     expect(item?.route).toBe('/layanan');
   });
 });
