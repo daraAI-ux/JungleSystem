@@ -133,6 +133,9 @@ const TASK_STATUS_FILTER_LABELS: Record<string, string> = {
 const TRANSFER_STATUS_FILTER_LABELS: Record<string, string> = {
   all: 'All statuses',
 };
+const MUTASI_TYPE_FILTER_LABELS: Record<string, string> = {
+  all: 'All types',
+};
 const TASK_FILTER_STATUSES: Array<Exclude<AmTaskStatus, 'queued'> | 'all'> = ['all', 'pending', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
 const AM_TASK_PAGE_LIMIT = 20;
@@ -4600,7 +4603,12 @@ function AmMutasiPage({
         <AmMetricCard label="Total Outgoing" value={formatRupiah(outgoing.total)} meta={`${outgoing.count} mutasi`} />
         <AmMetricCard label="Net Balance" value={formatRupiah(netBalance)} meta="masuk - keluar" />
         <AmMetricCard label="Total Transactions" value={String(totalTransactions)} meta="summary count" />
-        <AmSegmentGroup active={type} items={['all', 'masuk', 'keluar']} onSelect={handleMutasiTypeChange} />
+        <AmSegmentGroup
+          active={type}
+          items={['all', 'masuk', 'keluar']}
+          labels={MUTASI_TYPE_FILTER_LABELS}
+          onSelect={handleMutasiTypeChange}
+        />
         <AmSegmentGroup
           active={accountFilter}
           items={['all', ...accounts.map(account => account._id)]}
