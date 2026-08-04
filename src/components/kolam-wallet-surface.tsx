@@ -1123,6 +1123,7 @@ function WalletTransactionPanel({
   const [typeOpen, setTypeOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const safePage = Math.max(1, controller.txPagination.page);
   const pageCount = Math.max(1, controller.txPagination.totalPages);
@@ -1141,6 +1142,10 @@ function WalletTransactionPanel({
     [controller.allWallets, controller.wallets],
   );
 
+  const walletLabel =
+    walletOptions.find(
+      option => option.value === controller.txFilters.walletId,
+    )?.label ?? 'Dompet';
   const typeLabel =
     controller.txFilters.type === 'all'
       ? 'Tipe'
@@ -1241,16 +1246,25 @@ function WalletTransactionPanel({
         <View style={[kolamTableToolbarStyles.row, styles.txToolbarRow]}>
           <View style={[kolamTableToolbarStyles.filters, styles.txToolbarFilters]}>
             {showWalletFilter ? (
-              <KolamDropdownSelect
-                label="Dompet"
-                menuPlacement="inline"
-                onChange={value =>
-                  controller.onChangeTxFilters({ walletId: value })
+              <KolamButton
+                intent={
+                  walletOpen || Boolean(controller.txFilters.walletId)
+                    ? 'primary'
+                    : 'secondary'
                 }
-                options={walletOptions}
-                showLabelInTrigger={false}
-                style={styles.walletSelect}
-                value={controller.txFilters.walletId}
+                label={walletLabel}
+                onPress={() => {
+                  setTypeOpen(false);
+                  setSourceOpen(false);
+                  setStatusOpen(false);
+                  setWalletOpen(current => !current);
+                }}
+                style={[
+                  styles.filterTrigger,
+                  controller.txFilters.walletId
+                    ? styles.walletFilterActive
+                    : null,
+                ]}
               />
             ) : null}
             <KolamButton
@@ -1261,6 +1275,7 @@ function WalletTransactionPanel({
               }
               label={typeLabel}
               onPress={() => {
+                setWalletOpen(false);
                 setSourceOpen(false);
                 setStatusOpen(false);
                 setTypeOpen(current => !current);
@@ -1275,6 +1290,7 @@ function WalletTransactionPanel({
               }
               label={sourceLabel}
               onPress={() => {
+                setWalletOpen(false);
                 setTypeOpen(false);
                 setStatusOpen(false);
                 setSourceOpen(current => !current);
@@ -1289,6 +1305,7 @@ function WalletTransactionPanel({
               }
               label={statusLabel}
               onPress={() => {
+                setWalletOpen(false);
                 setTypeOpen(false);
                 setSourceOpen(false);
                 setStatusOpen(current => !current);
@@ -1352,6 +1369,13 @@ function WalletTransactionPanel({
           />
         </View>
 
+        {walletOpen ? (
+          <FilterPanel
+            onClose={() => setWalletOpen(false)}
+            onSelect={value => controller.onChangeTxFilters({ walletId: value })}
+            options={walletOptions}
+          />
+        ) : null}
         {typeOpen ? (
           <FilterPanel
             onClose={() => setTypeOpen(false)}
@@ -2530,17 +2554,26 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   toolbarActionsCompact: {
+    flexGrow: 0,
     flexShrink: 0,
     flexWrap: 'nowrap',
     gap: 4,
   },
   txToolbarRow: {
+    alignItems: 'center',
     flexWrap: 'nowrap',
     gap: 4,
   },
   txToolbarFilters: {
+    alignItems: 'center',
+    flexGrow: 0,
+    flexShrink: 1,
     flexWrap: 'nowrap',
     gap: 4,
+    minWidth: 0,
+  },
+  walletFilterActive: {
+    maxWidth: 112,
   },
   filterPanel: {
     backgroundColor: V.colors.bg,
@@ -2566,16 +2599,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   dateField: {
+    flexGrow: 0,
     flexShrink: 0,
-    maxWidth: 108,
-    minWidth: 88,
-    width: 96,
-  },
-  walletSelect: {
-    flexShrink: 0,
-    maxWidth: 120,
-    minWidth: 88,
-    width: 100,
+    maxWidth: 96,
+    minWidth: 72,
+    width: 84,
   },
   row: {
     alignItems: 'center',
