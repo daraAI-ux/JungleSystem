@@ -5068,6 +5068,7 @@ function AmWebhooksPage() {
       ) : null}
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Webhook Config</Text>
+        <AmLoadingOrEmpty isLoading={isLoading} items={configs} loadingText="Memuat webhook configs..." emptyText="No webhooks registered" />
         <View style={styles.cardGrid}>
           {configs.map(config => (
             <View key={config._id} style={styles.hardwareCard}>
@@ -5118,7 +5119,7 @@ function AmWebhooksPage() {
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs yet" />
         {logs.map(log => (
           <View key={log._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.event}</Text>

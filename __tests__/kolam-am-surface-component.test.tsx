@@ -3269,6 +3269,10 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'transactions');
     await updateAmRoute(renderer!, 'mutasi');
     await updateAmRoute(renderer!, 'webhooks');
+    const webhooksText = renderText(renderer!).join(' ');
+    expect(webhooksText).toContain('No webhooks registered');
+    expect(webhooksText).toContain('No webhook logs yet');
+    expect(webhooksText).not.toContain('No webhook logs found');
     await updateAmRoute(renderer!, 'admin/users');
     await updateAmRoute(renderer!, 'admin/activity-log');
     await updateAmRoute(renderer!, 'settings/account');
