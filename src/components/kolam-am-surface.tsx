@@ -402,7 +402,19 @@ function getAmPageViewPath(
     return fallbackPath;
   }
 
+  if (isLegacyAmSsoRoute(normalizedRoute)) {
+    return '/';
+  }
+
+  if (!getKnownAmRouteByModuleRoute(normalizedRoute)) {
+    return fallbackPath;
+  }
+
   return `/${normalizedRoute}`;
+}
+
+function isLegacyAmSsoRoute(route: string) {
+  return route === 'login' || route === 'settings/account';
 }
 
 function normalizeModuleRoutePath(route?: string | null) {

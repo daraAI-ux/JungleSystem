@@ -821,7 +821,8 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    expect(recordAmPageView).toHaveBeenCalledWith('/login');
+    expect(recordAmPageView).toHaveBeenCalledWith('/');
+    expect(recordAmPageView).not.toHaveBeenCalledWith('/login');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Login Submit'})).toHaveLength(0);
     expect(renderText(renderer!).join(' ')).not.toContain('Gunakan akun Kolam yang sama.');
   });
@@ -4505,7 +4506,8 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     const text = renderText(renderer!);
-    expect(recordAmPageView).toHaveBeenCalledWith('/settings/account');
+    expect(recordAmPageView).toHaveBeenCalledWith('/');
+    expect(recordAmPageView).not.toHaveBeenCalledWith('/settings/account');
     expect(text).not.toContain('Profile information');
     expect(text).not.toContain('Change password');
     expect(text).not.toContain('Account Settings');
