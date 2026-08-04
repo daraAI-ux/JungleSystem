@@ -37,6 +37,7 @@ import {
 } from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
+import {KolamFormTextField} from './kolam-form-text-field';
 import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
@@ -535,13 +536,12 @@ export function KolamDaraTrainingVideoStudioBody({
 
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>Prompt</Text>
-              <TextInput
+              <KolamFormTextField
                 editable={canManage && !busy}
                 multiline
                 onChangeText={setPrompt}
-                placeholderTextColor={V.colors.mutedFg}
                 scrollEnabled
-                style={[styles.input, styles.promptInput]}
+                style={styles.promptInput}
                 value={prompt}
               />
             </View>
