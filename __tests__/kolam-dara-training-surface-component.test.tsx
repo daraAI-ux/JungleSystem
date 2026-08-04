@@ -312,20 +312,26 @@ describe('KolamDaraTrainingSurface', () => {
         updatedAt: '',
       },
     ]);
-    fineTuneDatasetMock.mockResolvedValue([
-      {
-        id: 'd1',
-        sourceType: 'phrase_rule',
-        sourceId: 'p1',
-        input: 'anda siapa',
-        output: 'Saya DARA',
-        validationStatus: 'valid',
-        status: 'candidate',
-        notes: '',
-        createdAt: '',
-        updatedAt: '',
-      },
-    ]);
+    fineTuneDatasetMock.mockResolvedValue({
+      rows: [
+        {
+          id: 'd1',
+          sourceType: 'phrase_rule',
+          sourceId: 'p1',
+          input: 'anda siapa',
+          output: 'Saya DARA',
+          validationStatus: 'valid',
+          status: 'candidate',
+          notes: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      total: 1,
+      page: 1,
+      pages: 1,
+      limit: 10,
+    });
     fineTuneBenchmarkMock.mockResolvedValue({
       scenarios: [
         {

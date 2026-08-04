@@ -198,18 +198,46 @@ export async function listKolamDaraTrainingFineTuneDataset(opts?: {
   page?: number;
   limit?: number;
   status?: KolamDaraTrainingFineTuneDatasetFilter;
-}): Promise<KolamDaraTrainingFineTuneDatasetItem[]> {
+}): Promise<{
+  rows: KolamDaraTrainingFineTuneDatasetItem[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}> {
+  const page = opts?.page ?? 1;
+  const limit = opts?.limit ?? 10;
   const payload = await kolamRequest<unknown>(
     '/dara-training/fine-tune/dataset',
     {
       query: {
-        page: opts?.page ?? 1,
-        limit: opts?.limit ?? 30,
+        page,
+        limit,
         status: opts?.status ?? 'all',
       },
     },
   );
-  return normalizeKolamDaraTrainingFineTuneDatasetList(payload);
+  const root =
+    payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : {};
+  const meta =
+    root.meta && typeof root.meta === 'object' && !Array.isArray(root.meta)
+      ? (root.meta as Record<string, unknown>)
+      : {};
+  const rows = normalizeKolamDaraTrainingFineTuneDatasetList(payload);
+  const total = Number(meta.total) || rows.length;
+  const resolvedLimit = Number(meta.limit) || limit;
+  const resolvedPage = Number(meta.page) || page;
+  const pages =
+    Number(meta.pages) || Math.max(1, Math.ceil(total / resolvedLimit) || 1);
+  return {
+    rows,
+    total,
+    page: resolvedPage,
+    pages,
+    limit: resolvedLimit,
+  };
 }
 
 /** PUT /dara-training/fine-tune/dataset/:id */
