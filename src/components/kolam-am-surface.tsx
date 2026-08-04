@@ -121,10 +121,14 @@ import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
 
 const TASK_TYPE_LABELS: Record<string, string> = {
+  all: 'All Types',
   stock_sync: 'Stock Sync',
   process_sale: 'Process Sale',
   send_message: 'Send Message',
   bank_transfer: 'Bank Transfer',
+};
+const TASK_STATUS_FILTER_LABELS: Record<string, string> = {
+  all: 'All Status',
 };
 const TASK_FILTER_STATUSES: Array<Exclude<AmTaskStatus, 'queued'> | 'all'> = ['all', 'pending', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
@@ -817,7 +821,7 @@ function AmTasksPage({
       <View style={styles.filterBar}>
         <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
         <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={handleTypeChange} />
-        <AmSegmentGroup active={status} items={TASK_FILTER_STATUSES} onSelect={handleStatusChange} />
+        <AmSegmentGroup active={status} items={TASK_FILTER_STATUSES} labels={TASK_STATUS_FILTER_LABELS} onSelect={handleStatusChange} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTasks} />
       </View>
       {error ? (

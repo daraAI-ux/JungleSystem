@@ -1013,6 +1013,9 @@ describe('KolamAmSurface', () => {
     });
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment BCA Main - 123'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone 1'})).toHaveLength(0);
+    const filterText = renderText(renderer!).join(' ');
+    expect(filterText).toContain('All Types');
+    expect(filterText).toContain('All Status');
     expect(getAmServiceAccounts).not.toHaveBeenCalled();
     expect(getAmDevices).not.toHaveBeenCalled();
   });
