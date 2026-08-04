@@ -236,7 +236,7 @@ export function getDashboardHeaderRouteContext({
     };
   }
 
-  if (activeModuleRoute && activeModuleRoute.area !== 'am') {
+  if (activeModuleRoute) {
     return {
       eyebrow: `${activeModuleRoute.area.toUpperCase()} Route`,
       route: activeModuleRoute.route,
@@ -368,9 +368,13 @@ export function getDashboardHeaderSyncIndicator({
 function getDashboardHeaderSyncArea(
   activeModule: AppModule,
 ): SyncActivityArea | 'app' {
+  if (activeModule === 'am') {
+    return 'am';
+  }
+
   const area = getShellModule(activeModule).area;
 
-  if (area === 'kolam' || area === 'pos' || area === 'am') {
+  if (area === 'kolam' || area === 'pos') {
     return area;
   }
 

@@ -23,7 +23,9 @@ import {
   getAmRouteByModuleRoute,
   normalizeAmRoute,
 } from '../src/domain/am-navigation';
+import {getDashboardHeaderSyncIndicator} from '../src/domain/dashboard-header';
 import {getShellModule} from '../src/domain/app-shell';
+import {seedUnifiedDataset} from '../src/services/unified-data';
 
 const AM_FE_DASHBOARD_ROOT =
   'E:\\Projects\\da-automation-management\\am-fe\\src\\app\\(dashboard)';
@@ -131,6 +133,28 @@ describe('AM navigation parity', () => {
   it('normalizes AM module routes before matching them', () => {
     expect(normalizeAmRoute(null)).toBe('/');
     expect(normalizeAmRoute('/hardware/rack-1/')).toBe('hardware/rack-1');
+  });
+
+  it('maps the AM shell header sync indicator to the AM live source', () => {
+    const liveAmDataset = {
+      ...seedUnifiedDataset,
+      sync: {...seedUnifiedDataset.sync, am: 'live' as const},
+    };
+
+    expect(
+      getDashboardHeaderSyncIndicator({
+        activeModule: 'am',
+        dataset: liveAmDataset,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        area: 'am',
+        areaLabel: 'AM',
+        detail: 'AM data source: Live',
+        label: 'Live',
+        status: 'live',
+      }),
+    );
   });
 });
 

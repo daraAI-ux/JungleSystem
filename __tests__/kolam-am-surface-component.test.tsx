@@ -873,7 +873,10 @@ describe('KolamAmSurface', () => {
     expect(recordAmPageView).toHaveBeenCalledWith('/');
     expect(recordAmPageView).not.toHaveBeenCalledWith('/login');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Login Submit'})).toHaveLength(0);
-    expect(renderText(renderer!).join(' ')).not.toContain('Gunakan akun Kolam yang sama.');
+    const joinedText = renderText(renderer!).join(' ');
+    expect(joinedText).toContain("Today's Incoming");
+    expect(joinedText).not.toContain('Page not found');
+    expect(joinedText).not.toContain('Gunakan akun Kolam yang sama.');
   });
 
   it('loads live service accounts from the Services route', async () => {
@@ -4565,6 +4568,8 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
     expect(recordAmPageView).not.toHaveBeenCalledWith('/settings/account');
+    expect(text).toContain("Today's Incoming");
+    expect(text).not.toContain('Page not found');
     expect(text).not.toContain('Profile information');
     expect(text).not.toContain('Change password');
     expect(text).not.toContain('Account Settings');

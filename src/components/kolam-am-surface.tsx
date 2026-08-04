@@ -326,6 +326,10 @@ type AmHardwareInitialRoute = {
 
 function getAmRouteSelection(route?: string | null): AmRouteSelection {
   const normalizedRoute = normalizeModuleRoutePath(route);
+  if (isLegacyAmSsoRoute(normalizedRoute)) {
+    return {routeId: 'dashboard'};
+  }
+
   const routeItem = getKnownAmRouteByModuleRoute(normalizedRoute);
   const segments = normalizedRoute === '/' ? [] : normalizedRoute.split('/');
 
