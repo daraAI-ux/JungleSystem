@@ -1780,7 +1780,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-password'}).props.onPress();
     });
 
-    expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-password', 'otp', 'SecretPass1!');
+    expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-password', 'password', 'SecretPass1!');
   });
 
   it('hides service input after runtime logs report login success', async () => {
