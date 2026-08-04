@@ -438,21 +438,26 @@ describe('KolamAmSurface', () => {
         'Administration',
       ]),
     );
-    const amScroll = renderer!.root
-      .findAllByType(ScrollView)
-      .find(scroll => !scroll.props.horizontal);
-    const amScrollContentStyle = StyleSheet.flatten(
-      amScroll?.props.contentContainerStyle,
-    );
-    expect(amScrollContentStyle).toEqual(
+    const amRoot = renderer!.root
+      .findAllByType(View)
+      .find(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.width === '100%' && style?.paddingTop === getDashboardLayoutVisualContract().page.gapY;
+      });
+    const amRootStyle = StyleSheet.flatten(amRoot?.props.style);
+    expect(amRootStyle).toEqual(
       expect.objectContaining({
         width: '100%',
         paddingTop: getDashboardLayoutVisualContract().page.gapY,
       }),
     );
-    expect(amScrollContentStyle?.maxWidth).toBeUndefined();
-    expect(amScrollContentStyle?.alignSelf).toBeUndefined();
-    expect(amScrollContentStyle?.paddingHorizontal).toBeUndefined();
+    expect(amRootStyle?.maxWidth).toBeUndefined();
+    expect(amRootStyle?.alignSelf).toBeUndefined();
+    expect(amRootStyle?.paddingHorizontal).toBeUndefined();
+    const verticalAmScroll = renderer!.root
+      .findAllByType(ScrollView)
+      .find(scroll => !scroll.props.horizontal);
+    expect(verticalAmScroll).toBeUndefined();
     const legacyFrame = renderer!.root
       .findAllByType(View)
       .find(view => {

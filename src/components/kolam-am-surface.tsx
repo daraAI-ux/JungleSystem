@@ -260,10 +260,7 @@ export function KolamAmSurface({
   }, [pageViewPath]);
 
   return (
-    <ScrollView
-      style={styles.surfaceScroll}
-      contentContainerStyle={styles.pageContent}
-      showsVerticalScrollIndicator={false}>
+    <View style={styles.pageContent}>
       {activeRoute === 'dashboard' ? (
         <AmDashboardPage
           dashboard={dataset.am.dashboard}
@@ -301,7 +298,7 @@ export function KolamAmSurface({
       ) : (
         <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -6768,10 +6765,6 @@ function titleCase(value: string) {
 }
 
 const styles = StyleSheet.create({
-  surfaceScroll: {
-    width: '100%',
-    alignSelf: 'stretch',
-  },
   pageContent: {
     width: '100%',
     paddingTop: DASHBOARD_LAYOUT_VISUAL.page.gapY,
