@@ -1,6 +1,8 @@
 import {appConfig} from '../src/config/app';
 import {setAccessToken} from '../src/lib/api-client';
 import {
+  checkKolamMediaOrphans,
+  cleanupKolamMediaOrphans,
   getKolamMediaList,
   getKolamMediaOrphanFilenames,
 } from '../src/services/kolam-media-api';
@@ -79,6 +81,69 @@ describe('Kolam media API', () => {
       'old.jpg',
     ]);
   });
+
+  it('checks orphan candidates before cleanup', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          safe: ['unused.jpg'],
+          scanned: 2,
+          unsafe: [{filename: 'linked.jpg', foundIn: ['Product']}],
+        },
+      }),
+    );
+
+    await expect(
+      checkKolamMediaOrphans(['unused.jpg', 'linked.jpg']),
+    ).resolves.toEqual({
+      safe: ['unused.jpg'],
+      scanned: 2,
+      unsafe: [{filename: 'linked.jpg', foundIn: ['Product']}],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/media/orphan/check`,
+      expect.objectContaining({
+        body: JSON.stringify({filenames: ['unused.jpg', 'linked.jpg']}),
+        method: 'POST',
+      }),
+    );
+  });
+
+  it('cleans safe orphan candidates through the live endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        data: {
+          deleted: 1,
+          failed: [{filename: 'missing.jpg', error: 'File not found on disk'}],
+          forced: false,
+          skippedUnsafe: 1,
+          unsafe: [{filename: 'linked.jpg', foundIn: ['Species']}],
+        },
+      }),
+    );
+
+    await expect(
+      cleanupKolamMediaOrphans({filenames: ['unused.jpg', 'missing.jpg']}),
+    ).resolves.toEqual({
+      deleted: 1,
+      failed: [{filename: 'missing.jpg', error: 'File not found on disk'}],
+      forced: false,
+      skippedUnsafe: 1,
+      unsafe: [{filename: 'linked.jpg', foundIn: ['Species']}],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/media/orphan/cleanup`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          filenames: ['unused.jpg', 'missing.jpg'],
+          force: false,
+        }),
+        method: 'POST',
+      }),
+    );
+  });
 });
 
 function jsonResponse(payload: unknown) {
@@ -87,4 +152,3 @@ function jsonResponse(payload: unknown) {
     status: 200,
   });
 }
-

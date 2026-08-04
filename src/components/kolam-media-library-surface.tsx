@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,9 +17,14 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
+  checkKolamMediaOrphans,
+  cleanupKolamMediaOrphans,
   getKolamMediaList,
+  getKolamMediaOrphanFilenames,
   type KolamMediaItem,
   type KolamMediaListResult,
+  type KolamMediaOrphanCheckResult,
+  type KolamMediaOrphanCleanupResult,
 } from '../services/kolam-media-api';
 import {KolamButton} from './kolam-button';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -28,6 +34,7 @@ import {
   type KolamFilterPanelAnchor,
 } from './kolam-filter-panel-anchor';
 import {KolamMediaPlayer} from './kolam-media-player';
+import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -51,6 +58,18 @@ export function KolamMediaLibrarySurface({
   const [filterPanelOpen, setFilterPanelOpen] = React.useState(false);
   const [panelAnchor, setPanelAnchor] =
     React.useState<KolamFilterPanelAnchor | null>(null);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = React.useState(false);
+  const [cleanupPhase, setCleanupPhase] = React.useState<
+    'ready' | 'checking' | 'review' | 'deleting' | 'done'
+  >('ready');
+  const [cleanupError, setCleanupError] = React.useState<string | null>(null);
+  const [candidateFilenames, setCandidateFilenames] = React.useState<string[]>(
+    [],
+  );
+  const [checkResult, setCheckResult] =
+    React.useState<KolamMediaOrphanCheckResult | null>(null);
+  const [cleanupResult, setCleanupResult] =
+    React.useState<KolamMediaOrphanCleanupResult | null>(null);
   const [loading, setLoading] = React.useState(false);
   const toolbarRef = React.useRef<View>(null);
   const filterTriggerRef = React.useRef<View>(null);
@@ -120,6 +139,10 @@ export function KolamMediaLibrarySurface({
     [onRouteChange, routeState],
   );
 
+  const refreshCurrentList = React.useCallback(() => {
+    setRoute({});
+  }, [setRoute]);
+
   const columns = Math.max(2, Math.min(6, Math.floor((width - 360) / 180)));
   const items = result?.items ?? [];
   const selectedFilter =
@@ -167,6 +190,64 @@ export function KolamMediaLibrarySurface({
     });
   }, [filterPanelOpen, width]);
 
+  const openCleanupDialog = React.useCallback(async () => {
+    setCleanupDialogOpen(true);
+    setCleanupPhase('checking');
+    setCleanupError(null);
+    setCandidateFilenames([]);
+    setCheckResult(null);
+    setCleanupResult(null);
+
+    try {
+      const filenames = await getKolamMediaOrphanFilenames(routeState.type);
+      setCandidateFilenames(filenames);
+
+      if (!filenames.length) {
+        setCleanupPhase('review');
+        setCheckResult({safe: [], scanned: 0, unsafe: []});
+        return;
+      }
+
+      const nextCheck = await checkKolamMediaOrphans(filenames);
+      setCheckResult(nextCheck);
+      setCleanupPhase('review');
+    } catch (cause) {
+      setCleanupError(
+        cause instanceof Error ? cause.message : 'Gagal memeriksa orphan.',
+      );
+      setCleanupPhase('ready');
+    }
+  }, [routeState.type]);
+
+  const closeCleanupDialog = React.useCallback(() => {
+    setCleanupDialogOpen(false);
+    setCleanupPhase('ready');
+    setCleanupError(null);
+  }, []);
+
+  const deleteSafeOrphans = React.useCallback(async () => {
+    const filenames = checkResult?.safe ?? [];
+
+    if (!filenames.length) {
+      return;
+    }
+
+    setCleanupPhase('deleting');
+    setCleanupError(null);
+
+    try {
+      const nextResult = await cleanupKolamMediaOrphans({filenames});
+      setCleanupResult(nextResult);
+      setCleanupPhase('done');
+      refreshCurrentList();
+    } catch (cause) {
+      setCleanupError(
+        cause instanceof Error ? cause.message : 'Gagal menghapus orphan.',
+      );
+      setCleanupPhase('review');
+    }
+  }, [checkResult?.safe, refreshCurrentList]);
+
   return (
     <View style={styles.root}>
       <View ref={toolbarRef} style={styles.toolbarWrap}>
@@ -203,6 +284,16 @@ export function KolamMediaLibrarySurface({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
+              {routeState.filter === 'orphan' ? (
+                <KolamButton
+                  disabled={cleanupDialogOpen}
+                  intent="danger"
+                  label="Hapus orphan"
+                  onPress={() => {
+                    openCleanupDialog().catch(() => undefined);
+                  }}
+                />
+              ) : null}
               <KolamButton
                 label="Cari"
                 onPress={() => setRoute({page: 1, search: draftSearch})}
@@ -295,6 +386,16 @@ export function KolamMediaLibrarySurface({
 
         <KolamMediaPreviewPane item={selectedItem} />
       </View>
+      <KolamMediaOrphanCleanupDialog
+        candidateCount={candidateFilenames.length}
+        checkResult={checkResult}
+        cleanupError={cleanupError}
+        cleanupPhase={cleanupPhase}
+        cleanupResult={cleanupResult}
+        onClose={closeCleanupDialog}
+        onDeleteSafe={deleteSafeOrphans}
+        visible={cleanupDialogOpen}
+      />
     </View>
   );
 }
@@ -384,6 +485,94 @@ function KolamMediaPreviewPane({item}: {item: KolamMediaItem | null}) {
       </View>
       {item.alt ? <Text style={styles.previewMeta}>{item.alt}</Text> : null}
     </View>
+  );
+}
+
+function KolamMediaOrphanCleanupDialog({
+  candidateCount,
+  checkResult,
+  cleanupError,
+  cleanupPhase,
+  cleanupResult,
+  onClose,
+  onDeleteSafe,
+  visible,
+}: {
+  candidateCount: number;
+  checkResult: KolamMediaOrphanCheckResult | null;
+  cleanupError: string | null;
+  cleanupPhase: 'ready' | 'checking' | 'review' | 'deleting' | 'done';
+  cleanupResult: KolamMediaOrphanCleanupResult | null;
+  onClose: () => void;
+  onDeleteSafe: () => Promise<void>;
+  visible: boolean;
+}) {
+  const safeCount = checkResult?.safe.length ?? 0;
+  const unsafeCount = checkResult?.unsafe.length ?? 0;
+  const busy = cleanupPhase === 'checking' || cleanupPhase === 'deleting';
+  const ignoreBackdropPress = React.useCallback(() => undefined, []);
+
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+      <View style={styles.cleanupOverlay}>
+        <KolamModalBackdrop onPress={busy ? ignoreBackdropPress : onClose} />
+        <View accessibilityLabel="Cleanup orphan" style={styles.cleanupDialog}>
+          <Text style={styles.cleanupTitle}>Hapus orphan</Text>
+          {cleanupPhase === 'checking' ? (
+            <Text style={styles.cleanupText}>Memeriksa file orphan...</Text>
+          ) : null}
+          {cleanupPhase === 'review' ? (
+            <View style={styles.cleanupBody}>
+              <Text style={styles.cleanupText}>
+                {candidateCount} kandidat, {safeCount} aman, {unsafeCount} dilewati.
+              </Text>
+              {cleanupError ? (
+                <Text style={styles.cleanupError}>{cleanupError}</Text>
+              ) : null}
+              {unsafeCount > 0 ? (
+                <ScrollView style={styles.cleanupList}>
+                  {checkResult?.unsafe.slice(0, 8).map(entry => (
+                    <Text key={entry.filename} style={styles.cleanupListText}>
+                      {entry.filename} - {entry.foundIn.join(', ') || 'Referenced'}
+                    </Text>
+                  ))}
+                </ScrollView>
+              ) : null}
+            </View>
+          ) : null}
+          {cleanupPhase === 'deleting' ? (
+            <Text style={styles.cleanupText}>Menghapus orphan...</Text>
+          ) : null}
+          {cleanupPhase === 'done' ? (
+            <View style={styles.cleanupBody}>
+              <Text style={styles.cleanupText}>
+                Terhapus {cleanupResult?.deleted ?? 0}. Gagal{' '}
+                {cleanupResult?.failed.length ?? 0}. Dilewati{' '}
+                {cleanupResult?.skippedUnsafe ?? 0}.
+              </Text>
+              {cleanupError ? (
+                <Text style={styles.cleanupError}>{cleanupError}</Text>
+              ) : null}
+            </View>
+          ) : null}
+          {cleanupPhase === 'ready' && cleanupError ? (
+            <Text style={styles.cleanupError}>{cleanupError}</Text>
+          ) : null}
+          <View style={styles.cleanupActions}>
+            <KolamButton disabled={busy} label="Tutup" onPress={onClose} />
+            {cleanupPhase === 'review' && safeCount > 0 ? (
+              <KolamButton
+                intent="danger"
+                label="Hapus"
+                onPress={() => {
+                  onDeleteSafe().catch(() => undefined);
+                }}
+              />
+            ) : null}
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -577,5 +766,65 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '600',
+  },
+  cleanupActions: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  cleanupBody: {
+    gap: 8,
+  },
+  cleanupDialog: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 14,
+    maxWidth: '86%',
+    padding: 18,
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 16},
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    width: 520,
+  },
+  cleanupError: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  cleanupList: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    maxHeight: 140,
+    padding: 8,
+  },
+  cleanupListText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  cleanupOverlay: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  cleanupText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  cleanupTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '900',
   },
 });

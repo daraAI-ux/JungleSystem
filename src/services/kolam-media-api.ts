@@ -37,7 +37,31 @@ export interface KolamMediaListResult {
   totalPages: number;
 }
 
+export interface KolamMediaOrphanUnsafeEntry {
+  filename: string;
+  foundIn: string[];
+}
+
+export interface KolamMediaOrphanCheckResult {
+  safe: string[];
+  scanned: number;
+  unsafe: KolamMediaOrphanUnsafeEntry[];
+}
+
+export interface KolamMediaOrphanCleanupResult {
+  deleted: number;
+  failed: Array<{filename: string; error: string}>;
+  forced: boolean;
+  skippedUnsafe: number;
+  unsafe: KolamMediaOrphanUnsafeEntry[];
+}
+
 type QueryValue = string | number | boolean | undefined | null;
+type KolamMediaRequestOptions = {
+  body?: unknown;
+  method?: 'GET' | 'POST';
+  query?: Record<string, QueryValue>;
+};
 
 export async function getKolamMediaList({
   filter = 'all',
@@ -47,11 +71,13 @@ export async function getKolamMediaList({
   type = 'image',
 }: KolamMediaListQuery = {}): Promise<KolamMediaListResult> {
   const response = await kolamMediaRequest<unknown>('/media/list', {
-    filter,
-    limit,
-    page,
-    search: search.trim() || undefined,
-    type,
+    query: {
+      filter,
+      limit,
+      page,
+      search: search.trim() || undefined,
+      type,
+    },
   });
 
   return normalizeKolamMediaList(response, {page, type});
@@ -61,7 +87,7 @@ export async function getKolamMediaOrphanFilenames(
   type: KolamMediaType,
 ): Promise<string[]> {
   const response = await kolamMediaRequest<unknown>('/media/orphan-filenames', {
-    type,
+    query: {type},
   });
   const value = unwrapData(response);
 
@@ -78,14 +104,67 @@ export async function getKolamMediaOrphanFilenames(
   return [];
 }
 
+export async function checkKolamMediaOrphans(
+  filenames: string[],
+): Promise<KolamMediaOrphanCheckResult> {
+  const response = await kolamMediaRequest<unknown>('/media/orphan/check', {
+    method: 'POST',
+    body: {filenames},
+  });
+  const value = unwrapData(response);
+
+  if (!isRecord(value)) {
+    return {safe: [], scanned: 0, unsafe: []};
+  }
+
+  return {
+    safe: normalizeStringList(value.safe),
+    scanned: getNumber(value.scanned, filenames.length),
+    unsafe: normalizeUnsafeEntries(value.unsafe),
+  };
+}
+
+export async function cleanupKolamMediaOrphans({
+  filenames,
+  force = false,
+}: {
+  filenames: string[];
+  force?: boolean;
+}): Promise<KolamMediaOrphanCleanupResult> {
+  const response = await kolamMediaRequest<unknown>('/media/orphan/cleanup', {
+    method: 'POST',
+    body: {filenames, force},
+  });
+  const value = unwrapData(response);
+
+  if (!isRecord(value)) {
+    return {
+      deleted: 0,
+      failed: [],
+      forced: force,
+      skippedUnsafe: 0,
+      unsafe: [],
+    };
+  }
+
+  return {
+    deleted: getNumber(value.deleted, 0),
+    failed: normalizeFailedEntries(value.failed),
+    forced: Boolean(value.forced),
+    skippedUnsafe: getNumber(value.skippedUnsafe, 0),
+    unsafe: normalizeUnsafeEntries(value.unsafe),
+  };
+}
+
 async function kolamMediaRequest<T>(
   path: string,
-  query?: Record<string, QueryValue>,
+  options: KolamMediaRequestOptions = {},
 ) {
   return apiRequest<T>({
-    method: 'GET',
+    method: options.method ?? 'GET',
     path,
-    query,
+    query: options.query,
+    body: options.body,
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
@@ -163,6 +242,64 @@ function normalizeOwners(value: unknown): KolamMediaOwner[] {
   });
 
   return owners;
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === 'string');
+}
+
+function normalizeUnsafeEntries(value: unknown): KolamMediaOrphanUnsafeEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(entry => {
+      if (!isRecord(entry)) {
+        return null;
+      }
+
+      const filename = getString(entry.filename);
+      if (!filename) {
+        return null;
+      }
+
+      return {
+        filename,
+        foundIn: normalizeStringList(entry.foundIn),
+      };
+    })
+    .filter((entry): entry is KolamMediaOrphanUnsafeEntry => entry !== null);
+}
+
+function normalizeFailedEntries(
+  value: unknown,
+): Array<{filename: string; error: string}> {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(entry => {
+      if (!isRecord(entry)) {
+        return null;
+      }
+
+      const filename = getString(entry.filename);
+      if (!filename) {
+        return null;
+      }
+
+      return {
+        filename,
+        error: getString(entry.error) || 'Gagal',
+      };
+    })
+    .filter((entry): entry is {filename: string; error: string} => entry !== null);
 }
 
 function getListItems(value: unknown): unknown[] {
