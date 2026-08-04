@@ -16,6 +16,7 @@ import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
 import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
+import {getAccessToken} from '../lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
@@ -2538,7 +2539,7 @@ function AmServiceDetailPanel({
                     <Image
                       accessibilityLabel={`AM Service QR Image ${account._id}`}
                       resizeMode="contain"
-                      source={{uri: qrUrl}}
+                      source={getAmProtectedImageSource(qrUrl)}
                       style={styles.qrImage}
                     />
                     <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
@@ -6694,6 +6695,21 @@ function getServiceInputRequirement(logs: AmDeviceServiceLog[]): 'otp' | 'passwo
 
 function normalizeAmQrImageUri(value: string): string {
   return value.startsWith('data:') ? value : `data:image/png;base64,${value}`;
+}
+
+function getAmProtectedImageSource(uri: string) {
+  const token = getAccessToken();
+  if (!token) {
+    return {uri};
+  }
+
+  return {
+    uri,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'x-source': appConfig.amSourceHeader,
+    },
+  };
 }
 
 function countBoxesForRack(boxes: AmBox[], rack: AmRack) {

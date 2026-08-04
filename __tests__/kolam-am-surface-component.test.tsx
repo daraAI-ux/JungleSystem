@@ -4,6 +4,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
 import {getDashboardLayoutVisualContract} from '../src/domain/dashboard-layout';
+import {setAccessToken} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
@@ -382,6 +383,7 @@ describe('KolamAmSurface', () => {
       });
     }
     jest.useRealTimers();
+    setAccessToken(undefined);
     jest.clearAllMocks();
   });
 
@@ -1435,6 +1437,7 @@ describe('KolamAmSurface', () => {
   });
 
   it('sends service OTP input when runtime logs request it', async () => {
+    setAccessToken('kolam-live-token');
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -1494,6 +1497,10 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service QR Image service-otp'}).props.source,
     ).toEqual({
       uri: 'https://frogs.dunia-anura.com/api/device/device-otp/service/shopee-qr?t=qr-1',
+      headers: {
+        Authorization: 'Bearer kolam-live-token',
+        'x-source': 'am',
+      },
     });
 
     const inputs = renderer!.root.findAllByType(TextInput);
