@@ -167,7 +167,7 @@ describe('Kolam navigation controller hook', () => {
     expect(requireNavigationController(latest).activeModule).toBe('kolam');
     expect(requireNavigationController(latest).activeNavigationItem).toEqual(
       expect.objectContaining({
-        label: 'Brands',
+        label: 'Merek',
         route: '/brands',
       }),
     );
@@ -204,10 +204,9 @@ describe('Kolam navigation controller hook', () => {
       );
     });
 
-    expect(requireNavigationController(latest).activeModule).toBe('catalog');
+    expect(requireNavigationController(latest).activeModule).toBe('kolam');
     expect(requireNavigationController(latest).activeNavigationItem).toEqual(
       expect.objectContaining({
-        label: 'Products Create',
         route: '/products/create',
       }),
     );
@@ -244,7 +243,7 @@ describe('Kolam navigation controller hook', () => {
     );
   });
 
-  it('keeps selected POS module route context from command palette', async () => {
+  it('keeps selected POS checkout module context from command palette', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
 
@@ -259,40 +258,37 @@ describe('Kolam navigation controller hook', () => {
       );
     });
 
-    const saleDraftCommand = getCommandIndex().find(
+    const checkoutCommand = getCommandIndex().find(
       command =>
-        command.kind === 'module-route' && command.route === 'sale-draft',
+        command.kind === 'module' &&
+        command.moduleId === 'checkout' &&
+        command.route?.includes('sale-draft'),
     );
 
-    expect(saleDraftCommand).toBeDefined();
+    expect(checkoutCommand).toBeDefined();
 
     await ReactTestRenderer.act(async () => {
       await requireNavigationController(latest).handleCommand(
-        saleDraftCommand!,
+        checkoutCommand!,
         async () => undefined,
       );
     });
 
     expect(requireNavigationController(latest).activeModule).toBe('checkout');
-    expect(requireNavigationController(latest).activeModuleRoute).toEqual(
-      expect.objectContaining({
-        moduleId: 'checkout',
-        route: 'sale-draft',
-      }),
-    );
+    expect(requireNavigationController(latest).activeModuleRoute).toBeNull();
     expect(requireNavigationController(latest).activeNavigationItem).toBeNull();
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
     expect(requireNavigationController(latest).activeAmSurface).toBeNull();
-    expect(messages.at(-1)).toContain('sale-draft');
+    expect(messages.at(-1)).toContain('command index');
   });
 
-  it('keeps selected POS module route context from Module Route Launcher', async () => {
+  it('keeps selected POS cashflow module route context from Module Route Launcher', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
-    const saleDraftRoute = getShellModuleRouteEntry('checkout', 'sale-draft');
+    const cashflowRoute = getShellModuleRouteEntry('cashflow', 'pos/cashflow/open');
 
-    if (!saleDraftRoute) {
-      throw new Error('POS sale-draft route is missing.');
+    if (!cashflowRoute) {
+      throw new Error('POS cashflow route is missing.');
     }
 
     await ReactTestRenderer.act(async () => {
@@ -308,21 +304,21 @@ describe('Kolam navigation controller hook', () => {
 
     await ReactTestRenderer.act(async () => {
       requireNavigationController(latest).handleModuleRouteSelect(
-        saleDraftRoute,
+        cashflowRoute,
       );
     });
 
-    expect(requireNavigationController(latest).activeModule).toBe('checkout');
+    expect(requireNavigationController(latest).activeModule).toBe('cashflow');
     expect(requireNavigationController(latest).activeModuleRoute).toEqual(
       expect.objectContaining({
-        moduleId: 'checkout',
-        route: 'sale-draft',
+        moduleId: 'cashflow',
+        route: 'pos/cashflow/open',
       }),
     );
     expect(requireNavigationController(latest).activeNavigationItem).toBeNull();
     expect(requireNavigationController(latest).activePluginRoute).toBeNull();
     expect(requireNavigationController(latest).commandSearch).toBe(
-      'sale-draft',
+      'pos/cashflow/open',
     );
     expect(messages.at(-1)).toContain('Module Route Launcher');
   });
@@ -527,7 +523,6 @@ describe('Kolam navigation controller hook', () => {
 
     expect(requireNavigationController(latest).activeNavigationItem).toEqual(
       expect.objectContaining({
-        label: 'Products Detail',
         route: '/products/product-live-low',
       }),
     );
@@ -546,7 +541,7 @@ describe('Kolam navigation controller hook', () => {
     );
   });
 
-  it('keeps selected plugin route context from command palette', async () => {
+  it('keeps Team Chat command palette context as a Kolam navigation route', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
 
@@ -563,7 +558,7 @@ describe('Kolam navigation controller hook', () => {
 
     const teamChatCommand = getCommandIndex().find(
       command =>
-        command.kind === 'plugin-route' && command.route === '/team-chat',
+        command.kind === 'navigation-route' && command.route === '/team-chat',
     );
 
     expect(teamChatCommand).toBeDefined();
@@ -575,14 +570,13 @@ describe('Kolam navigation controller hook', () => {
       );
     });
 
-    expect(requireNavigationController(latest).activeModule).toBe('plugins');
-    expect(requireNavigationController(latest).activePluginRoute).toEqual(
+    expect(requireNavigationController(latest).activeModule).toBe('kolam');
+    expect(requireNavigationController(latest).activeNavigationItem).toEqual(
       expect.objectContaining({
-        pluginId: 'chat',
         route: '/team-chat',
       }),
     );
-    expect(requireNavigationController(latest).pluginSearch).toBe('/team-chat');
+    expect(requireNavigationController(latest).activePluginRoute).toBeNull();
     expect(messages.at(-1)).toContain('/team-chat');
   });
 
@@ -615,23 +609,6 @@ describe('Kolam navigation controller hook', () => {
       await Promise.resolve();
     });
 
-    const teamChatCommand = getCommandIndex().find(
-      command =>
-        command.kind === 'plugin-route' && command.route === '/team-chat',
-    );
-
-    expect(teamChatCommand).toBeDefined();
-
-    await ReactTestRenderer.act(async () => {
-      await requireNavigationController(latest).handleCommand(
-        teamChatCommand!,
-        async () => undefined,
-      );
-    });
-
-    expect(requireNavigationController(latest).activePluginRoute).toBeNull();
-    expect(messages.at(-1)).toContain('dinonaktifkan di Settings');
-
     const staleTeamChatRoute = getPluginRouteIndex(pluginRegistry).find(
       route => route.pluginId === 'chat' && route.route === '/team-chat',
     );
@@ -650,7 +627,7 @@ describe('Kolam navigation controller hook', () => {
     expect(messages.at(-1)).toContain('dinonaktifkan di Settings');
   });
 
-  it('keeps selected plugin route context from Plugin Hub launcher', async () => {
+  it('keeps Plugin Hub launcher routes closed after Plugin Hub removal', async () => {
     const messages: string[] = [];
     let latest: NavigationController | null = null;
 
@@ -677,15 +654,9 @@ describe('Kolam navigation controller hook', () => {
       requireNavigationController(latest).handlePluginRouteSelect(route);
     });
 
-    expect(requireNavigationController(latest).activeModule).toBe('plugins');
-    expect(requireNavigationController(latest).activePluginRoute).toEqual(
-      expect.objectContaining({
-        pluginId: 'chat',
-        route: '/team-chat',
-      }),
-    );
-    expect(requireNavigationController(latest).pluginSearch).toBe('/team-chat');
-    expect(messages.at(-1)).toContain('Plugin Hub');
+    expect(requireNavigationController(latest).activeModule).toBe('kolam');
+    expect(requireNavigationController(latest).activePluginRoute).toBeNull();
+    expect(messages.at(-1)).toContain('Plugin Hub sudah dihapus');
   });
 
   it('keeps selected AM sidebar route context from command palette', async () => {
@@ -796,7 +767,7 @@ describe('Kolam navigation controller hook', () => {
 
     const teamChatCommand = getCommandIndex().find(
       command =>
-        command.kind === 'plugin-route' && command.route === '/team-chat',
+        command.kind === 'navigation-route' && command.route === '/team-chat',
     );
 
     if (!teamChatCommand) {

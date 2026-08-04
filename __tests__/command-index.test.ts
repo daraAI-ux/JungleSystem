@@ -10,12 +10,12 @@ describe('unified command index', () => {
     const commands = getCommandIndex();
 
     expect(getCommandIndexStats(commands)).toEqual({
-      total: 317,
+      total: 314,
       modules: 8,
-      moduleRoutes: 33,
+      moduleRoutes: 31,
       kolamSurfaces: 5,
       navigationRoutes: 250,
-      amRoutes: 10,
+      amRoutes: 9,
       actions: 11,
       pluginRoutes: 0,
     });
@@ -61,8 +61,8 @@ describe('unified command index', () => {
       expect.objectContaining({
         id: 'navigation-route:/products/create',
         kind: 'navigation-route',
-        moduleId: 'catalog',
-        area: 'pos',
+        moduleId: 'kolam',
+        area: 'kolam',
         route: '/products/create',
       }),
     );
@@ -88,8 +88,8 @@ describe('unified command index', () => {
       expect.objectContaining({
         id: 'navigation-route:/customers/:id/edit',
         kind: 'navigation-route',
-        moduleId: 'customer',
-        area: 'pos',
+        moduleId: 'kolam',
+        area: 'kolam',
         route: '/customers/:id/edit',
       }),
     );
