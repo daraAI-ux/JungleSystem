@@ -1,5 +1,5 @@
-import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import React, {useMemo, useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import {
   formatKolamDaraSeoKeywordDifficulty,
   formatKolamDaraSeoKeywordVolume,
@@ -11,6 +11,13 @@ import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
 
+const COL_VOLUME = 110;
+const COL_DIFFICULTY = 120;
+const COL_TREND = 100;
+const COL_SCORE = 72;
+const ROW_PAD = 20;
+const FIXED_COLS = COL_VOLUME + COL_DIFFICULTY + COL_TREND + COL_SCORE + ROW_PAD;
+
 /**
  * FE parity: DA-Dara-Plugin `dara-seo-keywords.tsx` table
  * Keyword / Volume / Difficulty / Trend / Skor + client page size 10.
@@ -20,7 +27,13 @@ export function KolamDaraSeoKeywordsBody({
 }: {
   controller: KolamDaraSeoKeywordsController;
 }) {
+  const [bodyWidth, setBodyWidth] = useState(0);
   const showTable = controller.pagedItems.length > 0;
+  const tableWidth = Math.max(bodyWidth, 640);
+  const keywordWidth = useMemo(
+    () => Math.max(200, tableWidth - FIXED_COLS),
+    [tableWidth],
+  );
 
   return (
     <View style={styles.surface}>
@@ -58,75 +71,75 @@ export function KolamDaraSeoKeywordsBody({
                 onPress={() => controller.onSetPage(controller.page + 1)}
               />
             </View>
-          }>
-          <ScrollView horizontal style={styles.tableScroll}>
-            <View style={styles.table}>
-              <View style={styles.headerRow}>
-                <Text style={[styles.th, styles.colKeyword]}>Keyword</Text>
-                <Text style={[styles.th, styles.colVolume]}>Volume</Text>
-                <Text style={[styles.th, styles.colDifficulty]}>Difficulty</Text>
-                <Text style={[styles.th, styles.colTrend]}>Trend</Text>
-                <Text style={[styles.th, styles.colScore]}>Skor</Text>
-              </View>
-              {controller.pagedItems.map(row => {
-                const level = resolveKolamDaraSeoKeywordDifficulty(
-                  row.opportunityScore,
-                );
-                return (
-                  <View key={row.id} style={styles.bodyRow}>
-                    <View style={styles.colKeyword}>
-                      <Text style={styles.keywordStrong}>{row.mainKeyword}</Text>
-                      {row.keywordType ? (
-                        <Text style={styles.keywordType}>{row.keywordType}</Text>
-                      ) : null}
-                    </View>
-                    <Text style={[styles.td, styles.colVolume]}>
-                      {formatKolamDaraSeoKeywordVolume(
-                        row.opportunityScore,
-                      ).toLocaleString('id-ID')}
-                    </Text>
-                    <View style={styles.colDifficulty}>
-                      <View
-                        style={[
-                          styles.pill,
-                          level === 'low'
-                            ? styles.pillLow
-                            : level === 'medium'
-                              ? styles.pillMedium
-                              : styles.pillHigh,
-                        ]}>
-                        <Text
-                          style={[
-                            styles.pillText,
-                            level === 'low'
-                              ? styles.pillTextLow
-                              : level === 'medium'
-                                ? styles.pillTextMedium
-                                : styles.pillTextHigh,
-                          ]}>
-                          {formatKolamDaraSeoKeywordDifficulty(
-                            row.opportunityScore,
-                          )}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.colTrend}>
-                      <View
-                        accessibilityLabel="Estimasi tren"
-                        style={styles.sparkTrack}>
-                        <View style={[styles.sparkSeg, styles.sparkSegWarn]} />
-                        <View style={[styles.sparkSeg, styles.sparkSegMid]} />
-                        <View style={[styles.sparkSeg, styles.sparkSegOk]} />
-                      </View>
-                    </View>
-                    <Text style={[styles.td, styles.colScore]}>
-                      {row.opportunityScore}
-                    </Text>
-                  </View>
-                );
-              })}
+          }
+          onBodyWidthChange={setBodyWidth}
+          style={styles.tableShell}>
+          <View style={[styles.table, bodyWidth > 0 ? {width: tableWidth} : null]}>
+            <View style={styles.headerRow}>
+              <Text style={[styles.th, {width: keywordWidth}]}>Keyword</Text>
+              <Text style={[styles.th, styles.colVolume]}>Volume</Text>
+              <Text style={[styles.th, styles.colDifficulty]}>Difficulty</Text>
+              <Text style={[styles.th, styles.colTrend]}>Trend</Text>
+              <Text style={[styles.th, styles.colScore]}>Skor</Text>
             </View>
-          </ScrollView>
+            {controller.pagedItems.map(row => {
+              const level = resolveKolamDaraSeoKeywordDifficulty(
+                row.opportunityScore,
+              );
+              return (
+                <View key={row.id} style={styles.bodyRow}>
+                  <View style={{width: keywordWidth, paddingRight: 10}}>
+                    <Text style={styles.keywordStrong}>{row.mainKeyword}</Text>
+                    {row.keywordType ? (
+                      <Text style={styles.keywordType}>{row.keywordType}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.td, styles.colVolume]}>
+                    {formatKolamDaraSeoKeywordVolume(
+                      row.opportunityScore,
+                    ).toLocaleString('id-ID')}
+                  </Text>
+                  <View style={styles.colDifficulty}>
+                    <View
+                      style={[
+                        styles.pill,
+                        level === 'low'
+                          ? styles.pillLow
+                          : level === 'medium'
+                            ? styles.pillMedium
+                            : styles.pillHigh,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.pillText,
+                          level === 'low'
+                            ? styles.pillTextLow
+                            : level === 'medium'
+                              ? styles.pillTextMedium
+                              : styles.pillTextHigh,
+                        ]}>
+                        {formatKolamDaraSeoKeywordDifficulty(
+                          row.opportunityScore,
+                        )}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.colTrend}>
+                    <View
+                      accessibilityLabel="Estimasi tren"
+                      style={styles.sparkTrack}>
+                      <View style={[styles.sparkSeg, styles.sparkSegWarn]} />
+                      <View style={[styles.sparkSeg, styles.sparkSegMid]} />
+                      <View style={[styles.sparkSeg, styles.sparkSegOk]} />
+                    </View>
+                  </View>
+                  <Text style={[styles.td, styles.colScore]}>
+                    {row.opportunityScore}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         </KolamCatalogListTableShell>
       ) : null}
     </View>
@@ -135,37 +148,44 @@ export function KolamDaraSeoKeywordsBody({
 
 const styles = StyleSheet.create({
   surface: {
+    alignSelf: 'stretch',
     flex: 1,
     gap: 12,
     minHeight: 0,
+    width: '100%',
+  },
+  tableShell: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   loadingText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
   },
-  tableScroll: {
-    flexGrow: 0,
-  },
   table: {
-    minWidth: 640,
+    alignSelf: 'stretch',
     width: '100%',
   },
   headerRow: {
+    alignSelf: 'stretch',
     backgroundColor: V.colors.muted,
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
     paddingHorizontal: 10,
     paddingVertical: 8,
+    width: '100%',
   },
   bodyRow: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
     paddingHorizontal: 10,
     paddingVertical: 10,
+    width: '100%',
   },
   th: {
     color: V.colors.mutedFg,
@@ -180,23 +200,17 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
   },
-  colKeyword: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 180,
-    paddingRight: 10,
-  },
   colVolume: {
-    width: 96,
+    width: COL_VOLUME,
   },
   colDifficulty: {
-    width: 110,
+    width: COL_DIFFICULTY,
   },
   colTrend: {
-    width: 96,
+    width: COL_TREND,
   },
   colScore: {
-    width: 64,
+    width: COL_SCORE,
   },
   keywordStrong: {
     color: V.colors.fg,
@@ -266,6 +280,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 24,
+    width: '100%',
   },
   emptyText: {
     color: V.colors.mutedFg,
