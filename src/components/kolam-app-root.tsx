@@ -3,6 +3,7 @@ import {View} from 'react-native';
 import {KolamAppShellSurface} from './kolam-app-shell-surface';
 import {KolamImagePreviewHost} from './kolam-image-preview-dialog';
 import {KolamLoginScreen} from './kolam-login-screen';
+import {KolamMaintenanceLockScreen} from './kolam-maintenance-lock-screen';
 import {KolamMediaPreviewHost} from './kolam-media-preview-dialog';
 import {KolamWorkspaceSurface} from './kolam-workspace-surface';
 import {
@@ -10,10 +11,12 @@ import {
   useKolamShellChromeContext,
   useKolamWorkspaceViewContext,
 } from '../context/kolam-app-contexts';
+import {useKolamMaintenanceLockController} from '../hooks/use-kolam-maintenance-lock-controller';
 
 export function KolamAppRoot() {
   const {authUser, deviceIdentityStatus} = useKolamAuthContext();
   const {runtime} = useKolamWorkspaceViewContext();
+  const maintenanceLock = useKolamMaintenanceLockController(Boolean(authUser));
 
   if (!authUser) {
     return (
@@ -23,6 +26,10 @@ export function KolamAppRoot() {
         syncStatus={runtime.syncStatus}
       />
     );
+  }
+
+  if (maintenanceLock.locked) {
+    return <KolamMaintenanceLockScreen />;
   }
 
   return <KolamSignedInLayout />;
