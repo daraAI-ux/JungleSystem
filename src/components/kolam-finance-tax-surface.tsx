@@ -17,6 +17,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-controller';
 import {KolamButton} from './kolam-button';
 import {KolamCardFrame} from './kolam-card-frame';
+import {KolamDaraTaxRingkasanBody} from './kolam-dara-tax-ringkasan-body';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -87,10 +88,6 @@ export function KolamFinanceTaxSurface({
           </View>
         ) : null}
 
-        {controller.error ? (
-          <Text style={styles.warn}>{controller.error}</Text>
-        ) : null}
-
         <View style={styles.tabBar}>
           <KolamSurfacePanelTabs
             onSelectTab={(tabId: KolamDaraTaxTabId) => {
@@ -107,9 +104,18 @@ export function KolamFinanceTaxSurface({
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           style={styles.scroll}>
-          <View style={styles.stubCard}>
-            <Text style={styles.stubTitle}>{selectedTabLabel}</Text>
-          </View>
+          {selectedTab === 'ringkasan' ? (
+            <KolamDaraTaxRingkasanBody
+              dashboard={controller.dashboard}
+              error={controller.error}
+              loading={controller.loading}
+              series={controller.series}
+            />
+          ) : (
+            <View style={styles.stubCard}>
+              <Text style={styles.stubTitle}>{selectedTabLabel}</Text>
+            </View>
+          )}
           {onRouteChange ? (
             <KolamButton
               intent="secondary"
@@ -246,11 +252,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     lineHeight: 18,
-  },
-  warn: {
-    color: V.colors.warning,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
   tabBar: {
     flexShrink: 0,
