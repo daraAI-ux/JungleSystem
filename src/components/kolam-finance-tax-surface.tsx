@@ -17,6 +17,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-controller';
 import {KolamButton} from './kolam-button';
 import {KolamCardFrame} from './kolam-card-frame';
+import {KolamDaraTaxLaporanBody} from './kolam-dara-tax-laporan-body';
 import {KolamDaraTaxOperasionalBody} from './kolam-dara-tax-operasional-body';
 import {KolamDaraTaxRegulasiBody} from './kolam-dara-tax-regulasi-body';
 import {KolamDaraTaxRingkasanBody} from './kolam-dara-tax-ringkasan-body';
@@ -143,6 +144,15 @@ export function KolamFinanceTaxSurface({
               taxStatus={controller.taxStatus}
               versions={controller.regulationVersions}
               watcherRunning={controller.watcherRunning}
+            />
+          ) : selectedTab === 'laporan' ? (
+            <KolamDaraTaxLaporanBody
+              canDraft={access.canDraft}
+              dashboard={controller.dashboard}
+              loading={controller.loading}
+              onRefresh={controller.onRefresh}
+              period={controller.period}
+              taxEnabled={controller.taxEnabled}
             />
           ) : (
             <View style={styles.stubCard}>

@@ -41,6 +41,13 @@ export type KolamDaraTaxDeadline = {
   taxType: string;
 };
 
+export type KolamDaraTaxDraftReport = {
+  id: string;
+  title: string;
+  status: string;
+  reportType: string;
+};
+
 export type KolamDaraTaxDashboard = {
   period: string;
   overview: KolamDaraTaxOverview | null;
@@ -52,6 +59,7 @@ export type KolamDaraTaxDashboard = {
   };
   deadlines: KolamDaraTaxDeadline[];
   pendingRegulationDraftCount: number;
+  draftReports: KolamDaraTaxDraftReport[];
   draftReportCount: number;
 };
 
@@ -196,6 +204,21 @@ export function normalizeKolamDaraTaxDashboard(
     : [];
 
   const hasOverview = Object.keys(overviewRaw).length > 0;
+  const normalizedDraftReports = draftReports
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        title: String(row.title || '').trim() || id,
+        status: String(row.status || '').trim(),
+        reportType: String(row.reportType || '').trim(),
+      };
+    })
+    .filter((row): row is KolamDaraTaxDraftReport => row != null);
 
   return {
     period: String(data.period || overviewRaw.period || '').trim(),
@@ -264,7 +287,8 @@ export function normalizeKolamDaraTaxDashboard(
       const row = asRecord(item);
       return String(row.status || '').trim() === 'pending_review';
     }).length,
-    draftReportCount: draftReports.length,
+    draftReports: normalizedDraftReports,
+    draftReportCount: normalizedDraftReports.length,
   };
 }
 

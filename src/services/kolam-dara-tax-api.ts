@@ -313,6 +313,22 @@ export async function runKolamDaraTaxReaccruePph21(body: {
   return String(root.message || '').trim();
 }
 
+/** POST /dara-tax/reports/drafts */
+export async function createKolamDaraTaxReportDraft(body?: {
+  reportType?: string;
+  period?: KolamDaraTaxPeriod;
+}): Promise<{id: string; title: string}> {
+  const payload = await kolamRequest<unknown>('/dara-tax/reports/drafts', {
+    method: 'POST',
+    body: body ?? {},
+  });
+  const data = unwrapNestedData(payload);
+  return {
+    id: String(data._id || data.id || '').trim(),
+    title: String(data.title || '').trim(),
+  };
+}
+
 function asApiRecord(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === 'object' && !Array.isArray(payload)
     ? (payload as Record<string, unknown>)

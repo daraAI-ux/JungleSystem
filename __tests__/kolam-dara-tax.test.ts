@@ -72,6 +72,7 @@ describe('kolam-dara-tax domain', () => {
     expect(dashboard.deadlines[0]?.taxType).toBe('PPN');
     expect(dashboard.pendingRegulationDraftCount).toBe(1);
     expect(dashboard.draftReportCount).toBe(1);
+    expect(dashboard.draftReports[0]?.title).toBe('Draft');
     expect(formatKolamDaraTaxIdr(1100000)).toContain('1.100.000');
     expect(formatKolamDaraTaxDateId('2026-08-31T00:00:00.000Z')).not.toBe('—');
   });

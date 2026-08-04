@@ -50,6 +50,7 @@ jest.mock('../src/services/kolam-dara-tax-api', () => ({
   runKolamDaraTaxBootstrap: jest.fn(),
   runKolamDaraTaxSnapshotBackfill: jest.fn(),
   runKolamDaraTaxReaccruePph21: jest.fn(),
+  createKolamDaraTaxReportDraft: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-financial-settings-api', () => ({
@@ -125,6 +126,7 @@ describe('KolamFinanceTaxSurface', () => {
       risks: {alerts: [], count: 0},
       deadlines: [],
       pendingRegulationDraftCount: 0,
+      draftReports: [],
       draftReportCount: 0,
     });
     seriesMock.mockResolvedValue({
@@ -300,6 +302,46 @@ describe('KolamFinanceTaxSurface', () => {
     expect(text).toContain('Sumber');
     expect(statusMock).toHaveBeenCalled();
     expect(versionsMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders laporan draft list when tab=laporan', async () => {
+    dashboardMock.mockResolvedValue({
+      period: 'month',
+      overview: null,
+      complianceScores: {},
+      complianceHighlights: [],
+      risks: {alerts: [], count: 0},
+      deadlines: [],
+      pendingRegulationDraftCount: 0,
+      draftReports: [
+        {
+          id: 'r1',
+          title: 'Ringkasan Agustus',
+          status: 'draft',
+          reportType: 'monthly_summary',
+        },
+      ],
+      draftReportCount: 1,
+    });
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamFinanceTaxSurface route="/finance/tax?tab=laporan" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Draft laporan pajak');
+    expect(text).toContain('Buat draft ringkasan');
+    expect(text).toContain('Ringkasan Agustus');
+    expect(text).toContain('Ringkasan estimasi periode terpilih.');
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
