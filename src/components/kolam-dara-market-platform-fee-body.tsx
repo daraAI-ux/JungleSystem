@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -20,6 +21,9 @@ import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
+
+const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
+const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 
 /** FE `PlatformFeeMonitorPanel` — Monitor | Kalkulasi. */
 export function KolamDaraMarketPlatformFeeBody({
@@ -281,7 +285,18 @@ function ProfileFormCard({
 
   return (
     <View style={[styles.card, styles.profileCard]}>
-      <Text style={styles.sectionTitle}>{profile.platform}</Text>
+      <View pointerEvents="none" style={styles.platformLogoCorner}>
+        <Image
+          resizeMode="contain"
+          source={
+            profile.platform === 'shopee' ? SHOPEE_LOGO : TOKOPEDIA_LOGO
+          }
+          style={styles.platformLogo}
+        />
+      </View>
+      <Text style={[styles.sectionTitle, styles.profileTitle]}>
+        {profile.platform}
+      </Text>
 
       <Text style={styles.fieldLabel}>Tier penjual</Text>
       <KolamDropdownSelect
@@ -576,6 +591,22 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 280,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  platformLogoCorner: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    zIndex: 1,
+  },
+  platformLogo: {
+    borderRadius: 6,
+    height: 28,
+    width: 28,
+  },
+  profileTitle: {
+    paddingRight: 36,
   },
   fullSelect: {
     width: '100%',
