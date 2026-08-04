@@ -116,6 +116,31 @@ describe('Kolam workspace tabs', () => {
     expect(closeRestore).toEqual(speciesSnapshot);
   });
 
+  it('generates unique tab ids across repeated create actions', async () => {
+    let latest: WorkspaceTabsController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <WorkspaceTabsHarness
+          snapshot={productsSnapshot}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      requireController(latest).handleCreateTab();
+      requireController(latest).handleCreateTab();
+      requireController(latest).handleCreateTab();
+    });
+
+    const tabIds = requireController(latest).tabs.map(tab => tab.id);
+    expect(tabIds).toHaveLength(4);
+    expect(new Set(tabIds).size).toBe(tabIds.length);
+  });
+
   it('renders shell tabs with close and add controls', async () => {
     const onCreateTab = jest.fn();
     const onTabClose = jest.fn();

@@ -18,8 +18,9 @@ export function useKolamWorkspaceTabsController({
 }: {
   snapshot: KolamWorkspaceTabSnapshot;
 }): KolamWorkspaceTabsController {
+  const nextWorkspaceTabIdRef = React.useRef(1);
   const [tabs, setTabs] = React.useState<KolamWorkspaceTab[]>(() => [
-    createWorkspaceTab(snapshot),
+    createWorkspaceTab(snapshot, nextWorkspaceTabIdRef),
   ]);
   const [activeTabId, setActiveTabId] = React.useState(() => tabs[0].id);
   const restoringTabIdRef = React.useRef<string | null>(null);
@@ -44,9 +45,17 @@ export function useKolamWorkspaceTabsController({
   }, [activeTabId, snapshot]);
 
   const handleCreateTab = React.useCallback(() => {
-    const nextTab = createWorkspaceTab(snapshot);
-    setTabs(currentTabs => [...currentTabs, nextTab]);
-    setActiveTabId(nextTab.id);
+    setTabs(currentTabs => {
+      const usedIds = new Set(currentTabs.map(tab => tab.id));
+      const nextTab = createWorkspaceTab(
+        snapshot,
+        nextWorkspaceTabIdRef,
+        usedIds,
+      );
+
+      setActiveTabId(nextTab.id);
+      return [...currentTabs, nextTab];
+    });
   }, [snapshot]);
 
   const handleTabSelect = React.useCallback(
@@ -98,13 +107,19 @@ export function useKolamWorkspaceTabsController({
   };
 }
 
-let nextWorkspaceTabId = 1;
-
 function createWorkspaceTab(
   snapshot: KolamWorkspaceTabSnapshot,
+  nextWorkspaceTabIdRef: React.MutableRefObject<number>,
+  usedIds = new Set<string>(),
 ): KolamWorkspaceTab {
-  const id = `workspace-tab-${nextWorkspaceTabId}`;
-  nextWorkspaceTabId += 1;
+  let id = `workspace-tab-${nextWorkspaceTabIdRef.current}`;
+
+  while (usedIds.has(id)) {
+    nextWorkspaceTabIdRef.current += 1;
+    id = `workspace-tab-${nextWorkspaceTabIdRef.current}`;
+  }
+
+  nextWorkspaceTabIdRef.current += 1;
 
   return {
     id,
