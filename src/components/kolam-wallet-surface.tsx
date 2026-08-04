@@ -1312,28 +1312,30 @@ function WalletTransactionPanel({
               }}
               style={styles.filterTrigger}
             />
-            <KolamDateField
-              accessibilityLabel="Tanggal mulai"
-              label="Dari"
-              onChange={value =>
-                controller.onChangeTxFilters({ startDate: value })
-              }
-              placeholder="Dari"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.txFilters.startDate}
-            />
-            <KolamDateField
-              accessibilityLabel="Tanggal sampai"
-              label="Sampai"
-              onChange={value =>
-                controller.onChangeTxFilters({ endDate: value })
-              }
-              placeholder="Sampai"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              value={controller.txFilters.endDate}
-            />
+            <View style={styles.txDateRange}>
+              <KolamDateField
+                accessibilityLabel="Tanggal mulai"
+                label="Dari"
+                onChange={value =>
+                  controller.onChangeTxFilters({ startDate: value })
+                }
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.txFilters.startDate}
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={value =>
+                  controller.onChangeTxFilters({ endDate: value })
+                }
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                value={controller.txFilters.endDate}
+              />
+            </View>
           </View>
           <WalletToolbarActions
             controller={controller}
@@ -2566,11 +2568,18 @@ const styles = StyleSheet.create({
   },
   txToolbarFilters: {
     alignItems: 'center',
-    flexGrow: 0,
+    flexGrow: 1,
     flexShrink: 1,
     flexWrap: 'nowrap',
     gap: 4,
     minWidth: 0,
+  },
+  txDateRange: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexGrow: 0,
+    flexShrink: 0,
+    gap: 4,
   },
   walletFilterActive: {
     maxWidth: 112,
@@ -2601,9 +2610,9 @@ const styles = StyleSheet.create({
   dateField: {
     flexGrow: 0,
     flexShrink: 0,
-    maxWidth: 96,
-    minWidth: 72,
-    width: 84,
+    maxWidth: 140,
+    minWidth: 120,
+    width: 120,
   },
   row: {
     alignItems: 'center',
