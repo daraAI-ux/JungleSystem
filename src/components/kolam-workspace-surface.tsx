@@ -144,7 +144,6 @@ export function KolamWorkspaceSurfaceComponent({
   onCommandSelect,
   onCustomerVisitConfirm,
   onDashboardRoute,
-  onAmSurfaceSelect,
   onModuleRouteSelect,
   onSelectModule,
   onKolamSurfaceSelect,
@@ -223,6 +222,17 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamVoucherSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/vouchers'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamCustomerRoute(activeRoutePath)) {
+    return (
+      <KolamCustomerSurface
+        customer={customer}
+        customers={dataset.customers}
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/customers'}
       />
     );
   }
@@ -732,6 +742,11 @@ function renderPosRouteContext(
     surface,
     onRouteSelect,
   );
+}
+
+function isKolamCustomerRoute(route: string) {
+  const routePath = route.split('?')[0];
+  return routePath === '/customers' || routePath.startsWith('/customers/');
 }
 
 function getPosModuleLabel(moduleId: AppModule) {

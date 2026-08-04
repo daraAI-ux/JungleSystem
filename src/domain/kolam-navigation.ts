@@ -2326,7 +2326,7 @@ export function getKolamNavigationRouteTarget(
   const routePath = item.route.split('?')[0];
 
   if (routePath === '/products' || routePath.startsWith('/products/')) {
-    return routeTarget('catalog', item);
+    return routeTarget('kolam', item);
   }
 
   if (routePath === '/species' || routePath.startsWith('/species/')) {
@@ -2357,7 +2357,7 @@ export function getKolamNavigationRouteTarget(
   }
 
   if (routePath === '/customers' || routePath.startsWith('/customers/')) {
-    return routeTarget('customer', item);
+    return routeTarget('kolam', item);
   }
 
   if (routePath === '/pengaturan') {

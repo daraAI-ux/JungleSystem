@@ -240,10 +240,10 @@ describe('Kolam workspace surface controller hook', () => {
     expect(selectedModules).toEqual([
       'sales',
       'sales',
-      'catalog',
-      'catalog',
-      'catalog',
-      'catalog',
+      'kolam',
+      'kolam',
+      'kolam',
+      'kolam',
     ]);
     expect(routeContexts).toEqual([
       '/sales?needsAction=1',
@@ -256,10 +256,10 @@ describe('Kolam workspace surface controller hook', () => {
     expect(messages).toEqual([
       'Sales native membuka /sales?needsAction=1.',
       'Sales native membuka /sales/sale-1.',
-      'Katalog native membuka /products?stockStatus=low_stock.',
-      'Katalog native membuka /products/product-1.',
-      'Katalog native membuka /inventory.',
-      'Katalog native membuka /raw-materials.',
+      'Kolam native membuka /products?stockStatus=low_stock.',
+      'Kolam native membuka /products/product-1.',
+      'Kolam native membuka /inventory.',
+      'Kolam native membuka /raw-materials.',
     ]);
   });
 });

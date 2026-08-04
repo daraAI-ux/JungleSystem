@@ -350,7 +350,7 @@ function getDashboardRouteModule(route: string): AppModule {
     route.startsWith('/species') ||
     route.startsWith('/layanan')
   ) {
-    return 'catalog';
+    return 'kolam';
   }
 
   return 'kolam';

@@ -17,11 +17,11 @@ import {
 describe('kolamNavigationSections', () => {
   it('keeps the native sidebar aligned with the live Kolam menu sections', () => {
     expect(kolamNavigationSections.map(section => section.title)).toEqual([
-      'Overview',
-      'Inventory',
-      'Sales & Cashflow',
-      'Finance',
-      'User',
+      'Beranda',
+      'Inventori',
+      'Penjualan & Arus Kas',
+      'Keuangan',
+      'Pengguna',
       'Enclonura',
     ]);
     expect(getKolamNavigationRouteCount()).toBeGreaterThanOrEqual(78);
@@ -97,8 +97,6 @@ describe('kolamNavigationSections', () => {
         '/taxonomy-request',
         '/storage-management',
         '/storage-history',
-        '/blogs',
-        '/blog-topics',
         '/list-of-users/hr',
         '/list-of-users/overtime',
         '/staff-attendance',
@@ -106,7 +104,6 @@ describe('kolamNavigationSections', () => {
         '/staff-attendance/me',
         '/portal',
         '/task-manager',
-        '/app-downloads',
       ]),
     );
   });
@@ -125,7 +122,7 @@ describe('kolamNavigationSections', () => {
         '/products',
         '/species',
         '/sales',
-        '/cashflow-session',
+        '/pos/cashflow',
         '/wallet',
         '/commissions',
         '/customers',
@@ -161,18 +158,23 @@ describe('kolamNavigationSections', () => {
     expect(kolamRoutes).toContain('/sales/discount-approval');
     expect(kolamRoutes).toContain('/vouchers');
     expect(kolamRoutes).toContain('/shipping-method');
-    expect(kolamRoutes).not.toContain('/custom-project');
-    expect(kolamRoutes).not.toContain('/custom-project/instances/new');
+    expect(kolamRoutes).toContain('/custom-project');
+    expect(kolamRoutes).toContain('/custom-project/instances/new');
     expect(kolamRoutes).toContain('/terms-templates');
     expect(kolamRoutes).toContain('/proyek');
     expect(getKolamNavigationItemByRoute('/terms-templates')).toEqual(
       expect.objectContaining({
-        label: 'Syarat & Ketentuan',
+        label: 'Terms & Conditions',
         route: '/terms-templates',
-        group: 'Penjualan',
+        group: 'Custom Project',
       }),
     );
-    expect(getKolamNavigationItemByRoute('/custom-project')).toBeNull();
+    expect(getKolamNavigationItemByRoute('/custom-project')).toEqual(
+      expect.objectContaining({
+        label: 'Custom Project',
+        route: '/custom-project',
+      }),
+    );
     expect(
       kolamSidebarNavigationSections
         .flatMap(section => section.items)
@@ -231,8 +233,6 @@ describe('kolamNavigationSections', () => {
     expect(kolamRoutes).toContain('/customer-storage-logs');
     expect(kolamRoutes).toContain('/enclonura-species');
     expect(kolamRoutes).toContain('/storage-history');
-    expect(kolamRoutes).toContain('/blogs');
-    expect(kolamRoutes).toContain('/blog-topics');
     expect(kolamRoutes).not.toContain('/settings/ai-tools');
     expect(kolamRoutes).not.toContain(
       '/settings/websetting/marketplace-landing',
@@ -281,18 +281,19 @@ describe('kolamNavigationSections', () => {
     };
 
     expect(getKolamNavigationLiveGroups(byId('inventory'))).toEqual([
-      'Label and Fields',
-      'Products',
-      'Life Stocks',
-      'Services',
-      'Stock',
-      'Procurement',
-      'Productions',
+      'Label dan Field',
+      'Produk',
+      'Stok Hidup',
+      'Layanan',
+      'Stok',
+      'Inventory',
+      'Pengadaan',
+      'Produksi',
     ]);
     expect(getKolamNavigationLiveGroups(byId('finance'))).toEqual([
       'Payroll & Tax',
-      'Expenses & Income',
-      'Finance Settings',
+      'Pengeluaran & Pemasukan',
+      'Pengaturan Keuangan',
     ]);
     expect(kolamNavigationSections.some(section => section.id === 'settings')).toBe(
       false,
@@ -337,7 +338,7 @@ describe('kolamNavigationSections', () => {
     };
 
     expect(getKolamNavigationRouteTarget(byRoute('/products')).moduleId).toBe(
-      'catalog',
+      'kolam',
     );
     expect(
       getKolamNavigationRouteTarget(byRoute('/label-dan-field/kategori'))
@@ -354,7 +355,7 @@ describe('kolamNavigationSections', () => {
     );
     expect(
       getKolamNavigationRouteTarget(byRoute('/cashflow-session')).moduleId,
-    ).toBe('cashflow');
+    ).toBe('kolam');
     expect(getKolamNavigationRouteTarget(byRoute('/source')).moduleId).toBe(
       'kolam',
     );
@@ -372,14 +373,11 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationRouteTarget(byRoute('/finance/payroll')).moduleId,
     ).toBe('kolam');
     expect(getKolamNavigationRouteTarget(byRoute('/customers')).moduleId).toBe(
-      'customer',
+      'kolam',
     );
     expect(
       getKolamNavigationRouteTarget(byRoute('/customer-species')).moduleId,
     ).toBe('kolam');
-    expect(getKolamNavigationRouteTarget(byRoute('/blogs')).moduleId).toBe(
-      'kolam',
-    );
     expect(
       getKolamNavigationRouteTarget(byRoute('/enclonura-species')).moduleId,
     ).toBe('kolam');
@@ -453,13 +451,13 @@ describe('kolamNavigationSections', () => {
       expect.arrayContaining([
         expect.objectContaining({
           baseRoute: '/products',
-          label: 'Products Create',
+          label: 'Produk Create',
           route: '/products/create',
           routePattern: '/products/create',
         }),
         expect.objectContaining({
           baseRoute: '/products',
-          label: 'Products Edit',
+          label: 'Produk Edit',
           route: '/products/:id/edit',
           routePattern: '/products/:id/edit',
         }),
@@ -484,10 +482,6 @@ describe('kolamNavigationSections', () => {
           route: '/purchase-order/:id/edit',
         }),
         expect.objectContaining({
-          baseRoute: '/blogs',
-          route: '/blogs/create',
-        }),
-        expect.objectContaining({
           baseRoute: '/campaign/dara-seo',
           route: '/campaign/dara-seo/keywords',
         }),
@@ -509,17 +503,17 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationRouteTarget(
         variants.find(variant => variant.route === '/products/create')!,
       ).moduleId,
-    ).toBe('catalog');
+    ).toBe('kolam');
     expect(
       getKolamNavigationRouteTarget(
         variants.find(variant => variant.route === '/sales/create')!,
       ).moduleId,
-    ).toBe('sales');
+    ).toBe('kolam');
     expect(
       getKolamNavigationRouteTarget(
         variants.find(variant => variant.route === '/customers/:id/edit')!,
       ).moduleId,
-    ).toBe('customer');
+    ).toBe('kolam');
   });
 
   it('labels stock transaction detail as Detil Transaksi Stok', () => {
@@ -554,25 +548,25 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationItemByRuntimeRoute('/products?stockStatus=low_stock'),
     ).toEqual(
       expect.objectContaining({
-        label: 'Products',
+        label: 'Produk',
         route: '/products?stockStatus=low_stock',
       }),
     );
     expect(getKolamNavigationItemByRuntimeRoute('/products/create')).toEqual(
       expect.objectContaining({
-        label: 'Products Create',
+        label: 'Produk Create',
         route: '/products/create',
       }),
     );
     expect(getKolamNavigationItemByRuntimeRoute('/sales/create')).toEqual(
       expect.objectContaining({
-        label: 'Sales Create',
+        label: 'Penjualan Baru',
         route: '/sales/create',
       }),
     );
     expect(getKolamNavigationItemByRuntimeRoute('/sales/sale-1/edit')).toEqual(
       expect.objectContaining({
-        label: 'Sales Edit',
+        label: 'Ubah Penjualan',
         route: '/sales/sale-1/edit',
       }),
     );
@@ -614,7 +608,7 @@ describe('kolamNavigationSections', () => {
     );
     expect(getKolamNavigationItemByRuntimeRoute('/sales/sale-1')).toEqual(
       expect.objectContaining({
-        label: 'Sales Detail',
+        label: 'Detail Penjualan',
         route: '/sales/sale-1',
       }),
     );
@@ -634,7 +628,7 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationItemByRuntimeRoute('/label-dan-field/merek'),
     ).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Merek',
         route: '/label-dan-field/merek',
       }),
@@ -645,7 +639,7 @@ describe('kolamNavigationSections', () => {
       ),
     ).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Dunia Anura',
         route: '/label-dan-field/merek/Dunia%20Anura/edit',
       }),
@@ -654,7 +648,7 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationItemByRuntimeRoute('/label-dan-field/merek/baru'),
     ).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Buat Merek Baru',
         route: '/label-dan-field/merek/baru',
       }),
@@ -663,14 +657,14 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationItemByRuntimeRoute('/label-dan-field/kategori'),
     ).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Kategori',
         route: '/label-dan-field/kategori',
       }),
     );
     expect(getKolamNavigationItemByRuntimeRoute('/category')).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Kategori',
         route: '/label-dan-field/kategori',
       }),
@@ -681,7 +675,7 @@ describe('kolamNavigationSections', () => {
       ),
     ).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Peralatan',
         route: '/label-dan-field/kategori/Peralatan/edit',
       }),
@@ -690,7 +684,7 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationItemByRuntimeRoute('/label-dan-field/kategori/baru'),
     ).toEqual(
       expect.objectContaining({
-        group: 'Label and Fields',
+        group: 'Label dan Field',
         label: 'Buat Kategori Baru',
         route: '/label-dan-field/kategori/baru',
       }),
