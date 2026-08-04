@@ -422,72 +422,278 @@ export function KolamSalesOpsDetail({
         </Text>
       ) : null}
 
+      <View style={styles.detailFrame}>
+        <View style={styles.detailFrameRow}>
+          <View style={styles.detailFrameMain}>
+            <Text style={styles.sectionTitle}>Informasi Transaksi</Text>
+            <KolamDescriptionList
+              accessibilityLabel="Informasi transaksi"
+              rows={[
+                {
+                  id: 'buyer',
+                  label:
+                    sale.buyerInfo && !sale.customer
+                      ? 'Pembeli eksternal'
+                      : 'Pelanggan',
+                  value: sale.buyerLabel,
+                  meta: [buyerPhone, buyerEmail].filter(Boolean).join(' · '),
+                  tone: 'default',
+                },
+                {
+                  id: 'pic',
+                  label: 'PIC',
+                  value: sale.createdByName || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'payment-method',
+                  label: 'Metode bayar',
+                  value: sale.paymentMethod?.name || '—',
+                  meta: sale.paymentMethod?.type || '',
+                  tone: 'default',
+                },
+                {
+                  id: 'created',
+                  label: 'Dibuat',
+                  value: formatShortDateTime(sale.createdAt) || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                {
+                  id: 'transaction',
+                  label: 'Tanggal transaksi',
+                  value: formatShortDateTime(sale.transactionDate) || '—',
+                  meta: '',
+                  tone: 'default',
+                },
+                ...(sale.discountType
+                  ? [
+                      {
+                        id: 'discount-type',
+                        label: 'Tipe diskon',
+                        value: sale.discountType,
+                        meta: '',
+                        tone: 'default' as const,
+                      },
+                    ]
+                  : []),
+                ...(sale.notes
+                  ? [
+                      {
+                        id: 'notes',
+                        label: 'Catatan',
+                        value: sale.notes,
+                        meta: '',
+                        tone: 'default' as const,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          </View>
+
+          {!skipShipping ? (
+            <View style={styles.detailFrameSide}>
+              <Text style={styles.sectionTitle}>Informasi Pengiriman</Text>
+              <View style={styles.shippingBlock}>
+                <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Alamat</Text>
+                  <Text style={styles.shippingFieldValue}>
+                    {sale.shippingAddressText || '—'}
+                  </Text>
+                </View>
+                <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Kurir</Text>
+                  {saleCouriers.length > 0 ? (
+                    <View style={styles.courierChipRow}>
+                      {saleCouriers.map(courier => {
+                        const logo = getKolamCourierLogoSource(courier.logoKey);
+                        return (
+                          <View key={courier.name} style={styles.courierChip}>
+                            {logo ? (
+                              <Image
+                                accessibilityLabel={`Logo ${courier.name}`}
+                                resizeMode="contain"
+                                source={logo}
+                                style={styles.courierLogo}
+                              />
+                            ) : null}
+                            <Text style={styles.shippingFieldValue}>
+                              {courier.name}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <Text style={styles.shippingFieldValue}>Tidak ada kurir</Text>
+                  )}
+                </View>
+                {saleServiceLabel ? (
+                  <View style={styles.shippingField}>
+                    <Text style={styles.shippingFieldLabel}>Layanan</Text>
+                    <Text style={styles.shippingFieldValue}>
+                      {saleServiceLabel}
+                    </Text>
+                  </View>
+                ) : null}
+                {saleTrackingNumber ? (
+                  <View style={styles.shippingField}>
+                    <Text style={styles.shippingFieldLabel}>Nomor Resi</Text>
+                    <Text
+                      selectable
+                      style={[styles.shippingFieldValue, styles.trackingMono]}
+                    >
+                      {saleTrackingNumber}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={styles.shippingField}>
+                  <Text style={styles.shippingFieldLabel}>Total pengiriman</Text>
+                  <Text style={styles.shippingFieldValue}>
+                    {formatRupiah(sale.shippingCost)}
+                  </Text>
+                </View>
+              </View>
+
+              {marketplaceLogistics ? (
+                <>
+                  <Text style={styles.sectionTitle}>
+                    Perjalanan paket ({logisticsPlatformLabel})
+                  </Text>
+                  {marketplaceLogistics.lastUpdate &&
+                  marketplaceLogistics.timeline.length === 0 ? (
+                    <Text style={styles.metaText}>
+                      {marketplaceLogistics.lastUpdate}
+                    </Text>
+                  ) : marketplaceLogistics.timeline.length === 0 ? (
+                    <Text style={styles.metaText}>
+                      Belum ada pembaruan perjalanan paket.
+                    </Text>
+                  ) : (
+                    <ScrollView
+                      contentContainerStyle={styles.historyScroll}
+                      nestedScrollEnabled
+                      style={styles.historyScrollView}
+                    >
+                      <View style={styles.historyTimeline}>
+                        {marketplaceLogistics.timeline.map((entry, index) => {
+                          const timeLabel = formatKolamSaleLogisticsTime(
+                            entry.at,
+                          );
+                          const isLatest = index === 0;
+                          return (
+                            <View
+                              key={`${entry.message}-${entry.at || index}`}
+                              style={styles.historyTimelineItem}
+                            >
+                              <View
+                                style={[
+                                  styles.historyTimelineDot,
+                                  isLatest
+                                    ? styles.historyTimelineDotSuccess
+                                    : styles.historyTimelineDotSecondary,
+                                ]}
+                              />
+                              <View style={styles.historyTimelineBody}>
+                                <Text style={styles.historyTimelineTitle}>
+                                  {entry.message}
+                                </Text>
+                                {timeLabel ? (
+                                  <Text style={styles.metaText}>
+                                    {timeLabel}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </ScrollView>
+                  )}
+                </>
+              ) : null}
+
+              {showDeliveryActions ? (
+                <>
+                  {allowedDeliveryTransitions.length === 0 ? (
+                    <Text style={styles.metaText}>
+                      Tidak ada transisi pengiriman yang tersedia.
+                    </Text>
+                  ) : (
+                    <View style={styles.actionButtons}>
+                      {allowedDeliveryTransitions.map(target => (
+                        <KolamButton
+                          disabled={controller.mutating}
+                          intent="primary"
+                          key={target}
+                          label={formatKolamSaleDeliveryFilterLabel(target)}
+                          onPress={() => setPendingDelivery(target)}
+                        />
+                      ))}
+                    </View>
+                  )}
+                  {canRequestBiteshipPickup ? (
+                    <KolamButton
+                      disabled={controller.mutating}
+                      label="Request pickup Biteship"
+                      onPress={() => {
+                        void controller.onRequestBiteshipPickup();
+                      }}
+                    />
+                  ) : null}
+                </>
+              ) : marketplaceManaged ? (
+                <View style={styles.marketplaceFulfillmentActions}>
+                  {showTokopediaDropOffBadge ? (
+                    <View style={styles.tokopediaDropOffRow}>
+                      <KolamStatusBadge
+                        intent="warning"
+                        label="Antar ke counter (Tokopedia)"
+                      />
+                      {tokopediaDropOffUrl ? (
+                        <Pressable
+                          accessibilityRole="link"
+                          onPress={() => {
+                            void Linking.openURL(tokopediaDropOffUrl).catch(
+                              () => undefined,
+                            );
+                          }}
+                        >
+                          <Text style={styles.dropOffLink}>Lokasi counter</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  ) : null}
+                  {showTokopediaPickupRequest ? (
+                    <KolamButton
+                      disabled={controller.mutating}
+                      intent="primary"
+                      label="Request jemput kurir (Tokopedia)"
+                      onPress={() => {
+                        void controller.onRequestMarketplacePickup();
+                      }}
+                    />
+                  ) : null}
+                  {!showMarketplaceFulfillmentActions ? (
+                    <Text style={styles.metaText}>
+                      Pengiriman marketplace dikelola otomatis dari platform.
+                    </Text>
+                  ) : null}
+                </View>
+              ) : sale.status !== 'paid' && sale.status !== 'partial_paid' ? (
+                <Text style={styles.metaText}>
+                  Transisi pengiriman tersedia setelah status Lunas.
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      </View>
+
       <View style={styles.columns}>
         <View style={styles.columnMain}>
-          <Text style={styles.sectionTitle}>Informasi Transaksi</Text>
-          <KolamDescriptionList
-            accessibilityLabel="Informasi transaksi"
-            rows={[
-              {
-                id: 'buyer',
-                label: sale.buyerInfo && !sale.customer ? 'Pembeli eksternal' : 'Pelanggan',
-                value: sale.buyerLabel,
-                meta: [buyerPhone, buyerEmail].filter(Boolean).join(' · '),
-                tone: 'default',
-              },
-              {
-                id: 'pic',
-                label: 'PIC',
-                value: sale.createdByName || '—',
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'payment-method',
-                label: 'Metode bayar',
-                value: sale.paymentMethod?.name || '—',
-                meta: sale.paymentMethod?.type || '',
-                tone: 'default',
-              },
-              {
-                id: 'created',
-                label: 'Dibuat',
-                value: formatShortDateTime(sale.createdAt) || '—',
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'transaction',
-                label: 'Tanggal transaksi',
-                value: formatShortDateTime(sale.transactionDate) || '—',
-                meta: '',
-                tone: 'default',
-              },
-              ...(sale.discountType
-                ? [
-                    {
-                      id: 'discount-type',
-                      label: 'Tipe diskon',
-                      value: sale.discountType,
-                      meta: '',
-                      tone: 'default' as const,
-                    },
-                  ]
-                : []),
-              ...(sale.notes
-                ? [
-                    {
-                      id: 'notes',
-                      label: 'Catatan',
-                      value: sale.notes,
-                      meta: '',
-                      tone: 'default' as const,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-
           <Text style={styles.sectionTitle}>Aksi status</Text>
           {marketplaceManaged ? (
             <Text style={styles.metaText}>
@@ -911,176 +1117,6 @@ export function KolamSalesOpsDetail({
         </View>
 
         <View style={styles.columnSide}>
-          {!skipShipping ? (
-            <>
-              <Text style={styles.sectionTitle}>Informasi Pengiriman</Text>
-              <View style={styles.shippingBlock}>
-                <View style={styles.shippingField}>
-                  <Text style={styles.shippingFieldLabel}>Alamat</Text>
-                  <Text style={styles.shippingFieldValue}>
-                    {sale.shippingAddressText || '—'}
-                  </Text>
-                </View>
-                <View style={styles.shippingField}>
-                  <Text style={styles.shippingFieldLabel}>Kurir</Text>
-                  {saleCouriers.length > 0 ? (
-                    <View style={styles.courierChipRow}>
-                      {saleCouriers.map(courier => {
-                        const logo = getKolamCourierLogoSource(courier.logoKey);
-                        return (
-                          <View key={courier.name} style={styles.courierChip}>
-                            {logo ? (
-                              <Image
-                                accessibilityLabel={`Logo ${courier.name}`}
-                                resizeMode="contain"
-                                source={logo}
-                                style={styles.courierLogo}
-                              />
-                            ) : null}
-                            <Text style={styles.shippingFieldValue}>
-                              {courier.name}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  ) : (
-                    <Text style={styles.shippingFieldValue}>Tidak ada kurir</Text>
-                  )}
-                </View>
-                {saleServiceLabel ? (
-                  <View style={styles.shippingField}>
-                    <Text style={styles.shippingFieldLabel}>Layanan</Text>
-                    <Text style={styles.shippingFieldValue}>
-                      {saleServiceLabel}
-                    </Text>
-                  </View>
-                ) : null}
-                {saleTrackingNumber ? (
-                  <View style={styles.shippingField}>
-                    <Text style={styles.shippingFieldLabel}>Nomor Resi</Text>
-                    <Text
-                      selectable
-                      style={[styles.shippingFieldValue, styles.trackingMono]}
-                    >
-                      {saleTrackingNumber}
-                    </Text>
-                  </View>
-                ) : null}
-                <View style={styles.shippingField}>
-                  <Text style={styles.shippingFieldLabel}>Total pengiriman</Text>
-                  <Text style={styles.shippingFieldValue}>
-                    {formatRupiah(sale.shippingCost)}
-                  </Text>
-                </View>
-                {marketplaceLogistics ? (
-                  <View style={styles.logisticsBlock}>
-                    <Text style={styles.shippingFieldLabel}>
-                      Perjalanan paket ({logisticsPlatformLabel})
-                    </Text>
-                    {marketplaceLogistics.lastUpdate &&
-                    marketplaceLogistics.timeline.length === 0 ? (
-                      <Text style={styles.shippingFieldValue}>
-                        {marketplaceLogistics.lastUpdate}
-                      </Text>
-                    ) : (
-                      marketplaceLogistics.timeline.map((entry, index) => {
-                        const timeLabel = formatKolamSaleLogisticsTime(entry.at);
-                        return (
-                          <View
-                            key={`${entry.message}-${entry.at || index}`}
-                            style={styles.logisticsEntry}
-                          >
-                            <Text style={styles.shippingFieldValue}>
-                              {entry.message}
-                            </Text>
-                            {timeLabel ? (
-                              <Text style={styles.metaText}>{timeLabel}</Text>
-                            ) : null}
-                          </View>
-                        );
-                      })
-                    )}
-                  </View>
-                ) : null}
-                {showDeliveryActions ? (
-                  <>
-                    {allowedDeliveryTransitions.length === 0 ? (
-                      <Text style={styles.metaText}>
-                        Tidak ada transisi pengiriman yang tersedia.
-                      </Text>
-                    ) : (
-                      <View style={styles.actionButtons}>
-                        {allowedDeliveryTransitions.map(target => (
-                          <KolamButton
-                            disabled={controller.mutating}
-                            intent="primary"
-                            key={target}
-                            label={formatKolamSaleDeliveryFilterLabel(target)}
-                            onPress={() => setPendingDelivery(target)}
-                          />
-                        ))}
-                      </View>
-                    )}
-                    {canRequestBiteshipPickup ? (
-                      <KolamButton
-                        disabled={controller.mutating}
-                        label="Request pickup Biteship"
-                        onPress={() => {
-                          void controller.onRequestBiteshipPickup();
-                        }}
-                      />
-                    ) : null}
-                  </>
-                ) : marketplaceManaged ? (
-                  <View style={styles.marketplaceFulfillmentActions}>
-                    {showTokopediaDropOffBadge ? (
-                      <View style={styles.tokopediaDropOffRow}>
-                        <KolamStatusBadge
-                          intent="warning"
-                          label="Antar ke counter (Tokopedia)"
-                        />
-                        {tokopediaDropOffUrl ? (
-                          <Pressable
-                            accessibilityRole="link"
-                            onPress={() => {
-                              void Linking.openURL(tokopediaDropOffUrl).catch(
-                                () => undefined,
-                              );
-                            }}
-                          >
-                            <Text style={styles.dropOffLink}>
-                              Lokasi counter
-                            </Text>
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    ) : null}
-                    {showTokopediaPickupRequest ? (
-                      <KolamButton
-                        disabled={controller.mutating}
-                        intent="primary"
-                        label="Request jemput kurir (Tokopedia)"
-                        onPress={() => {
-                          void controller.onRequestMarketplacePickup();
-                        }}
-                      />
-                    ) : null}
-                    {!showMarketplaceFulfillmentActions ? (
-                      <Text style={styles.metaText}>
-                        Pengiriman marketplace dikelola otomatis dari platform.
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : sale.status !== 'paid' && sale.status !== 'partial_paid' ? (
-                  <Text style={styles.metaText}>
-                    Transisi pengiriman tersedia setelah status Lunas.
-                  </Text>
-                ) : null}
-              </View>
-            </>
-          ) : null}
-
           {controller.livestockAllocations.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>Alokasi enclosure</Text>
@@ -1438,6 +1474,36 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
+  detailFrame: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  detailFrameRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  detailFrameMain: {
+    flex: 2,
+    flexBasis: 420,
+    gap: 8,
+    minWidth: 280,
+    paddingRight: 16,
+  },
+  detailFrameSide: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    flex: 1,
+    flexBasis: 280,
+    gap: 10,
+    minWidth: 240,
+    paddingLeft: 16,
+  },
   columns: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1698,21 +1764,6 @@ const styles = StyleSheet.create({
   trackingMono: {
     fontFamily: 'Consolas',
     fontVariant: ['tabular-nums'],
-  },
-  logisticsBlock: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-    marginTop: 4,
-    paddingTop: 10,
-  },
-  logisticsEntry: {
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 2,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
   historyScrollView: {
     maxHeight: 320,
