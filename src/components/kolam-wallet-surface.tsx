@@ -1126,7 +1126,7 @@ function WalletTransactionPanel({
 
   const walletOptions = useMemo(
     () => [
-      { label: 'Semua dompet', value: '' },
+      { label: 'Dompet', value: '' },
       ...(controller.allWallets.length > 0
         ? controller.allWallets
         : controller.wallets
@@ -1239,6 +1239,7 @@ function WalletTransactionPanel({
                   controller.onChangeTxFilters({ walletId: value })
                 }
                 options={walletOptions}
+                showLabelInTrigger={false}
                 style={styles.walletSelect}
                 value={controller.txFilters.walletId}
               />
