@@ -164,6 +164,41 @@ describe('Kolam finance expense domain', () => {
     expect(result.totals).toEqual({ totalAmount: 5000000, totalCount: 1 });
   });
 
+  it('normalizes asset-purchase list row with wallet id and createdAt', () => {
+    const result = normalizeKolamFinanceExpenseList(
+      {
+        data: [
+          {
+            _id: 'ap-1',
+            code: 'APUR-001',
+            name: 'Laptop',
+            price: 10000000,
+            shippingCost: 50000,
+            total: 10050000,
+            location: { name: 'Gudang A' },
+            wallet: { _id: 'w1', name: 'Utama' },
+            status: 'verified',
+            reason: 'Ops',
+            asset: { currentBookValue: 9000000 },
+            executedAt: '2026-07-01T00:00:00.000Z',
+            createdAt: '2026-07-01T00:00:00.000Z',
+          },
+        ],
+        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      },
+      'asset-purchase',
+    );
+
+    expect(result.data[0]).toMatchObject({
+      id: 'ap-1',
+      walletId: 'w1',
+      walletLabel: 'Utama',
+      bookValue: 9000000,
+      createdAt: '2026-07-01T00:00:00.000Z',
+    });
+    expect(result.data[0].createdAtLabel).toBeTruthy();
+  });
+
   it('maps asset-purchase create and edit surface modes', () => {
     expect(getKolamAssetPurchaseSurfaceMode('/asset-purchase')).toBe('list');
     expect(getKolamAssetPurchaseSurfaceMode('/asset-purchase/create')).toBe(

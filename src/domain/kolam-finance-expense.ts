@@ -66,6 +66,7 @@ export type KolamFinanceExpenseListRow = {
   amount: number;
   price: number;
   total: number;
+  walletId: string;
   walletLabel: string;
   executedAt: string;
   executedAtLabel: string;
@@ -75,6 +76,8 @@ export type KolamFinanceExpenseListRow = {
   reason: string;
   categoryLabel: string;
   createdByLabel: string;
+  createdAt: string;
+  createdAtLabel: string;
   locationLabel: string;
   shippingCost: number;
   bookValue: number | null;
@@ -843,6 +846,7 @@ function normalizeFinanceExpenseRow(
   const price = Number(record.price ?? amount) || 0;
   const total = Number(record.total ?? record.amount ?? 0) || 0;
   const executedAt = getString(record, 'executedAt') || getString(record, 'createdAt');
+  const createdAt = getString(record, 'createdAt') || executedAt;
   const asset = asRecord(record.asset);
 
   return {
@@ -852,6 +856,7 @@ function normalizeFinanceExpenseRow(
     amount,
     price,
     total,
+    walletId: resolveEntityId(record.wallet),
     walletLabel: resolveWalletLabel(record.wallet),
     executedAt,
     executedAtLabel: formatFinanceExpenseDate(executedAt),
@@ -864,6 +869,8 @@ function normalizeFinanceExpenseRow(
         ? formatRoutineExpenseCategoryLabel(getString(record, 'category'))
         : '',
     createdByLabel: resolveUserLabel(record.createdBy),
+    createdAt,
+    createdAtLabel: formatFinanceExpenseDate(createdAt),
     locationLabel: resolveLocationLabel(record.location),
     shippingCost: Number(record.shippingCost || 0) || 0,
     bookValue:

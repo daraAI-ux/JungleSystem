@@ -15,6 +15,7 @@ import {
 import { ApiError } from '../lib/api-error';
 import {
   fetchKolamFinanceExpenseList,
+  deleteKolamFinanceExpense,
   verifyKolamFinanceExpense,
 } from '../services/kolam-finance-expense-api';
 import {
@@ -40,10 +41,13 @@ export interface KolamFinanceExpenseListController {
   locations: KolamLocationOption[];
   loading: boolean;
   verifyingId: string | null;
+  deletingId: string | null;
   error: string;
   statusMessage: string;
   canView: boolean;
   canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
   canVerify: boolean;
   onSearchChange: (value: string) => void;
   onStatusChange: (status: KolamFinanceExpenseStatusFilter) => void;
@@ -56,6 +60,7 @@ export interface KolamFinanceExpenseListController {
   onLimitChange: (limit: number) => void;
   onRefresh: () => Promise<void>;
   onVerify: (row: KolamFinanceExpenseListRow) => Promise<void>;
+  onDelete: (row: KolamFinanceExpenseListRow) => Promise<void>;
 }
 
 export function useKolamFinanceExpenseListController(
@@ -82,6 +87,7 @@ export function useKolamFinanceExpenseListController(
   const [locations, setLocations] = useState<KolamLocationOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const filtersRef = useRef(filters);
@@ -99,6 +105,18 @@ export function useKolamFinanceExpenseListController(
     permissions,
     kind,
     'create',
+    roleKey,
+  );
+  const canUpdate = hasKolamFinanceExpensePermission(
+    permissions,
+    kind,
+    'update',
+    roleKey,
+  );
+  const canDelete = hasKolamFinanceExpensePermission(
+    permissions,
+    kind,
+    'delete',
     roleKey,
   );
   const canVerify = hasKolamFinanceExpensePermission(
@@ -303,6 +321,33 @@ export function useKolamFinanceExpenseListController(
     [canVerify, kind, refresh],
   );
 
+  const onDelete = useCallback(
+    async (row: KolamFinanceExpenseListRow) => {
+      if (!canDelete || !row.id) {
+        return;
+      }
+      setDeletingId(row.id);
+      setError('');
+      setStatusMessage('');
+      try {
+        await deleteKolamFinanceExpense(kind, row.id);
+        setStatusMessage('Berhasil dihapus');
+        await refresh();
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Gagal menghapus',
+        );
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [canDelete, kind, refresh],
+  );
+
   return useMemo(
     () => ({
       kind,
@@ -314,10 +359,13 @@ export function useKolamFinanceExpenseListController(
       locations,
       loading,
       verifyingId,
+      deletingId,
       error,
       statusMessage,
       canView,
       canCreate,
+      canUpdate,
+      canDelete,
       canVerify,
       onSearchChange,
       onStatusChange,
@@ -330,6 +378,7 @@ export function useKolamFinanceExpenseListController(
       onLimitChange,
       onRefresh: refresh,
       onVerify,
+      onDelete,
     }),
     [
       kind,
@@ -341,10 +390,13 @@ export function useKolamFinanceExpenseListController(
       locations,
       loading,
       verifyingId,
+      deletingId,
       error,
       statusMessage,
       canView,
       canCreate,
+      canUpdate,
+      canDelete,
       canVerify,
       onSearchChange,
       onStatusChange,
@@ -357,6 +409,7 @@ export function useKolamFinanceExpenseListController(
       onLimitChange,
       refresh,
       onVerify,
+      onDelete,
     ],
   );
 }

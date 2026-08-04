@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
+  buildKolamAssetPurchaseDetailRoute,
   getFinanceExpenseStatusIntent,
   getKolamAssetPurchaseCreateRoute,
   getKolamAssetPurchaseDetailRoute,
+  getKolamAssetPurchaseEditRoute,
   getKolamAssetPurchaseSurfaceMode,
   KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS,
   KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS,
@@ -24,6 +26,7 @@ import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surfa
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamTableFooterControls,
@@ -45,6 +48,7 @@ function buildColumns(
   kind: KolamFinanceExpenseKind,
   controller: KolamFinanceExpenseListController,
   onRouteChange?: (route: string) => void,
+  onRequestDelete?: (row: KolamFinanceExpenseListRow) => void,
 ): ColumnDef[] {
   const base: ColumnDef[] = [
     {
@@ -126,11 +130,22 @@ function buildColumns(
         id: 'bookValue',
         label: 'Nilai buku',
         flex: 0.9,
-        render: row => (
-          <Text style={styles.metaText}>
-            {row.bookValue == null ? '—' : formatRupiah(row.bookValue)}
-          </Text>
-        ),
+        render: row =>
+          row.bookValue == null ? (
+            <Text style={styles.metaText}>—</Text>
+          ) : onRouteChange && row.id ? (
+            <Pressable
+              onPress={() =>
+                onRouteChange(
+                  buildKolamAssetPurchaseDetailRoute(row.id, 'depreciation'),
+                )
+              }
+            >
+              <Text style={styles.linkText}>{formatRupiah(row.bookValue)}</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.metaText}>{formatRupiah(row.bookValue)}</Text>
+          ),
       },
       {
         id: 'location',
@@ -159,11 +174,33 @@ function buildColumns(
       id: 'wallet',
       label: 'Dompet',
       flex: 0.9,
-      render: row => (
-        <Text numberOfLines={1} style={styles.metaText}>
-          {row.walletLabel}
-        </Text>
-      ),
+      render: row => {
+        if (kind === 'asset-purchase') {
+          if (row.walletId && onRouteChange) {
+            return (
+              <Pressable
+                onPress={() =>
+                  onRouteChange(`/wallet/${encodeURIComponent(row.walletId)}`)
+                }
+              >
+                <Text numberOfLines={1} style={styles.linkText}>
+                  {row.walletLabel || row.walletId}
+                </Text>
+              </Pressable>
+            );
+          }
+          return (
+            <Text numberOfLines={1} style={styles.metaText}>
+              {row.walletId ? row.walletLabel || row.walletId : 'Dompet Utama'}
+            </Text>
+          );
+        }
+        return (
+          <Text numberOfLines={1} style={styles.metaText}>
+            {row.walletLabel}
+          </Text>
+        );
+      },
     },
     {
       id: 'executed',
@@ -227,10 +264,23 @@ function buildColumns(
     ),
   });
 
+  if (kind === 'asset-purchase') {
+    base.push({
+      id: 'createdAt',
+      label: 'Dibuat',
+      flex: 0.8,
+      render: row => (
+        <Text numberOfLines={1} style={styles.metaText}>
+          {row.createdAtLabel || '—'}
+        </Text>
+      ),
+    });
+  }
+
   base.push({
     id: 'action',
     label: '',
-    flex: kind === 'asset-purchase' ? 1.2 : 0.8,
+    flex: kind === 'asset-purchase' ? 1.6 : 0.8,
     render: row => (
       <View style={styles.rowActions}>
         {kind === 'asset-purchase' && onRouteChange && row.id ? (
@@ -243,12 +293,35 @@ function buildColumns(
             style={styles.actionButton}
           />
         ) : null}
+        {kind === 'asset-purchase' &&
+        controller.canUpdate &&
+        onRouteChange &&
+        row.id ? (
+          <KolamButton
+            intent="secondary"
+            label="Rubah"
+            onPress={() =>
+              onRouteChange(getKolamAssetPurchaseEditRoute(row.id))
+            }
+            style={styles.actionButton}
+          />
+        ) : null}
         {controller.canVerify && row.status !== 'verified' ? (
           <KolamButton
             intent="primary"
             label={controller.verifyingId === row.id ? '…' : 'Verifikasi'}
             onPress={() => {
               void controller.onVerify(row);
+            }}
+            style={styles.actionButton}
+          />
+        ) : null}
+        {kind === 'asset-purchase' && controller.canDelete && row.id ? (
+          <KolamButton
+            intent="secondary"
+            label={controller.deletingId === row.id ? '…' : 'Hapus'}
+            onPress={() => {
+              onRequestDelete?.(row);
             }}
             style={styles.actionButton}
           />
@@ -321,9 +394,14 @@ function FinanceExpenseListBody({
 }) {
   const [searchInput, setSearchInput] = useState(controller.filters.search);
   const [exportOpen, setExportOpen] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] =
+    useState<KolamFinanceExpenseListRow | null>(null);
   const isAssetPurchase = kind === 'asset-purchase';
   const columns = React.useMemo(
-    () => buildColumns(kind, controller, onRouteChange),
+    () =>
+      buildColumns(kind, controller, onRouteChange, row =>
+        setDeleteCandidate(row),
+      ),
     [kind, controller, onRouteChange],
   );
 
@@ -636,6 +714,22 @@ function FinanceExpenseListBody({
           visible={exportOpen}
         />
       ) : null}
+
+      {isAssetPurchase ? (
+        <KolamDeleteConfirmDialog
+          itemLabel={deleteCandidate?.name || deleteCandidate?.code}
+          itemType="pembelian aset"
+          onCancel={() => setDeleteCandidate(null)}
+          onConfirm={() => {
+            const row = deleteCandidate;
+            setDeleteCandidate(null);
+            if (row) {
+              void controller.onDelete(row);
+            }
+          }}
+          visible={Boolean(deleteCandidate)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -741,6 +835,13 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  linkText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   rowActions: {
     flexDirection: 'row',

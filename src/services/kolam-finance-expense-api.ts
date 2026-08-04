@@ -63,6 +63,16 @@ export async function verifyKolamFinanceExpense(
   });
 }
 
+export async function deleteKolamFinanceExpense(
+  kind: KolamFinanceExpenseKind,
+  id: string,
+): Promise<void> {
+  const segment = getKolamFinanceExpenseApiSegment(kind);
+  await kolamRequest(`/${segment}/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function fetchKolamAssetPurchaseById(
   id: string,
 ): Promise<KolamAssetPurchaseDetail> {
