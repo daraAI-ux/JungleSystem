@@ -17,8 +17,10 @@ export type KolamNotificationSoundSettingsState = {
 };
 
 export function useKolamNotificationSoundSettings({
+  enabled = true,
   intervalMs = 300_000,
 }: {
+  enabled?: boolean;
   intervalMs?: number;
 } = {}): KolamNotificationSoundSettingsState {
   const [state, setState] = useState<KolamNotificationSoundSettingsState>({
@@ -27,6 +29,14 @@ export function useKolamNotificationSoundSettings({
   });
 
   useEffect(() => {
+    if (!enabled) {
+      setState({
+        loading: false,
+        webSetting: null,
+      });
+      return undefined;
+    }
+
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | undefined;
 
@@ -68,7 +78,7 @@ export function useKolamNotificationSoundSettings({
         clearInterval(timer);
       }
     };
-  }, [intervalMs]);
+  }, [enabled, intervalMs]);
 
   return state;
 }

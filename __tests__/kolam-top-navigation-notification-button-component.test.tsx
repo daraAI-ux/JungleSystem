@@ -4,6 +4,7 @@ import {KolamIconButton} from '../src/components/kolam-icon-button';
 import {KolamNotificationBadge} from '../src/components/kolam-notification-badge';
 import {KolamNotificationBellIcon} from '../src/components/kolam-notification-bell-icon';
 import {KolamPressable} from '../src/components/kolam-pressable';
+import {KolamTopNavigationChatButton} from '../src/components/kolam-top-navigation-chat-button';
 import {KolamTopNavigationNotificationButton} from '../src/components/kolam-top-navigation-notification-button';
 
 describe('KolamTopNavigationNotificationButton', () => {
@@ -39,5 +40,44 @@ describe('KolamTopNavigationNotificationButton', () => {
 
     button.props.onPress();
     expect(onNotificationPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('KolamTopNavigationChatButton', () => {
+  it('renders unread count on the chat icon', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationChatButton
+          accessibilityLabel="Pesan masuk"
+          kind="inbox"
+          onPress={jest.fn()}
+          unreadCount={12}
+        />,
+      );
+    });
+
+    expect(
+      renderer!.root.findByType(KolamNotificationBadge).props.attentionCount,
+    ).toBe(12);
+  });
+
+  it('keeps the chat badge hidden when there is no unread count', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationChatButton
+          accessibilityLabel="Team chat"
+          kind="team"
+          onPress={jest.fn()}
+        />,
+      );
+    });
+
+    expect(
+      renderer!.root.findByType(KolamNotificationBadge).props.attentionCount,
+    ).toBe(0);
   });
 });

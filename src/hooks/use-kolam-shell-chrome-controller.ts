@@ -4,6 +4,7 @@ import type { AccessScope } from '../domain/auth';
 import type { CommandEntry } from '../domain/command-index';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import type { SettingsTabItem } from '../domain/settings-surface';
+import type { KolamChatUnreadCounts } from './use-kolam-chat-notification-host';
 import {
   getTopNavUserMenuItems,
   type TopNavBreadcrumbItem,
@@ -26,6 +27,7 @@ export function useKolamShellChromeController({
   activePluginRoute,
   activeSettingsTab,
   attentionItems,
+  chatUnreadCounts,
   collapsed,
   commandSearch,
   dataset,
@@ -73,6 +75,7 @@ export function useKolamShellChromeController({
   activePluginRoute?: PluginRouteEntry | null;
   activeSettingsTab?: SettingsTabItem | null;
   attentionItems: AttentionPanelItem[];
+  chatUnreadCounts?: KolamChatUnreadCounts;
   collapsed: boolean;
   commandSearch: string;
   dataset: UnifiedDataset;
@@ -141,6 +144,7 @@ export function useKolamShellChromeController({
     activePluginRoute,
     activeSettingsTab,
     attentionItems,
+    chatUnreadCounts,
     displayInitials,
     onAvatarPress,
     onBreadcrumbPress,

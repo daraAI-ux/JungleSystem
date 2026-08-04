@@ -1,11 +1,13 @@
 import React from 'react';
 import type {TopNavRightControl} from '../domain/top-nav';
+import type {KolamChatUnreadCounts} from '../hooks/use-kolam-chat-notification-host';
 import {KolamListFrame} from './kolam-list-frame';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamTopNavigationRightControl} from './kolam-top-navigation-right-control';
 
 export function KolamTopNavigationRight({
   attentionCount,
+  chatUnreadCounts,
   displayInitials,
   onAvatarPress,
   onCashflowNavigate,
@@ -15,6 +17,7 @@ export function KolamTopNavigationRight({
   rightControls,
 }: {
   attentionCount: number;
+  chatUnreadCounts?: KolamChatUnreadCounts;
   displayInitials: string;
   onAvatarPress: () => void;
   onCashflowNavigate?: (route: string) => void;
@@ -31,6 +34,7 @@ export function KolamTopNavigationRight({
         renderItem={control => (
           <KolamTopNavigationRightControl
             attentionCount={attentionCount}
+            chatUnreadCounts={chatUnreadCounts}
             control={control}
             displayInitials={displayInitials}
             onAvatarPress={onAvatarPress}

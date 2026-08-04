@@ -10,6 +10,7 @@ import type { KolamTopNavigationProps } from './kolam-top-navigation-types';
 export function KolamTopNavigation({
   attentionCount,
   breadcrumbItems,
+  chatUnreadCounts,
   displayInitials,
   onAvatarPress,
   onBreadcrumbPress,
@@ -34,6 +35,7 @@ export function KolamTopNavigation({
       </View>
       <KolamTopNavigationRight
         attentionCount={attentionCount}
+        chatUnreadCounts={chatUnreadCounts}
         displayInitials={displayInitials}
         onAvatarPress={onAvatarPress}
         onCashflowNavigate={onCashflowNavigate}

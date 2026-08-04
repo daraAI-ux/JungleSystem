@@ -16,6 +16,7 @@ import {getUnifiedSyncMessage} from '../services/unified-data';
 import {useKolamAuthController} from '../hooks/use-kolam-auth-controller';
 import {useKolamCashflowController} from '../hooks/use-kolam-cashflow-controller';
 import {useKolamCashflowPreview} from '../hooks/use-kolam-cashflow-preview';
+import {useKolamChatNotificationHost} from '../hooks/use-kolam-chat-notification-host';
 import {useKolamCheckoutController} from '../hooks/use-kolam-checkout-controller';
 import {useKolamCustomerController} from '../hooks/use-kolam-customer-controller';
 import {useKolamNavigationController} from '../hooks/use-kolam-navigation-controller';
@@ -395,6 +396,11 @@ export function KolamAppStateProvider({
   const handleChatRailClose = React.useCallback(() => {
     setActiveChatRail(null);
   }, []);
+  const {unreadCounts: chatUnreadCounts} = useKolamChatNotificationHost({
+    currentUserId: authUser?.id,
+    enabled: Boolean(authUser),
+    visibleRailMode: activeChatRail,
+  });
 
   const {dashboardHeader, overlay, sidebar, topNavigation} =
     useKolamShellChromeController({
@@ -407,6 +413,7 @@ export function KolamAppStateProvider({
       activePluginRoute,
       activeSettingsTab,
       attentionItems,
+      chatUnreadCounts,
       collapsed: isSidebarCollapsed,
       commandSearch,
       commands: filteredCommands,

@@ -4,6 +4,7 @@ import type { AppModule, ShellModuleRouteEntry } from '../domain/app-shell';
 import type { AttentionPanelItem } from '../domain/attention-panel';
 import type { KolamNavigationItem } from '../domain/kolam-navigation';
 import type { SettingsTabItem } from '../domain/settings-surface';
+import type { KolamChatUnreadCounts } from './use-kolam-chat-notification-host';
 import {
   getTopNavBreadcrumbItems,
   getTopNavRightControls,
@@ -22,6 +23,7 @@ export function useKolamTopNavigationController({
   activePluginRoute,
   activeSettingsTab,
   attentionItems,
+  chatUnreadCounts,
   displayInitials,
   onAvatarPress,
   onBreadcrumbPress,
@@ -40,6 +42,7 @@ export function useKolamTopNavigationController({
   activePluginRoute?: PluginRouteEntry | null;
   activeSettingsTab?: SettingsTabItem | null;
   attentionItems: AttentionPanelItem[];
+  chatUnreadCounts?: KolamChatUnreadCounts;
   displayInitials: string;
   onAvatarPress: () => void;
   onBreadcrumbPress?: (item: TopNavBreadcrumbItem) => void;
@@ -66,6 +69,7 @@ export function useKolamTopNavigationController({
         activePluginRoute,
         activeSettingsTab,
       }),
+      chatUnreadCounts,
       displayInitials,
       rightControls: getTopNavRightControls(),
       onAvatarPress,
@@ -86,6 +90,7 @@ export function useKolamTopNavigationController({
       activePluginRoute,
       activeSettingsTab,
       attentionCount,
+      chatUnreadCounts,
       displayInitials,
       onAvatarPress,
       onBreadcrumbPress,

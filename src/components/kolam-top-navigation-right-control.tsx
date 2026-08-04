@@ -1,5 +1,6 @@
 import React from 'react';
 import type {TopNavRightControl} from '../domain/top-nav';
+import type {KolamChatUnreadCounts} from '../hooks/use-kolam-chat-notification-host';
 import {KolamTopNavigationAvatarButton} from './kolam-top-navigation-avatar-button';
 import {KolamTopNavigationCashflowHost} from './kolam-top-navigation-cashflow-host';
 import {KolamTopNavigationChatButton} from './kolam-top-navigation-chat-button';
@@ -9,6 +10,7 @@ import {KolamIconButton} from './kolam-icon-button';
 
 export function KolamTopNavigationRightControl({
   attentionCount,
+  chatUnreadCounts,
   control,
   displayInitials,
   onAvatarPress,
@@ -18,6 +20,7 @@ export function KolamTopNavigationRightControl({
   profilePhotoUrl,
 }: {
   attentionCount: number;
+  chatUnreadCounts?: KolamChatUnreadCounts;
   control: TopNavRightControl;
   displayInitials: string;
   onAvatarPress: () => void;
@@ -31,11 +34,14 @@ export function KolamTopNavigationRightControl({
   }
 
   if (control.id === 'chat-inbox' || control.id === 'chat-team') {
+    const kind = control.id === 'chat-inbox' ? 'inbox' : 'team';
+
     return (
       <KolamTopNavigationChatButton
         accessibilityLabel={control.label}
-        kind={control.id === 'chat-inbox' ? 'inbox' : 'team'}
+        kind={kind}
         onPress={() => onChatControlPress?.(control)}
+        unreadCount={chatUnreadCounts?.[kind] ?? 0}
       />
     );
   }
