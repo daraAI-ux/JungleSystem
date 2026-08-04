@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
   Image,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -78,19 +79,6 @@ export function KolamDaraMarketPlatformFeeBody({
         <Text style={styles.warn}>{controller.error}</Text>
       ) : null}
 
-      {controller.scanAllProgress ? (
-        <View style={styles.scanBanner} accessibilityRole="summary">
-          <Text style={styles.scanBannerText}>
-            {`Memindai: ${controller.scanAllProgress.name} (${controller.scanAllProgress.current}/${controller.scanAllProgress.total})`}
-          </Text>
-        </View>
-      ) : null}
-      {controller.scanningId && !controller.scanAllProgress ? (
-        <View style={styles.scanBanner}>
-          <Text style={styles.scanBannerText}>Memindai URL…</Text>
-        </View>
-      ) : null}
-
       {controller.panelTab === 'kalkulasi' ? (
         <KalkulasiTab controller={controller} />
       ) : (
@@ -142,22 +130,36 @@ function MonitorTab({
             onPress={() => {
               void controller.onCheckAll();
             }}
+            size="sm"
           />
         </View>
+
+        {controller.scanAllProgress ? (
+          <View style={styles.scanBanner} accessibilityRole="summary">
+            <Text style={styles.scanBannerText}>
+              {`Memindai: ${controller.scanAllProgress.name} (${controller.scanAllProgress.current}/${controller.scanAllProgress.total})`}
+            </Text>
+          </View>
+        ) : null}
+        {controller.scanningId && !controller.scanAllProgress ? (
+          <View style={styles.scanBanner}>
+            <Text style={styles.scanBannerText}>Memindai URL…</Text>
+          </View>
+        ) : null}
 
         <View style={styles.addRow}>
           <TextInput
             onChangeText={controller.onSetNewName}
             placeholder="Nama (opsional)"
             placeholderTextColor={V.colors.mutedFg}
-            style={styles.input}
+            style={[styles.input, styles.addField]}
             value={controller.newName}
           />
           <TextInput
             onChangeText={controller.onSetNewUrl}
             placeholder="https://seller…"
             placeholderTextColor={V.colors.mutedFg}
-            style={styles.input}
+            style={[styles.input, styles.addField]}
             value={controller.newUrl}
           />
           <KolamButton
@@ -165,40 +167,72 @@ function MonitorTab({
             onPress={() => {
               void controller.onAddSource();
             }}
+            size="sm"
           />
         </View>
 
-        {controller.sources.map(source => {
-          const rowScanning = controller.scanningId === source.id;
-          return (
-            <View
-              key={source.id}
-              style={[styles.sourceRow, rowScanning ? styles.sourceBusy : null]}>
-              <View style={styles.sourceBody}>
-                <Text style={styles.sourcePlatform}>{source.platform}</Text>
-                <Text style={styles.sourceName}>{source.name}</Text>
-                {rowScanning ? (
-                  <Text style={styles.scanTiny}>Memindai…</Text>
-                ) : null}
-                {source.lastError && !rowScanning ? (
-                  <Text style={styles.errorTiny}>{source.lastError}</Text>
-                ) : null}
-                <Text style={styles.meta}>
+        <View>
+          <View style={styles.tableHead}>
+            <Text style={[styles.th, styles.colPlatform]}>Platform</Text>
+            <Text style={[styles.th, styles.colName]}>Nama</Text>
+            <Text style={[styles.th, styles.colChecked]}>Terakhir cek</Text>
+            <Text style={[styles.th, styles.colAction]}>Aksi</Text>
+          </View>
+          {controller.sources.map(source => {
+            const rowScanning = controller.scanningId === source.id;
+            return (
+              <View
+                key={source.id}
+                style={[
+                  styles.tableRow,
+                  rowScanning ? styles.sourceBusy : null,
+                ]}>
+                <Text
+                  style={[
+                    styles.td,
+                    styles.colPlatform,
+                    styles.sourcePlatform,
+                  ]}>
+                  {source.platform}
+                </Text>
+                <View style={[styles.colName, styles.nameCell]}>
+                  <Pressable
+                    accessibilityRole="link"
+                    disabled={!source.url}
+                    onPress={() => {
+                      if (source.url) {
+                        void Linking.openURL(source.url);
+                      }
+                    }}>
+                    <Text style={styles.sourceLink}>{source.name}</Text>
+                  </Pressable>
+                  {rowScanning ? (
+                    <Text style={styles.scanTiny}>Memindai…</Text>
+                  ) : null}
+                  {source.lastError && !rowScanning ? (
+                    <Text style={styles.errorTiny}>{source.lastError}</Text>
+                  ) : null}
+                </View>
+                <Text style={[styles.td, styles.colChecked, styles.meta]}>
                   {formatKolamDaraMarketPlatformFeeCheckedAt(
                     source.lastCheckedAt,
                   )}
                 </Text>
+                <View style={styles.colAction}>
+                  <KolamButton
+                    disabled={controller.isScanning}
+                    intent="outline"
+                    label={rowScanning ? 'Scan' : 'Cek'}
+                    onPress={() => {
+                      void controller.onCheckOne(source.id, source.name);
+                    }}
+                    size="sm"
+                  />
+                </View>
               </View>
-              <KolamButton
-                disabled={controller.isScanning}
-                label={rowScanning ? 'Scan' : 'Cek'}
-                onPress={() => {
-                  void controller.onCheckOne(source.id, source.name);
-                }}
-              />
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
       </View>
 
       {controller.snapshots.length ? (
@@ -709,7 +743,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   addRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
+  },
+  addField: {
+    flex: 1,
+    minWidth: 140,
   },
   input: {
     borderColor: V.colors.border,
@@ -752,34 +793,66 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 11,
   },
-  sourceRow: {
-    alignItems: 'center',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+  tableHead: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
     flexDirection: 'row',
-    gap: 10,
-    padding: 10,
+    gap: 8,
+    paddingBottom: 6,
+  },
+  tableRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  th: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  td: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  colPlatform: {
+    flex: 0.9,
+    minWidth: 72,
+    textTransform: 'capitalize',
+  },
+  colName: {
+    flex: 1.6,
+    minWidth: 120,
+  },
+  colChecked: {
+    flex: 1.2,
+    minWidth: 100,
+  },
+  colAction: {
+    alignItems: 'flex-start',
+    flex: 0.7,
+    minWidth: 72,
+  },
+  nameCell: {
+    gap: 2,
+    minWidth: 0,
   },
   sourceBusy: {
     backgroundColor: V.colors.muted,
   },
-  sourceBody: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
   sourcePlatform: {
     color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
     textTransform: 'capitalize',
   },
-  sourceName: {
-    color: V.colors.fg,
+  sourceLink: {
+    color: V.colors.primary,
     fontFamily: V.fontFamily,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   scanTiny: {
     color: V.colors.primary,
