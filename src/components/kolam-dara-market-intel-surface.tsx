@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
@@ -64,8 +64,13 @@ export function KolamDaraMarketIntelSurface({
   const bulkPricingController = useKolamDaraPricingEquipmentController(
     access.canSee && access.canDraft ? route : '',
   );
+  const onMarketJobSettled = useCallback(() => {
+    // FE `dara-jobs-updated` → dashboard reload (no-op off dashboard tab).
+    void dashboardController.onRefresh();
+  }, [dashboardController.onRefresh]);
   const jobsProgress = useKolamDaraMarketIntelJobsProgress(
     access.canSee ? route : '',
+    {onJobSettled: onMarketJobSettled},
   );
 
   useEffect(() => {

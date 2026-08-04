@@ -508,6 +508,16 @@ describe('KolamPusatAiRingkasanSurface', () => {
       seoButton.props.onPress();
     });
     expect(onRouteChange).toHaveBeenCalledWith('/campaign/dara-seo');
+
+    const marketButton = renderer!.root.find(
+      node =>
+        typeof node.props.label === 'string' &&
+        node.props.label === 'Buka Market Intel',
+    );
+    await ReactTestRenderer.act(async () => {
+      marketButton.props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/campaign/dara-market-intel');
   });
 
   it('switches to Proses tab and loads job history', async () => {

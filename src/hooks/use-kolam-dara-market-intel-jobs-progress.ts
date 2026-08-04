@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {isKolamDaraMarketIntelRoute} from '../domain/kolam-dara-market-intel';
 import {
   isKolamDaraJobActive,
@@ -25,15 +25,23 @@ export interface KolamDaraMarketIntelJobsProgressController {
   ) => Promise<void>;
 }
 
-/** FE `DaraJobsProvider module="market-intel"` + progress strip. */
+/**
+ * FE `DaraJobsProvider module="market-intel"` + `DaraJobProgressBar`
+ * (poll active market-intel jobs while any Intel Pasar route is open).
+ */
 export function useKolamDaraMarketIntelJobsProgress(
   route: string,
+  options?: {
+    onJobSettled?: (job: KolamDaraAsyncJob) => void;
+  },
 ): KolamDaraMarketIntelJobsProgressController {
   const enabled = isKolamDaraMarketIntelRoute(route);
   const [jobs, setJobs] = useState<KolamDaraAsyncJob[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
+  const onJobSettledRef = useRef(options?.onJobSettled);
+  onJobSettledRef.current = options?.onJobSettled;
 
   const onRefreshJobs = useCallback(async () => {
     if (!enabled) {
@@ -71,12 +79,20 @@ export function useKolamDaraMarketIntelJobsProgress(
       active.forEach(job => {
         void fetchKolamDaraJob(job.id)
           .then(next => {
+            if (!isKolamDaraJobActive(next)) {
+              // FE removes completed/failed from strip + toasts.
+              if (next.status === 'completed') {
+                setNotice(`${next.label} selesai`);
+              } else if (next.status === 'failed') {
+                setNotice(next.error || `${next.label} gagal`);
+              }
+              onJobSettledRef.current?.(next);
+              setJobs(prev => prev.filter(item => item.id !== next.id));
+              return;
+            }
             setJobs(prev => {
               const without = prev.filter(item => item.id !== next.id);
-              if (!isKolamDaraJobActive(next)) {
-                return without;
-              }
-              return [...without, next];
+              return [next, ...without];
             });
           })
           .catch(() => undefined);
@@ -84,6 +100,11 @@ export function useKolamDaraMarketIntelJobsProgress(
     }, MARKET_JOBS_POLL_MS);
     return () => clearInterval(timer);
   }, [enabled]);
+
+  const activeJobs = useMemo(
+    () => jobs.filter(isKolamDaraJobActive),
+    [jobs],
+  );
 
   const isRunning = useCallback(
     (jobType: string) =>
@@ -97,23 +118,36 @@ export function useKolamDaraMarketIntelJobsProgress(
       params?: Record<string, unknown>,
       label?: string,
     ) => {
+      const existing = jobs.find(
+        job => job.jobType === jobType && isKolamDaraJobActive(job),
+      );
+      if (existing) {
+        setNotice(`${existing.label} masih berjalan`);
+        return;
+      }
       setNotice(null);
       try {
-        const {job, jobId} = await startKolamDaraJob({
+        const {jobId, job} = await startKolamDaraJob({
           module: 'market-intel',
           jobType,
           params,
           label,
         });
         if (job) {
-          setJobs(prev => {
-            const without = prev.filter(item => item.id !== job.id);
-            return [...without, job];
-          });
+          setJobs(prev => [job, ...prev.filter(item => item.id !== job.id)]);
         } else if (jobId) {
-          void onRefreshJobs();
+          const next = await fetchKolamDaraJob(jobId).catch(() => null);
+          if (next) {
+            setJobs(prev => [
+              next,
+              ...prev.filter(item => item.id !== next.id),
+            ]);
+          } else {
+            void onRefreshJobs();
+          }
         }
-        setNotice('Job dimulai');
+        setNotice(`Job dimulai: ${label || jobType}`);
+        void onRefreshJobs();
       } catch (err) {
         setNotice(
           err instanceof Error && err.message.trim()
@@ -122,11 +156,11 @@ export function useKolamDaraMarketIntelJobsProgress(
         );
       }
     },
-    [onRefreshJobs],
+    [jobs, onRefreshJobs],
   );
 
   return {
-    activeJobs: jobs.filter(isKolamDaraJobActive),
+    activeJobs,
     notice,
     isRunning,
     onRefreshJobs,

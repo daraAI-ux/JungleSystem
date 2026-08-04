@@ -330,6 +330,97 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
   });
 
+  it('shows market-intel job progress strip and opens Pusat AI Proses', async () => {
+    jobsListMock.mockResolvedValue([
+      {
+        id: 'job-m1',
+        module: 'market-intel',
+        jobType: 'market.scan_bulk',
+        status: 'running',
+        label: 'Scan market intelligence',
+        progressCurrent: 8,
+        progressTotal: 40,
+        progressMessage: 'Produk 8/40',
+        error: '',
+        createdAt: '2026-08-04T00:00:00.000Z',
+        finishedAt: '',
+      },
+    ]);
+
+    const onRouteChange = jest.fn();
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraMarketIntelSurface
+          onRouteChange={onRouteChange}
+          route="/campaign/dara-market-intel"
+        />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Scan market intelligence');
+    expect(text).toContain('Berjalan');
+    expect(text).toContain('8/40');
+    expect(text).toContain('20%');
+
+    const titleNode = tree!.root.find(
+      node =>
+        Array.isArray(node.children) &&
+        node.children[0] === 'Scan market intelligence',
+    );
+    let strip = titleNode.parent;
+    while (
+      strip &&
+      !(
+        strip.props?.accessibilityRole === 'button' &&
+        typeof strip.props?.onPress === 'function'
+      )
+    ) {
+      strip = strip.parent;
+    }
+    expect(strip).toBeTruthy();
+    await ReactTestRenderer.act(async () => {
+      strip!.props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai?tab=proses');
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('routes Riwayat proses tab to Pusat AI Proses', async () => {
+    const onRouteChange = jest.fn();
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraMarketIntelSurface
+          onRouteChange={onRouteChange}
+          route="/campaign/dara-market-intel"
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    const tabs = tree!.root.find(
+      node =>
+        Array.isArray(node.props?.tabs) &&
+        typeof node.props?.onSelectTab === 'function',
+    );
+    await ReactTestRenderer.act(async () => {
+      tabs.props.onSelectTab('jobs');
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai?tab=proses');
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
   it('renders approvals list from recommendations API', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {

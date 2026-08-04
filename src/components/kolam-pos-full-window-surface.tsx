@@ -22,16 +22,17 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
 import type {WorkflowStep} from '../lib/workflow';
 import type {CreateCustomerBody} from '../services/pos-api';
+import {KolamShellChromeContext} from '../context/kolam-app-contexts';
 import {KolamButton} from './kolam-button';
-import {KolamDashboardHeaderCopy} from './kolam-dashboard-header-copy';
-import {dashboardHeaderStyles} from './kolam-dashboard-header-styles';
-import {KolamHeaderFrame} from './kolam-header-frame';
+import {KolamDashboardHeader} from './kolam-dashboard-header';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamNavItem} from './kolam-nav-item';
+import {KolamOverlaySurface} from './kolam-overlay-surface';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamQuickSearch} from './kolam-quick-search';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSidebarBrand} from './kolam-sidebar-brand';
+import {KolamTopNavigation} from './kolam-top-navigation';
 
 export interface KolamPosFullWindowSurfaceProps {
   activeSession?: CashflowSession | null;
@@ -58,7 +59,9 @@ export interface KolamPosFullWindowSurfaceProps {
   onCreateSaleDraft: () => void;
   onCustomerFormChange: (nextForm: CreateCustomerBody) => void;
   onGlobalDiscountChange: (value: string) => void;
-  onGlobalDiscountTypeChange: (discountType: CheckoutState['globalDiscountType']) => void;
+  onGlobalDiscountTypeChange: (
+    discountType: CheckoutState['globalDiscountType'],
+  ) => void;
   onDiscountAmountChange: (itemId: string, value: string) => void;
   onDiscountTypeChange: (
     itemId: string,
@@ -148,6 +151,7 @@ export function KolamPosFullWindowSurface({
   workflowSteps = [],
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
+  const shellChrome = React.useContext(KolamShellChromeContext);
   const categoryScrollRef = React.useRef<ScrollView>(null);
   const categoryScrollOffsetRef = React.useRef(0);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
@@ -169,10 +173,7 @@ export function KolamPosFullWindowSurface({
   const safeCatalogPage = Math.min(catalogPage, totalCatalogPages);
   const catalogPageStartIndex = (safeCatalogPage - 1) * itemsPerPage;
   const orderPaneStyle = React.useMemo(
-    () => [
-      styles.orderPane,
-      width < 1280 ? styles.orderPaneCompact : null,
-    ],
+    () => [styles.orderPane, width < 1280 ? styles.orderPaneCompact : null],
     [width],
   );
   const pagedCatalog = filteredCatalog.slice(
@@ -190,7 +191,8 @@ export function KolamPosFullWindowSurface({
     0,
   );
   const isCatalogView = activeView === 'catalog';
-  const canOpenPayment = checkout.cart.length > 0 && !!selectedCustomer && hasCashflowSession;
+  const canOpenPayment =
+    checkout.cart.length > 0 && !!selectedCustomer && hasCashflowSession;
 
   const handleSaveOrder = React.useCallback(() => {
     if (!checkout.cart.length) {
@@ -288,6 +290,7 @@ export function KolamPosFullWindowSurface({
       <PosSidebar
         activeType={activeType}
         activeView={activeView}
+        onBackToCenter={onBackToCenter}
         onQuickSearch={handleSidebarQuickSearch}
         onSelectCashflow={() => setActiveView('cashflow')}
         onSelectCustomers={() => setActiveView('customers')}
@@ -301,262 +304,277 @@ export function KolamPosFullWindowSurface({
           onTypeChange('species');
         }}
       />
-      <View style={styles.catalogPane}>
-        <KolamHeaderFrame variant="dashboardHeader" style={styles.posHeader}>
-          <KolamDashboardHeaderCopy
-            eyebrow="POS"
-            title="POS"
-          />
-          <View style={dashboardHeaderStyles.headerControls}>
-            <KolamButton
-              label="Kembali"
-              intent="outline"
-              size="sm"
-              onPress={onBackToCenter}
-            />
-          </View>
-        </KolamHeaderFrame>
-
-        {isCatalogView ? (
+      <View style={styles.posMain}>
+        {shellChrome ? (
           <>
-            <View style={styles.categoryBar}>
-              <KolamInteractionFrame
-                onPress={() => scrollCategories('left')}
-                style={styles.categoryScrollButton}>
-                <Text style={styles.categoryScrollText}>{'<'}</Text>
-              </KolamInteractionFrame>
-              <ScrollView
-                ref={categoryScrollRef}
-                horizontal
-                contentContainerStyle={styles.categoryPillList}
-                onScroll={event => {
-                  categoryScrollOffsetRef.current = event.nativeEvent.contentOffset.x;
-                }}
-                scrollEventThrottle={16}
-                showsHorizontalScrollIndicator={false}>
-                <PosCategoryPill
-                  active={!activeCategory}
-                  label="Semua"
-                  onPress={() => onCategoryChange?.(null)}
+            <KolamTopNavigation {...shellChrome.topNavigation} />
+            <KolamOverlaySurface {...shellChrome.overlay} />
+            <View style={styles.posDashboardHeader}>
+              <KolamDashboardHeader {...shellChrome.dashboardHeader} />
+            </View>
+          </>
+        ) : null}
+        <View style={styles.posWorkspace}>
+          <View style={styles.catalogPane}>
+            {isCatalogView ? (
+              <>
+                <View style={styles.categoryBar}>
+                  <KolamInteractionFrame
+                    onPress={() => scrollCategories('left')}
+                    style={styles.categoryScrollButton}>
+                    <Text style={styles.categoryScrollText}>{'<'}</Text>
+                  </KolamInteractionFrame>
+                  <ScrollView
+                    ref={categoryScrollRef}
+                    horizontal
+                    contentContainerStyle={styles.categoryPillList}
+                    onScroll={event => {
+                      categoryScrollOffsetRef.current =
+                        event.nativeEvent.contentOffset.x;
+                    }}
+                    scrollEventThrottle={16}
+                    showsHorizontalScrollIndicator={false}>
+                    <PosCategoryPill
+                      active={!activeCategory}
+                      label="Semua"
+                      onPress={() => onCategoryChange?.(null)}
+                    />
+                    {catalogCategories.map(category => (
+                      <PosCategoryPill
+                        key={category}
+                        active={activeCategory === category}
+                        label={category}
+                        onPress={() => onCategoryChange?.(category)}
+                      />
+                    ))}
+                  </ScrollView>
+                  <KolamInteractionFrame
+                    onPress={() => scrollCategories('right')}
+                    style={styles.categoryScrollButton}>
+                    <Text style={styles.categoryScrollText}>{'>'}</Text>
+                  </KolamInteractionFrame>
+                  {catalogSearch || activeCategory ? (
+                    <KolamButton
+                      label="Hapus Filter"
+                      intent="plain"
+                      onPress={() => {
+                        onCatalogSearchChange('');
+                        onCategoryChange?.(null);
+                      }}
+                    />
+                  ) : null}
+                </View>
+
+                <ScrollView
+                  style={styles.catalogScroll}
+                  contentContainerStyle={styles.catalogContent}
+                  showsVerticalScrollIndicator>
+                  {catalogRows.length ? (
+                    catalogRows.map((row, rowIndex) => (
+                      <View key={`row-${rowIndex}`} style={styles.catalogRow}>
+                        {row.map(item => (
+                          <PosCatalogCard
+                            key={item.id}
+                            cartLine={checkout.cart.find(
+                              line => line.itemId === item.id,
+                            )}
+                            item={item}
+                            onAddToCart={onAddToCart}
+                            onOpenQuickView={setQuickViewItem}
+                          />
+                        ))}
+                        {Array.from({length: columnCount - row.length}).map(
+                          (_, index) => (
+                            <View
+                              key={`empty-${index}`}
+                              style={styles.cardSlot}
+                            />
+                          ),
+                        )}
+                      </View>
+                    ))
+                  ) : (
+                    <View style={styles.catalogEmpty}>
+                      <Text style={styles.emptyTitle}>
+                        {hasActiveCatalogFilters
+                          ? activeType === 'species'
+                            ? 'Tidak ada spesies yang cocok.'
+                            : 'Tidak ada produk yang cocok.'
+                          : activeType === 'species'
+                          ? 'Tidak ada spesies tersedia.'
+                          : 'Tidak ada produk tersedia.'}
+                      </Text>
+                      <Text style={styles.emptyText}>
+                        {hasActiveCatalogFilters
+                          ? 'Coba hapus filter atau kata kunci.'
+                          : 'Katalog sellable akan muncul di sini.'}
+                      </Text>
+                    </View>
+                  )}
+                </ScrollView>
+                <PosCatalogPagination
+                  currentPage={safeCatalogPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                  onPageChange={setCatalogPage}
+                  totalPages={totalCatalogPages}
                 />
-                {catalogCategories.map(category => (
-                  <PosCategoryPill
-                    key={category}
-                    active={activeCategory === category}
-                    label={category}
-                    onPress={() => onCategoryChange?.(category)}
+                {!hasCashflowSession ? (
+                  <PosCashflowLockOverlay
+                    onOpenCashflow={() => setActiveView('cashflow')}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <PosSubview
+                activeView={activeView}
+                activeSession={activeSession}
+                customerForm={customerForm}
+                customers={customers}
+                isCreatingCustomer={isCreatingCustomer}
+                paymentMethods={paymentMethods}
+                recentSales={recentSales}
+                selectedCustomerId={checkout.customerId}
+                selectedPaymentId={checkout.paymentMethodId}
+                onCreateCustomer={onCreateCustomer}
+                onCustomerFormChange={onCustomerFormChange}
+                onSelectCustomer={onSelectCustomer}
+                onSelectPaymentMethod={onSelectPaymentMethod}
+              />
+            )}
+          </View>
+
+          <View style={orderPaneStyle}>
+            <View style={styles.orderHeader}>
+              <Text style={styles.orderTitle}>Pesanan</Text>
+              <Text style={styles.orderBadge}>
+                {checkout.cart.length} barang
+              </Text>
+            </View>
+            <PosCustomerSelectorInline
+              customers={customers}
+              searchValue={customerSelectorSearch}
+              selectedCustomer={selectedCustomer}
+              onOpenCustomerView={draftName => {
+                setActiveView('customers');
+                if (draftName.trim()) {
+                  onCustomerFormChange({
+                    ...customerForm,
+                    name: draftName.trim(),
+                  });
+                }
+                setCustomerSelectorSearch('');
+              }}
+              onSearchChange={setCustomerSelectorSearch}
+              onSelectCustomer={onSelectCustomer}
+            />
+            {checkout.cart.length ? (
+              <ScrollView style={styles.orderList}>
+                {checkout.cart.map(line => (
+                  <PosOrderRow
+                    key={line.itemId}
+                    catalog={catalog}
+                    line={line}
+                    onDiscountAmountChange={onDiscountAmountChange}
+                    onDiscountTypeChange={onDiscountTypeChange}
+                    onQuantityChange={onQuantityChange}
+                    onVoucherCodeChange={onVoucherCodeChange}
                   />
                 ))}
               </ScrollView>
-              <KolamInteractionFrame
-                onPress={() => scrollCategories('right')}
-                style={styles.categoryScrollButton}>
-                <Text style={styles.categoryScrollText}>{'>'}</Text>
-              </KolamInteractionFrame>
-              {catalogSearch || activeCategory ? (
-                <KolamButton
-                  label="Hapus Filter"
-                  intent="plain"
-                  onPress={() => {
-                    onCatalogSearchChange('');
-                    onCategoryChange?.(null);
-                  }}
-                />
-              ) : null}
-            </View>
+            ) : (
+              <View style={styles.orderEmpty}>
+                <View style={styles.orderEmptyIcon}>
+                  <Text style={styles.orderEmptyIconText}>Bag</Text>
+                </View>
+                <Text style={styles.orderEmptyTitle}>Keranjang Kosong</Text>
+                <Text style={styles.orderEmptyText}>
+                  Pilih produk dari katalog untuk memulai pesanan
+                </Text>
+              </View>
+            )}
 
-            <ScrollView
-              style={styles.catalogScroll}
-              contentContainerStyle={styles.catalogContent}
-              showsVerticalScrollIndicator>
-              {catalogRows.length ? (
-                catalogRows.map((row, rowIndex) => (
-                  <View key={`row-${rowIndex}`} style={styles.catalogRow}>
-                    {row.map(item => (
-                      <PosCatalogCard
-                        key={item.id}
-                        cartLine={checkout.cart.find(
-                          line => line.itemId === item.id,
-                        )}
-                        item={item}
-                        onAddToCart={onAddToCart}
-                        onOpenQuickView={setQuickViewItem}
-                      />
-                    ))}
-                    {Array.from({length: columnCount - row.length}).map(
-                      (_, index) => (
-                        <View key={`empty-${index}`} style={styles.cardSlot} />
-                      ),
-                    )}
-                  </View>
-                ))
-              ) : (
-                <View style={styles.catalogEmpty}>
-                  <Text style={styles.emptyTitle}>
-                    {hasActiveCatalogFilters
-                      ? activeType === 'species'
-                        ? 'Tidak ada spesies yang cocok.'
-                        : 'Tidak ada produk yang cocok.'
-                      : activeType === 'species'
-                        ? 'Tidak ada spesies tersedia.'
-                        : 'Tidak ada produk tersedia.'}
-                  </Text>
-                  <Text style={styles.emptyText}>
-                    {hasActiveCatalogFilters
-                      ? 'Coba hapus filter atau kata kunci.'
-                      : 'Katalog sellable akan muncul di sini.'}
+            {checkout.cart.length ? (
+              <View style={styles.orderFooter}>
+                <View style={styles.adjustmentRow}>
+                  <Text style={styles.adjustmentLabel}>Ongkir</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    onChangeText={onShippingCostChange}
+                    placeholder="0"
+                    style={[styles.adjustmentInput, styles.shippingInput]}
+                    value={
+                      checkout.shippingCost ? String(checkout.shippingCost) : ''
+                    }
+                  />
+                </View>
+                <SummaryLine label="Subtotal" value={formatRupiah(subtotal)} />
+                {subtotal - afterDiscount > 0 ? (
+                  <SummaryLine
+                    danger
+                    label="Diskon"
+                    value={`-${formatRupiah(subtotal - afterDiscount)}`}
+                  />
+                ) : null}
+                {checkout.shippingCost > 0 ? (
+                  <SummaryLine
+                    label="Ongkir"
+                    value={formatRupiah(checkout.shippingCost)}
+                  />
+                ) : null}
+                <PosCheckoutValidationMessages workflowSteps={workflowSteps} />
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total</Text>
+                  <Text style={styles.totalValue}>
+                    {formatRupiah(finalTotal)}
                   </Text>
                 </View>
-              )}
-            </ScrollView>
-            <PosCatalogPagination
-              currentPage={safeCatalogPage}
-              itemsPerPage={itemsPerPage}
-              onItemsPerPageChange={setItemsPerPage}
-              onPageChange={setCatalogPage}
-              totalPages={totalCatalogPages}
-            />
-            {!hasCashflowSession ? (
-              <PosCashflowLockOverlay onOpenCashflow={() => setActiveView('cashflow')} />
+                <KolamButton
+                  label={
+                    isCreatingSale
+                      ? 'Memproses...'
+                      : `Bayar ${
+                          canOpenPayment ? formatRupiah(finalTotal) : ''
+                        }`
+                  }
+                  intent="primary"
+                  size="md"
+                  disabled={!canOpenPayment || isCreatingSale}
+                  onPress={() => {
+                    onSelectPaymentMethod('');
+                    setIsPaymentModalOpen(true);
+                  }}
+                  style={styles.payButton}
+                />
+                <View style={styles.savedOrderActions}>
+                  <KolamButton
+                    label="Simpan"
+                    intent="outline"
+                    size="sm"
+                    disabled={!checkout.cart.length}
+                    onPress={handleSaveOrder}
+                    style={styles.savedOrderActionButton}
+                  />
+                  <KolamButton
+                    label={`Tersimpan (${savedOrders.length})`}
+                    intent="outline"
+                    size="sm"
+                    disabled={!savedOrders.length}
+                    onPress={() => setIsSavedOrdersOpen(true)}
+                    style={styles.savedOrderActionButton}
+                  />
+                  <KolamButton
+                    label={`Kosongkan (${cartCount})`}
+                    intent="plain"
+                    size="sm"
+                    onPress={onClearCart}
+                    style={styles.savedOrderActionButton}
+                  />
+                </View>
+              </View>
             ) : null}
-          </>
-        ) : (
-          <PosSubview
-            activeView={activeView}
-            activeSession={activeSession}
-            customerForm={customerForm}
-            customers={customers}
-            isCreatingCustomer={isCreatingCustomer}
-            paymentMethods={paymentMethods}
-            recentSales={recentSales}
-            selectedCustomerId={checkout.customerId}
-            selectedPaymentId={checkout.paymentMethodId}
-            onCreateCustomer={onCreateCustomer}
-            onCustomerFormChange={onCustomerFormChange}
-            onSelectCustomer={onSelectCustomer}
-            onSelectPaymentMethod={onSelectPaymentMethod}
-          />
-        )}
-      </View>
-
-      <View style={orderPaneStyle}>
-        <View style={styles.orderHeader}>
-          <Text style={styles.orderTitle}>Pesanan</Text>
-          <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
+          </View>
         </View>
-        <PosCustomerSelectorInline
-          customers={customers}
-          searchValue={customerSelectorSearch}
-          selectedCustomer={selectedCustomer}
-          onOpenCustomerView={draftName => {
-            setActiveView('customers');
-            if (draftName.trim()) {
-              onCustomerFormChange({
-                ...customerForm,
-                name: draftName.trim(),
-              });
-            }
-            setCustomerSelectorSearch('');
-          }}
-          onSearchChange={setCustomerSelectorSearch}
-          onSelectCustomer={onSelectCustomer}
-        />
-        {checkout.cart.length ? (
-          <ScrollView style={styles.orderList}>
-            {checkout.cart.map(line => (
-              <PosOrderRow
-                key={line.itemId}
-                catalog={catalog}
-                line={line}
-                onDiscountAmountChange={onDiscountAmountChange}
-                onDiscountTypeChange={onDiscountTypeChange}
-                onQuantityChange={onQuantityChange}
-                onVoucherCodeChange={onVoucherCodeChange}
-              />
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.orderEmpty}>
-            <View style={styles.orderEmptyIcon}>
-              <Text style={styles.orderEmptyIconText}>Bag</Text>
-            </View>
-            <Text style={styles.orderEmptyTitle}>Keranjang Kosong</Text>
-            <Text style={styles.orderEmptyText}>
-              Pilih produk dari katalog untuk memulai pesanan
-            </Text>
-          </View>
-        )}
-
-        {checkout.cart.length ? (
-          <View style={styles.orderFooter}>
-            <View style={styles.adjustmentRow}>
-              <Text style={styles.adjustmentLabel}>Ongkir</Text>
-              <TextInput
-                keyboardType="numeric"
-                onChangeText={onShippingCostChange}
-                placeholder="0"
-                style={[styles.adjustmentInput, styles.shippingInput]}
-                value={checkout.shippingCost ? String(checkout.shippingCost) : ''}
-              />
-            </View>
-            <SummaryLine label="Subtotal" value={formatRupiah(subtotal)} />
-            {subtotal - afterDiscount > 0 ? (
-              <SummaryLine
-                danger
-                label="Diskon"
-                value={`-${formatRupiah(subtotal - afterDiscount)}`}
-              />
-            ) : null}
-            {checkout.shippingCost > 0 ? (
-              <SummaryLine label="Ongkir" value={formatRupiah(checkout.shippingCost)} />
-            ) : null}
-            <PosCheckoutValidationMessages workflowSteps={workflowSteps} />
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>{formatRupiah(finalTotal)}</Text>
-            </View>
-            <KolamButton
-              label={
-                isCreatingSale
-                  ? 'Memproses...'
-                  : `Bayar ${canOpenPayment ? formatRupiah(finalTotal) : ''}`
-              }
-              intent="primary"
-              size="md"
-              disabled={!canOpenPayment || isCreatingSale}
-              onPress={() => {
-                onSelectPaymentMethod('');
-                setIsPaymentModalOpen(true);
-              }}
-              style={styles.payButton}
-            />
-            <View style={styles.savedOrderActions}>
-              <KolamButton
-                label="Simpan"
-                intent="outline"
-                size="sm"
-                disabled={!checkout.cart.length}
-                onPress={handleSaveOrder}
-                style={styles.savedOrderActionButton}
-              />
-              <KolamButton
-                label={`Tersimpan (${savedOrders.length})`}
-                intent="outline"
-                size="sm"
-                disabled={!savedOrders.length}
-                onPress={() => setIsSavedOrdersOpen(true)}
-                style={styles.savedOrderActionButton}
-              />
-              <KolamButton
-                label={`Kosongkan (${cartCount})`}
-                intent="plain"
-                size="sm"
-                onPress={onClearCart}
-                style={styles.savedOrderActionButton}
-              />
-            </View>
-          </View>
-        ) : null}
       </View>
       {isSavedOrdersOpen ? (
         <PosSavedOrdersPanel
@@ -571,7 +589,9 @@ export function KolamPosFullWindowSurface({
       ) : null}
       {quickViewItem ? (
         <PosQuickViewModal
-          cartLine={checkout.cart.find(line => line.itemId === quickViewItem.id)}
+          cartLine={checkout.cart.find(
+            line => line.itemId === quickViewItem.id,
+          )}
           item={quickViewItem}
           onAddToCart={onAddToCart}
           onClose={() => setQuickViewItem(null)}
@@ -638,6 +658,7 @@ const POS_CASHFLOW_NAV_MODULE: ShellModule = {
 function PosSidebar({
   activeType,
   activeView,
+  onBackToCenter,
   onSelectCashflow,
   onSelectCustomers,
   onSelectProduct,
@@ -647,6 +668,7 @@ function PosSidebar({
 }: {
   activeType: CatalogItemType | 'all';
   activeView: PosWindowView;
+  onBackToCenter: () => void;
   onQuickSearch: () => void;
   onSelectCashflow: () => void;
   onSelectCustomers: () => void;
@@ -692,6 +714,13 @@ function PosSidebar({
           active={activeView === 'cashflow'}
           module={POS_CASHFLOW_NAV_MODULE}
           onPress={onSelectCashflow}
+        />
+        <KolamButton
+          label="Kembali"
+          intent="outline"
+          size="sm"
+          onPress={onBackToCenter}
+          style={styles.posBackButton}
         />
       </ScrollView>
     </View>
@@ -853,7 +882,11 @@ function PosCatalogCard({
             </>
           )}
           {isOutOfStock || isLowStock ? (
-            <Text style={[styles.stockBadge, isOutOfStock && styles.stockBadgeDanger]}>
+            <Text
+              style={[
+                styles.stockBadge,
+                isOutOfStock && styles.stockBadgeDanger,
+              ]}>
               {isOutOfStock ? 'Habis' : `Sisa ${item.stock}`}
             </Text>
           ) : null}
@@ -865,7 +898,9 @@ function PosCatalogCard({
               {item.code}
             </Text>
             {item.variantCount ? (
-              <Text style={styles.variantBadge}>{item.variantCount} Varian</Text>
+              <Text style={styles.variantBadge}>
+                {item.variantCount} Varian
+              </Text>
             ) : null}
           </View>
           <Text numberOfLines={2} style={styles.productName}>
@@ -1044,7 +1079,9 @@ function PosCustomerSelectorInline({
             ))
           ) : (
             <Text style={styles.customerEmpty}>
-              {customers.length ? 'Pelanggan tidak ditemukan' : 'Belum ada pelanggan'}
+              {customers.length
+                ? 'Pelanggan tidak ditemukan'
+                : 'Belum ada pelanggan'}
             </Text>
           )}
         </View>
@@ -1181,7 +1218,10 @@ function PosOrderRow({
           quantity={line.quantity}
           onDecrement={() => onQuantityChange(line.itemId, line.quantity - 1)}
           onIncrement={() =>
-            onQuantityChange(line.itemId, Math.min(item.stock, line.quantity + 1))
+            onQuantityChange(
+              line.itemId,
+              Math.min(item.stock, line.quantity + 1),
+            )
           }
         />
       </View>
@@ -1202,7 +1242,8 @@ function PosTinyToggle({
     <KolamInteractionFrame
       onPress={onPress}
       style={[styles.tinyToggle, active && styles.tinyToggleActive]}>
-      <Text style={[styles.tinyToggleText, active && styles.tinyToggleTextActive]}>
+      <Text
+        style={[styles.tinyToggleText, active && styles.tinyToggleTextActive]}>
         {label}
       </Text>
     </KolamInteractionFrame>
@@ -1412,7 +1453,10 @@ function PosSubview({
               <KolamInteractionFrame
                 key={customer.id}
                 onPress={() => onSelectCustomer(customer.id)}
-                style={[styles.customerCard, active && styles.customerCardActive]}>
+                style={[
+                  styles.customerCard,
+                  active && styles.customerCardActive,
+                ]}>
                 <View style={styles.customerAvatar}>
                   <Text style={styles.customerAvatarText}>
                     {getInitials(customer.name)}
@@ -1429,7 +1473,9 @@ function PosSubview({
                     {customer.address || '-'}
                   </Text>
                 </View>
-                {active ? <Text style={styles.selectedMark}>Dipilih</Text> : null}
+                {active ? (
+                  <Text style={styles.selectedMark}>Dipilih</Text>
+                ) : null}
               </KolamInteractionFrame>
             );
           })}
@@ -1460,7 +1506,9 @@ function PosSubview({
                   </Text>
                 </View>
                 <View style={styles.saleAmountBox}>
-                  <Text style={styles.saleAmount}>{formatRupiah(sale.total)}</Text>
+                  <Text style={styles.saleAmount}>
+                    {formatRupiah(sale.total)}
+                  </Text>
                   <Text style={styles.saleStatus}>{sale.status}</Text>
                 </View>
               </View>
@@ -1494,7 +1542,8 @@ function PosSubview({
             <View>
               <Text style={styles.cashSessionTitle}>{activeSession.name}</Text>
               <Text style={styles.cashSessionMeta}>
-                {activeSession.cashier} | Dibuka {formatPosDate(activeSession.openedAt)}
+                {activeSession.cashier} | Dibuka{' '}
+                {formatPosDate(activeSession.openedAt)}
               </Text>
             </View>
             <Text style={styles.cashSessionBadge}>Shift Aktif</Text>
@@ -1510,7 +1559,9 @@ function PosSubview({
             />
             <PosCashMetric
               label="Total Penjualan"
-              value={formatRupiah(activeSession.snapshot?.totalSalesAmount ?? 0)}
+              value={formatRupiah(
+                activeSession.snapshot?.totalSalesAmount ?? 0,
+              )}
             />
             <PosCashMetric
               label="Tunai"
@@ -1541,30 +1592,37 @@ function PosSubview({
         </Text>
       </View>
       <View style={styles.paymentGrid}>
-        {paymentMethods.filter(method => method.active).map(method => {
-          const active = selectedPaymentId === method.id;
+        {paymentMethods
+          .filter(method => method.active)
+          .map(method => {
+            const active = selectedPaymentId === method.id;
 
-          return (
-            <KolamInteractionFrame
-              key={method.id}
-              onPress={() => onSelectPaymentMethod(method.id)}
-              style={[styles.paymentCard, active && styles.paymentCardActive]}>
-              <Text numberOfLines={1} style={styles.paymentName}>
-                {method.name}
-              </Text>
-              <Text numberOfLines={1} style={styles.paymentMeta}>
-                Wallet: {method.wallet || '-'}
-              </Text>
-              <Text
+            return (
+              <KolamInteractionFrame
+                key={method.id}
+                onPress={() => onSelectPaymentMethod(method.id)}
                 style={[
-                  styles.paymentStatus,
-                  method.active ? styles.paymentStatusActive : styles.paymentStatusMuted,
+                  styles.paymentCard,
+                  active && styles.paymentCardActive,
                 ]}>
-                {method.active ? 'Aktif' : 'Nonaktif'}
-              </Text>
-            </KolamInteractionFrame>
-          );
-        })}
+                <Text numberOfLines={1} style={styles.paymentName}>
+                  {method.name}
+                </Text>
+                <Text numberOfLines={1} style={styles.paymentMeta}>
+                  Wallet: {method.wallet || '-'}
+                </Text>
+                <Text
+                  style={[
+                    styles.paymentStatus,
+                    method.active
+                      ? styles.paymentStatusActive
+                      : styles.paymentStatusMuted,
+                  ]}>
+                  {method.active ? 'Aktif' : 'Nonaktif'}
+                </Text>
+              </KolamInteractionFrame>
+            );
+          })}
       </View>
     </ScrollView>
   );
@@ -1638,12 +1696,11 @@ function getSavedOrderSubtotal(order: PosSavedOrder, catalog: CatalogItem[]) {
 }
 
 function getSavedOrderItemNames(order: PosSavedOrder, catalog: CatalogItem[]) {
-  return order.checkout.cart
-    .slice(0, 3)
-    .map(line => {
-      const name = catalog.find(item => item.id === line.itemId)?.name ?? line.itemId;
-      return name.split(/\s+/).slice(0, 2).join(' ');
-    });
+  return order.checkout.cart.slice(0, 3).map(line => {
+    const name =
+      catalog.find(item => item.id === line.itemId)?.name ?? line.itemId;
+    return name.split(/\s+/).slice(0, 2).join(' ');
+  });
 }
 
 function getPosKeyboardTarget(): PosKeyboardTarget | undefined {
@@ -1722,7 +1779,12 @@ function PosSavedOrdersPanel({
               {orders.length} pesanan tersimpan
             </Text>
           </View>
-          <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
+          <KolamButton
+            label="Tutup"
+            intent="outline"
+            size="sm"
+            onPress={onClose}
+          />
         </View>
         {orders.length ? (
           <ScrollView style={styles.savedOrdersList}>
@@ -1779,8 +1841,8 @@ function PosSavedOrdersPanel({
                         confirmingDelete
                           ? 'Batal'
                           : confirmingLoad
-                            ? 'Ganti'
-                            : 'Muat'
+                          ? 'Ganti'
+                          : 'Muat'
                       }
                       intent="primary"
                       disabled={!canLoad && !confirmingDelete}
@@ -1795,8 +1857,8 @@ function PosSavedOrdersPanel({
                         confirmingLoad
                           ? 'Batal'
                           : confirmingDelete
-                            ? 'Ya Hapus'
-                            : 'Hapus'
+                          ? 'Ya Hapus'
+                          : 'Hapus'
                       }
                       intent="plain"
                       tone="default"
@@ -1875,7 +1937,11 @@ function PosQuickViewModal({
             </View>
           )}
           {isOutOfStock || isLowStock ? (
-            <Text style={[styles.quickViewStockBadge, isOutOfStock && styles.stockBadgeDanger]}>
+            <Text
+              style={[
+                styles.quickViewStockBadge,
+                isOutOfStock && styles.stockBadgeDanger,
+              ]}>
               {isOutOfStock ? 'Habis' : `Sisa ${item.stock}`}
             </Text>
           ) : null}
@@ -1890,7 +1956,12 @@ function PosQuickViewModal({
                 {item.code} | {item.category || 'Tanpa kategori'}
               </Text>
             </View>
-            <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
+            <KolamButton
+              label="Tutup"
+              intent="outline"
+              size="sm"
+              onPress={onClose}
+            />
           </View>
           <Text style={styles.quickViewPrice}>{formatRupiah(item.price)}</Text>
           <View style={styles.quickViewInfoGrid}>
@@ -1981,15 +2052,19 @@ function PosPaymentModal({
   );
   const paidValue = Number(paidAmount || 0);
   const change = paidValue - total;
-  const quickAmounts = React.useMemo(() => getQuickPaymentAmounts(total), [total]);
-  const canConfirm = Boolean(selectedPayment) && (!isCash || paidValue >= total);
+  const quickAmounts = React.useMemo(
+    () => getQuickPaymentAmounts(total),
+    [total],
+  );
+  const canConfirm =
+    Boolean(selectedPayment) && (!isCash || paidValue >= total);
   const confirmLabel = isCreatingSale
     ? 'Memproses...'
     : !selectedPayment
-      ? 'Pilih Metode'
-      : isCash && paidValue < total
-        ? `Kurang ${formatRupiah(total - paidValue)}`
-        : `Bayar ${formatRupiah(total)}`;
+    ? 'Pilih Metode'
+    : isCash && paidValue < total
+    ? `Kurang ${formatRupiah(total - paidValue)}`
+    : `Bayar ${formatRupiah(total)}`;
 
   React.useEffect(() => {
     setPaidAmount(total > 0 ? String(Math.round(total)) : '');
@@ -2006,7 +2081,12 @@ function PosPaymentModal({
               Pilih metode pembayaran dan konfirmasi.
             </Text>
           </View>
-          <KolamButton label="Tutup" intent="outline" size="sm" onPress={onClose} />
+          <KolamButton
+            label="Tutup"
+            intent="outline"
+            size="sm"
+            onPress={onClose}
+          />
         </View>
 
         <View style={styles.paymentBody}>
@@ -2062,7 +2142,9 @@ function PosPaymentModal({
           <View style={styles.paymentColumn}>
             <View style={styles.paymentTotalCard}>
               <Text style={styles.paymentTotalLabel}>Total Tagihan</Text>
-              <Text style={styles.paymentTotalValue}>{formatRupiah(total)}</Text>
+              <Text style={styles.paymentTotalValue}>
+                {formatRupiah(total)}
+              </Text>
             </View>
 
             {isCash ? (
@@ -2097,37 +2179,48 @@ function PosPaymentModal({
                   ))}
                 </View>
                 <View style={styles.numpadGrid}>
-                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '<'].map(
-                    key => (
-                      <KolamInteractionFrame
-                        key={key}
-                        onPress={() => {
-                          if (key === 'C') {
-                            setPaidAmount('');
-                          } else if (key === '<') {
-                            setPaidAmount(value => value.slice(0, -1));
-                          } else {
-                            setPaidAmount(value =>
-                              `${value}${key}`.replace(/^0+(?=\d)/, ''),
-                            );
-                          }
-                        }}
+                  {[
+                    '1',
+                    '2',
+                    '3',
+                    '4',
+                    '5',
+                    '6',
+                    '7',
+                    '8',
+                    '9',
+                    'C',
+                    '0',
+                    '<',
+                  ].map(key => (
+                    <KolamInteractionFrame
+                      key={key}
+                      onPress={() => {
+                        if (key === 'C') {
+                          setPaidAmount('');
+                        } else if (key === '<') {
+                          setPaidAmount(value => value.slice(0, -1));
+                        } else {
+                          setPaidAmount(value =>
+                            `${value}${key}`.replace(/^0+(?=\d)/, ''),
+                          );
+                        }
+                      }}
+                      style={[
+                        styles.numpadButton,
+                        key === 'C' && styles.numpadButtonDanger,
+                        key === '<' && styles.numpadButtonWarning,
+                      ]}>
+                      <Text
                         style={[
-                          styles.numpadButton,
-                          key === 'C' && styles.numpadButtonDanger,
-                          key === '<' && styles.numpadButtonWarning,
+                          styles.numpadText,
+                          key === 'C' && styles.numpadTextDanger,
+                          key === '<' && styles.numpadTextWarning,
                         ]}>
-                        <Text
-                          style={[
-                            styles.numpadText,
-                            key === 'C' && styles.numpadTextDanger,
-                            key === '<' && styles.numpadTextWarning,
-                          ]}>
-                          {key === '<' ? 'Hapus' : key}
-                        </Text>
-                      </KolamInteractionFrame>
-                    ),
-                  )}
+                        {key === '<' ? 'Hapus' : key}
+                      </Text>
+                    </KolamInteractionFrame>
+                  ))}
                 </View>
                 <View
                   style={[
@@ -2254,17 +2347,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: V.colors.bg,
   },
+  posMain: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: V.colors.mainSurface,
+  },
+  posDashboardHeader: {
+    paddingHorizontal: V.layout.contentPadding,
+    paddingTop: V.layout.contentPadding,
+    backgroundColor: V.colors.mainSurface,
+  },
+  posWorkspace: {
+    flex: 1,
+    minHeight: 0,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
   catalogPane: {
     flex: 1,
     minWidth: 0,
     borderRightColor: V.colors.border,
     borderRightWidth: 1,
-  },
-  posHeader: {
-    marginBottom: 0,
-    paddingHorizontal: 16,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
     backgroundColor: V.colors.bg,
   },
   posSidebar: {
@@ -2288,6 +2391,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
+  },
+  posBackButton: {
+    marginTop: 10,
   },
   categoryBar: {
     minHeight: 46,
