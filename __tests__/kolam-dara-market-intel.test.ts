@@ -2,6 +2,8 @@ import {
   KOLAM_DARA_MARKET_INTEL_DESCRIPTION,
   KOLAM_DARA_MARKET_INTEL_TITLE,
   buildKolamDaraMarketIntelRoute,
+  formatKolamDaraMarketIntelIdr,
+  formatKolamDaraMarketIntelTaxSource,
   getKolamDaraMarketIntelTab,
   isKolamDaraMarketIntelRoute,
   normalizeKolamDaraMarketIntelBrands,
@@ -172,5 +174,16 @@ describe('kolam-dara-market-intel domain', () => {
     });
     expect(dash?.supplierLeaders[0].bestSupplier).toBe('Vendor X');
     expect(normalizeKolamDaraMarketIntelDashboard({})).toBeNull();
+  });
+
+  it('formats IDR and tax source like FE dashboard helpers', () => {
+    expect(formatKolamDaraMarketIntelIdr(null)).toBe('—');
+    expect(formatKolamDaraMarketIntelIdr(1200)).toMatch(/^Rp /);
+    expect(formatKolamDaraMarketIntelTaxSource('regulation')).toBe(
+      'Regulasi DARA Tax',
+    );
+    expect(formatKolamDaraMarketIntelTaxSource('po_latest')).toBe(
+      'PO terbaru',
+    );
   });
 });

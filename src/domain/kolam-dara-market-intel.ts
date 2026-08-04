@@ -417,3 +417,22 @@ function toFiniteNumber(value: unknown) {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : 0;
 }
+
+/** FE `formatIdr` on market dashboard. */
+export function formatKolamDaraMarketIntelIdr(value?: number | null) {
+  if (value == null || !Number.isFinite(value)) {
+    return '—';
+  }
+  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+}
+
+/** FE `taxSourceLabel`. */
+export function formatKolamDaraMarketIntelTaxSource(source: string) {
+  if (source === 'regulation') {
+    return 'Regulasi DARA Tax';
+  }
+  if (source === 'po_latest') {
+    return 'PO terbaru';
+  }
+  return source.trim() || '—';
+}
