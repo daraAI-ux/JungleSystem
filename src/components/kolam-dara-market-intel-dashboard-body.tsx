@@ -73,86 +73,83 @@ export function KolamDaraMarketIntelDashboardBody({
         collapsable={false}
         style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
-          <View style={kolamTableToolbarStyles.row}>
-            <View style={kolamTableToolbarStyles.filters}>
-              {brandOptions.length > 1 ? (
-                <View ref={brandTriggerRef} collapsable={false}>
-                  <KolamTableFilterTrigger
-                    active={brandPanelOpen || brandId !== 'all'}
-                    label={brandLabel}
-                    onPress={openBrandPanel}
-                    open={brandPanelOpen}
-                    variant="quiet"
-                  />
-                </View>
-              ) : null}
-            </View>
-            <View style={kolamTableToolbarStyles.actions}>
-              {canDraft ? (
-                <>
-                  <KolamButton
-                    disabled={jobsProgress.isRunning('market.scan_bulk')}
-                    label={
-                      jobsProgress.isRunning('market.scan_bulk')
-                        ? 'Scan…'
-                        : 'Scan 40 produk'
-                    }
-                    onPress={() => {
-                      void jobsProgress
-                        .onStartMarketJob(
-                          'market.scan_bulk',
-                          {limit: 40, useLlama: false},
-                          'Scan bulk produk',
-                        )
-                        .then(() => controller.onRefresh());
-                    }}
-                  />
-                  <KolamButton
-                    disabled={jobsProgress.isRunning(
-                      'market.channel_pricing_scan',
-                    )}
-                    label={
-                      jobsProgress.isRunning('market.channel_pricing_scan')
-                        ? 'Channel…'
-                        : 'Scan channel'
-                    }
-                    onPress={() => {
-                      void jobsProgress
-                        .onStartMarketJob(
-                          'market.channel_pricing_scan',
-                          {limit: 60, brandId: brandQueryParam},
-                          'Scan channel pricing',
-                        )
-                        .then(() => controller.onRefresh());
-                    }}
-                  />
-                  <KolamButton
-                    label="Monitor kompetitor"
-                    onPress={() =>
-                      onRouteChange?.(
-                        '/campaign/dara-market-intel/competitors',
+          {/* FE page-shell actions: brand + scan/nav buttons flex-end. */}
+          <View style={styles.toolbarEndRow}>
+            {brandOptions.length > 1 ? (
+              <View ref={brandTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={brandPanelOpen || brandId !== 'all'}
+                  label={brandLabel}
+                  onPress={openBrandPanel}
+                  open={brandPanelOpen}
+                  variant="quiet"
+                />
+              </View>
+            ) : null}
+            {canDraft ? (
+              <>
+                <KolamButton
+                  disabled={jobsProgress.isRunning('market.scan_bulk')}
+                  label={
+                    jobsProgress.isRunning('market.scan_bulk')
+                      ? 'Scan…'
+                      : 'Scan 40 produk'
+                  }
+                  onPress={() => {
+                    void jobsProgress
+                      .onStartMarketJob(
+                        'market.scan_bulk',
+                        {limit: 40, useLlama: false},
+                        'Scan bulk produk',
                       )
-                    }
-                  />
-                  <KolamButton
-                    intent="primary"
-                    label={`Persetujuan (${dashboard?.pendingApprovals ?? 0})`}
-                    onPress={() =>
-                      onRouteChange?.(
-                        '/campaign/dara-market-intel/approvals',
+                      .then(() => controller.onRefresh());
+                  }}
+                />
+                <KolamButton
+                  disabled={jobsProgress.isRunning(
+                    'market.channel_pricing_scan',
+                  )}
+                  label={
+                    jobsProgress.isRunning('market.channel_pricing_scan')
+                      ? 'Channel…'
+                      : 'Scan channel'
+                  }
+                  onPress={() => {
+                    void jobsProgress
+                      .onStartMarketJob(
+                        'market.channel_pricing_scan',
+                        {limit: 60, brandId: brandQueryParam},
+                        'Scan channel pricing',
                       )
-                    }
-                  />
-                </>
-              ) : null}
-              <KolamButton
-                disabled={loading}
-                label={loading ? 'Memuat…' : 'Refresh'}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
-            </View>
+                      .then(() => controller.onRefresh());
+                  }}
+                />
+                <KolamButton
+                  label="Monitor kompetitor"
+                  onPress={() =>
+                    onRouteChange?.(
+                      '/campaign/dara-market-intel/competitors',
+                    )
+                  }
+                />
+                <KolamButton
+                  intent="primary"
+                  label={`Persetujuan (${dashboard?.pendingApprovals ?? 0})`}
+                  onPress={() =>
+                    onRouteChange?.(
+                      '/campaign/dara-market-intel/approvals',
+                    )
+                  }
+                />
+              </>
+            ) : null}
+            <KolamButton
+              disabled={loading}
+              label={loading ? 'Memuat…' : 'Refresh'}
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
           </View>
         </View>
         {brandPanelOpen && panelAnchor ? (
@@ -332,6 +329,15 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  toolbarEndRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    minHeight: 40,
+    overflow: 'visible',
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,

@@ -435,8 +435,14 @@ describe('KolamDaraMarketIntelSurface', () => {
     expect(text).toContain('Produk A');
     expect(text).toContain('Pricing');
     expect(text).toContain('Naikkan harga Produk A');
+    expect(text).toContain('Kategori');
+    expect(text).toContain('Produk');
+    expect(text).toContain('Status');
+    expect(text).toContain('Ringkasan');
+    expect(text).toContain('Aksi');
     expect(text).toContain('Review');
     expect(text).toContain('Setujui (0)');
+    expect(text).toContain('Refresh');
     expect(recsMock).toHaveBeenCalledWith({
       status: 'draft_ready',
       limit: 100,

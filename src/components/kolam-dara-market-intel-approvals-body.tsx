@@ -96,56 +96,53 @@ export function KolamDaraMarketIntelApprovalsBody({
     <View style={styles.root}>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
-          <View style={kolamTableToolbarStyles.row}>
-            <View style={kolamTableToolbarStyles.filters}>
-              <View ref={statusTriggerRef} collapsable={false}>
+          {/* FE `dara-approvals-toolbar`: all controls flex-end (Brand → Status → Setujui → Refresh). */}
+          <View style={styles.toolbarEndRow}>
+            {brandOptions.length > 1 ? (
+              <View ref={brandTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
                   active={
-                    activePanel === 'status' ||
-                    controller.statusFilter !== 'all'
+                    activePanel === 'brand' || controller.brandId !== 'all'
                   }
-                  label={statusLabel}
-                  onPress={() => openPanel('status', statusTriggerRef)}
-                  open={activePanel === 'status'}
+                  label={brandLabel}
+                  onPress={() => openPanel('brand', brandTriggerRef)}
+                  open={activePanel === 'brand'}
                   variant="quiet"
                 />
               </View>
-              {brandOptions.length > 1 ? (
-                <View ref={brandTriggerRef} collapsable={false}>
-                  <KolamTableFilterTrigger
-                    active={
-                      activePanel === 'brand' || controller.brandId !== 'all'
-                    }
-                    label={brandLabel}
-                    onPress={() => openPanel('brand', brandTriggerRef)}
-                    open={activePanel === 'brand'}
-                    variant="quiet"
-                  />
-                </View>
-              ) : null}
-            </View>
-            <View style={kolamTableToolbarStyles.actions}>
-              {canApprove ? (
-                <KolamButton
-                  disabled={
-                    controller.actionBusy ||
-                    controller.selectedApprovableCount === 0
-                  }
-                  intent="primary"
-                  label={`Setujui (${controller.selectedApprovableCount})`}
-                  onPress={() => {
-                    void controller.onBulkApprove();
-                  }}
-                />
-              ) : null}
-              <KolamButton
-                disabled={controller.loading}
-                label={controller.loading ? 'Memuat…' : 'Refresh'}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
+            ) : null}
+            <View ref={statusTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activePanel === 'status' ||
+                  controller.statusFilter !== 'all'
+                }
+                label={statusLabel}
+                onPress={() => openPanel('status', statusTriggerRef)}
+                open={activePanel === 'status'}
+                variant="quiet"
               />
             </View>
+            {canApprove ? (
+              <KolamButton
+                disabled={
+                  controller.actionBusy ||
+                  controller.selectedApprovableCount === 0
+                }
+                intent="primary"
+                label={`Setujui (${controller.selectedApprovableCount})`}
+                onPress={() => {
+                  void controller.onBulkApprove();
+                }}
+              />
+            ) : null}
+            <KolamButton
+              disabled={controller.loading}
+              label={controller.loading ? 'Memuat…' : 'Refresh'}
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
           </View>
         </View>
 
@@ -212,7 +209,15 @@ export function KolamDaraMarketIntelApprovalsBody({
             Tidak ada rekomendasi untuk filter ini.
           </Text>
         ) : (
-          <View style={styles.list}>
+          <View style={styles.table}>
+            <View style={styles.tableHead}>
+              {canApprove ? <View style={styles.colCheck} /> : null}
+              <Text style={[styles.th, styles.colCategory]}>Kategori</Text>
+              <Text style={[styles.th, styles.colProduct]}>Produk</Text>
+              <Text style={[styles.th, styles.colStatus]}>Status</Text>
+              <Text style={[styles.th, styles.colSummary]}>Ringkasan</Text>
+              <Text style={[styles.th, styles.colAction]}>Aksi</Text>
+            </View>
             {controller.pageItems.map(item => (
               <RecommendationRow
                 canApprove={canApprove}
@@ -276,7 +281,7 @@ function RecommendationRow({
 }) {
   const ready = isKolamDaraMarketIntelApprovable(item);
   return (
-    <View style={styles.row}>
+    <View style={styles.tableRow}>
       {canApprove ? (
         <Pressable
           accessibilityRole="checkbox"
@@ -285,24 +290,28 @@ function RecommendationRow({
           onPress={onToggle}
           style={[
             styles.check,
+            styles.colCheck,
             selected ? styles.checkOn : null,
             !ready ? styles.checkDisabled : null,
           ]}>
           <Text style={styles.checkMark}>{selected ? '✓' : ''}</Text>
         </Pressable>
       ) : null}
-      <View style={styles.rowBody}>
-        <Text style={styles.badge}>
-          {formatKolamDaraMarketIntelCategory(item.category)}
-        </Text>
-        <Text style={styles.rowTitle}>
-          {formatKolamDaraMarketIntelEntityName(item)}
-        </Text>
-        <Text style={styles.meta}>
-          {`${formatKolamDaraMarketIntelRecStatus(item.status)} · ${item.title}`}
-        </Text>
+      <Text style={[styles.td, styles.colCategory, styles.badge]}>
+        {formatKolamDaraMarketIntelCategory(item.category)}
+      </Text>
+      <Text style={[styles.td, styles.colProduct, styles.productName]} numberOfLines={2}>
+        {formatKolamDaraMarketIntelEntityName(item)}
+      </Text>
+      <Text style={[styles.td, styles.colStatus]}>
+        {formatKolamDaraMarketIntelRecStatus(item.status)}
+      </Text>
+      <Text style={[styles.td, styles.colSummary]} numberOfLines={2}>
+        {item.title}
+      </Text>
+      <View style={styles.colAction}>
+        <KolamButton label="Review" onPress={onOpen} />
       </View>
-      <KolamButton label="Review" onPress={onOpen} />
     </View>
   );
 }
@@ -346,11 +355,6 @@ function DetailModal({
         <KolamModalBackdrop onPress={controller.onCloseDetail} />
         <View style={styles.dialog}>
           <Text style={styles.dialogTitle}>{detail.title}</Text>
-          <Text style={styles.meta}>
-            {`${formatKolamDaraMarketIntelCategory(detail.category)} · ${formatKolamDaraMarketIntelRecStatus(
-              detail.status,
-            )} · ${formatKolamDaraMarketIntelEntityName(detail)}`}
-          </Text>
           <ScrollView style={styles.dialogBody}>
             {detail.summary ? (
               <Text style={styles.summary}>{detail.summary}</Text>
@@ -360,7 +364,6 @@ function DetailModal({
             ) : null}
             {metricLines.length ? (
               <View style={styles.metricsBox}>
-                <Text style={styles.metricsHead}>Ringkasan angka</Text>
                 {metricLines.map(line => (
                   <View key={line.label} style={styles.metricRow}>
                     <Text style={styles.metricLabel}>{line.label}</Text>
@@ -454,6 +457,15 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
+  toolbarEndRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    minHeight: 40,
+    overflow: 'visible',
+  },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -502,28 +514,86 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  list: {
-    gap: 8,
-  },
-  row: {
-    alignItems: 'center',
+  table: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  tableHead: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     paddingHorizontal: 10,
     paddingVertical: 10,
+  },
+  tableRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  th: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  td: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  colCheck: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+  },
+  colCategory: {
+    flex: 0.9,
+    minWidth: 72,
+  },
+  colProduct: {
+    flex: 1.4,
+    minWidth: 100,
+  },
+  colStatus: {
+    flex: 0.9,
+    minWidth: 72,
+  },
+  colSummary: {
+    flex: 1.8,
+    minWidth: 120,
+  },
+  colAction: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+    minWidth: 88,
+  },
+  productName: {
+    fontWeight: '600',
+  },
+  badge: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
   },
   check: {
     alignItems: 'center',
     borderColor: V.colors.border,
     borderRadius: 4,
     borderWidth: 1,
-    height: 22,
+    height: 18,
     justifyContent: 'center',
-    width: 22,
+    width: 18,
   },
   checkOn: {
     backgroundColor: V.colors.primary,
@@ -535,31 +605,16 @@ const styles = StyleSheet.create({
   checkMark: {
     color: V.colors.primaryFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  rowBody: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
-  badge: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '700',
-  },
-  rowTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '600',
+    lineHeight: 12,
   },
   pagination: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'flex-end',
     paddingTop: 4,
   },
   overlay: {
@@ -620,14 +675,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 6,
     padding: 12,
-  },
-  metricsHead: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
   },
   metricRow: {
     flexDirection: 'row',

@@ -105,42 +105,39 @@ function CompetitorsToolbar({
   return (
     <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
       <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            {brandOptions.length > 1 ? (
-              <View ref={brandTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={brandPanelOpen || controller.brandId !== 'all'}
-                  label={brandLabel}
-                  onPress={openBrandPanel}
-                  open={brandPanelOpen}
-                  variant="quiet"
-                />
-              </View>
-            ) : null}
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            {controller.view === 'detail' ? (
-              <KolamButton
-                label="← Daftar kompetitor"
-                onPress={controller.onBackToList}
+        {/* FE `dara-approvals-toolbar`: brand + actions flex-end. */}
+        <View style={styles.toolbarEndRow}>
+          {brandOptions.length > 1 ? (
+            <View ref={brandTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={brandPanelOpen || controller.brandId !== 'all'}
+                label={brandLabel}
+                onPress={openBrandPanel}
+                open={brandPanelOpen}
+                variant="quiet"
               />
-            ) : null}
+            </View>
+          ) : null}
+          {controller.view === 'detail' ? (
             <KolamButton
-              disabled={controller.loading}
-              label={controller.loading ? 'Memuat…' : 'Muat'}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
+              label="← Daftar kompetitor"
+              onPress={controller.onBackToList}
             />
-            <KolamButton
-              disabled={controller.busy}
-              label="Laporkan DARA"
-              onPress={() => {
-                void controller.onSendReport();
-              }}
-            />
-          </View>
+          ) : null}
+          <KolamButton
+            disabled={controller.loading}
+            label={controller.loading ? 'Memuat…' : 'Muat'}
+            onPress={() => {
+              void controller.onRefresh();
+            }}
+          />
+          <KolamButton
+            disabled={controller.busy}
+            label="Laporkan DARA"
+            onPress={() => {
+              void controller.onSendReport();
+            }}
+          />
         </View>
       </View>
       {brandPanelOpen && panelAnchor ? (
@@ -473,6 +470,15 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  toolbarEndRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+    minHeight: 40,
+    overflow: 'visible',
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
