@@ -128,6 +128,7 @@ function extractExpressRoutePatterns(source: string) {
 
 function isExcludedBeRoute(endpoint: string) {
   return (
+    endpoint === '/auth/login' ||
     endpoint === '/auth/register' ||
     endpoint.startsWith('/external/') ||
     endpoint.startsWith('/internal/')

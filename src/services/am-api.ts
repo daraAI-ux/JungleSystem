@@ -439,15 +439,6 @@ export interface AmUserPayload {
   role?: string;
 }
 
-export interface AmLoginPayload {
-  username: string;
-  password: string;
-}
-
-export interface AmLoginResponse {
-  user: AmCurrentUser;
-}
-
 export interface AmActivityLog {
   _id: string;
   timestamp: string;
@@ -1207,13 +1198,6 @@ export async function getAmCurrentUser(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmCurrentUser> {
   return amGet<AmCurrentUser>('/auth/me', undefined, baseUrl);
-}
-
-export async function loginAmSession(
-  payload: AmLoginPayload,
-  baseUrl = appConfig.amApiBaseUrl,
-): Promise<AmLoginResponse> {
-  return amPost<AmLoginResponse>('/auth/login', payload, baseUrl);
 }
 
 export async function logoutAmSession(

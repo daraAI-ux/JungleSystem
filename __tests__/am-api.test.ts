@@ -59,7 +59,6 @@ import {
   deleteAmRacks,
   deleteAmServiceAccount,
   deleteAmWebhookConfig,
-  loginAmSession,
   logoutAmSession,
   restartAmTokopediaSession,
   retryAmTask,
@@ -110,35 +109,11 @@ describe('AM API service', () => {
     );
   });
 
-  it('logs into the live AM session with bearer-only SSO transport', async () => {
-    const payload = {username: 'admin', password: 'secret'};
-    fetchMock.mockResolvedValue(jsonResponse({
-      success: true,
-      data: {user: {_id: 'user-current', username: 'admin'}},
-    }));
-
-    await loginAmSession(payload, 'https://am.example.test/api');
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://am.example.test/api/auth/login',
-      expect.objectContaining({
-        method: 'POST',
-        credentials: 'omit',
-        body: JSON.stringify(payload),
-        headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          'x-source': appConfig.amSourceHeader,
-        }),
-      }),
-    );
-  });
-
   it('keeps Kolam bearer SSO ahead of legacy AM auth cookies', async () => {
-    const payload = {username: 'admin', password: 'secret'};
     setAccessToken('kolam-token');
     fetchMock
       .mockResolvedValueOnce(jsonResponse(
-        {success: true, data: {user: {_id: 'user-current', username: 'admin'}}},
+        {success: true, data: {_id: 'user-current', username: 'admin'}},
         {'set-cookie': 'am_accessToken=token-123; Path=/; HttpOnly; SameSite=Lax'},
       ))
       .mockResolvedValueOnce(jsonResponse({
@@ -146,7 +121,7 @@ describe('AM API service', () => {
         data: {_id: 'user-current', username: 'admin'},
       }));
 
-    await loginAmSession(payload, 'https://am.example.test/api');
+    await getAmCurrentUser('https://am.example.test/api');
     await getAmCurrentUser('https://am.example.test/api');
 
     expect(fetchMock).toHaveBeenLastCalledWith(
