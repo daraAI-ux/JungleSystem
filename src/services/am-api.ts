@@ -2,9 +2,7 @@ import {appConfig} from '../config/app';
 import {apiRequest} from '../lib/api-client';
 
 type AmQueryValue = string | number | boolean | string[] | undefined | null;
-const AM_SSO_HEADERS = {
-  Cookie: 'kolamCsrf=',
-};
+const AM_SSO_CREDENTIALS = 'omit' as const;
 
 export interface AmDashboardSummary {
   totalBalance: number;
@@ -1230,8 +1228,7 @@ export async function logoutAmSession(
     path: '/auth/logout',
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 }
 
@@ -1305,8 +1302,7 @@ export async function recordAmPageView(
     },
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 }
 
@@ -1385,8 +1381,7 @@ export async function sendAmChatMessage(
     body: payload,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 
   if (isAmEnvelope(response)) {
@@ -1460,8 +1455,7 @@ async function amGet<T>(
     query,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 
   return unwrapAmResponse(response);
@@ -1482,8 +1476,7 @@ async function amPost<T>(
     body,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 
   return unwrapAmResponse(response);
@@ -1504,8 +1497,7 @@ async function amPut<T>(
     body,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 
   return unwrapAmResponse(response);
@@ -1524,8 +1516,7 @@ async function amDelete<T>(
     path,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 
   return unwrapAmResponse(response);
@@ -1546,8 +1537,7 @@ async function amDeleteWithBody<T>(
     body,
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
-    headers: AM_SSO_HEADERS,
-    credentials: 'include',
+    credentials: AM_SSO_CREDENTIALS,
   });
 
   return unwrapAmResponse(response);

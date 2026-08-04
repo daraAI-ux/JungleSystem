@@ -90,23 +90,22 @@ describe('AM API service', () => {
     clearResponseCookieJar();
   });
 
-  it('logs out of the live AM session with AM source and cookie credentials', async () => {
+  it('logs out of the live AM session with AM source and bearer-only SSO transport', async () => {
     await logoutAmSession('https://am.example.test/api');
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://am.example.test/api/auth/logout',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
     );
   });
 
-  it('logs into the live AM session with cookie credentials', async () => {
+  it('logs into the live AM session with bearer-only SSO transport', async () => {
     const payload = {username: 'admin', password: 'secret'};
     fetchMock.mockResolvedValue(jsonResponse({
       success: true,
@@ -119,10 +118,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/auth/login',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -150,10 +148,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/auth/me',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
           Authorization: 'Bearer kolam-token',
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -190,9 +187,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/dashboard',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -223,9 +219,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/task?page=2&limit=20&type=send_message&status=processing&serviceAccountId=account-1&deviceId=device-1&search=buyer',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -248,10 +243,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/task',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -268,9 +262,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/task/task-1/cancel',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -282,9 +275,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/task/task-1/retry',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -296,9 +288,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/task/task-1/force-fail',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -320,9 +311,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/service-account-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -340,9 +330,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/service-account-1',
       expect.objectContaining({
         method: 'DELETE',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -379,9 +368,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account?page=2&limit=20&platform=tokopedia&status=inactive&search=main',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -391,10 +379,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(createPayload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -405,10 +392,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/service-new',
       expect.objectContaining({
         method: 'PUT',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(updatePayload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -453,10 +439,9 @@ describe('AM API service', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(12, 'https://am.example.test/api/device/device-1', expect.objectContaining({method: 'PUT'}));
     expect(fetchMock).toHaveBeenNthCalledWith(13, 'https://am.example.test/api/devices', expect.objectContaining({
       method: 'DELETE',
-      credentials: 'include',
+      credentials: 'omit',
       body: JSON.stringify({ids: ['device-1']}),
       headers: expect.objectContaining({
-        Cookie: 'kolamCsrf=',
         'Content-Type': 'application/json',
         'x-source': appConfig.amSourceHeader,
       }),
@@ -499,9 +484,8 @@ describe('AM API service', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(6, 'https://am.example.test/api/webhook/config/webhook-1', expect.objectContaining({
       method: 'DELETE',
-      credentials: 'include',
+      credentials: 'omit',
       headers: expect.objectContaining({
-        Cookie: 'kolamCsrf=',
         'x-source': appConfig.amSourceHeader,
       }),
     }));
@@ -516,9 +500,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/roles',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -560,9 +543,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/chat/message?page=1&limit=20&platform=whatsapp&serviceAccountId=account-1&contactId=contact-1&direction=incoming',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -591,9 +573,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/chat/contact?page=1&limit=20&platform=tokopedia&serviceAccountId=account-1&search=buyer',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -612,9 +593,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/chat/message/message-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -633,9 +613,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/chat/contact/contact-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -661,10 +640,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/chat/message/send',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -694,10 +672,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/chat/contact',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -723,10 +700,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/transfer',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -743,9 +719,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/transfer/transfer-1/cancel',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -757,9 +732,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/transfer/transfer-1/retry',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -771,9 +745,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/transfer/transfer-1/force-fail',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -789,9 +762,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/rack/rack-live',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -809,9 +781,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/box/box-live?rackId=rack-live',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -829,9 +800,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-live?boxId=box-live',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -853,9 +823,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/webhook/test-ping',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -874,9 +843,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/users/user-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -897,10 +865,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/users/user-current',
       expect.objectContaining({
         method: 'PUT',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -917,10 +884,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-1/service/start',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify({serviceAccountId: 'account-1'}),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -933,10 +899,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-1/service/stop',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify({serviceAccountId: 'account-1'}),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -954,10 +919,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-1/service/input',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify({type: 'otp', value: '123456'}),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -974,9 +938,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/verify',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -988,9 +951,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/qr-start',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1002,9 +964,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/restart',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1020,10 +981,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify({cookies}),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -1040,10 +1000,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/login-method',
       expect.objectContaining({
         method: 'PUT',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify({qrTiktokLogin: true, loginFillOnly: false}),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -1060,10 +1019,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/captcha',
       expect.objectContaining({
         method: 'PUT',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify({captchaAutoSolve: true, anthropicApiKey: 'sk-ant'}),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -1084,10 +1042,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/api-monitor',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -1100,9 +1057,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/tokopedia-session/api-monitor',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1116,9 +1072,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/service-account/account-1/session',
       expect.objectContaining({
         method: 'DELETE',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1141,10 +1096,9 @@ describe('AM API service', () => {
       'https://am.example.test/api/activity-log/bulk-delete',
       expect.objectContaining({
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         body: JSON.stringify(payload),
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'Content-Type': 'application/json',
           'x-source': appConfig.amSourceHeader,
         }),
@@ -1165,9 +1119,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/task/task-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1179,9 +1132,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-1/services',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1197,9 +1149,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/device/device-1/service/logs?limit=80&source=realtime&page=2',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1214,9 +1165,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/transfer?serviceAccountId=account-1&status=pending&page=2&limit=20',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1228,9 +1178,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/transfer/transfer-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1245,9 +1194,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/mutasi?accountId=account-1&deviceId=device-1&type=masuk&page=2&limit=20',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1259,9 +1207,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/mutasi/summary?accountId=account-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1273,9 +1220,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/mutasi/mutasi-1',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1290,9 +1236,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/users?search=admin&role=role-1&page=2&limit=20',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1307,9 +1252,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/activity-log?search=login&method=POST&status=success&page=2&limit=20',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
@@ -1321,9 +1265,8 @@ describe('AM API service', () => {
       'https://am.example.test/api/activity-log/stats?days=14',
       expect.objectContaining({
         method: 'GET',
-        credentials: 'include',
+        credentials: 'omit',
         headers: expect.objectContaining({
-          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
       }),
