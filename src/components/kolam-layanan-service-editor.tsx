@@ -899,6 +899,28 @@ function KolamLayananServiceForm({
   controller: KolamLayananController;
 }) {
   const form = controller.form;
+  const brandDropdownOptions = React.useMemo(() => {
+    const selectedNames = form.brandIds
+      .map(
+        id =>
+          controller.brandOptions.find(brand => brand.id === id)?.name || '',
+      )
+      .filter(Boolean);
+    return [
+      {
+        label: selectedNames.length
+          ? selectedNames.join(', ')
+          : 'Pilih merek…',
+        value: '',
+      },
+      ...controller.brandOptions.map(brand => ({
+        label: form.brandIds.includes(brand.id)
+          ? `✓ ${brand.name}`
+          : brand.name,
+        value: brand.id,
+      })),
+    ];
+  }, [controller.brandOptions, form.brandIds]);
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -937,18 +959,28 @@ function KolamLayananServiceForm({
           />
         </FieldShell>
         <FieldShell label="Merek" required>
-          <View style={styles.chipRow}>
-            {controller.brandOptions.map(brand => (
-              <KolamSelectorChip
-                active={form.brandIds.includes(brand.id)}
-                key={brand.id}
-                label={brand.name}
-                onPress={() => controller.onToggleBrand(brand.id)}
-              />
-            ))}
-          </View>
-          {!controller.brandOptions.length ? (
+          {controller.brandOptions.length ? (
+            <KolamDropdownSelect
+              accessibilityLabel="Merek"
+              label="Merek"
+              onChange={value => {
+                if (value) {
+                  controller.onToggleBrand(value);
+                }
+              }}
+              options={brandDropdownOptions}
+              searchable
+              searchPlaceholder="Cari merek…"
+              value=""
+            />
+          ) : (
             <Text style={styles.metaText}>Daftar merek kosong.</Text>
+          )}
+          {form.brandIds.length ? (
+            <Text style={styles.metaText}>
+              {form.brandIds.length} merek dipilih — pilih lagi untuk
+              menambah/menghapus.
+            </Text>
           ) : null}
         </FieldShell>
         <View style={styles.switchRow}>
