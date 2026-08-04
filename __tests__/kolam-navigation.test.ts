@@ -399,10 +399,56 @@ describe('kolamNavigationSections', () => {
     expect(getKolamNavigationItemByRoute('/missing-route')).toBeNull();
   });
 
+  it('uses FE DARA SEO shell titles and descriptions', () => {
+    expect(getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo')).toEqual(
+      expect.objectContaining({
+        label: 'DARA SEO & Market Intelligence',
+        description:
+          'Analisa, rekomendasi, dan draft perubahan. Mutasi produk hanya setelah approval.',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo/approvals'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Persetujuan Perubahan SEO',
+        description:
+          'Review draft AI untuk produk, blog, dan livestock — lalu terapkan setelah approve.',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo/keywords'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Keyword Opportunities',
+        description:
+          'Peluang keyword dari audit DARA SEO — prioritas berdasarkan skor peluang.',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo/sentiment'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Analisis Sentimen',
+        description:
+          'Analisis sentimen teks review — rule-based atau Llama (AI).',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo/integrations'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Integrasi sumber SEO',
+        description:
+          'SerpAPI, DuckDuckGo, SearXNG, GSC, Firecrawl, dan Indexing API — atur tanpa edit .env.',
+      }),
+    );
+  });
+
   it('indexes live create detail and edit route variants for native command search', () => {
     const variants = getKolamNavigationRouteVariants();
 
-    expect(variants).toHaveLength(163);
+    expect(variants).toHaveLength(165);
     expect(variants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -534,8 +580,28 @@ describe('kolamNavigationSections', () => {
       getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo/keywords'),
     ).toEqual(
       expect.objectContaining({
-        label: 'DARA SEO Keywords',
+        label: 'Keyword Opportunities',
+        description:
+          'Peluang keyword dari audit DARA SEO — prioritas berdasarkan skor peluang.',
         route: '/campaign/dara-seo/keywords',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'DARA SEO & Market Intelligence',
+        description:
+          'Analisa, rekomendasi, dan draft perubahan. Mutasi produk hanya setelah approval.',
+      }),
+    );
+    expect(
+      getKolamNavigationItemByRuntimeRoute('/campaign/dara-seo/approvals'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Persetujuan Perubahan SEO',
+        description:
+          'Review draft AI untuk produk, blog, dan livestock — lalu terapkan setelah approve.',
       }),
     );
     expect(

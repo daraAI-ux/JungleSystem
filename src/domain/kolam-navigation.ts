@@ -397,9 +397,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'DARA SEO',
+        label: 'DARA SEO & Market Intelligence',
         route: '/campaign/dara-seo',
-        description: 'SEO, keywords, rankings, sentiment, and integrations',
+        description:
+          'Analisa, rekomendasi, dan draft perubahan. Mutasi produk hanya setelah approval.',
         group: 'Kampanye',
         requiredAccess: ['kolam'],
       },
@@ -1686,57 +1687,73 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Approvals',
+    labelSuffix: 'Persetujuan',
+    label: 'Persetujuan Perubahan SEO',
     route: '/campaign/dara-seo/approvals',
-    description: 'DARA SEO approvals page from live Kolam',
+    description:
+      'Review draft AI untuk produk, blog, dan livestock — lalu terapkan setelah approve.',
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Audit Logs',
+    labelSuffix: 'Log audit',
+    label: 'Audit Logs',
     route: '/campaign/dara-seo/audit-logs',
-    description: 'DARA SEO audit logs page from live Kolam',
+    description: 'Riwayat aktivitas DARA SEO.',
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Integrations',
+    labelSuffix: 'Integrasi',
+    label: 'Integrasi sumber SEO',
     route: '/campaign/dara-seo/integrations',
-    description: 'DARA SEO integrations page from live Kolam',
+    description:
+      'SerpAPI, DuckDuckGo, SearXNG, GSC, Firecrawl, dan Indexing API — atur tanpa edit .env.',
   },
   {
     baseRoute: '/campaign/dara-seo',
     labelSuffix: 'Keywords',
+    label: 'Keyword Opportunities',
     route: '/campaign/dara-seo/keywords',
-    description: 'DARA SEO keywords page from live Kolam',
+    description:
+      'Peluang keyword dari audit DARA SEO — prioritas berdasarkan skor peluang.',
   },
   {
     baseRoute: '/campaign/dara-seo',
     labelSuffix: 'Mentions',
+    label: 'Brand & SERP Mentions',
     route: '/campaign/dara-seo/mentions',
-    description: 'DARA SEO mentions page from live Kolam',
+    description: 'Mentions brand, hasil SERP, kompetitor, dan backlink.',
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Rankings',
+    labelSuffix: 'Ranking SERP',
+    label: 'Ranking SERP',
     route: '/campaign/dara-seo/rankings',
-    description: 'DARA SEO rankings page from live Kolam',
+    description:
+      'Hasil yang sudah di-fetch & disimpan (cron, test integrasi, atau fetch manual).',
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Sentiment',
+    labelSuffix: 'Sentimen',
+    label: 'Analisis Sentimen',
     route: '/campaign/dara-seo/sentiment',
-    description: 'DARA SEO sentiment page from live Kolam',
+    description:
+      'Analisis sentimen teks review — rule-based atau Llama (AI).',
   },
   {
     baseRoute: '/campaign/dara-seo',
     labelSuffix: 'Social Insights',
+    label: 'Social Insights',
     route: '/campaign/dara-seo/social-insights',
-    description: 'DARA SEO social insights page from live Kolam',
+    description:
+      'Instagram & TikTok via akun inbox AM. Setelah fetch, browser kembali standby poll DM.',
   },
   {
     baseRoute: '/campaign/dara-seo',
     labelSuffix: 'Website',
+    label: 'SEO Website (Homepage)',
     route: '/campaign/dara-seo/website',
-    description: 'DARA SEO website page from live Kolam',
+    description:
+      'Meta title, description, dan keyword untuk halaman utama toko publik — perubahan via approval.',
   },
   {
     baseRoute: '/enclosures',
