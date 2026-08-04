@@ -3,7 +3,6 @@ import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
-import {getDashboardLayoutVisualContract} from '../src/domain/dashboard-layout';
 import {setAccessToken} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
@@ -451,24 +450,24 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .find(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.width === '100%' && style?.paddingTop === getDashboardLayoutVisualContract().page.gapY;
+        return style?.width === '100%' && style?.alignSelf === 'stretch';
       });
     const amRootStyle = StyleSheet.flatten(amRoot?.props.style);
     expect(amRootStyle).toEqual(
       expect.objectContaining({
         width: '100%',
         alignSelf: 'stretch',
-        paddingTop: getDashboardLayoutVisualContract().page.gapY,
       }),
     );
     expect(amRootStyle?.marginHorizontal).toBeUndefined();
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
+    expect(amRootStyle?.paddingTop).toBeUndefined();
     const amRecentPanels = renderer!.root
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 420 && style?.borderWidth === 1;
+        return style?.flexBasis === '100%' && style?.borderWidth === 1;
       });
     expect(amRecentPanels.length).toBeGreaterThanOrEqual(2);
     expect(amRecentPanels.every(view => {

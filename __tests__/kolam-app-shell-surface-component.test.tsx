@@ -334,8 +334,7 @@ describe('KolamAppShellSurface', () => {
     );
   });
 
-  it('uses the same centered page container for AM', async () => {
-    const visual = getDashboardLayoutVisualContract();
+  it('lets AM use the full app workspace container', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -405,12 +404,15 @@ describe('KolamAppShellSurface', () => {
       );
     });
 
-    expect(getMainContentStyle(renderer!)).toEqual(
+    const mainContentStyle = getMainContentStyle(renderer!);
+    expect(mainContentStyle).toEqual(
       expect.objectContaining({
-        maxWidth: visual.page.maxWidthPx,
-        alignSelf: 'center',
+        padding: 16,
       }),
     );
+    expect(mainContentStyle?.maxWidth).toBeUndefined();
+    expect(mainContentStyle?.alignSelf).toBeUndefined();
+    expect(mainContentStyle?.paddingHorizontal).toBeUndefined();
   });
 
   it('disables shell ScrollView on catalog table list routes so FlatList owns scroll', async () => {

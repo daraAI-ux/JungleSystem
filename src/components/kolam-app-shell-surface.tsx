@@ -53,7 +53,6 @@ function KolamAppShellSurfaceComponent({
 
   const isKolamDashboard =
     sidebar.activeModule === 'kolam' ||
-    sidebar.activeModule === 'am' ||
     isKolamCenteredRoute(sidebar.activeRoute);
   const ownsListScroll = isCatalogTableListRoute(sidebar.activeRoute);
   const pageContentStyle = [
