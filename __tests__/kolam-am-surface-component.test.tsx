@@ -456,10 +456,10 @@ describe('KolamAmSurface', () => {
       expect.objectContaining({
         width: '100%',
         alignSelf: 'stretch',
-        marginHorizontal: -getDashboardLayoutVisualContract().page.paddingX,
         paddingTop: getDashboardLayoutVisualContract().page.gapY,
       }),
     );
+    expect(amRootStyle?.marginHorizontal).toBeUndefined();
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
     const amRecentPanels = renderer!.root
@@ -493,7 +493,7 @@ describe('KolamAmSurface', () => {
     expect(amTableHeaders.length).toBeGreaterThan(0);
     expect(amTableHeaders.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%';
+      return style?.width === '100%' && style?.overflow === 'hidden';
     })).toBe(true);
     const amTableRows = renderer!.root
       .findAllByType(View)
@@ -504,7 +504,7 @@ describe('KolamAmSurface', () => {
     expect(amTableRows.length).toBeGreaterThan(0);
     expect(amTableRows.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%';
+      return style?.width === '100%' && style?.overflow === 'hidden';
     })).toBe(true);
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
