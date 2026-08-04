@@ -280,47 +280,49 @@ function AssetPurchaseDetailBody({
       ) : null}
 
       <View style={styles.tabsRow}>
-        <View style={styles.mainPane}>
+        <View style={styles.tabsMainSlot}>
           <KolamSurfacePanelTabs
             onSelectTab={controller.onSelectTab}
             selectedTabId={controller.tab}
             tabs={controller.tabs}
           />
         </View>
-        <View style={styles.historyPane} />
+        <View style={styles.tabsHistorySlot} />
       </View>
 
-      <View style={styles.bodyRow}>
-        <View style={styles.mainPane}>
-          <ScrollView
-            contentContainerStyle={styles.content}
-            style={styles.mainScroll}
-          >
-            {controller.tab === 'details' ? (
-              <DetailsTab
-                customFields={detail.customFieldValues}
-                infoRows={infoRows}
-                photos={detail.photos}
-              />
-            ) : null}
-            {controller.tab === 'pricing' ? (
-              <PricingTab
-                price={detail.price}
-                shippingCost={detail.shippingCost}
-                total={detail.total}
-              />
-            ) : null}
-            {controller.tab === 'depreciation' ? (
-              <KolamAssetPurchaseDepreciationTab
-                onPurchaseRefresh={controller.onRefresh}
-                purchase={detail}
-              />
-            ) : null}
-          </ScrollView>
-        </View>
+      <View style={styles.detailFrame}>
+        <View style={styles.bodyRow}>
+          <View style={styles.mainPane}>
+            <ScrollView
+              contentContainerStyle={styles.content}
+              style={styles.mainScroll}
+            >
+              {controller.tab === 'details' ? (
+                <DetailsTab
+                  customFields={detail.customFieldValues}
+                  infoRows={infoRows}
+                  photos={detail.photos}
+                />
+              ) : null}
+              {controller.tab === 'pricing' ? (
+                <PricingTab
+                  price={detail.price}
+                  shippingCost={detail.shippingCost}
+                  total={detail.total}
+                />
+              ) : null}
+              {controller.tab === 'depreciation' ? (
+                <KolamAssetPurchaseDepreciationTab
+                  onPurchaseRefresh={controller.onRefresh}
+                  purchase={detail}
+                />
+              ) : null}
+            </ScrollView>
+          </View>
 
-        <View style={styles.historyPane}>
-          <HistoryPanel items={controller.historyItems} />
+          <View style={styles.historyPane}>
+            <HistoryPanel items={controller.historyItems} />
+          </View>
         </View>
       </View>
     </View>
@@ -492,29 +494,53 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    gap: 20,
+  },
+  tabsMainSlot: {
+    flex: 3,
+    minWidth: 0,
+    paddingRight: 16,
+  },
+  tabsHistorySlot: {
+    flex: 1,
+    maxWidth: 300,
+    minWidth: 240,
+    paddingLeft: 16,
+  },
+  detailFrame: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   bodyRow: {
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     flex: 1,
     flexDirection: 'row',
-    gap: 20,
     minHeight: 0,
   },
   mainPane: {
     flex: 3,
     minHeight: 0,
     minWidth: 0,
+    paddingRight: 16,
   },
   mainScroll: {
     flex: 1,
     minHeight: 0,
   },
   historyPane: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: StyleSheet.hairlineWidth,
     flex: 1,
     maxWidth: 300,
     minHeight: 0,
     minWidth: 240,
+    paddingLeft: 16,
   },
   historyFrame: {
     flex: 1,
