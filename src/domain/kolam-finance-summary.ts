@@ -113,6 +113,55 @@ export const KOLAM_FINANCE_CONFIRM_STATUS_OPTIONS: Array<{
   { label: 'Ditolak', value: 'rejected' },
 ];
 
+export type KolamFinanceDetailFilterMode =
+  | 'all'
+  | 'income'
+  | 'expenses'
+  | 'ratio';
+
+export const KOLAM_FINANCE_DETAIL_FILTER_OPTIONS: Array<{
+  label: string;
+  value: KolamFinanceDetailFilterMode;
+}> = [
+  { label: 'Semua', value: 'all' },
+  { label: 'Pemasukan', value: 'income' },
+  { label: 'Pengeluaran', value: 'expenses' },
+  { label: 'Rasio', value: 'ratio' },
+];
+
+/** Detail keys that FE shows only when present as a number on the payload. */
+export function hasKolamFinanceDetailKey(
+  details: Record<string, number>,
+  key: string,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(details, key);
+}
+
+export function getKolamFinanceDetailAmount(
+  details: Record<string, number>,
+  key: string,
+): number {
+  const value = details[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+export function getKolamFinanceDetailFlowTotal(
+  totalIncome: number,
+  totalExpense: number,
+): number {
+  return totalIncome + totalExpense;
+}
+
+export function getKolamFinanceDetailRatioPercent(
+  value: number,
+  total: number,
+): number {
+  if (!(total > 0)) {
+    return 0;
+  }
+  return (Math.abs(value) / total) * 100;
+}
+
 export function isKolamFinanceSummaryRoute(route: string): boolean {
   const path = String(route || '').split('?')[0].replace(/\/+$/, '') || '/';
   if (path === KOLAM_FINANCE_SUMMARY_ROOT) {

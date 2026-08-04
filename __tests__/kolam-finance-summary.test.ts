@@ -1,5 +1,9 @@
 import {
+  getKolamFinanceDetailAmount,
+  getKolamFinanceDetailFlowTotal,
+  getKolamFinanceDetailRatioPercent,
   getKolamFinanceFocusTxId,
+  hasKolamFinanceDetailKey,
   hasKolamWalletPermission,
   isKolamFinanceConfirmableSource,
   isKolamFinanceSummaryRoute,
@@ -123,5 +127,16 @@ describe('kolam finance summary domain', () => {
     expect(summary.transactions[0]?.cashflowSessionId).toBe('sess-1');
     expect(summary.liabilitiesPayableOpen).toBe(50);
     expect(summary.liabilitiesPayableOverdue).toBe(10);
+  });
+
+  it('computes detail ratio helpers', () => {
+    const details = {sales: 100, shippingCost: 25};
+    expect(hasKolamFinanceDetailKey(details, 'shippingCost')).toBe(true);
+    expect(hasKolamFinanceDetailKey(details, 'insuranceCost')).toBe(false);
+    expect(getKolamFinanceDetailAmount(details, 'sales')).toBe(100);
+    expect(getKolamFinanceDetailAmount(details, 'missing')).toBe(0);
+    expect(getKolamFinanceDetailFlowTotal(100, 50)).toBe(150);
+    expect(getKolamFinanceDetailRatioPercent(75, 150)).toBe(50);
+    expect(getKolamFinanceDetailRatioPercent(10, 0)).toBe(0);
   });
 });
