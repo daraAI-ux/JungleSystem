@@ -11,7 +11,6 @@ import { useKolamLayananSubscriptionController } from '../hooks/use-kolam-layana
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDescriptionList } from './kolam-description-list';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -71,8 +70,20 @@ function FormSection({
   );
 }
 
-function desc(id: string, label: string, value: string) {
-  return { id, label, meta: '', tone: 'default' as const, value };
+/** FE DetailField: label atas, value bawah — tanpa DescriptionList. */
+function DetailField({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.detailField}>
+      <Text style={styles.detailFieldLabel}>{label}</Text>
+      <View style={styles.detailFieldValue}>{children}</View>
+    </View>
+  );
 }
 
 function formatDate(value?: string | null) {
@@ -101,7 +112,6 @@ function formatDatetime(value?: string | null) {
   return date.toLocaleString('id-ID', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -117,7 +127,6 @@ export function KolamLayananSubscriptionDetail({
   const controller = useKolamLayananSubscriptionController(route);
   const subscription = controller.subscription;
   const form = controller.contractForm;
-  const title = subscription?.subscriptionNumber || 'Langganan';
   const visitPreview = controller.visitPreview;
 
   const customerOptions = React.useMemo(
@@ -133,36 +142,12 @@ export function KolamLayananSubscriptionDetail({
     [controller.customers],
   );
 
-  const packageLabel = subscription
-    ? [
-        subscription.serviceName && subscription.serviceName !== '—'
-          ? subscription.serviceName
-          : null,
-        subscription.packageCode && subscription.packageCode !== '—'
-          ? `(${subscription.packageCode})`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(' ') || 'Belum diisi'
-    : 'Belum diisi';
-
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.toolbarTitle}>
-              {title}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              disabled={controller.loading}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar langganan"
               onPress={() =>
@@ -233,86 +218,119 @@ export function KolamLayananSubscriptionDetail({
         />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.statusStrip}>
-            <View style={styles.statusStripItem}>
-              <Text style={styles.statusStripLabel}>Status</Text>
-              <KolamStatusBadge
-                intent={getKolamLayananSubscriptionStatusIntent(
-                  subscription.status,
-                )}
-                label={getKolamLayananSubscriptionStatusLabel(
-                  subscription.status,
-                )}
-              />
+          <KolamContentFrame variant="nativeFormSection">
+            <View style={styles.statusStrip}>
+              <View style={styles.statusStripItem}>
+                <Text style={styles.statusStripLabel}>Status</Text>
+                <KolamStatusBadge
+                  intent={getKolamLayananSubscriptionStatusIntent(
+                    subscription.status,
+                  )}
+                  label={getKolamLayananSubscriptionStatusLabel(
+                    subscription.status,
+                  )}
+                />
+              </View>
+              <View style={styles.statusStripItem}>
+                <Text style={styles.statusStripLabel}>Pelanggan</Text>
+                <Text style={styles.statusStripValue}>
+                  {subscription.customerName || '—'}
+                </Text>
+              </View>
+              <View style={styles.statusStripItem}>
+                <Text style={styles.statusStripLabel}>Periode</Text>
+                <Text style={[styles.statusStripValue, styles.tabular]}>
+                  {formatDate(subscription.startDate)} –{' '}
+                  {formatDate(subscription.endDate)}
+                </Text>
+              </View>
+              <View style={[styles.statusStripItem, styles.statusStripDivider]}>
+                <Text style={styles.statusStripLabel}>Perpanjang otomatis</Text>
+                <KolamStatusBadge
+                  intent={subscription.autoRenew ? 'success' : 'secondary'}
+                  label={subscription.autoRenew ? 'Ya' : 'Tidak'}
+                />
+              </View>
             </View>
-            <View style={[styles.statusStripItem, styles.statusStripDivider]}>
-              <Text style={styles.statusStripLabel}>Pelanggan</Text>
-              <Text style={styles.statusStripValue}>
-                {subscription.customerName || '—'}
-              </Text>
-            </View>
-            <View style={styles.statusStripItem}>
-              <Text style={styles.statusStripLabel}>Periode</Text>
-              <Text style={styles.statusStripValue}>
-                {formatDate(subscription.startDate)} –{' '}
-                {formatDate(subscription.endDate)}
-              </Text>
-            </View>
-            <View style={[styles.statusStripItem, styles.statusStripDivider]}>
-              <Text style={styles.statusStripLabel}>Perpanjang otomatis</Text>
-              <KolamStatusBadge
-                intent={subscription.autoRenew ? 'success' : 'secondary'}
-                label={subscription.autoRenew ? 'Ya' : 'Tidak'}
-              />
-            </View>
-          </View>
+          </KolamContentFrame>
 
           <View style={styles.detailColumns}>
             <View style={styles.detailMain}>
               <FormSection title="Ringkasan langganan">
-                <KolamDescriptionList
-                  rows={[
-                    desc('package', 'Paket', packageLabel),
-                    desc(
-                      'voucher',
-                      'Voucher',
-                      subscription.voucherSerial || '—',
-                    ),
-                    desc(
-                      'invoice',
-                      'Faktur',
-                      subscription.saleInvoiceCode || 'Belum diisi',
-                    ),
-                    desc(
-                      'tasks',
-                      'Template tugas',
-                      `${subscription.packageTasksCount} item`,
-                    ),
-                  ]}
-                />
-                <View style={styles.inlineActions}>
-                  {subscription.voucherId ? (
-                    <KolamButton
-                      intent="outline"
-                      label="Buka voucher"
-                      onPress={() =>
-                        onRouteChange?.(
-                          `${KOLAM_LAYANAN_ROOT}/voucher/${subscription.voucherId}`,
-                        )
-                      }
-                      size="sm"
-                    />
-                  ) : null}
-                  {subscription.saleId ? (
-                    <KolamButton
-                      intent="outline"
-                      label="Lihat penjualan"
-                      onPress={() =>
-                        onRouteChange?.(`/sales/${subscription.saleId}`)
-                      }
-                      size="sm"
-                    />
-                  ) : null}
+                <View style={styles.summaryGrid}>
+                  <DetailField label="Paket">
+                    {subscription.serviceName &&
+                    subscription.serviceName !== '—' ? (
+                      <Text style={styles.summaryValue}>
+                        {subscription.serviceName}
+                        {subscription.packageCode &&
+                        subscription.packageCode !== '—' ? (
+                          <Text style={styles.summaryMono}>
+                            {' '}
+                            ({subscription.packageCode})
+                          </Text>
+                        ) : null}
+                      </Text>
+                    ) : (
+                      <Text style={styles.emptyValue}>Belum diisi</Text>
+                    )}
+                  </DetailField>
+                  <DetailField label="Voucher">
+                    {subscription.voucherId ? (
+                      <Pressable
+                        accessibilityRole="link"
+                        onPress={() =>
+                          onRouteChange?.(
+                            `${KOLAM_LAYANAN_ROOT}/voucher/${subscription.voucherId}`,
+                          )
+                        }
+                      >
+                        <Text style={styles.linkText}>
+                          {subscription.voucherSerial &&
+                          subscription.voucherSerial !== '—'
+                            ? subscription.voucherSerial
+                            : 'Buka voucher'}
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <Text style={styles.summaryValue}>
+                        {subscription.voucherSerial &&
+                        subscription.voucherSerial !== '—'
+                          ? subscription.voucherSerial
+                          : '—'}
+                      </Text>
+                    )}
+                  </DetailField>
+                  <DetailField label="Faktur">
+                    {subscription.saleInvoiceCode ? (
+                      <View style={styles.invoiceRow}>
+                        <Text style={[styles.summaryValue, styles.tabular]}>
+                          {subscription.saleInvoiceCode}
+                        </Text>
+                        {subscription.saleId ? (
+                          <Pressable
+                            accessibilityRole="link"
+                            onPress={() =>
+                              onRouteChange?.(
+                                `/sales/${subscription.saleId}`,
+                              )
+                            }
+                          >
+                            <Text style={styles.linkText}>
+                              Lihat penjualan
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    ) : (
+                      <Text style={styles.emptyValue}>Belum diisi</Text>
+                    )}
+                  </DetailField>
+                  <DetailField label="Template tugas">
+                    <Text style={styles.summaryValue}>
+                      {subscription.packageTasksCount} item
+                    </Text>
+                  </DetailField>
                 </View>
               </FormSection>
 
@@ -331,15 +349,14 @@ export function KolamLayananSubscriptionDetail({
                           onRouteChange?.(row.href);
                         }
                       }}
-                      style={styles.linkRow}
+                      style={styles.verifyRow}
                     >
-                      <View style={styles.linkCopy}>
-                        <Text style={styles.primaryText}>{row.visitTitle}</Text>
-                        <Text style={styles.metaText}>
-                          Buka · {formatDatetime(row.scheduledTime)}
-                        </Text>
-                      </View>
-                      <Text style={styles.linkAction}>Buka</Text>
+                      <Text style={styles.summaryValue}>
+                        {row.visitTitle || row.packageTaskCode || 'Kunjungan'}
+                      </Text>
+                      <Text style={styles.linkText}>
+                        Buka · {formatDatetime(row.scheduledTime)}
+                      </Text>
                     </Pressable>
                   ))}
                 </FormSection>
@@ -408,12 +425,16 @@ export function KolamLayananSubscriptionDetail({
                           >
                             {visit.visitTitle}
                           </Text>
-                          <View style={[styles.colCode, styles.badgeCell]}>
-                            <KolamStatusBadge
-                              intent="secondary"
-                              label={visit.packageTaskCode || '—'}
-                            />
-                          </View>
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.detailTableCell,
+                              styles.colCode,
+                              styles.tabular,
+                            ]}
+                          >
+                            {visit.packageTaskCode || '—'}
+                          </Text>
                           <Text
                             numberOfLines={1}
                             style={[
@@ -520,7 +541,7 @@ export function KolamLayananSubscriptionDetail({
                   </View>
                 </View>
                 <View style={styles.switchRow}>
-                  <Text style={styles.primaryText}>Perpanjangan otomatis</Text>
+                  <Text style={styles.summaryValue}>Perpanjangan otomatis</Text>
                   <KolamSwitch
                     accessibilityLabel="Perpanjangan otomatis"
                     active={form.autoRenew}
@@ -566,15 +587,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   content: {
-    gap: 16,
-    paddingBottom: 32,
+    gap: 12,
+    paddingBottom: 24,
     paddingHorizontal: 8,
-  },
-  toolbarTitle: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '600',
-    maxWidth: 420,
   },
   banner: {
     alignSelf: 'stretch',
@@ -582,19 +597,15 @@ const styles = StyleSheet.create({
   },
   statusStrip: {
     alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 16,
+    paddingVertical: 2,
   },
   statusStripItem: {
-    gap: 4,
-    minWidth: 120,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   statusStripDivider: {
     borderLeftColor: V.colors.border,
@@ -640,7 +651,7 @@ const styles = StyleSheet.create({
   },
   sectionCopy: {
     flex: 1,
-    gap: 4,
+    gap: 2,
     minWidth: 0,
   },
   sectionTitle: {
@@ -649,7 +660,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionBody: {
-    gap: 12,
+    gap: 10,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
@@ -657,10 +668,69 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 6,
   },
-  inlineActions: {
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailField: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    gap: 4,
+    minWidth: 140,
+  },
+  detailFieldLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  detailFieldValue: {
+    minWidth: 0,
+  },
+  summaryValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  summaryMono: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  emptyValue: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+  },
+  invoiceRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  linkText: {
+    color: V.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  tabular: {
+    fontFamily: V.fontFamily,
+    fontVariant: ['tabular-nums'],
+  },
+  verifyRow: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   dateRow: {
     flexDirection: 'row',
@@ -675,31 +745,8 @@ const styles = StyleSheet.create({
   switchRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     gap: 12,
-  },
-  linkRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  linkCopy: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
-  linkAction: {
-    color: V.colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  primaryText: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '600',
+    justifyContent: 'space-between',
   },
   metaText: {
     color: V.colors.mutedFg,
@@ -744,11 +791,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     minWidth: 0,
   },
-  badgeCell: {
-    justifyContent: 'center',
-  },
   colTask: { flex: 1.3, minWidth: 0 },
-  colCode: { flexGrow: 0, flexShrink: 0, width: 88 },
+  colCode: { flexGrow: 0, flexShrink: 0, width: 72 },
   colSchedule: { flex: 1, minWidth: 0 },
   colDeadline: { flex: 1, minWidth: 0 },
 });
