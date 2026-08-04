@@ -5565,7 +5565,7 @@ function AmUsersPage() {
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Name</Text>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Full Name</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Role</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>

@@ -4054,6 +4054,7 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search by name or username...'),
     ).toBe(true);
+    expect(renderText(renderer!)).toContain('Full Name');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
