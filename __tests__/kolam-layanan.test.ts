@@ -128,9 +128,36 @@ describe('kolam-layanan domain', () => {
       memberPoints: { enabled: true, points: 12 },
       requiresOnSiteVisit: true,
       includesDelivery: false,
+      productComponents: [
+        {
+          product: {
+            _id: 'p1',
+            name: 'Pakan A',
+            productCode: 'RAW-1',
+            type: 'raw',
+            stock: 12,
+            brand: { name: 'DA' },
+            category: { name: 'Pakan' },
+            price: 25000,
+          },
+          quantityPerExecution: 2,
+          inventoryKind: 'raw',
+          unit: { name: 'kg', initial: 'kg' },
+        },
+      ],
     });
     expect(service.onlinePrice).toBe(175000);
     expect(service.requiresOnSiteVisit).toBe(true);
+    expect(service.productComponents).toHaveLength(1);
+    expect(service.productComponents[0]).toEqual(
+      expect.objectContaining({
+        productName: 'Pakan A',
+        productCode: 'RAW-1',
+        inventoryKind: 'raw',
+        quantityPerExecution: 2,
+        stock: 12,
+      }),
+    );
     expect(hasKolamLayananVolumePricing(service)).toBe(true);
     expect(formatKolamLayananPricingMethod(service)).toBe('Per m³ & per km');
     expect(formatKolamLayananCommission(service)).toBe('5%');

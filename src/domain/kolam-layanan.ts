@@ -99,9 +99,26 @@ export interface KolamLayananService {
   memberPoints: number;
   contractDurationValue: number | null;
   contractDurationUnit: KolamLayananContractDurationUnit | null;
+  productComponents: KolamLayananServiceProductComponent[];
   createdAt?: string;
   updatedAt?: string;
   raw: unknown;
+}
+
+/** Material line on service master (detail / BOM per kunjungan). */
+export interface KolamLayananServiceProductComponent {
+  key: string;
+  productId: string;
+  productName: string;
+  productCode: string;
+  inventoryKind: 'raw' | 'product';
+  quantityPerExecution: number;
+  unitLabel: string;
+  stock: number | null;
+  brandName: string;
+  categoryName: string;
+  typeLabel: string;
+  price: number | null;
 }
 
 export interface KolamLayananServiceFormState {
@@ -255,7 +272,13 @@ export interface KolamLayananPendingListQuery {
   status?: KolamLayananPendingStatus;
   statuses?: string;
   search?: string;
+  /** Filter pending vouchers linked to a service master. */
+  service?: string;
 }
+
+/** Open + active vouchers shown on FE service detail. */
+export const KOLAM_LAYANAN_SERVICE_DETAIL_VOUCHER_STATUSES =
+  'pending,awaiting_staff_approval,awaiting_client_approval,schedule_approved,initiated';
 
 export interface KolamLayananPendingListResult {
   items: KolamLayananPendingService[];
@@ -1381,10 +1404,76 @@ export function normalizeKolamLayananService(payload: unknown): KolamLayananServ
     memberPoints: getNumber(memberPoints, 'points') ?? 0,
     contractDurationValue: getNumber(record, 'contractDurationValue'),
     contractDurationUnit,
+    productComponents: normalizeKolamLayananServiceProductComponents(record),
     createdAt: getString(record, 'createdAt') || undefined,
     updatedAt: getString(record, 'updatedAt') || undefined,
     raw: payload,
   };
+}
+
+export function normalizeKolamLayananServiceProductComponents(
+  source: unknown,
+): KolamLayananServiceProductComponent[] {
+  const record = asRecord(source);
+  const rows = Array.isArray(record.productComponents)
+    ? record.productComponents
+    : [];
+  return rows
+    .map((row, index) => {
+      const item = asRecord(row);
+      const productRaw = item.product;
+      const product = asRecord(productRaw);
+      const productId =
+        typeof productRaw === 'string'
+          ? productRaw.trim()
+          : getString(product, '_id') || getString(product, 'id');
+      const productName =
+        getString(item, 'productName') ||
+        getString(product, 'name') ||
+        (productId ? productId : '');
+      if (!productId && !productName) {
+        return null;
+      }
+      const inventoryRaw = getString(item, 'inventoryKind');
+      const productType = getString(product, 'type');
+      const inventoryKind: 'raw' | 'product' =
+        inventoryRaw === 'raw' || productType === 'raw' ? 'raw' : 'product';
+      const unit = asRecord(item.unit ?? product.unit);
+      const unitName = getString(unit, 'name');
+      const unitInitial = getString(unit, 'initial');
+      const unitLabel = unitInitial
+        ? `${unitName || unitInitial}${unitName ? ` (${unitInitial})` : ''}`
+        : unitName || '—';
+      const brand = asRecord(product.brand);
+      const category = asRecord(product.category);
+      return {
+        key: `${productId || 'pc'}-${index}`,
+        productId,
+        productName: productName || 'Produk tidak dikenal',
+        productCode: getString(product, 'productCode') || getString(product, 'sku') || '—',
+        inventoryKind,
+        quantityPerExecution:
+          getNumber(item, 'quantityPerExecution') ??
+          getNumber(item, 'quantity') ??
+          1,
+        unitLabel,
+        stock: getNumber(product, 'stock') ?? null,
+        brandName:
+          getString(brand, 'name') ||
+          (typeof product.brand === 'string' ? product.brand : '') ||
+          '—',
+        categoryName:
+          getString(category, 'name') ||
+          (typeof product.category === 'string' ? product.category : '') ||
+          '—',
+        typeLabel: inventoryKind === 'raw' ? 'Bahan baku' : 'Produk jadi',
+        price:
+          getNumber(product, 'price') ??
+          getNumber(product, 'price_to_sell') ??
+          null,
+      } satisfies KolamLayananServiceProductComponent;
+    })
+    .filter((item): item is KolamLayananServiceProductComponent => item != null);
 }
 
 export function normalizeKolamLayananServiceList(

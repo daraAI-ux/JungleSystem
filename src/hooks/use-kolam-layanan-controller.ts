@@ -9,6 +9,7 @@ import {
   getKolamLayananServiceIdFromRoute,
   getKolamLayananTabHref,
   isKolamLayananNativeRoute,
+  KOLAM_LAYANAN_SERVICE_DETAIL_VOUCHER_STATUSES,
   validateKolamLayananServiceForm,
   type KolamLayananListTab,
   type KolamLayananOpsDashboard,
@@ -46,6 +47,8 @@ export interface KolamLayananController {
   page: number;
   pageSize: number;
   pendingServices: KolamLayananPendingService[];
+  relatedVouchers: KolamLayananPendingService[];
+  relatedVouchersLoading: boolean;
   saving: boolean;
   search: string;
   selectedService: KolamLayananService | null;
@@ -90,6 +93,10 @@ export function useKolamLayananController(
   const [pendingServices, setPendingServices] = useState<
     KolamLayananPendingService[]
   >([]);
+  const [relatedVouchers, setRelatedVouchers] = useState<
+    KolamLayananPendingService[]
+  >([]);
+  const [relatedVouchersLoading, setRelatedVouchersLoading] = useState(false);
   const [subscriptions, setSubscriptions] = useState<KolamLayananSubscription[]>(
     [],
   );
@@ -229,6 +236,7 @@ export function useKolamLayananController(
     void (async () => {
       setLoading(true);
       setError(null);
+      setRelatedVouchers([]);
       try {
         const live = await getKolamLayananService(serviceId);
         if (!active) {
@@ -239,6 +247,39 @@ export function useKolamLayananController(
           setForm(createKolamLayananServiceFormState(live));
         }
         setDataSource('live');
+
+        if (mode === 'detail') {
+          setRelatedVouchersLoading(true);
+          try {
+            const vouchers = await getKolamLayananPendingServices({
+              service: serviceId,
+              statuses: KOLAM_LAYANAN_SERVICE_DETAIL_VOUCHER_STATUSES,
+              page: 1,
+              limit: 200,
+            });
+            if (active) {
+              setRelatedVouchers(
+                [...vouchers.items].sort((a, b) => {
+                  const ta = a.purchasedAt
+                    ? new Date(a.purchasedAt).getTime()
+                    : 0;
+                  const tb = b.purchasedAt
+                    ? new Date(b.purchasedAt).getTime()
+                    : 0;
+                  return tb - ta;
+                }),
+              );
+            }
+          } catch {
+            if (active) {
+              setRelatedVouchers([]);
+            }
+          } finally {
+            if (active) {
+              setRelatedVouchersLoading(false);
+            }
+          }
+        }
       } catch (detailError) {
         if (active) {
           setError(getErrorMessage(detailError));
@@ -427,6 +468,28 @@ export function useKolamLayananController(
       if (mode === 'edit') {
         setForm(createKolamLayananServiceFormState(live));
       }
+      if (mode === 'detail') {
+        setRelatedVouchersLoading(true);
+        try {
+          const vouchers = await getKolamLayananPendingServices({
+            service: serviceId,
+            statuses: KOLAM_LAYANAN_SERVICE_DETAIL_VOUCHER_STATUSES,
+            page: 1,
+            limit: 200,
+          });
+          setRelatedVouchers(
+            [...vouchers.items].sort((a, b) => {
+              const ta = a.purchasedAt ? new Date(a.purchasedAt).getTime() : 0;
+              const tb = b.purchasedAt ? new Date(b.purchasedAt).getTime() : 0;
+              return tb - ta;
+            }),
+          );
+        } catch {
+          setRelatedVouchers([]);
+        } finally {
+          setRelatedVouchersLoading(false);
+        }
+      }
       setDataSource('live');
     } catch (detailError) {
       setError(getErrorMessage(detailError));
@@ -450,6 +513,8 @@ export function useKolamLayananController(
       page,
       pageSize,
       pendingServices,
+      relatedVouchers,
+      relatedVouchersLoading,
       saving,
       search,
       selectedService,
@@ -508,6 +573,8 @@ export function useKolamLayananController(
       page,
       pageSize,
       pendingServices,
+      relatedVouchers,
+      relatedVouchersLoading,
       saving,
       search,
       selectedService,

@@ -12,7 +12,9 @@ import {
   KOLAM_LAYANAN_ENCLOSURE_TYPE_OPTIONS,
   KOLAM_LAYANAN_ROOT,
   KOLAM_LAYANAN_TASK_TYPE_OPTIONS,
+  type KolamLayananPendingService,
   type KolamLayananService,
+  type KolamLayananServiceProductComponent,
 } from '../domain/kolam-layanan';
 import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -174,6 +176,9 @@ export function KolamLayananServiceEditor({
       {controller.mode === 'detail' ? (
         <KolamLayananServiceDetail
           loading={controller.loading}
+          onRouteChange={onRouteChange}
+          relatedVouchers={controller.relatedVouchers}
+          relatedVouchersLoading={controller.relatedVouchersLoading}
           service={controller.selectedService}
         />
       ) : (
@@ -228,9 +233,15 @@ function KolamLayananDeferredPlaceholder({
 
 function KolamLayananServiceDetail({
   loading,
+  onRouteChange,
+  relatedVouchers,
+  relatedVouchersLoading,
   service,
 }: {
   loading: boolean;
+  onRouteChange?: (route: string) => void;
+  relatedVouchers: KolamLayananPendingService[];
+  relatedVouchersLoading: boolean;
   service: KolamLayananService | null;
 }) {
   if (loading && !service) {
@@ -278,6 +289,13 @@ function KolamLayananServiceDetail({
   const marginKm = priceKm - costKm;
   const marginPctM3 = costM3 > 0 ? (marginM3 / costM3) * 100 : 0;
   const marginPctKm = costKm > 0 ? (marginKm / costKm) * 100 : 0;
+  const productComponents = service.productComponents ?? [];
+  const rawMaterials = productComponents.filter(
+    item => item.inventoryKind === 'raw',
+  );
+  const finishedProducts = productComponents.filter(
+    item => item.inventoryKind === 'product',
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -333,6 +351,132 @@ function KolamLayananServiceDetail({
               ]}
             />
           </FormSection>
+
+          <FormSection
+            description={
+              relatedVouchersLoading
+                ? 'Memuat…'
+                : `${relatedVouchers.length} voucher terkait layanan ini`
+            }
+            title="Voucher layanan"
+          >
+            {relatedVouchersLoading ? (
+              <Text style={styles.metaText}>Memuat voucher…</Text>
+            ) : relatedVouchers.length === 0 ? (
+              <Text style={styles.emptyPanel}>
+                Belum ada voucher untuk layanan ini.
+              </Text>
+            ) : (
+              <View style={styles.detailTable}>
+                <View style={styles.detailTableHeader}>
+                  <Text style={[styles.detailTableHead, styles.colSerial]}>
+                    Serial
+                  </Text>
+                  <Text style={[styles.detailTableHead, styles.colStatus]}>
+                    Status
+                  </Text>
+                  <Text style={[styles.detailTableHead, styles.colInvoice]}>
+                    Faktur
+                  </Text>
+                  <Text style={[styles.detailTableHead, styles.colCustomer]}>
+                    Customer
+                  </Text>
+                  <Text style={[styles.detailTableHead, styles.colType]}>
+                    Tipe
+                  </Text>
+                  <Text style={[styles.detailTableHead, styles.colDate]}>
+                    Tanggal beli
+                  </Text>
+                  <Text style={[styles.detailTableHead, styles.colAction]}>
+                    {' '}
+                  </Text>
+                </View>
+                {relatedVouchers.map(item => (
+                  <View key={item.id} style={styles.detailTableRow}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.detailTableCell, styles.colSerial, styles.monoCell]}
+                    >
+                      {item.serviceSerial || '—'}
+                    </Text>
+                    <View style={[styles.colStatus, styles.badgeCell]}>
+                      <KolamStatusBadge
+                        intent={
+                          item.status === 'initiated' ? 'success' : 'secondary'
+                        }
+                        label={
+                          item.status === 'initiated'
+                            ? 'Aktif'
+                            : 'Menunggu aktivasi'
+                        }
+                      />
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.detailTableCell, styles.colInvoice, styles.monoCell]}
+                    >
+                      {item.invoiceCode || '—'}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.detailTableCell, styles.colCustomer]}
+                    >
+                      {item.customerName || '—'}
+                    </Text>
+                    <View style={[styles.colType, styles.badgeCell]}>
+                      {item.taskType ? (
+                        <KolamStatusBadge
+                          intent={
+                            item.taskType === 'dosing' ? 'info' : 'secondary'
+                          }
+                          label={getKolamLayananTaskTypeLabel(item.taskType)}
+                        />
+                      ) : (
+                        <Text style={styles.detailTableCell}>—</Text>
+                      )}
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.detailTableCell, styles.colDate, styles.metaText]}
+                    >
+                      {formatDetailDate(item.purchasedAt)}
+                    </Text>
+                    <View style={styles.colAction}>
+                      <KolamButton
+                        intent="outline"
+                        label="Detail"
+                        onPress={() =>
+                          onRouteChange?.(
+                            `${KOLAM_LAYANAN_ROOT}/voucher/${item.id}`,
+                          )
+                        }
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </FormSection>
+
+          {productComponents.length > 0 ? (
+            <FormSection
+              description={`${productComponents.length} komponen stok gudang Kolam`}
+              title="Material per kunjungan"
+            >
+              {rawMaterials.length > 0 ? (
+                <ServiceProductComponentsBlock
+                  rows={rawMaterials}
+                  title="Bahan baku"
+                />
+              ) : null}
+              {finishedProducts.length > 0 ? (
+                <ServiceProductComponentsBlock
+                  rows={finishedProducts}
+                  title="Produk jadi"
+                />
+              ) : null}
+            </FormSection>
+          ) : null}
         </View>
 
         <View style={styles.detailSide}>
@@ -469,6 +613,80 @@ function KolamLayananServiceDetail({
       </View>
     </ScrollView>
   );
+}
+
+function ServiceProductComponentsBlock({
+  rows,
+  title,
+}: {
+  rows: KolamLayananServiceProductComponent[];
+  title: string;
+}) {
+  return (
+    <View style={styles.materialBlock}>
+      <Text style={styles.materialBlockTitle}>{title}</Text>
+      <View style={styles.detailTable}>
+        <View style={styles.detailTableHeader}>
+          <Text style={[styles.detailTableHead, styles.colName]}>Nama</Text>
+          <Text style={[styles.detailTableHead, styles.colCode]}>Kode</Text>
+          <Text style={[styles.detailTableHead, styles.colQty]}>Qty</Text>
+          <Text style={[styles.detailTableHead, styles.colStock]}>Stok</Text>
+          <Text style={[styles.detailTableHead, styles.colBrand]}>Merek</Text>
+          <Text style={[styles.detailTableHead, styles.colPrice]}>Harga</Text>
+        </View>
+        {rows.map(row => (
+          <View key={row.key} style={styles.detailTableRow}>
+            <Text numberOfLines={2} style={[styles.detailTableCell, styles.colName]}>
+              {row.productName}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[styles.detailTableCell, styles.colCode, styles.monoCell]}
+            >
+              {row.productCode}
+            </Text>
+            <Text numberOfLines={1} style={[styles.detailTableCell, styles.colQty]}>
+              {row.quantityPerExecution}
+              {row.unitLabel && row.unitLabel !== '—'
+                ? ` ${row.unitLabel}`
+                : ''}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.detailTableCell,
+                styles.colStock,
+                row.stock === 0 ? styles.metricDanger : styles.detailTableCell,
+              ]}
+            >
+              {row.stock == null ? '—' : String(row.stock)}
+            </Text>
+            <Text numberOfLines={1} style={[styles.detailTableCell, styles.colBrand]}>
+              {row.brandName}
+            </Text>
+            <Text numberOfLines={1} style={[styles.detailTableCell, styles.colPrice]}>
+              {row.price != null ? formatRupiah(row.price) : '—'}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function formatDetailDate(value?: string | null) {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 function KolamLayananServiceForm({
@@ -929,5 +1147,78 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 11,
     fontWeight: '400',
+  },
+  emptyPanel: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 20,
+    textAlign: 'center',
+  },
+  detailTable: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  detailTableHeader: {
+    backgroundColor: V.colors.tableHeader,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  detailTableRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  detailTableHead: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  detailTableCell: {
+    color: V.colors.fg,
+    fontSize: 12,
+  },
+  monoCell: {
+    fontFamily: V.fontFamily,
+    fontVariant: ['tabular-nums'],
+  },
+  badgeCell: {
+    justifyContent: 'center',
+  },
+  colSerial: { flexBasis: 110, flexGrow: 1, minWidth: 90 },
+  colStatus: { flexBasis: 120, flexGrow: 1, minWidth: 100 },
+  colInvoice: { flexBasis: 100, flexGrow: 1, minWidth: 80 },
+  colCustomer: { flexBasis: 120, flexGrow: 1.2, minWidth: 90 },
+  colType: { flexBasis: 90, flexGrow: 0, minWidth: 72 },
+  colDate: { flexBasis: 100, flexGrow: 0, minWidth: 88 },
+  colAction: { flexBasis: 88, flexGrow: 0, minWidth: 80 },
+  colName: { flexBasis: 160, flexGrow: 1.4, minWidth: 120 },
+  colCode: { flexBasis: 90, flexGrow: 0.8, minWidth: 72 },
+  colQty: { flexBasis: 80, flexGrow: 0.6, minWidth: 64 },
+  colStock: { flexBasis: 56, flexGrow: 0, minWidth: 48 },
+  colBrand: { flexBasis: 90, flexGrow: 0.8, minWidth: 72 },
+  colPrice: { flexBasis: 90, flexGrow: 0.8, minWidth: 72 },
+  materialBlock: {
+    gap: 6,
+    marginTop: 4,
+  },
+  materialBlockTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

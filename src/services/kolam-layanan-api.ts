@@ -105,6 +105,7 @@ export async function getKolamLayananPendingServices(
       ...(query.status ? { status: query.status } : {}),
       ...(query.statuses ? { statuses: query.statuses } : {}),
       ...(query.search?.trim() ? { search: query.search.trim() } : {}),
+      ...(query.service?.trim() ? { service: query.service.trim() } : {}),
     },
   });
   return normalizeKolamLayananPendingList(payload, query);
