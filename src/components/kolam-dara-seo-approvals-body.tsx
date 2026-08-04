@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {
   Modal,
   Pressable,
@@ -23,13 +23,18 @@ import {
   resolveKolamDaraSeoTargetType,
   type KolamDaraSeoStatusFilterId,
   type KolamDaraSeoSuggestion,
+  type KolamDaraSeoTargetTab,
 } from '../domain/kolam-dara-seo';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {KolamButton} from './kolam-button';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamSearchField} from './kolam-search-field';
+import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+
+type ApprovalsFilterPanel = 'brand' | 'status' | 'target' | null;
 
 export function KolamDaraSeoApprovalsBody({
   canApprove,
@@ -42,6 +47,16 @@ export function KolamDaraSeoApprovalsBody({
   controller: KolamDaraSeoApprovalsController;
   onRouteChange?: (route: string) => void;
 }) {
+  const toolbarRef = useRef<View>(null);
+  const brandTriggerRef = useRef<View>(null);
+  const statusTriggerRef = useRef<View>(null);
+  const targetTriggerRef = useRef<View>(null);
+  const [activePanel, setActivePanel] = useState<ApprovalsFilterPanel>(null);
+  const [panelAnchor, setPanelAnchor] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
   const brandOptions = useMemo(
     () => [
       {label: 'Semua merek', value: 'all'},
@@ -53,106 +68,184 @@ export function KolamDaraSeoApprovalsBody({
     [controller.brands],
   );
 
-  const statusOptions = useMemo(
-    () =>
-      KOLAM_DARA_SEO_STATUS_FILTERS.map(item => ({
-        label: item.label,
-        value: item.id,
-      })),
-    [],
-  );
+  const brandLabel =
+    brandOptions.find(option => option.value === controller.brandId)?.label ??
+    'Merek';
+  const statusLabel =
+    KOLAM_DARA_SEO_STATUS_FILTERS.find(
+      item => item.id === controller.statusFilter,
+    )?.label ?? 'Status';
+  const targetLabel =
+    KOLAM_DARA_SEO_TARGET_TABS.find(item => item.id === controller.targetTab)
+      ?.label ?? 'Tipe';
+
+  const openPanel = (
+    panel: Exclude<ApprovalsFilterPanel, null>,
+    triggerRef: React.RefObject<View | null>,
+  ) => {
+    if (activePanel === panel) {
+      setActivePanel(null);
+      return;
+    }
+    triggerRef.current?.measureInWindow((x, y, _w, h) => {
+      toolbarRef.current?.measureInWindow((tx, ty) => {
+        setPanelAnchor({top: y - ty + h + 4, left: Math.max(0, x - tx)});
+        setActivePanel(panel);
+      });
+    });
+  };
+
+  const panelOptions =
+    activePanel === 'brand'
+      ? brandOptions
+      : activePanel === 'status'
+        ? KOLAM_DARA_SEO_STATUS_FILTERS.map(item => ({
+            label: item.label,
+            value: item.id,
+          }))
+        : activePanel === 'target'
+          ? KOLAM_DARA_SEO_TARGET_TABS.map(item => ({
+              label: item.label,
+              value: item.id,
+            }))
+          : [];
 
   return (
     <View style={styles.root}>
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={controller.onSetSearchInput}
+                placeholder="Cari"
+                value={controller.searchInput}
+              />
+              <View ref={targetTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activePanel === 'target' || controller.targetTab !== 'all'
+                  }
+                  label={targetLabel}
+                  onPress={() => openPanel('target', targetTriggerRef)}
+                  open={activePanel === 'target'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activePanel === 'status' ||
+                    controller.statusFilter !== 'all'
+                  }
+                  label={statusLabel}
+                  onPress={() => openPanel('status', statusTriggerRef)}
+                  open={activePanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+              {brandOptions.length > 1 ? (
+                <View ref={brandTriggerRef} collapsable={false}>
+                  <KolamTableFilterTrigger
+                    active={
+                      activePanel === 'brand' || controller.brandId !== 'all'
+                    }
+                    label={brandLabel}
+                    onPress={() => openPanel('brand', brandTriggerRef)}
+                    open={activePanel === 'brand'}
+                    variant="quiet"
+                  />
+                </View>
+              ) : null}
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                label="Reset"
+                muted
+                onPress={() => {
+                  setActivePanel(null);
+                  controller.onResetFilters();
+                }}
+              />
+              <KolamButton
+                disabled={controller.loading}
+                label={controller.loading ? 'Memuat…' : 'Refresh'}
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
+              {canApprove ? (
+                <KolamButton
+                  disabled={
+                    controller.actionBusy ||
+                    controller.selectedApprovableCount === 0
+                  }
+                  intent="primary"
+                  label={`Terapkan terpilih (${controller.selectedApprovableCount})`}
+                  onPress={() => {
+                    void controller.onBulkApprove();
+                  }}
+                />
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        {activePanel && panelAnchor ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {top: panelAnchor.top, left: panelAnchor.left},
+            ]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}>
+              {panelOptions.map(option => {
+                const selected =
+                  activePanel === 'brand'
+                    ? controller.brandId === option.value
+                    : activePanel === 'status'
+                      ? controller.statusFilter === option.value
+                      : controller.targetTab === option.value;
+                return (
+                  <KolamButton
+                    intent={selected ? 'primary' : 'plain'}
+                    key={option.value}
+                    label={option.label}
+                    onPress={() => {
+                      if (activePanel === 'brand') {
+                        controller.onSetBrandId(option.value);
+                      } else if (activePanel === 'status') {
+                        controller.onSetStatusFilter(
+                          option.value as KolamDaraSeoStatusFilterId,
+                        );
+                      } else {
+                        controller.onSetTargetTab(
+                          option.value as KolamDaraSeoTargetTab,
+                        );
+                      }
+                      setActivePanel(null);
+                    }}
+                    style={styles.filterPanelOption}
+                  />
+                );
+              })}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setActivePanel(null)}
+              />
+            </View>
+          </View>
+        ) : null}
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.scroll}>
-        <View style={styles.targetRow}>
-          {KOLAM_DARA_SEO_TARGET_TABS.map(tab => (
-            <KolamButton
-              intent={controller.targetTab === tab.id ? 'primary' : 'outline'}
-              key={tab.id}
-              label={tab.label}
-              onPress={() => controller.onSetTargetTab(tab.id)}
-              size="sm"
-            />
-          ))}
-        </View>
-
-        <View style={styles.filterCard}>
-          {brandOptions.length > 1 ? (
-            <View style={styles.field}>
-              <KolamDropdownSelect
-                accessibilityLabel="Filter merek"
-                label="Merek"
-                onChange={controller.onSetBrandId}
-                options={brandOptions}
-                showLabelInTrigger
-                value={controller.brandId}
-              />
-            </View>
-          ) : null}
-          <View style={styles.searchRow}>
-            <TextInput
-              accessibilityLabel="Cari nama"
-              onChangeText={controller.onSetSearchInput}
-              placeholder="Cari nama"
-              placeholderTextColor={V.colors.mutedFg}
-              style={styles.searchInput}
-              value={controller.searchInput}
-            />
-            <KolamButton
-              intent="primary"
-              label="Cari"
-              onPress={controller.onSearch}
-              size="sm"
-            />
-          </View>
-          <View style={styles.field}>
-            <KolamDropdownSelect
-              accessibilityLabel="Filter status"
-              label="Status"
-              onChange={value =>
-                controller.onSetStatusFilter(value as KolamDaraSeoStatusFilterId)
-              }
-              options={statusOptions}
-              showLabelInTrigger
-              value={controller.statusFilter}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            <KolamButton
-              intent="outline"
-              label="Reset filter"
-              onPress={controller.onResetFilters}
-              size="sm"
-            />
-            <KolamButton
-              disabled={controller.loading}
-              intent="outline"
-              label={controller.loading ? 'Memuat…' : 'Refresh antrian'}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              size="sm"
-            />
-            {canApprove ? (
-              <KolamButton
-                disabled={
-                  controller.actionBusy ||
-                  controller.selectedApprovableCount === 0
-                }
-                intent="primary"
-                label={`Terapkan terpilih (${controller.selectedApprovableCount})`}
-                onPress={() => {
-                  void controller.onBulkApprove();
-                }}
-                size="sm"
-              />
-            ) : null}
-          </View>
-        </View>
-
         {controller.notice ? (
           <Text style={styles.notice}>{controller.notice}</Text>
         ) : null}
@@ -186,26 +279,22 @@ export function KolamDaraSeoApprovalsBody({
           <View style={styles.pagination}>
             <KolamButton
               disabled={controller.page <= 1}
-              intent="outline"
               label="Sebelumnya"
               onPress={() =>
                 controller.onPageChange(Math.max(1, controller.page - 1))
               }
-              size="sm"
             />
             <Text style={styles.meta}>
               {`${controller.page} / ${controller.totalPages} · ${controller.filteredTotal}`}
             </Text>
             <KolamButton
               disabled={controller.page >= controller.totalPages}
-              intent="outline"
               label="Berikutnya"
               onPress={() =>
                 controller.onPageChange(
                   Math.min(controller.totalPages, controller.page + 1),
                 )
               }
-              size="sm"
             />
           </View>
         ) : null}
@@ -265,7 +354,7 @@ function SuggestionRow({
           }`}
         </Text>
       </View>
-      <KolamButton intent="outline" label="Review" onPress={onOpen} size="sm" />
+      <KolamButton label="Review" onPress={onOpen} />
     </View>
   );
 }
@@ -369,18 +458,15 @@ function DetailModal({
                 onPress={() => {
                   void controller.onRegenerateDraft();
                 }}
-                size="sm"
               />
             ) : null}
             {canDraft && status === 'draft_ready' && detailPending ? (
               <KolamButton
                 disabled={controller.actionBusy}
-                intent="outline"
                 label="Kirim approval"
                 onPress={() => {
                   void controller.onSubmitDetail();
                 }}
-                size="sm"
               />
             ) : null}
             {canApprove &&
@@ -393,45 +479,34 @@ function DetailModal({
                 onPress={() => {
                   void controller.onApproveDetail();
                 }}
-                size="sm"
               />
             ) : null}
             {canApprove && isKolamDaraSeoRejectableStatus(status) ? (
-              <KolamButton
-                intent="outline"
-                label="Tolak"
-                onPress={controller.onOpenReject}
-                size="sm"
-              />
+              <KolamButton label="Tolak" onPress={controller.onOpenReject} />
             ) : null}
             {canApprove &&
             (status === 'pending_approval' || status === 'draft_ready') ? (
               <KolamButton
                 disabled={controller.actionBusy}
-                intent="outline"
                 label="Tunda"
                 onPress={() => {
                   void controller.onDeferDetail();
                 }}
-                size="sm"
               />
             ) : null}
             {canApprove && (status === 'applied' || status === 'approved') ? (
               <KolamButton
                 disabled={controller.actionBusy}
-                intent="outline"
                 label="Rollback"
                 onPress={() => {
                   void controller.onRollbackDetail();
                 }}
-                size="sm"
               />
             ) : null}
             <KolamButton
               intent="secondary"
               label="Tutup"
               onPress={controller.onCloseDetail}
-              size="sm"
             />
           </View>
         </View>
@@ -469,7 +544,6 @@ function RejectModal({
               intent="secondary"
               label="Batal"
               onPress={controller.onCloseReject}
-              size="sm"
             />
             <KolamButton
               disabled={controller.actionBusy || !controller.detail}
@@ -478,7 +552,6 @@ function RejectModal({
               onPress={() => {
                 void controller.onConfirmReject();
               }}
-              size="sm"
             />
           </View>
         </View>
@@ -490,6 +563,44 @@ function RejectModal({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    gap: 12,
+  },
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
+    maxWidth: 280,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    width: 240,
+    zIndex: 120000,
+  },
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 4,
+    paddingTop: 4,
   },
   scroll: {
     flex: 1,
@@ -497,45 +608,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: 12,
     paddingBottom: 24,
-  },
-  targetRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  filterCard: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 10,
-    padding: 12,
-  },
-  field: {
-    maxWidth: 320,
-  },
-  searchRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  searchInput: {
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    color: V.colors.fg,
-    flex: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    minHeight: 36,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
   },
   notice: {
     color: V.colors.mutedFg,

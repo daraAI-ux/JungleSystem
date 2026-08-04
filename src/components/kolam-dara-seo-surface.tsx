@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {
   Pressable,
   ScrollView,
@@ -25,10 +25,11 @@ import {
 } from '../hooks/use-kolam-dara-seo-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
+import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 export function KolamDaraSeoSurface({
   onRouteChange,
@@ -96,6 +97,13 @@ function KolamDaraSeoDashboardBody({
 }) {
   const {dashboard, pending, loading, error, notice, brandId, brands} =
     controller;
+  const toolbarRef = useRef<View>(null);
+  const brandTriggerRef = useRef<View>(null);
+  const [brandPanelOpen, setBrandPanelOpen] = useState(false);
+  const [panelAnchor, setPanelAnchor] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   const brandOptions = useMemo(
     () => [
@@ -107,6 +115,22 @@ function KolamDaraSeoDashboardBody({
     ],
     [brands],
   );
+
+  const brandLabel =
+    brandOptions.find(option => option.value === brandId)?.label ?? 'Merek';
+
+  const openBrandPanel = () => {
+    if (brandPanelOpen) {
+      setBrandPanelOpen(false);
+      return;
+    }
+    brandTriggerRef.current?.measureInWindow((x, y, _w, h) => {
+      toolbarRef.current?.measureInWindow((tx, ty) => {
+        setPanelAnchor({top: y - ty + h + 4, left: Math.max(0, x - tx)});
+        setBrandPanelOpen(true);
+      });
+    });
+  };
 
   const kpiCards = useMemo(() => {
     if (!dashboard) {
@@ -174,114 +198,146 @@ function KolamDaraSeoDashboardBody({
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       style={styles.scroll}>
-      <View style={styles.toolbar}>
-        {brandOptions.length > 1 ? (
-          <View style={styles.brandSelect}>
-            <KolamDropdownSelect
-              accessibilityLabel="Filter merek"
-              label="Merek"
-              onChange={controller.onSetBrandId}
-              options={brandOptions}
-              showLabelInTrigger
-              value={brandId}
-            />
+      <View
+        ref={toolbarRef}
+        collapsable={false}
+        style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              {brandOptions.length > 1 ? (
+                <View ref={brandTriggerRef} collapsable={false}>
+                  <KolamTableFilterTrigger
+                    active={brandPanelOpen || brandId !== 'all'}
+                    label={brandLabel}
+                    onPress={openBrandPanel}
+                    open={brandPanelOpen}
+                    variant="quiet"
+                  />
+                </View>
+              ) : null}
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {canDraft ? (
+                <>
+                  <KolamButton
+                    disabled={controller.jobBusyType === 'seo.bulk_products'}
+                    label={
+                      controller.jobBusyType === 'seo.bulk_products'
+                        ? 'Audit produk…'
+                        : 'Audit 30 produk'
+                    }
+                    onPress={() => {
+                      void controller.onStartSeoJob(
+                        'seo.bulk_products',
+                        {limit: 30, generateDraft: true},
+                        'Audit bulk produk',
+                      );
+                    }}
+                  />
+                  <KolamButton
+                    disabled={controller.jobBusyType === 'seo.bulk_blogs'}
+                    label={
+                      controller.jobBusyType === 'seo.bulk_blogs'
+                        ? 'Audit blog…'
+                        : 'Audit 30 blog'
+                    }
+                    onPress={() => {
+                      void controller.onStartSeoJob(
+                        'seo.bulk_blogs',
+                        {limit: 30, generateDraft: true},
+                        'Audit bulk blog',
+                      );
+                    }}
+                  />
+                  <KolamButton
+                    disabled={controller.jobBusyType === 'seo.bulk_species'}
+                    label={
+                      controller.jobBusyType === 'seo.bulk_species'
+                        ? 'Audit livestock…'
+                        : 'Audit 30 livestock'
+                    }
+                    onPress={() => {
+                      void controller.onStartSeoJob(
+                        'seo.bulk_species',
+                        {limit: 30, generateDraft: true},
+                        'Audit bulk livestock',
+                      );
+                    }}
+                  />
+                  <KolamButton
+                    disabled={controller.jobBusyType === 'seo.serp_monitor'}
+                    label={
+                      controller.jobBusyType === 'seo.serp_monitor'
+                        ? 'Monitor…'
+                        : 'Run SERP monitor'
+                    }
+                    onPress={() => {
+                      void controller.onStartSeoJob(
+                        'seo.serp_monitor',
+                        {},
+                        'SERP monitor',
+                      );
+                    }}
+                  />
+                </>
+              ) : null}
+              <KolamButton
+                label="SEO Website"
+                onPress={() => onRouteChange?.('/campaign/dara-seo/website')}
+              />
+              <KolamButton
+                label="Pusat AI"
+                onPress={() => onRouteChange?.('/pusat-ai')}
+              />
+              <KolamButton
+                intent="primary"
+                label={`Approvals${
+                  dashboard ? ` (${dashboard.pendingApprovals})` : ''
+                }`}
+                onPress={() => onRouteChange?.('/campaign/dara-seo/approvals')}
+              />
+              <KolamButton
+                disabled={loading}
+                label={loading ? 'Memuat…' : 'Refresh'}
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+              />
+            </View>
+          </View>
+        </View>
+        {brandPanelOpen && panelAnchor ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {top: panelAnchor.top, left: panelAnchor.left},
+            ]}>
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}>
+              {brandOptions.map(option => (
+                <KolamButton
+                  intent={brandId === option.value ? 'primary' : 'plain'}
+                  key={option.value}
+                  label={option.label}
+                  onPress={() => {
+                    controller.onSetBrandId(option.value);
+                    setBrandPanelOpen(false);
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton
+                label="Tutup"
+                onPress={() => setBrandPanelOpen(false)}
+              />
+            </View>
           </View>
         ) : null}
-        <View style={styles.toolbarActions}>
-          {canDraft ? (
-            <>
-              <KolamButton
-                disabled={controller.jobBusyType === 'seo.bulk_products'}
-                intent="outline"
-                label={
-                  controller.jobBusyType === 'seo.bulk_products'
-                    ? 'Audit produk…'
-                    : 'Audit 30 produk'
-                }
-                onPress={() => {
-                  void controller.onStartSeoJob(
-                    'seo.bulk_products',
-                    {limit: 30, generateDraft: true},
-                    'Audit bulk produk',
-                  );
-                }}
-              />
-              <KolamButton
-                disabled={controller.jobBusyType === 'seo.bulk_blogs'}
-                intent="outline"
-                label={
-                  controller.jobBusyType === 'seo.bulk_blogs'
-                    ? 'Audit blog…'
-                    : 'Audit 30 blog'
-                }
-                onPress={() => {
-                  void controller.onStartSeoJob(
-                    'seo.bulk_blogs',
-                    {limit: 30, generateDraft: true},
-                    'Audit bulk blog',
-                  );
-                }}
-              />
-              <KolamButton
-                disabled={controller.jobBusyType === 'seo.bulk_species'}
-                intent="outline"
-                label={
-                  controller.jobBusyType === 'seo.bulk_species'
-                    ? 'Audit livestock…'
-                    : 'Audit 30 livestock'
-                }
-                onPress={() => {
-                  void controller.onStartSeoJob(
-                    'seo.bulk_species',
-                    {limit: 30, generateDraft: true},
-                    'Audit bulk livestock',
-                  );
-                }}
-              />
-              <KolamButton
-                disabled={controller.jobBusyType === 'seo.serp_monitor'}
-                intent="outline"
-                label={
-                  controller.jobBusyType === 'seo.serp_monitor'
-                    ? 'Monitor…'
-                    : 'Run SERP monitor'
-                }
-                onPress={() => {
-                  void controller.onStartSeoJob(
-                    'seo.serp_monitor',
-                    {},
-                    'SERP monitor',
-                  );
-                }}
-              />
-            </>
-          ) : null}
-          <KolamButton
-            intent="outline"
-            label="SEO Website"
-            onPress={() => onRouteChange?.('/campaign/dara-seo/website')}
-          />
-          <KolamButton
-            intent="outline"
-            label="Pusat AI"
-            onPress={() => onRouteChange?.('/pusat-ai')}
-          />
-          <KolamButton
-            intent="primary"
-            label={`Approvals${
-              dashboard ? ` (${dashboard.pendingApprovals})` : ''
-            }`}
-            onPress={() => onRouteChange?.('/campaign/dara-seo/approvals')}
-          />
-          <KolamButton
-            disabled={loading}
-            intent="outline"
-            label={loading ? 'Memuat…' : 'Refresh'}
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
-        </View>
       </View>
 
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -384,16 +440,42 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
-  toolbar: {
-    gap: 10,
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
   },
-  brandSelect: {
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1200,
     maxWidth: 280,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    width: 240,
+    zIndex: 120000,
   },
-  toolbarActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  filterPanelScroll: {
+    maxHeight: 280,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 4,
+    paddingTop: 4,
   },
   notice: {
     color: V.colors.mutedFg,

@@ -390,7 +390,10 @@ export function useKolamDaraSeoApprovalsController(
     },
     onSetBrandId: setBrandId,
     onSetRejectNote: setRejectNote,
-    onSetSearchInput: setSearchInput,
+    onSetSearchInput: (value: string) => {
+      setSearchInput(value);
+      setSearch(value.trim());
+    },
     onSetStatusFilter: setStatusFilter,
     onSetTargetTab: setTargetTab,
     onSubmitDetail: async () => {
