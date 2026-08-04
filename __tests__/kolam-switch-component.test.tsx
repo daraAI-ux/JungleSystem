@@ -10,18 +10,25 @@ describe('KolamSwitch', () => {
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamSwitch active onPress={onPress} />,
+        <KolamSwitch
+          accessibilityLabel="Runtime switch"
+          active
+          onPress={onPress}
+        />,
       );
     });
 
-    const control = renderer!.root.findByProps({accessibilityRole: 'switch'});
+    const control = renderer!.root.findAllByProps({
+      accessibilityLabel: 'Runtime switch',
+    }).find(node => node.props.accessibilityState);
 
-    expect(control.props.accessibilityState).toEqual({
+    expect(control).toBeDefined();
+    expect(control!.props.accessibilityState).toEqual({
       checked: true,
       disabled: false,
     });
 
-    control.props.onPress();
+    control!.props.onPress();
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 

@@ -1762,11 +1762,25 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'services');
+    const inactivePowerSwitch = renderer!.root.findAllByProps({
+      accessibilityLabel: 'AM Service Power service-2',
+    }).find(node => node.props.accessibilityState);
+    const activePowerSwitch = renderer!.root.findAllByProps({
+      accessibilityLabel: 'AM Service Power service-active',
+    }).find(node => node.props.accessibilityState);
+    expect(inactivePowerSwitch).toBeDefined();
+    expect(activePowerSwitch).toBeDefined();
+    expect(
+      inactivePowerSwitch!.props.accessibilityState,
+    ).toEqual({checked: false, disabled: false});
+    expect(
+      activePowerSwitch!.props.accessibilityState,
+    ).toEqual({checked: true, disabled: false});
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Start service-2'}).props.onPress();
+      inactivePowerSwitch!.props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Stop service-active'}).props.onPress();
+      activePowerSwitch!.props.onPress();
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Session'}).props.onPress();

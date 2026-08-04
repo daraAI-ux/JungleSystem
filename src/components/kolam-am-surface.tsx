@@ -117,6 +117,7 @@ import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
+import {KolamSwitch} from './kolam-switch';
 
 const TASK_TYPE_LABELS: Record<string, string> = {
   all: 'All Types',
@@ -656,7 +657,7 @@ function AmRecentTransfersPanel({
   transfers: AmTransfer[];
 }) {
   return (
-    <View style={styles.panel}>
+    <View style={styles.dashboardRecentPanel}>
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.panelTitle}>Recent Transfers</Text>
         <KolamButton
@@ -669,32 +670,32 @@ function AmRecentTransfersPanel({
       </View>
       <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
       <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Recipient</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
-          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+        <View style={styles.dashboardTableHeader}>
+          <Text style={[styles.tableHeaderText, styles.recentAccountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.recentRecipientCol]}>Recipient</Text>
+          <Text style={[styles.tableHeaderText, styles.recentAmountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.recentStatusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.recentDateCol]}>Time</Text>
         </View>
         {transfers.map(transfer => (
           <KolamInteractionFrame
             key={transfer._id}
             accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
             onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
-            style={styles.tableRow}>
-            <View style={styles.accountCol}>
+            style={styles.dashboardTableRow}>
+            <View style={styles.recentAccountCol}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(transfer.accountId)}</Text>
             </View>
-            <View style={styles.recipientCol}>
+            <View style={styles.recentRecipientCol}>
               <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
             </View>
-            <Text style={[styles.cellText, styles.amountCol]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>
-            <View style={styles.statusCol}>
+            <Text style={[styles.cellText, styles.recentAmountCol]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>
+            <View style={styles.recentStatusCol}>
               <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
             </View>
-            <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(transfer.createdAt)}</Text>
+            <Text style={[styles.cellText, styles.recentDateCol]} numberOfLines={1}>{formatAmDate(transfer.createdAt)}</Text>
           </KolamInteractionFrame>
         ))}
       </View>
@@ -716,7 +717,7 @@ function AmRecentMutasiPanel({
   onOpenRoute: (route: string, templateRoute?: string) => void;
 }) {
   return (
-    <View style={styles.panel}>
+    <View style={styles.dashboardRecentPanel}>
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.panelTitle}>Recent Mutations</Text>
         <KolamButton
@@ -729,34 +730,34 @@ function AmRecentMutasiPanel({
       </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
       <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+        <View style={styles.dashboardTableHeader}>
+          <Text style={[styles.tableHeaderText, styles.recentTypeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.recentAccountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.recentAmountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.recentDateCol]}>Time</Text>
         </View>
         {mutasi.map(item => (
           <KolamInteractionFrame
             key={item._id}
             accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
             onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
-            style={styles.tableRow}>
-            <View style={styles.typeCol}>
+            style={styles.dashboardTableRow}>
+            <View style={styles.recentTypeCol}>
               <AmStatusChip
                 label={item.type === 'masuk' ? 'In' : 'Out'}
                 tone={item.type === 'masuk' ? 'success' : 'danger'}
               />
             </View>
-            <View style={styles.accountCol}>
+            <View style={styles.recentAccountCol}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(item.accountId)}</Text>
             </View>
             <Text
-              style={[styles.cellText, styles.amountCol, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
+              style={[styles.cellText, styles.recentAmountCol, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
               numberOfLines={1}>
               {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
             </Text>
-            <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
+            <Text style={[styles.cellText, styles.recentDateCol]} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
           </KolamInteractionFrame>
         ))}
       </View>
@@ -1567,12 +1568,10 @@ function AmServicesPage() {
                     label={active ? (isTransferBanking(account.platform) ? 'Ready' : 'Running') : account.status}
                     tone={active ? 'success' : 'warning'}
                   />
-                  <KolamButton
-                    accessibilityLabel={`AM Service ${active ? 'Stop' : 'Start'} ${account._id}`}
-                    intent={active ? 'outline' : 'warning'}
-                    label={actingServiceId === account._id ? '...' : active ? 'Stop' : 'Start'}
-                    muted={actingServiceId === account._id || !device}
-                    size="sm"
+                  <KolamSwitch
+                    accessibilityLabel={`AM Service Power ${account._id}`}
+                    active={active}
+                    disabled={actingServiceId === account._id || !device}
                     onPress={() => runServicePowerAction(account)}
                   />
                 </View>
@@ -6899,6 +6898,17 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: 12,
   },
+  dashboardRecentPanel: {
+    flexGrow: 1,
+    flexBasis: 420,
+    minWidth: 0,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    padding: 14,
+    backgroundColor: V.colors.bg,
+  },
   overviewGrid: {
     width: '100%',
     flexDirection: 'row',
@@ -7165,6 +7175,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  dashboardTableHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: V.colors.border,
+    backgroundColor: V.colors.mutedSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   tableHeaderText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -7173,6 +7192,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  dashboardTableRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
@@ -7300,42 +7327,82 @@ const styles = StyleSheet.create({
   },
   typeCol: {
     flex: 1.2,
+    minWidth: 0,
   },
   statusCol: {
     flex: 0.9,
+    minWidth: 0,
   },
   accountWideCol: {
     flex: 1.3,
+    minWidth: 0,
   },
   recipientCol: {
     flex: 1.4,
+    minWidth: 0,
   },
   amountCol: {
     flex: 0.9,
+    minWidth: 0,
   },
   actionCol: {
     flex: 1.2,
+    minWidth: 0,
   },
   deviceCol: {
     flex: 1.2,
+    minWidth: 0,
   },
   accountCol: {
     flex: 1.2,
+    minWidth: 0,
   },
   errorCol: {
     flex: 1.2,
+    minWidth: 0,
   },
   dateCol: {
     flex: 1,
+    minWidth: 0,
   },
   serviceCol: {
     flex: 1.4,
+    minWidth: 0,
   },
   platformCol: {
     flex: 0.8,
+    minWidth: 0,
   },
   deviceWideCol: {
     flex: 1.3,
+    minWidth: 0,
+  },
+  recentTypeCol: {
+    width: 54,
+    flexShrink: 0,
+  },
+  recentAccountCol: {
+    flex: 1.2,
+    minWidth: 0,
+  },
+  recentRecipientCol: {
+    flex: 1.2,
+    minWidth: 0,
+  },
+  recentAmountCol: {
+    width: 104,
+    flexShrink: 0,
+    textAlign: 'right',
+  },
+  recentStatusCol: {
+    width: 84,
+    flexShrink: 0,
+    alignItems: 'flex-start',
+  },
+  recentDateCol: {
+    width: 92,
+    flexShrink: 0,
+    textAlign: 'right',
   },
   deviceNameCol: {
     flex: 1.2,

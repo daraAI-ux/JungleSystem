@@ -9,16 +9,19 @@ const SETTINGS_SWITCH_VISUAL = getSettingsSwitchVisualContract();
 export interface KolamSwitchProps {
   active: boolean;
   onPress: () => void;
+  accessibilityLabel?: string;
   disabled?: boolean;
 }
 
 export function KolamSwitch({
+  accessibilityLabel,
   active,
   onPress,
   disabled = false,
 }: KolamSwitchProps) {
   return (
     <KolamInteractionFrame
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole={SETTINGS_SWITCH_VISUAL.role}
       accessibilityState={{checked: active, disabled}}
       disabled={disabled}
