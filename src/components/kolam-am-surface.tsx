@@ -4152,7 +4152,14 @@ function AmTransfersPage({
           size="sm"
           onPress={() => setShowTransferForm(current => !current)}
         />
-        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchTransfers} />
+        <KolamButton
+          disabled={isLoading}
+          label={isLoading ? 'Memuat' : 'Refresh'}
+          intent="outline"
+          muted={isLoading}
+          size="sm"
+          onPress={fetchTransfers}
+        />
       </View>
       <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
       {actionMessage ? (
@@ -4232,6 +4239,7 @@ function AmTransfersPage({
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Transfer Create"
+                disabled={isSubmittingTransfer}
                 label={isSubmittingTransfer ? 'Creating' : 'Create Transfer'}
                 intent="warning"
                 muted={isSubmittingTransfer}
@@ -4965,6 +4973,7 @@ function AmTransferActions({
         <KolamButton
           key={action.id}
           accessibilityLabel={`AM Transfer ${action.label} ${transfer._id}`}
+          disabled={disabled}
           intent={action.intent}
           label={disabled ? '...' : action.label}
           muted={disabled}
@@ -6970,6 +6979,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
+    marginHorizontal: -V.layout.contentPadding,
     overflow: 'hidden',
   },
   pageStack: {
@@ -7095,10 +7105,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   recentListMeta: {
-    flexBasis: 156,
-    flexShrink: 1,
+    flexBasis: 180,
+    flexShrink: 0,
     minWidth: 0,
-    maxWidth: 220,
+    maxWidth: 260,
     alignSelf: 'stretch',
     alignItems: 'flex-end',
     gap: 4,

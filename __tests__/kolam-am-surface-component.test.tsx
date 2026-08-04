@@ -4,6 +4,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {KolamButton} from '../src/components/kolam-button';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
+import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 import {setAccessToken} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
@@ -459,7 +460,7 @@ describe('KolamAmSurface', () => {
         alignSelf: 'stretch',
       }),
     );
-    expect(amRootStyle?.marginHorizontal).toBeUndefined();
+    expect(amRootStyle?.marginHorizontal).toBe(-V.layout.contentPadding);
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
     expect(amRootStyle?.paddingTop).toBeUndefined();
@@ -511,15 +512,15 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 156 &&
-          style?.maxWidth === 220 &&
+        return style?.flexBasis === 180 &&
+          style?.maxWidth === 260 &&
           style?.alignItems === 'flex-end';
       });
     expect(recentMetaColumns.length).toBeGreaterThan(0);
     expect(recentMetaColumns.every(view => {
       const style = StyleSheet.flatten(view.props.style);
       return style?.minWidth === 0 &&
-        style?.flexShrink === 1 &&
+        style?.flexShrink === 0 &&
         style?.overflow === 'hidden';
     })).toBe(true);
     const recentAmountTexts = renderer!.root
