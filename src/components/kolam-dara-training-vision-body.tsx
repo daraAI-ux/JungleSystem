@@ -691,17 +691,27 @@ export function KolamDaraTrainingVisionBody({
               ) : null}
             </View>
             {stats ? (
-              <View style={styles.statGrid}>
-                <StatBox label="Baris indeks" value={stats.clipIndexTotal ?? 0} />
-                <StatBox
-                  label="Embedding OK"
-                  value={stats.clipIndexClipCount ?? 0}
-                />
-                <StatBox
-                  label="Perlu backfill"
-                  value={stats.clipIndexMissing ?? 0}
-                />
-                <StatBox label="Job" value={clipJobLabel(clipJob)} />
+              <View style={styles.pipelineColumns}>
+                <View style={styles.pipelineColumn}>
+                  <PipelineField
+                    label="Baris indeks"
+                    value={stats.clipIndexTotal ?? 0}
+                  />
+                  <PipelineField
+                    label="Embedding OK"
+                    value={stats.clipIndexClipCount ?? 0}
+                  />
+                </View>
+                <View style={styles.pipelineColumn}>
+                  <PipelineField
+                    label="Perlu backfill"
+                    value={stats.clipIndexMissing ?? 0}
+                  />
+                  <PipelineField
+                    label="Job"
+                    value={clipJobLabel(clipJob)}
+                  />
+                </View>
               </View>
             ) : null}
           </View>
