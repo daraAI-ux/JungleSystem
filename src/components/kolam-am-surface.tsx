@@ -2501,6 +2501,7 @@ function AmServiceDetailPanel({
         {canClearSession ? (
           <KolamButton
             accessibilityLabel={`AM Service Clear Session ${account._id}`}
+            disabled={clearingSession}
             intent="danger"
             label={clearingSession ? 'Clearing...' : 'Clear Session'}
             muted={clearingSession}
@@ -2572,6 +2573,7 @@ function AmServiceDetailPanel({
                 />
                 <KolamButton
                   accessibilityLabel={`AM Service Submit Input ${account._id}`}
+                  disabled={serviceInputSending}
                   label={serviceInputSending ? 'Mengirim' : 'Submit Input'}
                   muted={serviceInputSending}
                   size="sm"

@@ -1713,8 +1713,24 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       inputs[inputs.length - 1].props.onChangeText('123456');
     });
+    let resolveServiceInput: ((value: {success: boolean}) => void) | undefined;
+    jest.mocked(sendAmDeviceServiceInput).mockImplementationOnce(() => new Promise(resolve => {
+      resolveServiceInput = resolve;
+    }));
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-otp'}).props.onPress();
+    });
+
+    const pendingSubmitButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Service Submit Input service-otp',
+    });
+    expect(pendingSubmitButton.props.disabled).toBe(true);
+    expect(pendingSubmitButton.props.muted).toBe(true);
+    expect(pendingSubmitButton.props.label).toBe('Mengirim');
+
+    await act(async () => {
+      resolveServiceInput?.({success: true});
+      await Promise.resolve();
     });
 
     expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-otp', 'otp', '123456');
