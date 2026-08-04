@@ -1,8 +1,9 @@
 import React from 'react';
-import {Image, Text, TextInput} from 'react-native';
+import {Image, ScrollView, StyleSheet, Text, TextInput} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
+import {getDashboardLayoutVisualContract} from '../src/domain/dashboard-layout';
 import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
@@ -448,6 +449,20 @@ describe('KolamAmSurface', () => {
         'Banking',
         'Administration',
       ]),
+    );
+    const dashboardLayout = getDashboardLayoutVisualContract();
+    const amScroll = renderer!.root
+      .findAllByType(ScrollView)
+      .find(scroll => !scroll.props.horizontal);
+    expect(StyleSheet.flatten(amScroll?.props.contentContainerStyle)).toEqual(
+      expect.objectContaining({
+        width: '100%',
+        maxWidth: dashboardLayout.page.maxWidthPx,
+        alignSelf: 'center',
+        paddingHorizontal: dashboardLayout.page.paddingX,
+        paddingTop: dashboardLayout.page.paddingTop,
+        paddingBottom: dashboardLayout.page.paddingBottom,
+      }),
     );
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');

@@ -12,6 +12,7 @@ import {
   getShellModuleRouteEntry,
   type ShellModuleRouteEntry,
 } from '../domain/app-shell';
+import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
 import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah} from '../lib/money';
@@ -173,6 +174,7 @@ const AM_TRANSFER_METHOD_FEES: Record<string, number> = {
   'BI FAST': 2500,
   'Realtime Online': 6500,
 };
+const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
 const AM_TRANSACTION_PURPOSES = ['Investment', 'Purchase', 'Others (for various purposes)', 'Transfer of Wealth'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
   all: 'All Platforms',
@@ -7150,7 +7152,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   pageContent: {
-    padding: 18,
+    width: '100%',
+    maxWidth: DASHBOARD_LAYOUT_VISUAL.page.maxWidthPx,
+    alignSelf: 'center',
+    paddingHorizontal: DASHBOARD_LAYOUT_VISUAL.page.paddingX,
+    paddingTop: DASHBOARD_LAYOUT_VISUAL.page.paddingTop,
+    paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
   },
   pageStack: {
     gap: 16,
