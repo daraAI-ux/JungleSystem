@@ -257,6 +257,25 @@ Dashboard header shell sudah menampilkan **judul modul** (+ deskripsi dari navig
 3. Deskripsi modul yang kanonik hidup di **navigasi** (`kolam-navigation` description), bukan diulang sebagai subtitle list yang bentrok dengan header shell.
 4. Di proposal sebelum coding halaman list baru: sebutkan apakah surface akan punya page title sendiri; default **tidak**, kecuali alasan konteks di atas.
 
+## Temporary scripts (di luar repo)
+
+Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing.
+
+Script sementara (smoke test, one-off audit, backfill ad-hoc, probe API, PoC lokal, dll.) **tidak boleh** dibuat di dalam working tree git KolamWindows.
+
+### Lokasi wajib
+
+- Direktori: `E:\Data\Dunia-Anura\temp.script`
+- Folder ini **di luar** repo `KolamWindows` (sibling path), bukan di `src/`, root repo, `scripts/`, atau `__tests__/`.
+
+### Wajib untuk agen
+
+1. Semua file sementara jenis script (`.mjs`, `.js`, `.cjs`, `.ts` one-off, `.ps1` ad-hoc, `.sh`, dll.) ditulis ke `E:\Data\Dunia-Anura\temp.script\` (buat folder jika belum ada).
+2. **Jangan** menambah `tmp-*`, `scratch-*`, atau script one-off lain di root/`scripts/` repo kecuali user meminta eksplisit file itu jadi bagian produk/tooling resmi.
+3. Jangan commit isi `temp.script` ke repo KolamWindows.
+4. Jangan menyimpan secrets (password, token, `.env`) di `temp.script` dalam bentuk plaintext yang bertahan; prefer env var proses saat run.
+5. Jika script sementara sudah terlanjur di repo: pindahkan ke `temp.script`, hapus dari working tree repo, lalu lanjut sesuai aturan git batch.
+
 ## Git commit (wajib setelah batch)
 
 Aturan ini melengkapi proteksi di atas. Tidak menghapus atau melemahkan rule existing.
