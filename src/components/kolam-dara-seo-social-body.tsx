@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {
   formatKolamDaraSeoSocialDate,
   formatKolamDaraSeoSocialMetric,
@@ -15,6 +15,9 @@ import {KolamButton} from './kolam-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatusBadge} from './kolam-status-badge';
+
+/** Same asset as chat rail (`kolam-global-chat-rail`). */
+const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
 
 const COL_PLATFORM = 110;
 const COL_STATUS = 110;
@@ -260,6 +263,30 @@ function PlatformCard({
           onPress={() => onSync(28)}
         />
       </View>
+
+      <View pointerEvents="none" style={styles.platformLogoCorner}>
+        <SocialPlatformLogo platform={platform} />
+      </View>
+    </View>
+  );
+}
+
+/** Cosmetic logos matching chat rail (`KolamChatPlatformLogoMark`). */
+function SocialPlatformLogo({platform}: {platform: KolamDaraSeoSocialPlatform}) {
+  if (platform === 'tiktok') {
+    return (
+      <Image
+        resizeMode="contain"
+        source={TIKTOK_LOGO}
+        style={styles.tiktokLogoImage}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.instagramLogo}>
+      <View style={styles.instagramLens} />
+      <View style={styles.instagramFlash} />
     </View>
   );
 }
@@ -308,7 +335,46 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
     minWidth: 0,
+    overflow: 'hidden',
     padding: 14,
+    paddingBottom: 18,
+    position: 'relative',
+  },
+  platformLogoCorner: {
+    bottom: 12,
+    opacity: 0.9,
+    position: 'absolute',
+    right: 12,
+  },
+  tiktokLogoImage: {
+    height: 28,
+    width: 28,
+  },
+  instagramLogo: {
+    alignItems: 'center',
+    backgroundColor: '#fff0f6',
+    borderColor: '#e1306c',
+    borderRadius: 8,
+    borderWidth: 2,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  instagramLens: {
+    borderColor: '#e1306c',
+    borderRadius: 6,
+    borderWidth: 2,
+    height: 12,
+    width: 12,
+  },
+  instagramFlash: {
+    backgroundColor: '#e1306c',
+    borderRadius: 2,
+    height: 4,
+    position: 'absolute',
+    right: 4,
+    top: 4,
+    width: 4,
   },
   platformHead: {
     alignItems: 'flex-start',
@@ -363,6 +429,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    paddingRight: 40,
   },
   historyCard: {
     backgroundColor: V.colors.bg,
