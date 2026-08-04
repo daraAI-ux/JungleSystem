@@ -2,7 +2,10 @@ import { getAmRouteByModuleRoute } from './am-navigation';
 import { getShellModule, type AppModule } from './app-shell';
 import type { AccessScope } from './auth';
 import type { ShellModuleRouteEntry } from './app-shell';
-import type { KolamNavigationItem } from './kolam-navigation';
+import {
+  getKolamNavigationSectionTitleForRoute,
+  type KolamNavigationItem,
+} from './kolam-navigation';
 import type { KolamButtonIntent, KolamButtonTone } from './kolam-button';
 import type { SyncActivityArea } from './sync-activity';
 import { getSyncStatusIconKind } from './sync-activity';
@@ -270,7 +273,10 @@ export function getDashboardHeaderRouteContext({
 
   if (activeNavigationItem && activeNavigationItem.route !== '/') {
     return {
-      eyebrow: activeNavigationItem.group ?? 'Kolam Route',
+      eyebrow:
+        activeNavigationItem.group ??
+        getKolamNavigationSectionTitleForRoute(activeNavigationItem.route) ??
+        undefined,
       route: activeNavigationItem.route,
       title: getDashboardRouteTitle(activeNavigationItem),
       subtitle: activeNavigationItem.description ?? '',

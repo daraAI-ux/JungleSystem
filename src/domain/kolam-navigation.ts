@@ -2331,6 +2331,36 @@ export function getKolamNavigationSectionPrimaryItem(
   return section.items.find(item => item.label === section.title) ?? null;
 }
 
+/**
+ * Sidebar section title for a runtime route (longest matching sidebar item).
+ * Used by dashboard header eyebrow when `item.group` is unset.
+ */
+export function getKolamNavigationSectionTitleForRoute(
+  route: string,
+  sections: KolamNavigationSection[] = kolamSidebarNavigationSections,
+): string | null {
+  const path = String(route || '').split('?')[0].replace(/\/+$/, '') || '/';
+  let best: {title: string; length: number} | null = null;
+
+  for (const section of sections) {
+    for (const item of section.items) {
+      const itemPath =
+        String(item.route || '').split('?')[0].replace(/\/+$/, '') || '/';
+      const matches =
+        path === itemPath ||
+        (itemPath !== '/' && path.startsWith(`${itemPath}/`));
+      if (!matches) {
+        continue;
+      }
+      if (!best || itemPath.length > best.length) {
+        best = {title: section.title, length: itemPath.length};
+      }
+    }
+  }
+
+  return best?.title ?? null;
+}
+
 export function getKolamNavigationRouteTarget(
   item: KolamNavigationItem,
 ): KolamNavigationRouteTarget {

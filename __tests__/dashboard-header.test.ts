@@ -80,6 +80,76 @@ describe('dashboard header copy', () => {
     expect(shouldShowDashboardSessionPill()).toBe(false);
   });
 
+  it('uses sidebar section title as eyebrow when navigation item has no group', () => {
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'DARA SEO',
+          route: '/campaign/dara-seo',
+          description: 'Audit SEO',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Pusat AI',
+        title: 'DARA SEO',
+        route: '/campaign/dara-seo',
+      }),
+    );
+
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'Persetujuan Perubahan SEO',
+          route: '/campaign/dara-seo/approvals',
+          description: 'Review draft',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Pusat AI',
+        title: 'Persetujuan Perubahan SEO',
+      }),
+    );
+
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'Pelatihan DARA',
+          route: '/list-of-users/dara-training',
+          description: 'Pelatihan',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Pusat AI',
+        title: 'Pelatihan DARA',
+      }),
+    );
+  });
+
+  it('prefers explicit navigation group over section title for eyebrow', () => {
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'Produk',
+          route: '/products',
+          description: 'Katalog',
+          group: 'Produk',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Produk',
+        title: 'Produk',
+      }),
+    );
+  });
+
   it('builds route-aware page header context for native route surfaces', () => {
     const saleDraftRoute = getShellModuleRouteEntry('checkout', 'sale-draft');
     const teamChatRoute = getPluginRouteIndex(pluginRegistry).find(
