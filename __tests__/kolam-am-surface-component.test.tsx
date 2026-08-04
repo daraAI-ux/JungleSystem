@@ -1286,6 +1286,50 @@ describe('KolamAmSurface', () => {
     });
   });
 
+  it('keeps banking service rows non-expandable like AM FE', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'service-bca',
+          platform: 'bca',
+          label: 'BCA Main',
+          deviceId: {
+            _id: 'device-bca',
+            name: 'Bank Device',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.3:5555',
+            udid: null,
+          },
+          status: 'active',
+          username: 'bcauser',
+          accountNumber: '123456',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    jest.mocked(getAmTransfers).mockClear();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    const serviceRow = renderer!.root.findByProps({accessibilityLabel: 'AM Service BCA Main'});
+
+    expect(serviceRow.props.onPress).toBeUndefined();
+    expect(renderText(renderer!).join(' ')).toContain('Ready');
+    expect(renderText(renderer!).join(' ')).not.toContain('Transfer History');
+    expect(getAmTransfers).not.toHaveBeenCalled();
+  });
+
   it('polls realtime service logs while a service is expanded', async () => {
     jest.useFakeTimers();
     jest.mocked(getAmServiceAccounts).mockResolvedValue({

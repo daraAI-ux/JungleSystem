@@ -1537,17 +1537,20 @@ function AmServicesPage() {
         {accounts.map(account => {
           const device = getServiceDevice(account);
           const active = account.status === 'active';
-          const expanded = expandedId === account._id;
+          const banking = isTransferBanking(account.platform);
+          const expanded = !banking && expandedId === account._id;
           return (
             <View key={account._id}>
               <KolamInteractionFrame
                 accessibilityLabel={`AM Service ${account.label}`}
                 accessibilityRole="button"
-                onPress={() => toggleService(account)}
+                onPress={banking ? undefined : () => toggleService(account)}
                 style={[styles.tableRow, expanded && styles.tableRowExpanded]}>
                 <View style={styles.serviceCol}>
                   <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
-                  <Text style={styles.rowMeta}>{expanded ? 'Expanded' : active ? 'Running' : 'Stopped'}</Text>
+                  <Text style={styles.rowMeta}>
+                    {expanded ? 'Expanded' : active ? (banking ? 'Ready' : 'Running') : 'Stopped'}
+                  </Text>
                 </View>
                 <Text style={[styles.cellText, styles.platformCol]}>{AM_PLATFORM_LABELS[account.platform] ?? account.platform}</Text>
                 <View style={styles.deviceWideCol}>
