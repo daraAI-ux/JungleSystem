@@ -50,7 +50,7 @@ import { KolamLayananServiceEditor } from './kolam-layanan-service-editor';
 import { KolamLayananSubscriptionDetail } from './kolam-layanan-subscription-detail';
 import { KolamLayananVoucherDetail } from './kolam-layanan-voucher-detail';
 import { KolamSearchField } from './kolam-search-field';
-import { KolamStatsCardStrip } from './kolam-stats-card-strip';
+import { KolamStatsCard } from './kolam-stats-card';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -177,8 +177,10 @@ function KolamLayananList({
       contentContainerStyle={styles.listContent}
       style={styles.stack}
     >
-      <View style={styles.fullWidth}>
-        <KolamStatsCardStrip cards={kpiCards} />
+      <View style={styles.kpiStrip}>
+        {kpiCards.map(card => (
+          <KolamStatsCard card={card} key={card.id} />
+        ))}
       </View>
 
       <View style={[kolamTableToolbarStyles.shell, styles.fullWidth]}>
@@ -894,6 +896,14 @@ const styles = StyleSheet.create({
   },
   fullWidth: {
     alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
+  },
+  kpiStrip: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    gap: 8,
     minWidth: 0,
     width: '100%',
   },
