@@ -3,7 +3,6 @@ import { getShellModule, type AppModule } from './app-shell';
 import type { AccessScope } from './auth';
 import type { ShellModuleRouteEntry } from './app-shell';
 import {
-  getKolamNavigationItemByRuntimeRoute,
   getKolamNavigationSectionTitleForRoute,
   type KolamNavigationItem,
 } from './kolam-navigation';
@@ -275,33 +274,61 @@ export function getDashboardHeaderRouteContext({
   if (activeNavigationItem && activeNavigationItem.route !== '/') {
     const routePath =
       activeNavigationItem.route.split('?')[0].replace(/\/+$/, '') || '/';
-    const isAssetPurchaseRoute =
-      routePath === '/asset-purchase' ||
-      routePath.startsWith('/asset-purchase/');
-    // Asset-purchase header copy is owned by the live catalog. Refresh it so
-    // Fast Refresh / tab snapshots cannot keep stale English labels.
-    const catalogItem = isAssetPurchaseRoute
-      ? getKolamNavigationItemByRuntimeRoute(activeNavigationItem.route)
-      : null;
-    const resolvedItem = catalogItem
-      ? {
-          ...activeNavigationItem,
-          label: catalogItem.label,
-          description: catalogItem.description,
-        }
-      : activeNavigationItem;
+    const assetPurchaseHeader = getAssetPurchaseDashboardHeaderCopy(routePath);
+    if (assetPurchaseHeader) {
+      return {
+        eyebrow:
+          activeNavigationItem.group ??
+          getKolamNavigationSectionTitleForRoute(routePath) ??
+          undefined,
+        route: activeNavigationItem.route,
+        title: assetPurchaseHeader.title,
+        subtitle: assetPurchaseHeader.subtitle,
+      };
+    }
 
     return {
       eyebrow:
-        resolvedItem.group ??
-        getKolamNavigationSectionTitleForRoute(resolvedItem.route) ??
+        activeNavigationItem.group ??
+        getKolamNavigationSectionTitleForRoute(activeNavigationItem.route) ??
         undefined,
-      route: resolvedItem.route,
-      title: getDashboardRouteTitle(resolvedItem),
-      subtitle: resolvedItem.description ?? '',
+      route: activeNavigationItem.route,
+      title: getDashboardRouteTitle(activeNavigationItem),
+      subtitle: activeNavigationItem.description ?? '',
     };
   }
 
+  return null;
+}
+
+function getAssetPurchaseDashboardHeaderCopy(routePath: string): {
+  title: string;
+  subtitle: string;
+} | null {
+  if (routePath === '/asset-purchase') {
+    return {
+      title: 'Pembelian Aset',
+      subtitle: 'Pembelian aset tetap',
+    };
+  }
+  if (routePath === '/asset-purchase/create') {
+    return {
+      title: 'Buat Pembelian Aset',
+      subtitle: 'Buat pembelian aset',
+    };
+  }
+  if (/^\/asset-purchase\/[^/]+\/edit$/.test(routePath)) {
+    return {
+      title: 'Ubah Pembelian Aset',
+      subtitle: 'Ubah pembelian aset',
+    };
+  }
+  if (/^\/asset-purchase\/[^/]+$/.test(routePath)) {
+    return {
+      title: 'Detail Pembelian Aset',
+      subtitle: 'Detail dan informasi pembelian aset',
+    };
+  }
   return null;
 }
 
