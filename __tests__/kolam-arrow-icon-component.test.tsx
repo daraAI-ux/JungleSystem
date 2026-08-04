@@ -1,23 +1,26 @@
 import React from 'react';
-import {View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamArrowIcon} from '../src/components/kolam-arrow-icon';
+import {KolamChevronIcon} from '../src/components/kolam-chevron-icon';
 import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 
 describe('KolamArrowIcon', () => {
-  it('renders the shared arrow glyph with muted tint by default', async () => {
+  it('renders the sidebar-style triangle chevron with muted tint by default', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(<KolamArrowIcon />);
     });
 
-    const rendered = JSON.stringify(
-      renderer!.root.findAllByType(View).map(node => node.props.style),
-    );
+    const chevron = renderer!.root.findByType(KolamChevronIcon);
 
-    expect(renderer!.root.findAllByType(View)).toHaveLength(4);
-    expect(rendered).toContain(V.colors.mutedFg);
+    expect(chevron.props).toEqual(
+      expect.objectContaining({
+        color: V.colors.mutedFg,
+        direction: 'right',
+        size: 'dashboard-sm',
+      }),
+    );
   });
 
   it('supports a custom arrow tint', async () => {
@@ -29,10 +32,8 @@ describe('KolamArrowIcon', () => {
       );
     });
 
-    const rendered = JSON.stringify(
-      renderer!.root.findAllByType(View).map(node => node.props.style),
-    );
+    const chevron = renderer!.root.findByType(KolamChevronIcon);
 
-    expect(rendered).toContain(V.colors.info);
+    expect(chevron.props.color).toBe(V.colors.info);
   });
 });

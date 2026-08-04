@@ -84,7 +84,7 @@ function WorkspaceTabButton({
           radius="md"
           variant="ghost"
           style={styles.closeButton}>
-          <KolamXIcon color={active ? V.colors.fg : V.colors.mutedFg} />
+          <KolamXIcon color={V.colors.danger} />
         </KolamIconButton>
       ) : null}
       {active ? <View style={styles.indicator} /> : null}

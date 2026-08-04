@@ -2,6 +2,8 @@ import React from 'react';
 import {Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamWorkspaceTabStrip} from '../src/components/kolam-workspace-tab-strip';
+import {KolamXIcon} from '../src/components/kolam-x-icon';
+import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 import {
   getKolamWorkspaceTabLabel,
   getKolamWorkspaceTabRouteKey,
@@ -175,6 +177,9 @@ describe('Kolam workspace tabs', () => {
       .map(node => node.props.children);
 
     expect(textLabels).toEqual(expect.arrayContaining(['Produk', 'Spesies']));
+    expect(renderer!.root.findAllByType(KolamXIcon)[0].props.color).toBe(
+      V.colors.danger,
+    );
     renderer!.root.findByProps({accessibilityLabel: 'Tab baru'}).props.onPress();
     renderer!.root.findByProps({accessibilityLabel: 'Tutup Produk'}).props.onPress();
 
