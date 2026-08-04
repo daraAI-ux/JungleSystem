@@ -162,6 +162,8 @@ export function KolamDaraTrainingVisionBody({
   const [speciesRows, setSpeciesRows] = useState<
     KolamDaraTrainingVisionSpecies[]
   >([]);
+  const [speciesPage, setSpeciesPage] = useState(1);
+  const [speciesPages, setSpeciesPages] = useState(1);
   const [speciesQ, setSpeciesQ] = useState('');
   const [speciesSearch, setSpeciesSearch] = useState('');
   const [selectedSpecies, setSelectedSpecies] =
@@ -172,6 +174,8 @@ export function KolamDaraTrainingVisionBody({
   const [productRows, setProductRows] = useState<
     KolamDaraTrainingVisionProduct[]
   >([]);
+  const [productPage, setProductPage] = useState(1);
+  const [productPages, setProductPages] = useState(1);
   const [productQ, setProductQ] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [selectedProduct, setSelectedProduct] =
@@ -220,8 +224,14 @@ export function KolamDaraTrainingVisionBody({
       const [st, sp, pr, fb, hn, fq, latestEval, evalRuns, baseline] =
         await Promise.all([
           fetchKolamDaraTrainingVisionStats(),
-          listKolamDaraTrainingVisionSpecies({q: speciesSearch}),
-          listKolamDaraTrainingVisionProducts({q: productSearch}),
+          listKolamDaraTrainingVisionSpecies({
+            page: speciesPage,
+            q: speciesSearch,
+          }),
+          listKolamDaraTrainingVisionProducts({
+            page: productPage,
+            q: productSearch,
+          }),
           listKolamDaraTrainingVisionFeedback({
             page: feedbackPage,
             limit: 20,
@@ -237,8 +247,10 @@ export function KolamDaraTrainingVisionBody({
           ),
         ]);
       setStats(st);
-      setSpeciesRows(sp);
-      setProductRows(pr);
+      setSpeciesRows(sp.rows);
+      setSpeciesPages(sp.pages);
+      setProductRows(pr.rows);
+      setProductPages(pr.pages);
       setFeedbackRows(fb.rows);
       setFeedbackPages(fb.pages);
       setHardNegatives(hn);
@@ -263,7 +275,9 @@ export function KolamDaraTrainingVisionBody({
     feedbackKind,
     feedbackPage,
     feedbackSearch,
+    productPage,
     productSearch,
+    speciesPage,
     speciesSearch,
   ]);
 
@@ -702,7 +716,10 @@ export function KolamDaraTrainingVisionBody({
                 <KolamButton
                   intent="secondary"
                   label="Cari"
-                  onPress={() => setSpeciesSearch(speciesQ.trim())}
+                  onPress={() => {
+                    setSpeciesPage(1);
+                    setSpeciesSearch(speciesQ.trim());
+                  }}
                   size="sm"
                 />
               </View>
@@ -715,22 +732,22 @@ export function KolamDaraTrainingVisionBody({
               <>
                 <View style={styles.tableHead}>
                   <Text style={[styles.th, styles.colName]}>Species</Text>
+                  <Text style={[styles.th, styles.colCount]}>Katalog</Text>
                   <Text style={[styles.th, styles.colCount]}>Training</Text>
                   <Text style={[styles.th, styles.colReady]}>Status</Text>
+                  <Text style={[styles.th, styles.colAction]} />
                 </View>
                 {speciesRows.map(row => (
-                  <Pressable
-                    key={row.speciesId}
-                    onPress={() => {
-                      void openSpecies(row);
-                    }}
-                    style={styles.tableRow}>
+                  <View key={row.speciesId} style={styles.tableRow}>
                     <View style={styles.colName}>
                       <Text style={styles.tdStrong}>{row.displayName}</Text>
                       {row.scientificName ? (
                         <Text style={styles.tdMuted}>{row.scientificName}</Text>
                       ) : null}
                     </View>
+                    <Text style={[styles.td, styles.colCount]}>
+                      {row.catalogPhotoCount}
+                    </Text>
                     <Text style={[styles.td, styles.colCount]}>
                       {row.trainingCount}
                     </Text>
@@ -740,8 +757,39 @@ export function KolamDaraTrainingVisionBody({
                         label={row.readyForTrain ? 'Siap latih' : 'Kumpulkan'}
                       />
                     </View>
-                  </Pressable>
+                    <View style={styles.colAction}>
+                      <KolamButton
+                        intent="secondary"
+                        label="Kelola"
+                        onPress={() => {
+                          void openSpecies(row);
+                        }}
+                        size="sm"
+                      />
+                    </View>
+                  </View>
                 ))}
+                {speciesPages > 1 ? (
+                  <View style={styles.pager}>
+                    <KolamButton
+                      disabled={speciesPage <= 1}
+                      intent="secondary"
+                      label="Sebelumnya"
+                      onPress={() => setSpeciesPage(p => Math.max(1, p - 1))}
+                      size="sm"
+                    />
+                    <Text style={styles.meta}>
+                      {speciesPage}/{speciesPages}
+                    </Text>
+                    <KolamButton
+                      disabled={speciesPage >= speciesPages}
+                      intent="secondary"
+                      label="Berikutnya"
+                      onPress={() => setSpeciesPage(p => p + 1)}
+                      size="sm"
+                    />
+                  </View>
+                ) : null}
               </>
             )}
           </View>
@@ -833,7 +881,10 @@ export function KolamDaraTrainingVisionBody({
                 <KolamButton
                   intent="secondary"
                   label="Cari"
-                  onPress={() => setProductSearch(productQ.trim())}
+                  onPress={() => {
+                    setProductPage(1);
+                    setProductSearch(productQ.trim());
+                  }}
                   size="sm"
                 />
               </View>
@@ -847,15 +898,12 @@ export function KolamDaraTrainingVisionBody({
                 <View style={styles.tableHead}>
                   <Text style={[styles.th, styles.colName]}>Produk</Text>
                   <Text style={[styles.th, styles.colSku]}>SKU</Text>
+                  <Text style={[styles.th, styles.colCount]}>Katalog</Text>
                   <Text style={[styles.th, styles.colCount]}>Training</Text>
+                  <Text style={[styles.th, styles.colAction]} />
                 </View>
                 {productRows.map(row => (
-                  <Pressable
-                    key={row.productId}
-                    onPress={() => {
-                      void openProduct(row);
-                    }}
-                    style={styles.tableRow}>
+                  <View key={row.productId} style={styles.tableRow}>
                     <Text style={[styles.tdStrong, styles.colName]}>
                       {row.displayName}
                     </Text>
@@ -863,10 +911,44 @@ export function KolamDaraTrainingVisionBody({
                       {row.sku || '—'}
                     </Text>
                     <Text style={[styles.td, styles.colCount]}>
+                      {row.catalogPhotoCount}
+                    </Text>
+                    <Text style={[styles.td, styles.colCount]}>
                       {row.trainingCount}
                     </Text>
-                  </Pressable>
+                    <View style={styles.colAction}>
+                      <KolamButton
+                        intent="secondary"
+                        label="Kelola"
+                        onPress={() => {
+                          void openProduct(row);
+                        }}
+                        size="sm"
+                      />
+                    </View>
+                  </View>
                 ))}
+                {productPages > 1 ? (
+                  <View style={styles.pager}>
+                    <KolamButton
+                      disabled={productPage <= 1}
+                      intent="secondary"
+                      label="Sebelumnya"
+                      onPress={() => setProductPage(p => Math.max(1, p - 1))}
+                      size="sm"
+                    />
+                    <Text style={styles.meta}>
+                      {productPage}/{productPages}
+                    </Text>
+                    <KolamButton
+                      disabled={productPage >= productPages}
+                      intent="secondary"
+                      label="Berikutnya"
+                      onPress={() => setProductPage(p => p + 1)}
+                      size="sm"
+                    />
+                  </View>
+                ) : null}
               </>
             )}
           </View>

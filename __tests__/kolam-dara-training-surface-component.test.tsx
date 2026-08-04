@@ -326,8 +326,39 @@ describe('KolamDaraTrainingSurface', () => {
       embedIndexStale: 0,
       negativeTypes: [{id: 'lainnya', label: 'Di luar katalog DA'}],
     });
-    visionSpeciesMock.mockResolvedValue([]);
-    visionProductsMock.mockResolvedValue([]);
+    visionSpeciesMock.mockResolvedValue({
+      rows: [
+        {
+          speciesId: 's1',
+          displayName: 'Whites Tree Frog',
+          scientificName: 'Litoria caerulea',
+          catalogPhotoCount: 4,
+          trainingCount: 2,
+          readyForTrain: false,
+          catalogPhotos: ['a.jpg'],
+        },
+      ],
+      page: 1,
+      pages: 2,
+      total: 12,
+    });
+    visionProductsMock.mockResolvedValue({
+      rows: [
+        {
+          productId: 'p1',
+          displayName: 'Frog Soil',
+          name: 'Frog Soil',
+          sku: 'SKU-1',
+          catalogPhotoCount: 3,
+          trainingCount: 1,
+          readyForIndex: true,
+          catalogPhotos: [],
+        },
+      ],
+      page: 1,
+      pages: 1,
+      total: 1,
+    });
     visionFeedbackMock.mockResolvedValue({
       rows: [
         {
@@ -506,6 +537,47 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Closed-world');
     expect(visionStatsMock).toHaveBeenCalled();
     expect(visionFeedbackMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('shows Katalog, Kelola, and pager on Species (YOLO)', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=vision" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const speciesLabel = tree!.root.find(
+      node =>
+        typeof node.children?.[0] === 'string' &&
+        node.children[0] === 'Species (YOLO)',
+    );
+    let pressable = speciesLabel.parent;
+    while (pressable && typeof pressable.props?.onPress !== 'function') {
+      pressable = pressable.parent;
+    }
+    expect(pressable).toBeTruthy();
+    await ReactTestRenderer.act(async () => {
+      pressable!.props.onPress();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Daftar species');
+    expect(text).toContain('Katalog');
+    expect(text).toContain('Kelola');
+    expect(text).toContain('Whites Tree Frog');
+    expect(text).toContain('Sebelumnya');
+    expect(text).toContain('Berikutnya');
+    expect(visionSpeciesMock).toHaveBeenCalledWith(
+      expect.objectContaining({page: 1}),
+    );
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

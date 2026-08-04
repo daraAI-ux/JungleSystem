@@ -1,5 +1,7 @@
 import {
   normalizeKolamDaraTrainingVisionFeedbackList,
+  normalizeKolamDaraTrainingVisionProductList,
+  normalizeKolamDaraTrainingVisionSpeciesList,
   normalizeKolamDaraTrainingVisionStats,
   resolveKolamDaraTrainingVisionMatchIntent,
 } from '../src/domain/kolam-dara-training-vision';
@@ -32,6 +34,53 @@ describe('kolam-dara-training-vision domain', () => {
     expect(stats.negativeTypes).toEqual([
       {id: 'lainnya', label: 'Di luar katalog DA'},
     ]);
+  });
+
+  it('normalizes vision species and product lists with meta', () => {
+    const species = normalizeKolamDaraTrainingVisionSpeciesList({
+      data: [
+        {
+          speciesId: 's1',
+          displayName: 'Whites Tree Frog',
+          scientificName: 'Litoria caerulea',
+          catalogPhotoCount: 4,
+          trainingCount: 2,
+          readyForTrain: false,
+          catalogPhotos: ['a.jpg'],
+        },
+      ],
+      meta: {page: 2, pages: 5, total: 42},
+    });
+    expect(species).toMatchObject({
+      page: 2,
+      pages: 5,
+      total: 42,
+    });
+    expect(species.rows[0]).toMatchObject({
+      speciesId: 's1',
+      catalogPhotoCount: 4,
+      trainingCount: 2,
+    });
+
+    const products = normalizeKolamDaraTrainingVisionProductList({
+      data: [
+        {
+          productId: 'p1',
+          displayName: 'Frog Soil',
+          sku: 'SKU-1',
+          catalogPhotoCount: 3,
+          trainingCount: 1,
+          catalogPhotos: [],
+        },
+      ],
+      meta: {page: 1, pages: 3, total: 25},
+    });
+    expect(products.pages).toBe(3);
+    expect(products.rows[0]).toMatchObject({
+      productId: 'p1',
+      catalogPhotoCount: 3,
+      sku: 'SKU-1',
+    });
   });
 
   it('normalizes vision feedback list and match intents', () => {

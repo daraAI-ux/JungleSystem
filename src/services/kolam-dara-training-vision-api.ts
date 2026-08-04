@@ -8,6 +8,7 @@ import {
   normalizeKolamDaraTrainingVisionFeedbackQueue,
   normalizeKolamDaraTrainingVisionHardNegativeList,
   normalizeKolamDaraTrainingVisionPhotoList,
+  KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
   normalizeKolamDaraTrainingVisionProductList,
   normalizeKolamDaraTrainingVisionSpeciesList,
   normalizeKolamDaraTrainingVisionStats,
@@ -19,8 +20,8 @@ import {
   type KolamDaraTrainingVisionFeedbackQueueItem,
   type KolamDaraTrainingVisionHardNegative,
   type KolamDaraTrainingVisionPhoto,
-  type KolamDaraTrainingVisionProduct,
-  type KolamDaraTrainingVisionSpecies,
+  type KolamDaraTrainingVisionProductList,
+  type KolamDaraTrainingVisionSpeciesList,
   type KolamDaraTrainingVisionStats,
 } from '../domain/kolam-dara-training-vision';
 import {apiRequest} from '../lib/api-client';
@@ -40,10 +41,15 @@ export async function fetchKolamDaraTrainingVisionStats(): Promise<KolamDaraTrai
 /** GET /dara-training/vision/species */
 export async function listKolamDaraTrainingVisionSpecies(opts?: {
   page?: number;
+  limit?: number;
   q?: string;
-}): Promise<KolamDaraTrainingVisionSpecies[]> {
+}): Promise<KolamDaraTrainingVisionSpeciesList> {
   const payload = await kolamRequest<unknown>('/dara-training/vision/species', {
-    query: {page: opts?.page ?? 1, limit: 20, q: opts?.q || undefined},
+    query: {
+      page: opts?.page ?? 1,
+      limit: opts?.limit ?? KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
+      q: opts?.q || undefined,
+    },
   });
   return normalizeKolamDaraTrainingVisionSpeciesList(payload);
 }
@@ -51,10 +57,15 @@ export async function listKolamDaraTrainingVisionSpecies(opts?: {
 /** GET /dara-training/vision/products */
 export async function listKolamDaraTrainingVisionProducts(opts?: {
   page?: number;
+  limit?: number;
   q?: string;
-}): Promise<KolamDaraTrainingVisionProduct[]> {
+}): Promise<KolamDaraTrainingVisionProductList> {
   const payload = await kolamRequest<unknown>('/dara-training/vision/products', {
-    query: {page: opts?.page ?? 1, limit: 20, q: opts?.q || undefined},
+    query: {
+      page: opts?.page ?? 1,
+      limit: opts?.limit ?? KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
+      q: opts?.q || undefined,
+    },
   });
   return normalizeKolamDaraTrainingVisionProductList(payload);
 }

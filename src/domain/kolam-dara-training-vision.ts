@@ -83,6 +83,9 @@ export type KolamDaraTrainingVisionStats = {
   negativeTypes: KolamDaraTrainingVisionIdLabel[];
 };
 
+/** Page size for Species (YOLO) / Produk list tables (BE max 50). */
+export const KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE = 10;
+
 export type KolamDaraTrainingVisionSpecies = {
   speciesId: string;
   displayName: string;
@@ -91,6 +94,13 @@ export type KolamDaraTrainingVisionSpecies = {
   trainingCount: number;
   readyForTrain: boolean;
   catalogPhotos: string[];
+};
+
+export type KolamDaraTrainingVisionSpeciesList = {
+  rows: KolamDaraTrainingVisionSpecies[];
+  page: number;
+  pages: number;
+  total: number;
 };
 
 export type KolamDaraTrainingVisionProduct = {
@@ -102,6 +112,13 @@ export type KolamDaraTrainingVisionProduct = {
   trainingCount: number;
   readyForIndex: boolean;
   catalogPhotos: string[];
+};
+
+export type KolamDaraTrainingVisionProductList = {
+  rows: KolamDaraTrainingVisionProduct[];
+  page: number;
+  pages: number;
+  total: number;
 };
 
 export type KolamDaraTrainingVisionPhoto = {
@@ -284,8 +301,10 @@ export function normalizeKolamDaraTrainingVisionStats(
 
 export function normalizeKolamDaraTrainingVisionSpeciesList(
   payload: unknown,
-): KolamDaraTrainingVisionSpecies[] {
-  return listFrom(payload)
+): KolamDaraTrainingVisionSpeciesList {
+  const root = asRecord(payload);
+  const meta = asRecord(root.meta);
+  const rows = listFrom(payload)
     .map(item => {
       const row = asRecord(item);
       const speciesId = String(row.speciesId || row._id || row.id || '').trim();
@@ -303,12 +322,20 @@ export function normalizeKolamDaraTrainingVisionSpeciesList(
       };
     })
     .filter((row): row is KolamDaraTrainingVisionSpecies => row != null);
+  return {
+    rows,
+    page: asNumber(meta.page) || 1,
+    pages: asNumber(meta.pages) || 1,
+    total: asNumber(meta.total) || rows.length,
+  };
 }
 
 export function normalizeKolamDaraTrainingVisionProductList(
   payload: unknown,
-): KolamDaraTrainingVisionProduct[] {
-  return listFrom(payload)
+): KolamDaraTrainingVisionProductList {
+  const root = asRecord(payload);
+  const meta = asRecord(root.meta);
+  const rows = listFrom(payload)
     .map(item => {
       const row = asRecord(item);
       const productId = String(row.productId || row._id || row.id || '').trim();
@@ -327,6 +354,12 @@ export function normalizeKolamDaraTrainingVisionProductList(
       };
     })
     .filter((row): row is KolamDaraTrainingVisionProduct => row != null);
+  return {
+    rows,
+    page: asNumber(meta.page) || 1,
+    pages: asNumber(meta.pages) || 1,
+    total: asNumber(meta.total) || rows.length,
+  };
 }
 
 export function normalizeKolamDaraTrainingVisionPhotoList(
