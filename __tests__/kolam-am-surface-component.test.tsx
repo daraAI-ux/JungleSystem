@@ -3684,6 +3684,7 @@ describe('KolamAmSurface', () => {
   });
 
   it('renders mutasi summary stats and pagination from live metadata', async () => {
+    setAccessToken('kolam-mutasi-token');
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -3861,6 +3862,13 @@ describe('KolamAmSurface', () => {
     expect(detailText).toContain('hash-mutasi-1');
     expect(detailText).toContain('Vendor Mutasi');
     expect(detailText).toContain('/mutasi/mutasi-1/receipt');
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Receipt'}).props.source).toEqual({
+      uri: 'https://frogs.dunia-anura.com/api/mutasi/mutasi-1/receipt',
+      headers: {
+        Authorization: 'Bearer kolam-mutasi-token',
+        'x-source': 'am',
+      },
+    });
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Next Page'}).props.onPress();

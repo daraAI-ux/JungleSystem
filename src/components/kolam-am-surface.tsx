@@ -4840,6 +4840,17 @@ function AmMutasiDetailPanel({
           </View>
         </View>
       ) : null}
+      {receiptUrl ? (
+        <View style={styles.proofPanel}>
+          <Text style={styles.panelTitle}>Receipt</Text>
+          <Image
+            accessibilityLabel="AM Mutasi Receipt"
+            resizeMode="contain"
+            source={getAmProtectedImageSource(receiptUrl)}
+            style={styles.proofImage}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
