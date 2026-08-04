@@ -1,0 +1,43 @@
+import React from 'react';
+import ReactTestRenderer from 'react-test-renderer';
+import {KolamIconButton} from '../src/components/kolam-icon-button';
+import {KolamNotificationBadge} from '../src/components/kolam-notification-badge';
+import {KolamNotificationBellIcon} from '../src/components/kolam-notification-bell-icon';
+import {KolamPressable} from '../src/components/kolam-pressable';
+import {KolamTopNavigationNotificationButton} from '../src/components/kolam-top-navigation-notification-button';
+
+describe('KolamTopNavigationNotificationButton', () => {
+  it('renders the notification bell without a circular icon-button frame', async () => {
+    const onNotificationPress = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationNotificationButton
+          attentionCount={7}
+          onNotificationPress={onNotificationPress}
+        />,
+      );
+    });
+
+    expect(renderer!.root.findAllByType(KolamIconButton)).toHaveLength(0);
+    expect(renderer!.root.findByType(KolamNotificationBellIcon)).toBeTruthy();
+    expect(
+      renderer!.root.findByType(KolamNotificationBadge).props.attentionCount,
+    ).toBe(7);
+
+    const button = renderer!.root.findByType(KolamPressable);
+    expect(button.props.accessibilityLabel).toBe('Notifikasi');
+    expect(button.props.style).toEqual(
+      expect.objectContaining({
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+        height: 32,
+        width: 32,
+      }),
+    );
+
+    button.props.onPress();
+    expect(onNotificationPress).toHaveBeenCalledTimes(1);
+  });
+});

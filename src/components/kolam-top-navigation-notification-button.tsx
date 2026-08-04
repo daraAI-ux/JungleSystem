@@ -1,7 +1,8 @@
-﻿import React from 'react';
-import {KolamIconButton} from './kolam-icon-button';
+import React from 'react';
+import {StyleSheet} from 'react-native';
 import {KolamNotificationBadge} from './kolam-notification-badge';
 import {KolamNotificationBellIcon} from './kolam-notification-bell-icon';
+import {KolamPressable} from './kolam-pressable';
 
 export function KolamTopNavigationNotificationButton({
   attentionCount,
@@ -11,9 +12,25 @@ export function KolamTopNavigationNotificationButton({
   onNotificationPress: () => void;
 }) {
   return (
-    <KolamIconButton onPress={onNotificationPress} size={32} radius="full">
+    <KolamPressable
+      accessibilityLabel="Notifikasi"
+      onPress={onNotificationPress}
+      style={styles.button}>
       <KolamNotificationBellIcon />
       <KolamNotificationBadge attentionCount={attentionCount} />
-    </KolamIconButton>
+    </KolamPressable>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderWidth: 0,
+    height: 32,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 32,
+  },
+});
