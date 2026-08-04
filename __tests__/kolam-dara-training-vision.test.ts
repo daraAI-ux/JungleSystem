@@ -3,6 +3,7 @@ import {
   isKolamDaraTrainingVisionReadyForTrain,
   KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
+  normalizeKolamDaraTrainingVisionBaselineKpi,
   normalizeKolamDaraTrainingVisionFeedbackList,
   normalizeKolamDaraTrainingVisionProductList,
   normalizeKolamDaraTrainingVisionSpeciesList,
@@ -145,6 +146,46 @@ describe('kolam-dara-training-vision domain', () => {
     });
     expect(resolveKolamDaraTrainingVisionMatchIntent('match')).toBe('success');
     expect(resolveKolamDaraTrainingVisionMatchIntent('weak')).toBe('danger');
+  });
+
+  it('normalizes baseline KPI like FE cards', () => {
+    const kpi = normalizeKolamDaraTrainingVisionBaselineKpi({
+      data: {
+        periodDays: 30,
+        inbox: {
+          source: 'events',
+          eventCount: 12,
+          autoReply: 4,
+          visionMatch: 3,
+          visionAmbiguous: 1,
+          visionLlm: 0,
+          clarifyAbstain: 2,
+          payment: 5,
+          skippedDedup: 1,
+          abstainRate: 33,
+          autoReplyRate: 67,
+          byMatchMethod: {siglip: 3, yolo: 1},
+        },
+        feedback: {total: 4, falseMatch: 1, falseMatchRate: 25},
+        precision: {estimatedPrecisionPct: 80, note: 'Estimasi.'},
+        latestHoldoutEval: {siglipAccuracy: 91},
+      },
+    });
+    expect(kpi).toMatchObject({
+      inboxSource: 'events',
+      inboxEventCount: 12,
+      inboxAbstainRate: 33,
+      inboxAutoReplyRate: 67,
+      inboxPayment: 5,
+      inboxSkippedDedup: 1,
+      latestHoldoutSiglipAccuracy: 91,
+      precisionPct: 80,
+    });
+    expect(kpi!.inboxByMatchMethod).toEqual([
+      {method: 'siglip', count: 3},
+      {method: 'yolo', count: 1},
+    ]);
+    expect(kpi).not.toHaveProperty('inboxTotalHandled');
   });
 });
 

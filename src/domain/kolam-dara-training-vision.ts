@@ -253,16 +253,24 @@ export type KolamDaraTrainingVisionBaselineKpi = {
   periodDays: number;
   since: string;
   until: string;
-  inboxTotalHandled: number;
+  inboxSource: string;
+  inboxEventCount: number | null;
   inboxAutoReply: number;
   inboxVisionMatch: number;
   inboxVisionAmbiguous: number;
+  inboxVisionLlm: number;
+  inboxClarifyAbstain: number;
+  inboxPayment: number;
+  inboxSkippedDedup: number;
   inboxAbstainRate: number;
+  inboxAutoReplyRate: number;
+  inboxByMatchMethod: Array<{method: string; count: number}>;
   feedbackTotal: number;
   feedbackFalseMatch: number;
   feedbackFalseMatchRate: number;
   precisionPct: number | null;
   precisionNote: string;
+  latestHoldoutSiglipAccuracy: number | null;
 };
 
 export type KolamDaraTrainingVisionActionResult = {
@@ -594,15 +602,34 @@ export function normalizeKolamDaraTrainingVisionBaselineKpi(
   const inbox = asRecord(data.inbox);
   const feedback = asRecord(data.feedback);
   const precision = asRecord(data.precision);
+  const latestHoldout = asRecord(data.latestHoldoutEval);
+  const byMatchMethodRaw = asRecord(inbox.byMatchMethod);
+  const inboxByMatchMethod = Object.entries(byMatchMethodRaw)
+    .map(([method, count]) => ({
+      method: String(method || '').trim(),
+      count: asNumber(count),
+    }))
+    .filter(row => row.method.length > 0)
+    .sort((a, b) => b.count - a.count);
   return {
     periodDays: asNumber(data.periodDays) || 30,
     since: String(data.since || '').trim(),
     until: String(data.until || '').trim(),
-    inboxTotalHandled: asNumber(inbox.totalHandled),
+    inboxSource: String(inbox.source || '').trim(),
+    inboxEventCount:
+      inbox.eventCount == null || inbox.eventCount === ''
+        ? null
+        : asNumber(inbox.eventCount),
     inboxAutoReply: asNumber(inbox.autoReply),
     inboxVisionMatch: asNumber(inbox.visionMatch),
     inboxVisionAmbiguous: asNumber(inbox.visionAmbiguous),
+    inboxVisionLlm: asNumber(inbox.visionLlm),
+    inboxClarifyAbstain: asNumber(inbox.clarifyAbstain),
+    inboxPayment: asNumber(inbox.payment),
+    inboxSkippedDedup: asNumber(inbox.skippedDedup),
     inboxAbstainRate: asNumber(inbox.abstainRate),
+    inboxAutoReplyRate: asNumber(inbox.autoReplyRate),
+    inboxByMatchMethod,
     feedbackTotal: asNumber(feedback.total),
     feedbackFalseMatch: asNumber(feedback.falseMatch),
     feedbackFalseMatchRate: asNumber(feedback.falseMatchRate),
@@ -612,6 +639,11 @@ export function normalizeKolamDaraTrainingVisionBaselineKpi(
         ? null
         : asNumber(precision.estimatedPrecisionPct),
     precisionNote: String(precision.note || '').trim(),
+    latestHoldoutSiglipAccuracy:
+      latestHoldout.siglipAccuracy == null ||
+      latestHoldout.siglipAccuracy === ''
+        ? null
+        : asNumber(latestHoldout.siglipAccuracy),
   };
 }
 

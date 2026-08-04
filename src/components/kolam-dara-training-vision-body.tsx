@@ -1178,19 +1178,27 @@ export function KolamDaraTrainingVisionBody({
           {baselineKpi ?
             <>
               <Text style={styles.meta}>
-                Periode: {formatKolamDaraTrainingVisionDateTime(baselineKpi.since)}{' '}
-                — {formatKolamDaraTrainingVisionDateTime(baselineKpi.until)}
+                Sumber inbox:{' '}
+                <Text style={styles.metaStrong}>
+                  {baselineKpi.inboxSource || '—'}
+                </Text>
+                {baselineKpi.inboxEventCount != null
+                  ? ` · ${baselineKpi.inboxEventCount} event`
+                  : ''}
               </Text>
               <View style={styles.statGrid}>
                 <StatBox
-                  hint={`Match ${baselineKpi.inboxVisionMatch} · Ambigu ${baselineKpi.inboxVisionAmbiguous}`}
-                  label="Inbox ditangani"
-                  value={baselineKpi.inboxTotalHandled}
-                />
-                <StatBox
-                  hint={`Auto-reply ${baselineKpi.inboxAutoReply}`}
+                  hint={`${baselineKpi.inboxClarifyAbstain} dari ${
+                    baselineKpi.inboxAutoReply +
+                    baselineKpi.inboxClarifyAbstain
+                  } attempt katalog`}
                   label="Abstain / klarifikasi"
                   value={`${baselineKpi.inboxAbstainRate ?? 0}%`}
+                />
+                <StatBox
+                  hint={`Match ${baselineKpi.inboxVisionMatch} · Ambigu ${baselineKpi.inboxVisionAmbiguous} · LLM ${baselineKpi.inboxVisionLlm}`}
+                  label="Auto-reply vision"
+                  value={`${baselineKpi.inboxAutoReplyRate ?? 0}%`}
                 />
                 <StatBox
                   hint={`${baselineKpi.feedbackFalseMatch}/${baselineKpi.feedbackTotal} koreksi`}
@@ -1207,6 +1215,32 @@ export function KolamDaraTrainingVisionBody({
                   }
                 />
               </View>
+              <View style={styles.statGrid}>
+                <StatBox
+                  label="Bukti bayar"
+                  value={baselineKpi.inboxPayment}
+                />
+                <StatBox
+                  label="Skip dedup foto"
+                  value={baselineKpi.inboxSkippedDedup}
+                />
+                <StatBox
+                  label="Holdout SigLIP terakhir"
+                  value={
+                    baselineKpi.latestHoldoutSiglipAccuracy != null ?
+                      `${baselineKpi.latestHoldoutSiglipAccuracy}%`
+                    : '—'
+                  }
+                />
+              </View>
+              {baselineKpi.inboxByMatchMethod.length > 0 ? (
+                <Text style={styles.meta}>
+                  Metode auto-reply:{' '}
+                  {baselineKpi.inboxByMatchMethod
+                    .map(row => `${row.method} ${row.count}`)
+                    .join(' · ')}
+                </Text>
+              ) : null}
               {baselineKpi.precisionNote ? (
                 <Text style={styles.meta}>{baselineKpi.precisionNote}</Text>
               ) : null}
