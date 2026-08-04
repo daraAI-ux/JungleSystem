@@ -1,5 +1,8 @@
 import {apiRequest} from '../src/lib/api-client';
-import {deleteAllKolamNotifications} from '../src/services/kolam-notifications-api';
+import {
+  archiveKolamNotification,
+  deleteAllKolamNotifications,
+} from '../src/services/kolam-notifications-api';
 
 jest.mock('../src/lib/api-client', () => ({
   apiRequest: jest.fn(),
@@ -21,6 +24,17 @@ describe('kolam notifications API', () => {
         method: 'DELETE',
         path: '/notification/all',
         body: {},
+      }),
+    );
+  });
+
+  it('archives a single notification with the backend route that exists today', async () => {
+    await archiveKolamNotification('notification-1');
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'DELETE',
+        path: '/notification/notification-1',
       }),
     );
   });

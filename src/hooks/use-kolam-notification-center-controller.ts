@@ -14,6 +14,7 @@ import {
   type KolamNotificationsResult,
 } from '../domain/kolam-notifications';
 import {
+  archiveKolamNotification,
   getKolamNotifications,
   getKolamNotificationStats,
   deleteAllKolamNotifications,
@@ -236,9 +237,32 @@ export function useKolamNotificationCenterController({
       return;
     }
 
-    await deleteAllKolamNotifications();
-    await Promise.all([refreshStats(), refreshList()]);
-  }, [enabled, refreshList, refreshStats]);
+    setIsRefreshing(true);
+    setErrorMessage('');
+    try {
+      try {
+        await deleteAllKolamNotifications();
+      } catch (error) {
+        if (!isDeleteAllEndpointUnsupported(error)) {
+          throw error;
+        }
+        await archiveAllKolamNotifications({
+          knownTotal: Math.max(stats.total, result.pagination.totalData),
+        });
+      }
+      await Promise.all([refreshStats(), refreshList()]);
+    } catch (error) {
+      setErrorMessage(getNotificationErrorMessage(error));
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [
+    enabled,
+    refreshList,
+    refreshStats,
+    result.pagination.totalData,
+    stats.total,
+  ]);
 
   const attentionItems = useMemo(
     () =>
@@ -301,6 +325,49 @@ function getNotificationTone(type: KolamNotification['type']) {
   }
 
   return 'info';
+}
+
+async function archiveAllKolamNotifications({
+  knownTotal,
+}: {
+  knownTotal: number;
+}) {
+  const limit = 100;
+  const firstPageLimit = Math.max(limit, knownTotal || 0);
+  let page = 1;
+  let hasMore = true;
+  const archivedIds = new Set<string>();
+
+  while (hasMore) {
+    const nextResult = await getKolamNotifications({
+      page,
+      limit: page === 1 ? firstPageLimit : limit,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    });
+    const ids = nextResult.data
+      .map(notification => notification._id)
+      .filter(id => id && !archivedIds.has(id));
+
+    await Promise.all(
+      ids.map(async id => {
+        archivedIds.add(id);
+        await archiveKolamNotification(id);
+      }),
+    );
+
+    hasMore = nextResult.pagination.hasMore && ids.length > 0;
+    page += 1;
+  }
+}
+
+function isDeleteAllEndpointUnsupported(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /cast to objectid failed/i.test(error.message) &&
+    /value "all"/i.test(error.message);
 }
 
 function maybePlayNotificationSound({

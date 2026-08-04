@@ -92,6 +92,13 @@ export async function markKolamNotificationRead(
   return normalizeKolamNotification(record);
 }
 
+export async function archiveKolamNotification(id: string): Promise<void> {
+  await kolamNotificationRequest<unknown>(
+    `/notification/${encodeURIComponent(id)}`,
+    {method: 'DELETE'},
+  );
+}
+
 export async function markAllKolamNotificationsRead(
   category?: string,
 ): Promise<void> {
