@@ -82,6 +82,27 @@ function StatBox({
   );
 }
 
+/** Soft row metrics for Status pipeline — not the FE tile grid. */
+function PipelineStat({
+  hint,
+  label,
+  value,
+}: {
+  hint?: string;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <View style={styles.pipelineStat}>
+      <View style={styles.pipelineStatMain}>
+        <Text style={styles.pipelineStatLabel}>{label}</Text>
+        <Text style={styles.pipelineStatValue}>{value}</Text>
+      </View>
+      {hint ? <Text style={styles.pipelineStatHint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
 function EvalMetricBox({
   hint,
   metric,
@@ -439,22 +460,22 @@ export function KolamDaraTrainingVisionBody({
       {section === 'ringkasan' && stats ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Status pipeline</Text>
-          <View style={styles.statGrid}>
-            <StatBox
+          <View style={styles.pipelineList}>
+            <PipelineStat
               label="Closed-world"
               value={stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'}
             />
-            <StatBox
+            <PipelineStat
               hint={stats.embedModelId.split('/').pop()}
               label="Embed aktif"
               value={stats.embedFamily || 'siglip'}
             />
-            <StatBox label="Threshold min" value={stats.embedMinScore ?? '—'} />
-            <StatBox
+            <PipelineStat label="Threshold min" value={stats.embedMinScore ?? '—'} />
+            <PipelineStat
               label="Indeks model OK"
               value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
             />
-            <StatBox
+            <PipelineStat
               hint={
                 (stats.embedIndexStale ?? 0) > 0 ?
                   'Jalankan rebuild dual'
@@ -463,7 +484,7 @@ export function KolamDaraTrainingVisionBody({
               label="Perlu rebuild"
               value={stats.embedIndexStale ?? 0}
             />
-            <StatBox
+            <PipelineStat
               hint={
                 stats.detectCropBackend === 'sam' ?
                   stats.detectCropModel.split('/').pop() || 'mobile_sam'
@@ -472,24 +493,24 @@ export function KolamDaraTrainingVisionBody({
               label="Detect/crop"
               value={stats.detectCropMode || 'auto'}
             />
-            <StatBox
+            <PipelineStat
               hint={stats.ocrEngine || undefined}
               label="OCR unified"
               value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
             />
-            <StatBox
+            <PipelineStat
               label="Foto training species"
               value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
             />
-            <StatBox
+            <PipelineStat
               label="Foto training produk"
               value={stats.productTrainingPhotos ?? 0}
             />
-            <StatBox
+            <PipelineStat
               label="YOLO species"
               value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
             />
-            <StatBox
+            <PipelineStat
               hint={
                 stats.yoloProductClassCount ?
                   `${stats.yoloProductClassCount} SKU`
@@ -498,12 +519,15 @@ export function KolamDaraTrainingVisionBody({
               label="YOLO produk"
               value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
             />
-            <StatBox
+            <PipelineStat
               hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
               label="Koreksi inbox"
               value={stats.feedbackTotal ?? 0}
             />
-            <StatBox label="Antrian feedback" value={stats.feedbackPending ?? 0} />
+            <PipelineStat
+              label="Antrian feedback"
+              value={stats.feedbackPending ?? 0}
+            />
           </View>
         </View>
       ) : null}
@@ -1473,6 +1497,46 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '600',
+  },
+  pipelineList: {
+    alignSelf: 'stretch',
+    gap: 6,
+    width: '100%',
+  },
+  pipelineStat: {
+    backgroundColor: V.colors.muted,
+    borderRadius: V.radius.md,
+    gap: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  pipelineStatMain: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  pipelineStatLabel: {
+    color: V.colors.mutedFg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
+    paddingRight: 8,
+  },
+  pipelineStatValue: {
+    color: V.colors.fg,
+    flexShrink: 0,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  pipelineStatHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    lineHeight: 14,
   },
   statGrid: {
     alignItems: 'stretch',
