@@ -5627,6 +5627,21 @@ describe('KolamAmSurface', () => {
   });
 
   it('disables webhook submit while the save request is pending', async () => {
+    jest.mocked(getAmWebhookConfigs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-1',
+          url: 'https://example.test/webhook',
+          events: ['transfer.success'],
+          status: 'active',
+          description: 'Existing hook',
+          failCount: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
     let resolveCreate: (value: unknown) => void = () => undefined;
     jest.mocked(createAmWebhookConfig).mockImplementationOnce(
       () => new Promise(resolve => {
@@ -5663,6 +5678,27 @@ describe('KolamAmSurface', () => {
     );
     expect(saveButton?.props.disabled).toBe(true);
     expect(saveButton?.props.label).toBe('Saving...');
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Register'}).props.disabled,
+    ).toBe(true);
+    expect(
+      renderer!.root.findByProps({label: 'Test Ping'}).props.disabled,
+    ).toBe(true);
+    expect(
+      renderer!.root.findByProps({label: 'Cancel'}).props.disabled,
+    ).toBe(true);
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Edit webhook-1'}).props.disabled,
+    ).toBe(true);
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Toggle webhook-1'}).props.disabled,
+    ).toBe(true);
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Delete webhook-1'}).props.disabled,
+    ).toBe(true);
+    expect(
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Event transfer.success'}).props.disabled,
+    ).toBe(true);
 
     await act(async () => {
       resolveCreate({

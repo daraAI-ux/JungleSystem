@@ -5230,18 +5230,21 @@ function AmWebhooksPage() {
   const webhookLogTotalPages = Math.max(1, Math.ceil(logTotal / Math.max(logLimit, 1)));
   const webhookLogRangeFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
   const webhookLogRangeTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
+  const isWebhookActionLocked = isSubmitting || isTestingPing || actingConfigId !== null;
 
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
         <AmMetricCard label="Endpoints" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
         <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
-        <KolamButton disabled={isLoading} label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
-        <KolamButton disabled={isTestingPing} label={isTestingPing ? 'Testing...' : 'Test Ping'} intent="outline" muted={isTestingPing} size="sm" onPress={testPing} />
+        <KolamButton disabled={isLoading || isWebhookActionLocked} label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
+        <KolamButton disabled={isWebhookActionLocked} label={isTestingPing ? 'Testing...' : 'Test Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
         <KolamButton
           accessibilityLabel="AM Webhook Register"
+          disabled={isWebhookActionLocked}
           label="Register Webhook"
           intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
+          muted={isWebhookActionLocked}
           size="sm"
           onPress={isWebhookFormOpen && !editingConfigId ? resetWebhookForm : openCreateWebhookForm}
         />
@@ -5265,6 +5268,7 @@ function AmWebhooksPage() {
               <KolamInteractionFrame
                 key={event}
                 accessibilityLabel={`AM Webhook Event ${event}`}
+                disabled={isWebhookActionLocked}
                 onPress={() => toggleWebhookEvent(event)}
                 style={[styles.eventChip, selectedEvents.includes(event) && styles.eventChipSelected]}>
                 <Text style={[styles.segmentText, selectedEvents.includes(event) && styles.segmentTextActive]}>{event}</Text>
@@ -5274,14 +5278,14 @@ function AmWebhooksPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Webhook Save"
-              disabled={isSubmitting}
+              disabled={isWebhookActionLocked}
               intent="warning"
               label={isSubmitting ? 'Saving...' : editingConfigId ? 'Save Webhook' : 'Register'}
-              muted={isSubmitting}
+              muted={isWebhookActionLocked}
               size="sm"
               onPress={saveWebhook}
             />
-            <KolamButton label={editingConfigId ? 'Cancel Edit' : 'Cancel'} intent="outline" size="sm" onPress={resetWebhookForm} />
+            <KolamButton disabled={isWebhookActionLocked} label={editingConfigId ? 'Cancel Edit' : 'Cancel'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={resetWebhookForm} />
           </View>
         </View>
       ) : null}
@@ -5300,22 +5304,22 @@ function AmWebhooksPage() {
               </Text>
               <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
               <View style={styles.inlineActions}>
-                <KolamButton accessibilityLabel={`AM Webhook Edit ${config._id}`} label="Edit" intent="outline" size="sm" onPress={() => editWebhook(config)} />
+                <KolamButton accessibilityLabel={`AM Webhook Edit ${config._id}`} disabled={isWebhookActionLocked} label="Edit" intent="outline" muted={isWebhookActionLocked} size="sm" onPress={() => editWebhook(config)} />
                 <KolamButton
                   accessibilityLabel={`AM Webhook Toggle ${config._id}`}
-                  disabled={actingConfigId === config._id}
+                  disabled={isWebhookActionLocked}
                   label={actingConfigId === config._id ? '...' : config.status === 'active' ? 'Deactivate' : 'Activate'}
                   intent="warning"
-                  muted={actingConfigId === config._id}
+                  muted={isWebhookActionLocked}
                   size="sm"
                   onPress={() => toggleWebhookStatus(config)}
                 />
                 <KolamButton
                   accessibilityLabel={`AM Webhook Delete ${config._id}`}
-                  disabled={actingConfigId === config._id}
+                  disabled={isWebhookActionLocked}
                   label={actingConfigId === config._id ? '...' : 'Delete'}
                   intent="danger"
-                  muted={actingConfigId === config._id}
+                  muted={isWebhookActionLocked}
                   size="sm"
                   onPress={() => deleteWebhook(config)}
                 />
