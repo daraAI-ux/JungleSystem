@@ -4643,7 +4643,7 @@ function AmMutasiPage({
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Description</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi AM..." emptyText="No mutations found" />
         {mutasi.map(item => (

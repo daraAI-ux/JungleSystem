@@ -3777,8 +3777,9 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Outgoing');
     expect(joinedText).toMatch(/\+Rp\s*125\.000/);
     expect(joinedText).toMatch(/-Rp\s*50\.000/);
+    expect(text).toEqual(expect.arrayContaining(['Type', 'Account', 'Amount', 'Description', 'Device', 'Time']));
     expect(joinedText).toContain('Time');
-    expect(joinedText).toContain('Action');
+    expect(joinedText).not.toContain('Action');
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+100\s+of\s+120\s+items/);
     expect(joinedText).toContain('Page 1/2');
 
