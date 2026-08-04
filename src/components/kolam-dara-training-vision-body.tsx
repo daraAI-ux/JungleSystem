@@ -897,9 +897,9 @@ export function KolamDaraTrainingVisionBody({
               <>
                 <View style={styles.tableHead}>
                   <Text style={[styles.th, styles.colName]}>Produk</Text>
-                  <Text style={[styles.th, styles.colSku]}>SKU</Text>
                   <Text style={[styles.th, styles.colCount]}>Katalog</Text>
                   <Text style={[styles.th, styles.colCount]}>Training</Text>
+                  <Text style={[styles.th, styles.colReady]}>Status</Text>
                   <Text style={[styles.th, styles.colAction]} />
                 </View>
                 {productRows.map(row => (
@@ -907,15 +907,18 @@ export function KolamDaraTrainingVisionBody({
                     <Text style={[styles.tdStrong, styles.colName]}>
                       {row.displayName}
                     </Text>
-                    <Text style={[styles.tdMuted, styles.colSku]}>
-                      {row.sku || '—'}
-                    </Text>
                     <Text style={[styles.td, styles.colCount]}>
                       {row.catalogPhotoCount}
                     </Text>
                     <Text style={[styles.td, styles.colCount]}>
                       {row.trainingCount}
                     </Text>
+                    <View style={styles.colReady}>
+                      <KolamStatusBadge
+                        intent={row.readyForIndex ? 'success' : 'muted'}
+                        label={row.readyForIndex ? 'Siap latih' : 'Kumpulkan'}
+                      />
+                    </View>
                     <View style={styles.colAction}>
                       <KolamButton
                         intent="secondary"

@@ -584,6 +584,45 @@ describe('KolamDaraTrainingSurface', () => {
     });
   });
 
+  it('matches Species columns on Produk YOLO (no SKU, has Status)', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=vision" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const produkLabel = tree!.root.find(
+      node =>
+        typeof node.children?.[0] === 'string' &&
+        node.children[0] === 'Produk',
+    );
+    let pressable = produkLabel.parent;
+    while (pressable && typeof pressable.props?.onPress !== 'function') {
+      pressable = pressable.parent;
+    }
+    expect(pressable).toBeTruthy();
+    await ReactTestRenderer.act(async () => {
+      pressable!.props.onPress();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Daftar produk');
+    expect(text).toContain('Katalog');
+    expect(text).toContain('Status');
+    expect(text).toContain('Siap latih');
+    expect(text).toContain('Kelola');
+    expect(text).toContain('Frog Soil');
+    expect(text).not.toContain('"children":["SKU"]');
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
   it('denies access without dara-training or chat view', async () => {
     authMock.mockReturnValue({
       authUser: {roleKey: 'cashier', permissions: []},
