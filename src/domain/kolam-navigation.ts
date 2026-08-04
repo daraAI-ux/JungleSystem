@@ -503,7 +503,8 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Pajak Keuangan',
         route: '/finance/tax',
-        description: 'Rute laporan pajak keuangan dari Kolam live',
+        description:
+          'Estimasi compliance per periode. Bukan pelaporan otomatis ke DJP.',
         group: 'Payroll & Tax',
         requiredAccess: ['kolam'],
       },

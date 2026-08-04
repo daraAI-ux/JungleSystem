@@ -5,8 +5,13 @@ import {
   normalizeKolamBonusList,
 } from '../src/domain/kolam-bonus';
 import {
+  buildKolamDaraTaxRoute,
+  getKolamDaraTaxTab,
   getKolamFinanceTaxSurfaceMode,
   isKolamFinanceTaxRoute,
+  KOLAM_DARA_TAX_DEFAULT_PERIOD,
+  KOLAM_DARA_TAX_TABS,
+  resolveKolamDaraTaxAccess,
 } from '../src/domain/kolam-finance-tax';
 import {
   buildKolamPayrollPeriodRoute,
@@ -121,5 +126,48 @@ describe('kolam finance tax domain', () => {
     expect(getKolamFinanceTaxSurfaceMode('/finance/settings/tax-profile')).toBe(
       'tax-profile',
     );
+  });
+
+  it('resolves FE tabs, period default, and ?tab= routes', () => {
+    expect(KOLAM_DARA_TAX_TABS.map(tab => tab.id)).toEqual([
+      'ringkasan',
+      'operasional',
+      'regulasi',
+      'laporan',
+      'pelunasan',
+    ]);
+    expect(KOLAM_DARA_TAX_TABS.find(tab => tab.id === 'pelunasan')?.label).toBe(
+      'Setoran',
+    );
+    expect(KOLAM_DARA_TAX_DEFAULT_PERIOD).toBe('month');
+    expect(getKolamDaraTaxTab('/finance/tax')).toBe('ringkasan');
+    expect(getKolamDaraTaxTab('/finance/tax?tab=operasional')).toBe(
+      'operasional',
+    );
+    expect(getKolamDaraTaxTab('/finance/tax?tab=nope')).toBe('ringkasan');
+    expect(buildKolamDaraTaxRoute('ringkasan')).toBe('/finance/tax');
+    expect(buildKolamDaraTaxRoute('pelunasan')).toBe(
+      '/finance/tax?tab=pelunasan',
+    );
+  });
+
+  it('resolves tax access like FE tax:view + admin/owner', () => {
+    expect(
+      resolveKolamDaraTaxAccess({roleKey: 'cashier', permissions: []}).canSee,
+    ).toBe(false);
+    expect(resolveKolamDaraTaxAccess({roleKey: 'admin'}).canSee).toBe(true);
+    expect(resolveKolamDaraTaxAccess({roleKey: 'owner'}).canSee).toBe(true);
+    expect(
+      resolveKolamDaraTaxAccess({
+        roleKey: 'finance',
+        permissions: [{resource: 'tax', actions: ['view']}],
+      }).canSee,
+    ).toBe(true);
+    expect(
+      resolveKolamDaraTaxAccess({
+        roleKey: 'finance',
+        permissions: [{resource: 'tax', actions: ['draft']}],
+      }).canDraft,
+    ).toBe(true);
   });
 });

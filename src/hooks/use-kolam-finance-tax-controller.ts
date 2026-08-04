@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {
   getKolamFinanceTaxSurfaceMode,
+  KOLAM_DARA_TAX_DEFAULT_PERIOD,
   KOLAM_FINANCE_TAX_PROFILE_ROUTE,
+  type KolamDaraTaxPeriod,
 } from '../domain/kolam-finance-tax';
-import { ApiError } from '../lib/api-error';
+import {ApiError} from '../lib/api-error';
+import {getKolamWebSetting} from '../services/kolam-api';
 import {
   getKolamTaxCompanyProfile,
   type KolamTaxCompanyProfile,
@@ -14,6 +17,10 @@ export interface KolamFinanceTaxController {
   profile: KolamTaxCompanyProfile | null;
   loading: boolean;
   error: string;
+  /** FE `daraTaxEnabled !== false` — default on when unset. */
+  taxEnabled: boolean;
+  period: KolamDaraTaxPeriod;
+  onSetPeriod: (period: KolamDaraTaxPeriod) => void;
   onRefresh: () => Promise<void>;
 }
 
@@ -24,26 +31,35 @@ export function useKolamFinanceTaxController(
   const [profile, setProfile] = useState<KolamTaxCompanyProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [taxEnabled, setTaxEnabled] = useState(true);
+  const [period, setPeriod] = useState<KolamDaraTaxPeriod>(
+    KOLAM_DARA_TAX_DEFAULT_PERIOD,
+  );
 
   const refresh = useCallback(async () => {
-    if (mode !== 'tax-profile') {
-      setProfile(null);
-      setError('');
-      return;
-    }
     setLoading(true);
     setError('');
     try {
+      if (mode === 'dashboard') {
+        const setting = await getKolamWebSetting();
+        setTaxEnabled(setting.daraTaxEnabled !== false);
+        setProfile(null);
+        return;
+      }
       const nextProfile = await getKolamTaxCompanyProfile();
       setProfile(nextProfile);
     } catch (err) {
-      setProfile(null);
+      if (mode === 'tax-profile') {
+        setProfile(null);
+      }
       setError(
         err instanceof ApiError
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Gagal memuat profil pajak',
+            : mode === 'dashboard'
+              ? 'Gagal memuat status DARA Tax'
+              : 'Gagal memuat profil pajak',
       );
     } finally {
       setLoading(false);
@@ -59,8 +75,11 @@ export function useKolamFinanceTaxController(
     profile,
     loading,
     error,
+    taxEnabled,
+    period,
+    onSetPeriod: setPeriod,
     onRefresh: refresh,
   };
 }
 
-export { KOLAM_FINANCE_TAX_PROFILE_ROUTE };
+export {KOLAM_FINANCE_TAX_PROFILE_ROUTE};
