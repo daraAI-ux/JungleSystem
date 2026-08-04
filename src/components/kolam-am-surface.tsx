@@ -260,7 +260,10 @@ export function KolamAmSurface({
   }, [pageViewPath]);
 
   return (
-    <ScrollView contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.surfaceScroll}
+      contentContainerStyle={styles.pageContent}
+      showsVerticalScrollIndicator={false}>
       {activeRoute === 'dashboard' ? (
         <AmDashboardPage
           dashboard={dataset.am.dashboard}
@@ -688,10 +691,12 @@ function AmRecentMutasiPanel({
           onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
           style={styles.deviceRow}>
           <View style={styles.rowMain}>
-            <Text style={styles.rowTitle}>{item.type === 'masuk' ? 'In' : 'Out'} - {formatBankAccount(item.accountId)}</Text>
-            <Text style={styles.rowMeta}>{item.description || formatDeviceRef(item.deviceId)} - {formatAmDate(item.detectedAt)}</Text>
+            <Text style={styles.rowTitle} numberOfLines={1}>{item.type === 'masuk' ? 'In' : 'Out'} - {formatBankAccount(item.accountId)}</Text>
+            <Text style={styles.rowMeta} numberOfLines={2}>{item.description || formatDeviceRef(item.deviceId)} - {formatAmDate(item.detectedAt)}</Text>
           </View>
-          <Text style={[styles.amountText, styles.rowAmountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}>
+          <Text
+            style={[styles.amountText, styles.rowAmountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
+            numberOfLines={1}>
             {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
           </Text>
         </KolamInteractionFrame>
@@ -6763,6 +6768,10 @@ function titleCase(value: string) {
 }
 
 const styles = StyleSheet.create({
+  surfaceScroll: {
+    width: '100%',
+    alignSelf: 'stretch',
+  },
   pageContent: {
     width: '100%',
     paddingTop: DASHBOARD_LAYOUT_VISUAL.page.gapY,
@@ -6817,6 +6826,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexGrow: 1,
     flexBasis: 0,
+    minWidth: 0,
     gap: 12,
     borderWidth: 1,
     borderColor: V.colors.border,
