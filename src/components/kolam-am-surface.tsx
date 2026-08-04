@@ -646,7 +646,7 @@ function AmRecentTransfersPanel({
           accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
           onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
           style={styles.deviceRow}>
-          <View>
+          <View style={styles.rowMain}>
             <Text style={styles.rowTitle}>{transfer.recipientName || transfer.recipientAccount}</Text>
             <Text style={styles.rowMeta}>{formatBankAccount(transfer.accountId)} - {formatAmDate(transfer.createdAt)}</Text>
           </View>
@@ -692,11 +692,11 @@ function AmRecentMutasiPanel({
           accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
           onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
           style={styles.deviceRow}>
-          <View>
+          <View style={styles.rowMain}>
             <Text style={styles.rowTitle}>{item.type === 'masuk' ? 'In' : 'Out'} - {formatBankAccount(item.accountId)}</Text>
             <Text style={styles.rowMeta}>{item.description || formatDeviceRef(item.deviceId)} - {formatAmDate(item.detectedAt)}</Text>
           </View>
-          <Text style={[styles.amountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}>
+          <Text style={[styles.amountText, styles.rowAmountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}>
             {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
           </Text>
         </KolamInteractionFrame>
@@ -7104,11 +7104,7 @@ function titleCase(value: string) {
 const styles = StyleSheet.create({
   pageContent: {
     width: '100%',
-    maxWidth: DASHBOARD_LAYOUT_VISUAL.page.maxWidthPx,
-    alignSelf: 'center',
-    paddingHorizontal: DASHBOARD_LAYOUT_VISUAL.page.paddingX,
-    paddingTop: DASHBOARD_LAYOUT_VISUAL.page.paddingTop,
-    paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
+    paddingTop: DASHBOARD_LAYOUT_VISUAL.page.gapY,
   },
   pageStack: {
     width: '100%',
@@ -7184,6 +7180,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   panelTitle: {
+    flexShrink: 1,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 16,
@@ -7223,6 +7220,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   deviceRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -7231,6 +7229,10 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     paddingTop: 10,
   },
+  rowMain: {
+    flex: 1,
+    minWidth: 0,
+  },
   rowTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -7238,11 +7240,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   rowMeta: {
+    flexShrink: 1,
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
   rowActions: {
+    flexShrink: 0,
     alignItems: 'flex-end',
     gap: 5,
   },
@@ -7288,10 +7292,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   amountText: {
+    flexShrink: 0,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '900',
+  },
+  rowAmountText: {
+    maxWidth: 120,
+    textAlign: 'right',
   },
   amountPositive: {
     color: V.colors.success,

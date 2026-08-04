@@ -449,20 +449,21 @@ describe('KolamAmSurface', () => {
         'Administration',
       ]),
     );
-    const dashboardLayout = getDashboardLayoutVisualContract();
     const amScroll = renderer!.root
       .findAllByType(ScrollView)
       .find(scroll => !scroll.props.horizontal);
-    expect(StyleSheet.flatten(amScroll?.props.contentContainerStyle)).toEqual(
+    const amScrollContentStyle = StyleSheet.flatten(
+      amScroll?.props.contentContainerStyle,
+    );
+    expect(amScrollContentStyle).toEqual(
       expect.objectContaining({
         width: '100%',
-        maxWidth: dashboardLayout.page.maxWidthPx,
-        alignSelf: 'center',
-        paddingHorizontal: dashboardLayout.page.paddingX,
-        paddingTop: dashboardLayout.page.paddingTop,
-        paddingBottom: dashboardLayout.page.paddingBottom,
+        paddingTop: getDashboardLayoutVisualContract().page.gapY,
       }),
     );
+    expect(amScrollContentStyle?.maxWidth).toBeUndefined();
+    expect(amScrollContentStyle?.alignSelf).toBeUndefined();
+    expect(amScrollContentStyle?.paddingHorizontal).toBeUndefined();
     const legacyFrame = renderer!.root
       .findAllByType(View)
       .find(view => {
