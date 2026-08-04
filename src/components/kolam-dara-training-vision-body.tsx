@@ -1038,7 +1038,7 @@ export function KolamDaraTrainingVisionBody({
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <View style={styles.headCopy}>
-              <Text style={styles.sectionTitle}>Eval holdout (Fase 7)</Text>
+              <Text style={styles.sectionTitle}>Eval holdout</Text>
               <Text style={styles.meta}>
                 Uji akurasi tanpa bocor train: SigLIP pada foto training
                 holdout (~20%), YOLO species/produk pada valid-set export.
