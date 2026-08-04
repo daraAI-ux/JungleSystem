@@ -103,6 +103,13 @@ export type KolamDaraTrainingVisionClipJob = {
   status: string;
   kind: string;
   error: string;
+  startedAt: string;
+  finishedAt: string;
+};
+
+export type KolamDaraTrainingVisionClipIndexJobView = {
+  job: KolamDaraTrainingVisionClipJob | null;
+  log: string[];
 };
 
 export type KolamDaraTrainingVisionStats = {
@@ -326,6 +333,8 @@ export function normalizeKolamDaraTrainingVisionStats(
           status: String(job.status || '').trim(),
           kind: String(job.kind || '').trim(),
           error: String(job.error || '').trim(),
+          startedAt: String(job.startedAt || '').trim(),
+          finishedAt: String(job.finishedAt || '').trim(),
         }
       : null,
     hardNegativeCount: asNumber(data.hardNegativeCount),
@@ -652,6 +661,26 @@ export function normalizeKolamDaraTrainingVisionActionResult(
   return {
     success: root.success !== false,
     message: String(root.message || '').trim(),
+  };
+}
+
+export function normalizeKolamDaraTrainingVisionClipIndexJobView(
+  payload: unknown,
+): KolamDaraTrainingVisionClipIndexJobView {
+  const data = unwrapDataRecord(payload);
+  const job = asRecord(data.job);
+  const logRaw = Array.isArray(data.log) ? data.log : [];
+  return {
+    job: Object.keys(job).length
+      ? {
+          status: String(job.status || '').trim(),
+          kind: String(job.kind || '').trim(),
+          error: String(job.error || '').trim(),
+          startedAt: String(job.startedAt || '').trim(),
+          finishedAt: String(job.finishedAt || '').trim(),
+        }
+      : null,
+    log: logRaw.map(line => String(line ?? '').trimEnd()).filter(Boolean),
   };
 }
 

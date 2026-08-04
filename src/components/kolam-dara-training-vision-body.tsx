@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Modal,
   Pressable,
@@ -42,6 +42,7 @@ import {
   exportKolamDaraTrainingVisionYolo,
   exportKolamDaraTrainingVisionYoloProducts,
   fetchKolamDaraTrainingVisionBaselineKpi,
+  fetchKolamDaraTrainingVisionClipIndexJob,
   fetchKolamDaraTrainingVisionLatestEvalRun,
   fetchKolamDaraTrainingVisionStats,
   importKolamDaraTrainingVisionFeedback,
@@ -263,6 +264,8 @@ export function KolamDaraTrainingVisionBody({
   const [negKey, setNegKey] = useState('');
   const [negType, setNegType] = useState('lainnya');
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [clipLogLines, setClipLogLines] = useState<string[]>([]);
+  const clipJobWasRunningRef = useRef(false);
 
   const clipJob = stats?.clipIndexJob;
   const clipJobRunning = clipJob?.status === 'running';
@@ -342,6 +345,53 @@ export function KolamDaraTrainingVisionBody({
       setNegType(stats.negativeTypes[0]?.id ?? 'lainnya');
     }
   }, [stats?.negativeTypes, negType]);
+
+  useEffect(() => {
+    if (section !== 'ringkasan') {
+      return;
+    }
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const view = await fetchKolamDaraTrainingVisionClipIndexJob(100);
+        if (cancelled) {
+          return;
+        }
+        setClipLogLines(view.log);
+        const status = view.job?.status || '';
+        if (status === 'running') {
+          clipJobWasRunningRef.current = true;
+          setStats(prev =>
+            prev
+              ? {
+                  ...prev,
+                  clipIndexJob: view.job,
+                }
+              : prev,
+          );
+        } else if (clipJobWasRunningRef.current) {
+          clipJobWasRunningRef.current = false;
+          void load();
+        }
+      } catch {
+        // keep last log lines
+      }
+    };
+    void tick();
+    const shouldPoll = clipJobRunning || busy === 'rebuild';
+    if (!shouldPoll) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    const id = setInterval(() => {
+      void tick();
+    }, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [busy, clipJobRunning, load, section]);
 
   const runBusy = async (key: string, fn: () => Promise<void>) => {
     setBusy(key);
@@ -489,7 +539,24 @@ export function KolamDaraTrainingVisionBody({
       const r = await rebuildKolamDaraTrainingVisionClipIndex({
         includeProducts,
       });
-      setNotice(r.message || (r.success ? 'Rebuild selesai' : 'Rebuild gagal'));
+      setNotice(
+        r.message ||
+          (r.success
+            ? 'Rebuild dimulai — lihat Console log'
+            : 'Rebuild gagal'),
+      );
+      clipJobWasRunningRef.current = true;
+      try {
+        const view = await fetchKolamDaraTrainingVisionClipIndexJob(100);
+        setClipLogLines(view.log);
+        if (view.job) {
+          setStats(prev =>
+            prev ? {...prev, clipIndexJob: view.job} : prev,
+          );
+        }
+      } catch {
+        // ignore
+      }
       await load();
     });
 
@@ -730,6 +797,30 @@ export function KolamDaraTrainingVisionBody({
             {clipJob?.status === 'failed' && clipJob.error ? (
               <Text style={styles.notice}>{clipJob.error}</Text>
             ) : null}
+
+            <View style={styles.console}>
+              <View style={styles.consoleHead}>
+                <View
+                  style={[
+                    styles.consoleDot,
+                    clipJobRunning ? styles.consoleDotOn : null,
+                  ]}
+                />
+                <Text style={styles.consoleTitle}>
+                  Console log
+                  {clipJobRunning ? ' · berjalan' : ''}
+                </Text>
+              </View>
+              <ScrollView
+                nestedScrollEnabled
+                style={styles.consoleScroll}>
+                <Text style={styles.consoleBody}>
+                  {clipLogLines.length
+                    ? clipLogLines.join('\n')
+                    : '// Log muncul saat rebuild / backfill berjalan'}
+                </Text>
+              </ScrollView>
+            </View>
           </View>
         </>
       ) : null}
@@ -2091,5 +2182,43 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 14,
     fontWeight: '700',
+  },
+  console: {
+    backgroundColor: '#0b1220',
+    borderColor: '#1f2937',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    marginTop: 4,
+    padding: 12,
+  },
+  consoleHead: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  consoleDot: {
+    backgroundColor: '#4b5563',
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  consoleDotOn: {
+    backgroundColor: '#4ade80',
+  },
+  consoleTitle: {
+    color: '#d1d5db',
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  consoleScroll: {
+    maxHeight: 180,
+  },
+  consoleBody: {
+    color: '#4ade80',
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    lineHeight: 16,
   },
 });

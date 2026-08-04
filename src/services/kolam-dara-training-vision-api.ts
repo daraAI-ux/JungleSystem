@@ -3,6 +3,7 @@ import {getKolamFileUrl} from '../lib/file-url';
 import {
   normalizeKolamDaraTrainingVisionActionResult,
   normalizeKolamDaraTrainingVisionBaselineKpi,
+  normalizeKolamDaraTrainingVisionClipIndexJobView,
   normalizeKolamDaraTrainingVisionEvalRun,
   normalizeKolamDaraTrainingVisionEvalRunList,
   normalizeKolamDaraTrainingVisionFeedbackList,
@@ -15,6 +16,7 @@ import {
   normalizeKolamDaraTrainingVisionStats,
   type KolamDaraTrainingVisionActionResult,
   type KolamDaraTrainingVisionBaselineKpi,
+  type KolamDaraTrainingVisionClipIndexJobView,
   type KolamDaraTrainingVisionEvalRun,
   type KolamDaraTrainingVisionFeedbackKind,
   type KolamDaraTrainingVisionFeedbackList,
@@ -225,6 +227,17 @@ export async function rebuildKolamDaraTrainingVisionClipIndex(opts?: {
     },
   );
   return normalizeKolamDaraTrainingVisionActionResult(payload);
+}
+
+/** GET /dara-training/vision/clip-index-job */
+export async function fetchKolamDaraTrainingVisionClipIndexJob(
+  lines = 80,
+): Promise<KolamDaraTrainingVisionClipIndexJobView> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/vision/clip-index-job',
+    {query: {lines}},
+  );
+  return normalizeKolamDaraTrainingVisionClipIndexJobView(payload);
 }
 
 /** POST /dara-training/vision/backfill-clip */

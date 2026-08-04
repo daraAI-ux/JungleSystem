@@ -4,6 +4,7 @@ import {
   KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
   normalizeKolamDaraTrainingVisionBaselineKpi,
+  normalizeKolamDaraTrainingVisionClipIndexJobView,
   normalizeKolamDaraTrainingVisionFeedbackList,
   normalizeKolamDaraTrainingVisionProductList,
   normalizeKolamDaraTrainingVisionSpeciesList,
@@ -186,6 +187,20 @@ describe('kolam-dara-training-vision domain', () => {
       {method: 'yolo', count: 1},
     ]);
     expect(kpi).not.toHaveProperty('inboxTotalHandled');
+  });
+
+  it('normalizes clip-index job log tail for console UI', () => {
+    const view = normalizeKolamDaraTrainingVisionClipIndexJobView({
+      data: {
+        job: {status: 'running', kind: 'rebuild', startedAt: '2026-08-05T00:00:00Z'},
+        log: ['--- rebuild start', '[dara-vision] indexed=50'],
+      },
+    });
+    expect(view.job?.status).toBe('running');
+    expect(view.log).toEqual([
+      '--- rebuild start',
+      '[dara-vision] indexed=50',
+    ]);
   });
 });
 

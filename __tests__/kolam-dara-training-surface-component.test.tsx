@@ -48,6 +48,7 @@ jest.mock('../src/services/kolam-dara-training-vision-api', () => ({
   fetchKolamDaraTrainingVisionLatestEvalRun: jest.fn(),
   listKolamDaraTrainingVisionEvalRuns: jest.fn(),
   fetchKolamDaraTrainingVisionBaselineKpi: jest.fn(),
+  fetchKolamDaraTrainingVisionClipIndexJob: jest.fn(),
   resolveKolamDaraTrainingVisionImageUri: jest.fn((uri: string) => uri || null),
   rebuildKolamDaraTrainingVisionClipIndex: jest.fn(),
   backfillKolamDaraTrainingVisionClip: jest.fn(),
@@ -77,6 +78,7 @@ import {
   listKolamDaraTrainingVisionProducts,
   listKolamDaraTrainingVisionSpecies,
   fetchKolamDaraTrainingVisionBaselineKpi,
+  fetchKolamDaraTrainingVisionClipIndexJob,
   fetchKolamDaraTrainingVisionLatestEvalRun,
   listKolamDaraTrainingVisionEvalRuns,
 } from '../src/services/kolam-dara-training-vision-api';
@@ -149,6 +151,10 @@ const visionEvalRunsMock =
 const visionBaselineMock =
   fetchKolamDaraTrainingVisionBaselineKpi as jest.MockedFunction<
     typeof fetchKolamDaraTrainingVisionBaselineKpi
+  >;
+const visionClipJobMock =
+  fetchKolamDaraTrainingVisionClipIndexJob as jest.MockedFunction<
+    typeof fetchKolamDaraTrainingVisionClipIndexJob
   >;
 const visionProductPhotosMock =
   listKolamDaraTrainingVisionProductPhotos as jest.MockedFunction<
@@ -415,6 +421,7 @@ describe('KolamDaraTrainingSurface', () => {
     visionLatestEvalMock.mockResolvedValue(null);
     visionEvalRunsMock.mockResolvedValue([]);
     visionBaselineMock.mockResolvedValue(null);
+    visionClipJobMock.mockResolvedValue({job: null, log: []});
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -568,6 +575,7 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Status pipeline');
     expect(text).toContain('Indeks visual katalog');
     expect(text).toContain('Baris indeks');
+    expect(text).toContain('Console log');
     expect(text).toContain('Closed-world');
     expect(visionStatsMock).toHaveBeenCalled();
     expect(visionFeedbackMock).toHaveBeenCalled();
