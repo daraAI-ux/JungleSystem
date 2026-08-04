@@ -175,3 +175,245 @@ export function resolveKolamDaraMarketIntelAccess(input: {
     isPurchasing,
   };
 }
+
+export type KolamDaraMarketIntelStatus = {
+  enabled: boolean;
+  canView: boolean;
+  canViewMargin: boolean;
+  canDraft: boolean;
+  canApprove: boolean;
+  disclaimer: string;
+};
+
+export type KolamDaraMarketIntelBrand = {
+  id: string;
+  name: string;
+  productCount: number;
+  monitoringActive: boolean;
+};
+
+export type KolamDaraMarketIntelPriceRow = {
+  productId: string;
+  name: string;
+  sellPrice: number;
+  idealPrice: number;
+  marginPercent: number | null;
+  extraProfitPotential: number | null;
+};
+
+export type KolamDaraMarketIntelLowMarginRow = {
+  productId: string;
+  name: string;
+  marginPercent: number;
+};
+
+export type KolamDaraMarketIntelSupplierLeader = {
+  productId: string;
+  productName: string;
+  bestSupplier: string;
+  cheapest: string;
+  score: number;
+};
+
+export type KolamDaraMarketIntelTaxPolicy = {
+  ppnRate: number;
+  pricesIncludeTax: boolean;
+  source: string;
+  taxDisclaimer: string;
+};
+
+export type KolamDaraMarketIntelDashboard = {
+  pendingApprovals: number;
+  tooCheap: KolamDaraMarketIntelPriceRow[];
+  tooExpensive: KolamDaraMarketIntelPriceRow[];
+  lowMargin: KolamDaraMarketIntelLowMarginRow[];
+  supplierLeaders: KolamDaraMarketIntelSupplierLeader[];
+  totals: {
+    extraProfitPotential: number | null;
+    purchaseSavingsPotential: number;
+  };
+  taxPolicy: KolamDaraMarketIntelTaxPolicy | null;
+};
+
+export function normalizeKolamDaraMarketIntelStatus(
+  payload: unknown,
+): KolamDaraMarketIntelStatus {
+  const data = unwrapDataRecord(payload);
+  return {
+    enabled: data.enabled !== false,
+    canView: data.canView === true,
+    canViewMargin: data.canViewMargin === true,
+    canDraft: data.canDraft === true,
+    canApprove: data.canApprove === true,
+    disclaimer: String(data.disclaimer || '').trim(),
+  };
+}
+
+export function normalizeKolamDaraMarketIntelBrands(payload: unknown): {
+  brands: KolamDaraMarketIntelBrand[];
+  defaultBrandId: string;
+} {
+  const data = unwrapDataRecord(payload);
+  const brands = Array.isArray(data.brands)
+    ? data.brands
+        .map(item => {
+          const row = asRecord(item);
+          const id = String(row._id || row.id || '').trim();
+          if (!id) {
+            return null;
+          }
+          return {
+            id,
+            name:
+              typeof row.name === 'string' && row.name.trim()
+                ? row.name.trim()
+                : id,
+            productCount: toFiniteNumber(row.productCount),
+            monitoringActive: row.monitoringActive === true,
+          } satisfies KolamDaraMarketIntelBrand;
+        })
+        .filter((item): item is KolamDaraMarketIntelBrand => item != null)
+    : [];
+  return {
+    brands,
+    defaultBrandId:
+      typeof data.defaultBrandId === 'string' && data.defaultBrandId.trim()
+        ? data.defaultBrandId.trim()
+        : 'all',
+  };
+}
+
+export function normalizeKolamDaraMarketIntelDashboard(
+  payload: unknown,
+): KolamDaraMarketIntelDashboard | null {
+  const data = unwrapDataRecord(payload);
+  if (!Object.keys(data).length) {
+    return null;
+  }
+  const totals = asRecord(data.totals);
+  const taxRaw = data.taxPolicy;
+  const tax =
+    taxRaw != null && typeof taxRaw === 'object' && !Array.isArray(taxRaw)
+      ? asRecord(taxRaw)
+      : null;
+
+  return {
+    pendingApprovals: toFiniteNumber(data.pendingApprovals),
+    tooCheap: normalizePriceRows(data.tooCheap),
+    tooExpensive: normalizePriceRows(data.tooExpensive),
+    lowMargin: normalizeLowMarginRows(data.lowMargin),
+    supplierLeaders: normalizeSupplierLeaders(data.supplierLeaders),
+    totals: {
+      extraProfitPotential:
+        totals.extraProfitPotential == null ||
+        totals.extraProfitPotential === ''
+          ? null
+          : toFiniteNumber(totals.extraProfitPotential),
+      purchaseSavingsPotential: toFiniteNumber(
+        totals.purchaseSavingsPotential,
+      ),
+    },
+    taxPolicy: tax
+      ? {
+          ppnRate: toFiniteNumber(tax.ppnRate),
+          pricesIncludeTax: tax.pricesIncludeTax === true,
+          source: String(tax.source || '').trim(),
+          taxDisclaimer: String(tax.taxDisclaimer || '').trim(),
+        }
+      : null,
+  };
+}
+
+function normalizePriceRows(value: unknown): KolamDaraMarketIntelPriceRow[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const row = asRecord(item);
+      const productId = String(row.productId || row._id || '').trim();
+      if (!productId) {
+        return null;
+      }
+      return {
+        productId,
+        name: String(row.name || '').trim() || productId,
+        sellPrice: toFiniteNumber(row.sellPrice),
+        idealPrice: toFiniteNumber(row.idealPrice),
+        marginPercent:
+          row.marginPercent == null || row.marginPercent === ''
+            ? null
+            : toFiniteNumber(row.marginPercent),
+        extraProfitPotential:
+          row.extraProfitPotential == null || row.extraProfitPotential === ''
+            ? null
+            : toFiniteNumber(row.extraProfitPotential),
+      } satisfies KolamDaraMarketIntelPriceRow;
+    })
+    .filter((item): item is KolamDaraMarketIntelPriceRow => item != null);
+}
+
+function normalizeLowMarginRows(
+  value: unknown,
+): KolamDaraMarketIntelLowMarginRow[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const row = asRecord(item);
+      const productId = String(row.productId || row._id || '').trim();
+      if (!productId) {
+        return null;
+      }
+      return {
+        productId,
+        name: String(row.name || '').trim() || productId,
+        marginPercent: toFiniteNumber(row.marginPercent),
+      } satisfies KolamDaraMarketIntelLowMarginRow;
+    })
+    .filter((item): item is KolamDaraMarketIntelLowMarginRow => item != null);
+}
+
+function normalizeSupplierLeaders(
+  value: unknown,
+): KolamDaraMarketIntelSupplierLeader[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const row = asRecord(item);
+      const productId = String(row.productId || row._id || '').trim();
+      if (!productId) {
+        return null;
+      }
+      return {
+        productId,
+        productName: String(row.productName || row.name || '').trim() || productId,
+        bestSupplier: String(row.bestSupplier || '').trim() || '—',
+        cheapest: String(row.cheapest || '').trim() || '—',
+        score: toFiniteNumber(row.score),
+      } satisfies KolamDaraMarketIntelSupplierLeader;
+    })
+    .filter((item): item is KolamDaraMarketIntelSupplierLeader => item != null);
+}
+
+function unwrapDataRecord(payload: unknown): Record<string, unknown> {
+  const root = asRecord(payload);
+  if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+    return asRecord(root.data);
+  }
+  return root;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function toFiniteNumber(value: unknown) {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
