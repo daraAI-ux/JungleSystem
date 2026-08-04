@@ -1052,6 +1052,64 @@ describe('KolamAmSurface', () => {
     expect(getAmTasks).toHaveBeenCalledTimes(3);
   });
 
+  it('disables task action buttons while the task request is pending', async () => {
+    jest.mocked(getAmTasks).mockResolvedValue({
+      data: [
+        {
+          _id: 'task-pending-action',
+          type: 'stock_sync',
+          status: 'pending',
+          priority: 1,
+          deviceId: {_id: 'device-1', name: 'Phone 1'},
+          serviceAccountId: {_id: 'service-1', label: 'Tokopedia Main'},
+          payload: {},
+          result: {},
+          error: '',
+          logs: [],
+          createdBy: null,
+          retryCount: 0,
+          maxRetries: 3,
+          startedAt: null,
+          completedAt: null,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    let resolveCancel: (value: unknown) => void = () => undefined;
+    jest.mocked(cancelAmTask).mockImplementationOnce(
+      () => new Promise(resolve => {
+        resolveCancel = resolve;
+      }) as ReturnType<typeof cancelAmTask>,
+    );
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'tasks');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Task Cancel task-pending-action'}).props.onPress();
+      await Promise.resolve();
+    });
+
+    const cancelButton = renderer!.root.findAllByType(KolamButton).find(
+      button => button.props.accessibilityLabel === 'AM Task Cancel task-pending-action',
+    );
+    expect(cancelButton?.props.disabled).toBe(true);
+    expect(cancelButton?.props.label).toBe('...');
+
+    await act(async () => {
+      resolveCancel({_id: 'task-pending-action'});
+      await Promise.resolve();
+    });
+  });
+
   it('keeps Tasks pagination in sync with AM live list metadata', async () => {
     jest.mocked(getAmTasks).mockResolvedValue({
       data: Array.from({length: 20}, (_, index) => ({

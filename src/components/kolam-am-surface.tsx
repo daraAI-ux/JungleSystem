@@ -1674,6 +1674,7 @@ function AmTaskActions({
         <KolamButton
           key={action.id}
           accessibilityLabel={`AM Task ${action.label} ${task._id}`}
+          disabled={disabled}
           intent={action.intent}
           label={disabled ? '...' : action.label}
           muted={disabled}
