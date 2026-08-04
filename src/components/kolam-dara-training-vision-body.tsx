@@ -510,8 +510,8 @@ export function KolamDaraTrainingVisionBody({
           <Text style={styles.metaStrong}>species</Text>, dan{' '}
           <Text style={styles.metaStrong}>produk sellable</Text> di katalog DA.
           Foto di luar katalog → abstain (tidak ditebak). OCR bukti bayar
-          diprioritaskan sebelum vision katalog. Kelola dataset & indeks di tab
-          di bawah.
+          diprioritaskan sebelum vision katalog. Kelola dataset & indeks di
+          Ringkasan.
         </Text>
       </View>
 
@@ -538,160 +538,174 @@ export function KolamDaraTrainingVisionBody({
 
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
-      {section === 'ringkasan' && stats ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Status pipeline</Text>
-          <View style={styles.pipelineColumns}>
-            <View style={styles.pipelineColumn}>
-              <PipelineField
-                label="Closed-world"
-                value={stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'}
-              />
-              <PipelineField
-                hint={stats.embedModelId.split('/').pop()}
-                label="Embed aktif"
-                value={stats.embedFamily || 'siglip'}
-              />
-              <PipelineField
-                label="Threshold min"
-                value={stats.embedMinScore ?? '—'}
-              />
-              <PipelineField
-                label="Indeks model OK"
-                value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
-              />
-              <PipelineField
-                hint={
-                  (stats.embedIndexStale ?? 0) > 0 ?
-                    'Jalankan rebuild dual'
-                  : undefined
-                }
-                label="Perlu rebuild"
-                value={stats.embedIndexStale ?? 0}
-              />
-              <PipelineField
-                hint={
-                  stats.detectCropBackend === 'sam' ?
-                    stats.detectCropModel.split('/').pop() || 'mobile_sam'
-                  : stats.detectCropModel.split('/').pop() || 'yolov8n'
-                }
-                label="Detect/crop"
-                value={stats.detectCropMode || 'auto'}
-              />
-              <PipelineField
-                hint={stats.ocrEngine || undefined}
-                label="OCR unified"
-                value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
-              />
+      {section === 'ringkasan' ? (
+        <>
+          {stats ? (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Status pipeline</Text>
+              <View style={styles.pipelineColumns}>
+                <View style={styles.pipelineColumn}>
+                  <PipelineField
+                    label="Closed-world"
+                    value={
+                      stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'
+                    }
+                  />
+                  <PipelineField
+                    hint={stats.embedModelId.split('/').pop()}
+                    label="Embed aktif"
+                    value={stats.embedFamily || 'siglip'}
+                  />
+                  <PipelineField
+                    label="Threshold min"
+                    value={stats.embedMinScore ?? '—'}
+                  />
+                  <PipelineField
+                    label="Indeks model OK"
+                    value={
+                      stats.embedIndexCurrentModel ?? stats.clipIndexClipCount
+                    }
+                  />
+                  <PipelineField
+                    hint={
+                      (stats.embedIndexStale ?? 0) > 0 ?
+                        'Jalankan rebuild dual'
+                      : undefined
+                    }
+                    label="Perlu rebuild"
+                    value={stats.embedIndexStale ?? 0}
+                  />
+                  <PipelineField
+                    hint={
+                      stats.detectCropBackend === 'sam' ?
+                        stats.detectCropModel.split('/').pop() || 'mobile_sam'
+                      : stats.detectCropModel.split('/').pop() || 'yolov8n'
+                    }
+                    label="Detect/crop"
+                    value={stats.detectCropMode || 'auto'}
+                  />
+                  <PipelineField
+                    hint={stats.ocrEngine || undefined}
+                    label="OCR unified"
+                    value={
+                      stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'
+                    }
+                  />
+                </View>
+                <View style={styles.pipelineColumn}>
+                  <PipelineField
+                    label="Foto training species"
+                    value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
+                  />
+                  <PipelineField
+                    label="Foto training produk"
+                    value={stats.productTrainingPhotos ?? 0}
+                  />
+                  <PipelineField
+                    label="YOLO species"
+                    value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
+                  />
+                  <PipelineField
+                    hint={
+                      stats.yoloProductClassCount ?
+                        `${stats.yoloProductClassCount} SKU`
+                      : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
+                    }
+                    label="YOLO produk"
+                    value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
+                  />
+                  <PipelineField
+                    hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
+                    label="Koreksi inbox"
+                    value={stats.feedbackTotal ?? 0}
+                  />
+                  <PipelineField
+                    label="Antrian feedback"
+                    value={stats.feedbackPending ?? 0}
+                  />
+                </View>
+              </View>
             </View>
-            <View style={styles.pipelineColumn}>
-              <PipelineField
-                label="Foto training species"
-                value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
-              />
-              <PipelineField
-                label="Foto training produk"
-                value={stats.productTrainingPhotos ?? 0}
-              />
-              <PipelineField
-                label="YOLO species"
-                value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
-              />
-              <PipelineField
-                hint={
-                  stats.yoloProductClassCount ?
-                    `${stats.yoloProductClassCount} SKU`
-                  : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
-                }
-                label="YOLO produk"
-                value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
-              />
-              <PipelineField
-                hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
-                label="Koreksi inbox"
-                value={stats.feedbackTotal ?? 0}
-              />
-              <PipelineField
-                label="Antrian feedback"
-                value={stats.feedbackPending ?? 0}
-              />
-            </View>
-          </View>
-        </View>
-      ) : null}
+          ) : null}
 
-      {section === 'indeks' ? (
-        <View style={styles.card}>
-          <View style={styles.cardHead}>
-            <View style={styles.headCopy}>
-              <Text style={styles.sectionTitle}>Indeks visual katalog</Text>
-              <Text style={styles.meta}>
-                Engine embed:{' '}
-                <Text style={styles.metaStrong}>
-                  {stats?.embedModelId.split('/').pop() || 'SigLIP'}
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <View style={styles.headCopy}>
+                <Text style={styles.sectionTitle}>Indeks visual katalog</Text>
+                <Text style={styles.meta}>
+                  Engine embed:{' '}
+                  <Text style={styles.metaStrong}>
+                    {stats?.embedModelId.split('/').pop() || 'SigLIP'}
+                  </Text>
+                  {stats?.embedIndexStale ?
+                    ` — ${stats.embedIndexStale} baris perlu rebuild (model lama)`
+                  : null}
+                  . Rebuild wajib setelah ganti model.
                 </Text>
-                {stats?.embedIndexStale ?
-                  ` — ${stats.embedIndexStale} baris perlu rebuild (model lama)`
-                : null}
-                . Rebuild wajib setelah ganti model.
-              </Text>
+              </View>
+              {canManage ? (
+                <View style={styles.headActions}>
+                  <KolamButton
+                    disabled={!!busy || clipJobRunning}
+                    intent="primary"
+                    label={
+                      busy === 'rebuild' ? 'Rebuild…' : 'Rebuild species + produk'
+                    }
+                    onPress={() => {
+                      void handleRebuildIndex(true);
+                    }}
+                    size="sm"
+                  />
+                  <KolamButton
+                    disabled={!!busy || clipJobRunning}
+                    intent="secondary"
+                    label={
+                      busy === 'rebuild' ? 'Rebuild…' : 'Rebuild species saja'
+                    }
+                    onPress={() => {
+                      void handleRebuildIndex(false);
+                    }}
+                    size="sm"
+                  />
+                  <KolamButton
+                    disabled={
+                      !!busy ||
+                      clipJobRunning ||
+                      !(stats?.clipIndexMissing ?? 0)
+                    }
+                    intent="secondary"
+                    label="Backfill embedding"
+                    onPress={() => {
+                      void runBusy('backfill', async () => {
+                        const r = await backfillKolamDaraTrainingVisionClip();
+                        setNotice(
+                          r.message ||
+                            (r.success ? 'Backfill selesai' : 'Backfill gagal'),
+                        );
+                        await load();
+                      });
+                    }}
+                    size="sm"
+                  />
+                </View>
+              ) : null}
             </View>
-            {canManage ? (
-              <View style={styles.headActions}>
-                <KolamButton
-                  disabled={!!busy || clipJobRunning}
-                  intent="primary"
-                  label={busy === 'rebuild' ? 'Rebuild…' : 'Rebuild species + produk'}
-                  onPress={() => {
-                    void handleRebuildIndex(true);
-                  }}
-                  size="sm"
+            {stats ? (
+              <View style={styles.statGrid}>
+                <StatBox label="Baris indeks" value={stats.clipIndexTotal ?? 0} />
+                <StatBox
+                  label="Embedding OK"
+                  value={stats.clipIndexClipCount ?? 0}
                 />
-                <KolamButton
-                  disabled={!!busy || clipJobRunning}
-                  intent="secondary"
-                  label={busy === 'rebuild' ? 'Rebuild…' : 'Rebuild species saja'}
-                  onPress={() => {
-                    void handleRebuildIndex(false);
-                  }}
-                  size="sm"
+                <StatBox
+                  label="Perlu backfill"
+                  value={stats.clipIndexMissing ?? 0}
                 />
-                <KolamButton
-                  disabled={
-                    !!busy || clipJobRunning || !(stats?.clipIndexMissing ?? 0)
-                  }
-                  intent="secondary"
-                  label="Backfill embedding"
-                  onPress={() => {
-                    void runBusy('backfill', async () => {
-                      const r = await backfillKolamDaraTrainingVisionClip();
-                      setNotice(
-                        r.message ||
-                          (r.success ? 'Backfill selesai' : 'Backfill gagal'),
-                      );
-                      await load();
-                    });
-                  }}
-                  size="sm"
-                />
+                <StatBox label="Job" value={clipJobLabel(clipJob)} />
               </View>
             ) : null}
           </View>
-          {stats ? (
-            <View style={styles.statGrid}>
-              <StatBox label="Baris indeks" value={stats.clipIndexTotal ?? 0} />
-              <StatBox
-                label="Embedding OK"
-                value={stats.clipIndexClipCount ?? 0}
-              />
-              <StatBox
-                label="Perlu backfill"
-                value={stats.clipIndexMissing ?? 0}
-              />
-              <StatBox label="Job" value={clipJobLabel(clipJob)} />
-            </View>
-          ) : null}
-        </View>
+        </>
       ) : null}
 
       {section === 'species' ? (

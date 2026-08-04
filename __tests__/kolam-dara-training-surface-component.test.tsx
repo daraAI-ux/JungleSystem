@@ -563,8 +563,11 @@ describe('KolamDaraTrainingSurface', () => {
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Vision inbox — closed-world');
     expect(text).toContain('Ringkasan');
+    expect(text).not.toContain('Indeks katalog');
     expect(text).toContain('Koreksi inbox');
     expect(text).toContain('Status pipeline');
+    expect(text).toContain('Indeks visual katalog');
+    expect(text).toContain('Baris indeks');
     expect(text).toContain('Closed-world');
     expect(visionStatsMock).toHaveBeenCalled();
     expect(visionFeedbackMock).toHaveBeenCalled();
