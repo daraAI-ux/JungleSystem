@@ -455,12 +455,24 @@ describe('KolamAmSurface', () => {
     expect(amRootStyle).toEqual(
       expect.objectContaining({
         width: '100%',
+        alignSelf: 'stretch',
+        marginHorizontal: -getDashboardLayoutVisualContract().page.paddingX,
         paddingTop: getDashboardLayoutVisualContract().page.gapY,
       }),
     );
     expect(amRootStyle?.maxWidth).toBeUndefined();
-    expect(amRootStyle?.alignSelf).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
+    const amRecentPanels = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.flexBasis === 420 && style?.borderWidth === 1;
+      });
+    expect(amRecentPanels.length).toBeGreaterThanOrEqual(2);
+    expect(amRecentPanels.every(view => {
+      const style = StyleSheet.flatten(view.props.style);
+      return style?.width === '100%';
+    })).toBe(true);
     const verticalAmScroll = renderer!.root
       .findAllByType(ScrollView)
       .find(scroll => !scroll.props.horizontal);

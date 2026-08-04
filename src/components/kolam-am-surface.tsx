@@ -6831,6 +6831,8 @@ function titleCase(value: string) {
 const styles = StyleSheet.create({
   pageContent: {
     width: '100%',
+    alignSelf: 'stretch',
+    marginHorizontal: -DASHBOARD_LAYOUT_VISUAL.page.paddingX,
     paddingTop: DASHBOARD_LAYOUT_VISUAL.page.gapY,
   },
   pageStack: {
@@ -6899,6 +6901,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dashboardRecentPanel: {
+    width: '100%',
     flexGrow: 1,
     flexBasis: 420,
     minWidth: 0,
@@ -7397,6 +7400,7 @@ const styles = StyleSheet.create({
   recentAmountCol: {
     width: 104,
     flexShrink: 0,
+    overflow: 'hidden',
     textAlign: 'right',
   },
   recentStatusCol: {
@@ -7407,6 +7411,7 @@ const styles = StyleSheet.create({
   recentDateCol: {
     width: 92,
     flexShrink: 0,
+    overflow: 'hidden',
     textAlign: 'right',
   },
   deviceNameCol: {
