@@ -156,6 +156,7 @@ const AM_TRANSFER_METHOD_FEES: Record<string, number> = {
 };
 const AM_TRANSACTION_PURPOSES = ['Investment', 'Purchase', 'Others (for various purposes)', 'Transfer of Wealth'];
 const AM_PLATFORM_LABELS: Record<string, string> = {
+  all: 'All Platforms',
   whatsapp: 'WhatsApp',
   tokopedia: 'Tokopedia',
   shopee: 'Shopee',

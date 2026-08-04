@@ -734,6 +734,7 @@ describe('KolamAmSurface', () => {
 
     let text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
     expect(text).toContain('Showing 1 to 20 of 45 items');
+    expect(text).toContain('All Platforms');
     expect(text).toContain('Box Browser / Rack Green');
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
       page: 1,
