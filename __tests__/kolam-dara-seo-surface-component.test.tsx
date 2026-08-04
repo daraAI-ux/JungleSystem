@@ -4,6 +4,7 @@ import {KolamDaraSeoSurface} from '../src/components/kolam-dara-seo-surface';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
   fetchKolamDaraSeoActiveBrands,
+  fetchKolamDaraSeoBrandMentions,
   fetchKolamDaraSeoDashboard,
   fetchKolamDaraSeoKeywords,
   fetchKolamDaraSeoPendingSuggestions,
@@ -91,6 +92,9 @@ const rankingsMock = fetchKolamDaraSeoRankings as jest.MockedFunction<
 const keywordsMock = fetchKolamDaraSeoKeywords as jest.MockedFunction<
   typeof fetchKolamDaraSeoKeywords
 >;
+const mentionsMock = fetchKolamDaraSeoBrandMentions as jest.MockedFunction<
+  typeof fetchKolamDaraSeoBrandMentions
+>;
 const websitePreviewMock = fetchKolamDaraSeoWebsitePreview as jest.MockedFunction<
   typeof fetchKolamDaraSeoWebsitePreview
 >;
@@ -106,6 +110,7 @@ describe('KolamDaraSeoSurface', () => {
     jobsListMock.mockResolvedValue([]);
     rankingsMock.mockResolvedValue({items: [], total: 0});
     keywordsMock.mockResolvedValue([]);
+    mentionsMock.mockResolvedValue([]);
     websitePreviewMock.mockResolvedValue({
       companyName: 'Dunia Anura',
       publicSiteUrl: 'https://duniaanura.test',
@@ -370,6 +375,45 @@ describe('KolamDaraSeoSurface', () => {
     expect(text).toContain('Medium');
     expect(keywordsMock).toHaveBeenCalled();
     expect(text).not.toContain('Refresh');
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders mentions table columns with pagination chrome', async () => {
+    mentionsMock.mockResolvedValue([
+      {
+        id: 'm1',
+        entityName: 'Dunia Anura',
+        url: 'https://x.test',
+        sourceName: '',
+        sourceType: 'serp',
+        engine: 'google',
+        snippet: 'Toko ikan hias',
+        mentionedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo/mentions" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Entitas');
+    expect(text).toContain('Sumber');
+    expect(text).toContain('Engine');
+    expect(text).toContain('Snippet');
+    expect(text).toContain('Dunia Anura');
+    expect(text).toContain('SERP');
+    expect(text).toContain('Keyword SERP');
+    expect(text).toContain('Kompetitor');
+    expect(text).toContain('Backlink');
+    expect(mentionsMock).toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

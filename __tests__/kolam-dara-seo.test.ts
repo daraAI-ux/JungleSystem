@@ -22,6 +22,7 @@ import {
   normalizeKolamDaraSeoStatus,
   normalizeKolamDaraSeoSuggestionDetail,
   normalizeKolamDaraSeoWebsitePreview,
+  paginateKolamDaraSeoMentions,
   paginateKolamDaraSeoSuggestions,
   pickKolamDaraSeoLatestSocialSnapshot,
   resolveKolamDaraSeoAccess,
@@ -35,6 +36,24 @@ describe('kolam-dara-seo domain', () => {
     expect(resolveKolamDaraSeoKeywordDifficulty(55)).toBe('medium');
     expect(resolveKolamDaraSeoKeywordDifficulty(20)).toBe('high');
     expect(formatKolamDaraSeoKeywordDifficulty(55)).toBe('Medium');
+  });
+
+  it('paginates mentions 10 per page', () => {
+    const rows = Array.from({length: 12}, (_, i) => ({
+      id: `m${i}`,
+      entityName: `E${i}`,
+      url: '',
+      sourceName: '',
+      sourceType: 'serp',
+      engine: 'google',
+      snippet: 's',
+      mentionedAt: '',
+    }));
+    const page1 = paginateKolamDaraSeoMentions(rows, 1);
+    expect(page1.items).toHaveLength(10);
+    expect(page1.totalPages).toBe(2);
+    expect(page1.total).toBe(12);
+    expect(paginateKolamDaraSeoMentions(rows, 2).items).toHaveLength(2);
   });
 
   it('matches SEO routes and resolves tabs', () => {

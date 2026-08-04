@@ -1,7 +1,8 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   getKolamDaraSeoTab,
   isKolamDaraSeoRoute,
+  paginateKolamDaraSeoMentions,
   type KolamDaraSeoMentionRow,
 } from '../domain/kolam-dara-seo';
 import {sanitizeApiErrorMessage} from '../lib/api-error';
@@ -20,7 +21,11 @@ export interface KolamDaraSeoMentionsController {
   keyword: string;
   loading: boolean;
   notice: string | null;
+  page: number;
+  pagedItems: KolamDaraSeoMentionRow[];
   rows: KolamDaraSeoMentionRow[];
+  total: number;
+  totalPages: number;
   onIngestBacklink: () => Promise<void>;
   onIngestCompetitor: () => Promise<void>;
   onFetchSerp: () => Promise<void>;
@@ -28,6 +33,7 @@ export interface KolamDaraSeoMentionsController {
   onSetBacklinkUrl: (value: string) => void;
   onSetCompetitor: (value: string) => void;
   onSetKeyword: (value: string) => void;
+  onSetPage: (page: number) => void;
 }
 
 export function useKolamDaraSeoMentionsController(
@@ -43,6 +49,7 @@ export function useKolamDaraSeoMentionsController(
   const [keyword, setKeyword] = useState('');
   const [competitor, setCompetitor] = useState('');
   const [backlinkUrl, setBacklinkUrl] = useState('');
+  const [page, setPage] = useState(1);
 
   const onRefresh = useCallback(async () => {
     if (!enabled) {
@@ -52,6 +59,7 @@ export function useKolamDaraSeoMentionsController(
     setError(null);
     try {
       setRows(await fetchKolamDaraSeoBrandMentions());
+      setPage(1);
     } catch (err) {
       setRows([]);
       setError(
@@ -70,6 +78,11 @@ export function useKolamDaraSeoMentionsController(
     }
     void onRefresh();
   }, [enabled, onRefresh]);
+
+  const paged = useMemo(
+    () => paginateKolamDaraSeoMentions(rows, page),
+    [page, rows],
+  );
 
   const runBusy = useCallback(
     async (fn: () => Promise<void>, successNotice: string) => {
@@ -100,7 +113,11 @@ export function useKolamDaraSeoMentionsController(
     keyword,
     loading,
     notice,
+    page: paged.page,
+    pagedItems: paged.items,
     rows,
+    total: paged.total,
+    totalPages: paged.totalPages,
     onFetchSerp: async () => {
       const value = keyword.trim();
       if (!value) {
@@ -138,5 +155,6 @@ export function useKolamDaraSeoMentionsController(
     onSetBacklinkUrl: setBacklinkUrl,
     onSetCompetitor: setCompetitor,
     onSetKeyword: setKeyword,
+    onSetPage: setPage,
   };
 }

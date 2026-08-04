@@ -964,6 +964,7 @@ export type KolamDaraSeoSocialSnapshot = {
 };
 
 export const KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE = 10;
+export const KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE = 10;
 
 export function formatKolamDaraSeoKeywordDifficulty(score: number) {
   const level = resolveKolamDaraSeoKeywordDifficulty(score);
@@ -1015,6 +1016,22 @@ export function paginateKolamDaraSeoKeywords(
   list: KolamDaraSeoKeywordRow[],
   page: number,
   pageSize = KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE,
+) {
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * pageSize;
+  return {
+    page: safePage,
+    totalPages,
+    total: list.length,
+    items: list.slice(start, start + pageSize),
+  };
+}
+
+export function paginateKolamDaraSeoMentions(
+  list: KolamDaraSeoMentionRow[],
+  page: number,
+  pageSize = KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE,
 ) {
   const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
   const safePage = Math.min(Math.max(1, page), totalPages);
