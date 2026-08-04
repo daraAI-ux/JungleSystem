@@ -2,6 +2,7 @@ import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
+import {KolamButton} from '../src/components/kolam-button';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
 import {setAccessToken} from '../src/lib/api-client';
 import {
@@ -2575,6 +2576,7 @@ describe('KolamAmSurface', () => {
       findInput('myBCA username')!.props.onChangeText('bca-updated');
       findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
     });
+    const updateCallsBeforeMove = jest.mocked(updateAmServiceAccount).mock.calls.length;
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Service Target Phone Target'}).props.onPress();
     });
@@ -2582,7 +2584,13 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
     });
 
-    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.objectContaining({
+    expect(updateAmServiceAccount).toHaveBeenCalledTimes(updateCallsBeforeMove);
+    expect(renderText(renderer!).join(' ')).toContain('Move Service Account?');
+    await act(async () => {
+      renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Move')!.props.onPress();
+    });
+
+    expect(updateAmServiceAccount).toHaveBeenLastCalledWith('service-1', expect.objectContaining({
       label: 'BCA Detail Updated',
       deviceId: 'device-2',
       username: 'bca-updated',
@@ -2590,7 +2598,7 @@ describe('KolamAmSurface', () => {
       credentials: {},
       status: 'inactive',
     }));
-    expect(updateAmServiceAccount).toHaveBeenCalledWith('service-1', expect.not.objectContaining({
+    expect(updateAmServiceAccount).toHaveBeenLastCalledWith('service-1', expect.not.objectContaining({
       platform: expect.anything(),
       password: '',
       pin: '',

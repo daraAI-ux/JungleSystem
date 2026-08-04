@@ -115,6 +115,7 @@ import {
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
+import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
@@ -3333,6 +3334,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   const [serviceFormAccountNumber, setServiceFormAccountNumber] = React.useState('');
   const [serviceFormPhoneNumber, setServiceFormPhoneNumber] = React.useState('');
   const [editingDeviceServiceId, setEditingDeviceServiceId] = React.useState<string | null>(null);
+  const [moveConfirmOpen, setMoveConfirmOpen] = React.useState(false);
   const [actingDeviceServiceId, setActingDeviceServiceId] = React.useState<string | null>(null);
   const [isSubmittingService, setIsSubmittingService] = React.useState(false);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
@@ -3394,6 +3396,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormPin('');
     setServiceFormAccountNumber('');
     setServiceFormPhoneNumber('');
+    setMoveConfirmOpen(false);
     setActionMessage(null);
   }, [createServicePlatformItems, device._id, servicePlatformItems]);
 
@@ -3418,6 +3421,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     setServiceFormPin('');
     setServiceFormAccountNumber(account.accountNumber ?? '');
     setServiceFormPhoneNumber(getCredentialString(account.credentials, 'phoneNumber') ?? '');
+    setMoveConfirmOpen(false);
     setActionMessage(null);
     void fetchAllDeviceOptions();
   }, [device._id, fetchAllDeviceOptions]);
@@ -3449,7 +3453,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     }
   }, [createServicePlatformItems, editingDeviceServiceId, isServiceFormOpen, servicePlatformItems]);
 
-  const submitDeviceServiceAccount = React.useCallback(async () => {
+  const submitDeviceServiceAccount = React.useCallback(async (moveConfirmed = false) => {
     if (!serviceFormLabel.trim()) {
       setError('Label service wajib diisi.');
       return;
@@ -3470,6 +3474,11 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
 
     if (deviceChanged && editingAccount?.status === 'active') {
       setError('Stop service first before moving to another device');
+      return;
+    }
+
+    if (deviceChanged && !moveConfirmed) {
+      setMoveConfirmOpen(true);
       return;
     }
 
@@ -3533,7 +3542,10 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         });
       }
       resetDeviceServiceForm(false);
-      setActionMessage(`${payload.label} ${editingDeviceServiceId ? 'diperbarui' : 'dibuat'}.`);
+      const targetDeviceName = deviceOptions.find(nextDevice => nextDevice._id === targetDeviceId)?.name ?? 'device baru';
+      setActionMessage(deviceChanged
+        ? `${payload.label} dipindahkan ke ${targetDeviceName}.`
+        : `${payload.label} ${editingDeviceServiceId ? 'diperbarui' : 'dibuat'}.`);
       await fetchDeviceServices();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan service account device.');
@@ -3555,6 +3567,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     serviceFormPlatform,
     serviceFormStatus,
     serviceFormUsername,
+    deviceOptions,
   ]);
 
   const deleteDeviceServiceAccount = React.useCallback(async (account: AmServiceAccount) => {
@@ -3577,6 +3590,18 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
 
   return (
     <View style={styles.panel}>
+      <KolamConfirmDialog
+        cancelLabel="Cancel"
+        confirmLabel="Move"
+        message={`Move ${serviceFormLabel || 'service account'} ke ${deviceOptions.find(nextDevice => nextDevice._id === serviceFormDeviceId)?.name ?? 'device baru'}?`}
+        title="Move Service Account?"
+        visible={moveConfirmOpen}
+        onCancel={() => setMoveConfirmOpen(false)}
+        onConfirm={() => {
+          setMoveConfirmOpen(false);
+          void submitDeviceServiceAccount(true);
+        }}
+      />
       <Text style={styles.panelTitle}>{device.name}</Text>
       <View style={styles.metricGrid}>
         <AmMetricCard label="Connection" value={titleCase(device.connectionType ?? 'usb')} meta={formatDeviceIdentifier(device)} />
