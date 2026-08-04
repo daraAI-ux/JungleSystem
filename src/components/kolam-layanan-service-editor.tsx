@@ -397,15 +397,17 @@ function KolamLayananServiceDetail({
                   <Text style={[styles.detailTableHead, styles.colDate]}>
                     Tanggal beli
                   </Text>
-                  <Text style={[styles.detailTableHead, styles.colAction]}>
-                    {' '}
-                  </Text>
+                  <View style={styles.colAction} />
                 </View>
                 {relatedVouchers.map(item => (
                   <View key={item.id} style={styles.detailTableRow}>
                     <Text
                       numberOfLines={1}
-                      style={[styles.detailTableCell, styles.colSerial, styles.monoCell]}
+                      style={[
+                        styles.detailTableCell,
+                        styles.colSerial,
+                        styles.monoCell,
+                      ]}
                     >
                       {item.serviceSerial || '—'}
                     </Text>
@@ -423,7 +425,11 @@ function KolamLayananServiceDetail({
                     </View>
                     <Text
                       numberOfLines={1}
-                      style={[styles.detailTableCell, styles.colInvoice, styles.monoCell]}
+                      style={[
+                        styles.detailTableCell,
+                        styles.colInvoice,
+                        styles.monoCell,
+                      ]}
                     >
                       {item.invoiceCode || '—'}
                     </Text>
@@ -447,11 +453,15 @@ function KolamLayananServiceDetail({
                     </View>
                     <Text
                       numberOfLines={1}
-                      style={[styles.detailTableCell, styles.colDate, styles.metaText]}
+                      style={[
+                        styles.detailTableCell,
+                        styles.colDate,
+                        styles.metaText,
+                      ]}
                     >
                       {formatDetailDate(item.purchasedAt)}
                     </Text>
-                    <View style={styles.colAction}>
+                    <View style={[styles.colAction, styles.actionCell]}>
                       <KolamButton
                         intent="outline"
                         label="Detail"
@@ -460,6 +470,7 @@ function KolamLayananServiceDetail({
                             `${KOLAM_LAYANAN_ROOT}/voucher/${item.id}`,
                           )
                         }
+                        size="sm"
                       />
                     </View>
                   </View>
@@ -1306,7 +1317,7 @@ const styles = StyleSheet.create({
     flexBasis: 420,
     flexGrow: 2,
     gap: 12,
-    minWidth: 280,
+    minWidth: 0,
   },
   detailSide: {
     flexBasis: 280,
@@ -1363,27 +1374,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   detailTable: {
+    alignSelf: 'stretch',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    minWidth: 0,
     overflow: 'hidden',
+    width: '100%',
   },
   detailTableHeader: {
+    alignItems: 'center',
     backgroundColor: V.colors.tableHeader,
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   detailTableRow: {
+    alignItems: 'center',
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   detailTableHead: {
     color: V.colors.mutedFg,
@@ -1394,6 +1410,7 @@ const styles = StyleSheet.create({
   detailTableCell: {
     color: V.colors.fg,
     fontSize: 12,
+    minWidth: 0,
   },
   monoCell: {
     fontFamily: V.fontFamily,
@@ -1402,19 +1419,23 @@ const styles = StyleSheet.create({
   badgeCell: {
     justifyContent: 'center',
   },
-  colSerial: { flexBasis: 110, flexGrow: 1, minWidth: 90 },
-  colStatus: { flexBasis: 120, flexGrow: 1, minWidth: 100 },
-  colInvoice: { flexBasis: 100, flexGrow: 1, minWidth: 80 },
-  colCustomer: { flexBasis: 120, flexGrow: 1.2, minWidth: 90 },
-  colType: { flexBasis: 90, flexGrow: 0, minWidth: 72 },
-  colDate: { flexBasis: 100, flexGrow: 0, minWidth: 88 },
-  colAction: { flexBasis: 88, flexGrow: 0, minWidth: 80 },
-  colName: { flexBasis: 160, flexGrow: 1.4, minWidth: 120 },
-  colCode: { flexBasis: 90, flexGrow: 0.8, minWidth: 72 },
-  colQty: { flexBasis: 80, flexGrow: 0.6, minWidth: 64 },
-  colStock: { flexBasis: 56, flexGrow: 0, minWidth: 48 },
-  colBrand: { flexBasis: 90, flexGrow: 0.8, minWidth: 72 },
-  colPrice: { flexBasis: 90, flexGrow: 0.8, minWidth: 72 },
+  actionCell: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  colSerial: { flex: 1.35, minWidth: 0 },
+  colStatus: { flexGrow: 0, flexShrink: 0, width: 96 },
+  colInvoice: { flex: 1.15, minWidth: 0 },
+  colCustomer: { flex: 1, minWidth: 0 },
+  colType: { flexGrow: 0, flexShrink: 0, width: 104 },
+  colDate: { flexGrow: 0, flexShrink: 0, width: 88 },
+  colAction: { flexGrow: 0, flexShrink: 0, width: 72 },
+  colName: { flex: 1.4, minWidth: 0 },
+  colCode: { flex: 0.85, minWidth: 0 },
+  colQty: { flex: 0.55, minWidth: 0 },
+  colStock: { flexGrow: 0, flexShrink: 0, width: 48 },
+  colBrand: { flex: 0.8, minWidth: 0 },
+  colPrice: { flex: 0.75, minWidth: 0 },
   materialBlock: {
     gap: 6,
     marginTop: 4,
