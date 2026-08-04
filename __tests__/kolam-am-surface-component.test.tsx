@@ -619,27 +619,79 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findByProps({accessibilityLabel: 'Kembali'})).toBeTruthy();
   });
 
-  it('does not expose the legacy AM login route inside JungleSystem', async () => {
+  it('submits the AM live login route from the AM shell route', async () => {
+    const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
         <KolamAmSurface
-          activeModuleRoute={{
-            ...amRoute(':catchAll'),
-            id: 'am:login',
-            route: 'login',
-          }}
+          activeModuleRoute={amRoute('login')}
+          dataset={seedUnifiedDataset}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    expect(renderText(renderer!).join(' ')).toContain('Gunakan akun Kolam yang sama.');
+    expect(inputs[0].props.placeholder).toBe('Akun Kolam (email atau username)');
+    expect(inputs[1].props.placeholder).toBe('Password Kolam');
+
+    await act(async () => {
+      inputs[0].props.onChangeText('admin<>');
+      inputs[1].props.onChangeText('secret');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.onPress();
+    });
+
+    expect(recordAmPageView).toHaveBeenCalledWith('/login');
+    expect(loginAmSession).toHaveBeenCalledWith({
+      username: 'admin',
+      password: 'secret',
+    });
+    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(amRoute('/'));
+    expect(renderer!.root.findAllByType(TextInput)[1].props.value).toBe('');
+  });
+
+  it('locks AM login after repeated failed attempts like AM FE', async () => {
+    jest.mocked(loginAmSession).mockRejectedValue(new Error('Username atau password salah'));
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={amRoute('login')}
           dataset={seedUnifiedDataset}
         />,
       );
     });
     renderers.push(renderer!);
 
-    expect(recordAmPageView).toHaveBeenCalledWith('/login');
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Login Submit'})).toHaveLength(0);
-    expect(loginAmSession).not.toHaveBeenCalled();
-    expect(renderText(renderer!).join(' ')).not.toContain('Gunakan akun Kolam yang sama.');
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('admin');
+      inputs[1].props.onChangeText('wrong-password');
+    });
+
+    for (let index = 0; index < 5; index += 1) {
+      await act(async () => {
+        renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.onPress();
+      });
+    }
+
+    expect(loginAmSession).toHaveBeenCalledTimes(5);
+    expect(renderText(renderer!).join(' ')).toContain('Terlalu banyak percobaan gagal.');
+    expect(renderText(renderer!).join(' ')).toContain('Coba lagi dalam');
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.disabled).toBe(true);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Login Submit'}).props.onPress();
+    });
+
+    expect(loginAmSession).toHaveBeenCalledTimes(5);
   });
 
   it('loads live service accounts from the Services route', async () => {
@@ -3253,6 +3305,7 @@ describe('KolamAmSurface', () => {
     expect(webhooksText).not.toContain('No webhook logs found');
     await updateAmRoute(renderer!, 'admin/users');
     await updateAmRoute(renderer!, 'admin/activity-log');
+    await updateAmRoute(renderer!, 'settings/account');
 
     expect(getAmTransfers).toHaveBeenCalledWith({
       page: 1,
@@ -3277,7 +3330,7 @@ describe('KolamAmSurface', () => {
       status: undefined,
       method: undefined,
     });
-    expect(getAmCurrentUser).toHaveBeenCalledTimes(3);
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(4);
   });
 
   it('renders activity log stats, detail, filters, and pagination from live metadata', async () => {
@@ -3853,32 +3906,136 @@ describe('KolamAmSurface', () => {
     );
   });
 
-  it('does not expose the legacy AM account settings route inside JungleSystem', async () => {
+  it('renders account settings from the live AM auth session route', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM User',
+      username: 'current@dunia-anura.com',
+      role: {
+        _id: 'role-admin',
+        name: 'Admin',
+        permissions: ['user:read', 'user:update'],
+        description: 'Admin role',
+      },
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamAmSurface
-          activeModuleRoute={{
-            ...amRoute(':catchAll'),
-            id: 'am:settings/account',
-            route: 'settings/account',
-          }}
-          dataset={seedUnifiedDataset}
-        />,
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
       );
     });
     renderers.push(renderer!);
 
+    await updateAmRoute(renderer!, 'settings/account');
+
     const text = renderText(renderer!);
-    expect(recordAmPageView).toHaveBeenCalledWith('/settings/account');
-    expect(text).not.toContain('Profile information');
-    expect(text).not.toContain('Change password');
+    expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
+    expect(text).toContain('Profile information');
+    expect(text).toContain('Change password');
+    expect(text).toContain('Update your current password to keep your account secure.');
+    expect(text).toContain('Current AM User');
+    expect(text).not.toContain('Current password');
     expect(text).not.toContain('Account Settings');
+    expect(text).not.toContain('Danger area');
+    expect(text).not.toContain('Delete account');
     expect(
-      renderer!.root.findAllByProps({accessibilityLabel: 'AM Account Save Profile'}),
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Account Delete'}),
     ).toHaveLength(0);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Save Profile'}).props.onPress();
+    });
+
+    expect(renderText(renderer!).join(' ')).toContain('Tidak ada perubahan profile untuk disimpan.');
     expect(updateAmUser).not.toHaveBeenCalled();
+
+    jest.mocked(updateAmUser).mockResolvedValueOnce({
+      _id: 'user-current',
+      fullName: 'Current AM User Updated',
+      username: 'current.updated@dunia-anura.com',
+      role: {_id: 'role-admin', name: 'Admin', permissions: ['user:read', 'user:update'], description: 'Admin role'},
+    });
+
+    const findInput = (placeholder: string) =>
+      renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
+
+    await act(async () => {
+      findInput('Your name')!.props.onChangeText('Current AM User Updated');
+      findInput('you@domain.com')!.props.onChangeText('current.updated@dunia-anura.com');
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Save Profile'}).props.onPress();
+    });
+
+    expect(updateAmUser).toHaveBeenCalledWith('user-current', {
+      fullName: 'Current AM User Updated',
+      username: 'current.updated@dunia-anura.com',
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Profile information tersimpan.');
+    expect(renderText(renderer!).join(' ')).toContain('Current AM User Updated');
+
+    await act(async () => {
+      findInput('New password')!.props.onChangeText('NewPass1!');
+      findInput('Confirm password')!.props.onChangeText('NewPass1!');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Update Password'}).props.onPress();
+    });
+
+    expect(updateAmUser).toHaveBeenCalledWith('user-current', {
+      password: 'NewPass1!',
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Password tersimpan.');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Account Logout'}).props.onPress();
+    });
+
+    expect(logoutAmSession).toHaveBeenCalledTimes(1);
+    expect(renderText(renderer!).join(' ')).toContain('AM session logged out.');
+  });
+
+  it('keeps account update actions gated by the live AM user update permission', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM Read Only',
+      username: 'readonly@dunia-anura.com',
+      role: {
+        _id: 'role-read',
+        name: 'User',
+        permissions: ['user:read'],
+        description: 'Read-only role',
+      },
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'settings/account');
+
+    const saveButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Account Save Profile',
+    });
+    const passwordButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Account Update Password',
+    });
+
+    expect(saveButton.props.disabled).toBe(true);
+    expect(passwordButton.props.disabled).toBe(true);
+
+    await act(async () => {
+      saveButton.props.onPress();
+    });
+
+    expect(updateAmUser).not.toHaveBeenCalled();
+    expect(renderText(renderer!).join(' ')).toContain('Permission user:update diperlukan.');
   });
 
   it('runs user create, edit, and delete actions from the Users route', async () => {

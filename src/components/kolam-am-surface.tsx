@@ -300,6 +300,10 @@ export function KolamAmSurface({
         />
       ) : activeRoute === 'users' ? (
         <AmUsersPage />
+      ) : activeRoute === 'settings-account' ? (
+        <AmAccountSettingsPage />
+      ) : activeRoute === 'login' ? (
+        <AmLoginPage onModuleRouteSelect={onModuleRouteSelect} />
       ) : activeRoute === 'activity-log' ? (
         <AmActivityLogPage />
       ) : (
@@ -7043,6 +7047,8 @@ function getRouteIdFromSurface(surface?: UnifiedSurface | null): AmRouteId {
   if (surface.route.includes('mutasi')) return 'mutasi';
   if (surface.route.includes('admin/users')) return 'users';
   if (surface.route.includes('activity-log')) return 'activity-log';
+  if (surface.route.includes('settings/account')) return 'settings-account';
+  if (surface.route.includes('login')) return 'login';
   return 'dashboard';
 }
 

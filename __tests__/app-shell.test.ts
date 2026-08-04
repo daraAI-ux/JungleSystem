@@ -40,8 +40,8 @@ test('summarizes shell area coverage for sidebar navigation', () => {
     expect.objectContaining({
       area: 'am',
       moduleCount: 1,
-      routeCount: 16,
-      summaryLabel: '1 modul / 16 route',
+      routeCount: 18,
+      summaryLabel: '1 modul / 18 route',
     }),
   );
   expect(getShellAreaCoverage('plugins').summaryLabel).toBe('0 modul / 0 route');
@@ -73,7 +73,7 @@ test('finds module metadata by id', () => {
 test('indexes POS and AM module routes as native route surfaces', () => {
   const routeIndex = getShellModuleRouteIndex();
 
-  expect(routeIndex.length).toBeGreaterThanOrEqual(31);
+  expect(routeIndex.length).toBeGreaterThanOrEqual(32);
   expect(routeIndex.map(route => route.id)).toEqual(
     expect.arrayContaining([
       'catalog:products?sellable=true',
@@ -87,10 +87,8 @@ test('indexes POS and AM module routes as native route surfaces', () => {
       'am:hardware/:rackId/:boxId/:deviceId',
       'am:mutasi/:id',
       'am:admin/activity-log',
+      'am:settings/account',
     ]),
-  );
-  expect(routeIndex.map(route => route.id)).not.toEqual(
-    expect.arrayContaining(['am:settings/account', 'am:login']),
   );
   expect(getShellModuleRouteEntry('checkout', 'sale-draft')).toEqual(
     null,
