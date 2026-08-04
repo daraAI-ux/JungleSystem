@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamFinanceConfirmStatusLabel,
   formatKolamFinanceTxTypeLabel,
@@ -9,7 +9,6 @@ import {
   txMatchesFinanceFocusId,
   type KolamFinanceConfirmStatusFilter,
   type KolamFinanceRange,
-  type KolamFinanceTransaction,
 } from '../domain/kolam-finance-summary';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -386,64 +385,6 @@ function FinanceTransactionList({
   const safePage = Math.max(1, controller.filters.page);
   const pageCount = Math.max(1, controller.totalPages);
 
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamFinanceTransaction }) => {
-      const focused = txMatchesFinanceFocusId(item, controller.focusTxId);
-      const canConfirmRow =
-        controller.canConfirm &&
-        item.confirmStatus === 'unconfirmed' &&
-        item.id;
-      return (
-        <View style={[styles.row, focused ? styles.rowFocused : null]}>
-          <View style={[styles.cell, { flex: 1.1 }]}>
-            <Text numberOfLines={2} style={styles.metaText}>
-              {formatTxDate(item.date)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text numberOfLines={1} style={styles.primaryText}>
-              {item.wallet}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.7 }]}>
-            <Text style={styles.metaText}>
-              {formatKolamFinanceTxTypeLabel(item.type)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <KolamStatusBadge
-              intent={getKolamFinanceConfirmStatusIntent(item.confirmStatus)}
-              label={formatKolamFinanceConfirmStatusLabel(item.confirmStatus)}
-            />
-          </View>
-          <View style={[styles.cell, { flex: 1.2 }]}>
-            <Text numberOfLines={2} style={styles.metaText}>
-              {item.note || item.source || '—'}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.8 }]}>
-            {canConfirmRow ? (
-              <KolamButton
-                intent="primary"
-                label={
-                  controller.confirmingTxId === item.id ? '…' : 'Konfirmasi'
-                }
-                onPress={() => {
-                  void controller.onConfirmTransaction(item);
-                }}
-                style={styles.confirmButton}
-              />
-            ) : null}
-          </View>
-        </View>
-      );
-    },
-    [controller],
-  );
-
   return (
     <View style={styles.listRoot}>
       <KolamCatalogListTableShell
@@ -479,35 +420,90 @@ function FinanceTransactionList({
         }
         style={styles.tableFrame}
       >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.paginatedTransactions}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={
-                  controller.loading ? 'Memuat…' : 'Tidak ada transaksi'
-                }
-              />
+        <View style={styles.headerRow}>
+          {TX_COLUMNS.map(column => (
+            <View
+              key={column.id}
+              style={[styles.cell, { flex: column.flex }]}
+            >
+              <Text style={styles.headerCellText}>{column.label}</Text>
             </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {TX_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
+          ))}
+        </View>
+        {controller.paginatedTransactions.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              compact
+              title={controller.loading ? 'Memuat…' : 'Tidak ada transaksi'}
+            />
+          </View>
+        ) : (
+          controller.paginatedTransactions.map(item => {
+            const focused = txMatchesFinanceFocusId(item, controller.focusTxId);
+            const canConfirmRow =
+              controller.canConfirm &&
+              item.confirmStatus === 'unconfirmed' &&
+              item.id;
+            return (
+              <View
+                key={item.id}
+                style={[styles.row, focused ? styles.rowFocused : null]}
+              >
+                <View style={[styles.cell, { flex: 1.1 }]}>
+                  <Text numberOfLines={2} style={styles.metaText}>
+                    {formatTxDate(item.date)}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.list}
-        />
+                <View style={[styles.cell, { flex: 1 }]}>
+                  <Text numberOfLines={1} style={styles.primaryText}>
+                    {item.wallet}
+                  </Text>
+                </View>
+                <View style={[styles.cell, { flex: 0.7 }]}>
+                  <Text style={styles.metaText}>
+                    {formatKolamFinanceTxTypeLabel(item.type)}
+                  </Text>
+                </View>
+                <View style={[styles.cell, { flex: 1 }]}>
+                  <Text style={styles.primaryText}>
+                    {formatRupiah(item.amount)}
+                  </Text>
+                </View>
+                <View style={[styles.cell, { flex: 1 }]}>
+                  <KolamStatusBadge
+                    intent={getKolamFinanceConfirmStatusIntent(
+                      item.confirmStatus,
+                    )}
+                    label={formatKolamFinanceConfirmStatusLabel(
+                      item.confirmStatus,
+                    )}
+                  />
+                </View>
+                <View style={[styles.cell, { flex: 1.2 }]}>
+                  <Text numberOfLines={2} style={styles.metaText}>
+                    {item.note || item.source || '—'}
+                  </Text>
+                </View>
+                <View style={[styles.cell, { flex: 0.8 }]}>
+                  {canConfirmRow ? (
+                    <KolamButton
+                      intent="primary"
+                      label={
+                        controller.confirmingTxId === item.id
+                          ? '…'
+                          : 'Konfirmasi'
+                      }
+                      onPress={() => {
+                        void controller.onConfirmTransaction(item);
+                      }}
+                      style={styles.confirmButton}
+                    />
+                  ) : null}
+                </View>
+              </View>
+            );
+          })
+        )}
       </KolamCatalogListTableShell>
     </View>
   );
@@ -532,9 +528,7 @@ function formatTxDate(value: string): string {
 
 const styles = StyleSheet.create({
   surface: {
-    flex: 1,
     gap: 10,
-    minHeight: 0,
   },
   banner: {
     alignSelf: 'stretch',
@@ -657,18 +651,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   listRoot: {
-    flex: 1,
     gap: 8,
-    minHeight: 240,
   },
   tableFrame: {
-    flex: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
+    width: '100%',
   },
   emptyWrap: {
     paddingVertical: 24,

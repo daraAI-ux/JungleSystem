@@ -21,8 +21,8 @@ describe('isCatalogTableListRoute', () => {
   });
 
   it('matches Keuangan FlatList list roots', () => {
-    expect(isCatalogTableListRoute('/finance')).toBe(true);
-    expect(isCatalogTableListRoute('/finance/abc123')).toBe(true);
+    expect(isCatalogTableListRoute('/finance')).toBe(false);
+    expect(isCatalogTableListRoute('/finance/abc123')).toBe(false);
     expect(isCatalogTableListRoute('/wallet')).toBe(true);
     expect(isCatalogTableListRoute('/payable')).toBe(true);
     expect(isCatalogTableListRoute('/receivable')).toBe(true);

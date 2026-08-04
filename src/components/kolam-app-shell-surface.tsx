@@ -110,7 +110,7 @@ function isKolamCenteredRoute(route?: string | null) {
 export function isCatalogTableListRoute(route?: string | null) {
   const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
 
-  if (
+  return (
     routePath === '/species' ||
     routePath === '/products' ||
     routePath === '/products/archive' ||
@@ -128,24 +128,7 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/finance/payroll' ||
     routePath === '/finance/bonus' ||
     routePath === '/cashflow-session'
-  ) {
-    return true;
-  }
-
-  // `/finance` summary (+ optional `/finance/:txId` focus) owns FlatList scroll.
-  if (routePath === '/finance') {
-    return true;
-  }
-  if (routePath.startsWith('/finance/')) {
-    const rest = routePath.slice('/finance/'.length);
-    if (!rest || rest.includes('/')) {
-      return false;
-    }
-    const blocked = new Set(['payroll', 'bonus', 'tax', 'settings']);
-    return !blocked.has(rest.toLowerCase());
-  }
-
-  return false;
+  );
 }
 
 const KOLAM_CENTERED_EXACT_ROUTES = ['/list-of-users'];
