@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamFinanceTaxSurface} from '../src/components/kolam-finance-tax-surface';
+import {KolamSegment} from '../src/components/kolam-segment';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {getKolamWebSetting} from '../src/services/kolam-api';
 import {
   fetchKolamDaraTaxAllocationBySource,
+  fetchKolamDaraTaxAuditLogs,
   fetchKolamDaraTaxDashboard,
   fetchKolamDaraTaxJournalPreview,
   fetchKolamDaraTaxOverviewSeries,
@@ -107,6 +109,9 @@ const statusMock = fetchKolamDaraTaxStatus as jest.MockedFunction<
 const versionsMock = fetchKolamDaraTaxRegulationVersions as jest.MockedFunction<
   typeof fetchKolamDaraTaxRegulationVersions
 >;
+const auditLogsMock = fetchKolamDaraTaxAuditLogs as jest.MockedFunction<
+  typeof fetchKolamDaraTaxAuditLogs
+>;
 const listSettlementsMock = listKolamDaraTaxSettlements as jest.MockedFunction<
   typeof listKolamDaraTaxSettlements
 >;
@@ -125,6 +130,7 @@ describe('KolamFinanceTaxSurface', () => {
     } as Awaited<ReturnType<typeof getKolamWebSetting>>);
     listSettlementsMock.mockResolvedValue([]);
     listWalletsMock.mockResolvedValue([]);
+    auditLogsMock.mockResolvedValue([]);
     dashboardMock.mockResolvedValue({
       period: 'month',
       overview: {
@@ -321,6 +327,52 @@ describe('KolamFinanceTaxSurface', () => {
     expect(text).toContain('Sumber');
     expect(statusMock).toHaveBeenCalled();
     expect(versionsMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders regulasi audit log as Waktu/Aksi/Ringkasan table', async () => {
+    auditLogsMock.mockResolvedValue([
+      {
+        id: 'a1',
+        action: 'regulation.approve',
+        toolName: 'rms',
+        resultSummary: 'Draft disetujui',
+        success: true,
+        createdAt: '2026-08-01T10:30:00.000Z',
+      },
+    ]);
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamFinanceTaxSurface route="/finance/tax?tab=regulasi" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await ReactTestRenderer.act(async () => {
+      const auditTab = tree!.root
+        .findAllByType(KolamSegment)
+        .find(node => node.props.label === 'Audit');
+      expect(auditTab).toBeTruthy();
+      auditTab!.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Audit log');
+    expect(text).toContain('Waktu');
+    expect(text).toContain('Aksi');
+    expect(text).toContain('Ringkasan');
+    expect(text).toContain('regulation.approve');
+    expect(text).toContain('Draft disetujui');
+    expect(text).not.toContain('"rms"');
+    expect(auditLogsMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

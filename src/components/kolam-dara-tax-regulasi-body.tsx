@@ -1036,18 +1036,28 @@ export function KolamDaraTaxRegulasiBody({
           ) : auditLogs.length === 0 ? (
             <Text style={styles.meta}>Belum ada entri.</Text>
           ) : (
-            auditLogs.map(row => (
-              <View key={row.id} style={styles.listCard}>
-                <Text style={styles.tdMono}>
-                  {formatKolamDaraTaxDateTimeId(row.createdAt)}
+            <>
+              <View style={styles.tableHead}>
+                <Text style={[styles.th, styles.colAuditTime]}>Waktu</Text>
+                <Text style={[styles.th, styles.colAuditAction]}>Aksi</Text>
+                <Text style={[styles.th, styles.colAuditSummary]}>
+                  Ringkasan
                 </Text>
-                <Text style={styles.tdStrong}>{row.action}</Text>
-                {row.toolName ? (
-                  <Text style={styles.meta}>{row.toolName}</Text>
-                ) : null}
-                <Text style={styles.td}>{row.resultSummary || '—'}</Text>
               </View>
-            ))
+              {auditLogs.map(row => (
+                <View key={row.id} style={[styles.tableRow, styles.tableRowTop]}>
+                  <Text style={[styles.tdMuted, styles.colAuditTime]}>
+                    {formatKolamDaraTaxDateTimeId(row.createdAt)}
+                  </Text>
+                  <Text style={[styles.tdMono, styles.colAuditAction]}>
+                    {row.action}
+                  </Text>
+                  <Text style={[styles.td, styles.colAuditSummary]}>
+                    {row.resultSummary || '—'}
+                  </Text>
+                </View>
+              ))}
+            </>
           )}
         </View>
       ) : null}
@@ -1224,6 +1234,9 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 6,
   },
+  tableRowTop: {
+    alignItems: 'flex-start',
+  },
   th: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -1247,6 +1260,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontVariant: ['tabular-nums'],
   },
+  tdMuted: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+  },
   colSource: {flex: 1.4, minWidth: 100},
   colStatus: {flex: 1, minWidth: 72},
   colChecked: {flex: 1, minWidth: 80},
@@ -1255,6 +1274,9 @@ const styles = StyleSheet.create({
   colHukum: {flex: 1.4, minWidth: 100},
   colTitle: {flex: 1.6, minWidth: 120},
   colCategory: {flex: 1, minWidth: 80},
+  colAuditTime: {flex: 1.1, minWidth: 96},
+  colAuditAction: {flex: 1.2, minWidth: 100},
+  colAuditSummary: {flex: 2, minWidth: 140},
   link: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,
