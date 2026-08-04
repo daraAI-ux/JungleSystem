@@ -57,51 +57,41 @@ export function useKolamDaraSeoController(route: string): KolamDaraSeoController
     }
     setLoading(true);
     setError(null);
-    const [statusRes, brandRes, dashRes, pendingRes] = await Promise.allSettled([
-      fetchKolamDaraSeoStatus(),
-      fetchKolamDaraSeoActiveBrands(),
+
+    // Match FE dashboard load: dashboard + pending first.
+    // Keep status/brands non-blocking so they cannot blank the KPI surface.
+    const [dashRes, pendingRes] = await Promise.allSettled([
       fetchKolamDaraSeoDashboard(brandId),
       fetchKolamDaraSeoPendingSuggestions(brandId, 10),
     ]);
 
-    if (statusRes.status === 'fulfilled') {
-      setSeoEnabled(statusRes.value.seoEnabled);
-    }
-    if (brandRes.status === 'fulfilled') {
-      setBrands(brandRes.value.brands);
-    }
+    void Promise.allSettled([
+      fetchKolamDaraSeoStatus(),
+      fetchKolamDaraSeoActiveBrands(),
+    ]).then(([statusRes, brandRes]) => {
+      if (statusRes.status === 'fulfilled') {
+        setSeoEnabled(statusRes.value.seoEnabled);
+      }
+      if (brandRes.status === 'fulfilled') {
+        setBrands(brandRes.value.brands);
+      }
+    });
 
     if (dashRes.status === 'fulfilled') {
       setDashboard(dashRes.value);
       setDataSource('live');
-    }
-    if (pendingRes.status === 'fulfilled') {
-      setPending(pendingRes.value);
-    }
-
-    if (dashRes.status === 'rejected') {
+      setError(null);
+    } else {
       const message = getControllerErrorMessage(
         dashRes.reason,
         'Gagal memuat dashboard DARA SEO',
       );
       setError(message);
       setDataSource(current => (current === 'live' ? 'live' : 'error'));
-    } else if (
-      statusRes.status === 'rejected' &&
-      pendingRes.status === 'rejected'
-    ) {
-      setError(
-        getControllerErrorMessage(
-          statusRes.reason,
-          'Gagal memuat dashboard DARA SEO',
-        ),
-      );
-      setDataSource(current => (current === 'live' ? 'live' : 'error'));
-    } else {
-      setError(null);
-      if (dashRes.status === 'fulfilled') {
-        setDataSource('live');
-      }
+    }
+
+    if (pendingRes.status === 'fulfilled') {
+      setPending(pendingRes.value);
     }
 
     setLoading(false);
@@ -129,16 +119,15 @@ export function useKolamDaraSeoController(route: string): KolamDaraSeoController
           params,
           label,
         });
+        // FE/plugin: startJob only — no immediate dashboard reload while BE runs the job.
         setNotice(`Job dimulai: ${label || jobType}`);
-        // Soft refresh — do not wipe KPI if dashboard/gateway returns 502.
-        await onRefresh();
       } catch (err) {
         setNotice(getControllerErrorMessage(err, 'Gagal memulai job SEO'));
       } finally {
         setJobBusyType(null);
       }
     },
-    [onRefresh],
+    [],
   );
 
   return {
