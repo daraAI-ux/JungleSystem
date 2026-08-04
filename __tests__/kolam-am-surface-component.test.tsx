@@ -3751,6 +3751,10 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Total Outgoing');
     expect(joinedText).toContain('Net Balance');
     expect(joinedText).toContain('Total Transactions');
+    expect(joinedText).toContain('All accounts');
+    expect(joinedText).toContain('All devices');
+    expect(joinedText).not.toContain('All Accounts');
+    expect(joinedText).not.toContain('All Devices');
     expect(joinedText).toContain('Phone 1');
     expect(joinedText).toContain('Box Green / Rack Mutasi');
     expect(joinedText).toContain('Incoming');

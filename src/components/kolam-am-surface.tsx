@@ -4536,14 +4536,14 @@ function AmMutasiPage({
   const totalTransactions = incoming.count + outgoing.count;
   const accountLabels = React.useMemo(
     () => ({
-      all: 'All Accounts',
+      all: 'All accounts',
       ...Object.fromEntries(accounts.map(account => [account._id, formatMutasiAccountOption(account)])),
     }),
     [accounts],
   );
   const deviceLabels = React.useMemo(
     () => ({
-      all: 'All Devices',
+      all: 'All devices',
       ...Object.fromEntries(devices.map(device => [device._id, device.name])),
     }),
     [devices],
