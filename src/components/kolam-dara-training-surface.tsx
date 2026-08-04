@@ -17,6 +17,7 @@ import {KolamDaraTrainingFulfillmentBody} from './kolam-dara-training-fulfillmen
 import {KolamDaraTrainingPhrasesBody} from './kolam-dara-training-phrases-body';
 import {KolamDaraTrainingProductsBody} from './kolam-dara-training-products-body';
 import {KolamDaraTrainingReviewsBody} from './kolam-dara-training-reviews-body';
+import {KolamDaraTrainingVisionBody} from './kolam-dara-training-vision-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -45,6 +46,7 @@ export function KolamDaraTrainingSurface({
   const [productsRefreshKey, setProductsRefreshKey] = useState(0);
   const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
   const [fineTuneRefreshKey, setFineTuneRefreshKey] = useState(0);
+  const [visionRefreshKey, setVisionRefreshKey] = useState(0);
 
   const selectedTab = getKolamDaraTrainingTab(route);
   const selectedTabLabel =
@@ -66,6 +68,7 @@ export function KolamDaraTrainingSurface({
     setProductsRefreshKey(key => key + 1);
     setReviewsRefreshKey(key => key + 1);
     setFineTuneRefreshKey(key => key + 1);
+    setVisionRefreshKey(key => key + 1);
   };
 
   if (!access.canSee) {
@@ -145,6 +148,11 @@ export function KolamDaraTrainingSurface({
           <KolamDaraTrainingFineTuneBody
             canManage={access.canManage}
             refreshKey={fineTuneRefreshKey}
+          />
+        ) : selectedTab === 'vision' ? (
+          <KolamDaraTrainingVisionBody
+            canManage={access.canManage}
+            refreshKey={visionRefreshKey}
           />
         ) : controller.loading && !controller.stats ? (
           <Text style={styles.meta}>Memuat…</Text>

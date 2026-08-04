@@ -38,6 +38,47 @@ jest.mock('../src/services/kolam-dara-training-api', () => ({
   updateKolamDaraTrainingFineTuneDatasetItem: jest.fn(),
 }));
 
+jest.mock('../src/services/kolam-dara-training-vision-api', () => ({
+  fetchKolamDaraTrainingVisionStats: jest.fn(),
+  listKolamDaraTrainingVisionSpecies: jest.fn(),
+  listKolamDaraTrainingVisionProducts: jest.fn(),
+  listKolamDaraTrainingVisionFeedback: jest.fn(),
+  listKolamDaraTrainingVisionHardNegatives: jest.fn(),
+  listKolamDaraTrainingVisionFeedbackQueue: jest.fn(),
+  fetchKolamDaraTrainingVisionLatestEvalRun: jest.fn(),
+  listKolamDaraTrainingVisionEvalRuns: jest.fn(),
+  fetchKolamDaraTrainingVisionBaselineKpi: jest.fn(),
+  resolveKolamDaraTrainingVisionImageUri: jest.fn((uri: string) => uri || null),
+  rebuildKolamDaraTrainingVisionClipIndex: jest.fn(),
+  backfillKolamDaraTrainingVisionClip: jest.fn(),
+  importKolamDaraTrainingVisionFeedback: jest.fn(),
+  exportKolamDaraTrainingVisionYolo: jest.fn(),
+  trainKolamDaraTrainingVisionYolo: jest.fn(),
+  exportKolamDaraTrainingVisionYoloProducts: jest.fn(),
+  trainKolamDaraTrainingVisionYoloProducts: jest.fn(),
+  evalKolamDaraTrainingVisionYolo: jest.fn(),
+  runKolamDaraTrainingVisionHoldoutEval: jest.fn(),
+  addKolamDaraTrainingVisionHardNegative: jest.fn(),
+  importKolamDaraTrainingVisionFeedbackQueueItem: jest.fn(),
+  listKolamDaraTrainingVisionSpeciesPhotos: jest.fn(),
+  listKolamDaraTrainingVisionProductPhotos: jest.fn(),
+  addKolamDaraTrainingVisionSpeciesPhoto: jest.fn(),
+  addKolamDaraTrainingVisionProductPhoto: jest.fn(),
+  deleteKolamDaraTrainingVisionPhoto: jest.fn(),
+}));
+
+import {
+  fetchKolamDaraTrainingVisionStats,
+  listKolamDaraTrainingVisionFeedback,
+  listKolamDaraTrainingVisionFeedbackQueue,
+  listKolamDaraTrainingVisionHardNegatives,
+  listKolamDaraTrainingVisionProducts,
+  listKolamDaraTrainingVisionSpecies,
+  fetchKolamDaraTrainingVisionBaselineKpi,
+  fetchKolamDaraTrainingVisionLatestEvalRun,
+  listKolamDaraTrainingVisionEvalRuns,
+} from '../src/services/kolam-dara-training-vision-api';
+
 const authMock = useKolamAuthContext as jest.MockedFunction<
   typeof useKolamAuthContext
 >;
@@ -72,6 +113,41 @@ const fineTuneBenchmarkMock =
 const fineTuneRunsMock = listKolamDaraTrainingFineTuneRuns as jest.MockedFunction<
   typeof listKolamDaraTrainingFineTuneRuns
 >;
+const visionStatsMock = fetchKolamDaraTrainingVisionStats as jest.MockedFunction<
+  typeof fetchKolamDaraTrainingVisionStats
+>;
+const visionSpeciesMock =
+  listKolamDaraTrainingVisionSpecies as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionSpecies
+  >;
+const visionProductsMock =
+  listKolamDaraTrainingVisionProducts as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionProducts
+  >;
+const visionFeedbackMock =
+  listKolamDaraTrainingVisionFeedback as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionFeedback
+  >;
+const visionHardNegMock =
+  listKolamDaraTrainingVisionHardNegatives as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionHardNegatives
+  >;
+const visionQueueMock =
+  listKolamDaraTrainingVisionFeedbackQueue as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionFeedbackQueue
+  >;
+const visionLatestEvalMock =
+  fetchKolamDaraTrainingVisionLatestEvalRun as jest.MockedFunction<
+    typeof fetchKolamDaraTrainingVisionLatestEvalRun
+  >;
+const visionEvalRunsMock =
+  listKolamDaraTrainingVisionEvalRuns as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionEvalRuns
+  >;
+const visionBaselineMock =
+  fetchKolamDaraTrainingVisionBaselineKpi as jest.MockedFunction<
+    typeof fetchKolamDaraTrainingVisionBaselineKpi
+  >;
 
 describe('KolamDaraTrainingSurface', () => {
   beforeEach(() => {
@@ -212,6 +288,71 @@ describe('KolamDaraTrainingSurface', () => {
       ok: true,
     });
     fineTuneRunsMock.mockResolvedValue([]);
+    visionStatsMock.mockResolvedValue({
+      trainingPhotos: 12,
+      speciesWithTraining: 3,
+      speciesReadyForTrain: 2,
+      feedbackTotal: 4,
+      minTrainingPhotos: 3,
+      yoloModelReady: true,
+      yoloClassCount: 5,
+      clipIndexTotal: 10,
+      clipIndexClipCount: 8,
+      clipIndexMissing: 2,
+      clipIndexJob: null,
+      hardNegativeCount: 1,
+      feedbackPending: 1,
+      speciesTrainingPhotos: 12,
+      productTrainingPhotos: 4,
+      productsWithTraining: 2,
+      closedWorldMode: true,
+      ocrUnifiedEnabled: true,
+      ocrEngine: 'paddle',
+      ocrTesseractFallback: true,
+      detectCropMode: 'auto',
+      detectCropModel: 'yolov8n',
+      detectCropBackend: 'yolo',
+      feedbackSpeciesTotal: 3,
+      feedbackProductTotal: 1,
+      yoloProductModelReady: false,
+      yoloProductClassCount: 0,
+      minProductTrainingPhotos: 3,
+      visionLlmFallbackEnabled: false,
+      visionLlmFallbackReady: false,
+      embedModelId: 'siglip',
+      embedFamily: 'siglip',
+      embedMinScore: 0.2,
+      embedIndexCurrentModel: 8,
+      embedIndexStale: 0,
+      negativeTypes: [{id: 'lainnya', label: 'Di luar katalog DA'}],
+    });
+    visionSpeciesMock.mockResolvedValue([]);
+    visionProductsMock.mockResolvedValue([]);
+    visionFeedbackMock.mockResolvedValue({
+      rows: [
+        {
+          id: 'vfb1',
+          conversationId: 'c1',
+          buyerImageUrl: '/media/a.jpg',
+          matchStatus: 'ambiguous',
+          entityKind: 'species',
+          suggestedDisplayName: 'Wrong',
+          correctDisplayName: 'Rana sp.',
+          correctSku: '',
+          notes: '',
+          inTrainingDataset: false,
+          createdAt: '2026-08-01T10:00:00.000Z',
+        },
+      ],
+      page: 1,
+      pages: 1,
+      total: 1,
+    });
+    visionHardNegMock.mockResolvedValue([]);
+    visionQueueMock.mockResolvedValue([]);
+    visionLatestEvalMock.mockResolvedValue(null);
+    visionEvalRunsMock.mockResolvedValue([]);
+    visionBaselineMock.mockResolvedValue(null);
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -340,6 +481,31 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('anda siapa');
     expect(fineTuneSummaryMock).toHaveBeenCalled();
     expect(fineTuneCandidatesMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders vision inbox ringkasan on vision tab', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=vision" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Vision inbox — closed-world');
+    expect(text).toContain('Ringkasan');
+    expect(text).toContain('Koreksi inbox');
+    expect(text).toContain('Status pipeline');
+    expect(text).toContain('Closed-world');
+    expect(visionStatsMock).toHaveBeenCalled();
+    expect(visionFeedbackMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
