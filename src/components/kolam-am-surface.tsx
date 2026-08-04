@@ -3328,6 +3328,7 @@ function AmHardwareDeviceList({
 }
 
 function AmDeviceDetailPanel({device}: {device: AmDevice}) {
+  const isBrowserDevice = device.connectionType === 'browser';
   const [accounts, setAccounts] = React.useState<AmServiceAccount[]>([]);
   const [services, setServices] = React.useState<AmDeviceServiceStatus[]>([]);
   const [allDevices, setAllDevices] = React.useState<AmDevice[]>([]);
@@ -3349,10 +3350,10 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   const [error, setError] = React.useState<string | null>(null);
 
   const servicePlatformItems = React.useMemo(
-    () => device.connectionType === 'browser'
+    () => isBrowserDevice
       ? ['whatsapp', 'tokopedia', 'shopee', 'tiktok', 'instagram']
       : ['bca', 'brimo', 'dana'],
-    [device.connectionType],
+    [isBrowserDevice],
   );
   const deviceServiceMode = React.useMemo(() => {
     if (accounts.some(account => AM_EXCLUSIVE_SERVICE_PLATFORMS.has(account.platform))) return 'exclusive';
@@ -3586,18 +3587,28 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       <Text style={styles.panelTitle}>{device.name}</Text>
       <View style={styles.metricGrid}>
         <AmMetricCard label="Connection" value={titleCase(device.connectionType ?? 'usb')} meta={formatDeviceIdentifier(device)} />
-        <AmMetricCard label="ADB" value={titleCase(device.adbStatus ?? 'disconnected')} meta={device.adbCheckedAt ? formatAmDate(device.adbCheckedAt) : 'not checked'} />
-        <AmMetricCard label="Ports" value={String(device.adbPort ?? '-')} meta={`Appium ${device.appiumPort ?? '-'} / System ${device.systemPort ?? '-'}`} />
+        {isBrowserDevice ? (
+          <AmMetricCard label="Runtime" value="Playwright" meta="Chromium" />
+        ) : (
+          <>
+            <AmMetricCard label="ADB" value={titleCase(device.adbStatus ?? 'disconnected')} meta={device.adbCheckedAt ? formatAmDate(device.adbCheckedAt) : 'not checked'} />
+            <AmMetricCard label="Ports" value={String(device.adbPort ?? '-')} meta={`Appium ${device.appiumPort ?? '-'} / System ${device.systemPort ?? '-'}`} />
+          </>
+        )}
       </View>
       <View style={styles.detailList}>
-        <View style={styles.detailListRow}>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Brand</Text>
-          <Text style={[styles.cellText, styles.recipientCol]}>{device.brand || 'Not set'}</Text>
-        </View>
-        <View style={styles.detailListRow}>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Model</Text>
-          <Text style={[styles.cellText, styles.recipientCol]}>{device.model || 'Not set'}</Text>
-        </View>
+        {isBrowserDevice ? null : (
+          <>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Brand</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{device.brand || 'Not set'}</Text>
+            </View>
+            <View style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Model</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{device.model || 'Not set'}</Text>
+            </View>
+          </>
+        )}
         <View style={styles.detailListRow}>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Box</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceBox(device)}</Text>

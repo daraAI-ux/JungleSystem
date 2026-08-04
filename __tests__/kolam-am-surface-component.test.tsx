@@ -2705,6 +2705,14 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
+    let text = renderText(renderer!);
+    expect(text).toContain('Runtime');
+    expect(text).toContain('Playwright');
+    expect(text).toContain('Chromium');
+    expect(text).not.toContain('Ports');
+    expect(text).not.toContain('Brand');
+    expect(text).not.toContain('Model');
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Add Service Account device-browser'}).props.onPress();
     });
