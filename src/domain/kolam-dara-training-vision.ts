@@ -33,7 +33,7 @@ export const KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS = 5;
 export const KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS = 3;
 
 /**
- * Train-ready when training photo count meets the YOLO min for that entity.
+ * Train-ready when **training** photo count meets the YOLO min (katalog tidak dihitung).
  * SoT: species `readyForTrain` / product export `minPhotos`.
  */
 export function isKolamDaraTrainingVisionReadyForTrain(
@@ -46,6 +46,24 @@ export function isKolamDaraTrainingVisionReadyForTrain(
       KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   );
   return Number(trainingCount) >= min;
+}
+
+/** Status badge: Siap latih | n/min (hanya dari kolom Training). */
+export function formatKolamDaraTrainingVisionTrainStatusLabel(
+  trainingCount: number,
+  minPhotos: number,
+): {ready: boolean; label: string} {
+  const min = Math.max(
+    1,
+    Math.floor(Number(minPhotos)) ||
+      KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+  );
+  const count = Math.max(0, Math.floor(Number(trainingCount)) || 0);
+  const ready = count >= min;
+  return {
+    ready,
+    label: ready ? 'Siap latih' : `${count}/${min}`,
+  };
 }
 
 export type KolamDaraTrainingVisionMatchStatus =

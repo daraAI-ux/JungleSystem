@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import {
   formatKolamDaraTrainingVisionDateTime,
-  isKolamDaraTrainingVisionReadyForTrain,
+  formatKolamDaraTrainingVisionTrainStatusLabel,
   KOLAM_DARA_TRAINING_VISION_MATCH_LABELS,
   KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+  KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
   KOLAM_DARA_TRAINING_VISION_SECTIONS,
   resolveKolamDaraTrainingVisionMatchIntent,
   type KolamDaraTrainingVisionBaselineKpi,
@@ -739,38 +740,47 @@ export function KolamDaraTrainingVisionBody({
                   <Text style={[styles.th, styles.colReady]}>Status</Text>
                   <Text style={[styles.th, styles.colAction]} />
                 </View>
-                {speciesRows.map(row => (
-                  <View key={row.speciesId} style={styles.tableRow}>
-                    <View style={styles.colName}>
-                      <Text style={styles.tdStrong}>{row.displayName}</Text>
-                      {row.scientificName ? (
-                        <Text style={styles.tdMuted}>{row.scientificName}</Text>
-                      ) : null}
+                {speciesRows.map(row => {
+                  const trainStatus = formatKolamDaraTrainingVisionTrainStatusLabel(
+                    row.trainingCount,
+                    stats?.minTrainingPhotos ??
+                      KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
+                  );
+                  return (
+                    <View key={row.speciesId} style={styles.tableRow}>
+                      <View style={styles.colName}>
+                        <Text style={styles.tdStrong}>{row.displayName}</Text>
+                        {row.scientificName ? (
+                          <Text style={styles.tdMuted}>
+                            {row.scientificName}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Text style={[styles.td, styles.colCount]}>
+                        {row.catalogPhotoCount}
+                      </Text>
+                      <Text style={[styles.td, styles.colCount]}>
+                        {row.trainingCount}
+                      </Text>
+                      <View style={styles.colReady}>
+                        <KolamStatusBadge
+                          intent={trainStatus.ready ? 'success' : 'muted'}
+                          label={trainStatus.label}
+                        />
+                      </View>
+                      <View style={styles.colAction}>
+                        <KolamButton
+                          intent="secondary"
+                          label="Kelola"
+                          onPress={() => {
+                            void openSpecies(row);
+                          }}
+                          size="sm"
+                        />
+                      </View>
                     </View>
-                    <Text style={[styles.td, styles.colCount]}>
-                      {row.catalogPhotoCount}
-                    </Text>
-                    <Text style={[styles.td, styles.colCount]}>
-                      {row.trainingCount}
-                    </Text>
-                    <View style={styles.colReady}>
-                      <KolamStatusBadge
-                        intent={row.readyForTrain ? 'success' : 'muted'}
-                        label={row.readyForTrain ? 'Siap latih' : 'Kumpulkan'}
-                      />
-                    </View>
-                    <View style={styles.colAction}>
-                      <KolamButton
-                        intent="secondary"
-                        label="Kelola"
-                        onPress={() => {
-                          void openSpecies(row);
-                        }}
-                        size="sm"
-                      />
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
                 {speciesPages > 1 ? (
                   <View style={styles.pager}>
                     <KolamButton
@@ -905,7 +915,7 @@ export function KolamDaraTrainingVisionBody({
                   <Text style={[styles.th, styles.colAction]} />
                 </View>
                 {productRows.map(row => {
-                  const readyForTrain = isKolamDaraTrainingVisionReadyForTrain(
+                  const trainStatus = formatKolamDaraTrainingVisionTrainStatusLabel(
                     row.trainingCount,
                     stats?.minProductTrainingPhotos ??
                       KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
@@ -923,8 +933,8 @@ export function KolamDaraTrainingVisionBody({
                       </Text>
                       <View style={styles.colReady}>
                         <KolamStatusBadge
-                          intent={readyForTrain ? 'success' : 'muted'}
-                          label={readyForTrain ? 'Siap latih' : 'Kumpulkan'}
+                          intent={trainStatus.ready ? 'success' : 'muted'}
+                          label={trainStatus.label}
                         />
                       </View>
                       <View style={styles.colAction}>

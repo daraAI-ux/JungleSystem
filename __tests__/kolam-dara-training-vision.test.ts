@@ -1,4 +1,5 @@
 import {
+  formatKolamDaraTrainingVisionTrainStatusLabel,
   isKolamDaraTrainingVisionReadyForTrain,
   KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
@@ -56,6 +57,18 @@ describe('kolam-dara-training-vision domain', () => {
         KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
       ),
     ).toBe(true);
+    expect(formatKolamDaraTrainingVisionTrainStatusLabel(1, 3)).toEqual({
+      ready: false,
+      label: '1/3',
+    });
+    expect(formatKolamDaraTrainingVisionTrainStatusLabel(3, 3)).toEqual({
+      ready: true,
+      label: 'Siap latih',
+    });
+    expect(formatKolamDaraTrainingVisionTrainStatusLabel(2, 5)).toEqual({
+      ready: false,
+      label: '2/5',
+    });
   });
 
   it('normalizes vision species and product lists with meta', () => {

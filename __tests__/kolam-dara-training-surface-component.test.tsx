@@ -623,7 +623,7 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Daftar produk');
     expect(text).toContain('Katalog');
     expect(text).toContain('Status');
-    expect(text).toContain('Kumpulkan');
+    expect(text).toContain('1/3');
     expect(text).toContain('Siap latih');
     expect(text).toContain('Kelola');
     expect(text).toContain('Frog Soil');
