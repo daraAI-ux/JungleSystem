@@ -4,6 +4,7 @@ import {
   getFinanceExpenseStatusIntent,
   getKolamAssetPurchaseCreateRoute,
   getKolamAssetPurchaseDetailRoute,
+  getKolamAssetPurchaseSurfaceMode,
   KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS,
   KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS,
   type KolamFinanceExpenseKind,
@@ -18,6 +19,7 @@ import {
   type KolamFinanceExpenseListController,
 } from '../hooks/use-kolam-finance-expense-list-controller';
 import { formatRupiah } from '../lib/money';
+import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
@@ -790,7 +792,30 @@ export function KolamAssetPurchaseSurface(props: {
   onRouteChange?: (route: string) => void;
   route: string;
 }) {
+  const mode = getKolamAssetPurchaseSurfaceMode(props.route);
+  if (mode === 'create' || mode === 'edit') {
+    return <KolamAssetPurchaseFormSurface {...props} />;
+  }
+  if (mode === 'list') {
+    return (
+      <KolamFinanceExpenseListSurface kind="asset-purchase" {...props} />
+    );
+  }
   return (
-    <KolamFinanceExpenseListSurface kind="asset-purchase" {...props} />
+    <View style={styles.surface}>
+      <KolamEmptyState title="Belum tersedia" />
+      {props.onRouteChange ? (
+        <KolamButton
+          intent="secondary"
+          label="Kembali"
+          onPress={() =>
+            props.onRouteChange?.(
+              getFinanceExpenseUnsupportedBackRoute('asset-purchase'),
+            )
+          }
+          style={styles.backButton}
+        />
+      ) : null}
+    </View>
   );
 }

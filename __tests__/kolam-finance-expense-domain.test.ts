@@ -8,7 +8,14 @@ import {
 } from '../src/domain/kolam-commission';
 import {
   buildFinanceExpenseListRoute,
+  buildKolamAssetPurchaseCreatePayload,
+  createEmptyKolamAssetPurchaseForm,
   createInitialFinanceExpenseListFilters,
+  createKolamAssetPurchaseFormFromDetail,
+  getAssetPurchaseFormTotal,
+  getKolamAssetPurchaseEditRoute,
+  getKolamAssetPurchaseIdFromRoute,
+  getKolamAssetPurchaseSurfaceMode,
   getKolamFinanceExpenseKindFromRoute,
   getKolamFinanceExpenseSurfaceMode,
   isKolamAssetPurchaseRoute,
@@ -17,7 +24,9 @@ import {
   isKolamRoutineExpenseRoute,
   isKolamUnexpectedExpenseRoute,
   isKolamUnexpectedIncomeRoute,
+  normalizeKolamAssetPurchaseDetail,
   normalizeKolamFinanceExpenseList,
+  validateKolamAssetPurchaseForm,
 } from '../src/domain/kolam-finance-expense';
 
 describe('Kolam finance expense domain', () => {
@@ -152,38 +161,93 @@ describe('Kolam finance expense domain', () => {
     expect(result.totals).toEqual({ totalAmount: 5000000, totalCount: 1 });
   });
 
-  it('normalizes asset-purchase list row with price shipping and book value', () => {
-    const result = normalizeKolamFinanceExpenseList(
-      {
-        data: [
-          {
-            _id: 'ap-1',
-            code: 'APUR-001',
-            name: 'Laptop',
-            price: 10000000,
-            shippingCost: 50000,
-            total: 10050000,
-            location: { name: 'Gudang A' },
-            wallet: { name: 'Utama' },
-            status: 'verified',
-            reason: 'Ops',
-            asset: { currentBookValue: 9000000 },
-            executedAt: '2026-07-01T00:00:00.000Z',
-          },
-        ],
-        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
-      },
-      'asset-purchase',
+  it('maps asset-purchase create and edit surface modes', () => {
+    expect(getKolamAssetPurchaseSurfaceMode('/asset-purchase')).toBe('list');
+    expect(getKolamAssetPurchaseSurfaceMode('/asset-purchase/create')).toBe(
+      'create',
     );
+    expect(getKolamAssetPurchaseSurfaceMode('/asset-purchase/ap-1/edit')).toBe(
+      'edit',
+    );
+    expect(getKolamAssetPurchaseSurfaceMode('/asset-purchase/ap-1')).toBe(
+      'detail',
+    );
+    expect(getKolamAssetPurchaseIdFromRoute('/asset-purchase/ap-1/edit')).toBe(
+      'ap-1',
+    );
+    expect(getKolamAssetPurchaseEditRoute('ap-1')).toBe(
+      '/asset-purchase/ap-1/edit',
+    );
+  });
 
-    expect(result.data[0]).toMatchObject({
-      id: 'ap-1',
+  it('builds create payload and validates form', () => {
+    const form = {
+      ...createEmptyKolamAssetPurchaseForm('2026-07-01'),
+      name: ' Laptop ',
+      priceText: '10000000',
+      shippingCostText: '50000',
+      walletId: 'w1',
+      locationId: 'loc1',
+      series: ' SN-1 ',
+      customFieldValues: [
+        { label: 'RAM', value: '16GB' },
+        { label: '  ', value: 'ignored' },
+      ],
+      reason: ' Ops ',
+    };
+    expect(getAssetPurchaseFormTotal(form)).toBe(10050000);
+    expect(validateKolamAssetPurchaseForm(form, 'create')).toBeNull();
+    expect(buildKolamAssetPurchaseCreatePayload(form)).toMatchObject({
+      name: 'Laptop',
       price: 10000000,
       shippingCost: 50000,
       total: 10050000,
-      locationLabel: 'Gudang A',
-      bookValue: 9000000,
+      wallet: 'w1',
+      location: 'loc1',
+      series: 'SN-1',
+      customFieldValues: [{ label: 'RAM', value: '16GB' }],
       reason: 'Ops',
+    });
+    expect(
+      validateKolamAssetPurchaseForm(
+        { ...form, name: '', priceText: '0' },
+        'create',
+      ),
+    ).toBe('Masukkan nama aset');
+  });
+
+  it('normalizes asset-purchase detail for edit form', () => {
+    const detail = normalizeKolamAssetPurchaseDetail({
+      data: {
+        _id: 'ap-1',
+        code: 'APUR-001',
+        name: 'Laptop',
+        series: 'SN-1',
+        photos: ['/uploads/a.jpg'],
+        customFieldValues: [{ label: 'RAM', value: '16GB' }],
+        price: 10000000,
+        shippingCost: 50000,
+        total: 10050000,
+        wallet: { _id: 'w1', name: 'Kas' },
+        location: { _id: 'loc1', name: 'Gudang' },
+        executedAt: '2026-07-01T12:00:00.000Z',
+        reason: 'Ops',
+        status: 'unverified',
+      },
+    });
+    expect(detail).toMatchObject({
+      id: 'ap-1',
+      walletId: 'w1',
+      locationId: 'loc1',
+      photos: ['/uploads/a.jpg'],
+    });
+    expect(createKolamAssetPurchaseFormFromDetail(detail)).toMatchObject({
+      name: 'Laptop',
+      priceText: '10000000',
+      shippingCostText: '50000',
+      walletId: 'w1',
+      locationId: 'loc1',
+      executedAt: '2026-07-01',
     });
   });
 });

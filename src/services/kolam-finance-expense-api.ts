@@ -1,7 +1,10 @@
 import { appConfig } from '../config/app';
 import {
   getKolamFinanceExpenseApiSegment,
+  normalizeKolamAssetPurchaseDetail,
   normalizeKolamFinanceExpenseList,
+  type KolamAssetPurchaseDetail,
+  type KolamAssetPurchaseWritePayload,
   type KolamFinanceExpenseKind,
   type KolamFinanceExpenseListFilters,
   type KolamFinanceExpenseListResult,
@@ -60,6 +63,80 @@ export async function verifyKolamFinanceExpense(
   });
 }
 
+export async function fetchKolamAssetPurchaseById(
+  id: string,
+): Promise<KolamAssetPurchaseDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/asset-purchase/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamAssetPurchaseDetail(payload);
+}
+
+export async function createKolamAssetPurchase(
+  body: KolamAssetPurchaseWritePayload,
+): Promise<KolamAssetPurchaseDetail> {
+  const payload = await kolamRequest<unknown>('/asset-purchase', {
+    method: 'POST',
+    body,
+  });
+  return normalizeKolamAssetPurchaseDetail(payload);
+}
+
+export async function updateKolamAssetPurchase(
+  id: string,
+  body: KolamAssetPurchaseWritePayload,
+): Promise<KolamAssetPurchaseDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/asset-purchase/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  );
+  return normalizeKolamAssetPurchaseDetail(payload);
+}
+
+export async function uploadKolamAssetPurchasePhotos(
+  localUris: string[],
+): Promise<string[]> {
+  if (localUris.length === 0) {
+    return [];
+  }
+  const body = new FormData();
+  localUris.forEach((localUri, index) => {
+    body.append(
+      'photos',
+      createReactNativeFilePart(
+        localUri,
+        `asset-photo-${index + 1}.jpg`,
+      ) as unknown as Blob,
+    );
+  });
+  const payload = await kolamRequest<unknown>('/asset-purchase/upload-photos', {
+    method: 'POST',
+    body,
+  });
+  const record =
+    payload && typeof payload === 'object'
+      ? (payload as Record<string, unknown>)
+      : {};
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  return rows.map(item => String(item ?? '').trim()).filter(Boolean);
+}
+
+export async function deleteKolamAssetPurchasePhoto(
+  path: string,
+): Promise<void> {
+  await kolamRequest('/asset-purchase/photo', {
+    method: 'DELETE',
+    body: { path },
+  });
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
@@ -76,4 +153,31 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+  const extension = name.split('.').pop()?.toLowerCase();
+  let type = 'image/jpeg';
+  switch (extension) {
+    case 'png':
+      type = 'image/png';
+      break;
+    case 'webp':
+      type = 'image/webp';
+      break;
+    case 'gif':
+      type = 'image/gif';
+      break;
+    default:
+      break;
+  }
+  return {
+    uri: normalizedUri,
+    name,
+    type,
+  };
 }
