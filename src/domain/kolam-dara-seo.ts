@@ -966,17 +966,30 @@ export type KolamDaraSeoSocialSnapshot = {
 export const KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE = 10;
 
 export function formatKolamDaraSeoKeywordDifficulty(score: number) {
-  if (score >= 70) {
+  const level = resolveKolamDaraSeoKeywordDifficulty(score);
+  if (level === 'low') {
     return 'Low';
   }
-  if (score >= 50) {
+  if (level === 'medium') {
     return 'Medium';
   }
   return 'High';
 }
 
+export function resolveKolamDaraSeoKeywordDifficulty(
+  score: number,
+): 'low' | 'medium' | 'high' {
+  if (score >= 70) {
+    return 'low';
+  }
+  if (score >= 50) {
+    return 'medium';
+  }
+  return 'high';
+}
+
 export function formatKolamDaraSeoKeywordVolume(score: number) {
-  return Math.round(score * 420);
+  return score * 420;
 }
 
 export function formatKolamDaraSeoMentionSource(

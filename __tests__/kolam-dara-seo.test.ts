@@ -1,6 +1,8 @@
 import {
   buildKolamDaraSeoRoute,
   filterKolamDaraSeoSuggestions,
+  formatKolamDaraSeoKeywordDifficulty,
+  formatKolamDaraSeoKeywordVolume,
   formatKolamDaraSeoScoreStatus,
   formatKolamDaraSeoSentimentStatus,
   formatKolamDaraSeoSuggestionStatus,
@@ -23,9 +25,18 @@ import {
   paginateKolamDaraSeoSuggestions,
   pickKolamDaraSeoLatestSocialSnapshot,
   resolveKolamDaraSeoAccess,
+  resolveKolamDaraSeoKeywordDifficulty,
 } from '../src/domain/kolam-dara-seo';
 
 describe('kolam-dara-seo domain', () => {
+  it('formats keyword volume and difficulty like FE', () => {
+    expect(formatKolamDaraSeoKeywordVolume(60)).toBe(25200);
+    expect(resolveKolamDaraSeoKeywordDifficulty(80)).toBe('low');
+    expect(resolveKolamDaraSeoKeywordDifficulty(55)).toBe('medium');
+    expect(resolveKolamDaraSeoKeywordDifficulty(20)).toBe('high');
+    expect(formatKolamDaraSeoKeywordDifficulty(55)).toBe('Medium');
+  });
+
   it('matches SEO routes and resolves tabs', () => {
     expect(isKolamDaraSeoRoute('/campaign/dara-seo')).toBe(true);
     expect(isKolamDaraSeoRoute('/campaign/dara-seo/approvals')).toBe(true);

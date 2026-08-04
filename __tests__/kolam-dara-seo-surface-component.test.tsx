@@ -5,6 +5,7 @@ import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
   fetchKolamDaraSeoActiveBrands,
   fetchKolamDaraSeoDashboard,
+  fetchKolamDaraSeoKeywords,
   fetchKolamDaraSeoPendingSuggestions,
   fetchKolamDaraSeoRankings,
   fetchKolamDaraSeoStatus,
@@ -87,6 +88,9 @@ const jobsListMock = fetchKolamDaraJobsList as jest.MockedFunction<
 const rankingsMock = fetchKolamDaraSeoRankings as jest.MockedFunction<
   typeof fetchKolamDaraSeoRankings
 >;
+const keywordsMock = fetchKolamDaraSeoKeywords as jest.MockedFunction<
+  typeof fetchKolamDaraSeoKeywords
+>;
 const websitePreviewMock = fetchKolamDaraSeoWebsitePreview as jest.MockedFunction<
   typeof fetchKolamDaraSeoWebsitePreview
 >;
@@ -101,6 +105,7 @@ describe('KolamDaraSeoSurface', () => {
     brandsMock.mockResolvedValue({brands: [], defaultBrandId: 'all'});
     jobsListMock.mockResolvedValue([]);
     rankingsMock.mockResolvedValue({items: [], total: 0});
+    keywordsMock.mockResolvedValue([]);
     websitePreviewMock.mockResolvedValue({
       companyName: 'Dunia Anura',
       publicSiteUrl: 'https://duniaanura.test',
@@ -329,6 +334,42 @@ describe('KolamDaraSeoSurface', () => {
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('ikan koi');
     expect(rankingsMock).toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders keywords as FE table columns with volume and difficulty', async () => {
+    keywordsMock.mockResolvedValue([
+      {
+        id: 'k1',
+        mainKeyword: 'pakan lele',
+        keywordType: 'opportunity',
+        opportunityScore: 60,
+        productId: 'p1',
+      },
+    ]);
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo/keywords" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Keyword');
+    expect(text).toContain('Volume');
+    expect(text).toContain('Difficulty');
+    expect(text).toContain('Trend');
+    expect(text).toContain('Skor');
+    expect(text).toContain('pakan lele');
+    expect(text).toContain('25.200');
+    expect(text).toContain('Medium');
+    expect(keywordsMock).toHaveBeenCalled();
+    expect(text).not.toContain('Refresh');
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });
