@@ -522,7 +522,7 @@ function AmDashboardPage({
       </View>
       <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
-        <AmMetricCard label="Total Balance" value={formatRupiah(data.summary.totalBalance)} meta={`${data.summary.totalAccounts} account`} />
+        <AmMetricCard label="Total Balance" value={formatRupiah(data.summary.totalBalance)} meta={`${data.summary.totalAccounts} accounts`} />
         <AmMetricCard label="Today's Incoming" value={formatRupiah(data.summary.todayIncoming.total)} meta={`${data.summary.todayIncoming.count} transactions`} />
         <AmMetricCard label="Today's Outgoing" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transactions`} />
         <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta="with active accounts" />
@@ -701,7 +701,9 @@ function AmRecentTransfersPanel({
             style={styles.recentListRow}>
             <View style={styles.recentListMain}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>
+                {[transfer.recipientAccount, transfer.recipientName].filter(Boolean).join(' - ') || '-'}
+              </Text>
             </View>
             <View style={styles.recentListMeta}>
               <Text style={[styles.cellText, styles.amountText]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>

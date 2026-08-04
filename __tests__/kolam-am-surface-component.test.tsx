@@ -418,8 +418,9 @@ describe('KolamAmSurface', () => {
     expect(text.indexOf("Today's Transfers")).toBeLessThan(text.indexOf('Recent Transfers'));
     expect(text.indexOf('Recent Transfers')).toBeLessThan(text.indexOf('Device Overview'));
     expect(text).not.toContain('Transfer Status');
-    expect(text).toContain('Vendor Dashboard');
-    expect(text).toContain('Vendor Dashboard Sixth');
+    expect(joinedText).toContain('3 accounts');
+    expect(joinedText).toContain('999 - Vendor Dashboard');
+    expect(joinedText).toContain('994 - Vendor Dashboard Sixth');
     expect(joinedText).toContain('Legacy BCA - 321');
     expect(text).toContain('Recent Mutations');
     expect(joinedText).toContain('Legacy BRI - 654');

@@ -1,13 +1,20 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  formatKolamLayananContractDuration,
+  formatKolamLayananPurchaseDimensions,
+  formatKolamLayananPurchaseVolumeM3,
   getKolamLayananMaterialChargeLabel,
+  getKolamLayananPendingStatusIntent,
   getKolamLayananPendingStatusLabel,
+  getKolamLayananScheduleStatusLabel,
   getKolamLayananTaskTypeLabel,
   getKolamLayananWeekdayLabel,
   KOLAM_LAYANAN_MATERIAL_CHARGE_OPTIONS,
   KOLAM_LAYANAN_ROOT,
   KOLAM_LAYANAN_WEEKDAY_OPTIONS,
+  type KolamLayananContractDurationUnit,
+  type KolamLayananVoucherDetail,
   type KolamLayananVoucherMaterialLine,
 } from '../domain/kolam-layanan';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -18,7 +25,10 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDescriptionList } from './kolam-description-list';
+import {
+  KolamDetailMetaStrip,
+  KolamDetailMetaStripItem,
+} from './kolam-detail-meta-strip';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -68,8 +78,46 @@ function FormSection({
   );
 }
 
-function desc(id: string, label: string, value: string) {
-  return { id, label, meta: '', tone: 'default' as const, value };
+/** FE DetailField: label atas, value bawah. */
+function DetailField({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.detailField}>
+      <Text style={styles.detailFieldLabel}>{label}</Text>
+      <View style={styles.detailFieldValue}>{children}</View>
+    </View>
+  );
+}
+
+function formatDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function EmptyValue() {
+  return <Text style={styles.emptyValue}>—</Text>;
+}
+
+function voucherBackRoute(voucher: KolamLayananVoucherDetail | null) {
+  if (voucher?.serviceId) {
+    return `${KOLAM_LAYANAN_ROOT}/${voucher.serviceId}`;
+  }
+  return KOLAM_LAYANAN_ROOT;
 }
 
 export function KolamLayananVoucherDetail({
@@ -94,26 +142,9 @@ export function KolamLayananVoucherDetail({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
-              disabled={controller.loading || controller.saving}
-              label="Refresh"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
+              label="Kembali ke layanan"
+              onPress={() => onRouteChange?.(voucherBackRoute(voucher))}
             />
-            <KolamButton
-              label="Daftar"
-              onPress={() => onRouteChange?.(KOLAM_LAYANAN_ROOT)}
-            />
-            {voucher?.serviceId ? (
-              <KolamButton
-                label="Paket"
-                onPress={() =>
-                  onRouteChange?.(
-                    `${KOLAM_LAYANAN_ROOT}/${voucher.serviceId}`,
-                  )
-                }
-              />
-            ) : null}
           </View>
         </View>
       </View>
@@ -152,53 +183,19 @@ export function KolamLayananVoucherDetail({
         />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.stripRow}>
-            <KolamStatusBadge
-              intent={
-                voucher.status === 'initiated'
-                  ? 'success'
-                  : voucher.status === 'pending'
-                    ? 'secondary'
-                    : 'warning'
-              }
-              label={getKolamLayananPendingStatusLabel(voucher.status)}
-            />
-            <KolamStatusBadge
-              intent="info"
-              label={getKolamLayananTaskTypeLabel(voucher.taskType)}
-            />
-          </View>
+          <KolamDetailMetaStrip>
+            <KolamDetailMetaStripItem label="Status voucher">
+              <KolamStatusBadge
+                intent={getKolamLayananPendingStatusIntent(voucher.status)}
+                label={getKolamLayananPendingStatusLabel(voucher.status)}
+              />
+            </KolamDetailMetaStripItem>
+          </KolamDetailMetaStrip>
 
-          <FormSection title="Informasi voucher">
-            <KolamDescriptionList
-              rows={[
-                desc('serial', 'Serial', voucher.serviceSerial),
-                desc('invoice', 'Faktur', voucher.invoiceCode),
-                desc('service', 'Paket', voucher.serviceName),
-                desc('package', 'Kode paket', voucher.packageCode),
-                desc('customer', 'Pelanggan', voucher.customerName),
-                desc(
-                  'visits',
-                  'Kunjungan / bulan',
-                  voucher.visitsPerMonth != null
-                    ? String(voucher.visitsPerMonth)
-                    : '—',
-                ),
-                desc(
-                  'contract',
-                  'Durasi kontrak',
-                  voucher.contractDurationValue != null
-                    ? `${voucher.contractDurationValue} ${voucher.contractDurationUnit || ''}`
-                    : '—',
-                ),
-                desc(
-                  'pic',
-                  'PIC',
-                  voucher.visitAssignedToName || 'Belum ditetapkan',
-                ),
-              ]}
-            />
-          </FormSection>
+          <VoucherInfoSection
+            onRouteChange={onRouteChange}
+            voucher={voucher}
+          />
 
           {voucher.initiated ? (
             <FormSection title="Voucher aktif">
@@ -216,6 +213,187 @@ export function KolamLayananVoucherDetail({
         </ScrollView>
       )}
     </View>
+  );
+}
+
+function VoucherInfoSection({
+  onRouteChange,
+  voucher,
+}: {
+  onRouteChange?: (route: string) => void;
+  voucher: KolamLayananVoucherDetail;
+}) {
+  const purchaseDimLabel = formatKolamLayananPurchaseDimensions(
+    voucher.purchaseDimensions,
+  );
+  const volumeFallback = !purchaseDimLabel
+    ? formatKolamLayananPurchaseVolumeM3(voucher.quantity)
+    : null;
+  const enclosureTypesLabel = voucher.purchaseEnclosureTypes.length
+    ? voucher.purchaseEnclosureTypes.join(', ')
+    : null;
+  const enclosureLabel = voucher.enclosureName
+    ? voucher.enclosureType
+      ? `${voucher.enclosureName} (${voucher.enclosureType})`
+      : voucher.enclosureName
+    : null;
+  const contractLabel =
+    voucher.contractDurationValue != null && voucher.contractDurationUnit
+      ? formatKolamLayananContractDuration(
+          voucher.contractDurationValue,
+          voucher.contractDurationUnit as KolamLayananContractDurationUnit,
+        )
+      : null;
+  const purchasedLabel = formatDate(voucher.purchasedAt);
+  const initiatedLabel = formatDate(voucher.initiatedAt);
+  const hasInvoice =
+    Boolean(voucher.invoiceCode) && voucher.invoiceCode !== '—';
+  const hasCustomer =
+    Boolean(voucher.customerName) && voucher.customerName !== '—';
+  const hasService =
+    Boolean(voucher.serviceName) && voucher.serviceName !== '—';
+  const hasPackage =
+    Boolean(voucher.packageCode) && voucher.packageCode !== '—';
+
+  return (
+    <FormSection title="Informasi voucher">
+      <View style={styles.summaryGrid}>
+        <DetailField label="Faktur">
+          {hasInvoice && voucher.saleId ? (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => onRouteChange?.(`/sales/${voucher.saleId}`)}
+            >
+              <Text style={[styles.summaryValue, styles.monoText]}>
+                {voucher.invoiceCode}
+              </Text>
+            </Pressable>
+          ) : hasInvoice ? (
+            <Text style={[styles.summaryValue, styles.monoText]}>
+              {voucher.invoiceCode}
+            </Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+        <DetailField label="Pelanggan">
+          {hasCustomer ? (
+            <Text style={styles.summaryValue}>{voucher.customerName}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+
+        <DetailField label="Layanan">
+          {hasService ? (
+            <Text style={styles.summaryValue}>{voucher.serviceName}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+        <DetailField label="Tipe layanan">
+          {voucher.taskType ? (
+            <KolamStatusBadge
+              intent={voucher.taskType === 'dosing' ? 'info' : 'secondary'}
+              label={getKolamLayananTaskTypeLabel(voucher.taskType)}
+            />
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+
+        <DetailField label="Kunjungan per bulan">
+          {voucher.visitsPerMonth != null && voucher.visitsPerMonth > 0 ? (
+            <Text style={styles.summaryValue}>{voucher.visitsPerMonth}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+        <DetailField label="Durasi kontrak">
+          {contractLabel && contractLabel !== '—' ? (
+            <Text style={styles.summaryValue}>{contractLabel}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+
+        <DetailField label="Kode paket">
+          {hasPackage ? (
+            <Text style={[styles.summaryValue, styles.monoText]}>
+              {voucher.packageCode}
+            </Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+
+        <DetailField label="Ukuran kandang (P × L × T)">
+          {purchaseDimLabel ? (
+            <View style={styles.dimBlock}>
+              <Text style={styles.summaryValue}>{purchaseDimLabel}</Text>
+              {volumeFallback ? (
+                <Text style={styles.metaText}>Volume: {volumeFallback}</Text>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.dimBlock}>
+              <EmptyValue />
+              <Text style={styles.warnText}>
+                Ukuran kontrak belum tercatat — aktivasi ke kandang ditolak.
+              </Text>
+            </View>
+          )}
+        </DetailField>
+        <DetailField label="Tipe kandang kontrak">
+          {enclosureTypesLabel ? (
+            <Text style={styles.summaryValue}>{enclosureTypesLabel}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+
+        <DetailField label="Kandang teraktivasi">
+          {voucher.enclosureId && enclosureLabel ? (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() =>
+                onRouteChange?.(`/enclosures/${voucher.enclosureId}`)
+              }
+            >
+              <Text style={styles.linkText}>{enclosureLabel}</Text>
+            </Pressable>
+          ) : enclosureLabel ? (
+            <Text style={styles.summaryValue}>{enclosureLabel}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+        <DetailField label="PIC kunjungan">
+          {voucher.visitAssignedToName ? (
+            <Text style={styles.summaryValue}>
+              {voucher.visitAssignedToName}
+            </Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+
+        <DetailField label="Tanggal beli">
+          {purchasedLabel ? (
+            <Text style={styles.summaryValue}>{purchasedLabel}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+        <DetailField label="Tanggal aktivasi">
+          {initiatedLabel ? (
+            <Text style={styles.summaryValue}>{initiatedLabel}</Text>
+          ) : (
+            <EmptyValue />
+          )}
+        </DetailField>
+      </View>
+    </FormSection>
   );
 }
 
@@ -278,7 +456,7 @@ function VoucherScheduleSection({
       <View style={styles.stripRow}>
         <KolamStatusBadge
           intent="secondary"
-          label={getKolamLayananPendingStatusLabel(status)}
+          label={getKolamLayananScheduleStatusLabel(status)}
         />
         <Text style={styles.metaText}>
           {schedule.visitsPerWeek ?? 1} kunjungan / minggu
@@ -651,9 +829,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   content: {
-    gap: 16,
+    alignItems: 'stretch',
+    gap: 12,
     paddingBottom: 32,
-    paddingHorizontal: 8,
   },
   toolbarTitle: {
     color: V.colors.fg,
@@ -682,6 +860,48 @@ const styles = StyleSheet.create({
   },
   sectionBody: {
     gap: 12,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailField: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    gap: 4,
+    minWidth: 140,
+  },
+  detailFieldLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  detailFieldValue: {
+    minWidth: 0,
+  },
+  summaryValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  monoText: {
+    fontFamily: 'Consolas',
+  },
+  emptyValue: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+  },
+  linkText: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  dimBlock: {
+    gap: 4,
   },
   fieldLabel: {
     color: V.colors.mutedFg,

@@ -306,6 +306,45 @@ describe('kolam-layanan domain', () => {
     expect(body.price_m3).toBe(15000);
   });
 
+  it('normalizes voucher purchase dimensions and enclosure types', () => {
+    const voucher = normalizeKolamLayananVoucherDetail({
+      data: {
+        _id: 'ps2',
+        status: 'pending',
+        purchaseVolumeDimensions: {
+          length: 100,
+          width: 50,
+          height: 40,
+          unit: { initial: 'cm' },
+        },
+        purchaseEnclosureTypes: ['Terrarium', 'Aquarium'],
+        service: {
+          _id: 'svc2',
+          name: 'Pkg',
+          enclosureTypes: ['Vivarium'],
+        },
+      },
+    });
+    expect(voucher.purchaseDimensions).toEqual({
+      length: 100,
+      width: 50,
+      height: 40,
+      unitLabel: 'cm',
+    });
+    // Non-initiated: prefer live service enclosure types (FE enclosureTypesFromPending).
+    expect(voucher.purchaseEnclosureTypes).toEqual(['Vivarium']);
+
+    const initiated = normalizeKolamLayananVoucherDetail({
+      data: {
+        _id: 'ps3',
+        status: 'initiated',
+        purchaseEnclosureTypes: ['Terrarium'],
+        service: { _id: 'svc3', name: 'Pkg', enclosureTypes: ['Vivarium'] },
+      },
+    });
+    expect(initiated.purchaseEnclosureTypes).toEqual(['Terrarium']);
+  });
+
   it('normalizes voucher detail, schedule, terms, and sale permission gate', () => {
     const voucher = normalizeKolamLayananVoucherDetail({
       data: {
@@ -338,6 +377,8 @@ describe('kolam-layanan domain', () => {
     expect(voucher.customerName).toBe('Andi');
     expect(voucher.materialLines).toHaveLength(1);
     expect(voucher.materialLines[0].chargeMode).toBe('hpp_voucher');
+    expect(voucher.purchaseDimensions).toBeNull();
+    expect(voucher.purchaseEnclosureTypes).toEqual([]);
     expect(getKolamLayananVoucherIdFromRoute('/layanan/voucher/ps1')).toBe(
       'ps1',
     );

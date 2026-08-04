@@ -316,6 +316,13 @@ export interface KolamLayananVoucherMaterialLine {
   stockFulfilledAt: string | null;
 }
 
+export interface KolamLayananPurchaseVolumeDimensions {
+  length: number;
+  width: number;
+  height: number;
+  unitLabel: string;
+}
+
 export interface KolamLayananVoucherDetail {
   id: string;
   serviceSerial: string;
@@ -330,6 +337,10 @@ export interface KolamLayananVoucherDetail {
   taskType: string | null;
   visitsPerMonth: number | null;
   purchasedAt: string | null;
+  initiatedAt: string | null;
+  quantity: number | null;
+  purchaseDimensions: KolamLayananPurchaseVolumeDimensions | null;
+  purchaseEnclosureTypes: string[];
   contractDurationValue: number | null;
   contractDurationUnit: string | null;
   proposedVisitSlots: KolamLayananVisitSlot[];
@@ -343,6 +354,7 @@ export interface KolamLayananVoucherDetail {
   initiatedMaintenanceId: string | null;
   enclosureId: string | null;
   enclosureName: string | null;
+  enclosureType: string | null;
   initiated: boolean;
   raw: unknown;
 }
@@ -855,13 +867,22 @@ export const KOLAM_LAYANAN_SUBSCRIPTION_STATUS_OPTIONS: Array<{
   { id: 'cancelled', label: 'Dibatalkan' },
 ];
 
+/** FE voucher detail STATUS_LABEL (+ cancelled). */
 export const KOLAM_LAYANAN_PENDING_STATUS_LABEL: Record<string, string> = {
-  pending: 'Menunggu',
-  awaiting_staff_approval: 'Menunggu staf',
-  awaiting_client_approval: 'Menunggu klien',
+  pending: 'Menunggu aktivasi',
+  awaiting_staff_approval: 'Tunggu staff',
+  awaiting_client_approval: 'Tunggu pelanggan',
   schedule_approved: 'Jadwal disetujui',
-  initiated: 'Diaktifkan',
+  initiated: 'Aktif',
   cancelled: 'Dibatalkan',
+};
+
+/** FE staff-voucher-schedule-card statusLabel. */
+export const KOLAM_LAYANAN_SCHEDULE_STATUS_LABEL: Record<string, string> = {
+  pending: 'Menunggu jadwal',
+  awaiting_staff_approval: 'Menunggu persetujuan staff',
+  awaiting_client_approval: 'Menunggu persetujuan pelanggan',
+  schedule_approved: 'Jadwal disetujui',
 };
 
 export function getKolamLayananSubscriptionStatusLabel(status?: string | null) {
@@ -954,6 +975,54 @@ export function getKolamLayananPendingStatusLabel(status?: string | null) {
     return '—';
   }
   return KOLAM_LAYANAN_PENDING_STATUS_LABEL[status] || status;
+}
+
+export function getKolamLayananPendingStatusIntent(
+  status?: string | null,
+): 'secondary' | 'success' | 'warning' | 'danger' | 'info' {
+  if (status === 'initiated') {
+    return 'success';
+  }
+  if (status === 'pending') {
+    return 'secondary';
+  }
+  if (status === 'cancelled') {
+    return 'danger';
+  }
+  return 'warning';
+}
+
+export function getKolamLayananScheduleStatusLabel(status?: string | null) {
+  if (!status) {
+    return '—';
+  }
+  return KOLAM_LAYANAN_SCHEDULE_STATUS_LABEL[status] || status;
+}
+
+export function formatKolamLayananPurchaseDimensions(
+  dims: KolamLayananPurchaseVolumeDimensions | null | undefined,
+): string | null {
+  if (!dims) {
+    return null;
+  }
+  const nums = [dims.length, dims.width, dims.height].map(n => {
+    const rounded = Math.round(n * 100) / 100;
+    return String(rounded);
+  });
+  const unit = dims.unitLabel.trim();
+  return unit
+    ? `${nums[0]} × ${nums[1]} × ${nums[2]} ${unit}`
+    : `${nums[0]} × ${nums[1]} × ${nums[2]}`;
+}
+
+export function formatKolamLayananPurchaseVolumeM3(
+  quantity: number | null | undefined,
+): string | null {
+  if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity <= 0) {
+    return null;
+  }
+  const rounded = Math.round(quantity * 100) / 100;
+  return `${rounded} m³`;
 }
 
 export function getKolamLayananCapacityStatusLabel(status: string) {
@@ -2062,6 +2131,12 @@ export function normalizeKolamLayananVoucherDetail(
       ? scheduleProposedByRaw
       : null;
 
+  const enclosureRecord = asRecord(
+    asRecord(record.initiatedDosingId).enclosure ??
+      asRecord(record.initiatedMaintenanceId).enclosure,
+  );
+  const status = getString(record, 'status') || 'pending';
+
   return {
     id: getString(record, '_id') || getString(record, 'id'),
     serviceSerial: getString(record, 'serviceSerial') || '—',
@@ -2069,7 +2144,7 @@ export function normalizeKolamLayananVoucherDetail(
       getString(record, 'invoiceCode') ||
       getString(sale, 'invoiceCode') ||
       '—',
-    status: getString(record, 'status') || 'pending',
+    status,
     packageCode: getString(record, 'packageCode') || '—',
     serviceId:
       getString(service, '_id') ||
@@ -2087,6 +2162,14 @@ export function normalizeKolamLayananVoucherDetail(
     taskType: getString(record, 'taskType') || getString(service, 'taskType') || null,
     visitsPerMonth: getNumber(record, 'visitsPerMonth'),
     purchasedAt: getString(record, 'purchasedAt') || null,
+    initiatedAt: getString(record, 'initiatedAt') || null,
+    quantity: getNumber(record, 'quantity'),
+    purchaseDimensions: resolveVoucherPurchaseDimensions(record, sale),
+    purchaseEnclosureTypes: resolveVoucherPurchaseEnclosureTypes(
+      record,
+      service,
+      status,
+    ),
     contractDurationValue: getNumber(record, 'contractDurationValue'),
     contractDurationUnit: getString(record, 'contractDurationUnit') || null,
     proposedVisitSlots: normalizeVisitSlots(record.proposedVisitSlots),
@@ -2102,28 +2185,13 @@ export function normalizeKolamLayananVoucherDetail(
     subscriptionNumber: getString(subscription, 'subscriptionNumber') || null,
     initiatedDosingId: getIdFromMaybeRef(record.initiatedDosingId),
     initiatedMaintenanceId: getIdFromMaybeRef(record.initiatedMaintenanceId),
-    enclosureId:
-      getIdFromMaybeRef(
-        asRecord(record.initiatedDosingId).enclosure ??
-          asRecord(record.initiatedMaintenanceId).enclosure,
-      ) || null,
+    enclosureId: getIdFromMaybeRef(enclosureRecord) || null,
     enclosureName:
-      getString(
-        asRecord(
-          asRecord(record.initiatedDosingId).enclosure ??
-            asRecord(record.initiatedMaintenanceId).enclosure,
-        ),
-        'enclosure_name',
-      ) ||
-      getString(
-        asRecord(
-          asRecord(record.initiatedDosingId).enclosure ??
-            asRecord(record.initiatedMaintenanceId).enclosure,
-        ),
-        'name',
-      ) ||
+      getString(enclosureRecord, 'enclosure_name') ||
+      getString(enclosureRecord, 'name') ||
       null,
-    initiated: getString(record, 'status') === 'initiated',
+    enclosureType: getString(enclosureRecord, 'enclosure_type') || null,
+    initiated: status === 'initiated',
     raw: payload,
   };
 }
@@ -2205,6 +2273,106 @@ function normalizeTaskUserName(value: unknown): string | null {
     return name;
   }
   return getString(record, 'username') || getString(record, 'name') || null;
+}
+
+function isValidPurchaseDim(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function normalizePurchaseVolumeDimensions(
+  value: unknown,
+): KolamLayananPurchaseVolumeDimensions | null {
+  const record = asRecord(value);
+  const length = getNumber(record, 'length');
+  const width = getNumber(record, 'width');
+  const height = getNumber(record, 'height');
+  if (
+    !isValidPurchaseDim(length) ||
+    !isValidPurchaseDim(width) ||
+    !isValidPurchaseDim(height)
+  ) {
+    return null;
+  }
+  let unitLabel = getString(record, 'unitLabel');
+  if (!unitLabel) {
+    const unit = record.unit;
+    if (typeof unit === 'string') {
+      unitLabel = unit.trim();
+    } else {
+      const unitRecord = asRecord(unit);
+      unitLabel =
+        getString(unitRecord, 'initial') || getString(unitRecord, 'name') || '';
+    }
+  }
+  return { length, width, height, unitLabel };
+}
+
+/** FE resolve-voucher-purchase-dimensions. */
+function resolveVoucherPurchaseDimensions(
+  record: Record<string, unknown>,
+  sale: Record<string, unknown>,
+): KolamLayananPurchaseVolumeDimensions | null {
+  const direct = normalizePurchaseVolumeDimensions(
+    record.purchaseVolumeDimensions,
+  );
+  if (direct) {
+    return direct;
+  }
+  const idx = getNumber(record, 'saleItemIndex');
+  const items = Array.isArray(sale.items) ? sale.items : [];
+  if (idx != null && idx >= 0 && items[idx]) {
+    return normalizePurchaseVolumeDimensions(
+      asRecord(items[idx]).serviceVolumeDimensions,
+    );
+  }
+  return null;
+}
+
+function normalizeEnclosureTypeList(value: unknown): string[] {
+  const items = Array.isArray(value) ? value : value != null ? [value] : [];
+  const out: string[] = [];
+  for (const item of items) {
+    const text = String(item ?? '').trim();
+    if (
+      text &&
+      (KOLAM_LAYANAN_ENCLOSURE_TYPE_OPTIONS as readonly string[]).includes(
+        text,
+      ) &&
+      !out.includes(text)
+    ) {
+      out.push(text);
+    }
+  }
+  return out;
+}
+
+/** FE enclosureTypesFromPending (subset). */
+function resolveVoucherPurchaseEnclosureTypes(
+  record: Record<string, unknown>,
+  service: Record<string, unknown>,
+  status: string,
+): string[] {
+  const fromApi = normalizeEnclosureTypeList(record.effectiveEnclosureTypes);
+  if (fromApi.length) {
+    return fromApi;
+  }
+  const fromServiceArray = normalizeEnclosureTypeList(service.enclosureTypes);
+  const fromService =
+    fromServiceArray.length > 0
+      ? fromServiceArray
+      : normalizeEnclosureTypeList(service.enclosureType);
+  const fromSnapshot = [
+    ...normalizeEnclosureTypeList(record.purchaseEnclosureTypes),
+    ...normalizeEnclosureTypeList(record.purchaseEnclosureType),
+  ].filter((item, index, arr) => arr.indexOf(item) === index);
+
+  if (status === 'initiated') {
+    return fromSnapshot.length ? fromSnapshot : fromService;
+  }
+  if (fromService.length) {
+    return fromService;
+  }
+  return fromSnapshot;
 }
 
 function getIdFromMaybeRef(value: unknown): string | null {
