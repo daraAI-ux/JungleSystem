@@ -3,6 +3,7 @@ import {
   buildKolamDaraTrainingStatsCards,
   getKolamDaraTrainingTab,
   isKolamDaraTrainingRoute,
+  normalizeKolamDaraTrainingPhraseList,
   normalizeKolamDaraTrainingStats,
   resolveKolamDaraTrainingAccess,
 } from '../src/domain/kolam-dara-training';
@@ -77,5 +78,30 @@ describe('kolam-dara-training domain', () => {
     expect(cards.find(c => c.id === 'feedback')?.tone).toBe('warning');
     expect(cards.find(c => c.id === 'rank-log')?.value).toBe('Ada');
     expect(cards.find(c => c.id === 'rerank')?.value).toBe('Belum');
+  });
+
+  it('normalizes phrase list for reply kamus', () => {
+    const rows = normalizeKolamDaraTrainingPhraseList({
+      data: [
+        {
+          _id: 'p1',
+          phrase: 'anda siapa',
+          category: 'identity',
+          customReply: 'Saya DARA',
+          enabled: true,
+          priority: 10,
+        },
+        {phrase: 'no-id'},
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: 'p1',
+      phrase: 'anda siapa',
+      category: 'identity',
+      customReply: 'Saya DARA',
+      enabled: true,
+      priority: 10,
+    });
   });
 });

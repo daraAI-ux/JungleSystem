@@ -53,6 +53,47 @@ export type KolamDaraTrainingStats = {
   rerankModelExists: boolean;
 };
 
+export type KolamDaraTrainingPhraseCategory =
+  | 'chitchat'
+  | 'identity'
+  | 'greeting'
+  | 'custom'
+  | 'payment_hint'
+  | 'fulfillment_grant'
+  | 'fulfillment_decline';
+
+export type KolamDaraTrainingPhraseScope = 'reply' | 'fulfillment' | 'all';
+
+export type KolamDaraTrainingPhrase = {
+  id: string;
+  phrase: string;
+  category: KolamDaraTrainingPhraseCategory;
+  customReply: string;
+  enabled: boolean;
+  priority: number;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** FE `PHRASE_CATEGORY_LABELS`. */
+export const KOLAM_DARA_TRAINING_PHRASE_CATEGORY_LABELS: Record<
+  KolamDaraTrainingPhraseCategory,
+  string
+> = {
+  chitchat: 'Sapaan / basa-basi',
+  identity: 'Identitas DARA',
+  greeting: 'Salam',
+  custom: 'Kustom (jawaban manual)',
+  payment_hint: 'Pemicu bukti bayar (OCR)',
+  fulfillment_grant: 'Setuju kirim',
+  fulfillment_decline: 'Tahan / tolak kirim',
+};
+
+/** Reply-tab categories (FE modal Select list). */
+export const KOLAM_DARA_TRAINING_REPLY_CATEGORIES: KolamDaraTrainingPhraseCategory[] =
+  ['chitchat', 'identity', 'greeting', 'custom', 'payment_hint'];
+
 export function isKolamDaraTrainingRoute(route: string): boolean {
   const path = normalizeTrainingPath(route);
   return (
@@ -216,6 +257,49 @@ export function buildKolamDaraTrainingStatsCards(
       tone: stats.rerankModelExists ? 'success' : 'default',
     },
   ];
+}
+
+export function normalizeKolamDaraTrainingPhraseList(
+  payload: unknown,
+): KolamDaraTrainingPhrase[] {
+  const root = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+      ? root.data
+      : [];
+  return list
+    .map(normalizeKolamDaraTrainingPhrase)
+    .filter((row): row is KolamDaraTrainingPhrase => row != null);
+}
+
+export function normalizeKolamDaraTrainingPhrase(
+  payload: unknown,
+): KolamDaraTrainingPhrase | null {
+  const row = asRecord(payload);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  const categoryRaw = String(row.category || '').trim();
+  const category = isPhraseCategory(categoryRaw) ? categoryRaw : 'custom';
+  return {
+    id,
+    phrase: String(row.phrase || '').trim(),
+    category,
+    customReply: String(row.customReply || '').trim(),
+    enabled: row.enabled !== false,
+    priority: asNumber(row.priority),
+    notes: String(row.notes || '').trim(),
+    createdAt: String(row.createdAt || '').trim(),
+    updatedAt: String(row.updatedAt || '').trim(),
+  };
+}
+
+function isPhraseCategory(
+  value: string,
+): value is KolamDaraTrainingPhraseCategory {
+  return value in KOLAM_DARA_TRAINING_PHRASE_CATEGORY_LABELS;
 }
 
 function normalizeTrainingPath(route: string): string {

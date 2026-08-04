@@ -2,7 +2,10 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamDaraTrainingSurface} from '../src/components/kolam-dara-training-surface';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
-import {fetchKolamDaraTrainingStats} from '../src/services/kolam-dara-training-api';
+import {
+  fetchKolamDaraTrainingStats,
+  listKolamDaraTrainingPhrases,
+} from '../src/services/kolam-dara-training-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
@@ -10,6 +13,10 @@ jest.mock('../src/context/kolam-app-contexts', () => ({
 
 jest.mock('../src/services/kolam-dara-training-api', () => ({
   fetchKolamDaraTrainingStats: jest.fn(),
+  listKolamDaraTrainingPhrases: jest.fn(),
+  createKolamDaraTrainingPhrase: jest.fn(),
+  updateKolamDaraTrainingPhrase: jest.fn(),
+  deleteKolamDaraTrainingPhrase: jest.fn(),
 }));
 
 const authMock = useKolamAuthContext as jest.MockedFunction<
@@ -17,6 +24,9 @@ const authMock = useKolamAuthContext as jest.MockedFunction<
 >;
 const statsMock = fetchKolamDaraTrainingStats as jest.MockedFunction<
   typeof fetchKolamDaraTrainingStats
+>;
+const phrasesMock = listKolamDaraTrainingPhrases as jest.MockedFunction<
+  typeof listKolamDaraTrainingPhrases
 >;
 
 describe('KolamDaraTrainingSurface', () => {
@@ -38,9 +48,22 @@ describe('KolamDaraTrainingSurface', () => {
       rerankModelPath: '',
       rerankModelExists: false,
     });
+    phrasesMock.mockResolvedValue([
+      {
+        id: 'p1',
+        phrase: 'anda siapa',
+        category: 'identity',
+        customReply: 'Saya DARA',
+        enabled: true,
+        priority: 5,
+        notes: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ]);
   });
 
-  it('renders shell with KPI, tabs, and reload', async () => {
+  it('renders shell with KPI, tabs, and phrase kamus', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
@@ -58,6 +81,11 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Frasa respons cepat');
     expect(text).toContain('Vision inbox');
     expect(text).toContain('Fine-tuning');
+    expect(text).toContain('Kamus frasa');
+    expect(text).toContain('Tambah frasa');
+    expect(text).toContain('anda siapa');
+    expect(text).toContain('Identitas DARA');
+    expect(phrasesMock).toHaveBeenCalled();
     expect(statsMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
@@ -83,6 +111,7 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('dara-training');
     expect(text).not.toContain('Vision inbox');
     expect(statsMock).not.toHaveBeenCalled();
+    expect(phrasesMock).not.toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

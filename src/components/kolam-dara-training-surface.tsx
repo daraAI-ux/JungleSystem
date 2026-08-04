@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
@@ -12,13 +12,14 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamDaraTrainingController} from '../hooks/use-kolam-dara-training-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDaraTrainingPhrasesBody} from './kolam-dara-training-phrases-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
-/** FE `DaraTrainingPage` shell (Batch 0). */
+/** FE `DaraTrainingPage` shell. */
 export function KolamDaraTrainingSurface({
   onRouteChange,
   route,
@@ -35,6 +36,7 @@ export function KolamDaraTrainingSurface({
   const controller = useKolamDaraTrainingController(route, {
     enabled: access.canSee,
   });
+  const [phrasesRefreshKey, setPhrasesRefreshKey] = useState(0);
 
   const selectedTab = getKolamDaraTrainingTab(route);
   const selectedTabLabel =
@@ -49,13 +51,15 @@ export function KolamDaraTrainingSurface({
     [controller.stats],
   );
 
+  const onToolbarRefresh = async () => {
+    await controller.onRefresh();
+    setPhrasesRefreshKey(key => key + 1);
+  };
+
   if (!access.canSee) {
     return (
       <View style={styles.surface}>
-        <KolamEmptyState
-          message="dara-training"
-          title="Akses ditolak"
-        />
+        <KolamEmptyState message="dara-training" title="Akses ditolak" />
       </View>
     );
   }
@@ -71,7 +75,7 @@ export function KolamDaraTrainingSurface({
                 disabled={controller.loading}
                 label={controller.loading ? 'Memuat…' : 'Muat ulang'}
                 onPress={() => {
-                  void controller.onRefresh();
+                  void onToolbarRefresh();
                 }}
                 size="sm"
               />
@@ -106,7 +110,12 @@ export function KolamDaraTrainingSurface({
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.scroll}>
-        {controller.loading && !controller.stats ? (
+        {selectedTab === 'phrases' ? (
+          <KolamDaraTrainingPhrasesBody
+            canManage={access.canManage}
+            refreshKey={phrasesRefreshKey}
+          />
+        ) : controller.loading && !controller.stats ? (
           <Text style={styles.meta}>Memuat…</Text>
         ) : (
           <View style={styles.stubCard}>
