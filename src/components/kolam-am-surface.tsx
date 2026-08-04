@@ -7111,6 +7111,7 @@ const styles = StyleSheet.create({
     paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
   },
   pageStack: {
+    width: '100%',
     gap: 16,
   },
   actionRow: {
@@ -7120,11 +7121,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   metricGrid: {
+    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
   metricCard: {
+    flexBasis: 190,
     minWidth: 190,
     flexGrow: 1,
     borderWidth: 1,
@@ -7154,6 +7157,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   panel: {
+    width: '100%',
+    flexGrow: 1,
+    flexBasis: 0,
     gap: 12,
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7162,7 +7168,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   panelGrid: {
+    width: '100%',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'stretch',
     gap: 12,
   },
@@ -7292,7 +7300,9 @@ const styles = StyleSheet.create({
     color: V.colors.danger,
   },
   filterBar: {
+    width: '100%',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
   },
@@ -7363,6 +7373,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   tablePanel: {
+    width: '100%',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7595,6 +7606,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   paginationBar: {
+    width: '100%',
     marginTop: 12,
     borderTopWidth: 1,
     borderTopColor: V.colors.border,
@@ -7709,11 +7721,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   cardGrid: {
+    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
   hardwareCard: {
+    flexGrow: 1,
+    flexBasis: 220,
     width: 220,
     gap: 8,
     borderWidth: 1,
@@ -7740,6 +7755,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyPanel: {
+    width: '100%',
     borderWidth: 1,
     borderColor: V.colors.border,
     borderRadius: 8,
