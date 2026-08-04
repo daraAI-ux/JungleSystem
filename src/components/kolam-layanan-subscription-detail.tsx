@@ -134,19 +134,6 @@ export function KolamLayananSubscriptionDetail({
   const form = controller.contractForm;
   const visitPreview = controller.visitPreview;
 
-  const customerOptions = React.useMemo(
-    () => [
-      { label: '— Belum dipilih —', value: '' },
-      ...controller.customers.map(customer => ({
-        label: customer.phone
-          ? `${customer.name} · ${customer.phone}`
-          : customer.name,
-        value: customer.id,
-      })),
-    ],
-    [controller.customers],
-  );
-
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
@@ -482,7 +469,7 @@ export function KolamLayananSubscriptionDetail({
 
             <View style={styles.detailSide}>
               <FormSection
-                description="Ubah status, pelanggan, dan periode langganan."
+                description="Ubah status dan periode langganan. Pelanggan tetap dari penjualan/voucher."
                 title="Kontrak"
               >
                 <FieldShell label="Status">
@@ -499,22 +486,6 @@ export function KolamLayananSubscriptionDetail({
                       }),
                     )}
                     value={String(form.status)}
-                  />
-                </FieldShell>
-                <FieldShell label="Pelanggan (Kolam)">
-                  <KolamDropdownSelect
-                    accessibilityLabel="Pelanggan"
-                    label={
-                      controller.customersLoading
-                        ? 'Memuat pelanggan…'
-                        : 'Pilih pelanggan'
-                    }
-                    onChange={value =>
-                      controller.onChangeContractForm({ customerId: value })
-                    }
-                    options={customerOptions}
-                    searchable
-                    value={form.customerId}
                   />
                 </FieldShell>
                 <View style={styles.dateRow}>
