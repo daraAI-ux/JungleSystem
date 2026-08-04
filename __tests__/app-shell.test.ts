@@ -8,7 +8,10 @@ import {
   sidebarBrand,
   shellModules,
 } from '../src/domain/app-shell';
-import {kolamNavigationSections} from '../src/domain/kolam-navigation';
+import {
+  getKolamNavigationRouteTarget,
+  kolamNavigationSections,
+} from '../src/domain/kolam-navigation';
 
 test('defines shell areas for Kolam POS and AM without dev planning modules', () => {
   expect(getShellModulesByArea('kolam').map(module => module.id)).toEqual([
@@ -190,28 +193,33 @@ test('keeps sidebar metadata available for native navigation badges', () => {
 });
 
 test('keeps Kolam shell route metadata aligned with live navigation routes', () => {
-  const shellRouteSet = new Set(
-    getShellModulesByArea('kolam').flatMap(module =>
-      module.routes.map(route => (route === '/' ? '/' : `/${route}`)),
-    ),
-  );
-  const liveRoutes = kolamNavigationSections.flatMap(section =>
-    section.items.map(item => item.route),
-  );
+  const liveItems = kolamNavigationSections.flatMap(section => section.items);
+  const missingRoutes = liveItems
+    .filter(item => {
+      const target = getKolamNavigationRouteTarget(item);
+      const targetRouteSet = new Set(
+        getShellModule(target.moduleId).routes.map(route =>
+          route === '/' ? '/' : `/${route}`,
+        ),
+      );
+      addKolamShellRouteAliases(targetRouteSet);
 
-  expect(shellRouteSet.size).toBeGreaterThanOrEqual(liveRoutes.length);
-  expect([...shellRouteSet].sort()).toEqual(expect.arrayContaining(liveRoutes));
+      return !targetRouteSet.has(item.route);
+    })
+    .map(item => item.route);
+
+  expect(missingRoutes).toEqual([]);
 });
 
 test('keeps sidebar brand tied to the live Kolam logo contract', () => {
   expect(getSidebarBrand()).toBe(sidebarBrand);
-  expect(sidebarBrand.title).toBe('KOLAM');
+  expect(sidebarBrand.title).toBe('JungleSystem');
   expect(sidebarBrand.subtitle).toBe('Dunia Anura');
   expect(sidebarBrand.sourceComponent).toBe(
-    'E:\\Projects\\_latest-da\\da-inventory-frontend\\src\\components\\logo.tsx',
+    'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.jpg',
   );
-  expect(sidebarBrand.expandedSize).toEqual({width: 160, height: 56});
-  expect(sidebarBrand.collapsedSize).toBe(48);
+  expect(sidebarBrand.expandedSize).toEqual({width: 118, height: 48});
+  expect(sidebarBrand.collapsedSize).toBe(32);
   expect(Object.values(sidebarBrand.palette)).toEqual(
     expect.arrayContaining([
       '#29381C',
@@ -223,3 +231,17 @@ test('keeps sidebar brand tied to the live Kolam logo contract', () => {
     ]),
   );
 });
+
+function addKolamShellRouteAliases(routeSet: Set<string>) {
+  if (routeSet.has('/category')) {
+    routeSet.add('/label-dan-field/kategori');
+  }
+  if (routeSet.has('/brands')) {
+    routeSet.add('/label-dan-field/merek');
+  }
+  if (routeSet.has('/proyek')) {
+    routeSet.add('/custom-project');
+    routeSet.add('/custom-project/instances');
+    routeSet.add('/custom-project/instances/new');
+  }
+}

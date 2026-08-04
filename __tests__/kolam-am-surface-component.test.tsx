@@ -461,6 +461,16 @@ describe('KolamAmSurface', () => {
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
     expect(amRootStyle?.paddingTop).toBeUndefined();
+    expect(amRootStyle?.minWidth).toBe(0);
+    const amStretchStacks = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.width === '100%' &&
+          style?.alignSelf === 'stretch' &&
+          style?.minWidth === 0;
+      });
+    expect(amStretchStacks.length).toBeGreaterThanOrEqual(5);
     const amRecentPanels = renderer!.root
       .findAllByType(View)
       .filter(view => {
@@ -482,6 +492,26 @@ describe('KolamAmSurface', () => {
           style?.alignItems === 'stretch';
       });
     expect(dashboardPanelStack).toBeTruthy();
+    const dashboardActionRow = renderer!.root
+      .findAllByType(View)
+      .find(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.width === '100%' &&
+          style?.alignSelf === 'stretch' &&
+          style?.justifyContent === 'flex-end';
+      });
+    expect(dashboardActionRow).toBeTruthy();
+    const recentMetaColumns = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.maxWidth === 220 && style?.alignItems === 'flex-end';
+      });
+    expect(recentMetaColumns.length).toBeGreaterThan(0);
+    expect(recentMetaColumns.every(view => {
+      const style = StyleSheet.flatten(view.props.style);
+      return style?.minWidth === 0 && style?.overflow === 'hidden';
+    })).toBe(true);
     const recentAmountTexts = renderer!.root
       .findAllByType(Text)
       .filter(node => flattenText(node.props.children).join('').includes('Rp'));

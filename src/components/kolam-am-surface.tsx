@@ -6866,13 +6866,17 @@ const styles = StyleSheet.create({
   pageContent: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
   },
   pageStack: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
     gap: 16,
   },
   actionRow: {
+    width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -6881,6 +6885,7 @@ const styles = StyleSheet.create({
   metricGrid: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -6931,6 +6936,7 @@ const styles = StyleSheet.create({
   panelGrid: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'column',
     alignItems: 'stretch',
     gap: 12,
@@ -6951,6 +6957,7 @@ const styles = StyleSheet.create({
   recentList: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
     gap: 0,
   },
   recentListRow: {
@@ -6971,13 +6978,16 @@ const styles = StyleSheet.create({
   },
   recentListMeta: {
     flexShrink: 0,
+    minWidth: 0,
     maxWidth: 220,
     alignItems: 'flex-end',
     gap: 4,
+    overflow: 'hidden',
   },
   overviewGrid: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'stretch',
@@ -7061,6 +7071,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   rowMeta: {
+    minWidth: 0,
     flexShrink: 1,
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -7149,6 +7160,8 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -7223,6 +7236,7 @@ const styles = StyleSheet.create({
   tablePanel: {
     width: '100%',
     alignSelf: 'stretch',
+    minWidth: 0,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7398,6 +7412,8 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   cellText: {
+    minWidth: 0,
+    flexShrink: 1,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
@@ -7679,6 +7695,8 @@ const styles = StyleSheet.create({
   },
   emptyPanel: {
     width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     borderWidth: 1,
     borderColor: V.colors.border,
     borderRadius: 8,
