@@ -761,7 +761,6 @@ export function KolamDaraTrainingVideoStudioBody({
 
 const styles = StyleSheet.create({
   root: {
-    flexGrow: 1,
     gap: 12,
   },
   card: {
@@ -769,7 +768,6 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    flexGrow: 1,
     gap: 12,
     padding: 12,
   },
@@ -798,9 +796,8 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   columns: {
-    alignItems: 'stretch',
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    flexGrow: 1,
     gap: 16,
   },
   columnMain: {
@@ -844,17 +841,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   promptBlock: {
-    flex: 1,
     gap: 4,
-    minHeight: 260,
   },
   promptInputShell: {
-    flex: 1,
-    minHeight: 200,
+    minHeight: 280,
   },
   promptInput: {
-    flex: 1,
-    minHeight: 200,
+    height: 280,
+    maxHeight: 280,
+    minHeight: 280,
   },
   dropdownGrid: {
     flexDirection: 'row',
@@ -905,9 +900,8 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    flex: 1,
     gap: 10,
-    minHeight: 260,
+    minHeight: 280,
     padding: 10,
   },
   panelHead: {
@@ -955,8 +949,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   historyList: {
-    flex: 1,
-    minHeight: 200,
+    maxHeight: 220,
   },
   historyRow: {
     borderBottomColor: V.colors.border,

@@ -78,11 +78,11 @@ export function KolamDaraTrainingFineTuneBody({
         listKolamDaraTrainingFineTuneRuns(),
       ]);
       setSummary(s);
-      setCandidates(c);
-      setDataset(d.rows);
-      setDatasetPages(d.pages);
-      setBenchmark(b.scenarios);
-      setRuns(r);
+      setCandidates(Array.isArray(c) ? c : []);
+      setDataset(Array.isArray(d?.rows) ? d.rows : []);
+      setDatasetPages(Math.max(1, Number(d?.pages) || 1));
+      setBenchmark(Array.isArray(b?.scenarios) ? b.scenarios : []);
+      setRuns(Array.isArray(r) ? r : []);
       setNotice('');
     } catch (err) {
       setNotice(
