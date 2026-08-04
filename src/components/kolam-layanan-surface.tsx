@@ -201,7 +201,9 @@ function KolamLayananList({
                 }
                 value={controller.search}
               />
-            ) : null}
+            ) : (
+              <View style={styles.searchInput} />
+            )}
             {controller.activeTab === 'langganan' ? (
               <KolamDropdownSelect
                 label="Status"
@@ -221,6 +223,8 @@ function KolamLayananList({
                 value={controller.subscriptionStatusFilter}
               />
             ) : null}
+          </View>
+          <View style={[kolamTableToolbarStyles.actions, styles.actionsRight]}>
             <View style={styles.tabGroup}>
               {KOLAM_LAYANAN_LIST_TABS.map(tab => (
                 <KolamButton
@@ -237,8 +241,6 @@ function KolamLayananList({
                 />
               ))}
             </View>
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               disabled={controller.loading || controller.opsLoading}
               label="Refresh"
@@ -917,8 +919,13 @@ const styles = StyleSheet.create({
   searchInput: {
     flexGrow: 1,
     flexShrink: 1,
-    maxWidth: 280,
     minWidth: 140,
+    width: '100%',
+  },
+  actionsRight: {
+    flexGrow: 0,
+    flexShrink: 0,
+    marginLeft: 'auto',
   },
   tabGroup: {
     alignItems: 'center',
