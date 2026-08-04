@@ -2075,6 +2075,14 @@ function AmHardwarePage({
           setError('Box wajib dipilih sebelum membuat device.');
           return;
         }
+        if (formConnectionType === 'usb' && !formUdid.trim()) {
+          setError('UDID wajib diisi untuk USB device.');
+          return;
+        }
+        if (formConnectionType === 'tcp' && !formTcpAddress.trim()) {
+          setError('TCP Address wajib diisi untuk TCP device.');
+          return;
+        }
         const devicePayload: AmDevicePayload = {
           appiumPort: editingHardwareId ? parseOptionalNumber(formAppiumPort) : undefined,
         };

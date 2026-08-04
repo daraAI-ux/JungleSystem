@@ -3222,6 +3222,12 @@ describe('KolamAmSurface', () => {
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+    expect(createAmDevice).not.toHaveBeenCalled();
+    expect(renderText(renderer!).join(' ')).toContain('TCP Address wajib diisi untuk TCP device.');
+
+    await act(async () => {
       inputs[0].props.onChangeText('10.0.0.9:5555');
       inputs[1].props.onChangeText('Samsung');
       inputs[2].props.onChangeText('A54');
@@ -3244,6 +3250,12 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment USB'}).props.onPress();
     });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+    });
+    expect(createAmDevice).toHaveBeenCalledTimes(1);
+    expect(renderText(renderer!).join(' ')).toContain('UDID wajib diisi untuk USB device.');
+
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
       inputs[0].props.onChangeText('USBNEW1');
