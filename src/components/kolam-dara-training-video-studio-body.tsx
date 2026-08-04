@@ -539,6 +539,7 @@ export function KolamDaraTrainingVideoStudioBody({
               <KolamFormTextField
                 editable={canManage && !busy}
                 multiline
+                nestedScrollEnabled
                 onChangeText={setPrompt}
                 scrollEnabled
                 style={styles.promptInput}
@@ -823,7 +824,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   promptInput: {
-    minHeight: 160,
+    height: 200,
+    maxHeight: 200,
+    minHeight: 200,
   },
   dropdownGrid: {
     flexDirection: 'row',

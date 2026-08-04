@@ -127,6 +127,7 @@ export function KolamDaraTrainingSurface({
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
+        nestedScrollEnabled
         style={styles.scroll}>
         {selectedTab === 'phrases' ? (
           <KolamDaraTrainingPhrasesBody
