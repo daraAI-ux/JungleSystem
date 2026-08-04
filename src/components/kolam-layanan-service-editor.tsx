@@ -616,15 +616,6 @@ function KolamLayananServiceDetail({
                   packageCode || 'Belum diisi',
                 ),
                 desc(
-                  'packageActive',
-                  'Status paket',
-                  packageCode
-                    ? service.packageActive
-                      ? 'Aktif'
-                      : 'Nonaktif'
-                    : 'Belum diisi',
-                ),
-                desc(
                   'contract',
                   'Durasi kontrak',
                   formatKolamLayananContractDuration(
@@ -634,14 +625,6 @@ function KolamLayananServiceDetail({
                 ),
               ]}
             />
-            {packageCode ? (
-              <View style={styles.inlineBadgeRow}>
-                <KolamStatusBadge
-                  intent={service.packageActive ? 'success' : 'secondary'}
-                  label={service.packageActive ? 'Paket aktif' : 'Paket nonaktif'}
-                />
-              </View>
-            ) : null}
           </FormSection>
 
           <ServiceTasksPanel
