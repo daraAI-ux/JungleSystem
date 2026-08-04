@@ -4389,6 +4389,68 @@ describe('KolamAmSurface', () => {
     expect(deleteAmUser).toHaveBeenCalledWith('user-1');
   });
 
+  it('disables user save while the create request is pending', async () => {
+    jest.mocked(getAmCurrentUser).mockResolvedValue({
+      _id: 'user-current',
+      fullName: 'Current AM Admin',
+      username: 'current-admin',
+      role: {
+        _id: 'role-admin',
+        name: 'Admin',
+        permissions: ['user:read', 'user:create'],
+        description: 'Admin role',
+      },
+    });
+    jest.mocked(getAmRoles).mockResolvedValue([
+      {_id: 'role-admin', name: 'Admin', permissions: ['user:read'], description: 'Admin role'},
+    ]);
+    jest.mocked(getAmUsers).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 100},
+    });
+    let resolveCreate: (value: unknown) => void = () => undefined;
+    jest.mocked(createAmUser).mockImplementationOnce(
+      () => new Promise(resolve => {
+        resolveCreate = resolve;
+      }) as ReturnType<typeof createAmUser>,
+    );
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'admin/users');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[1].props.onChangeText('Pending User');
+      inputs[2].props.onChangeText('pending');
+      inputs[3].props.onChangeText('StrongPass1!');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM User Save'}).props.onPress();
+      await Promise.resolve();
+    });
+
+    const saveButton = renderer!.root.findAllByType(KolamButton).find(
+      button => button.props.accessibilityLabel === 'AM User Save',
+    );
+    expect(saveButton?.props.disabled).toBe(true);
+    expect(saveButton?.props.label).toBe('Menyimpan');
+
+    await act(async () => {
+      resolveCreate({_id: 'user-new'});
+      await Promise.resolve();
+    });
+  });
+
   it('hides Users create, edit, and delete actions when AM live permission is read-only', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',

@@ -5630,7 +5630,7 @@ function AmUsersPage() {
             }}
           />
         ) : null}
-        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
+        <KolamButton disabled={isLoading} label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>
       <AmInlineError title="Users AM belum bisa dibaca" error={error} />
       {actionMessage ? (
@@ -5646,6 +5646,7 @@ function AmUsersPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel={`AM User Confirm Delete ${deletingUser._id}`}
+              disabled={actingUserId === deletingUser._id}
               intent="danger"
               label={actingUserId === deletingUser._id ? '...' : 'Delete'}
               muted={actingUserId === deletingUser._id}
@@ -5654,6 +5655,7 @@ function AmUsersPage() {
             />
             <KolamButton
               accessibilityLabel="AM User Cancel Delete"
+              disabled={actingUserId === deletingUser._id}
               intent="outline"
               label="Cancel"
               muted={actingUserId === deletingUser._id}
@@ -5698,6 +5700,7 @@ function AmUsersPage() {
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM User Save"
+                disabled={isSubmitting}
                 label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Save' : 'Create')}
                 muted={isSubmitting}
                 size="sm"
@@ -5755,6 +5758,7 @@ function AmUsersPage() {
                 {canDeleteUser ? (
                   <KolamButton
                     accessibilityLabel={`AM User Delete ${user._id}`}
+                    disabled={actingUserId === user._id}
                     label={actingUserId === user._id ? '...' : 'Delete'}
                     intent="danger"
                     muted={actingUserId === user._id}
