@@ -1,20 +1,39 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamDaraSeoAuditLogs,
   normalizeKolamDaraSeoBrands,
   normalizeKolamDaraSeoBulkActionResults,
   normalizeKolamDaraSeoDashboard,
+  normalizeKolamDaraSeoIntegrationReport,
+  normalizeKolamDaraSeoIntegrationSettings,
+  normalizeKolamDaraSeoKeywords,
+  normalizeKolamDaraSeoMentions,
   normalizeKolamDaraSeoPendingSuggestions,
+  normalizeKolamDaraSeoRankings,
+  normalizeKolamDaraSeoSentimentRows,
+  normalizeKolamDaraSeoSocialInsights,
   normalizeKolamDaraSeoStatus,
   normalizeKolamDaraSeoSuggestionDetail,
   normalizeKolamDaraSeoSuggestions,
+  normalizeKolamDaraSeoWebsitePreview,
+  type KolamDaraSeoAuditLogRow,
   type KolamDaraSeoBrand,
   type KolamDaraSeoBulkActionResult,
   type KolamDaraSeoDashboard,
+  type KolamDaraSeoIntegrationReport,
+  type KolamDaraSeoIntegrationSettings,
+  type KolamDaraSeoKeywordRow,
+  type KolamDaraSeoMentionRow,
   type KolamDaraSeoPendingSuggestion,
+  type KolamDaraSeoRankingRow,
+  type KolamDaraSeoSentimentRow,
+  type KolamDaraSeoSocialPlatform,
+  type KolamDaraSeoSocialSnapshot,
   type KolamDaraSeoStatus,
   type KolamDaraSeoSuggestion,
   type KolamDaraSeoSuggestionDetail,
   type KolamDaraSeoTargetType,
+  type KolamDaraSeoWebsitePreview,
 } from '../domain/kolam-dara-seo';
 import {apiRequest} from '../lib/api-client';
 
@@ -207,6 +226,271 @@ export async function bulkRejectKolamDaraSeoSuggestions(
     },
   );
   return normalizeKolamDaraSeoBulkActionResults(payload);
+}
+
+/** GET /dara-seo/rankings */
+export async function fetchKolamDaraSeoRankings(params?: {
+  keyword?: string;
+  limit?: number;
+  brandId?: string;
+}): Promise<{items: KolamDaraSeoRankingRow[]; total: number}> {
+  const payload = await kolamRequest<unknown>('/dara-seo/rankings', {
+    query: {
+      keyword: params?.keyword?.trim() || undefined,
+      limit: params?.limit ?? 50,
+      ...(params?.brandId && params.brandId !== 'all'
+        ? {brandId: params.brandId}
+        : {}),
+    },
+  });
+  return normalizeKolamDaraSeoRankings(payload);
+}
+
+/** GET /dara-seo/keywords */
+export async function fetchKolamDaraSeoKeywords(
+  productId?: string,
+): Promise<KolamDaraSeoKeywordRow[]> {
+  const payload = await kolamRequest<unknown>('/dara-seo/keywords', {
+    query: productId ? {productId} : undefined,
+  });
+  return normalizeKolamDaraSeoKeywords(payload);
+}
+
+/** GET /dara-seo/brand-mentions */
+export async function fetchKolamDaraSeoBrandMentions(): Promise<
+  KolamDaraSeoMentionRow[]
+> {
+  const payload = await kolamRequest<unknown>('/dara-seo/brand-mentions');
+  return normalizeKolamDaraSeoMentions(payload);
+}
+
+/** POST /dara-seo/monitoring/search/fetch */
+export async function fetchKolamDaraSeoSerpKeyword(
+  keyword: string,
+  productId?: string,
+) {
+  await kolamRequest('/dara-seo/monitoring/search/fetch', {
+    method: 'POST',
+    body: {keyword, productId},
+  });
+}
+
+/** POST /dara-seo/monitoring/competitor/ingest */
+export async function ingestKolamDaraSeoCompetitor(entityName: string) {
+  await kolamRequest('/dara-seo/monitoring/competitor/ingest', {
+    method: 'POST',
+    body: {entityName},
+  });
+}
+
+/** POST /dara-seo/monitoring/backlink/ingest */
+export async function ingestKolamDaraSeoBacklink(url: string) {
+  await kolamRequest('/dara-seo/monitoring/backlink/ingest', {
+    method: 'POST',
+    body: {url},
+  });
+}
+
+/** GET /dara-seo/website/preview */
+export async function fetchKolamDaraSeoWebsitePreview(): Promise<KolamDaraSeoWebsitePreview> {
+  const payload = await kolamRequest<unknown>('/dara-seo/website/preview');
+  const preview = normalizeKolamDaraSeoWebsitePreview(payload);
+  if (!preview) {
+    throw new Error('Preview SEO website kosong');
+  }
+  return preview;
+}
+
+/** PUT /dara-seo/website/seo */
+export async function updateKolamDaraSeoWebsite(body: {
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
+  publicSiteUrl?: string;
+}) {
+  await kolamRequest('/dara-seo/website/seo', {
+    method: 'PUT',
+    body,
+  });
+}
+
+/** POST /dara-seo/integrations/indexing/submit */
+export async function submitKolamDaraSeoGoogleIndexing(
+  url: string,
+  type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED',
+): Promise<string> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-seo/integrations/indexing/submit',
+    {
+      method: 'POST',
+      body: {url, type},
+    },
+  );
+  const root = asRecord(payload);
+  const message = String(root.message || '').trim();
+  return message || 'URL dikirim ke Google Indexing';
+}
+
+/** GET /dara-seo/audit-logs */
+export async function fetchKolamDaraSeoAuditLogs(): Promise<
+  KolamDaraSeoAuditLogRow[]
+> {
+  const payload = await kolamRequest<unknown>('/dara-seo/audit-logs');
+  return normalizeKolamDaraSeoAuditLogs(payload);
+}
+
+/** GET /dara-seo/sentiment */
+export async function fetchKolamDaraSeoSentiment(): Promise<
+  KolamDaraSeoSentimentRow[]
+> {
+  const payload = await kolamRequest<unknown>('/dara-seo/sentiment');
+  return normalizeKolamDaraSeoSentimentRows(payload);
+}
+
+/** POST /dara-seo/sentiment/ingest */
+export async function ingestKolamDaraSeoSentiment(body: {
+  text: string;
+  useLlm?: boolean;
+}) {
+  await kolamRequest('/dara-seo/sentiment/ingest', {
+    method: 'POST',
+    body,
+  });
+}
+
+/** DELETE /dara-seo/sentiment/:id */
+export async function deleteKolamDaraSeoSentiment(id: string) {
+  await kolamRequest(`/dara-seo/sentiment/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+/** GET /dara-seo/integrations/settings */
+export async function fetchKolamDaraSeoIntegrationSettings(): Promise<KolamDaraSeoIntegrationSettings> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-seo/integrations/settings',
+  );
+  const settings = normalizeKolamDaraSeoIntegrationSettings(payload);
+  if (!settings) {
+    throw new Error('Integrasi SEO kosong');
+  }
+  return settings;
+}
+
+/** PATCH /dara-seo/integrations/settings */
+export async function updateKolamDaraSeoIntegrationSettings(
+  body: Record<string, unknown>,
+): Promise<KolamDaraSeoIntegrationSettings> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-seo/integrations/settings',
+    {
+      method: 'PATCH',
+      body,
+    },
+  );
+  const settings = normalizeKolamDaraSeoIntegrationSettings(payload);
+  if (!settings) {
+    throw new Error('Gagal menyimpan integrasi SEO');
+  }
+  return settings;
+}
+
+/** POST /dara-seo/integrations/test/:providerId */
+export async function testKolamDaraSeoIntegration(
+  providerId: string,
+  keyword?: string,
+  url?: string,
+): Promise<{message: string; count?: number; fallback?: boolean}> {
+  const payload = await kolamRequest<unknown>(
+    `/dara-seo/integrations/test/${encodeURIComponent(providerId)}`,
+    {
+      method: 'POST',
+      body: {keyword, url},
+    },
+  );
+  const data = unwrapPayloadData(payload);
+  return {
+    message: String(data.message || 'OK').trim() || 'OK',
+    count:
+      data.count == null || data.count === ''
+        ? undefined
+        : Number(data.count),
+    fallback: data.fallback === true,
+  };
+}
+
+/** POST /dara-seo/integrations/report-preview */
+export async function previewKolamDaraSeoIntegrationReport(
+  keyword: string,
+): Promise<KolamDaraSeoIntegrationReport> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-seo/integrations/report-preview',
+    {
+      method: 'POST',
+      body: {keyword},
+    },
+  );
+  const report = normalizeKolamDaraSeoIntegrationReport(payload);
+  if (!report) {
+    throw new Error('Preview laporan kosong');
+  }
+  return report;
+}
+
+/** GET /dara-seo/social/insights */
+export async function fetchKolamDaraSeoSocialInsights(params?: {
+  platform?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{rows: KolamDaraSeoSocialSnapshot[]; total: number}> {
+  const payload = await kolamRequest<unknown>('/dara-seo/social/insights', {
+    query: {
+      platform: params?.platform,
+      page: params?.page,
+      limit: params?.limit ?? 30,
+    },
+  });
+  return normalizeKolamDaraSeoSocialInsights(payload);
+}
+
+/** POST /dara-seo/social/sync */
+export async function syncKolamDaraSeoSocialInsights(body: {
+  platform: KolamDaraSeoSocialPlatform;
+  periodDays: 7 | 28;
+}): Promise<string> {
+  const payload = await kolamRequest<unknown>('/dara-seo/social/sync', {
+    method: 'POST',
+    body,
+  });
+  const root = asRecord(payload);
+  return (
+    String(root.message || '').trim() || `Sync ${body.platform} dikirim ke AM`
+  );
+}
+
+/** Lightweight flag read for sentiment Llama toggle (Settings AI-Tools). */
+export async function fetchKolamDaraSeoSentimentLlmEnabled(): Promise<boolean> {
+  try {
+    const payload = await kolamRequest<unknown>('/websetting');
+    const data = unwrapPayloadData(payload);
+    return data.daraSeoSentimentLlmEnabled === true;
+  } catch {
+    return false;
+  }
+}
+
+function unwrapPayloadData(payload: unknown): Record<string, unknown> {
+  const root = asRecord(payload);
+  if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+    return asRecord(root.data);
+  }
+  return root;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function kolamRequest<T>(

@@ -517,6 +517,7 @@ export function isKolamDaraSeoReadyToApply(suggestion: KolamDaraSeoSuggestion) {
 export function resolveKolamDaraSeoAccess(input: {
   roleKey?: string | null;
   permissions?: KolamDaraSeoPermissionEntry[] | null;
+  isOwner?: boolean | null;
 }) {
   const role = String(input.roleKey ?? '')
     .toLowerCase()
@@ -527,8 +528,9 @@ export function resolveKolamDaraSeoAccess(input: {
     role === 'super-admin' ||
     role === 'super-administrator' ||
     role === 'superadmin';
+  const isOwner = input.isOwner === true || role === 'owner';
   const can = (action: string) => {
-    if (isAdmin) {
+    if (isAdmin || isOwner) {
       return true;
     }
     const permissions = input.permissions;
@@ -552,9 +554,11 @@ export function resolveKolamDaraSeoAccess(input: {
     });
   };
   return {
-    canSee: isAdmin || can('view'),
-    canDraft: isAdmin || can('draft'),
-    canApprove: isAdmin || can('approve'),
+    canSee: isAdmin || isOwner || can('view'),
+    canDraft: isAdmin || isOwner || can('draft'),
+    canApprove: isAdmin || isOwner || can('approve'),
+    /** Integrasi PATCH — FE Admin/Owner only. */
+    canManageSettings: isAdmin || isOwner,
   };
 }
 
@@ -830,6 +834,564 @@ function resolveSuggestionTitle(
     return product.name.trim();
   }
   return 'Produk';
+}
+
+export type KolamDaraSeoRankingRow = {
+  id: string;
+  keyword: string;
+  engine: string;
+  position: number | null;
+  url: string;
+  title: string;
+  snippet: string;
+  mentionedAt: string;
+};
+
+export type KolamDaraSeoKeywordRow = {
+  id: string;
+  mainKeyword: string;
+  keywordType: string;
+  opportunityScore: number;
+  productId: string;
+};
+
+export type KolamDaraSeoMentionRow = {
+  id: string;
+  entityName: string;
+  url: string;
+  sourceName: string;
+  sourceType: string;
+  engine: string;
+  snippet: string;
+  mentionedAt: string;
+};
+
+export type KolamDaraSeoWebsiteIssue = {
+  code: string;
+  message: string;
+  severity: string;
+};
+
+export type KolamDaraSeoWebsitePreview = {
+  companyName: string;
+  publicSiteUrl: string;
+  metaTitle: string;
+  metaDescription: string;
+  keywords: string[];
+  lastAuditedAt: string;
+  lastSeoScore: number | null;
+  auditScore: number | null;
+  issues: KolamDaraSeoWebsiteIssue[];
+};
+
+export type KolamDaraSeoAuditLogRow = {
+  id: string;
+  action: string;
+  productId: string;
+  createdAt: string;
+};
+
+export type KolamDaraSeoSentimentKind = 'positive' | 'neutral' | 'negative';
+
+export type KolamDaraSeoSentimentRow = {
+  id: string;
+  text: string;
+  sentiment: KolamDaraSeoSentimentKind;
+  sentimentScore: number;
+  analyzedBy: string;
+  detectedAt: string;
+};
+
+export type KolamDaraSeoIntegrationSettings = {
+  monitorKeywords: string;
+  reportPriority: string[];
+  serpApi: {
+    enabled: boolean;
+    configured: boolean;
+    apiKeyMasked: string;
+  };
+  duckduckgo: {enabled: boolean};
+  searxng: {enabled: boolean; baseUrl: string};
+  firecrawl: {enabled: boolean; baseUrl: string; apiKeyMasked: string};
+  searchConsole: {
+    enabled: boolean;
+    propertyUrl: string;
+    clientEmail: string;
+    privateKeyMasked: string;
+  };
+  indexingApi: {
+    enabled: boolean;
+    clientEmail: string;
+    privateKeyMasked: string;
+  };
+};
+
+export type KolamDaraSeoIntegrationReportSection = {
+  providerId: string;
+  label: string;
+  ok: boolean;
+  message: string;
+  rankings: Array<{position: number; url: string; title: string}>;
+};
+
+export type KolamDaraSeoIntegrationReport = {
+  keyword: string;
+  generatedAt: string;
+  primarySource: string;
+  summary: string;
+  sections: KolamDaraSeoIntegrationReportSection[];
+};
+
+export type KolamDaraSeoSocialPlatform = 'instagram' | 'tiktok';
+
+export type KolamDaraSeoSocialSnapshot = {
+  id: string;
+  platform: KolamDaraSeoSocialPlatform | string;
+  status: 'pending' | 'success' | 'failed' | string;
+  periodDays: number;
+  metrics: {
+    followers: number | null;
+    reach: number | null;
+    impressions: number | null;
+    profileViews: number | null;
+    engagementRate: number | null;
+    videoViews: number | null;
+    likes: number | null;
+  };
+  error: string;
+  fetchedAt: string;
+  createdAt: string;
+};
+
+export const KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE = 10;
+
+export function formatKolamDaraSeoKeywordDifficulty(score: number) {
+  if (score >= 70) {
+    return 'Low';
+  }
+  if (score >= 50) {
+    return 'Medium';
+  }
+  return 'High';
+}
+
+export function formatKolamDaraSeoKeywordVolume(score: number) {
+  return Math.round(score * 420);
+}
+
+export function formatKolamDaraSeoMentionSource(
+  sourceType?: string,
+  sourceName?: string,
+) {
+  if (sourceName && sourceName.trim()) {
+    return sourceName.trim();
+  }
+  if (sourceType === 'competitor') {
+    return 'Kompetitor';
+  }
+  if (sourceType === 'backlink') {
+    return 'Backlink';
+  }
+  if (sourceType === 'serp') {
+    return 'SERP';
+  }
+  return sourceType?.trim() || '—';
+}
+
+export function paginateKolamDaraSeoKeywords(
+  list: KolamDaraSeoKeywordRow[],
+  page: number,
+  pageSize = KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE,
+) {
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * pageSize;
+  return {
+    page: safePage,
+    totalPages,
+    total: list.length,
+    items: list.slice(start, start + pageSize),
+  };
+}
+
+export function normalizeKolamDaraSeoRankings(payload: unknown): {
+  items: KolamDaraSeoRankingRow[];
+  total: number;
+} {
+  const data = unwrapDataRecord(payload);
+  const rawItems = Array.isArray(data.items)
+    ? data.items
+    : Array.isArray(data)
+      ? data
+      : [];
+  const items = rawItems
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      const positionRaw = row.position;
+      const position =
+        positionRaw == null || positionRaw === ''
+          ? null
+          : toFiniteNumber(positionRaw);
+      return {
+        id,
+        keyword: String(row.keyword || '').trim(),
+        engine: String(row.engine || '').trim() || '—',
+        position: positionRaw == null || positionRaw === '' ? null : position,
+        url: String(row.url || '').trim(),
+        title: String(row.title || '').trim(),
+        snippet: String(row.snippet || '').trim(),
+        mentionedAt: String(row.mentionedAt || row.createdAt || '').trim(),
+      } satisfies KolamDaraSeoRankingRow;
+    })
+    .filter((item): item is KolamDaraSeoRankingRow => item != null);
+  return {
+    items,
+    total: toFiniteNumber(data.total) || items.length,
+  };
+}
+
+export function normalizeKolamDaraSeoKeywords(
+  payload: unknown,
+): KolamDaraSeoKeywordRow[] {
+  const data = unwrapDataRecord(payload);
+  const raw = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+      ? data.items
+      : Array.isArray(data.data)
+        ? data.data
+        : [];
+  return raw
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        mainKeyword: String(row.mainKeyword || row.keyword || '').trim(),
+        keywordType: String(row.keywordType || '').trim(),
+        opportunityScore: toFiniteNumber(row.opportunityScore),
+        productId: String(row.productId || '').trim(),
+      } satisfies KolamDaraSeoKeywordRow;
+    })
+    .filter((item): item is KolamDaraSeoKeywordRow => item != null);
+}
+
+export function normalizeKolamDaraSeoMentions(
+  payload: unknown,
+): KolamDaraSeoMentionRow[] {
+  const data = unwrapDataRecord(payload);
+  const raw = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+  return raw
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        entityName: String(row.entityName || '').trim() || '—',
+        url: String(row.url || '').trim(),
+        sourceName: String(row.sourceName || '').trim(),
+        sourceType: String(row.sourceType || '').trim(),
+        engine: String(row.engine || '').trim(),
+        snippet: String(row.snippet || '').trim(),
+        mentionedAt: String(row.mentionedAt || '').trim(),
+      } satisfies KolamDaraSeoMentionRow;
+    })
+    .filter((item): item is KolamDaraSeoMentionRow => item != null);
+}
+
+export function normalizeKolamDaraSeoWebsitePreview(
+  payload: unknown,
+): KolamDaraSeoWebsitePreview | null {
+  const data = unwrapDataRecord(payload);
+  if (!Object.keys(data).length) {
+    return null;
+  }
+  const websiteSeo = asRecord(data.websiteSeo);
+  const audit = asRecord(data.audit);
+  const issuesRaw = Array.isArray(audit.issues) ? audit.issues : [];
+  const keywordsRaw = Array.isArray(websiteSeo.keywords)
+    ? websiteSeo.keywords
+    : [];
+  const lastScore =
+    websiteSeo.lastSeoScore == null || websiteSeo.lastSeoScore === ''
+      ? null
+      : toFiniteNumber(websiteSeo.lastSeoScore);
+  const auditScore =
+    audit.seoScore == null || audit.seoScore === ''
+      ? null
+      : toFiniteNumber(audit.seoScore);
+  return {
+    companyName: String(data.companyName || '').trim(),
+    publicSiteUrl: String(websiteSeo.publicSiteUrl || '').trim(),
+    metaTitle: String(websiteSeo.metaTitle || '').trim(),
+    metaDescription: String(websiteSeo.metaDescription || '').trim(),
+    keywords: keywordsRaw
+      .map(item => String(item || '').trim())
+      .filter(Boolean),
+    lastAuditedAt: String(websiteSeo.lastAuditedAt || '').trim(),
+    lastSeoScore: lastScore,
+    auditScore,
+    issues: issuesRaw.map(item => {
+      const row = asRecord(item);
+      return {
+        code: String(row.code || '').trim(),
+        message: String(row.message || '').trim(),
+        severity: String(row.severity || '').trim(),
+      };
+    }),
+  };
+}
+
+export function normalizeKolamDaraSeoAuditLogs(
+  payload: unknown,
+): KolamDaraSeoAuditLogRow[] {
+  const data = unwrapDataRecord(payload);
+  const raw = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+  return raw
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        action: String(row.action || '').trim() || '—',
+        productId: String(row.productId || '').trim(),
+        createdAt: String(row.createdAt || '').trim(),
+      } satisfies KolamDaraSeoAuditLogRow;
+    })
+    .filter((item): item is KolamDaraSeoAuditLogRow => item != null);
+}
+
+export function normalizeKolamDaraSeoSentimentRows(
+  payload: unknown,
+): KolamDaraSeoSentimentRow[] {
+  const data = unwrapDataRecord(payload);
+  const raw = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+  return raw
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      const sentimentRaw = String(row.sentiment || '')
+        .trim()
+        .toLowerCase();
+      const sentiment: KolamDaraSeoSentimentKind =
+        sentimentRaw === 'positive' || sentimentRaw === 'negative'
+          ? sentimentRaw
+          : 'neutral';
+      return {
+        id,
+        text: String(row.text || '').trim(),
+        sentiment,
+        sentimentScore: toFiniteNumber(row.sentimentScore),
+        analyzedBy: String(row.analyzedBy || 'dara_rules').trim(),
+        detectedAt: String(row.detectedAt || row.createdAt || '').trim(),
+      } satisfies KolamDaraSeoSentimentRow;
+    })
+    .filter((item): item is KolamDaraSeoSentimentRow => item != null);
+}
+
+export function normalizeKolamDaraSeoIntegrationSettings(
+  payload: unknown,
+): KolamDaraSeoIntegrationSettings | null {
+  const data = unwrapDataRecord(payload);
+  if (!Object.keys(data).length) {
+    return null;
+  }
+  const serp = asRecord(data.serpApi);
+  const ddg = asRecord(data.duckduckgo);
+  const searx = asRecord(data.searxng);
+  const firecrawl = asRecord(data.firecrawl);
+  const gsc = asRecord(data.searchConsole);
+  const indexing = asRecord(data.indexingApi);
+  return {
+    monitorKeywords: String(data.monitorKeywords || '').trim(),
+    reportPriority: Array.isArray(data.reportPriority)
+      ? data.reportPriority.map(item => String(item))
+      : [],
+    serpApi: {
+      enabled: serp.enabled === true,
+      configured: serp.configured === true,
+      apiKeyMasked: String(serp.apiKeyMasked || '').trim(),
+    },
+    duckduckgo: {enabled: ddg.enabled === true},
+    searxng: {
+      enabled: searx.enabled === true,
+      baseUrl: String(searx.baseUrl || '').trim(),
+    },
+    firecrawl: {
+      enabled: firecrawl.enabled === true,
+      baseUrl: String(firecrawl.baseUrl || 'https://api.firecrawl.dev').trim(),
+      apiKeyMasked: String(firecrawl.apiKeyMasked || '').trim(),
+    },
+    searchConsole: {
+      enabled: gsc.enabled === true,
+      propertyUrl: String(gsc.propertyUrl || '').trim(),
+      clientEmail: String(gsc.clientEmail || '').trim(),
+      privateKeyMasked: String(gsc.privateKeyMasked || '').trim(),
+    },
+    indexingApi: {
+      enabled: indexing.enabled === true,
+      clientEmail: String(indexing.clientEmail || '').trim(),
+      privateKeyMasked: String(indexing.privateKeyMasked || '').trim(),
+    },
+  };
+}
+
+export function normalizeKolamDaraSeoIntegrationReport(
+  payload: unknown,
+): KolamDaraSeoIntegrationReport | null {
+  const data = unwrapDataRecord(payload);
+  if (!Object.keys(data).length) {
+    return null;
+  }
+  const sectionsRaw = Array.isArray(data.sections) ? data.sections : [];
+  return {
+    keyword: String(data.keyword || '').trim(),
+    generatedAt: String(data.generatedAt || '').trim(),
+    primarySource: String(data.primarySource || '').trim(),
+    summary: String(data.summary || '').trim(),
+    sections: sectionsRaw.map(item => {
+      const row = asRecord(item);
+      const rankingsRaw = Array.isArray(row.rankings) ? row.rankings : [];
+      return {
+        providerId: String(row.providerId || '').trim(),
+        label: String(row.label || '').trim(),
+        ok: row.ok === true,
+        message: String(row.message || '').trim(),
+        rankings: rankingsRaw.map(rank => {
+          const r = asRecord(rank);
+          return {
+            position: toFiniteNumber(r.position),
+            url: String(r.url || '').trim(),
+            title: String(r.title || '').trim(),
+          };
+        }),
+      };
+    }),
+  };
+}
+
+export function normalizeKolamDaraSeoSocialInsights(payload: unknown): {
+  rows: KolamDaraSeoSocialSnapshot[];
+  total: number;
+} {
+  const data = unwrapDataRecord(payload);
+  const raw = Array.isArray(data.rows)
+    ? data.rows
+    : Array.isArray(data.items)
+      ? data.items
+      : Array.isArray(data)
+        ? data
+        : [];
+  const rows = raw
+    .map(item => normalizeSocialSnapshot(item))
+    .filter((item): item is KolamDaraSeoSocialSnapshot => item != null);
+  return {rows, total: toFiniteNumber(data.total) || rows.length};
+}
+
+export function pickKolamDaraSeoLatestSocialSnapshot(
+  rows: KolamDaraSeoSocialSnapshot[],
+  platform: KolamDaraSeoSocialPlatform,
+) {
+  const platformRows = rows.filter(row => row.platform === platform);
+  const withMetrics = platformRows.find(
+    row =>
+      row.status !== 'pending' &&
+      hasSocialDisplayMetrics(row, platform),
+  );
+  if (withMetrics) {
+    return withMetrics;
+  }
+  return (
+    platformRows.find(row => row.status !== 'pending') ||
+    platformRows.find(row => row.status === 'pending') ||
+    null
+  );
+}
+
+function hasSocialDisplayMetrics(
+  row: KolamDaraSeoSocialSnapshot,
+  platform: KolamDaraSeoSocialPlatform,
+) {
+  const m = row.metrics;
+  if (platform === 'tiktok') {
+    return m.videoViews != null || m.profileViews != null || m.likes != null;
+  }
+  return (
+    m.followers != null ||
+    m.reach != null ||
+    m.impressions != null ||
+    m.profileViews != null
+  );
+}
+
+function normalizeSocialSnapshot(
+  value: unknown,
+): KolamDaraSeoSocialSnapshot | null {
+  const row = asRecord(value);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  const metrics = asRecord(row.metrics);
+  const nullableNum = (v: unknown) =>
+    v == null || v === '' ? null : toFiniteNumber(v);
+  return {
+    id,
+    platform: String(row.platform || '').trim(),
+    status: String(row.status || '').trim() || 'failed',
+    periodDays: toFiniteNumber(row.periodDays) || 7,
+    metrics: {
+      followers: nullableNum(metrics.followers),
+      reach: nullableNum(metrics.reach),
+      impressions: nullableNum(metrics.impressions),
+      profileViews: nullableNum(metrics.profileViews),
+      engagementRate: nullableNum(metrics.engagementRate),
+      videoViews: nullableNum(metrics.videoViews),
+      likes: nullableNum(metrics.likes),
+    },
+    error: String(row.error || '').trim(),
+    fetchedAt: String(row.fetchedAt || '').trim(),
+    createdAt: String(row.createdAt || '').trim(),
+  };
+}
+
+function unwrapDataRecord(payload: unknown): Record<string, unknown> {
+  const root = asRecord(payload);
+  if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+    return asRecord(root.data);
+  }
+  if (Array.isArray(root.data)) {
+    return {items: root.data};
+  }
+  return root;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
