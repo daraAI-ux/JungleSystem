@@ -49,7 +49,11 @@ import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
-import { KolamDropdownSelect, KolamTableFooterControls } from './kolam-dropdown-select';
+import {
+  KolamDropdownSelect,
+  KolamOverflowMenuButton,
+  KolamTableFooterControls,
+} from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -474,6 +478,152 @@ function WalletTabBar({
   );
 }
 
+function WalletListCard({
+  canDelete,
+  canEdit,
+  item,
+  onDelete,
+  onRouteChange,
+}: {
+  canDelete: boolean;
+  canEdit: boolean;
+  item: KolamWallet;
+  onDelete: () => void;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const growth = item.currentBalance - item.initialBalance;
+  const accountLabel = item.provider
+    ? `${item.provider}${item.accountNumber ? ` · ${item.accountNumber}` : ''}`
+    : `ID Dompet: ${item.id.slice(-8)}`;
+  const actions: Array<{
+    label: string;
+    onPress: () => void;
+    tone?: 'default' | 'danger';
+  }> = [
+    {
+      label: 'Lihat Detail',
+      onPress: () => onRouteChange?.(getKolamWalletDetailRoute(item.id)),
+    },
+  ];
+  if (canEdit) {
+    actions.push({
+      label: 'Ubah Dompet',
+      onPress: () => onRouteChange?.(getKolamWalletEditRoute(item.id)),
+    });
+  }
+  if (canDelete) {
+    actions.push({
+      label: 'Hapus Dompet',
+      onPress: onDelete,
+      tone: 'danger',
+    });
+  }
+
+  return (
+    <View style={[styles.walletCardWrap, menuOpen ? styles.walletCardWrapMenuOpen : null]}>
+      <KolamCardFrame
+        style={[styles.walletCard, menuOpen ? styles.walletCardMenuOpen : null]}
+      >
+      <View style={styles.walletCardHeader}>
+        <View style={styles.walletCardIdentity}>
+          <View style={styles.walletCardIcon}>
+            <Text style={styles.statIconSmall}>💳</Text>
+          </View>
+          <View style={styles.walletCardCopy}>
+            <View style={styles.walletCardTitleRow}>
+              <Text numberOfLines={1} style={styles.walletCardName}>
+                {item.name}
+              </Text>
+              <KolamStatusBadge
+                intent={getKolamWalletTypeIntent(item.type)}
+                label={formatKolamWalletTypeLabel(item.type)}
+              />
+            </View>
+            <Text numberOfLines={1} style={styles.metaText}>
+              {accountLabel}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.walletCardMenu}>
+          <KolamOverflowMenuButton
+            accessibilityLabel={`Menu ${item.name}`}
+            actions={actions}
+            onOpenChange={setMenuOpen}
+          />
+        </View>
+      </View>
+
+      <View style={styles.walletCardBalanceRow}>
+        <View style={styles.walletCardBalanceCopy}>
+          <Text style={styles.metaText}>Saldo Saat Ini</Text>
+          <Text
+            style={[
+              styles.walletCardBalance,
+              item.currentBalance < 0
+                ? styles.valueDanger
+                : styles.valuePrimary,
+            ]}
+          >
+            {formatRupiah(item.currentBalance)}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.growthPill,
+            growth > 0
+              ? styles.growthPositive
+              : growth < 0
+                ? styles.growthNegative
+                : styles.growthNeutral,
+          ]}
+        >
+          <Text style={styles.growthLabel}>Pertumbuhan</Text>
+          <Text style={styles.growthValue}>
+            {growth > 0 ? '+' : ''}
+            {formatRupiah(growth)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.walletCardMetaGrid}>
+        <View style={styles.walletCardMetaCell}>
+          <Text style={styles.metaText}>Awal</Text>
+          <Text style={styles.primaryText}>
+            {formatRupiah(item.initialBalance)}
+          </Text>
+        </View>
+        <View style={styles.walletCardMetaCell}>
+          <Text style={styles.metaText}>Diperbarui</Text>
+          <Text numberOfLines={1} style={styles.primaryText}>
+            {formatKolamWalletShortDate(item.updatedAt)}
+          </Text>
+        </View>
+      </View>
+
+      {item.note ? (
+        <Text numberOfLines={2} style={styles.walletCardNote}>
+          {item.note}
+        </Text>
+      ) : (
+        <View style={styles.walletCardNoteSpacer} />
+      )}
+
+      <View style={styles.walletCardFooter}>
+        <Text style={styles.metaText}>
+          Dibuat {formatKolamWalletShortDate(item.createdAt)}
+        </Text>
+        <KolamButton
+          intent="secondary"
+          label="Lihat"
+          onPress={() => onRouteChange?.(getKolamWalletDetailRoute(item.id))}
+        />
+      </View>
+    </KolamCardFrame>
+    </View>
+  );
+}
+
 function WalletListPanel({
   controller,
   onRouteChange,
@@ -491,121 +641,15 @@ function WalletListPanel({
   const pageCount = Math.max(1, controller.walletPagination.totalPages);
 
   const renderWalletCard = React.useCallback(
-    ({ item }: { item: KolamWallet }) => {
-      const growth = item.currentBalance - item.initialBalance;
-      const accountLabel = item.provider
-        ? `${item.provider}${item.accountNumber ? ` · ${item.accountNumber}` : ''}`
-        : `ID Dompet: ${item.id.slice(-8)}`;
-      return (
-        <KolamCardFrame style={styles.walletCard}>
-          <View style={styles.walletCardHeader}>
-            <View style={styles.walletCardIdentity}>
-              <View style={styles.walletCardIcon}>
-                <Text style={styles.statIconSmall}>💳</Text>
-              </View>
-              <View style={styles.walletCardCopy}>
-                <View style={styles.walletCardTitleRow}>
-                  <Text numberOfLines={1} style={styles.walletCardName}>
-                    {item.name}
-                  </Text>
-                  <KolamStatusBadge
-                    intent={getKolamWalletTypeIntent(item.type)}
-                    label={formatKolamWalletTypeLabel(item.type)}
-                  />
-                </View>
-                <Text numberOfLines={1} style={styles.metaText}>
-                  {accountLabel}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.walletCardBalanceRow}>
-            <View style={styles.walletCardBalanceCopy}>
-              <Text style={styles.metaText}>Saldo Saat Ini</Text>
-              <Text
-                style={[
-                  styles.walletCardBalance,
-                  item.currentBalance < 0 ? styles.valueDanger : styles.valuePrimary,
-                ]}
-              >
-                {formatRupiah(item.currentBalance)}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.growthPill,
-                growth > 0
-                  ? styles.growthPositive
-                  : growth < 0
-                    ? styles.growthNegative
-                    : styles.growthNeutral,
-              ]}
-            >
-              <Text style={styles.growthLabel}>Pertumbuhan</Text>
-              <Text style={styles.growthValue}>
-                {growth > 0 ? '+' : ''}
-                {formatRupiah(growth)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.walletCardMetaGrid}>
-            <View style={styles.walletCardMetaCell}>
-              <Text style={styles.metaText}>Awal</Text>
-              <Text style={styles.primaryText}>
-                {formatRupiah(item.initialBalance)}
-              </Text>
-            </View>
-            <View style={styles.walletCardMetaCell}>
-              <Text style={styles.metaText}>Diperbarui</Text>
-              <Text numberOfLines={1} style={styles.primaryText}>
-                {formatKolamWalletShortDate(item.updatedAt)}
-              </Text>
-            </View>
-          </View>
-
-          {item.note ? (
-            <Text numberOfLines={2} style={styles.walletCardNote}>
-              {item.note}
-            </Text>
-          ) : (
-            <View style={styles.walletCardNoteSpacer} />
-          )}
-
-          <View style={styles.walletCardFooter}>
-            <Text style={styles.metaText}>
-              Dibuat {formatKolamWalletShortDate(item.createdAt)}
-            </Text>
-            <View style={styles.rowActions}>
-              <KolamButton
-                intent="secondary"
-                label="Lihat"
-                onPress={() =>
-                  onRouteChange?.(getKolamWalletDetailRoute(item.id))
-                }
-              />
-              {controller.canEdit ? (
-                <KolamButton
-                  intent="secondary"
-                  label="Ubah"
-                  onPress={() =>
-                    onRouteChange?.(getKolamWalletEditRoute(item.id))
-                  }
-                />
-              ) : null}
-              {controller.canDelete ? (
-                <KolamButton
-                  intent="secondary"
-                  label="Hapus"
-                  onPress={() => setDeleteTarget(item)}
-                />
-              ) : null}
-            </View>
-          </View>
-        </KolamCardFrame>
-      );
-    },
+    ({ item }: { item: KolamWallet }) => (
+      <WalletListCard
+        canDelete={controller.canDelete}
+        canEdit={controller.canEdit}
+        item={item}
+        onDelete={() => setDeleteTarget(item)}
+        onRouteChange={onRouteChange}
+      />
+    ),
     [controller.canDelete, controller.canEdit, onRouteChange],
   );
 
@@ -684,9 +728,9 @@ function WalletListPanel({
       ) : (
         <View style={styles.walletCardGrid}>
           {controller.filteredWallets.map(item => (
-            <View key={item.id} style={styles.walletCardWrap}>
+            <React.Fragment key={item.id}>
               {renderWalletCard({ item })}
-            </View>
+            </React.Fragment>
           ))}
         </View>
       )}
@@ -2286,29 +2330,58 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  walletCardGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
   walletCardWrap: {
     flexBasis: 340,
     flexGrow: 1,
     maxWidth: '100%',
     minWidth: 280,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 1,
+  },
+  walletCardWrapMenuOpen: {
+    elevation: 1000,
+    overflow: 'visible',
+    zIndex: 1000,
+  },
+  walletCardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    overflow: 'visible',
   },
   walletCard: {
     gap: 12,
     minHeight: 280,
+    overflow: 'visible',
     padding: 14,
+    position: 'relative',
+    zIndex: 1,
+  },
+  walletCardMenuOpen: {
+    elevation: 1000,
+    overflow: 'visible',
+    zIndex: 1000,
   },
   walletCardHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
     gap: 8,
+    justifyContent: 'space-between',
+    overflow: 'visible',
+    zIndex: 2,
+  },
+  walletCardMenu: {
+    flexShrink: 0,
+    overflow: 'visible',
+    zIndex: 3,
   },
   walletCardIdentity: {
     alignItems: 'flex-start',
+    flex: 1,
     flexDirection: 'row',
     gap: 10,
+    minWidth: 0,
   },
   walletCardIcon: {
     alignItems: 'center',
