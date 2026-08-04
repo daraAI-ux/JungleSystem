@@ -280,14 +280,13 @@ function AssetPurchaseDetailBody({
       ) : null}
 
       <View style={styles.tabsRow}>
-        <View style={styles.tabsMainSlot}>
+        <View style={styles.tabsButtonsWrap}>
           <KolamSurfacePanelTabs
             onSelectTab={controller.onSelectTab}
             selectedTabId={controller.tab}
             tabs={controller.tabs}
           />
         </View>
-        <View style={styles.tabsHistorySlot} />
       </View>
 
       <View style={styles.detailFrame}>
@@ -493,18 +492,14 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   tabsRow: {
-    flexDirection: 'row',
+    alignSelf: 'stretch',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    width: '100%',
   },
-  tabsMainSlot: {
-    flex: 3,
-    minWidth: 0,
-    paddingRight: 16,
-  },
-  tabsHistorySlot: {
-    flex: 1,
-    maxWidth: 300,
-    minWidth: 240,
-    paddingLeft: 16,
+  tabsButtonsWrap: {
+    // Overlap KolamSurfacePanelTabs bottom border onto the full-width line.
+    marginBottom: -1,
   },
   detailFrame: {
     backgroundColor: V.colors.bg,
