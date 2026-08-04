@@ -245,6 +245,7 @@ export type KolamAssetPurchaseDetail = {
   createdAt: string;
   updatedAt: string;
   hasLinkedAsset: boolean;
+  linkedAssetId: string;
 };
 
 export type KolamAssetPurchaseDetailTab =
@@ -580,6 +581,7 @@ export function normalizeKolamAssetPurchaseDetail(
     createdAt,
     updatedAt,
     hasLinkedAsset: Boolean(assetId),
+    linkedAssetId: assetId,
   };
 }
 

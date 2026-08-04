@@ -248,6 +248,7 @@ describe('Kolam finance expense domain', () => {
       locationType: 'warehouse',
       photos: ['/uploads/a.jpg'],
       hasLinkedAsset: false,
+      linkedAssetId: '',
     });
     expect(createKolamAssetPurchaseFormFromDetail(detail)).toMatchObject({
       name: 'Laptop',
@@ -280,6 +281,7 @@ describe('Kolam finance expense domain', () => {
       asset: { _id: 'asset-1' },
     });
     expect(detail.hasLinkedAsset).toBe(true);
+    expect(detail.linkedAssetId).toBe('asset-1');
     const history = buildKolamAssetPurchaseHistoryItems(detail);
     expect(history[0]?.title).toBe('Pembelian Diperbarui');
     expect(history[1]?.title).toBe('Pembelian Aset Dibuat');

@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-asset-purchase-detail-controller';
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
+import { KolamAssetPurchaseDepreciationTab } from './kolam-asset-purchase-depreciation-tab';
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -274,7 +275,12 @@ function AssetPurchaseDetailBody({
             total={detail.total}
           />
         ) : null}
-        {controller.tab === 'depreciation' ? <DepreciationStubTab /> : null}
+        {controller.tab === 'depreciation' ? (
+          <KolamAssetPurchaseDepreciationTab
+            onPurchaseRefresh={controller.onRefresh}
+            purchase={detail}
+          />
+        ) : null}
         {controller.tab === 'history' ? (
           <HistoryTab items={controller.historyItems} />
         ) : null}
@@ -387,14 +393,6 @@ function PricingTab({
         <Text style={styles.priceTotalLabel}>Total</Text>
         <Text style={styles.priceTotalValue}>{formatRupiah(total)}</Text>
       </View>
-    </KolamContentFrame>
-  );
-}
-
-function DepreciationStubTab() {
-  return (
-    <KolamContentFrame variant="nativeFormSection">
-      <KolamEmptyState title="Belum tersedia" />
     </KolamContentFrame>
   );
 }
