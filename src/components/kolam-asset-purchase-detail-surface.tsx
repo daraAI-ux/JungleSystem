@@ -28,6 +28,7 @@ import type { KolamDescriptionListRow } from './kolam-description-list-types';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 export function KolamAssetPurchaseDetailSurface({
   onRouteChange,
@@ -206,34 +207,53 @@ function AssetPurchaseDetailBody({
 
   return (
     <View style={styles.surface}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerCopy}>
-          <Text numberOfLines={2} style={styles.headerTitle}>
-            {detail.name || 'Pembelian Aset'}
-          </Text>
-          {detail.code ? (
-            <KolamStatusBadge intent="secondary" label={detail.code} />
-          ) : null}
-          <KolamStatusBadge
-            intent={getFinanceExpenseStatusIntent(detail.status)}
-            label={formatFinanceExpenseStatusLabel(detail.status)}
-          />
-        </View>
-        <View style={styles.headerActions}>
-          {controller.canShowVerify ? (
-            <KolamButton
-              disabled={controller.verifying}
-              label={controller.verifying ? 'Memverifikasi…' : 'Verify'}
-              onPress={() => {
-                void controller.onVerify();
-              }}
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.toolbarContext}>
+              {detail.name || detail.code || 'Pembelian Aset'}
+            </Text>
+            {detail.code ? (
+              <KolamStatusBadge intent="secondary" label={detail.code} />
+            ) : null}
+            <KolamStatusBadge
+              intent={getFinanceExpenseStatusIntent(detail.status)}
+              label={formatFinanceExpenseStatusLabel(detail.status)}
             />
-          ) : null}
-          <KolamButton
-            intent="secondary"
-            label="Ubah"
-            onPress={controller.onEdit}
-          />
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.loading || controller.verifying}
+              intent="outline"
+              label="Refresh"
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamButton
+              intent="outline"
+              label="Kembali ke daftar"
+              onPress={controller.onBack}
+              style={styles.toolbarButton}
+            />
+            {controller.canShowVerify ? (
+              <KolamButton
+                disabled={controller.verifying}
+                label={controller.verifying ? 'Memverifikasi…' : 'Verify'}
+                onPress={() => {
+                  void controller.onVerify();
+                }}
+                style={styles.toolbarButton}
+              />
+            ) : null}
+            <KolamButton
+              intent="secondary"
+              label="Ubah"
+              onPress={controller.onEdit}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
       </View>
 
@@ -407,38 +427,42 @@ function HistoryPanel({
 }) {
   return (
     <KolamContentFrame style={styles.historyFrame} variant="nativeFormSection">
-      <KolamCopyStack
-        containerStyle={styles.sectionCopy}
-        items={[
-          {
-            id: 'title',
-            text: 'Riwayat Aktivitas',
-            style: styles.sectionTitle,
-          },
-        ]}
-      />
+      <Text style={styles.historyTitle}>Riwayat Aktivitas</Text>
       {items.length === 0 ? (
-        <Text style={styles.timelineMeta}>Belum ada riwayat</Text>
+        <KolamEmptyState compact title="Belum ada riwayat" />
       ) : (
-        <ScrollView contentContainerStyle={styles.historyScroll}>
+        <ScrollView
+          contentContainerStyle={styles.historyScroll}
+          style={styles.historyScrollView}
+        >
           <View style={styles.timeline}>
-            {items.map(item => (
-              <View key={item.id} style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
-                <View style={styles.timelineBody}>
-                  <Text style={styles.timelineTitle}>{item.title}</Text>
-                  <Text style={styles.timelineMeta}>{item.atLabel}</Text>
-                  {item.lines.map((line, index) => (
-                    <Text
-                      key={`${item.id}-${index}`}
-                      style={styles.timelineLine}
-                    >
-                      {line}
-                    </Text>
-                  ))}
+            {items.map(item => {
+              const isCreated = item.id === 'created';
+              return (
+                <View key={item.id} style={styles.timelineItem}>
+                  <View
+                    style={[
+                      styles.timelineDot,
+                      isCreated
+                        ? styles.timelineDotSuccess
+                        : styles.timelineDotPrimary,
+                    ]}
+                  />
+                  <View style={styles.timelineBody}>
+                    <Text style={styles.timelineTitle}>{item.title}</Text>
+                    <Text style={styles.timelineMeta}>{item.atLabel}</Text>
+                    {item.lines.map((line, index) => (
+                      <Text
+                        key={`${item.id}-${index}`}
+                        style={styles.timelineLine}
+                      >
+                        {line}
+                      </Text>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </ScrollView>
       )}
@@ -452,28 +476,18 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
   },
-  headerRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  headerCopy: {
-    flexGrow: 1,
-    flexShrink: 1,
-    gap: 6,
-    minWidth: 180,
-  },
-  headerTitle: {
+  toolbarContext: {
     color: V.colors.fg,
-    fontSize: 18,
+    flexShrink: 1,
+    fontSize: 13,
     fontWeight: '700',
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
-  headerActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
   },
   banner: {
     alignSelf: 'stretch',
@@ -501,11 +515,21 @@ const styles = StyleSheet.create({
   },
   historyFrame: {
     flex: 1,
+    gap: 10,
     minHeight: 200,
   },
+  historyTitle: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  historyScrollView: {
+    flex: 1,
+    minHeight: 0,
+  },
   historyScroll: {
-    gap: 0,
-    paddingBottom: 16,
+    paddingBottom: 12,
+    paddingTop: 2,
   },
   content: {
     gap: 16,
@@ -603,38 +627,45 @@ const styles = StyleSheet.create({
   timeline: {
     borderLeftColor: V.colors.border,
     borderLeftWidth: 2,
-    gap: 16,
-    paddingLeft: 14,
+    gap: 14,
+    paddingLeft: 12,
   },
   timelineItem: {
+    paddingLeft: 4,
     position: 'relative',
   },
   timelineDot: {
-    backgroundColor: V.colors.primary,
     borderColor: V.colors.bg,
     borderRadius: 6,
     borderWidth: 2,
     height: 10,
-    left: -20,
+    left: -18,
     position: 'absolute',
-    top: 4,
+    top: 3,
     width: 10,
   },
+  timelineDotPrimary: {
+    backgroundColor: V.colors.primary,
+  },
+  timelineDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
   timelineBody: {
-    gap: 4,
+    gap: 3,
   },
   timelineTitle: {
     color: V.colors.fg,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   timelineMeta: {
     color: V.colors.mutedFg,
-    fontSize: 12,
+    fontSize: 11,
   },
   timelineLine: {
     color: V.colors.mutedFg,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 15,
   },
   backButton: {
     alignSelf: 'flex-start',
