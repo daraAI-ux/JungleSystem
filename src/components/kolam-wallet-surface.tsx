@@ -1618,42 +1618,37 @@ function WalletActionModal({
   if (!modal) {
     return null;
   }
+  // In-tree overlay (not RN Modal): on Windows, Modal opens a separate OS
+  // window with its own title bar and oversized chrome ("offside" strip).
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={controller.onCloseActionModal}
-      transparent
-      visible
-    >
-      <View style={styles.actionModalRoot}>
-        <KolamModalBackdrop onPress={controller.onCloseActionModal} />
-        <View style={styles.actionModalCard}>
-          {modal === 'deposit' ? (
-            <DepositForm
-              controller={controller}
-              onClose={controller.onCloseActionModal}
-              preselectedWalletId={preselectedWalletId}
-              wallets={wallets}
-            />
-          ) : null}
-          {modal === 'withdraw' ? (
-            <WithdrawForm
-              controller={controller}
-              onClose={controller.onCloseActionModal}
-              preselectedWalletId={preselectedWalletId}
-              wallets={wallets}
-            />
-          ) : null}
-          {modal === 'transfer' ? (
-            <TransferForm
-              controller={controller}
-              onClose={controller.onCloseActionModal}
-              wallets={wallets}
-            />
-          ) : null}
-        </View>
+    <View pointerEvents="box-none" style={styles.actionOverlayHost}>
+      <KolamModalBackdrop onPress={controller.onCloseActionModal} />
+      <View style={styles.actionModalCard}>
+        {modal === 'deposit' ? (
+          <DepositForm
+            controller={controller}
+            onClose={controller.onCloseActionModal}
+            preselectedWalletId={preselectedWalletId}
+            wallets={wallets}
+          />
+        ) : null}
+        {modal === 'withdraw' ? (
+          <WithdrawForm
+            controller={controller}
+            onClose={controller.onCloseActionModal}
+            preselectedWalletId={preselectedWalletId}
+            wallets={wallets}
+          />
+        ) : null}
+        {modal === 'transfer' ? (
+          <TransferForm
+            controller={controller}
+            onClose={controller.onCloseActionModal}
+            wallets={wallets}
+          />
+        ) : null}
       </View>
-    </Modal>
+    </View>
   );
 }
 
@@ -2133,6 +2128,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
     minHeight: 0,
+    overflow: 'hidden',
+    position: 'relative',
   },
   listRoot: {
     flex: 1,
@@ -2702,12 +2699,14 @@ const styles = StyleSheet.create({
     width: '100%',
     zIndex: 2,
   },
-  actionModalRoot: {
+  actionOverlayHost: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    flex: 1,
+    elevation: 200000,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 32,
+    zIndex: 200000,
   },
   actionModalCard: {
     backgroundColor: V.colors.bg,
@@ -2715,8 +2714,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     elevation: 0,
-    maxHeight: '80%',
+    maxHeight: '90%',
     maxWidth: '86%',
+    overflow: 'hidden',
     shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
