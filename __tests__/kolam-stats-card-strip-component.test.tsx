@@ -1,6 +1,7 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import {getListFrameStyle} from '../src/components/kolam-list-frame-style';
 import {KolamListFrame} from '../src/components/kolam-list-frame';
 import {KolamStatsCardStrip} from '../src/components/kolam-stats-card-strip';
 import {statsCardStripStyles} from '../src/components/kolam-stats-card-strip-styles';
@@ -49,7 +50,34 @@ describe('KolamStatsCardStrip', () => {
     );
   });
 
-  it('wraps cards in sized slots inside a wrapping strip frame', async () => {
+  it('fills the wrapper with equal flex tiles (no fixed tile sizes or side padding)', () => {
+    const frameStyle = getListFrameStyle('statsCardStrip');
+    expect(frameStyle).toEqual(
+      expect.objectContaining({
+        alignSelf: 'stretch',
+        flexDirection: 'row',
+        width: '100%',
+      }),
+    );
+    expect(frameStyle).not.toEqual(
+      expect.objectContaining({paddingHorizontal: expect.anything()}),
+    );
+    expect(frameStyle.paddingHorizontal).toBeUndefined();
+
+    expect(statsCardStripStyles.card).toEqual(
+      expect.objectContaining({
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: 0,
+        minWidth: 0,
+      }),
+    );
+    expect(
+      (statsCardStripStyles as {cardSlot?: unknown}).cardSlot,
+    ).toBeUndefined();
+  });
+
+  it('renders cards as direct flex children of the strip frame', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -59,51 +87,24 @@ describe('KolamStatsCardStrip', () => {
             {
               id: 'seoScore',
               label: 'Skor SEO',
-              value: '72',
+              value: '61',
               detail: '',
               tone: 'default',
             },
             {
               id: 'approvals',
               label: 'Persetujuan',
-              value: '3',
+              value: '126',
               detail: '',
               tone: 'warning',
-            },
-            {
-              id: 'serp',
-              label: 'Snapshot SERP',
-              value: '12',
-              detail: '',
-              tone: 'default',
-            },
-            {
-              id: 'keywords',
-              label: 'Keywords',
-              value: '40',
-              detail: '',
-              tone: 'muted',
             },
           ]}
         />,
       );
     });
 
-    const frame = renderer!.root.findByType(KolamListFrame);
-    expect(frame.props.variant).toBe('statsCardStrip');
-    expect(frame.props.children).toBeTruthy();
-
-    const slots = renderer!.root
-      .findAllByType(View)
-      .filter(node => node.props.style === statsCardStripStyles.cardSlot);
-    expect(slots).toHaveLength(4);
-    expect(statsCardStripStyles.cardSlot).toEqual(
-      expect.objectContaining({
-        flexGrow: 1,
-        flexShrink: 1,
-        minWidth: 160,
-        flexBasis: 160,
-      }),
+    expect(renderer!.root.findByType(KolamListFrame).props.variant).toBe(
+      'statsCardStrip',
     );
   });
 });

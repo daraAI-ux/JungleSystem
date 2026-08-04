@@ -12,37 +12,33 @@ const CARD_SHADOW = {
   elevation: V.surface.cardShadow.elevation,
 } satisfies ViewStyle;
 
-/** FE marketing KPI strip: wrap tiles with intrinsic min size (~2–4 cols). */
-const STATS_CARD_SLOT_MIN_WIDTH = 160;
-
+/**
+ * Shared stats KPI strip — equal flex tiles that fill the wrapper width
+ * (FE marketing hub `repeat(N, 1fr)`). No fixed tile minWidth/basis.
+ */
 export const statsCardStripStyles = StyleSheet.create({
   grid: {
     alignItems: 'stretch',
+    alignSelf: 'stretch',
     backgroundColor: V.colors.bg,
     borderTopColor: V.colors.border,
     borderTopWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
-    paddingHorizontal: V.layout.tableCellPaddingX,
     paddingVertical: 12,
-  },
-  /** Flex child of the strip — own basis so tiles wrap instead of crushing. */
-  cardSlot: {
-    flexBasis: STATS_CARD_SLOT_MIN_WIDTH,
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: STATS_CARD_SLOT_MIN_WIDTH,
+    width: '100%',
   },
   card: {
     backgroundColor: V.colors.secondary,
     borderColor: V.colors.border,
     borderRadius: V.radius.lg,
     borderWidth: 1,
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
     minHeight: 82,
+    minWidth: 0,
     padding: 12,
-    width: '100%',
     ...CARD_SHADOW,
   },
   label: {
