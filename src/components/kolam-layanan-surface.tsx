@@ -184,12 +184,15 @@ function KolamLayananList({
       </View>
 
       <View style={[kolamTableToolbarStyles.shell, styles.fullWidth]}>
-        <View style={kolamTableToolbarStyles.row}>
+        <View style={[kolamTableToolbarStyles.row, styles.toolbarRow]}>
           <View style={kolamTableToolbarStyles.filters}>
             {controller.activeTab === 'daftar' ||
             controller.activeTab === 'langganan' ? (
               <KolamSearchField
-                containerStyle={kolamTableToolbarStyles.searchInput}
+                containerStyle={[
+                  kolamTableToolbarStyles.searchInput,
+                  styles.searchInput,
+                ]}
                 onChangeText={controller.onSearchChange}
                 placeholder={
                   controller.activeTab === 'langganan'
@@ -198,9 +201,7 @@ function KolamLayananList({
                 }
                 value={controller.search}
               />
-            ) : (
-              <View style={kolamTableToolbarStyles.searchInput} />
-            )}
+            ) : null}
             {controller.activeTab === 'langganan' ? (
               <KolamDropdownSelect
                 label="Status"
@@ -220,6 +221,22 @@ function KolamLayananList({
                 value={controller.subscriptionStatusFilter}
               />
             ) : null}
+            <View style={styles.tabGroup}>
+              {KOLAM_LAYANAN_LIST_TABS.map(tab => (
+                <KolamButton
+                  intent={
+                    controller.activeTab === tab.id ? 'primary' : 'outline'
+                  }
+                  key={tab.id}
+                  label={tab.label}
+                  onPress={() => {
+                    const href = controller.onTabChange(tab.id);
+                    onRouteChange?.(href);
+                  }}
+                  style={styles.tabButton}
+                />
+              ))}
+            </View>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
@@ -240,20 +257,6 @@ function KolamLayananList({
               />
             ) : null}
           </View>
-        </View>
-        <View style={styles.tabRow}>
-          {KOLAM_LAYANAN_LIST_TABS.map(tab => (
-            <KolamButton
-              intent={controller.activeTab === tab.id ? 'primary' : 'outline'}
-              key={tab.id}
-              label={tab.label}
-              onPress={() => {
-                const href = controller.onTabChange(tab.id);
-                onRouteChange?.(href);
-              }}
-              style={styles.tabButton}
-            />
-          ))}
         </View>
       </View>
 
@@ -903,19 +906,27 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     alignSelf: 'stretch',
     flexDirection: 'row',
+    flexWrap: 'nowrap',
     gap: 8,
     minWidth: 0,
     width: '100%',
   },
-  tabRow: {
+  toolbarRow: {
+    flexWrap: 'nowrap',
+  },
+  searchInput: {
+    flexGrow: 1,
+    flexShrink: 1,
+    maxWidth: 280,
+    minWidth: 140,
+  },
+  tabGroup: {
     alignItems: 'center',
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexGrow: 0,
+    flexShrink: 0,
+    flexWrap: 'nowrap',
     gap: 4,
-    marginTop: 4,
-    paddingTop: 4,
   },
   errorBadge: {
     alignSelf: 'stretch',
