@@ -38,7 +38,6 @@ import {
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {openKolamMediaPreview} from './kolam-media-preview-dialog';
-import {KolamMediaPlayer} from './kolam-media-player';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
 
@@ -463,6 +462,7 @@ export function KolamDaraTrainingVideoStudioBody({
                     : [{label: 'Konfigurasi env model', value: ''}]
                 }
                 style={styles.dropdownCell}
+                triggerStyle={styles.dropdownTrigger}
                 value={model}
               />
               <KolamDropdownSelect
@@ -474,6 +474,7 @@ export function KolamDaraTrainingVideoStudioBody({
                   value: String(item),
                 }))}
                 style={styles.dropdownCell}
+                triggerStyle={styles.dropdownTrigger}
                 value={duration}
               />
               <View style={styles.dropdownCell}>
@@ -487,6 +488,7 @@ export function KolamDaraTrainingVideoStudioBody({
                       item,
                     value: item,
                   }))}
+                  triggerStyle={styles.dropdownTrigger}
                   value={aspectRatio}
                 />
                 <Text style={styles.hint}>Auto tidak memaksa 16:9.</Text>
@@ -500,6 +502,7 @@ export function KolamDaraTrainingVideoStudioBody({
                   value: item,
                 }))}
                 style={styles.dropdownCell}
+                triggerStyle={styles.dropdownTrigger}
                 value={resolution}
               />
             </View>
@@ -595,39 +598,29 @@ export function KolamDaraTrainingVideoStudioBody({
 
               {activeJob?.outputUrl ? (
                 <View style={styles.previewWrap}>
-                  <KolamMediaPlayer
-                    kind="video"
-                    style={styles.previewPlayer}
-                    title="Hasil Video Studio"
-                    uri={activeJob.outputUrl}
-                  />
-                  <View style={styles.rowActions}>
-                    <KolamButton
-                      intent="secondary"
-                      label="Putar"
-                      onPress={() => {
-                        openKolamMediaPreview({
-                          kind: 'video',
-                          title: 'Hasil Video Studio',
-                          uri: activeJob.outputUrl,
-                        });
-                      }}
-                      size="sm"
-                    />
-                    <KolamButton
-                      intent="plain"
-                      label="Download hasil"
-                      onPress={() => {
-                        void Linking.openURL(
-                          activeJob.outputUrl ||
-                            buildKolamDaraTrainingVideoStudioDownloadUrl(
-                              activeJob.id,
-                            ),
-                        );
-                      }}
-                      size="sm"
-                    />
-                  </View>
+                  <Pressable
+                    accessibilityLabel="Putar hasil Video Studio"
+                    onPress={() => {
+                      openKolamMediaPreview({
+                        kind: 'video',
+                        title: 'Hasil Video Studio',
+                        uri: activeJob.outputUrl,
+                      });
+                    }}
+                    style={styles.previewFrame}>
+                    <Text style={styles.previewPlayLabel}>▶</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      void Linking.openURL(
+                        activeJob.outputUrl ||
+                          buildKolamDaraTrainingVideoStudioDownloadUrl(
+                            activeJob.id,
+                          ),
+                      );
+                    }}>
+                    <Text style={styles.downloadLink}>Download hasil</Text>
+                  </Pressable>
                 </View>
               ) : null}
 
@@ -787,22 +780,18 @@ const styles = StyleSheet.create({
   columns: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
   },
   columnMain: {
-    flexGrow: 1.05,
-    flexShrink: 1,
-    flexBasis: 420,
+    flex: 1.05,
     gap: 10,
-    minWidth: 320,
+    minWidth: 0,
   },
   columnSide: {
-    flexGrow: 0.95,
-    flexShrink: 1,
-    flexBasis: 360,
+    flex: 0.95,
     gap: 10,
-    minWidth: 300,
+    maxWidth: 440,
+    minWidth: 0,
   },
   uploadBox: {
     borderColor: V.colors.border,
@@ -834,8 +823,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   promptInput: {
-    height: 120,
-    maxHeight: 120,
+    height: 160,
+    maxHeight: 160,
     textAlignVertical: 'top',
   },
   dropdownGrid: {
@@ -844,11 +833,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dropdownCell: {
-    flexBasis: '48%',
+    flexBasis: '47%',
     flexGrow: 1,
     flexShrink: 1,
     gap: 4,
-    minWidth: 160,
+    minWidth: 0,
+  },
+  dropdownTrigger: {
+    minWidth: 0,
+    width: '100%',
   },
   hint: {
     color: V.colors.mutedFg,
@@ -903,14 +896,29 @@ const styles = StyleSheet.create({
   previewWrap: {
     gap: 8,
   },
-  previewPlayer: {
-    backgroundColor: '#0f172a',
-    height: 200,
+  previewFrame: {
+    alignItems: 'center',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#000000',
+    borderRadius: 8,
+    justifyContent: 'center',
     width: '100%',
+  },
+  previewPlayLabel: {
+    color: '#ffffff',
+    fontFamily: V.fontFamily,
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  downloadLink: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
   },
   historyList: {
     gap: 0,
-    maxHeight: 360,
+    maxHeight: 520,
   },
   historyRow: {
     borderBottomColor: V.colors.border,

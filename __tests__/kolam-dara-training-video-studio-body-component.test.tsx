@@ -113,8 +113,8 @@ describe('KolamDaraTrainingVideoStudioBody', () => {
     expect(text).toContain('Kirim task');
     expect(text).toContain('Histori job');
     expect(text).toContain('raw.mp4');
-    expect(text).toContain('Putar');
     expect(text).toContain('Download hasil');
+    expect(text).toContain('Putar hasil Video Studio');
     expect(configMock).toHaveBeenCalled();
     expect(jobsMock).toHaveBeenCalledWith(30);
 
