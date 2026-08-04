@@ -27,6 +27,27 @@ export const KOLAM_DARA_TRAINING_VISION_SECTIONS: Array<{
   {id: 'koreksi', label: 'Koreksi inbox'},
 ];
 
+/** BE `MIN_VISION_TRAINING_PHOTOS` default (species YOLO). */
+export const KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS = 5;
+/** BE `MIN_YOLO_PRODUCT_TRAIN_PHOTOS` default (produk YOLO). */
+export const KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS = 3;
+
+/**
+ * Train-ready when training photo count meets the YOLO min for that entity.
+ * SoT: species `readyForTrain` / product export `minPhotos`.
+ */
+export function isKolamDaraTrainingVisionReadyForTrain(
+  trainingCount: number,
+  minPhotos: number,
+): boolean {
+  const min = Math.max(
+    1,
+    Math.floor(Number(minPhotos)) ||
+      KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+  );
+  return Number(trainingCount) >= min;
+}
+
 export type KolamDaraTrainingVisionMatchStatus =
   | 'match'
   | 'ambiguous'
@@ -244,7 +265,9 @@ export function normalizeKolamDaraTrainingVisionStats(
     speciesWithTraining: asNumber(data.speciesWithTraining),
     speciesReadyForTrain: asNumber(data.speciesReadyForTrain),
     feedbackTotal: asNumber(data.feedbackTotal),
-    minTrainingPhotos: asNumber(data.minTrainingPhotos) || 3,
+    minTrainingPhotos:
+      asNumber(data.minTrainingPhotos) ||
+      KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
     yoloModelReady: data.yoloModelReady === true,
     yoloClassCount: asNumber(data.yoloClassCount),
     clipIndexTotal: asNumber(data.clipIndexTotal),
@@ -275,7 +298,9 @@ export function normalizeKolamDaraTrainingVisionStats(
     feedbackProductTotal: asNumber(data.feedbackProductTotal),
     yoloProductModelReady: data.yoloProductModelReady === true,
     yoloProductClassCount: asNumber(data.yoloProductClassCount),
-    minProductTrainingPhotos: asNumber(data.minProductTrainingPhotos) || 3,
+    minProductTrainingPhotos:
+      asNumber(data.minProductTrainingPhotos) ||
+      KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
     visionLlmFallbackEnabled: data.visionLlmFallbackEnabled === true,
     visionLlmFallbackReady: data.visionLlmFallbackReady === true,
     embedModelId: String(data.embedModelId || '').trim(),

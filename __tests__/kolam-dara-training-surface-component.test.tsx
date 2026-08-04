@@ -354,10 +354,20 @@ describe('KolamDaraTrainingSurface', () => {
           readyForIndex: true,
           catalogPhotos: [],
         },
+        {
+          productId: 'p2',
+          displayName: 'Coco Fiber',
+          name: 'Coco Fiber',
+          sku: 'SKU-2',
+          catalogPhotoCount: 2,
+          trainingCount: 3,
+          readyForIndex: true,
+          catalogPhotos: [],
+        },
       ],
       page: 1,
       pages: 1,
-      total: 1,
+      total: 2,
     });
     visionFeedbackMock.mockResolvedValue({
       rows: [
@@ -584,7 +594,7 @@ describe('KolamDaraTrainingSurface', () => {
     });
   });
 
-  it('matches Species columns on Produk YOLO (no SKU, has Status)', async () => {
+  it('matches Species columns on Produk YOLO with train-ready min photos', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
@@ -613,9 +623,11 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Daftar produk');
     expect(text).toContain('Katalog');
     expect(text).toContain('Status');
+    expect(text).toContain('Kumpulkan');
     expect(text).toContain('Siap latih');
     expect(text).toContain('Kelola');
     expect(text).toContain('Frog Soil');
+    expect(text).toContain('Coco Fiber');
     expect(text).not.toContain('"children":["SKU"]');
 
     await ReactTestRenderer.act(async () => {

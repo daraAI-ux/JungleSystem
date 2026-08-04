@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import {
   formatKolamDaraTrainingVisionDateTime,
+  isKolamDaraTrainingVisionReadyForTrain,
   KOLAM_DARA_TRAINING_VISION_MATCH_LABELS,
+  KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   KOLAM_DARA_TRAINING_VISION_SECTIONS,
   resolveKolamDaraTrainingVisionMatchIntent,
   type KolamDaraTrainingVisionBaselineKpi,
@@ -902,35 +904,42 @@ export function KolamDaraTrainingVisionBody({
                   <Text style={[styles.th, styles.colReady]}>Status</Text>
                   <Text style={[styles.th, styles.colAction]} />
                 </View>
-                {productRows.map(row => (
-                  <View key={row.productId} style={styles.tableRow}>
-                    <Text style={[styles.tdStrong, styles.colName]}>
-                      {row.displayName}
-                    </Text>
-                    <Text style={[styles.td, styles.colCount]}>
-                      {row.catalogPhotoCount}
-                    </Text>
-                    <Text style={[styles.td, styles.colCount]}>
-                      {row.trainingCount}
-                    </Text>
-                    <View style={styles.colReady}>
-                      <KolamStatusBadge
-                        intent={row.readyForIndex ? 'success' : 'muted'}
-                        label={row.readyForIndex ? 'Siap latih' : 'Kumpulkan'}
-                      />
+                {productRows.map(row => {
+                  const readyForTrain = isKolamDaraTrainingVisionReadyForTrain(
+                    row.trainingCount,
+                    stats?.minProductTrainingPhotos ??
+                      KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+                  );
+                  return (
+                    <View key={row.productId} style={styles.tableRow}>
+                      <Text style={[styles.tdStrong, styles.colName]}>
+                        {row.displayName}
+                      </Text>
+                      <Text style={[styles.td, styles.colCount]}>
+                        {row.catalogPhotoCount}
+                      </Text>
+                      <Text style={[styles.td, styles.colCount]}>
+                        {row.trainingCount}
+                      </Text>
+                      <View style={styles.colReady}>
+                        <KolamStatusBadge
+                          intent={readyForTrain ? 'success' : 'muted'}
+                          label={readyForTrain ? 'Siap latih' : 'Kumpulkan'}
+                        />
+                      </View>
+                      <View style={styles.colAction}>
+                        <KolamButton
+                          intent="secondary"
+                          label="Kelola"
+                          onPress={() => {
+                            void openProduct(row);
+                          }}
+                          size="sm"
+                        />
+                      </View>
                     </View>
-                    <View style={styles.colAction}>
-                      <KolamButton
-                        intent="secondary"
-                        label="Kelola"
-                        onPress={() => {
-                          void openProduct(row);
-                        }}
-                        size="sm"
-                      />
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
                 {productPages > 1 ? (
                   <View style={styles.pager}>
                     <KolamButton

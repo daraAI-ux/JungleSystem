@@ -1,4 +1,7 @@
 import {
+  isKolamDaraTrainingVisionReadyForTrain,
+  KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+  KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
   normalizeKolamDaraTrainingVisionFeedbackList,
   normalizeKolamDaraTrainingVisionProductList,
   normalizeKolamDaraTrainingVisionSpeciesList,
@@ -30,10 +33,29 @@ describe('kolam-dara-training-vision domain', () => {
       embedFamily: 'siglip',
       embedIndexStale: 2,
       feedbackPending: 1,
+      minTrainingPhotos: KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
+      minProductTrainingPhotos: KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
     });
     expect(stats.negativeTypes).toEqual([
       {id: 'lainnya', label: 'Di luar katalog DA'},
     ]);
+  });
+
+  it('marks train-ready from min photo thresholds (species 5 / product 3)', () => {
+    expect(isKolamDaraTrainingVisionReadyForTrain(4, 5)).toBe(false);
+    expect(isKolamDaraTrainingVisionReadyForTrain(5, 5)).toBe(true);
+    expect(
+      isKolamDaraTrainingVisionReadyForTrain(
+        2,
+        KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+      ),
+    ).toBe(false);
+    expect(
+      isKolamDaraTrainingVisionReadyForTrain(
+        3,
+        KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+      ),
+    ).toBe(true);
   });
 
   it('normalizes vision species and product lists with meta', () => {
