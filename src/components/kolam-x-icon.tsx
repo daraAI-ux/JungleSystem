@@ -3,7 +3,7 @@ import {StyleSheet, View, type StyleProp, type ViewStyle} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 
-export type KolamXIconSize = 'close' | 'md';
+export type KolamXIconSize = 'sm' | 'close' | 'md';
 
 export interface KolamXIconProps {
   color?: string;
@@ -34,10 +34,18 @@ export function KolamXIcon({
 }
 
 function getBoxSize(size: KolamXIconSize) {
+  if (size === 'sm') {
+    return 12;
+  }
+
   return size === 'md' ? 17 : 14;
 }
 
 function getGlyphSize(size: KolamXIconSize) {
+  if (size === 'sm') {
+    return 8;
+  }
+
   return size === 'md' ? 13 : 11;
 }
 

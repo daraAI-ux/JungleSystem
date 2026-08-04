@@ -84,7 +84,7 @@ function WorkspaceTabButton({
           radius="full"
           variant="ghost"
           style={styles.closeButton}>
-          <KolamXIcon color={V.colors.primaryFg} />
+          <KolamXIcon color={V.colors.primaryFg} size="sm" />
         </KolamIconButton>
       ) : null}
       {active ? <View style={styles.indicator} /> : null}
@@ -140,6 +140,9 @@ const styles = StyleSheet.create({
   closeButton: {
     backgroundColor: V.colors.danger,
     flexShrink: 0,
+    height: 18,
+    width: 18,
+    borderRadius: 9,
   },
   addButton: {
     flexShrink: 0,

@@ -6,7 +6,7 @@ import {KolamXIcon} from '../src/components/kolam-x-icon';
 import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 
 describe('KolamXIcon', () => {
-  it.each(['close', 'md'] as const)(
+  it.each(['sm', 'close', 'md'] as const)(
     'renders the shared %s X icon with the requested color',
     async size => {
       let renderer: ReactTestRenderer.ReactTestRenderer;

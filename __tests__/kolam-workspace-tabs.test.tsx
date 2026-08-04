@@ -182,11 +182,17 @@ describe('Kolam workspace tabs', () => {
     });
 
     expect(closeButton.props.style).toEqual(
-      expect.objectContaining({backgroundColor: V.colors.danger}),
+      expect.objectContaining({
+        backgroundColor: V.colors.danger,
+        borderRadius: 9,
+        height: 18,
+        width: 18,
+      }),
     );
     expect(renderer!.root.findAllByType(KolamXIcon)[0].props.color).toBe(
       V.colors.primaryFg,
     );
+    expect(renderer!.root.findAllByType(KolamXIcon)[0].props.size).toBe('sm');
     renderer!.root.findByProps({accessibilityLabel: 'Tab baru'}).props.onPress();
     closeButton.props.onPress();
 
