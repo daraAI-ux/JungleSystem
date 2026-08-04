@@ -516,7 +516,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam', 'pos'],
       },
       {
-        label: 'Asset Purchases',
+        label: 'Pembelian Aset',
         route: '/asset-purchase',
         description: 'Pembelian aset tetap',
         group: 'Pengeluaran & Pemasukan',
@@ -1248,18 +1248,21 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/asset-purchase',
     labelSuffix: 'Create',
+    label: 'Buat Pembelian Aset',
     route: '/asset-purchase/create',
     description: 'Buat pembelian aset',
   },
   {
     baseRoute: '/asset-purchase',
     labelSuffix: 'Detail',
+    label: 'Detail Pembelian Aset',
     route: '/asset-purchase/:id',
     description: 'Detail dan informasi pembelian aset',
   },
   {
     baseRoute: '/asset-purchase',
     labelSuffix: 'Edit',
+    label: 'Ubah Pembelian Aset',
     route: '/asset-purchase/:id/edit',
     description: 'Ubah pembelian aset',
   },
