@@ -213,7 +213,7 @@ export function getDashboardHeaderRouteContext({
   activeNavigationItem,
   activePluginRoute,
 }: DashboardHeaderRouteContextInput): DashboardHeaderRouteContext | null {
-  if (activeModuleRoute) {
+  if (activeModuleRoute && activeModuleRoute.area !== 'am') {
     return {
       eyebrow: `${activeModuleRoute.area.toUpperCase()} Route`,
       route: activeModuleRoute.route,

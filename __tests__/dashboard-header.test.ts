@@ -120,6 +120,22 @@ describe('dashboard header copy', () => {
     );
   });
 
+  it('keeps AM route plumbing out of the visible dashboard header copy', () => {
+    expect(
+      getDashboardHeaderRouteContext({
+        activeModuleRoute: {
+          id: 'am:/',
+          area: 'am',
+          moduleId: 'am',
+          moduleLabel: 'AM',
+          route: '/',
+          description: 'Automation management',
+          sourceRepo: 'E:\\Projects\\da-automation-management',
+        },
+      }),
+    ).toBeNull();
+  });
+
   it('maps dashboard header sync indicator from active module data source', () => {
     const cachedDataset = {
       ...seedUnifiedDataset,
