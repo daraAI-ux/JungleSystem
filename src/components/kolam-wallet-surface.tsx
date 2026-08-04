@@ -2222,11 +2222,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  actionBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
   rowActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
