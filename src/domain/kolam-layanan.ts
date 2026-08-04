@@ -90,6 +90,7 @@ export interface KolamLayananService {
   costM3: number | null;
   costKm: number | null;
   priceToSell: number | null;
+  onlinePrice: number | null;
   sellable: boolean;
   commissionEnabled: boolean;
   commissionType: 'percentage' | 'fixed';
@@ -1083,6 +1084,64 @@ export function formatKolamLayananUnitPrice(
   return `${formatCompactIdr(value)}${suffix}`;
 }
 
+export function formatKolamLayananContractDuration(
+  value: number | null | undefined,
+  unit: KolamLayananContractDurationUnit | null | undefined,
+) {
+  if (value == null || !unit) {
+    return '—';
+  }
+  const label =
+    KOLAM_LAYANAN_CONTRACT_DURATION_UNIT_OPTIONS.find(option => option.id === unit)
+      ?.label.toLowerCase() ?? unit;
+  return `${value} ${label}`;
+}
+
+export function formatKolamLayananCommission(service: KolamLayananService) {
+  if (!service.commissionEnabled) {
+    return 'Nonaktif';
+  }
+  if (service.commissionType === 'fixed') {
+    return formatRupiahAmount(service.commissionValue);
+  }
+  return `${service.commissionValue}%`;
+}
+
+export function formatKolamLayananMemberPoints(service: KolamLayananService) {
+  if (!service.memberPointsEnabled) {
+    return 'Nonaktif';
+  }
+  const pts = service.memberPoints || 0;
+  return pts > 0 ? `${pts.toLocaleString('id-ID')} poin` : '0 poin';
+}
+
+export function hasKolamLayananVolumePricing(service: KolamLayananService) {
+  return (service.priceM3 ?? 0) > 0 || (service.priceKm ?? 0) > 0;
+}
+
+export function formatKolamLayananPricingMethod(service: KolamLayananService) {
+  const priceM3 = service.priceM3 ?? 0;
+  const priceKm = service.priceKm ?? 0;
+  if (priceM3 > 0 && priceKm > 0) {
+    return 'Per m³ & per km';
+  }
+  if (priceM3 > 0) {
+    return 'Per m³';
+  }
+  if (priceKm > 0) {
+    return 'Per km';
+  }
+  return 'Standar (harga tetap)';
+}
+
+export function getKolamLayananStandardPrice(service: KolamLayananService) {
+  return service.priceToSell ?? service.price ?? 0;
+}
+
+function formatRupiahAmount(value: number) {
+  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+}
+
 function formatCompactIdr(value: number) {
   if (value >= 1_000_000_000) {
     return `${(value / 1_000_000_000).toFixed(1)}M`;
@@ -1313,6 +1372,7 @@ export function normalizeKolamLayananService(payload: unknown): KolamLayananServ
     costM3: getNumber(record, 'cost_m3'),
     costKm: getNumber(record, 'cost_km'),
     priceToSell: getNumber(record, 'price_to_sell'),
+    onlinePrice: getNumber(record, 'onlinePrice'),
     sellable: getBoolean(record, 'sellable') ?? true,
     commissionEnabled: getBoolean(record, 'commissionEnabled') ?? false,
     commissionType: commissionTypeRaw === 'fixed' ? 'fixed' : 'percentage',

@@ -3,6 +3,9 @@ import {
   createEmptyKolamLayananServiceFormState,
   createKolamLayananProductComponentsPayload,
   createKolamLayananServiceSavePayload,
+  formatKolamLayananCommission,
+  formatKolamLayananMemberPoints,
+  formatKolamLayananPricingMethod,
   formatKolamLayananUnitPrice,
   getKolamLayananListTab,
   getKolamLayananRouteMode,
@@ -16,6 +19,7 @@ import {
   canKolamLayananRecordCustomerVerification,
   canKolamLayananSupervisorReview,
   findKolamLayananExecutionInTask,
+  hasKolamLayananVolumePricing,
   hasKolamSalePermission,
   isKolamLayananNativeRoute,
   kolamLayananVisitSlotsReadyForPropose,
@@ -23,6 +27,7 @@ import {
   normalizeKolamLayananOpsDashboard,
   normalizeKolamLayananPendingList,
   normalizeKolamLayananScheduleRequirements,
+  normalizeKolamLayananService,
   normalizeKolamLayananServiceList,
   normalizeKolamLayananSubscriptionDetail,
   normalizeKolamLayananSubscriptionList,
@@ -106,6 +111,30 @@ describe('kolam-layanan domain', () => {
     expect(list.page).toBe(2);
     expect(list.total).toBe(25);
     expect(list.totalPages).toBe(3);
+  });
+
+  it('formats detail pricing/commission helpers and onlinePrice', () => {
+    const service = normalizeKolamLayananService({
+      _id: 'svc-detail',
+      name: 'Perawatan',
+      price_m3: 20000,
+      price_km: 8000,
+      cost_m3: 10000,
+      cost_km: 2000,
+      onlinePrice: 175000,
+      commissionEnabled: true,
+      commissionType: 'percentage',
+      commissionValue: 5,
+      memberPoints: { enabled: true, points: 12 },
+      requiresOnSiteVisit: true,
+      includesDelivery: false,
+    });
+    expect(service.onlinePrice).toBe(175000);
+    expect(service.requiresOnSiteVisit).toBe(true);
+    expect(hasKolamLayananVolumePricing(service)).toBe(true);
+    expect(formatKolamLayananPricingMethod(service)).toBe('Per m³ & per km');
+    expect(formatKolamLayananCommission(service)).toBe('5%');
+    expect(formatKolamLayananMemberPoints(service)).toBe('12 poin');
   });
 
   it('normalizes ops dashboard, pending list, and subscriptions', () => {

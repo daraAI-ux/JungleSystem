@@ -1,8 +1,13 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  formatKolamLayananUnitPrice,
+  formatKolamLayananCommission,
+  formatKolamLayananContractDuration,
+  formatKolamLayananMemberPoints,
+  formatKolamLayananPricingMethod,
+  getKolamLayananStandardPrice,
   getKolamLayananTaskTypeLabel,
+  hasKolamLayananVolumePricing,
   KOLAM_LAYANAN_CONTRACT_DURATION_UNIT_OPTIONS,
   KOLAM_LAYANAN_ENCLOSURE_TYPE_OPTIONS,
   KOLAM_LAYANAN_ROOT,
@@ -19,6 +24,11 @@ import { KolamDescriptionList } from './kolam-description-list';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamHtmlContent } from './kolam-html-content';
+import {
+  KolamPricingMetric,
+  KolamPricingMetricsGrid,
+} from './kolam-pricing-metric-grid';
 import { KolamSelectorChip } from './kolam-selector-chip';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -237,120 +247,226 @@ function KolamLayananServiceDetail({
     );
   }
 
+  const brandsLabel =
+    service.brands.map(brand => brand.name).filter(Boolean).join(', ') ||
+    'Belum diisi';
+  const taskLabel =
+    service.enclosureTaskTypeKeys
+      .map(getKolamLayananTaskTypeLabel)
+      .filter(Boolean)
+      .join(', ') ||
+    (service.taskType
+      ? getKolamLayananTaskTypeLabel(service.taskType)
+      : 'Belum diisi');
+  const enclosureLabel =
+    service.enclosureTypes.join(', ') || 'Belum diisi';
+  const visitsLabel =
+    service.visitsPerMonth != null && service.visitsPerMonth > 0
+      ? String(service.visitsPerMonth)
+      : 'Belum diisi';
+  const packageCode =
+    service.packageCode && service.packageCode !== '—'
+      ? service.packageCode
+      : '';
+  const volumePricing = hasKolamLayananVolumePricing(service);
+  const standardPrice = getKolamLayananStandardPrice(service);
+  const costM3 = service.costM3 ?? 0;
+  const costKm = service.costKm ?? 0;
+  const priceM3 = service.priceM3 ?? 0;
+  const priceKm = service.priceKm ?? 0;
+  const marginM3 = priceM3 - costM3;
+  const marginKm = priceKm - costKm;
+  const marginPctM3 = costM3 > 0 ? (marginM3 / costM3) * 100 : 0;
+  const marginPctKm = costKm > 0 ? (marginKm / costKm) * 100 : 0;
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.stripRow}>
-        <KolamStatusBadge
-          intent={service.sellable ? 'success' : 'secondary'}
-          label={service.sellable ? 'Dijual' : 'Nonaktif'}
-        />
-        <KolamStatusBadge
-          intent="info"
-          label={getKolamLayananTaskTypeLabel(service.taskType)}
-        />
+      <View style={styles.statusStrip}>
+        <View style={styles.statusStripItem}>
+          <Text style={styles.statusStripLabel}>Status jual</Text>
+          <KolamStatusBadge
+            intent={service.sellable ? 'success' : 'secondary'}
+            label={service.sellable ? 'Dijual' : 'Nonaktif'}
+          />
+        </View>
+        <View style={[styles.statusStripItem, styles.statusStripDivider]}>
+          <Text style={styles.statusStripLabel}>Komisi</Text>
+          <Text style={styles.statusStripValue}>
+            {formatKolamLayananCommission(service)}
+          </Text>
+        </View>
+        <View style={styles.statusStripItem}>
+          <Text style={styles.statusStripLabel}>Poin</Text>
+          <Text style={[styles.statusStripValue, styles.statusStripPoints]}>
+            {formatKolamLayananMemberPoints(service)}
+          </Text>
+        </View>
       </View>
 
-      <FormSection title="Informasi layanan">
-        <KolamDescriptionList
-          rows={[
-            desc('sku', 'SKU', service.sku),
-            desc(
-              'brands',
-              'Merek',
-              service.brands.map(brand => brand.name).join(', ') || '—',
-            ),
-            desc(
-              'tasks',
-              'Tipe task',
-              service.enclosureTaskTypeKeys
-                .map(getKolamLayananTaskTypeLabel)
-                .join(', ') || '—',
-            ),
-            desc(
-              'enclosures',
-              'Tipe kandang',
-              service.enclosureTypes.join(', ') || '—',
-            ),
-            desc(
-              'visits',
-              'Kunjungan / bulan',
-              service.visitsPerMonth != null
-                ? String(service.visitsPerMonth)
-                : '—',
-            ),
-            desc(
-              'package',
-              'Kode paket',
-              service.packageCode,
-            ),
-            desc(
-              'contract',
-              'Durasi kontrak',
-              service.contractDurationValue != null
-                ? `${service.contractDurationValue} ${service.contractDurationUnit || ''}`
-                : '—',
-            ),
-            desc(
-              'description',
-              'Deskripsi',
-              service.description || 'Belum diisi',
-            ),
-          ]}
-        />
-      </FormSection>
+      <View style={styles.detailColumns}>
+        <View style={styles.detailMain}>
+          <FormSection title="Informasi layanan">
+            {service.description.trim() ? (
+              <View style={styles.descriptionPreview}>
+                <KolamHtmlContent html={service.description} />
+              </View>
+            ) : (
+              <Text style={styles.metaText}>Belum diisi</Text>
+            )}
+            <KolamDescriptionList
+              rows={[
+                desc('sku', 'SKU', service.sku && service.sku !== '—' ? service.sku : 'Belum diisi'),
+                desc('brands', 'Merek', brandsLabel),
+                desc('tasks', 'Tipe task kandang', taskLabel),
+                desc('enclosures', 'Tipe kandang', enclosureLabel),
+                desc('visits', 'Kunjungan per bulan', visitsLabel),
+                desc(
+                  'onsite',
+                  'Kunjungan lapangan',
+                  service.requiresOnSiteVisit ? 'Wajib' : 'Tidak wajib',
+                ),
+                desc(
+                  'delivery',
+                  'Termasuk pengiriman',
+                  service.includesDelivery ? 'Ya' : 'Tidak',
+                ),
+              ]}
+            />
+          </FormSection>
+        </View>
 
-      <FormSection title="Harga">
-        <KolamDescriptionList
-          rows={[
-            desc(
-              'price',
-              'Harga dasar',
-              service.price != null ? formatRupiah(service.price) : '—',
-            ),
-            desc(
-              'priceM3',
-              'Jual /m³',
-              formatKolamLayananUnitPrice(service.priceM3, 'm3'),
-            ),
-            desc(
-              'priceKm',
-              'Jual /km',
-              formatKolamLayananUnitPrice(service.priceKm, 'km'),
-            ),
-            desc(
-              'costM3',
-              'HPP /m³',
-              service.costM3 != null ? formatRupiah(service.costM3) : '—',
-            ),
-            desc(
-              'costKm',
-              'HPP /km',
-              service.costKm != null ? formatRupiah(service.costKm) : '—',
-            ),
-          ]}
-        />
-      </FormSection>
+        <View style={styles.detailSide}>
+          <FormSection
+            description={formatKolamLayananPricingMethod(service)}
+            title="Harga & HPP"
+          >
+            {volumePricing ? (
+              <KolamPricingMetricsGrid compact>
+                <KolamPricingMetric label="HPP per m³">
+                  <Text style={styles.metricMuted}>
+                    {formatRupiah(costM3)}
+                    <Text style={styles.metricSuffix}> /m³</Text>
+                  </Text>
+                </KolamPricingMetric>
+                <KolamPricingMetric label="Harga jual per m³">
+                  <Text style={styles.metricSuccess}>
+                    {formatRupiah(priceM3)}
+                    <Text style={styles.metricSuffix}> /m³</Text>
+                  </Text>
+                </KolamPricingMetric>
+                <KolamPricingMetric label="HPP per km">
+                  <Text style={styles.metricMuted}>
+                    {formatRupiah(costKm)}
+                    <Text style={styles.metricSuffix}> /km</Text>
+                  </Text>
+                </KolamPricingMetric>
+                <KolamPricingMetric label="Harga jual per km">
+                  <Text style={styles.metricSuccess}>
+                    {formatRupiah(priceKm)}
+                    <Text style={styles.metricSuffix}> /km</Text>
+                  </Text>
+                </KolamPricingMetric>
+                {priceM3 > 0 ? (
+                  <KolamPricingMetric fullWidth label="Margin per m³">
+                    <Text
+                      style={
+                        marginM3 >= 0
+                          ? styles.metricSuccess
+                          : styles.metricDanger
+                      }
+                    >
+                      {formatRupiah(marginM3)}
+                      {costM3 > 0
+                        ? ` (${marginPctM3.toFixed(1)}%)`
+                        : ''}
+                    </Text>
+                  </KolamPricingMetric>
+                ) : null}
+                {priceKm > 0 ? (
+                  <KolamPricingMetric fullWidth label="Margin per km">
+                    <Text
+                      style={
+                        marginKm >= 0
+                          ? styles.metricSuccess
+                          : styles.metricDanger
+                      }
+                    >
+                      {formatRupiah(marginKm)}
+                      {costKm > 0
+                        ? ` (${marginPctKm.toFixed(1)}%)`
+                        : ''}
+                    </Text>
+                  </KolamPricingMetric>
+                ) : null}
+              </KolamPricingMetricsGrid>
+            ) : (
+              <KolamPricingMetricsGrid compact>
+                <KolamPricingMetric label="Harga jual standar">
+                  <Text
+                    style={
+                      standardPrice > 0
+                        ? styles.metricSuccess
+                        : styles.metricMuted
+                    }
+                  >
+                    {standardPrice > 0 ? formatRupiah(standardPrice) : '—'}
+                  </Text>
+                </KolamPricingMetric>
+                <KolamPricingMetric label="Harga online">
+                  <Text
+                    style={
+                      (service.onlinePrice ?? 0) > 0
+                        ? styles.primaryText
+                        : styles.metricMuted
+                    }
+                  >
+                    {(service.onlinePrice ?? 0) > 0
+                      ? formatRupiah(service.onlinePrice!)
+                      : '—'}
+                  </Text>
+                </KolamPricingMetric>
+              </KolamPricingMetricsGrid>
+            )}
+          </FormSection>
 
-      <FormSection title="Komisi & poin">
-        <KolamDescriptionList
-          rows={[
-            desc(
-              'commission',
-              'Komisi',
-              service.commissionEnabled
-                ? `${service.commissionType === 'fixed' ? formatRupiah(service.commissionValue) : `${service.commissionValue}%`}`
-                : 'Nonaktif',
-            ),
-            desc(
-              'points',
-              'Poin member',
-              service.memberPointsEnabled
-                ? String(service.memberPoints)
-                : 'Nonaktif',
-            ),
-          ]}
-        />
-      </FormSection>
+          <FormSection title="Paket penjualan">
+            <KolamDescriptionList
+              rows={[
+                desc(
+                  'packageCode',
+                  'Kode paket',
+                  packageCode || 'Belum diisi',
+                ),
+                desc(
+                  'packageActive',
+                  'Status paket',
+                  packageCode
+                    ? service.packageActive
+                      ? 'Aktif'
+                      : 'Nonaktif'
+                    : 'Belum diisi',
+                ),
+                desc(
+                  'contract',
+                  'Durasi kontrak',
+                  formatKolamLayananContractDuration(
+                    service.contractDurationValue,
+                    service.contractDurationUnit,
+                  ),
+                ),
+              ]}
+            />
+            {packageCode ? (
+              <View style={styles.inlineBadgeRow}>
+                <KolamStatusBadge
+                  intent={service.packageActive ? 'success' : 'secondary'}
+                  label={service.packageActive ? 'Paket aktif' : 'Paket nonaktif'}
+                />
+              </View>
+            ) : null}
+          </FormSection>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -722,11 +838,96 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  stripRow: {
+  statusStrip: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  statusStripItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  statusStripDivider: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    paddingLeft: 12,
+  },
+  statusStripLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  statusStripValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusStripPoints: {
+    color: V.colors.success,
+  },
+  detailColumns: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailMain: {
+    flexBasis: 420,
+    flexGrow: 2,
+    gap: 12,
+    minWidth: 280,
+  },
+  detailSide: {
+    flexBasis: 280,
+    flexGrow: 1,
+    gap: 12,
+    minWidth: 240,
+  },
+  descriptionPreview: {
+    marginBottom: 8,
+    minHeight: 40,
+  },
+  inlineBadgeRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    paddingHorizontal: 8,
+    marginTop: 8,
+  },
+  metricSuccess: {
+    color: V.colors.success,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
+  metricMuted: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
+  metricDanger: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
+  metricSuffix: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '400',
   },
 });
