@@ -17,6 +17,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-controller';
 import {KolamButton} from './kolam-button';
 import {KolamCardFrame} from './kolam-card-frame';
+import {KolamDaraTaxOperasionalBody} from './kolam-dara-tax-operasional-body';
 import {KolamDaraTaxRingkasanBody} from './kolam-dara-tax-ringkasan-body';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -110,6 +111,16 @@ export function KolamFinanceTaxSurface({
               error={controller.error}
               loading={controller.loading}
               series={controller.series}
+            />
+          ) : selectedTab === 'operasional' ? (
+            <KolamDaraTaxOperasionalBody
+              allocation={controller.allocation}
+              journal={controller.journal}
+              loading={controller.opsLoading}
+              onRouteChange={onRouteChange}
+              period={controller.period}
+              sptPreview={controller.sptPreview}
+              taxEnabled={controller.taxEnabled}
             />
           ) : (
             <View style={styles.stubCard}>

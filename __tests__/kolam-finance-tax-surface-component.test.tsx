@@ -4,8 +4,13 @@ import {KolamFinanceTaxSurface} from '../src/components/kolam-finance-tax-surfac
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {getKolamWebSetting} from '../src/services/kolam-api';
 import {
+  fetchKolamDaraTaxAllocationBySource,
   fetchKolamDaraTaxDashboard,
+  fetchKolamDaraTaxJournalPreview,
   fetchKolamDaraTaxOverviewSeries,
+  fetchKolamDaraTaxPoMissingFaktur,
+  fetchKolamDaraTaxSalesMissingFaktur,
+  fetchKolamDaraTaxSptPpnMasaPreview,
 } from '../src/services/kolam-dara-tax-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
@@ -19,10 +24,19 @@ jest.mock('../src/services/kolam-api', () => ({
 jest.mock('../src/services/kolam-dara-tax-api', () => ({
   fetchKolamDaraTaxDashboard: jest.fn(),
   fetchKolamDaraTaxOverviewSeries: jest.fn(),
+  fetchKolamDaraTaxAllocationBySource: jest.fn(),
+  fetchKolamDaraTaxJournalPreview: jest.fn(),
+  fetchKolamDaraTaxSptPpnMasaPreview: jest.fn(),
+  fetchKolamDaraTaxSalesMissingFaktur: jest.fn(),
+  fetchKolamDaraTaxPoMissingFaktur: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-financial-settings-api', () => ({
   getKolamTaxCompanyProfile: jest.fn(),
+}));
+
+jest.mock('../src/lib/native-clipboard', () => ({
+  copyTextToClipboard: jest.fn(async () => undefined),
 }));
 
 const authMock = useKolamAuthContext as jest.MockedFunction<
@@ -36,6 +50,23 @@ const dashboardMock = fetchKolamDaraTaxDashboard as jest.MockedFunction<
 >;
 const seriesMock = fetchKolamDaraTaxOverviewSeries as jest.MockedFunction<
   typeof fetchKolamDaraTaxOverviewSeries
+>;
+const allocationMock =
+  fetchKolamDaraTaxAllocationBySource as jest.MockedFunction<
+    typeof fetchKolamDaraTaxAllocationBySource
+  >;
+const journalMock = fetchKolamDaraTaxJournalPreview as jest.MockedFunction<
+  typeof fetchKolamDaraTaxJournalPreview
+>;
+const sptMock = fetchKolamDaraTaxSptPpnMasaPreview as jest.MockedFunction<
+  typeof fetchKolamDaraTaxSptPpnMasaPreview
+>;
+const salesMissingMock =
+  fetchKolamDaraTaxSalesMissingFaktur as jest.MockedFunction<
+    typeof fetchKolamDaraTaxSalesMissingFaktur
+  >;
+const poMissingMock = fetchKolamDaraTaxPoMissingFaktur as jest.MockedFunction<
+  typeof fetchKolamDaraTaxPoMissingFaktur
 >;
 
 describe('KolamFinanceTaxSurface', () => {
@@ -76,6 +107,62 @@ describe('KolamFinanceTaxSurface', () => {
         {period: '2026-02', orderCount: 2, ppnIdr: 200},
       ],
     });
+    allocationMock.mockResolvedValue({
+      period: 'month',
+      disclaimer: 'Estimasi',
+      bySource: [
+        {
+          sourceId: 's1',
+          sourceName: 'POS',
+          sourceType: 'pos',
+          orderCount: 2,
+          dppIdr: 1000,
+          ppnOutputIdr: 110,
+        },
+      ],
+      totals: {orderCount: 2, dppIdr: 1000, ppnOutputIdr: 110},
+    });
+    journalMock.mockResolvedValue({
+      period: 'month',
+      disclaimer: 'Jurnal',
+      balanced: true,
+      totals: {debitIdr: 110, creditIdr: 110},
+      lines: [
+        {
+          accountCode: '2110',
+          accountLabel: 'PPN',
+          debitIdr: 0,
+          creditIdr: 110,
+          memo: 'Output',
+          informational: false,
+        },
+      ],
+    });
+    sptMock.mockResolvedValue({
+      period: '2026-08',
+      formType: '1111',
+      formReference: 'SPT',
+      disclaimer: '',
+      generatedAt: '',
+      taxpayer: {
+        companyName: 'PT X',
+        legalName: 'PT X',
+        npwp: '01',
+        isPkp: true,
+        address: '',
+      },
+      summary: {
+        ppnKeluaranIdr: 110,
+        ppnMasukanIdr: 0,
+        ppnTerutangIdr: 110,
+        ppnLebihBayarIdr: 0,
+        netPpnIdr: 110,
+      },
+      lines: [],
+      raw: {period: '2026-08'},
+    });
+    salesMissingMock.mockResolvedValue([]);
+    poMissingMock.mockResolvedValue([]);
   });
 
   it('renders Inteligensi Pajak shell with tabs, period, and reload', async () => {
@@ -101,6 +188,34 @@ describe('KolamFinanceTaxSurface', () => {
     expect(webSettingMock).toHaveBeenCalled();
     expect(dashboardMock).toHaveBeenCalledWith('month');
     expect(seriesMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders operasional panels when tab=operasional', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamFinanceTaxSurface route="/finance/tax?tab=operasional" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Alokasi PPN per source penjualan');
+    expect(text).toContain('Preview jurnal pajak (estimasi)');
+    expect(text).toContain('Pre-fill SPT Masa PPN');
+    expect(text).toContain('Faktur pajak belum tercatat');
+    expect(text).toContain('POS');
+    expect(allocationMock).toHaveBeenCalledWith('month');
+    expect(journalMock).toHaveBeenCalled();
+    expect(sptMock).toHaveBeenCalled();
+    expect(salesMissingMock).toHaveBeenCalled();
+    expect(poMissingMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

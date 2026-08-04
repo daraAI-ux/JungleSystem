@@ -1,8 +1,13 @@
 import {
   formatKolamDaraTaxDateId,
   formatKolamDaraTaxIdr,
+  normalizeKolamDaraTaxAllocationBySource,
   normalizeKolamDaraTaxDashboard,
+  normalizeKolamDaraTaxJournalPreview,
+  normalizeKolamDaraTaxMissingFakturPos,
+  normalizeKolamDaraTaxMissingFakturSales,
   normalizeKolamDaraTaxOverviewSeries,
+  normalizeKolamDaraTaxSptPpnMasaPreview,
 } from '../src/domain/kolam-dara-tax';
 
 describe('kolam-dara-tax domain', () => {
@@ -77,5 +82,87 @@ describe('kolam-dara-tax domain', () => {
     });
     expect(series.ppnOutputByMonth).toHaveLength(2);
     expect(series.ppnOutputByMonth[1]?.ppnIdr).toBe(200);
+  });
+
+  it('normalizes operasional allocation, journal, SPT, and missing faktur', () => {
+    const allocation = normalizeKolamDaraTaxAllocationBySource({
+      data: {
+        period: 'month',
+        disclaimer: 'Estimasi',
+        bySource: [
+          {
+            sourceId: 's1',
+            sourceName: 'POS',
+            sourceType: 'pos',
+            orderCount: 2,
+            dppIdr: 1000,
+            ppnOutputIdr: 110,
+          },
+        ],
+        totals: {orderCount: 2, dppIdr: 1000, ppnOutputIdr: 110},
+      },
+    });
+    expect(allocation.bySource[0]?.sourceName).toBe('POS');
+    expect(allocation.totals.ppnOutputIdr).toBe(110);
+
+    const journal = normalizeKolamDaraTaxJournalPreview({
+      data: {
+        period: 'month',
+        disclaimer: 'Jurnal',
+        balanced: true,
+        totals: {debitIdr: 110, creditIdr: 110},
+        lines: [
+          {
+            accountCode: '2110',
+            accountLabel: 'PPN',
+            debitIdr: 0,
+            creditIdr: 110,
+            memo: 'Output',
+          },
+        ],
+      },
+    });
+    expect(journal.balanced).toBe(true);
+    expect(journal.lines[0]?.accountCode).toBe('2110');
+
+    const spt = normalizeKolamDaraTaxSptPpnMasaPreview({
+      data: {
+        period: '2026-08',
+        taxpayer: {legalName: 'PT X', npwp: '01'},
+        summary: {ppnKeluaranIdr: 110},
+        lines: [],
+      },
+    });
+    expect(spt.taxpayer.legalName).toBe('PT X');
+    expect(spt.raw.period).toBe('2026-08');
+
+    const sales = normalizeKolamDaraTaxMissingFakturSales({
+      data: {
+        items: [
+          {
+            _id: 'sale1',
+            invoiceCode: 'INV-1',
+            finalTotal: 5000,
+            fakturPajak: {status: 'none'},
+          },
+        ],
+      },
+    });
+    expect(sales[0]?.invoiceCode).toBe('INV-1');
+
+    const pos = normalizeKolamDaraTaxMissingFakturPos({
+      data: {
+        items: [
+          {
+            _id: 'po1',
+            poCode: 'PO-1',
+            vendorName: 'Vendor',
+            finalTotal: 9000,
+          },
+        ],
+      },
+    });
+    expect(pos[0]?.poCode).toBe('PO-1');
+    expect(pos[0]?.fakturStatus).toBe('none');
   });
 });
