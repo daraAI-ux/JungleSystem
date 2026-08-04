@@ -302,8 +302,11 @@ describe('Kolam finance expense domain', () => {
     expect(
       getKolamAssetPurchaseDetailTab('/asset-purchase/ap-1?tab=depreciation'),
     ).toBe('depreciation');
-    expect(buildKolamAssetPurchaseDetailRoute('ap-1', 'history')).toBe(
-      '/asset-purchase/ap-1?tab=history',
+    expect(
+      getKolamAssetPurchaseDetailTab('/asset-purchase/ap-1?tab=history'),
+    ).toBe('details');
+    expect(buildKolamAssetPurchaseDetailRoute('ap-1', 'pricing')).toBe(
+      '/asset-purchase/ap-1?tab=pricing',
     );
 
     const detail = normalizeKolamAssetPurchaseDetail({

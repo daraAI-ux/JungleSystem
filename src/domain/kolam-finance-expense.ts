@@ -254,8 +254,7 @@ export type KolamAssetPurchaseDetail = {
 export type KolamAssetPurchaseDetailTab =
   | 'details'
   | 'pricing'
-  | 'depreciation'
-  | 'history';
+  | 'depreciation';
 
 export type KolamAssetPurchaseHistoryItem = {
   id: string;
@@ -272,7 +271,6 @@ export const KOLAM_ASSET_PURCHASE_DETAIL_TABS: Array<{
   { id: 'details', label: 'Detail' },
   { id: 'pricing', label: 'Rincian Harga' },
   { id: 'depreciation', label: 'Penyusutan' },
-  { id: 'history', label: 'Riwayat' },
 ];
 
 export type KolamAssetPurchaseWritePayload = {
@@ -335,14 +333,10 @@ export function getKolamAssetPurchaseDetailTab(
   const tab = String(query.tab ?? '')
     .trim()
     .toLowerCase();
-  if (
-    tab === 'pricing' ||
-    tab === 'depreciation' ||
-    tab === 'history' ||
-    tab === 'details'
-  ) {
+  if (tab === 'pricing' || tab === 'depreciation' || tab === 'details') {
     return tab;
   }
+  // Legacy ?tab=history — riwayat now lives in the detail side panel.
   return 'details';
 }
 

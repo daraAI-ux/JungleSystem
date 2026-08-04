@@ -254,37 +254,40 @@ function AssetPurchaseDetailBody({
         />
       ) : null}
 
-      <KolamSurfacePanelTabs
-        onSelectTab={controller.onSelectTab}
-        selectedTabId={controller.tab}
-        tabs={controller.tabs}
-      />
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {controller.tab === 'details' ? (
-          <DetailsTab
-            customFields={detail.customFieldValues}
-            infoRows={infoRows}
-            photos={detail.photos}
+      <View style={styles.bodyRow}>
+        <View style={styles.mainPane}>
+          <KolamSurfacePanelTabs
+            onSelectTab={controller.onSelectTab}
+            selectedTabId={controller.tab}
+            tabs={controller.tabs}
           />
-        ) : null}
-        {controller.tab === 'pricing' ? (
-          <PricingTab
-            price={detail.price}
-            shippingCost={detail.shippingCost}
-            total={detail.total}
-          />
-        ) : null}
-        {controller.tab === 'depreciation' ? (
-          <KolamAssetPurchaseDepreciationTab
-            onPurchaseRefresh={controller.onRefresh}
-            purchase={detail}
-          />
-        ) : null}
-        {controller.tab === 'history' ? (
-          <HistoryTab items={controller.historyItems} />
-        ) : null}
-      </ScrollView>
+          <ScrollView contentContainerStyle={styles.content}>
+            {controller.tab === 'details' ? (
+              <DetailsTab
+                customFields={detail.customFieldValues}
+                infoRows={infoRows}
+                photos={detail.photos}
+              />
+            ) : null}
+            {controller.tab === 'pricing' ? (
+              <PricingTab
+                price={detail.price}
+                shippingCost={detail.shippingCost}
+                total={detail.total}
+              />
+            ) : null}
+            {controller.tab === 'depreciation' ? (
+              <KolamAssetPurchaseDepreciationTab
+                onPurchaseRefresh={controller.onRefresh}
+                purchase={detail}
+              />
+            ) : null}
+          </ScrollView>
+        </View>
+        <View style={styles.historyPane}>
+          <HistoryPanel items={controller.historyItems} />
+        </View>
+      </View>
     </View>
   );
 }
@@ -397,13 +400,13 @@ function PricingTab({
   );
 }
 
-function HistoryTab({
+function HistoryPanel({
   items,
 }: {
   items: KolamAssetPurchaseDetailController['historyItems'];
 }) {
   return (
-    <KolamContentFrame variant="nativeFormSection">
+    <KolamContentFrame style={styles.historyFrame} variant="nativeFormSection">
       <KolamCopyStack
         containerStyle={styles.sectionCopy}
         items={[
@@ -414,22 +417,31 @@ function HistoryTab({
           },
         ]}
       />
-      <View style={styles.timeline}>
-        {items.map(item => (
-          <View key={item.id} style={styles.timelineItem}>
-            <View style={styles.timelineDot} />
-            <View style={styles.timelineBody}>
-              <Text style={styles.timelineTitle}>{item.title}</Text>
-              <Text style={styles.timelineMeta}>{item.atLabel}</Text>
-              {item.lines.map((line, index) => (
-                <Text key={`${item.id}-${index}`} style={styles.timelineLine}>
-                  {line}
-                </Text>
-              ))}
-            </View>
+      {items.length === 0 ? (
+        <Text style={styles.timelineMeta}>Belum ada riwayat</Text>
+      ) : (
+        <ScrollView contentContainerStyle={styles.historyScroll}>
+          <View style={styles.timeline}>
+            {items.map(item => (
+              <View key={item.id} style={styles.timelineItem}>
+                <View style={styles.timelineDot} />
+                <View style={styles.timelineBody}>
+                  <Text style={styles.timelineTitle}>{item.title}</Text>
+                  <Text style={styles.timelineMeta}>{item.atLabel}</Text>
+                  {item.lines.map((line, index) => (
+                    <Text
+                      key={`${item.id}-${index}`}
+                      style={styles.timelineLine}
+                    >
+                      {line}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+        </ScrollView>
+      )}
     </KolamContentFrame>
   );
 }
@@ -465,6 +477,35 @@ const styles = StyleSheet.create({
   },
   banner: {
     alignSelf: 'stretch',
+  },
+  bodyRow: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    minHeight: 0,
+  },
+  mainPane: {
+    flex: 3,
+    flexBasis: 480,
+    gap: 10,
+    minHeight: 0,
+    minWidth: 280,
+  },
+  historyPane: {
+    flex: 1,
+    flexBasis: 220,
+    maxWidth: 360,
+    minHeight: 0,
+    minWidth: 200,
+  },
+  historyFrame: {
+    flex: 1,
+    minHeight: 200,
+  },
+  historyScroll: {
+    gap: 0,
+    paddingBottom: 16,
   },
   content: {
     gap: 16,
