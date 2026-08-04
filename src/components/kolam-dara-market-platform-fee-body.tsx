@@ -120,19 +120,7 @@ function MonitorTab({
       </View>
 
       <View style={styles.card}>
-        <View style={styles.cardHead}>
-          <Text style={styles.sectionTitle}>URL sumber regulasi</Text>
-          <KolamButton
-            disabled={controller.isScanning}
-            label={
-              controller.scanAllProgress ? 'Memindai…' : 'Cek semua URL'
-            }
-            onPress={() => {
-              void controller.onCheckAll();
-            }}
-            size="sm"
-          />
-        </View>
+        <Text style={styles.sectionTitle}>URL sumber regulasi</Text>
 
         {controller.scanAllProgress ? (
           <View style={styles.scanBanner} accessibilityRole="summary">
@@ -162,13 +150,25 @@ function MonitorTab({
             style={[styles.input, styles.addField]}
             value={controller.newUrl}
           />
-          <KolamButton
-            label="Tambah URL"
-            onPress={() => {
-              void controller.onAddSource();
-            }}
-            size="sm"
-          />
+          <View style={styles.addActions}>
+            <KolamButton
+              label="Tambah URL"
+              onPress={() => {
+                void controller.onAddSource();
+              }}
+              size="sm"
+            />
+            <KolamButton
+              disabled={controller.isScanning}
+              label={
+                controller.scanAllProgress ? 'Memindai…' : 'Cek semua URL'
+              }
+              onPress={() => {
+                void controller.onCheckAll();
+              }}
+              size="sm"
+            />
+          </View>
         </View>
 
         <View>
@@ -751,6 +751,12 @@ const styles = StyleSheet.create({
   addField: {
     flex: 1,
     minWidth: 140,
+  },
+  addActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   input: {
     borderColor: V.colors.border,
