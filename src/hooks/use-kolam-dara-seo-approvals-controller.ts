@@ -13,6 +13,7 @@ import {
   type KolamDaraSeoSuggestionDetail,
   type KolamDaraSeoTargetTab,
 } from '../domain/kolam-dara-seo';
+import {sanitizeApiErrorMessage} from '../lib/api-error';
 import {startKolamDaraJob} from '../services/kolam-dara-jobs-api';
 import {
   approveKolamDaraSeoSuggestion,
@@ -412,7 +413,7 @@ export function useKolamDaraSeoApprovalsController(
 
 function getControllerErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message.trim()) {
-    return error.message;
+    return sanitizeApiErrorMessage(error.message);
   }
   return fallback;
 }

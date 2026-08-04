@@ -133,6 +133,25 @@ describe('native runtime API identity', () => {
       }),
     );
   });
+
+  it('sanitizes HTML maintenance bodies instead of dumping markup', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: {get: jest.fn()},
+      text: jest.fn().mockResolvedValue(`<!DOCTYPE html>
+<html lang="id"><head><title>Dunia Anura - Maintenance</title>
+<style>:root{--bg:#171717}</style></head><body>down</body></html>`),
+    });
+
+    await expect(
+      apiRequest({method: 'GET', path: '/dara-seo/dashboard'}),
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 503,
+      message: 'Server sedang maintenance.',
+    });
+  });
 });
 
 function jsonResponse(payload: unknown, setCookie?: string) {

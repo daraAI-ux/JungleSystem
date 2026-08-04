@@ -1,6 +1,6 @@
 import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
-import { ApiError, type ApiErrorPayload } from './api-error';
+import { ApiError, sanitizeApiErrorMessage, type ApiErrorPayload } from './api-error';
 
 type QueryValue = string | number | boolean | string[] | undefined | null;
 type RequestCredentialsMode = 'include' | 'omit' | 'same-origin';
@@ -187,19 +187,25 @@ async function readJson(response: Response): Promise<unknown> {
   try {
     return JSON.parse(text);
   } catch {
-    return { message: text };
+    return {
+      message: sanitizeApiErrorMessage(text, response.status),
+    };
   }
 }
 
 function normalizeErrorPayload(payload: unknown): ApiErrorPayload {
   if (payload && typeof payload === 'object') {
     const record = payload as Record<string, unknown>;
+    const rawMessage =
+      typeof record.message === 'string'
+        ? record.message
+        : typeof record.error === 'string'
+          ? record.error
+          : undefined;
     return {
       message:
-        typeof record.message === 'string'
-          ? record.message
-          : typeof record.error === 'string'
-          ? record.error
+        rawMessage != null
+          ? sanitizeApiErrorMessage(rawMessage)
           : undefined,
       code:
         typeof record.code === 'string'
