@@ -34,6 +34,7 @@ import { isKolamSourceRoute } from '../domain/kolam-source';
 import { isKolamSupplierRoute } from '../domain/kolam-vendor';
 import { isKolamTaxonomyRoute } from '../domain/kolam-taxonomy';
 import { isKolamTeranuraNativeRoute } from '../domain/kolam-teranura';
+import { isKolamTermsTemplateRoute } from '../domain/kolam-terms-template';
 import { isKolamUnitRoute } from '../domain/kolam-unit';
 import { isKolamUserRoute } from '../domain/kolam-user';
 import { isKolamVoucherRoute } from '../domain/kolam-voucher';
@@ -71,6 +72,7 @@ import { KolamSourceSurface } from './kolam-source-surface';
 import { KolamSupplierSurface } from './kolam-supplier-surface';
 import { KolamTagSurface } from './kolam-tag-surface';
 import { KolamTeranuraSurface } from './kolam-teranura-surface';
+import { KolamTermsTemplateSurface } from './kolam-terms-template-surface';
 import { KolamTaxonomySurface } from './kolam-taxonomy-surface';
 import { KolamUnitSurface } from './kolam-unit-surface';
 import { KolamUserSurface } from './kolam-user-surface';
@@ -221,6 +223,15 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamVoucherSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/vouchers'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamTermsTemplateRoute(activeRoutePath)) {
+    return (
+      <KolamTermsTemplateSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/terms-templates'}
       />
     );
   }
