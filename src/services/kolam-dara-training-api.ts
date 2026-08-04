@@ -1,10 +1,13 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamDaraTrainingConversationReviewList,
   normalizeKolamDaraTrainingFeedbackList,
   normalizeKolamDaraTrainingPhrase,
   normalizeKolamDaraTrainingPhraseList,
   normalizeKolamDaraTrainingRerankResult,
   normalizeKolamDaraTrainingStats,
+  type KolamDaraTrainingConversationReviewList,
+  type KolamDaraTrainingConversationReviewStatus,
   type KolamDaraTrainingFeedback,
   type KolamDaraTrainingPhrase,
   type KolamDaraTrainingPhraseCategory,
@@ -108,6 +111,36 @@ export async function runKolamDaraTrainingProductRerank(opts?: {
     {method: 'POST', body: opts ?? {}},
   );
   return normalizeKolamDaraTrainingRerankResult(payload);
+}
+
+/** GET /dara-training/conversation-reviews — FE `listConversationReviews`. */
+export async function listKolamDaraTrainingConversationReviews(opts: {
+  status: KolamDaraTrainingConversationReviewStatus;
+  page?: number;
+  limit?: number;
+}): Promise<KolamDaraTrainingConversationReviewList> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/conversation-reviews',
+    {
+      query: {
+        status: opts.status,
+        page: opts.page ?? 1,
+        limit: opts.limit ?? 20,
+      },
+    },
+  );
+  return normalizeKolamDaraTrainingConversationReviewList(payload);
+}
+
+/** POST /chat/conversations/:id/review-complete — FE `completeConversationReview`. */
+export async function completeKolamDaraTrainingConversationReview(
+  conversationId: string,
+  notes: string,
+): Promise<void> {
+  await kolamRequest(
+    `/chat/conversations/${encodeURIComponent(conversationId)}/review-complete`,
+    {method: 'POST', body: {notes}},
+  );
 }
 
 function unwrapData(payload: unknown): unknown {

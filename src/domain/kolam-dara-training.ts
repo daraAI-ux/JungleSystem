@@ -96,6 +96,29 @@ export type KolamDaraTrainingRerankResult = {
   rerankModelExists: boolean;
 };
 
+export type KolamDaraTrainingConversationReviewStatus = 'pending' | 'done';
+
+/** FE `DaraConversationReviewRow`. */
+export type KolamDaraTrainingConversationReview = {
+  id: string;
+  conversationId: string;
+  createdAt: string;
+  reviewedAt: string;
+  contactLabel: string;
+  platform: string;
+  conversationStartedAt: string;
+  rating: number;
+  customerComment: string;
+  reviewNotes: string;
+};
+
+export type KolamDaraTrainingConversationReviewList = {
+  rows: KolamDaraTrainingConversationReview[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 /** FE `PHRASE_CATEGORY_LABELS`. */
 export const KOLAM_DARA_TRAINING_PHRASE_CATEGORY_LABELS: Record<
   KolamDaraTrainingPhraseCategory,
@@ -366,6 +389,49 @@ export function normalizeKolamDaraTrainingRerankResult(
     stdout: String(data.stdout || '').trim(),
     stderr: String(data.stderr || '').trim(),
     rerankModelExists: data.rerankModelExists === true,
+  };
+}
+
+export function normalizeKolamDaraTrainingConversationReviewList(
+  payload: unknown,
+): KolamDaraTrainingConversationReviewList {
+  const root = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+      ? root.data
+      : [];
+  const rows = list
+    .map(normalizeKolamDaraTrainingConversationReview)
+    .filter((row): row is KolamDaraTrainingConversationReview => row != null);
+  return {
+    rows,
+    total: asNumber(root.total) || rows.length,
+    page: asNumber(root.page) || 1,
+    limit: asNumber(root.limit) || 20,
+  };
+}
+
+export function normalizeKolamDaraTrainingConversationReview(
+  payload: unknown,
+): KolamDaraTrainingConversationReview | null {
+  const row = asRecord(payload);
+  const id = String(row._id || row.id || '').trim();
+  const conversationId = String(row.conversationId || '').trim();
+  if (!id || !conversationId) {
+    return null;
+  }
+  return {
+    id,
+    conversationId,
+    createdAt: String(row.createdAt || '').trim(),
+    reviewedAt: String(row.reviewedAt || '').trim(),
+    contactLabel: String(row.contactLabel || '').trim() || '—',
+    platform: String(row.platform || '').trim() || '—',
+    conversationStartedAt: String(row.conversationStartedAt || '').trim(),
+    rating: asNumber(row.rating),
+    customerComment: String(row.customerComment || '').trim(),
+    reviewNotes: String(row.reviewNotes || '').trim(),
   };
 }
 

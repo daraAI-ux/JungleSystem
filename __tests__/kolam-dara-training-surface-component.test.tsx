@@ -4,6 +4,7 @@ import {KolamDaraTrainingSurface} from '../src/components/kolam-dara-training-su
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
   fetchKolamDaraTrainingStats,
+  listKolamDaraTrainingConversationReviews,
   listKolamDaraTrainingFeedback,
   listKolamDaraTrainingPhrases,
 } from '../src/services/kolam-dara-training-api';
@@ -16,6 +17,8 @@ jest.mock('../src/services/kolam-dara-training-api', () => ({
   fetchKolamDaraTrainingStats: jest.fn(),
   listKolamDaraTrainingPhrases: jest.fn(),
   listKolamDaraTrainingFeedback: jest.fn(),
+  listKolamDaraTrainingConversationReviews: jest.fn(),
+  completeKolamDaraTrainingConversationReview: jest.fn(),
   createKolamDaraTrainingPhrase: jest.fn(),
   updateKolamDaraTrainingPhrase: jest.fn(),
   deleteKolamDaraTrainingPhrase: jest.fn(),
@@ -33,6 +36,9 @@ const phrasesMock = listKolamDaraTrainingPhrases as jest.MockedFunction<
 >;
 const feedbackMock = listKolamDaraTrainingFeedback as jest.MockedFunction<
   typeof listKolamDaraTrainingFeedback
+>;
+const reviewsMock = listKolamDaraTrainingConversationReviews as jest.MockedFunction<
+  typeof listKolamDaraTrainingConversationReviews
 >;
 
 describe('KolamDaraTrainingSurface', () => {
@@ -96,6 +102,25 @@ describe('KolamDaraTrainingSurface', () => {
         createdAt: '2026-08-01T10:00:00.000Z',
       },
     ]);
+    reviewsMock.mockResolvedValue({
+      rows: [
+        {
+          id: 'r1',
+          conversationId: 'c1',
+          createdAt: '2026-08-01T10:00:00.000Z',
+          reviewedAt: '',
+          contactLabel: 'Buyer A',
+          platform: 'whatsapp',
+          conversationStartedAt: '2026-08-01T09:00:00.000Z',
+          rating: 2,
+          customerComment: 'Lambat jawab',
+          reviewNotes: '',
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 20,
+    });
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -171,6 +196,32 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('cari soil');
     expect(text).toContain('Frog Soil');
     expect(feedbackMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders conversation reviews on reviews tab', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=reviews" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Review percakapan DARA');
+    expect(text).toContain('Menunggu review');
+    expect(text).toContain('Selesai');
+    expect(text).toContain('Buyer A');
+    expect(text).toContain('Lambat jawab');
+    expect(text).toContain('Review');
+    expect(reviewsMock).toHaveBeenCalledWith(
+      expect.objectContaining({status: 'pending', page: 1, limit: 20}),
+    );
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

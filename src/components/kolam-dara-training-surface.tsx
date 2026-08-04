@@ -15,6 +15,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDaraTrainingFulfillmentBody} from './kolam-dara-training-fulfillment-body';
 import {KolamDaraTrainingPhrasesBody} from './kolam-dara-training-phrases-body';
 import {KolamDaraTrainingProductsBody} from './kolam-dara-training-products-body';
+import {KolamDaraTrainingReviewsBody} from './kolam-dara-training-reviews-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -41,6 +42,7 @@ export function KolamDaraTrainingSurface({
   const [phrasesRefreshKey, setPhrasesRefreshKey] = useState(0);
   const [fulfillmentRefreshKey, setFulfillmentRefreshKey] = useState(0);
   const [productsRefreshKey, setProductsRefreshKey] = useState(0);
+  const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
 
   const selectedTab = getKolamDaraTrainingTab(route);
   const selectedTabLabel =
@@ -60,6 +62,7 @@ export function KolamDaraTrainingSurface({
     setPhrasesRefreshKey(key => key + 1);
     setFulfillmentRefreshKey(key => key + 1);
     setProductsRefreshKey(key => key + 1);
+    setReviewsRefreshKey(key => key + 1);
   };
 
   if (!access.canSee) {
@@ -133,6 +136,8 @@ export function KolamDaraTrainingSurface({
             refreshKey={productsRefreshKey}
             stats={controller.stats}
           />
+        ) : selectedTab === 'reviews' ? (
+          <KolamDaraTrainingReviewsBody refreshKey={reviewsRefreshKey} />
         ) : controller.loading && !controller.stats ? (
           <Text style={styles.meta}>Memuat…</Text>
         ) : (

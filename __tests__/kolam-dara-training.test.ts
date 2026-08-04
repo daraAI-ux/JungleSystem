@@ -3,6 +3,7 @@ import {
   buildKolamDaraTrainingStatsCards,
   getKolamDaraTrainingTab,
   isKolamDaraTrainingRoute,
+  normalizeKolamDaraTrainingConversationReviewList,
   normalizeKolamDaraTrainingFeedbackList,
   normalizeKolamDaraTrainingPhraseList,
   normalizeKolamDaraTrainingStats,
@@ -125,6 +126,35 @@ describe('kolam-dara-training domain', () => {
       query: 'cari soil',
       correctProductName: 'Frog Soil',
       correctSku: 'SKU-1',
+    });
+  });
+
+  it('normalizes conversation review list with total', () => {
+    const list = normalizeKolamDaraTrainingConversationReviewList({
+      data: [
+        {
+          _id: 'r1',
+          conversationId: 'c1',
+          contactLabel: 'Buyer A',
+          platform: 'whatsapp',
+          rating: 2,
+          customerComment: 'Lambat',
+          reviewNotes: '',
+          createdAt: '2026-08-01T10:00:00.000Z',
+        },
+      ],
+      total: 21,
+      page: 1,
+      limit: 20,
+    });
+    expect(list.total).toBe(21);
+    expect(list.rows).toHaveLength(1);
+    expect(list.rows[0]).toMatchObject({
+      id: 'r1',
+      conversationId: 'c1',
+      contactLabel: 'Buyer A',
+      rating: 2,
+      customerComment: 'Lambat',
     });
   });
 });
