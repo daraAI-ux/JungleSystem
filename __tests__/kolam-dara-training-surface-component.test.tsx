@@ -68,10 +68,12 @@ jest.mock('../src/services/kolam-dara-training-vision-api', () => ({
 }));
 
 import {
+  addKolamDaraTrainingVisionProductPhoto,
   fetchKolamDaraTrainingVisionStats,
   listKolamDaraTrainingVisionFeedback,
   listKolamDaraTrainingVisionFeedbackQueue,
   listKolamDaraTrainingVisionHardNegatives,
+  listKolamDaraTrainingVisionProductPhotos,
   listKolamDaraTrainingVisionProducts,
   listKolamDaraTrainingVisionSpecies,
   fetchKolamDaraTrainingVisionBaselineKpi,
@@ -147,6 +149,14 @@ const visionEvalRunsMock =
 const visionBaselineMock =
   fetchKolamDaraTrainingVisionBaselineKpi as jest.MockedFunction<
     typeof fetchKolamDaraTrainingVisionBaselineKpi
+  >;
+const visionProductPhotosMock =
+  listKolamDaraTrainingVisionProductPhotos as jest.MockedFunction<
+    typeof listKolamDaraTrainingVisionProductPhotos
+  >;
+const addVisionProductPhotoMock =
+  addKolamDaraTrainingVisionProductPhoto as jest.MockedFunction<
+    typeof addKolamDaraTrainingVisionProductPhoto
   >;
 
 describe('KolamDaraTrainingSurface', () => {
@@ -352,7 +362,11 @@ describe('KolamDaraTrainingSurface', () => {
           catalogPhotoCount: 3,
           trainingCount: 1,
           readyForIndex: true,
-          catalogPhotos: [],
+          catalogPhotos: [
+            '/media/frog-a.jpg',
+            '/media/frog-b.jpg',
+            '/media/frog-c.jpg',
+          ],
         },
         {
           productId: 'p2',
@@ -362,12 +376,19 @@ describe('KolamDaraTrainingSurface', () => {
           catalogPhotoCount: 2,
           trainingCount: 3,
           readyForIndex: true,
-          catalogPhotos: [],
+          catalogPhotos: ['/media/coco-a.jpg', '/media/coco-b.jpg'],
         },
       ],
       page: 1,
       pages: 1,
       total: 2,
+    });
+    visionProductPhotosMock.mockResolvedValue([]);
+    addVisionProductPhotoMock.mockResolvedValue({
+      id: 'ph1',
+      photoKey: '/media/frog-a.jpg',
+      source: 'catalog',
+      createdAt: '',
     });
     visionFeedbackMock.mockResolvedValue({
       rows: [
@@ -630,6 +651,82 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).not.toContain('"children":["SKU"]');
     // Katalog 3 + Training 1 → Siap latih (Frog Soil); not stuck at training-only 1/3
     expect(text).not.toContain('"children":["1/3"]');
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('opens Kelola with catalog picker and batch Tambah foto', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=vision" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const produkLabel = tree!.root.find(
+      node =>
+        typeof node.children?.[0] === 'string' &&
+        node.children[0] === 'Produk',
+    );
+    let sectionPress = produkLabel.parent;
+    while (sectionPress && typeof sectionPress.props?.onPress !== 'function') {
+      sectionPress = sectionPress.parent;
+    }
+    await ReactTestRenderer.act(async () => {
+      sectionPress!.props.onPress();
+    });
+
+    const kelola = tree!.root.findAll(
+      node =>
+        typeof node.props?.label === 'string' && node.props.label === 'Kelola',
+    )[0];
+    expect(kelola).toBeTruthy();
+    await ReactTestRenderer.act(async () => {
+      kelola.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    let text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Foto katalog — klik untuk pilih');
+    expect(text).toContain('Atau path foto manual');
+    expect(text).toContain('Tambah foto');
+    expect(visionProductPhotosMock).toHaveBeenCalledWith('p1');
+
+    const catalogThumb = tree!.root.find(
+      node =>
+        node.props?.accessibilityRole === 'button' &&
+        node.props?.accessibilityLabel === '/media/frog-a.jpg',
+    );
+    await ReactTestRenderer.act(async () => {
+      catalogThumb.props.onPress();
+    });
+
+    const tambah = tree!.root.find(
+      node =>
+        typeof node.props?.label === 'string' &&
+        node.props.label === 'Tambah foto',
+    );
+    await ReactTestRenderer.act(async () => {
+      tambah.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(addVisionProductPhotoMock).toHaveBeenCalledWith(
+      'p1',
+      expect.objectContaining({
+        photoKey: '/media/frog-a.jpg',
+        source: 'catalog',
+      }),
+    );
+    text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Foto ditambahkan');
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

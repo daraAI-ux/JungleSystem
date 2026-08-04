@@ -66,6 +66,7 @@ import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 
 const THUMB = {width: 48, height: 48, borderRadius: 6} as const;
+const CATALOG_THUMB = {width: 56, height: 56, borderRadius: 6} as const;
 
 function StatBox({
   hint,
@@ -214,6 +215,7 @@ export function KolamDaraTrainingVisionBody({
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [addKey, setAddKey] = useState('');
+  const [selectedCatalogKeys, setSelectedCatalogKeys] = useState<string[]>([]);
   const [negKey, setNegKey] = useState('');
   const [negType, setNegType] = useState('lainnya');
   const [photoSaving, setPhotoSaving] = useState(false);
@@ -309,6 +311,7 @@ export function KolamDaraTrainingVisionBody({
   const openSpecies = async (row: KolamDaraTrainingVisionSpecies) => {
     setSelectedSpecies(row);
     setSelectedProduct(null);
+    setSelectedCatalogKeys([]);
     setAddKey(row.catalogPhotos[0] || '');
     try {
       setSpeciesPhotos(
@@ -328,6 +331,7 @@ export function KolamDaraTrainingVisionBody({
   const openProduct = async (row: KolamDaraTrainingVisionProduct) => {
     setSelectedProduct(row);
     setSelectedSpecies(null);
+    setSelectedCatalogKeys([]);
     setAddKey(row.catalogPhotos[0] || '');
     try {
       setProductPhotos(
@@ -348,39 +352,64 @@ export function KolamDaraTrainingVisionBody({
     if (!photoSaving) {
       setSelectedSpecies(null);
       setSelectedProduct(null);
+      setSelectedCatalogKeys([]);
     }
   };
 
+  const toggleCatalogKey = (key: string) => {
+    setSelectedCatalogKeys(prev =>
+      prev.includes(key) ? prev.filter(item => item !== key) : [...prev, key],
+    );
+  };
+
   const savePhoto = async () => {
-    const key = addKey.trim();
-    if (!key) {
-      setNotice('Path foto wajib diisi');
+    const keys =
+      selectedCatalogKeys.length > 0 ?
+        selectedCatalogKeys
+      : addKey.trim() ?
+        [addKey.trim()]
+      : [];
+    if (!keys.length) {
+      setNotice('Pilih foto');
       return;
     }
     setPhotoSaving(true);
     try {
+      let added = 0;
+      for (const key of keys) {
+        if (selectedProduct) {
+          await addKolamDaraTrainingVisionProductPhoto(
+            selectedProduct.productId,
+            {
+              photoKey: key,
+              source: selectedProduct.catalogPhotos.includes(key)
+                ? 'catalog'
+                : 'manual',
+            },
+          );
+          added += 1;
+        } else if (selectedSpecies) {
+          await addKolamDaraTrainingVisionSpeciesPhoto(
+            selectedSpecies.speciesId,
+            {
+              photoKey: key,
+              source: selectedSpecies.catalogPhotos.includes(key)
+                ? 'catalog'
+                : 'manual',
+            },
+          );
+          added += 1;
+        }
+      }
+      setSelectedCatalogKeys([]);
+      setAddKey('');
       if (selectedProduct) {
-        await addKolamDaraTrainingVisionProductPhoto(
-          selectedProduct.productId,
-          {
-            photoKey: key,
-            source: selectedProduct.catalogPhotos.includes(key)
-              ? 'catalog'
-              : 'manual',
-          },
-        );
         await openProduct(selectedProduct);
       } else if (selectedSpecies) {
-        await addKolamDaraTrainingVisionSpeciesPhoto(selectedSpecies.speciesId, {
-          photoKey: key,
-          source: selectedSpecies.catalogPhotos.includes(key)
-            ? 'catalog'
-            : 'manual',
-        });
         await openSpecies(selectedSpecies);
       }
-      setNotice('Foto ditambahkan');
       await load();
+      setNotice(added > 1 ? `${added} foto ditambahkan` : 'Foto ditambahkan');
     } catch (err) {
       setNotice(
         err instanceof ApiError
@@ -402,8 +431,8 @@ export function KolamDaraTrainingVisionBody({
       } else if (selectedSpecies) {
         await openSpecies(selectedSpecies);
       }
-      setNotice('Foto dihapus');
       await load();
+      setNotice('Foto dihapus');
     } catch (err) {
       setNotice(
         err instanceof ApiError
@@ -430,6 +459,8 @@ export function KolamDaraTrainingVisionBody({
     : [{label: 'Di luar katalog DA', value: 'lainnya'}];
 
   const modalPhotos = selectedProduct ? productPhotos : speciesPhotos;
+  const modalCatalogPhotos =
+    selectedProduct?.catalogPhotos ?? selectedSpecies?.catalogPhotos ?? [];
   const photoModalOpen = selectedSpecies != null || selectedProduct != null;
   const photoModalTitle =
     selectedProduct?.displayName ??
@@ -1442,51 +1473,100 @@ export function KolamDaraTrainingVisionBody({
             <Text style={styles.modalTitle}>{photoModalTitle}</Text>
             <Text style={styles.meta}>Foto katalog atau path /media/…</Text>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.photoRow}>
-                {modalPhotos.map(photo => (
-                  <View key={photo.id} style={styles.photoItem}>
-                    <KolamRemoteImage
-                      accessibilityLabel={photo.photoKey}
-                      sourceUri={resolveKolamDaraTrainingVisionImageUri(
-                        photo.photoKey,
-                      )}
-                      style={THUMB}
-                    />
-                    {canManage ? (
-                      <KolamButton
-                        intent="secondary"
-                        label="Hapus"
-                        onPress={() => {
-                          void deletePhoto(photo.id);
-                        }}
-                        size="sm"
-                      />
-                    ) : null}
+            <ScrollView style={styles.modalScroll}>
+              {canManage && modalCatalogPhotos.length > 0 ? (
+                <View style={styles.modalSection}>
+                  <Text style={styles.fieldLabel}>
+                    Foto katalog — klik untuk pilih (abu = sudah di training)
+                  </Text>
+                  <View style={styles.catalogGrid}>
+                    {modalCatalogPhotos.map(photoKey => {
+                      const exists = modalPhotos.some(
+                        photo => photo.photoKey === photoKey,
+                      );
+                      const picked = selectedCatalogKeys.includes(photoKey);
+                      return (
+                        <Pressable
+                          key={photoKey}
+                          accessibilityLabel={photoKey}
+                          accessibilityRole="button"
+                          disabled={exists || photoSaving}
+                          onPress={() => {
+                            if (!exists) {
+                              toggleCatalogKey(photoKey);
+                            }
+                          }}
+                          style={[
+                            styles.catalogThumb,
+                            picked ? styles.catalogThumbPicked : null,
+                            exists ? styles.catalogThumbExists : null,
+                          ]}>
+                          <KolamRemoteImage
+                            accessibilityLabel={photoKey}
+                            sourceUri={resolveKolamDaraTrainingVisionImageUri(
+                              photoKey,
+                            )}
+                            style={CATALOG_THUMB}
+                          />
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                ))}
+                </View>
+              ) : null}
+
+              {canManage ? (
+                <View style={styles.modalSection}>
+                  <Text style={styles.fieldLabel}>
+                    {modalCatalogPhotos.length > 0
+                      ? 'Atau path foto manual'
+                      : 'Path foto'}
+                  </Text>
+                  <TextInput
+                    onChangeText={setAddKey}
+                    placeholder="/media/..."
+                    style={styles.textInput}
+                    value={addKey}
+                  />
+                  <KolamButton
+                    disabled={photoSaving}
+                    label={photoSaving ? 'Menyimpan…' : 'Tambah foto'}
+                    onPress={() => {
+                      void savePhoto();
+                    }}
+                    size="sm"
+                  />
+                </View>
+              ) : null}
+
+              <View style={styles.modalSection}>
+                <View style={styles.catalogGrid}>
+                  {modalPhotos.map(photo => (
+                    <View key={photo.id} style={styles.trainingThumb}>
+                      <KolamRemoteImage
+                        accessibilityLabel={photo.photoKey}
+                        sourceUri={resolveKolamDaraTrainingVisionImageUri(
+                          photo.photoKey,
+                        )}
+                        style={CATALOG_THUMB}
+                      />
+                      {canManage ? (
+                        <Pressable
+                          accessibilityLabel="Hapus"
+                          accessibilityRole="button"
+                          disabled={photoSaving}
+                          onPress={() => {
+                            void deletePhoto(photo.id);
+                          }}
+                          style={styles.trainingDelete}>
+                          <Text style={styles.trainingDeleteText}>Hapus</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
               </View>
             </ScrollView>
-
-            {canManage ? (
-              <>
-                <Text style={styles.fieldLabel}>Path foto</Text>
-                <TextInput
-                  onChangeText={setAddKey}
-                  placeholder="/media/..."
-                  style={styles.textInput}
-                  value={addKey}
-                />
-                <KolamButton
-                  disabled={photoSaving}
-                  label={photoSaving ? 'Menyimpan…' : 'Simpan'}
-                  onPress={() => {
-                    void savePhoto();
-                  }}
-                  size="sm"
-                />
-              </>
-            ) : null}
 
             <KolamButton
               disabled={photoSaving}
@@ -1817,6 +1897,54 @@ const styles = StyleSheet.create({
   },
   photoItem: {
     gap: 4,
+  },
+  modalScroll: {
+    maxHeight: 420,
+  },
+  modalSection: {
+    gap: 8,
+    marginTop: 8,
+  },
+  catalogGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  catalogThumb: {
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  catalogThumbPicked: {
+    borderColor: V.colors.primary,
+    borderWidth: 2,
+  },
+  catalogThumbExists: {
+    opacity: 0.4,
+  },
+  trainingThumb: {
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  trainingDelete: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  trainingDeleteText: {
+    color: '#ffffff',
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
   },
   modalRoot: {
     alignItems: 'center',
