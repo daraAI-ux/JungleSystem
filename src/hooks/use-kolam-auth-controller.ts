@@ -6,6 +6,8 @@ import {
 } from '../domain/auth';
 import {
   getUserDisplayName,
+  clearAuthSessionHandlers,
+  registerAuthSessionHandlers,
   restoreAuthSessionFromStore,
   signIn,
   signOut,
@@ -28,6 +30,19 @@ export function useKolamAuthController() {
   const accessScope = useMemo(() => getAccessScope(authUser), [authUser]);
   const displayName = getUserDisplayName(authUser);
   const authSourceHint = getAuthSource(authSource).description;
+
+  useEffect(() => {
+    registerAuthSessionHandlers(() => {
+      signOut();
+      setAuthUser(null);
+      setAuthPassword('');
+      setAuthMessage(
+        'Sesi login berakhir. Silakan login lagi untuk melanjutkan.',
+      );
+    });
+
+    return clearAuthSessionHandlers;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import {useKolamAuthController} from '../src/hooks/use-kolam-auth-controller';
+import {apiRequest} from '../src/lib/api-client';
 import {
   clearAuthSource,
   clearAuthToken,
@@ -121,12 +122,76 @@ describe('Kolam auth controller hook', () => {
       }),
     );
   });
+
+  it('clears the restored user when token refresh cannot recover an expired session', async () => {
+    let latest: AuthController | null = null;
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({
+        id: 'user-restored',
+        email: 'restored@example.test',
+        first_name: 'Anura',
+        access_inventory: true,
+      }))
+      .mockResolvedValueOnce(unauthorizedResponse('Token expired'))
+      .mockResolvedValueOnce(unauthorizedResponse('Refresh expired'));
+    globalThis.fetch = fetchMock;
+    saveAuthToken('stored-token');
+    saveAuthSource('kolam');
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <AuthHarness
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(requireAuthController(latest).authUser).toEqual(
+      expect.objectContaining({email: 'restored@example.test'}),
+    );
+
+    await ReactTestRenderer.act(async () => {
+      await expect(
+        apiRequest({
+          method: 'GET',
+          notifyOnAuthFailure: true,
+          path: '/auth/detail-user',
+        }),
+      ).rejects.toMatchObject({status: 401});
+    });
+
+    expect(requireAuthController(latest).authUser).toBeNull();
+    expect(requireAuthController(latest).authMessage).toBe(
+      'Sesi login berakhir. Silakan login lagi untuk melanjutkan.',
+    );
+  });
 });
 
 function jsonResponse(payload: unknown) {
   return {
     ok: true,
     status: 200,
+    headers: {
+      get: jest.fn(),
+    },
     text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
+  };
+}
+
+function unauthorizedResponse(message: string) {
+  return {
+    ok: false,
+    status: 401,
+    headers: {
+      get: jest.fn(),
+    },
+    text: jest.fn().mockResolvedValue(JSON.stringify({message})),
   };
 }

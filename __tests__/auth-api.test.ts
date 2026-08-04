@@ -8,6 +8,7 @@ import {
 import {
   getActiveAuthSource,
   getCurrentUser,
+  refreshAuthSession,
   restoreAuthSessionFromStore,
   signIn,
   signOut,
@@ -16,6 +17,7 @@ import {
 import {
   clearNativeDeviceIdentity,
   clearResponseCookieJar,
+  setAuthSessionHandlers,
   setNativeDeviceIdentity,
 } from '../src/lib/api-client';
 import {
@@ -32,6 +34,7 @@ describe('unified auth source contracts', () => {
     fetchMock.mockReset();
     globalThis.fetch = fetchMock;
     signOut();
+    setAuthSessionHandlers({});
     clearNativeDeviceIdentity();
     clearResponseCookieJar();
   });
@@ -218,12 +221,36 @@ describe('unified auth source contracts', () => {
     );
   });
 
+  it('refreshes the active Kolam session token through the direct BE route', async () => {
+    saveAuthToken('expired-kolam-token');
+    saveAuthSource('kolam');
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      accessToken: 'fresh-kolam-token',
+    }));
+
+    await expect(refreshAuthSession()).resolves.toBe('fresh-kolam-token');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/auth/refresh`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer expired-kolam-token',
+          'x-source': appConfig.kolamSourceHeader,
+        }),
+      }),
+    );
+    expect(getStoredAuthToken()).toBe('fresh-kolam-token');
+  });
+
   it('returns no restored session when there is no stored token', async () => {
     await expect(restoreAuthSessionFromStore()).resolves.toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('keeps the login response user when detail-user enrichment fails', async () => {
+    const onSessionExpired = jest.fn();
+    setAuthSessionHandlers({onSessionExpired});
     fetchMock
       .mockResolvedValueOnce(jsonResponse({
         accessToken: 'pos-token',
@@ -233,9 +260,9 @@ describe('unified auth source contracts', () => {
       }))
       .mockResolvedValueOnce({
         ok: false,
-        status: 500,
+        status: 401,
         text: jest.fn().mockResolvedValue(JSON.stringify({
-          message: 'detail failed',
+          message: 'Token expired',
         })),
       });
 
@@ -252,6 +279,8 @@ describe('unified auth source contracts', () => {
         roleKey: 'pos',
       },
     });
+    expect(onSessionExpired).not.toHaveBeenCalled();
+    expect(getStoredAuthToken()).toBe('pos-token');
   });
 
   it('logs out remotely with the active auth source header and clears local session', async () => {

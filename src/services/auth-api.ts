@@ -2,6 +2,7 @@
 import {
   apiRequest,
   getNativeDeviceIdentity,
+  setAuthSessionHandlers,
 } from '../lib/api-client';
 import {
   getAuthSource,
@@ -110,6 +111,11 @@ interface BackendUserPayload {
   };
 }
 
+interface RefreshAuthResponse {
+  accessToken?: string;
+  token?: string;
+}
+
 export interface AuthSession {
   token: string;
   user: SignedInUser;
@@ -130,7 +136,9 @@ export async function signIn(body: SignInBody): Promise<AuthSession> {
   activeAuthSource = authSource.id;
   const userPayload = response.user ?? response;
   const fallbackUser = mapSignedInUser(userPayload, response.role?.key);
-  const user = await getCurrentUser().catch(() => fallbackUser);
+  const user = await getCurrentUser({skipAuthRefresh: true}).catch(
+    () => fallbackUser,
+  );
 
   return {
     token: response.accessToken,
@@ -193,13 +201,18 @@ async function withKolamLoginStep<T>(
   }
 }
 
-export async function getCurrentUser(): Promise<SignedInUser> {
+export async function getCurrentUser({
+  skipAuthRefresh,
+}: {
+  skipAuthRefresh?: boolean;
+} = {}): Promise<SignedInUser> {
   if (activeAuthSource === 'kolam') {
     const response = await apiRequest<BackendUserPayload>({
       method: 'GET',
       path: '/auth/detail-user',
       baseUrl: appConfig.kolamApiBaseUrl,
       sourceHeader: getAuthSource(activeAuthSource).headerSource,
+      skipAuthRefresh,
     });
 
     return mapSignedInUser(response);
@@ -209,6 +222,7 @@ export async function getCurrentUser(): Promise<SignedInUser> {
     method: 'GET',
     path: '/auth/detail-user',
     sourceHeader: getAuthSource(activeAuthSource).headerSource,
+    skipAuthRefresh,
   });
 
   return mapSignedInUser(response);
@@ -277,6 +291,39 @@ export function signOut() {
   clearAuthToken();
   clearAuthSource();
   activeAuthSource = 'kolam';
+}
+
+export async function refreshAuthSession(): Promise<string | undefined> {
+  const sourceHeader = getAuthSource(activeAuthSource).headerSource;
+  const response = await apiRequest<RefreshAuthResponse>({
+    method: 'POST',
+    path: '/auth/refresh',
+    baseUrl:
+      activeAuthSource === 'kolam'
+        ? appConfig.kolamApiBaseUrl
+        : appConfig.apiBaseUrl,
+    sourceHeader,
+    skipAuthRefresh: true,
+  });
+  const nextToken = response.accessToken ?? response.token;
+
+  if (!nextToken) {
+    return undefined;
+  }
+
+  saveAuthToken(nextToken);
+  return nextToken;
+}
+
+export function registerAuthSessionHandlers(onSessionExpired: () => void) {
+  setAuthSessionHandlers({
+    refreshAccessToken: refreshAuthSession,
+    onSessionExpired,
+  });
+}
+
+export function clearAuthSessionHandlers() {
+  setAuthSessionHandlers({});
 }
 
 export async function signOutRemote(): Promise<void> {

@@ -17,11 +17,16 @@ export interface RequestOptions {
   token?: string;
   baseUrl?: string;
   sourceHeader?: string;
+  skipAuthRefresh?: boolean;
+  notifyOnAuthFailure?: boolean;
 }
 
 let accessToken: string | undefined;
 let nativeDeviceIdentity: NativeDeviceIdentity = {};
 const responseCookieJar: Record<string, CookieJar> = {};
+let refreshAccessToken: (() => Promise<string | undefined>) | undefined;
+let notifySessionExpired: (() => void) | undefined;
+let refreshAccessTokenPromise: Promise<string | undefined> | undefined;
 
 export interface NativeDeviceIdentity {
   macAddresses?: string[];
@@ -34,6 +39,14 @@ export function setAccessToken(token: string | undefined) {
 
 export function getAccessToken() {
   return accessToken;
+}
+
+export function setAuthSessionHandlers(handlers: {
+  refreshAccessToken?: () => Promise<string | undefined>;
+  onSessionExpired?: () => void;
+}) {
+  refreshAccessToken = handlers.refreshAccessToken;
+  notifySessionExpired = handlers.onSessionExpired;
 }
 
 export function setNativeDeviceIdentity(identity: NativeDeviceIdentity) {
@@ -78,7 +91,47 @@ export async function apiRequest<T>({
   token,
   baseUrl,
   sourceHeader,
+  skipAuthRefresh,
+  notifyOnAuthFailure,
 }: RequestOptions): Promise<T> {
+  return apiRequestWithAuthRefresh<T>(
+    {
+      method,
+      path,
+      query,
+      body,
+      headers: requestHeaders,
+      cookieJar,
+      credentials,
+      token,
+      baseUrl,
+      sourceHeader,
+      skipAuthRefresh,
+      notifyOnAuthFailure,
+    },
+    false,
+  );
+}
+
+async function apiRequestWithAuthRefresh<T>(
+  options: Required<Pick<RequestOptions, 'method' | 'path'>> &
+    Omit<RequestOptions, 'method' | 'path'>,
+  didRefresh: boolean,
+): Promise<T> {
+  const {
+    method,
+    path,
+    query,
+    body,
+    headers: requestHeaders,
+    cookieJar,
+    credentials,
+    token,
+    baseUrl,
+    sourceHeader,
+    skipAuthRefresh,
+    notifyOnAuthFailure,
+  } = options;
   const url = buildUrl(path, query, baseUrl);
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -136,7 +189,31 @@ export async function apiRequest<T>({
   const payload = await readJson(response);
 
   if (!response.ok) {
-    throw new ApiError(response.status, normalizeErrorPayload(payload));
+    const error = new ApiError(response.status, normalizeErrorPayload(payload));
+    if (shouldRefreshAuth(error, token, skipAuthRefresh, didRefresh)) {
+      const refreshedToken = await refreshStoredAccessToken();
+      if (refreshedToken) {
+        return apiRequestWithAuthRefresh<T>(
+          {
+            ...options,
+            token: token ?? refreshedToken,
+          },
+          true,
+        );
+      }
+    }
+
+    if (
+      shouldNotifySessionExpired(
+        error,
+        skipAuthRefresh,
+        notifyOnAuthFailure,
+      )
+    ) {
+      notifySessionExpired?.();
+    }
+
+    throw error;
   }
 
   return payload as T;
@@ -221,6 +298,51 @@ function normalizeErrorPayload(payload: unknown): ApiErrorPayload {
   }
 
   return {};
+}
+
+function shouldRefreshAuth(
+  error: ApiError,
+  token: string | undefined,
+  skipAuthRefresh: boolean | undefined,
+  didRefresh: boolean,
+) {
+  return (
+    error.status === 401 &&
+    !skipAuthRefresh &&
+    !didRefresh &&
+    !token &&
+    Boolean(accessToken)
+  );
+}
+
+function shouldNotifySessionExpired(
+  error: ApiError,
+  skipAuthRefresh: boolean | undefined,
+  notifyOnAuthFailure: boolean | undefined,
+) {
+  return error.status === 401 && !skipAuthRefresh && Boolean(notifyOnAuthFailure);
+}
+
+async function refreshStoredAccessToken() {
+  if (!refreshAccessToken) {
+    return undefined;
+  }
+
+  if (!refreshAccessTokenPromise) {
+    refreshAccessTokenPromise = refreshAccessToken()
+      .then(nextToken => {
+        if (nextToken) {
+          setAccessToken(nextToken);
+        }
+        return nextToken;
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        refreshAccessTokenPromise = undefined;
+      });
+  }
+
+  return refreshAccessTokenPromise;
 }
 
 function isStringArray(value: unknown): value is string[] {

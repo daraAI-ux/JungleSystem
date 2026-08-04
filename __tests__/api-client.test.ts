@@ -3,6 +3,7 @@ import {
   apiRequest,
   clearNativeDeviceIdentity,
   clearResponseCookieJar,
+  setAuthSessionHandlers,
   setAccessToken,
   setNativeDeviceIdentity,
 } from '../src/lib/api-client';
@@ -16,6 +17,7 @@ describe('native runtime API identity', () => {
     fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
     globalThis.fetch = fetchMock;
     setAccessToken(undefined);
+    setAuthSessionHandlers({});
     clearNativeDeviceIdentity();
     clearResponseCookieJar();
   });
@@ -153,6 +155,81 @@ describe('native runtime API identity', () => {
         'API mengembalikan halaman HTML (503). Backend mungkin down / gateway error.',
     });
   });
+
+  it('refreshes the stored access token once and retries an expired request', async () => {
+    const refreshAccessToken = jest.fn().mockResolvedValue('fresh-token');
+    setAuthSessionHandlers({refreshAccessToken});
+    setAccessToken('expired-token');
+    fetchMock
+      .mockResolvedValueOnce(unauthorizedResponse('Token expired'))
+      .mockResolvedValueOnce(jsonResponse({ok: true}));
+
+    await expect(
+      apiRequest({method: 'GET', path: '/auth/detail-user'}),
+    ).resolves.toEqual({ok: true});
+
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${appConfig.apiBaseUrl}/auth/detail-user`,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer expired-token',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${appConfig.apiBaseUrl}/auth/detail-user`,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer fresh-token',
+        }),
+      }),
+    );
+  });
+
+  it('does not notify session expiry for regular API 401 responses', async () => {
+    const onSessionExpired = jest.fn();
+    setAuthSessionHandlers({
+      refreshAccessToken: jest.fn().mockResolvedValue(undefined),
+      onSessionExpired,
+    });
+    setAccessToken('expired-token');
+    fetchMock.mockResolvedValueOnce(unauthorizedResponse('Token expired'));
+
+    await expect(
+      apiRequest({method: 'GET', path: '/auth/detail-user'}),
+    ).rejects.toMatchObject({
+      status: 401,
+      message: 'Token expired',
+    });
+
+    expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+
+  it('notifies session expiry for explicit auth checks that cannot refresh', async () => {
+    const onSessionExpired = jest.fn();
+    setAuthSessionHandlers({
+      refreshAccessToken: jest.fn().mockResolvedValue(undefined),
+      onSessionExpired,
+    });
+    setAccessToken('expired-token');
+    fetchMock.mockResolvedValueOnce(unauthorizedResponse('Token expired'));
+
+    await expect(
+      apiRequest({
+        method: 'GET',
+        notifyOnAuthFailure: true,
+        path: '/auth/detail-user',
+      }),
+    ).rejects.toMatchObject({
+      status: 401,
+      message: 'Token expired',
+    });
+
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+  });
 });
 
 function jsonResponse(payload: unknown, setCookie?: string) {
@@ -165,5 +242,16 @@ function jsonResponse(payload: unknown, setCookie?: string) {
       ),
     },
     text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
+  };
+}
+
+function unauthorizedResponse(message: string) {
+  return {
+    ok: false,
+    status: 401,
+    headers: {
+      get: jest.fn(),
+    },
+    text: jest.fn().mockResolvedValue(JSON.stringify({message})),
   };
 }
