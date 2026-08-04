@@ -23,6 +23,10 @@ export function KolamMediaPlayer({
   uri: string | null | undefined;
 }) {
   const sourceUri = normalizeMediaUrl(uri ?? '');
+  const documentBaseUrl = React.useMemo(
+    () => resolveMediaDocumentBaseUrl(sourceUri),
+    [sourceUri],
+  );
   const html = React.useMemo(
     () => createMediaPlayerHtml({ autoPlay, kind, title, uri: sourceUri }),
     [autoPlay, kind, sourceUri, title],
@@ -39,8 +43,8 @@ export function KolamMediaPlayer({
       javaScriptEnabled
       mediaPlaybackRequiresUserAction={false}
       originWhitelist={['*']}
-      source={{ html }}
-      style={styles.webView}
+      source={{ html, baseUrl: documentBaseUrl }}
+      style={[styles.webView, style]}
       useWebView2={Platform.OS === 'windows'}
     />
   );
@@ -87,7 +91,7 @@ function createVideoPlayerHtml({
 <body>
   <video ${
     autoPlay ? 'autoplay' : ''
-  } controls preload="metadata" title="${safeTitle}"><source src="${safeUri}"></video>
+  } controls playsinline preload="metadata" title="${safeTitle}" src="${safeUri}"></video>
 </body>
 </html>`;
 }
@@ -219,6 +223,18 @@ function normalizeMediaUrl(value: string) {
   }
 
   return `https://${trimmed}`;
+}
+
+/** WebView2 HTML docs need a real https base so remote media can load. */
+function resolveMediaDocumentBaseUrl(uri: string) {
+  const match = uri.match(/^(https?:\/\/[^/?#]+)/i);
+  if (match) {
+    return `${match[1]}/`;
+  }
+  if (/^file:/i.test(uri) || /^ms-app/i.test(uri)) {
+    return uri;
+  }
+  return 'https://localhost/';
 }
 
 function escapeHtml(value: string) {

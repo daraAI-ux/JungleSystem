@@ -32,6 +32,10 @@ jest.mock('../src/services/kolam-dara-training-video-studio-api', () => ({
   ),
 }));
 
+jest.mock('../src/components/kolam-media-preview-dialog', () => ({
+  openKolamMediaPreview: jest.fn(),
+}));
+
 const configMock = fetchKolamDaraTrainingVideoStudioConfig as jest.MockedFunction<
   typeof fetchKolamDaraTrainingVideoStudioConfig
 >;
@@ -109,6 +113,8 @@ describe('KolamDaraTrainingVideoStudioBody', () => {
     expect(text).toContain('Kirim task');
     expect(text).toContain('Histori job');
     expect(text).toContain('raw.mp4');
+    expect(text).toContain('Putar');
+    expect(text).toContain('Download hasil');
     expect(configMock).toHaveBeenCalled();
     expect(jobsMock).toHaveBeenCalledWith(30);
 

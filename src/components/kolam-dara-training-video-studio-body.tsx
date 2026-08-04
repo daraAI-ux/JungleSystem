@@ -37,6 +37,7 @@ import {
 } from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
+import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamMediaPlayer} from './kolam-media-player';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
@@ -85,6 +86,12 @@ export function KolamDaraTrainingVideoStudioBody({
       ]);
       setConfig(cfg);
       setJobs(history);
+      setActiveJob(current => {
+        if (current) {
+          return history.find(row => row.id === current.id) ?? current;
+        }
+        return history[0] ?? null;
+      });
       setPrompt(current => current || cfg.preset.prompt);
       setModel(current => current || cfg.defaultModel || cfg.models[0] || '');
       setNotice('');
@@ -592,18 +599,33 @@ export function KolamDaraTrainingVideoStudioBody({
                     title="Hasil Video Studio"
                     uri={activeJob.outputUrl}
                   />
-                  <KolamButton
-                    intent="plain"
-                    label="Download hasil"
-                    onPress={() => {
-                      void Linking.openURL(
-                        buildKolamDaraTrainingVideoStudioDownloadUrl(
-                          activeJob.id,
-                        ),
-                      );
-                    }}
-                    size="sm"
-                  />
+                  <View style={styles.rowActions}>
+                    <KolamButton
+                      intent="secondary"
+                      label="Putar"
+                      onPress={() => {
+                        openKolamMediaPreview({
+                          kind: 'video',
+                          title: 'Hasil Video Studio',
+                          uri: activeJob.outputUrl,
+                        });
+                      }}
+                      size="sm"
+                    />
+                    <KolamButton
+                      intent="plain"
+                      label="Download hasil"
+                      onPress={() => {
+                        void Linking.openURL(
+                          activeJob.outputUrl ||
+                            buildKolamDaraTrainingVideoStudioDownloadUrl(
+                              activeJob.id,
+                            ),
+                        );
+                      }}
+                      size="sm"
+                    />
+                  </View>
                 </View>
               ) : null}
 
@@ -861,8 +883,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   previewPlayer: {
-    aspectRatio: 16 / 9,
-    minHeight: 180,
+    backgroundColor: '#0f172a',
+    height: 240,
     width: '100%',
   },
   historyList: {
