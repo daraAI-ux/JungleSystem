@@ -499,6 +499,16 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(text).toContain('Skor SEO');
     expect(text).toContain('DARA SEO');
     expect(text).not.toContain('Riwayat proses');
+    expect(text).not.toContain('Akses cepat');
+
+    const quickSeo = renderer!.root.find(
+      node =>
+        typeof node.props.label === 'string' && node.props.label === 'DARA SEO',
+    );
+    await ReactTestRenderer.act(async () => {
+      quickSeo.props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/campaign/dara-seo');
 
     const seoButton = renderer!.root.find(
       node =>

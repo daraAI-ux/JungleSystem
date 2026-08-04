@@ -1,5 +1,5 @@
 import React, {useMemo} from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   buildKolamPusatAiHubRoute,
@@ -668,12 +668,24 @@ function KolamPusatAiRingkasanBody({
             ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
+            {hub && !loading
+              ? quickLinks.map(item => (
+                  <KolamButton
+                    intent="secondary"
+                    key={item.href}
+                    label={item.label}
+                    onPress={() => onRouteChange?.(item.href)}
+                    size="sm"
+                  />
+                ))
+              : null}
             <KolamButton
               disabled={loading}
               label={loading ? 'Memuat…' : 'Refresh'}
               onPress={() => {
                 void controller.onRefresh();
               }}
+              size="sm"
             />
           </View>
         </View>
@@ -735,26 +747,6 @@ function KolamPusatAiRingkasanBody({
               subtitle="Snapshot SERP tersimpan untuk monitoring keyword."
               title="Ranking & integrasi"
             />
-          </View>
-        ) : null}
-
-        {hub && !loading && quickLinks.length > 0 ? (
-          <View style={styles.quickLinks}>
-            <Text style={styles.quickLinksTitle}>Akses cepat</Text>
-            <View style={styles.quickLinksGrid}>
-              {quickLinks.map(item => (
-                <Pressable
-                  accessibilityLabel={item.label}
-                  accessibilityRole="button"
-                  key={item.href}
-                  onPress={() => onRouteChange?.(item.href)}
-                  style={styles.quickLink}>
-                  <Text numberOfLines={1} style={styles.quickLinkText}>
-                    {item.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
           </View>
         ) : null}
 
@@ -1354,33 +1346,5 @@ const styles = StyleSheet.create({
   moduleAction: {
     alignItems: 'flex-start',
     marginTop: 8,
-  },
-  quickLinks: {
-    gap: 8,
-  },
-  quickLinksTitle: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  quickLinksGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  quickLink: {
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: V.radius.md,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  quickLinkText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '500',
   },
 });
