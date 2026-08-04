@@ -1618,9 +1618,14 @@ function WalletActionModal({
       transparent
       visible
     >
-      <View style={styles.modalRoot}>
-        <KolamModalBackdrop onPress={controller.onCloseActionModal} />
-        <View style={styles.modalCard}>
+      <View style={styles.actionModalRoot}>
+        <Pressable
+          accessibilityLabel="Tutup"
+          accessibilityRole="button"
+          onPress={controller.onCloseActionModal}
+          style={styles.actionModalDim}
+        />
+        <View style={styles.actionModalCard}>
           {modal === 'deposit' ? (
             <DepositForm
               controller={controller}
@@ -1710,6 +1715,7 @@ function DepositForm({
       <KolamDropdownSelect
         label="Wallet Tujuan"
         menuPlacement="inline"
+        menuStyle={styles.actionDropdownMenu}
         onChange={setWalletId}
         options={walletOptions}
         value={walletId}
@@ -1807,6 +1813,7 @@ function WithdrawForm({
       <KolamDropdownSelect
         label="Wallet Sumber"
         menuPlacement="inline"
+        menuStyle={styles.actionDropdownMenu}
         onChange={setWalletId}
         options={walletOptions}
         value={walletId}
@@ -1922,6 +1929,7 @@ function TransferForm({
       <KolamDropdownSelect
         label="Dari Wallet"
         menuPlacement="inline"
+        menuStyle={styles.actionDropdownMenu}
         onChange={setFromWalletId}
         options={fromOptions}
         value={fromWalletId}
@@ -1929,6 +1937,7 @@ function TransferForm({
       <KolamDropdownSelect
         label="Ke Wallet"
         menuPlacement="inline"
+        menuStyle={styles.actionDropdownMenu}
         onChange={setToWalletId}
         options={toOptions}
         value={toWalletId}
@@ -2076,13 +2085,16 @@ function WalletFormShell({
   title: string;
 }) {
   return (
-    <ScrollView contentContainerStyle={styles.formBody}>
-      <Text style={styles.formTitle}>{title}</Text>
+    <ScrollView
+      contentContainerStyle={styles.actionFormBody}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={styles.actionFormTitle}>{title}</Text>
       {error ? (
         <KolamStatusBadge intent="danger" label={error} numberOfLines={3} />
       ) : null}
       {children}
-      <View style={styles.formActions}>
+      <View style={styles.actionFormActions}>
         <KolamButton intent="secondary" label="Batal" onPress={onClose} />
         <KolamButton
           disabled={submitDisabled}
@@ -2202,13 +2214,11 @@ const styles = StyleSheet.create({
   balanceInfo: {
     alignItems: 'center',
     backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   balanceInfoValue: {
     color: V.colors.fg,
@@ -2217,39 +2227,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   previewBlock: {
-    gap: 8,
+    gap: 6,
   },
   previewTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   proofBlock: {
-    gap: 8,
+    gap: 6,
   },
   proofLabel: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   proofActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   proofList: {
-    gap: 8,
+    gap: 6,
   },
   proofItem: {
     alignItems: 'center',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
     flexDirection: 'row',
     gap: 8,
-    padding: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
   proofThumb: {
     borderRadius: 6,
@@ -2687,6 +2697,39 @@ const styles = StyleSheet.create({
     width: '100%',
     zIndex: 2,
   },
+  actionModalRoot: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 12,
+  },
+  actionModalDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+  },
+  actionModalCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 0,
+    maxHeight: '88%',
+    maxWidth: 400,
+    overflow: 'hidden',
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    width: '100%',
+    zIndex: 2,
+  },
+  actionDropdownMenu: {
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+  },
   formBody: {
     gap: 12,
     padding: 16,
@@ -2701,5 +2744,21 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
     marginTop: 8,
+  },
+  actionFormBody: {
+    gap: 8,
+    padding: 12,
+  },
+  actionFormTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  actionFormActions: {
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'flex-end',
+    marginTop: 4,
   },
 });
