@@ -210,6 +210,7 @@ export async function downloadKolamLayananSubscriptionInvoice(
   if (!detail.saleId) {
     throw new Error('Langganan tidak terhubung ke faktur penjualan.');
   }
+  // FE hits /subscriptions/:id/invoice; BE remaps to sale invoice stream.
   return downloadKolamSaleInvoice(
     detail.saleId,
     detail.saleInvoiceCode || detail.subscriptionNumber || detail.id,
@@ -325,6 +326,24 @@ export async function setKolamLayananVoucherProductComponents(
     {
       method: 'PUT',
       body: { productComponents },
+    },
+  );
+}
+
+export async function setKolamLayananVoucherPurchaseContract(
+  id: string,
+  purchaseVolumeDimensions: {
+    length: number;
+    width: number;
+    height: number;
+    unitLabel: string;
+  },
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/pending-services/${encodeURIComponent(id)}/purchase-contract`,
+    {
+      method: 'PUT',
+      body: { purchaseVolumeDimensions },
     },
   );
 }

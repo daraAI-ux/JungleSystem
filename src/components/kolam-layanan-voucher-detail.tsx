@@ -1,18 +1,24 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  calcKolamLayananVolumeM3FromUnitLabel,
   formatKolamLayananContractDuration,
+  formatKolamLayananIdr,
   formatKolamLayananPurchaseDimensions,
   formatKolamLayananPurchaseVolumeM3,
   getKolamLayananMaterialChargeLabel,
   getKolamLayananPendingStatusIntent,
   getKolamLayananPendingStatusLabel,
   getKolamLayananScheduleStatusLabel,
+  getKolamLayananSubscriptionStatusIntent,
+  getKolamLayananSubscriptionStatusLabel,
   getKolamLayananTaskTypeLabel,
   getKolamLayananWeekdayLabel,
+  KOLAM_LAYANAN_DIMENSION_UNIT_OPTIONS,
   KOLAM_LAYANAN_MATERIAL_CHARGE_OPTIONS,
   KOLAM_LAYANAN_ROOT,
   KOLAM_LAYANAN_WEEKDAY_OPTIONS,
+  parseKolamLayananDimInput,
   type KolamLayananContractDurationUnit,
   type KolamLayananVoucherDetail,
   type KolamLayananVoucherMaterialLine,
@@ -192,24 +198,45 @@ export function KolamLayananVoucherDetail({
             </KolamDetailMetaStripItem>
           </KolamDetailMetaStrip>
 
-          <VoucherInfoSection
-            onRouteChange={onRouteChange}
-            voucher={voucher}
-          />
-
           {voucher.initiated ? (
-            <FormSection title="Voucher aktif">
-              <Text style={styles.metaText}>
-                Voucher sudah diinisiasi. Detail eksekusi kunjungan menyusul di
-                batch berikutnya. Jadwal / T&amp;C / material di bawah bersifat
-                arsip jika masih tersedia dari API.
-              </Text>
-            </FormSection>
-          ) : null}
-
-          <VoucherScheduleSection controller={controller} />
-          <VoucherTermsSection controller={controller} />
-          <VoucherMaterialsSection controller={controller} />
+            <>
+              <FormSection title="Voucher aktif">
+                <Text style={styles.metaText}>
+                  Voucher sudah diinisiasi. Detail eksekusi kunjungan menyusul di
+                  batch berikutnya.
+                </Text>
+              </FormSection>
+              <VoucherInfoSection
+                onRouteChange={onRouteChange}
+                voucher={voucher}
+              />
+              <VoucherSubscriptionSection
+                controller={controller}
+                onRouteChange={onRouteChange}
+              />
+              <VoucherMaterialsSection controller={controller} />
+            </>
+          ) : (
+            <View style={styles.detailColumns}>
+              <View style={styles.detailMain}>
+                <VoucherInfoSection
+                  onRouteChange={onRouteChange}
+                  voucher={voucher}
+                />
+                <VoucherContractDimensionsSection controller={controller} />
+                <VoucherMaterialsSection controller={controller} />
+              </View>
+              <View style={styles.detailSide}>
+                <VoucherSubscriptionSection
+                  controller={controller}
+                  onRouteChange={onRouteChange}
+                />
+                <VoucherCustomerReadinessSection controller={controller} />
+                <VoucherScheduleSection controller={controller} />
+                <VoucherTermsSection controller={controller} />
+              </View>
+            </View>
+          )}
         </ScrollView>
       )}
     </View>
@@ -392,6 +419,395 @@ function VoucherInfoSection({
             <EmptyValue />
           )}
         </DetailField>
+      </View>
+    </FormSection>
+  );
+}
+
+function VoucherContractDimensionsSection({
+  controller,
+}: {
+  controller: KolamLayananVoucherController;
+}) {
+  const voucher = controller.voucher;
+  if (!voucher) {
+    return null;
+  }
+  const disabled =
+    !controller.canMutateSale ||
+    voucher.status === 'cancelled' ||
+    voucher.status === 'initiated';
+  const draft = controller.contractDraft;
+  const length = parseKolamLayananDimInput(draft.length);
+  const width = parseKolamLayananDimInput(draft.width);
+  const height = parseKolamLayananDimInput(draft.height);
+  const volumeM3 = calcKolamLayananVolumeM3FromUnitLabel(
+    length,
+    width,
+    height,
+    draft.unitLabel,
+  );
+  const currentLabel = formatKolamLayananPurchaseDimensions(
+    voucher.purchaseDimensions,
+  );
+
+  return (
+    <FormSection
+      description="P × L × T dari pembelian — wajib agar aktivasi ke kandang pelanggan bisa dilakukan. Perubahan disinkron ke baris layanan di faktur (termasuk faktur paid)."
+      title="Ukuran kontrak kandang"
+    >
+      {currentLabel ? (
+        <Text style={styles.metaText}>
+          Tercatat: <Text style={styles.primaryText}>{currentLabel}</Text>
+        </Text>
+      ) : (
+        <Text style={styles.warnText}>
+          Belum ada ukuran kontrak — isi form di bawah sebelum aktivasi.
+        </Text>
+      )}
+
+      <View style={styles.calculatorBox}>
+        <Text style={styles.calculatorTitle}>
+          Kalkulator volume (P × L × T → m³)
+        </Text>
+        <View style={styles.dimRow}>
+          <FieldShell label="Panjang">
+            <KolamFormTextField
+              editable={!disabled}
+              mode="numeric"
+              onChangeText={value =>
+                controller.onChangeContractDraft({ length: value })
+              }
+              placeholder="Panjang"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={draft.length}
+            />
+          </FieldShell>
+          <FieldShell label="Lebar">
+            <KolamFormTextField
+              editable={!disabled}
+              mode="numeric"
+              onChangeText={value =>
+                controller.onChangeContractDraft({ width: value })
+              }
+              placeholder="Lebar"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={draft.width}
+            />
+          </FieldShell>
+          <FieldShell label="Tinggi">
+            <KolamFormTextField
+              editable={!disabled}
+              mode="numeric"
+              onChangeText={value =>
+                controller.onChangeContractDraft({ height: value })
+              }
+              placeholder="Tinggi"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={draft.height}
+            />
+          </FieldShell>
+          <KolamDropdownSelect
+            label="Satuan"
+            onChange={value => {
+              if (disabled) {
+                return;
+              }
+              controller.onChangeContractDraft({ unitLabel: value || 'Cm' });
+            }}
+            options={KOLAM_LAYANAN_DIMENSION_UNIT_OPTIONS.map(option => ({
+              label: option.label,
+              value: option.id,
+            }))}
+            value={draft.unitLabel}
+          />
+        </View>
+        {volumeM3 != null && volumeM3 > 0 ? (
+          <Text style={styles.metaText}>
+            Volume:{' '}
+            <Text style={styles.primaryText}>{volumeM3.toFixed(2)} m³</Text>
+            {voucher.quantity != null && voucher.quantity > 0
+              ? ` · qty faktur: ${voucher.quantity} m³`
+              : ''}
+          </Text>
+        ) : null}
+      </View>
+
+      {controller.canMutateSale && !disabled ? (
+        <KolamButton
+          disabled={controller.saving}
+          intent="primary"
+          label={controller.saving ? 'Menyimpan…' : 'Simpan ukuran kontrak'}
+          onPress={() => {
+            void controller.onSaveContractDimensions();
+          }}
+        />
+      ) : null}
+    </FormSection>
+  );
+}
+
+function VoucherSubscriptionSection({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamLayananVoucherController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const subscription = controller.subscription;
+
+  if (!subscription) {
+    return (
+      <FormSection title="Langganan">
+        <Text style={styles.metaText}>
+          Belum ada dokumen langganan untuk voucher ini. Klik sync untuk
+          membuat/memperbarui dari data voucher.
+        </Text>
+        <KolamButton
+          disabled={controller.syncingSubscription}
+          label={
+            controller.syncingSubscription
+              ? 'Menyinkron…'
+              : 'Buat / sync langganan'
+          }
+          onPress={() => {
+            void controller.onSyncSubscription();
+          }}
+        />
+      </FormSection>
+    );
+  }
+
+  return (
+    <FormSection title="Langganan">
+      <View style={styles.summaryGrid}>
+        <DetailField label="Nomor">
+          <Pressable
+            accessibilityRole="link"
+            onPress={() =>
+              onRouteChange?.(
+                `${KOLAM_LAYANAN_ROOT}/langganan/${subscription.id}`,
+              )
+            }
+          >
+            <Text style={[styles.linkText, styles.monoText]}>
+              {subscription.subscriptionNumber || subscription.id}
+            </Text>
+          </Pressable>
+        </DetailField>
+        <DetailField label="Status">
+          <KolamStatusBadge
+            intent={getKolamLayananSubscriptionStatusIntent(
+              subscription.status,
+            )}
+            label={getKolamLayananSubscriptionStatusLabel(subscription.status)}
+          />
+        </DetailField>
+        <DetailField label="Periode">
+          <Text style={styles.summaryValue}>
+            {formatDate(subscription.startDate) || '—'} –{' '}
+            {formatDate(subscription.endDate) || '—'}
+          </Text>
+        </DetailField>
+        <DetailField label="Perpanjangan otomatis">
+          <Text style={styles.summaryValue}>
+            {subscription.autoRenew ? 'Ya' : 'Tidak'}
+          </Text>
+        </DetailField>
+      </View>
+
+      <View style={styles.transportBlock}>
+        <Text style={styles.primaryText}>
+          Transport default (HPP kunjungan)
+        </Text>
+        <Text style={styles.metaText}>
+          Dipakai jika biaya transport per kunjungan belum diisi manual.
+        </Text>
+        <View style={styles.actionRow}>
+          <FieldShell label="Transport default">
+            <KolamFormTextField
+              mode="numeric"
+              onChangeText={value =>
+                controller.onChangeTransportDraft(value.replace(/[^\d]/g, ''))
+              }
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={controller.transportDraft}
+            />
+          </FieldShell>
+          <KolamButton
+            disabled={controller.saving}
+            label="Simpan"
+            onPress={() => {
+              void controller.onSaveTransport();
+            }}
+          />
+          <Text style={styles.metaText}>
+            {formatKolamLayananIdr(
+              Number(controller.transportDraft.replace(/[^\d]/g, '')) || 0,
+            )}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.actionRow}>
+        <KolamButton
+          disabled={controller.syncingSubscription}
+          label={
+            controller.syncingSubscription
+              ? 'Menyinkron…'
+              : 'Sync ulang dari voucher'
+          }
+          onPress={() => {
+            void controller.onSyncSubscription();
+          }}
+        />
+        {subscription.status === 'active' ? (
+          <KolamButton
+            disabled={controller.saving}
+            label="Buka jadwal kunjungan"
+            onPress={() => {
+              void controller.onSpawnVisits();
+            }}
+          />
+        ) : null}
+      </View>
+    </FormSection>
+  );
+}
+
+function VoucherCustomerReadinessSection({
+  controller,
+}: {
+  controller: KolamLayananVoucherController;
+}) {
+  const terms = controller.terms;
+  const schedule = controller.schedule;
+  const voucher = controller.voucher;
+  const termsRequired = terms?.required === true;
+  const termsAccepted = !termsRequired || terms?.allAccepted === true;
+  const needsSchedule = schedule?.requiresScheduleFlow === true;
+  const scheduleReady =
+    !needsSchedule || schedule?.status === 'schedule_approved';
+  const picReady = !needsSchedule || Boolean(schedule?.visitAssignedTo);
+  const missingPicAfterApprove =
+    needsSchedule &&
+    schedule?.status === 'schedule_approved' &&
+    !schedule?.visitAssignedTo;
+  const customerReady = termsAccepted && scheduleReady && picReady;
+  const customerName =
+    voucher?.customerName && voucher.customerName !== '—'
+      ? voucher.customerName
+      : null;
+
+  return (
+    <FormSection title="Aktivasi pelanggan">
+      <KolamStatusBadge
+        intent={customerReady ? 'success' : 'warning'}
+        label={customerReady ? 'Siap aktivasi' : 'Menunggu pelanggan'}
+      />
+      {customerName ? (
+        <Text style={styles.metaText}>
+          Pelanggan: <Text style={styles.primaryText}>{customerName}</Text>
+        </Text>
+      ) : null}
+      <Text style={styles.metaText}>
+        Persetujuan S&amp;K, jadwal, dan pemilihan kandang dilakukan di
+        dashboard pelanggan. Halaman ini hanya menampilkan status.
+      </Text>
+
+      <View style={styles.readinessBlock}>
+        <View style={styles.stripRow}>
+          <Text style={styles.primaryText}>Syarat &amp; ketentuan</Text>
+          <KolamStatusBadge
+            intent={termsAccepted ? 'success' : 'secondary'}
+            label={
+              termsRequired
+                ? termsAccepted
+                  ? 'Disetujui pelanggan'
+                  : 'Belum disetujui'
+                : 'Tidak wajib'
+            }
+          />
+        </View>
+        {termsRequired && terms?.templates.length ? (
+          <View style={styles.infoBox}>
+            {terms.templates.map(template => (
+              <View key={template.termsTemplateId} style={styles.stripRow}>
+                <Text style={styles.summaryValue}>
+                  {template.title || 'Syarat & ketentuan'} · v{template.version}
+                </Text>
+                <KolamStatusBadge
+                  intent={template.accepted ? 'success' : 'secondary'}
+                  label={template.accepted ? 'Disetujui' : 'Belum'}
+                />
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.metaText}>
+            {termsRequired
+              ? 'Belum ada template S&K terhubung.'
+              : 'Paket ini tidak mewajibkan persetujuan S&K.'}
+          </Text>
+        )}
+      </View>
+
+      {needsSchedule ? (
+        <View style={styles.readinessBlock}>
+          <View style={styles.stripRow}>
+            <Text style={styles.primaryText}>Jadwal kunjungan</Text>
+            <KolamStatusBadge
+              intent={scheduleReady ? 'success' : 'secondary'}
+              label={getKolamLayananScheduleStatusLabel(
+                schedule?.status ?? 'pending',
+              )}
+            />
+          </View>
+          {schedule?.proposedVisitSlots.length ? (
+            <View style={styles.infoBox}>
+              {schedule.proposedVisitSlots.map((slot, index) => (
+                <Text
+                  key={`${slot.weekday}-${slot.time}-${index}`}
+                  style={styles.metaText}
+                >
+                  {getKolamLayananWeekdayLabel(slot.weekday)} · {slot.time}
+                  {schedule.scheduleProposedBy === 'client'
+                    ? ' (dari pelanggan)'
+                    : schedule.scheduleProposedBy === 'staff'
+                      ? ' (dari staff)'
+                      : ''}
+                </Text>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.metaText}>Belum ada jadwal diajukan.</Text>
+          )}
+          {schedule?.visitAssignedToDisplayName ? (
+            <Text style={styles.metaText}>
+              PIC:{' '}
+              <Text style={styles.primaryText}>
+                {schedule.visitAssignedToDisplayName}
+              </Text>
+            </Text>
+          ) : missingPicAfterApprove ? (
+            <Text style={styles.warnText}>
+              Jadwal disetujui — PIC kunjungan belum ditetapkan. Tentukan di
+              kartu Jadwal kunjungan voucher.
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      <View style={[styles.stripRow, styles.readinessFooter]}>
+        <Text style={styles.primaryText}>Status aktivasi</Text>
+        <KolamStatusBadge
+          intent={customerReady ? 'success' : 'warning'}
+          label={
+            customerReady
+              ? 'Menunggu pelanggan memilih kandang & aktivasi'
+              : 'Pelanggan belum menyelesaikan persyaratan'
+          }
+        />
       </View>
     </FormSection>
   );
@@ -694,8 +1110,8 @@ function VoucherMaterialsSection({
 
   return (
     <FormSection
-      description="Tagih pelanggan / HPP voucher / punya sendiri. Simpan memakai sale/update."
-      title="Material tambahan"
+      description="Tagih pelanggan → revisi faktur. HPP voucher → stok keluar + debit dompet DA. Punya sendiri → catatan opsional tanpa SKU wajib."
+      title="Material tambahan (perjanjian manual)"
     >
       {hasHppPending ? (
         <KolamStatusBadge intent="danger" label="Stok HPP belum diproses" />
@@ -790,6 +1206,22 @@ function MaterialLineEditor({
         />
       </FieldShell>
       <KolamDropdownSelect
+        label="Jenis inventori"
+        onChange={value => {
+          if (disabled) {
+            return;
+          }
+          onChange({
+            inventoryKind: value === 'raw' ? 'raw' : 'product',
+          });
+        }}
+        options={[
+          { label: 'Bahan baku', value: 'raw' },
+          { label: 'Produk jadi', value: 'product' },
+        ]}
+        value={line.inventoryKind}
+      />
+      <KolamDropdownSelect
         label="Mode tagihan"
         onChange={value => {
           if (disabled) {
@@ -832,6 +1264,24 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: 12,
     paddingBottom: 32,
+  },
+  detailColumns: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailMain: {
+    flexBasis: 420,
+    flexGrow: 2,
+    gap: 12,
+    minWidth: 280,
+  },
+  detailSide: {
+    flexBasis: 300,
+    flexGrow: 1,
+    gap: 12,
+    minWidth: 260,
   },
   toolbarTitle: {
     color: V.colors.fg,
@@ -902,6 +1352,35 @@ const styles = StyleSheet.create({
   },
   dimBlock: {
     gap: 4,
+  },
+  calculatorBox: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
+  },
+  calculatorTitle: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  dimRow: {
+    gap: 8,
+  },
+  transportBlock: {
+    gap: 8,
+  },
+  readinessBlock: {
+    gap: 8,
+  },
+  readinessFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    paddingTop: 10,
   },
   fieldLabel: {
     color: V.colors.mutedFg,

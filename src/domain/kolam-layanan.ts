@@ -1025,6 +1025,67 @@ export function formatKolamLayananPurchaseVolumeM3(
   return `${rounded} m³`;
 }
 
+export const KOLAM_LAYANAN_DIMENSION_UNIT_OPTIONS = [
+  { id: 'Cm', label: 'cm' },
+  { id: 'M', label: 'm' },
+  { id: 'Mm', label: 'mm' },
+] as const;
+
+export interface KolamLayananContractDimensionsDraft {
+  length: string;
+  width: string;
+  height: string;
+  unitLabel: string;
+}
+
+export function createKolamLayananContractDimensionsDraft(
+  dims: KolamLayananPurchaseVolumeDimensions | null | undefined,
+): KolamLayananContractDimensionsDraft {
+  if (!dims) {
+    return { length: '', width: '', height: '', unitLabel: 'Cm' };
+  }
+  return {
+    length: String(dims.length),
+    width: String(dims.width),
+    height: String(dims.height),
+    unitLabel: dims.unitLabel.trim() || 'Cm',
+  };
+}
+
+export function parseKolamLayananDimInput(raw: string): number {
+  const normalized = raw.replace(',', '.').trim();
+  if (!normalized) {
+    return 0;
+  }
+  const n = Number.parseFloat(normalized);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+export function calcKolamLayananVolumeM3FromUnitLabel(
+  length: number,
+  width: number,
+  height: number,
+  unitLabel: string,
+): number | null {
+  const key = unitLabel.trim().toLowerCase();
+  let factor: number | null = null;
+  if (key === 'm' || key === 'meter') {
+    factor = 1;
+  } else if (key === 'cm' || key === 'centimeter' || key.includes('centi')) {
+    factor = 0.01;
+  } else if (key === 'mm' || key === 'millimeter' || key.includes('milli')) {
+    factor = 0.001;
+  }
+  if (factor == null || length <= 0 || width <= 0 || height <= 0) {
+    return null;
+  }
+  return Math.round(length * factor * width * factor * height * factor * 100) / 100;
+}
+
+export function formatKolamLayananIdr(value: number) {
+  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+}
+
 export function getKolamLayananCapacityStatusLabel(status: string) {
   if (status === 'full') {
     return 'Penuh';

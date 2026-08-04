@@ -1,5 +1,6 @@
 import {
   buildKolamLayananOpsKpiCards,
+  calcKolamLayananVolumeM3FromUnitLabel,
   createEmptyKolamLayananServiceFormState,
   createKolamLayananProductComponentsPayload,
   createKolamLayananServiceSavePayload,
@@ -38,6 +39,7 @@ import {
   normalizeKolamLayananVoucherDetail,
   createKolamLayananSubscriptionContractForm,
   createKolamLayananSubscriptionUpdatePayload,
+  parseKolamLayananDimInput,
   validateKolamLayananMaterialLines,
   validateKolamLayananServiceForm,
 } from '../src/domain/kolam-layanan';
@@ -304,6 +306,11 @@ describe('kolam-layanan domain', () => {
     expect(body.visitsPerMonth).toBe(2);
     expect(body.taskType).toBe('dosing');
     expect(body.price_m3).toBe(15000);
+  });
+
+  it('calculates contract volume m3 from unit label', () => {
+    expect(calcKolamLayananVolumeM3FromUnitLabel(100, 50, 40, 'Cm')).toBe(0.2);
+    expect(parseKolamLayananDimInput('12,5')).toBe(12.5);
   });
 
   it('normalizes voucher purchase dimensions and enclosure types', () => {
