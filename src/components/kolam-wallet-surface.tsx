@@ -1044,7 +1044,7 @@ const styles = StyleSheet.create({
   surface: {
     flex: 1,
     gap: 12,
-    padding: 12,
+    minHeight: 0,
   },
   listRoot: {
     flex: 1,

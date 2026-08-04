@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   surface: {
     flex: 1,
     gap: 10,
-    padding: 12,
+    minHeight: 0,
   },
   banner: {
     alignSelf: 'stretch',
