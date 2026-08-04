@@ -1147,6 +1147,7 @@ function AmServicesPage() {
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const [actingServiceId, setActingServiceId] = React.useState<string | null>(null);
   const [serviceInputValue, setServiceInputValue] = React.useState('');
+  const [submittedInputRequirementKey, setSubmittedInputRequirementKey] = React.useState<string | null>(null);
   const [serviceInputSending, setServiceInputSending] = React.useState(false);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [total, setTotal] = React.useState(0);
@@ -1299,6 +1300,7 @@ function AmServicesPage() {
       setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
       setDetailError(null);
       setServiceInputValue('');
+      setSubmittedInputRequirementKey(null);
       return;
     }
 
@@ -1316,6 +1318,7 @@ function AmServicesPage() {
     setDetailLogTotal(0);
     setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
     setServiceInputValue('');
+    setSubmittedInputRequirementKey(null);
     if (isTransferBanking(account.platform)) {
       await loadServiceHistory(account, 1);
     } else {
@@ -1420,6 +1423,7 @@ function AmServicesPage() {
       setDetailError(null);
       await sendAmDeviceServiceInput(device._id, inputType, value);
       setServiceInputValue('');
+      setSubmittedInputRequirementKey(getServiceInputRequirementKey(detailLogs));
       setActionMessage(`${inputType === 'password' ? 'Password' : 'OTP'} dikirim ke ${account.label}.`);
       await loadServiceLogs(account);
     } catch (nextError) {
@@ -1427,7 +1431,7 @@ function AmServicesPage() {
     } finally {
       setServiceInputSending(false);
     }
-  }, [loadServiceLogs, serviceInputValue]);
+  }, [detailLogs, loadServiceLogs, serviceInputValue]);
 
   const expandedServiceAccount = React.useMemo(
     () => accounts.find(account => account._id === expandedId) ?? null,
@@ -1583,6 +1587,7 @@ function AmServicesPage() {
                   historyTotal={detailHistoryTotal}
                   serviceInputSending={serviceInputSending}
                   serviceInputValue={serviceInputValue}
+                  submittedInputRequirementKey={submittedInputRequirementKey}
                   serviceStatuses={detailServices}
                   processRunning={detailRunning}
                   tasks={detailTasks}
@@ -2391,6 +2396,7 @@ function AmServiceDetailPanel({
   logTotal,
   serviceInputSending,
   serviceInputValue,
+  submittedInputRequirementKey,
   serviceStatuses,
   onClearSession,
   onChangeServiceInput,
@@ -2420,6 +2426,7 @@ function AmServiceDetailPanel({
   logTotal: number;
   serviceInputSending: boolean;
   serviceInputValue: string;
+  submittedInputRequirementKey: string | null;
   serviceStatuses: AmDeviceServiceStatus[];
   onClearSession: () => void;
   onChangeServiceInput: (value: string) => void;
@@ -2438,8 +2445,9 @@ function AmServiceDetailPanel({
   const runtime = serviceStatuses.find(status => status.serviceAccountId === account._id);
   const qrSignal = getQrLoginSignal(logs);
   const inputRequirement = getServiceInputRequirement(logs);
+  const inputRequirementKey = getServiceInputRequirementKey(logs);
   const needsPassword = inputRequirement === 'password';
-  const needsInput = inputRequirement !== null;
+  const needsInput = inputRequirement !== null && inputRequirementKey !== submittedInputRequirementKey;
   const qrUrl = device?._id ? getAmDeviceServiceQrUrl(device._id, account.platform, qrSignal?.qrcodeId) : null;
   const historyTotalPages = Math.max(1, Math.ceil(historyTotal / Math.max(historyLimit, 1)));
   const historyFrom = historyTotal ? (historyPage - 1) * historyLimit + 1 : 0;
@@ -6750,6 +6758,47 @@ function getServiceInputRequirement(logs: AmDeviceServiceLog[]): 'otp' | 'passwo
   });
 
   return lastInputIndex >= 0 && lastInputIndex > lastReadyIndex ? lastInputType : null;
+}
+
+function getServiceInputRequirementKey(logs: AmDeviceServiceLog[]): string | null {
+  let lastInputIndex = -1;
+  let lastInputType: 'otp' | 'password' | null = null;
+  let lastReadyIndex = -1;
+
+  logs.forEach((log, index) => {
+    const message = log.message;
+    if (message.includes('PASSWORD_REQUIRED')) {
+      lastInputIndex = index;
+      lastInputType = 'password';
+    } else if (
+      message.includes('OTP_REQUIRED') ||
+      message.includes('INPUT_REQUIRED') ||
+      message.includes('"event":"login_waiting"')
+    ) {
+      lastInputIndex = index;
+      lastInputType = 'otp';
+    }
+
+    if (
+      message.includes('login_success') ||
+      message.includes('Login success') ||
+      message.includes('Already logged in') ||
+      message.includes('OTP accepted') ||
+      message.includes('Process ready') ||
+      message.includes('"event":"ready"') ||
+      message.includes('"event":"login_success"') ||
+      message.includes('"event":"otp_fulfilled"')
+    ) {
+      lastReadyIndex = index;
+    }
+  });
+
+  if (lastInputIndex < 0 || lastInputIndex <= lastReadyIndex || !lastInputType) {
+    return null;
+  }
+
+  const inputLog = logs[lastInputIndex];
+  return `${lastInputType}:${lastInputIndex}:${inputLog.ts}:${inputLog.message}`;
 }
 
 function normalizeAmQrImageUri(value: string): string {

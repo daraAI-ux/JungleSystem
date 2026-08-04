@@ -1660,6 +1660,7 @@ describe('KolamAmSurface', () => {
 
     expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-otp', 'otp', '123456');
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-otp');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Service Submit Input service-otp'})).toHaveLength(0);
   });
 
   it('renders nested QR base64 events from AM worker logs', async () => {
