@@ -4310,8 +4310,8 @@ function AmTransfersPage({
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
             </View>
             <View style={styles.recipientCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientBank ?? '-'} {transfer.recipientAccount}</Text>
+              <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
             </View>
             <Text style={[styles.cellText, styles.platformCol]} numberOfLines={1}>
               {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}

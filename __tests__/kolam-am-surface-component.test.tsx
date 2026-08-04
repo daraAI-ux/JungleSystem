@@ -5203,6 +5203,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Device');
     expect(joinedText).toContain('Created');
     expect(joinedText).not.toContain('Action');
+    expect(joinedText).toContain('999 Vendor Pending BCA');
+    expect(joinedText).toContain('888 Vendor Success BRI');
     expect(joinedText).toContain('Box A / Rack Blue');
     expect(joinedText).toMatch(/Fee\s+Rp\s*2\.500/);
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
