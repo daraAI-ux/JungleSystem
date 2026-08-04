@@ -135,6 +135,8 @@ const TRANSFER_STATUS_FILTER_LABELS: Record<string, string> = {
 };
 const MUTASI_TYPE_FILTER_LABELS: Record<string, string> = {
   all: 'All types',
+  masuk: 'Incoming',
+  keluar: 'Outgoing',
 };
 const TASK_FILTER_STATUSES: Array<Exclude<AmTaskStatus, 'queued'> | 'all'> = ['all', 'pending', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];

@@ -4428,6 +4428,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('All devices');
     expect(joinedText).not.toContain('All Accounts');
     expect(joinedText).not.toContain('All Devices');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Incoming'}).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Outgoing'}).length).toBeGreaterThan(0);
     expect(text).toContain('BCA Main');
     expect(joinedText).toContain('Phone 1');
     expect(joinedText).toContain('Box Green / Rack Mutasi');
