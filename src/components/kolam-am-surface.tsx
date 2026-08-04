@@ -635,22 +635,36 @@ function AmRecentTransfersPanel({
         />
       </View>
       <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
-      {transfers.map(transfer => (
-        <KolamInteractionFrame
-          key={transfer._id}
-          accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
-          onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
-          style={styles.deviceRow}>
-          <View style={styles.rowMain}>
-            <Text style={styles.rowTitle}>{transfer.recipientName || transfer.recipientAccount}</Text>
-            <Text style={styles.rowMeta}>{formatBankAccount(transfer.accountId)} - {formatAmDate(transfer.createdAt)}</Text>
-          </View>
-          <View style={styles.rowActions}>
-            <Text style={styles.amountText}>{formatRupiah(transfer.amount)}</Text>
-            <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
-          </View>
-        </KolamInteractionFrame>
-      ))}
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Recipient</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+        </View>
+        {transfers.map(transfer => (
+          <KolamInteractionFrame
+            key={transfer._id}
+            accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
+            onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
+            style={styles.tableRow}>
+            <View style={styles.accountCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(transfer.accountId)}</Text>
+            </View>
+            <View style={styles.recipientCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
+            </View>
+            <Text style={[styles.cellText, styles.amountCol]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>
+            <View style={styles.statusCol}>
+              <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+            </View>
+            <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(transfer.createdAt)}</Text>
+          </KolamInteractionFrame>
+        ))}
+      </View>
       <AmLoadingOrEmpty
         isLoading={false}
         items={transfers}
@@ -681,23 +695,38 @@ function AmRecentMutasiPanel({
         />
       </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
-      {mutasi.map(item => (
-        <KolamInteractionFrame
-          key={item._id}
-          accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
-          onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
-          style={styles.deviceRow}>
-          <View style={styles.rowMain}>
-            <Text style={styles.rowTitle} numberOfLines={1}>{item.type === 'masuk' ? 'In' : 'Out'} - {formatBankAccount(item.accountId)}</Text>
-            <Text style={styles.rowMeta} numberOfLines={2}>{item.description || formatDeviceRef(item.deviceId)} - {formatAmDate(item.detectedAt)}</Text>
-          </View>
-          <Text
-            style={[styles.amountText, styles.rowAmountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
-            numberOfLines={1}>
-            {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
-          </Text>
-        </KolamInteractionFrame>
-      ))}
+      <View style={styles.tablePanel}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+        </View>
+        {mutasi.map(item => (
+          <KolamInteractionFrame
+            key={item._id}
+            accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
+            onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
+            style={styles.tableRow}>
+            <View style={styles.typeCol}>
+              <AmStatusChip
+                label={item.type === 'masuk' ? 'In' : 'Out'}
+                tone={item.type === 'masuk' ? 'success' : 'danger'}
+              />
+            </View>
+            <View style={styles.accountCol}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(item.accountId)}</Text>
+            </View>
+            <Text
+              style={[styles.cellText, styles.amountCol, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
+              numberOfLines={1}>
+              {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
+            </Text>
+            <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
+          </KolamInteractionFrame>
+        ))}
+      </View>
       <AmLoadingOrEmpty
         isLoading={false}
         items={mutasi}

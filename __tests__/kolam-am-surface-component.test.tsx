@@ -412,7 +412,8 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Vendor Dashboard Sixth');
     expect(joinedText).toContain('Legacy BCA - 321');
     expect(text).toContain('Recent Mutations');
-    expect(text).toContain('Incoming dashboard sixth');
+    expect(text).toEqual(expect.arrayContaining(['Account', 'Recipient', 'Amount', 'Status', 'Time']));
+    expect(text).toEqual(expect.arrayContaining(['Type', 'Account', 'Amount', 'Time']));
     expect(joinedText).toContain('Legacy BRI - 654');
     expect(text).toContain('Device Overview');
     expect(joinedText).toContain('with active accounts');
