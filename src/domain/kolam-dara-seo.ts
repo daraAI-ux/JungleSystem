@@ -4,7 +4,7 @@
  */
 
 export const KOLAM_DARA_SEO_ROOT = '/campaign/dara-seo';
-export const KOLAM_DARA_SEO_JOBS_HREF = '/pusat-ai?tab=proses';
+export const KOLAM_DARA_SEO_JOBS_HREF = '/pusat-ai';
 
 export type KolamDaraSeoTabId =
   | 'dashboard'
@@ -16,8 +16,7 @@ export type KolamDaraSeoTabId =
   | 'social-insights'
   | 'sentiment'
   | 'audit-logs'
-  | 'integrations'
-  | 'jobs';
+  | 'integrations';
 
 export const KOLAM_DARA_SEO_TABS: Array<{
   id: KolamDaraSeoTabId;
@@ -54,7 +53,6 @@ export const KOLAM_DARA_SEO_TABS: Array<{
     label: 'Integrasi',
     href: `${KOLAM_DARA_SEO_ROOT}/integrations`,
   },
-  {id: 'jobs', label: 'Riwayat proses', href: KOLAM_DARA_SEO_JOBS_HREF},
 ];
 
 export const KOLAM_DARA_SEO_TITLE = 'DARA SEO & Market Intelligence';

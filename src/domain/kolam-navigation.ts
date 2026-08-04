@@ -378,7 +378,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       },
       {
         label: 'DARA Jobs',
-        route: '/campaign/dara-jobs',
+        route: '/pusat-ai',
         description: 'DARA campaign job queue from live Kolam',
         group: 'Kampanye',
         requiredAccess: ['kolam'],
@@ -810,10 +810,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/list-of-users/dara-training', {
         group: undefined,
         label: 'Pelatihan DARA',
-      }),
-      sidebarItem('/campaign/dara-jobs', {
-        group: undefined,
-        label: 'Riwayat Proses DARA',
       }),
     ],
   },

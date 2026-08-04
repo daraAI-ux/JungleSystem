@@ -41,7 +41,7 @@ export function useKolamPusatAiProsesController(
   route: string,
   opts?: {canNormalize?: boolean},
 ): KolamPusatAiProsesController {
-  const enabled = getKolamPusatAiHubTab(route) === 'proses';
+  const enabled = getKolamPusatAiHubTab(route) === 'ringkasan';
   const canNormalize = opts?.canNormalize === true;
   const [moduleFilter, setModuleFilter] =
     useState<KolamDaraJobsModuleFilter>('all');

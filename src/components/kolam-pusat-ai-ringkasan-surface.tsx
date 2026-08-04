@@ -114,9 +114,8 @@ export function KolamPusatAiRingkasanSurface({
         <KolamPusatAiRingkasanBody
           controller={ringkasanController}
           onRouteChange={onRouteChange}
+          prosesController={prosesController}
         />
-      ) : selectedTab === 'proses' ? (
-        <KolamPusatAiProsesBody controller={prosesController} />
       ) : selectedTab === 'owner-copilot' ? (
         <KolamPusatAiOwnerCopilotBody
           controller={ownerController}
@@ -540,43 +539,39 @@ function KolamPusatAiProsesBody({
       {controller.loading ? (
         <Text style={styles.loadingText}>Memuat…</Text>
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          style={styles.scroll}>
-          <View style={styles.jobsTable}>
-            <View style={styles.jobsHeader}>
-              <Text style={[styles.jobsHeaderCell, styles.colProses]}>
-                Proses
-              </Text>
-              <Text style={[styles.jobsHeaderCell, styles.colModul]}>Modul</Text>
-              <Text style={[styles.jobsHeaderCell, styles.colStatus]}>
-                Status
-              </Text>
-              <Text style={[styles.jobsHeaderCell, styles.colProgress]}>
-                Progress
-              </Text>
-              <Text style={[styles.jobsHeaderCell, styles.colAksi]}>Aksi</Text>
-            </View>
-
-            {controller.jobs.length === 0 ? (
-              <Text style={styles.emptyTableText}>
-                {KOLAM_PUSAT_AI_PROSES_EMPTY_COPY}
-              </Text>
-            ) : (
-              controller.jobs.map(job => (
-                <ProsesJobRow
-                  job={job}
-                  key={job.id}
-                  onDismiss={() => controller.onDismissJob(job.id)}
-                  onPoll={() => {
-                    void controller.onPollJob(job.id);
-                  }}
-                  polling={controller.pollingJobId === job.id}
-                />
-              ))
-            )}
+        <View style={styles.jobsTable}>
+          <View style={styles.jobsHeader}>
+            <Text style={[styles.jobsHeaderCell, styles.colProses]}>
+              Proses
+            </Text>
+            <Text style={[styles.jobsHeaderCell, styles.colModul]}>Modul</Text>
+            <Text style={[styles.jobsHeaderCell, styles.colStatus]}>
+              Status
+            </Text>
+            <Text style={[styles.jobsHeaderCell, styles.colProgress]}>
+              Progress
+            </Text>
+            <Text style={[styles.jobsHeaderCell, styles.colAksi]}>Aksi</Text>
           </View>
-        </ScrollView>
+
+          {controller.jobs.length === 0 ? (
+            <Text style={styles.emptyTableText}>
+              {KOLAM_PUSAT_AI_PROSES_EMPTY_COPY}
+            </Text>
+          ) : (
+            controller.jobs.map(job => (
+              <ProsesJobRow
+                job={job}
+                key={job.id}
+                onDismiss={() => controller.onDismissJob(job.id)}
+                onPoll={() => {
+                  void controller.onPollJob(job.id);
+                }}
+                polling={controller.pollingJobId === job.id}
+              />
+            ))
+          )}
+        </View>
       )}
     </View>
   );
@@ -644,9 +639,11 @@ function ProsesJobRow({
 function KolamPusatAiRingkasanBody({
   controller,
   onRouteChange,
+  prosesController,
 }: {
   controller: KolamPusatAiRingkasanController;
   onRouteChange?: (route: string) => void;
+  prosesController: KolamPusatAiProsesController;
 }) {
   const {hub, loading, error, quickLinks, kpiCards} = controller;
   const showBrandFilter = (hub?.brands.length ?? 0) > 0;
@@ -749,6 +746,11 @@ function KolamPusatAiRingkasanBody({
             />
           </View>
         ) : null}
+
+        <View style={styles.prosesSection}>
+          <Text style={styles.prosesSectionTitle}>Riwayat proses DARA</Text>
+          <KolamPusatAiProsesBody controller={prosesController} />
+        </View>
 
         {!loading && !hub && !error ? (
           <KolamEmptyState title="Belum ada data" />
@@ -1346,5 +1348,14 @@ const styles = StyleSheet.create({
   moduleAction: {
     alignItems: 'flex-start',
     marginTop: 8,
+  },
+  prosesSection: {
+    gap: 10,
+  },
+  prosesSectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

@@ -65,7 +65,6 @@ describe('kolamNavigationSections', () => {
         '/sales',
         '/source',
         '/complaints',
-        '/campaign/dara-jobs',
         '/campaign/dara-marketing',
         '/campaign/dara-market-intel',
         '/campaign/dara-seo',

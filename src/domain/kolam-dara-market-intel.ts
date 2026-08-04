@@ -4,15 +4,14 @@
  */
 
 export const KOLAM_DARA_MARKET_INTEL_ROOT = '/campaign/dara-market-intel';
-export const KOLAM_DARA_MARKET_INTEL_JOBS_HREF = '/pusat-ai?tab=proses';
+export const KOLAM_DARA_MARKET_INTEL_JOBS_HREF = '/pusat-ai';
 
 export type KolamDaraMarketIntelTabId =
   | 'dashboard'
   | 'approvals'
   | 'competitors'
   | 'peralatan'
-  | 'kesehatan'
-  | 'jobs';
+  | 'kesehatan';
 
 export const KOLAM_DARA_MARKET_INTEL_TABS: Array<{
   id: KolamDaraMarketIntelTabId;
@@ -43,11 +42,6 @@ export const KOLAM_DARA_MARKET_INTEL_TABS: Array<{
     id: 'kesehatan',
     label: 'Kesehatan Toko',
     href: `${KOLAM_DARA_MARKET_INTEL_ROOT}/kesehatan`,
-  },
-  {
-    id: 'jobs',
-    label: 'Riwayat proses',
-    href: KOLAM_DARA_MARKET_INTEL_JOBS_HREF,
   },
 ];
 

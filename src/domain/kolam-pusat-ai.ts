@@ -10,7 +10,6 @@ export const KOLAM_PUSAT_AI_JOBS_LEGACY = '/campaign/dara-jobs';
 
 export type KolamPusatAiHubTabId =
   | 'ringkasan'
-  | 'proses'
   | 'owner-copilot'
   | 'log-dara'
   | 'transaksi-copilot'
@@ -26,7 +25,6 @@ export const KOLAM_PUSAT_AI_HUB_TABS: Array<{
   adminOnly: boolean;
 }> = [
   {id: 'ringkasan', label: 'Ringkasan', adminOnly: false},
-  {id: 'proses', label: 'Proses', adminOnly: false},
   {id: 'owner-copilot', label: 'Owner Copilot', adminOnly: true},
   {id: 'log-dara', label: 'Log DARA', adminOnly: true},
   {id: 'transaksi-copilot', label: 'Transaksi Copilot', adminOnly: true},
@@ -80,7 +78,7 @@ export function getKolamPusatAiHubTab(route: string): KolamPusatAiHubTab {
     return 'ringkasan';
   }
   if (path === KOLAM_PUSAT_AI_JOBS_LEGACY) {
-    return 'proses';
+    return 'ringkasan';
   }
   if (path !== KOLAM_PUSAT_AI_ROOT) {
     return 'other';
@@ -93,11 +91,8 @@ export function getKolamPusatAiHubTab(route: string): KolamPusatAiHubTab {
 
   const params = new URLSearchParams(route.slice(queryIndex + 1));
   const raw = (params.get('tab') || '').trim().toLowerCase();
-  if (!raw || raw === 'ringkasan') {
+  if (!raw || raw === 'ringkasan' || raw === 'proses') {
     return 'ringkasan';
-  }
-  if (raw === 'proses') {
-    return 'proses';
   }
   if (raw === 'owner-copilot') {
     return 'owner-copilot';
@@ -150,12 +145,12 @@ export function isKolamPusatAiRingkasanRoute(route: string) {
 
 export function normalizeKolamPusatAiQuickLinkHref(href: string) {
   if (href === '/campaign/dara-jobs') {
-    return `${KOLAM_PUSAT_AI_ROOT}?tab=proses`;
+    return KOLAM_PUSAT_AI_ROOT;
   }
   return href;
 }
 
-/** FE Ringkasan filters out jobs link (lives under tab Proses). */
+/** Jobs history lives on Ringkasan — drop dedicated jobs quick link. */
 export function filterKolamPusatAiRingkasanQuickLinks(
   links: Array<{href: string; label: string}>,
 ) {

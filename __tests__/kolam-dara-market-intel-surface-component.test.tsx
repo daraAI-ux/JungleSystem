@@ -345,7 +345,7 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
   });
 
-  it('shows market-intel job progress strip and opens Pusat AI Proses', async () => {
+  it('shows market-intel job progress strip and opens Pusat AI Ringkasan', async () => {
     jobsListMock.mockResolvedValue([
       {
         id: 'job-m1',
@@ -381,6 +381,7 @@ describe('KolamDaraMarketIntelSurface', () => {
     expect(text).toContain('Berjalan');
     expect(text).toContain('8/40');
     expect(text).toContain('20%');
+    expect(text).not.toContain('Riwayat proses');
 
     const titleNode = tree!.root.find(
       node =>
@@ -401,35 +402,7 @@ describe('KolamDaraMarketIntelSurface', () => {
     await ReactTestRenderer.act(async () => {
       strip!.props.onPress();
     });
-    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai?tab=proses');
-
-    await ReactTestRenderer.act(async () => {
-      tree!.unmount();
-    });
-  });
-
-  it('routes Riwayat proses tab to Pusat AI Proses', async () => {
-    const onRouteChange = jest.fn();
-    let tree: ReactTestRenderer.ReactTestRenderer;
-    await ReactTestRenderer.act(async () => {
-      tree = ReactTestRenderer.create(
-        <KolamDaraMarketIntelSurface
-          onRouteChange={onRouteChange}
-          route="/campaign/dara-market-intel"
-        />,
-      );
-      await Promise.resolve();
-    });
-
-    const tabs = tree!.root.find(
-      node =>
-        Array.isArray(node.props?.tabs) &&
-        typeof node.props?.onSelectTab === 'function',
-    );
-    await ReactTestRenderer.act(async () => {
-      tabs.props.onSelectTab('jobs');
-    });
-    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai?tab=proses');
+    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai');
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

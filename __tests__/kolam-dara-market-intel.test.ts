@@ -46,10 +46,7 @@ describe('kolam-dara-market-intel domain', () => {
     expect(buildKolamDaraMarketIntelRoute('peralatan')).toBe(
       '/campaign/dara-market-intel/peralatan',
     );
-    expect(buildKolamDaraMarketIntelRoute('jobs')).toBe(
-      KOLAM_DARA_MARKET_INTEL_JOBS_HREF,
-    );
-    expect(KOLAM_DARA_MARKET_INTEL_JOBS_HREF).toBe('/pusat-ai?tab=proses');
+    expect(KOLAM_DARA_MARKET_INTEL_JOBS_HREF).toBe('/pusat-ai');
     expect(KOLAM_DARA_MARKET_INTEL_TITLE).toBe('DARA AI Market Intelligence');
     expect(KOLAM_DARA_MARKET_INTEL_DESCRIPTION).toContain('approval');
   });

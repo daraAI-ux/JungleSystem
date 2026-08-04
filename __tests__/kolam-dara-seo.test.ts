@@ -1,4 +1,5 @@
 import {
+  KOLAM_DARA_SEO_JOBS_HREF,
   buildKolamDaraSeoRoute,
   extractKolamDaraSeoClientEmailFromServiceAccount,
   filterKolamDaraSeoSuggestions,
@@ -115,7 +116,7 @@ describe('kolam-dara-seo domain', () => {
       'approvals',
     );
     expect(getKolamDaraSeoTab('/campaign/dara-seo/website')).toBe('website');
-    expect(buildKolamDaraSeoRoute('jobs')).toBe('/pusat-ai?tab=proses');
+    expect(KOLAM_DARA_SEO_JOBS_HREF).toBe('/pusat-ai');
     expect(buildKolamDaraSeoRoute('dashboard')).toBe('/campaign/dara-seo');
     expect(
       getKolamDaraSeoApprovalsFocusId('/campaign/dara-seo/approvals?id=abc'),

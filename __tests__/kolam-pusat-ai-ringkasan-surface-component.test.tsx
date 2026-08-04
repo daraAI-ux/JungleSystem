@@ -493,12 +493,11 @@ describe('KolamPusatAiRingkasanSurface', () => {
 
     const text = renderText(renderer!).join(' ');
     expect(text).toContain('Ringkasan');
-    expect(text).toContain('Proses');
     expect(text).toContain('Owner Copilot');
     expect(text).toContain('Transaksi Copilot');
     expect(text).toContain('Skor SEO');
     expect(text).toContain('DARA SEO');
-    expect(text).not.toContain('Riwayat proses');
+    expect(text).toContain('Riwayat proses DARA');
     expect(text).not.toContain('Akses cepat');
 
     const quickSeo = renderer!.root.find(
@@ -530,7 +529,7 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(onRouteChange).toHaveBeenCalledWith('/campaign/dara-market-intel');
   });
 
-  it('switches to Proses tab and loads job history', async () => {
+  it('embeds job history on Ringkasan', async () => {
     fetchJobsMock.mockResolvedValue([
       {
         id: 'job-1',
@@ -547,48 +546,22 @@ describe('KolamPusatAiRingkasanSurface', () => {
       },
     ]);
 
-    const onRouteChange = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamPusatAiRingkasanSurface
-          onRouteChange={onRouteChange}
-          route="/pusat-ai"
-        />,
-      );
-      await Promise.resolve();
-    });
-
-    const prosesTab = renderer!.root.find(
-      node =>
-        typeof node.props.label === 'string' &&
-        node.props.label === 'Proses' &&
-        typeof node.props.onSelect === 'function',
-    );
-
-    await ReactTestRenderer.act(async () => {
-      prosesTab.props.onSelect('proses');
-    });
-    expect(onRouteChange).toHaveBeenCalledWith('/pusat-ai?tab=proses');
-
-    await ReactTestRenderer.act(async () => {
-      renderer!.update(
-        <KolamPusatAiRingkasanSurface
-          onRouteChange={onRouteChange}
-          route="/pusat-ai?tab=proses"
-        />,
+        <KolamPusatAiRingkasanSurface route="/pusat-ai" />,
       );
       await Promise.resolve();
       await Promise.resolve();
     });
 
     const text = renderText(renderer!).join(' ');
+    expect(text).toContain('Riwayat proses DARA');
     expect(text).not.toContain('Belum tersedia');
     expect(text).toContain(
       'Progress bar hanya tampil saat proses berjalan',
     );
-    expect(text).toContain('Proses');
     expect(text).toContain('Modul');
     expect(text).toContain('Status');
     expect(text).toContain('Progress');
@@ -760,7 +733,7 @@ describe('KolamPusatAiRingkasanSurface', () => {
 
     const text = renderText(renderer!).join(' ');
     expect(text).toContain('Ringkasan');
-    expect(text).toContain('Proses');
+    expect(text).toContain('Riwayat proses DARA');
     expect(text).not.toContain('Owner Copilot');
     expect(text).not.toContain('Inventory Copilot');
   });

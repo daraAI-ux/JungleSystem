@@ -97,10 +97,6 @@ export function KolamDaraMarketIntelSurface({
       <View style={styles.tabBar}>
         <KolamSurfacePanelTabs
           onSelectTab={(tabId: KolamDaraMarketIntelTabId) => {
-            if (tabId === 'jobs') {
-              onRouteChange?.(KOLAM_DARA_MARKET_INTEL_JOBS_HREF);
-              return;
-            }
             onRouteChange?.(buildKolamDaraMarketIntelRoute(tabId));
           }}
           selectedTabId={selectedTab}

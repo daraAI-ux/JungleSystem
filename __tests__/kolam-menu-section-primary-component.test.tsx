@@ -28,11 +28,8 @@ describe('KolamMenuSection primary hub', () => {
       'Intel Pasar',
       'DARA Pajak',
       'Pelatihan DARA',
-      'Riwayat Proses DARA',
     ]);
-    expect(getKolamNavigationSectionPrimaryItem(finance)?.route).toBe(
-      '/finance',
-    );
+    expect(getKolamNavigationSectionPrimaryItem(finance)).toBeNull();
     expect(getKolamNavigationSectionPrimaryItem(inventory)).toBeNull();
   });
 

@@ -20,8 +20,8 @@ describe('kolam-pusat-ai domain', () => {
     expect(isKolamPusatAiHubRoute('/campaign/dara-seo')).toBe(false);
 
     expect(isKolamPusatAiRingkasanRoute('/pusat-ai')).toBe(true);
-    expect(isKolamPusatAiRingkasanRoute('/pusat-ai?tab=proses')).toBe(false);
-    expect(getKolamPusatAiHubTab('/campaign/dara-jobs')).toBe('proses');
+    expect(isKolamPusatAiRingkasanRoute('/pusat-ai?tab=proses')).toBe(true);
+    expect(getKolamPusatAiHubTab('/campaign/dara-jobs')).toBe('ringkasan');
     expect(getKolamPusatAiHubTab('/pusat-ai?tab=shipping-copilot')).toBe(
       'transaksi-copilot',
     );
@@ -29,17 +29,14 @@ describe('kolam-pusat-ai domain', () => {
       'inventory-copilot',
     );
     expect(buildKolamPusatAiHubRoute('ringkasan')).toBe('/pusat-ai');
-    expect(buildKolamPusatAiHubRoute('proses')).toBe('/pusat-ai?tab=proses');
   });
 
   it('filters admin-only hub tabs', () => {
     expect(filterKolamPusatAiHubTabs(false).map(tab => tab.id)).toEqual([
       'ringkasan',
-      'proses',
     ]);
     expect(filterKolamPusatAiHubTabs(true).map(tab => tab.label)).toEqual([
       'Ringkasan',
-      'Proses',
       'Owner Copilot',
       'Log DARA',
       'Transaksi Copilot',
@@ -50,7 +47,7 @@ describe('kolam-pusat-ai domain', () => {
 
   it('filters jobs quick link and normalizes href', () => {
     expect(normalizeKolamPusatAiQuickLinkHref('/campaign/dara-jobs')).toBe(
-      '/pusat-ai?tab=proses',
+      '/pusat-ai',
     );
     expect(
       filterKolamPusatAiRingkasanQuickLinks([

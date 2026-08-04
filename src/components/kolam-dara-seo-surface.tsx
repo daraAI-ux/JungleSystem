@@ -89,10 +89,6 @@ export function KolamDaraSeoSurface({
       <View style={styles.tabBar}>
         <KolamSurfacePanelTabs
           onSelectTab={(tabId: KolamDaraSeoTabId) => {
-            if (tabId === 'jobs') {
-              onRouteChange?.(KOLAM_DARA_SEO_JOBS_HREF);
-              return;
-            }
             onRouteChange?.(buildKolamDaraSeoRoute(tabId));
           }}
           selectedTabId={selectedTab}
