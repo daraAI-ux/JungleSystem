@@ -5,6 +5,7 @@ import {
   type AppModule,
 } from '../domain/app-shell';
 import { getAmRouteByModuleRoute } from '../domain/am-navigation';
+import type {AccessScope} from '../domain/auth';
 import {
   filterCommandIndex,
   getCommandIndex,
@@ -37,9 +38,17 @@ import {
 } from '../domain/unified';
 import {getKolamWebSetting} from '../services/kolam-api';
 
+const DEFAULT_NAVIGATION_ACCESS_SCOPE: AccessScope = {
+  am: true,
+  kolam: true,
+  pos: true,
+};
+
 export function useKolamNavigationController({
+  accessScope = DEFAULT_NAVIGATION_ACCESS_SCOPE,
   onMessage,
 }: {
+  accessScope?: AccessScope;
   onMessage: (message: string) => void;
 }) {
   const [activeModule, setActiveModule] = useState<AppModule>('kolam');
@@ -103,8 +112,8 @@ export function useKolamNavigationController({
     [pluginConfig],
   );
   const commandIndex = useMemo(
-    () => getCommandIndex(),
-    [],
+    () => filterCommandsByAccess(getCommandIndex(), accessScope),
+    [accessScope],
   );
   const filteredCommands = useMemo(
     () => filterCommandIndex(commandIndex, commandSearch),
@@ -112,6 +121,11 @@ export function useKolamNavigationController({
   );
 
   const handleModuleSelect = (module: AppModule) => {
+    if (isAmModule(module) && !accessScope.am) {
+      onMessage('AM tidak dibuka karena sesi Kolam tidak memiliki akses AM.');
+      return;
+    }
+
     const defaultAmRoute =
       module === 'am' ? getShellModuleRouteEntry('am', '/') : null;
 
@@ -262,11 +276,19 @@ export function useKolamNavigationController({
 
     if (command.kind === 'module') {
       handleModuleSelect(command.moduleId);
+      if (isAmModule(command.moduleId) && !accessScope.am) {
+        return;
+      }
       onMessage(`${command.label} dibuka dari command index.`);
       return;
     }
 
     if (command.kind === 'module-route') {
+      if (isAmCommand(command, accessScope)) {
+        onMessage('AM tidak dibuka karena sesi Kolam tidak memiliki akses AM.');
+        return;
+      }
+
       const route = getShellModuleRouteEntry(command.moduleId, command.route);
 
       setActiveModule(command.moduleId);
@@ -315,6 +337,11 @@ export function useKolamNavigationController({
     }
 
     if (command.kind === 'am-route') {
+      if (!accessScope.am) {
+        onMessage('AM tidak dibuka karena sesi Kolam tidak memiliki akses AM.');
+        return;
+      }
+
       const surface = getAmSurfaceById(command.amSurfaceId);
       const route = getAmModuleRouteEntry(
         command.route ?? surface?.route,
@@ -385,6 +412,11 @@ export function useKolamNavigationController({
   };
 
   const handleAmSurfaceSelect = (surface: UnifiedSurface) => {
+    if (!accessScope.am) {
+      onMessage('AM tidak dibuka karena sesi Kolam tidak memiliki akses AM.');
+      return;
+    }
+
     const route = getAmModuleRouteEntry(surface.route, surface.id);
 
     setActiveModule('am');
@@ -413,6 +445,11 @@ export function useKolamNavigationController({
   };
 
   const handleModuleRouteSelect = (route: ShellModuleRouteEntry) => {
+    if (route.moduleId === 'am' && !accessScope.am) {
+      onMessage('AM tidak dibuka karena sesi Kolam tidak memiliki akses AM.');
+      return;
+    }
+
     const normalizedRoute = route.route.startsWith('/')
       ? route.route
       : `/${route.route}`;
@@ -460,6 +497,16 @@ export function useKolamNavigationController({
   };
 
   const restoreWorkspaceTabSnapshot = (snapshot: KolamWorkspaceTabSnapshot) => {
+    if (
+      (snapshot.activeModule === 'am' ||
+        snapshot.activeModuleRoute?.moduleId === 'am' ||
+        snapshot.activeAmSurface) &&
+      !accessScope.am
+    ) {
+      handleModuleSelect('kolam');
+      return;
+    }
+
     setActiveModule(snapshot.activeModule);
     setActiveNavigationItem(snapshot.activeNavigationItem ?? null);
     setActivePluginRoute(snapshot.activePluginRoute ?? null);
@@ -582,6 +629,25 @@ function getAmModuleRouteEntry(
     'am',
     moduleRoute,
   );
+}
+
+function filterCommandsByAccess(
+  commands: CommandEntry[],
+  accessScope: AccessScope,
+) {
+  return commands.filter(command => !isAmCommand(command, accessScope));
+}
+
+function isAmCommand(command: CommandEntry, accessScope: AccessScope) {
+  return !accessScope.am && (
+    command.area === 'am' ||
+    command.moduleId === 'am' ||
+    command.kind === 'am-route'
+  );
+}
+
+function isAmModule(module: AppModule) {
+  return module === 'am';
 }
 
 function getManualNavigationItem(route: string): KolamNavigationItem | null {

@@ -134,6 +134,7 @@ export function KolamAppStateProvider({
     toggleSidebar,
     toggleUserMenu,
   } = useKolamNavigationController({
+    accessScope,
     onMessage: setAuthMessage,
   });
   const workspaceTabSnapshot = React.useMemo(

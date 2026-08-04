@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
+import type { AccessScope } from '../src/domain/auth';
 import { getShellModuleRouteEntry } from '../src/domain/app-shell';
 import { getCommandIndex } from '../src/domain/command-index';
 import { kolamNavigationSections } from '../src/domain/kolam-navigation';
@@ -23,13 +24,16 @@ function requireNavigationController(controller: NavigationController | null) {
 }
 
 function NavigationHarness({
+  accessScope,
   messages,
   onRender,
 }: {
+  accessScope?: AccessScope;
   messages: string[];
   onRender: (controller: NavigationController) => void;
 }) {
   const controller = useKolamNavigationController({
+    accessScope,
     onMessage: message => messages.push(message),
   });
 
@@ -352,6 +356,66 @@ describe('Kolam navigation controller hook', () => {
     expect(requireNavigationController(latest).activeAmSurface).toBeNull();
     expect(requireNavigationController(latest).activeKolamSurface).toBeNull();
     expect(requireNavigationController(latest).activeNavigationItem).toBeNull();
+  });
+
+  it('keeps AM closed when the Kolam session has no AM access', async () => {
+    const messages: string[] = [];
+    let latest: NavigationController | null = null;
+    const noAmAccess = {am: false, kolam: true, pos: true};
+    const amModuleCommand = getCommandIndex().find(
+      command => command.kind === 'module' && command.moduleId === 'am',
+    );
+    const amRouteCommand = getCommandIndex().find(
+      command => command.kind === 'am-route' && command.moduleId === 'am',
+    );
+    const amRoute = getShellModuleRouteEntry('am', 'services');
+
+    if (!amModuleCommand || !amRouteCommand || !amRoute) {
+      throw new Error('AM command or route fixture is missing.');
+    }
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <NavigationHarness
+          accessScope={noAmAccess}
+          messages={messages}
+          onRender={controller => {
+            latest = controller;
+          }}
+        />,
+      );
+    });
+
+    expect(
+      requireNavigationController(latest).commandIndex.some(
+        command => command.area === 'am' || command.moduleId === 'am',
+      ),
+    ).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      requireNavigationController(latest).handleModuleSelect('am');
+    });
+
+    expect(requireNavigationController(latest).activeModule).toBe('kolam');
+    expect(requireNavigationController(latest).activeModuleRoute).toBeNull();
+
+    await ReactTestRenderer.act(async () => {
+      await requireNavigationController(latest).handleCommand(
+        amModuleCommand,
+        async () => undefined,
+      );
+      await requireNavigationController(latest).handleCommand(
+        amRouteCommand,
+        async () => undefined,
+      );
+      requireNavigationController(latest).handleModuleRouteSelect(amRoute);
+    });
+
+    expect(requireNavigationController(latest).activeModule).toBe('kolam');
+    expect(requireNavigationController(latest).activeModuleRoute).toBeNull();
+    expect(
+      messages.filter(message => message.includes('akses AM')).length,
+    ).toBeGreaterThanOrEqual(3);
   });
 
   it('keeps selected Kolam surface context from command palette', async () => {

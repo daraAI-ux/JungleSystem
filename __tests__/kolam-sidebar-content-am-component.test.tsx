@@ -89,6 +89,37 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).not.toContain('38');
   });
 
+  it('hides AM from the JungleSystem primary sidebar without AM access', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <View>
+          <KolamSidebarContent
+            accessScope={{ am: false, kolam: true, pos: true }}
+            activeModule="kolam"
+            activeRoute="/"
+            collapsed={false}
+            expandedSections={{ dashboard: true }}
+            filterMenuByAccess={false}
+            onModuleRouteSelect={() => undefined}
+            onMoveMenuSection={() => undefined}
+            onQuickSearch={() => undefined}
+            onSelectMenuItem={() => undefined}
+            onSelectModule={() => undefined}
+            onToggleMenuSection={() => undefined}
+            sectionOrder={[]}
+          />
+        </View>,
+      );
+    });
+
+    const text = renderText(renderer!);
+
+    expect(text).toContain('POS');
+    expect(text).not.toContain('AM');
+  });
+
   it('replaces the Kolam menu body with the AM FE sidebar sections', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

@@ -59,12 +59,12 @@ export function KolamSidebarContent({
   onToggleMenuSection,
   sectionOrder,
 }: KolamSidebarContentProps) {
-  const activeArea = getActiveSidebarArea(activeModule);
+  const activeArea = getActiveSidebarArea(activeModule, accessScope);
   const activeAmRoute =
     activeArea === 'am' ? activeModuleRoute?.route ?? activeRoute : activeRoute;
   const primaryModules = [
     ...getShellModulesByArea('kolam'),
-    ...getShellModulesByArea('am'),
+    ...(accessScope.am ? getShellModulesByArea('am') : []),
   ];
   const amBackModules = getShellModulesByArea('kolam').filter(
     module => module.id !== 'checkout',
@@ -305,9 +305,9 @@ function isAmRouteActive(item: AmRouteItem, activeRoute?: string | null) {
   );
 }
 
-function getActiveSidebarArea(module: AppModule) {
+function getActiveSidebarArea(module: AppModule, accessScope: AccessScope) {
   if (getShellModulesByArea('pos').some(item => item.id === module)) return 'pos';
-  if (module === 'am') return 'am';
+  if (module === 'am' && accessScope.am) return 'am';
   return 'kolam';
 }
 
