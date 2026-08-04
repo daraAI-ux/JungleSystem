@@ -272,13 +272,19 @@ function AssetPurchaseDetailBody({
         />
       ) : null}
 
-      <View style={styles.bodyRow}>
+      <View style={styles.tabsRow}>
         <View style={styles.mainPane}>
           <KolamSurfacePanelTabs
             onSelectTab={controller.onSelectTab}
             selectedTabId={controller.tab}
             tabs={controller.tabs}
           />
+        </View>
+        <View style={styles.historyPane} />
+      </View>
+
+      <View style={styles.bodyRow}>
+        <View style={styles.mainPane}>
           <ScrollView
             contentContainerStyle={styles.content}
             style={styles.mainScroll}
@@ -400,7 +406,7 @@ function HistoryPanel({
 }) {
   return (
     <View style={styles.historyFrame}>
-      <Text style={styles.historyTitle}>Riwayat Aktivitas</Text>
+      <Text style={styles.sectionTitle}>Riwayat Aktivitas</Text>
       {items.length === 0 ? (
         <Text style={styles.historyEmpty}>Belum ada riwayat</Text>
       ) : (
@@ -408,20 +414,35 @@ function HistoryPanel({
           contentContainerStyle={styles.historyScroll}
           style={styles.historyScrollView}
         >
-          {items.map(item => (
-            <View key={item.id} style={styles.historyItem}>
-              <Text style={styles.historyItemTitle}>{item.title}</Text>
-              <Text style={styles.historyItemMeta}>{item.atLabel}</Text>
-              {item.lines.map((line, index) => (
-                <Text
-                  key={`${item.id}-${index}`}
-                  style={styles.historyItemLine}
-                >
-                  {line}
-                </Text>
-              ))}
-            </View>
-          ))}
+          <View style={styles.timeline}>
+            {items.map(item => {
+              const isCreated = item.id === 'created';
+              return (
+                <View key={item.id} style={styles.timelineItem}>
+                  <View
+                    style={[
+                      styles.timelineDot,
+                      isCreated
+                        ? styles.timelineDotSuccess
+                        : styles.timelineDotPrimary,
+                    ]}
+                  />
+                  <View style={styles.timelineBody}>
+                    <Text style={styles.timelineTitle}>{item.title}</Text>
+                    <Text style={styles.timelineMeta}>{item.atLabel}</Text>
+                    {item.lines.map((line, index) => (
+                      <Text
+                        key={`${item.id}-${index}`}
+                        style={styles.timelineLine}
+                      >
+                        {line}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </ScrollView>
       )}
     </View>
@@ -450,8 +471,12 @@ const styles = StyleSheet.create({
   banner: {
     alignSelf: 'stretch',
   },
+  tabsRow: {
+    flexDirection: 'row',
+    gap: 20,
+  },
   bodyRow: {
-    alignItems: 'stretch',
+    alignItems: 'flex-start',
     flex: 1,
     flexDirection: 'row',
     gap: 20,
@@ -459,7 +484,6 @@ const styles = StyleSheet.create({
   },
   mainPane: {
     flex: 3,
-    gap: 10,
     minHeight: 0,
     minWidth: 0,
   },
@@ -475,13 +499,9 @@ const styles = StyleSheet.create({
   },
   historyFrame: {
     flex: 1,
-    gap: 12,
+    gap: 8,
     minHeight: 0,
-  },
-  historyTitle: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '700',
+    width: '100%',
   },
   historyEmpty: {
     color: V.colors.mutedFg,
@@ -492,22 +512,48 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   historyScroll: {
-    gap: 14,
     paddingBottom: 8,
+    paddingTop: 2,
   },
-  historyItem: {
+  timeline: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 2,
+    gap: 14,
+    paddingLeft: 12,
+  },
+  timelineItem: {
+    paddingLeft: 4,
+    position: 'relative',
+  },
+  timelineDot: {
+    borderColor: V.colors.bg,
+    borderRadius: 6,
+    borderWidth: 2,
+    height: 10,
+    left: -18,
+    position: 'absolute',
+    top: 3,
+    width: 10,
+  },
+  timelineDotPrimary: {
+    backgroundColor: V.colors.primary,
+  },
+  timelineDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  timelineBody: {
     gap: 3,
   },
-  historyItemTitle: {
+  timelineTitle: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '600',
   },
-  historyItemMeta: {
+  timelineMeta: {
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  historyItemLine: {
+  timelineLine: {
     color: V.colors.mutedFg,
     fontSize: 12,
     lineHeight: 17,
