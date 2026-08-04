@@ -64,6 +64,10 @@ export type KolamFinanceSummaryData = {
     totalExpense: number;
     netProfit: number;
   } | null;
+  grossMargin: {
+    grossMargin: number;
+    marginPercent: number;
+  } | null;
   details: Record<string, number>;
   wallets: KolamFinanceWalletRow[];
   transactions: KolamFinanceTransaction[];
@@ -279,6 +283,7 @@ export function normalizeKolamFinanceSummary(
   const record = asRecord(root);
   const cashMovement = asRecord(record.cashMovement);
   const profitAndLoss = asRecord(record.profitAndLoss);
+  const grossMargin = asRecord(record.grossMargin);
   const details = asRecord(record.details);
   const filter = asRecord(record.filter);
   const liabilities = asRecord(record.liabilities);
@@ -328,6 +333,13 @@ export function normalizeKolamFinanceSummary(
             totalIncome: toNumber(profitAndLoss.totalIncome) ?? 0,
             totalExpense: toNumber(profitAndLoss.totalExpense) ?? 0,
             netProfit: toNumber(profitAndLoss.netProfit) ?? 0,
+          }
+        : null,
+    grossMargin:
+      Object.keys(grossMargin).length > 0
+        ? {
+            grossMargin: toNumber(grossMargin.grossMargin) ?? 0,
+            marginPercent: toNumber(grossMargin.marginPercent) ?? 0,
           }
         : null,
     details: detailNumbers,

@@ -317,37 +317,124 @@ function FinanceSummaryCards({
   controller: KolamFinanceSummaryController;
 }) {
   const summary = controller.summary;
-  const cards = [
-    {
-      id: 'income',
-      label: 'Pemasukan',
-      value: summary?.totalIncome ?? 0,
-    },
-    {
-      id: 'expense',
-      label: 'Pengeluaran',
-      value: summary?.totalExpense ?? 0,
-    },
-    {
-      id: 'profit',
-      label: 'Laba / Rugi',
-      value: summary?.profitLoss ?? 0,
-    },
-    {
-      id: 'payable',
-      label: 'Utang terbuka',
-      value: summary?.liabilitiesPayableOpen ?? 0,
-    },
-  ];
+  const cashMovement = summary?.cashMovement ?? {
+    totalInflow: summary?.totalIncome ?? 0,
+    totalOutflow: summary?.totalExpense ?? 0,
+    netMovement: summary?.profitLoss ?? 0,
+  };
+  const profitAndLoss = summary?.profitAndLoss;
+  const grossMargin = summary?.grossMargin;
+  const profitLoss = profitAndLoss?.netProfit ?? summary?.profitLoss ?? 0;
+  const cashNetMovement = cashMovement.netMovement;
+  const pnlIncome = profitAndLoss?.totalIncome ?? summary?.totalIncome ?? 0;
+  const profitMargin = pnlIncome > 0 ? (profitLoss / pnlIncome) * 100 : 0;
+  const flowTotal = cashMovement.totalInflow + cashMovement.totalOutflow;
+  const expenseRatio =
+    flowTotal > 0 ? (cashMovement.totalOutflow / flowTotal) * 100 : 0;
+  const wallets = summary?.wallets ?? [];
+  const walletTotal = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
 
   return (
     <View style={styles.cardsRow}>
-      {cards.map(card => (
-        <KolamCardFrame key={card.id} style={styles.card}>
-          <Text style={styles.cardLabel}>{card.label}</Text>
-          <Text style={styles.cardValue}>{formatRupiah(card.value)}</Text>
-        </KolamCardFrame>
-      ))}
+      <KolamCardFrame style={styles.statCard}>
+        <View style={styles.statCardInner}>
+          <View style={styles.statCopy}>
+            <Text numberOfLines={1} style={styles.statLabel}>
+              Pemasukan Finance
+            </Text>
+            <Text numberOfLines={1} style={[styles.statValue, styles.statSuccess]}>
+              {formatRupiah(cashMovement.totalInflow)}
+            </Text>
+            <Text numberOfLines={1} style={styles.statHint}>
+              ↗ Aliran pendapatan aktif
+            </Text>
+          </View>
+          <View style={styles.statIconCircle}>
+            <Text style={styles.statIcon}>💰</Text>
+          </View>
+        </View>
+      </KolamCardFrame>
+
+      <KolamCardFrame style={styles.statCard}>
+        <View style={styles.statCardInner}>
+          <View style={styles.statCopy}>
+            <Text numberOfLines={1} style={styles.statLabel}>
+              Pengeluaran Finance
+            </Text>
+            <Text numberOfLines={1} style={[styles.statValue, styles.statDanger]}>
+              {formatRupiah(cashMovement.totalOutflow)}
+            </Text>
+            <View style={styles.statProgressTrack}>
+              <View
+                style={[
+                  styles.statProgressFill,
+                  {width: `${Math.min(expenseRatio, 100)}%`},
+                ]}
+              />
+            </View>
+          </View>
+          <View style={styles.statIconCircle}>
+            <Text style={styles.statIcon}>💸</Text>
+          </View>
+        </View>
+      </KolamCardFrame>
+
+      <KolamCardFrame style={styles.statCard}>
+        <View style={styles.statCardInner}>
+          <View style={styles.statCopy}>
+            <Text numberOfLines={1} style={styles.statLabel}>
+              Laba/Rugi (P&L)
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.statValue,
+                profitLoss >= 0 ? styles.statSuccess : styles.statDanger,
+              ]}
+            >
+              {formatRupiah(profitLoss)}
+            </Text>
+            <Text numberOfLines={1} style={styles.statHint}>
+              {Math.round(profitMargin)}% margin
+            </Text>
+            {grossMargin ? (
+              <Text numberOfLines={1} style={styles.statHint}>
+                Gross margin: {formatRupiah(grossMargin.grossMargin)}
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.statIconCircle}>
+            <Text style={styles.statIcon}>
+              {profitLoss >= 0 ? '📈' : '📉'}
+            </Text>
+          </View>
+        </View>
+      </KolamCardFrame>
+
+      <KolamCardFrame style={styles.statCard}>
+        <View style={styles.statCardInner}>
+          <View style={styles.statCopy}>
+            <Text numberOfLines={1} style={styles.statLabel}>
+              Net Arus Finance
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.statValue,
+                cashNetMovement >= 0 ? styles.statSuccess : styles.statDanger,
+              ]}
+            >
+              {formatRupiah(cashNetMovement)}
+            </Text>
+            <Text numberOfLines={1} style={styles.statHint}>
+              Wallet: {wallets.length} · Total: {formatRupiah(walletTotal)}
+            </Text>
+          </View>
+          <View style={styles.statIconCircle}>
+            <Text style={styles.statIcon}>💳</Text>
+          </View>
+        </View>
+      </KolamCardFrame>
     </View>
   );
 }
@@ -358,22 +445,52 @@ function FinanceWalletStrip({
   controller: KolamFinanceSummaryController;
 }) {
   const wallets = controller.summary?.wallets ?? [];
-  if (wallets.length === 0) {
-    return null;
-  }
+  const walletTotal = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+
   return (
-    <View style={styles.walletStrip}>
-      {wallets.map(wallet => (
-        <View key={wallet.name} style={styles.walletChip}>
-          <Text numberOfLines={1} style={styles.walletName}>
-            {wallet.name}
-          </Text>
-          <Text style={styles.walletBalance}>
-            {formatRupiah(wallet.balance)}
-          </Text>
+    <KolamCardFrame style={styles.walletPanel}>
+      <View style={styles.walletPanelHeader}>
+        <Text style={styles.walletPanelTitle}>💳 Manajemen Dompet</Text>
+      </View>
+      {wallets.length === 0 ? (
+        <View style={styles.walletEmpty}>
+          <View style={styles.statIconCircleLarge}>
+            <Text style={styles.statIconLarge}>💳</Text>
+          </View>
+          <Text style={styles.walletEmptyTitle}>Belum ada dompet</Text>
         </View>
-      ))}
-    </View>
+      ) : (
+        <View style={styles.walletPanelBody}>
+          <View style={styles.walletTotalRow}>
+            <Text style={styles.statHint}>Total saldo</Text>
+            <Text style={styles.walletTotalValue}>{formatRupiah(walletTotal)}</Text>
+          </View>
+          {wallets.map(wallet => (
+            <View key={wallet.name} style={styles.walletRow}>
+              <View style={styles.walletRowLeft}>
+                <View style={styles.statIconCircle}>
+                  <Text style={styles.statIconSmall}>💳</Text>
+                </View>
+                <View style={styles.walletRowCopy}>
+                  <Text numberOfLines={1} style={styles.walletName}>
+                    {wallet.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.statHint}>
+                    Aktif
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.walletRowRight}>
+                <Text style={styles.walletBalance}>
+                  {formatRupiah(wallet.balance)}
+                </Text>
+                <KolamStatusBadge intent="success" label="Aktif" />
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+    </KolamCardFrame>
   );
 }
 
@@ -607,48 +724,166 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  card: {
+  statCard: {
+    flexBasis: 200,
     flexGrow: 1,
-    flexBasis: 160,
-    minWidth: 140,
-    padding: 12,
+    minWidth: 180,
+    padding: 14,
   },
-  cardLabel: {
+  statCardInner: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  statCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  statLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-    marginBottom: 4,
+    fontWeight: '600',
   },
-  cardValue: {
+  statValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  statSuccess: {
+    color: V.colors.success,
+  },
+  statDanger: {
+    color: V.colors.danger,
+  },
+  statHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  statProgressTrack: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 999,
+    height: 6,
+    marginTop: 2,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  statProgressFill: {
+    backgroundColor: V.colors.danger,
+    borderRadius: 999,
+    height: '100%',
+  },
+  statIconCircle: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  statIconCircleLarge: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 64,
+    justifyContent: 'center',
+    marginBottom: 8,
+    width: 64,
+  },
+  statIcon: {
+    fontSize: 18,
+  },
+  statIconSmall: {
+    fontSize: 14,
+  },
+  statIconLarge: {
+    fontSize: 24,
+  },
+  walletPanel: {
+    padding: 0,
+  },
+  walletPanelHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  walletPanelTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  walletPanelBody: {
+    gap: 10,
+    padding: 14,
+  },
+  walletEmpty: {
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 28,
+  },
+  walletEmptyTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  walletTotalRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  walletTotalValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  walletStrip: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  walletChip: {
-    backgroundColor: V.colors.muted,
+  walletRow: {
+    alignItems: 'center',
     borderColor: V.colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    minWidth: 140,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  walletRowLeft: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minWidth: 0,
+  },
+  walletRowCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  walletRowRight: {
+    alignItems: 'flex-end',
+    gap: 4,
   },
   walletName: {
-    color: V.colors.mutedFg,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '600',
   },
   walletBalance: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   listRoot: {
     gap: 8,

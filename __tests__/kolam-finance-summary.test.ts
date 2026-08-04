@@ -77,6 +77,20 @@ describe('kolam finance summary domain', () => {
         totalIncome: 1000,
         totalExpense: 400,
         profitLoss: 600,
+        cashMovement: {
+          totalInflow: 1100,
+          totalOutflow: 450,
+          netMovement: 650,
+        },
+        profitAndLoss: {
+          totalIncome: 1000,
+          totalExpense: 400,
+          netProfit: 600,
+        },
+        grossMargin: {
+          grossMargin: 500,
+          marginPercent: 50,
+        },
         wallets: [{ name: 'Kas', balance: 250 }],
         transactions: [
           {
@@ -102,6 +116,9 @@ describe('kolam finance summary domain', () => {
       },
     });
     expect(summary.totalIncome).toBe(1000);
+    expect(summary.cashMovement?.totalInflow).toBe(1100);
+    expect(summary.profitAndLoss?.netProfit).toBe(600);
+    expect(summary.grossMargin?.grossMargin).toBe(500);
     expect(summary.wallets[0]?.balance).toBe(250);
     expect(summary.transactions[0]?.cashflowSessionId).toBe('sess-1');
     expect(summary.liabilitiesPayableOpen).toBe(50);
