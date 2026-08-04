@@ -48,6 +48,7 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -1284,20 +1285,26 @@ function WalletTransactionPanel({
               }}
               style={styles.filterTrigger}
             />
-            <KolamFormTextField
-              onChangeText={value =>
+            <KolamDateField
+              accessibilityLabel="Tanggal mulai"
+              label="Dari"
+              onChange={value =>
                 controller.onChangeTxFilters({ startDate: value })
               }
-              placeholder="Mulai YYYY-MM-DD"
-              style={styles.dateInput}
+              placeholder="Dari"
+              showLabelInTrigger={false}
+              style={styles.dateField}
               value={controller.txFilters.startDate}
             />
-            <KolamFormTextField
-              onChangeText={value =>
+            <KolamDateField
+              accessibilityLabel="Tanggal sampai"
+              label="Sampai"
+              onChange={value =>
                 controller.onChangeTxFilters({ endDate: value })
               }
-              placeholder="Akhir YYYY-MM-DD"
-              style={styles.dateInput}
+              placeholder="Sampai"
+              showLabelInTrigger={false}
+              style={styles.dateField}
               value={controller.txFilters.endDate}
             />
           </View>
@@ -2543,8 +2550,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  dateInput: {
-    minWidth: 140,
+  dateField: {
+    maxWidth: 140,
+    minWidth: 108,
+    width: 120,
   },
   walletSelect: {
     minWidth: 160,
