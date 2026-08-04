@@ -14,15 +14,17 @@ import {
   formatKolamDaraSeoScoreStatus,
   formatKolamDaraSeoSentimentStatus,
   getKolamDaraSeoTab,
+  resolveKolamDaraSeoAccess,
   type KolamDaraSeoTabId,
 } from '../domain/kolam-dara-seo';
-import {isTopNavAdminRole} from '../domain/top-nav';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {useKolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {
   useKolamDaraSeoController,
   type KolamDaraSeoController,
 } from '../hooks/use-kolam-dara-seo-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
@@ -37,8 +39,12 @@ export function KolamDaraSeoSurface({
 }) {
   const selectedTab = getKolamDaraSeoTab(route);
   const {authUser} = useKolamAuthContext();
-  const canDraft = isTopNavAdminRole(authUser?.roleKey);
+  const access = resolveKolamDaraSeoAccess({
+    roleKey: authUser?.roleKey,
+    permissions: authUser?.permissions,
+  });
   const controller = useKolamDaraSeoController(route);
+  const approvalsController = useKolamDaraSeoApprovalsController(route);
 
   return (
     <View style={styles.surface}>
@@ -61,8 +67,15 @@ export function KolamDaraSeoSurface({
 
       {selectedTab === 'dashboard' ? (
         <KolamDaraSeoDashboardBody
-          canDraft={canDraft}
+          canDraft={access.canDraft}
           controller={controller}
+          onRouteChange={onRouteChange}
+        />
+      ) : selectedTab === 'approvals' ? (
+        <KolamDaraSeoApprovalsBody
+          canApprove={access.canApprove}
+          canDraft={access.canDraft}
+          controller={approvalsController}
           onRouteChange={onRouteChange}
         />
       ) : (

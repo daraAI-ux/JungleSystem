@@ -7,6 +7,8 @@ import {
   fetchKolamDaraSeoDashboard,
   fetchKolamDaraSeoPendingSuggestions,
   fetchKolamDaraSeoStatus,
+  fetchKolamDaraSeoSuggestion,
+  fetchKolamDaraSeoSuggestions,
 } from '../src/services/kolam-dara-seo-api';
 import {startKolamDaraJob} from '../src/services/kolam-dara-jobs-api';
 
@@ -19,6 +21,15 @@ jest.mock('../src/services/kolam-dara-seo-api', () => ({
   fetchKolamDaraSeoActiveBrands: jest.fn(),
   fetchKolamDaraSeoDashboard: jest.fn(),
   fetchKolamDaraSeoPendingSuggestions: jest.fn(),
+  fetchKolamDaraSeoSuggestions: jest.fn(),
+  fetchKolamDaraSeoSuggestion: jest.fn(),
+  submitKolamDaraSeoSuggestion: jest.fn(),
+  approveKolamDaraSeoSuggestion: jest.fn(),
+  rejectKolamDaraSeoSuggestion: jest.fn(),
+  deferKolamDaraSeoSuggestion: jest.fn(),
+  rollbackKolamDaraSeoSuggestion: jest.fn(),
+  bulkApproveKolamDaraSeoSuggestions: jest.fn(),
+  bulkRejectKolamDaraSeoSuggestions: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-dara-jobs-api', () => ({
@@ -39,6 +50,12 @@ const dashMock = fetchKolamDaraSeoDashboard as jest.MockedFunction<
 >;
 const pendingMock = fetchKolamDaraSeoPendingSuggestions as jest.MockedFunction<
   typeof fetchKolamDaraSeoPendingSuggestions
+>;
+const suggestionsMock = fetchKolamDaraSeoSuggestions as jest.MockedFunction<
+  typeof fetchKolamDaraSeoSuggestions
+>;
+const suggestionMock = fetchKolamDaraSeoSuggestion as jest.MockedFunction<
+  typeof fetchKolamDaraSeoSuggestion
 >;
 
 describe('KolamDaraSeoSurface', () => {
@@ -72,6 +89,50 @@ describe('KolamDaraSeoSurface', () => {
         pendingItemCount: 1,
       },
     ]);
+    suggestionsMock.mockResolvedValue({
+      total: 1,
+      items: [
+        {
+          id: 's1',
+          targetType: 'product',
+          entityId: 'p1',
+          title: 'Filter',
+          seoScore: 40,
+          status: 'pending_approval',
+          summary: 'Perbaiki title',
+          pendingItemCount: 1,
+          productId: 'p1',
+          blogId: null,
+          speciesId: null,
+        },
+      ],
+    });
+    suggestionMock.mockResolvedValue({
+      suggestion: {
+        id: 's1',
+        targetType: 'product',
+        entityId: 'p1',
+        title: 'Filter',
+        seoScore: 40,
+        status: 'pending_approval',
+        summary: 'Perbaiki title',
+        pendingItemCount: 1,
+        productId: 'p1',
+        blogId: null,
+        speciesId: null,
+      },
+      items: [
+        {
+          id: 'i1',
+          fieldPath: 'metaTitle',
+          label: 'Meta title',
+          beforeValue: 'A',
+          proposedValue: 'B',
+          itemStatus: 'pending',
+          rationale: '',
+        },
+      ],
+    });
   });
 
   it('renders dashboard KPIs from live API', async () => {
@@ -94,11 +155,44 @@ describe('KolamDaraSeoSurface', () => {
     expect(startKolamDaraJob).not.toHaveBeenCalled();
   });
 
-  it('shows module placeholder on non-dashboard SEO tabs', async () => {
+  it('renders approvals list and opens detail', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
         <KolamDaraSeoSurface route="/campaign/dara-seo/approvals" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    let text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Filter');
+    expect(text).toContain('Review');
+    expect(text).toContain('Terapkan terpilih');
+    expect(suggestionsMock).toHaveBeenCalled();
+    expect(dashMock).not.toHaveBeenCalled();
+
+    const review = tree!.root.find(
+      node =>
+        typeof node.props?.label === 'string' && node.props.label === 'Review',
+    );
+    await ReactTestRenderer.act(async () => {
+      review.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    text = JSON.stringify(tree!.toJSON());
+    expect(suggestionMock).toHaveBeenCalledWith('s1');
+    expect(text).toContain('Approve & terapkan');
+    expect(text).toContain('Meta title');
+  });
+
+  it('shows module placeholder on later SEO tabs', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo/website" />,
       );
       await Promise.resolve();
     });
@@ -106,5 +200,6 @@ describe('KolamDaraSeoSurface', () => {
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Belum tersedia');
     expect(dashMock).not.toHaveBeenCalled();
+    expect(suggestionsMock).not.toHaveBeenCalled();
   });
 });
