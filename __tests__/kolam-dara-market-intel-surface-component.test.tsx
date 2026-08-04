@@ -439,7 +439,10 @@ describe('KolamDaraMarketIntelSurface', () => {
     expect(text).toContain('Monitor');
     expect(text).toContain('Kalkulasi');
     expect(text).toContain('Cek semua URL');
-    expect(text).toContain('Bulk harga');
+    expect(text).toContain('DARA Peralatan — Bulk Harga');
+    expect(text).toContain('Harga Kolam (onlinePrice)');
+    expect(text).toContain('Console log');
+    expect(text).toContain('Push ke olshop (Tokopedia)');
     expect(platformFeeMetaMock).toHaveBeenCalled();
     expect(platformFeeSourcesMock).toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {

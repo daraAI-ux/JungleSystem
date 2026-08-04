@@ -22,6 +22,7 @@ import {useKolamDaraMarketIntelDashboardController} from '../hooks/use-kolam-dar
 import {useKolamDaraMarketIntelJobsProgress} from '../hooks/use-kolam-dara-market-intel-jobs-progress';
 import {useKolamDaraMarketIntelStoreHealthController} from '../hooks/use-kolam-dara-market-intel-store-health-controller';
 import {useKolamDaraMarketPlatformFeeController} from '../hooks/use-kolam-dara-market-platform-fee-controller';
+import {useKolamDaraPricingEquipmentController} from '../hooks/use-kolam-dara-pricing-equipment-controller';
 import {KolamDaraMarketIntelApprovalsBody} from './kolam-dara-market-intel-approvals-body';
 import {KolamDaraMarketIntelCompetitorsBody} from './kolam-dara-market-intel-competitors-body';
 import {KolamDaraMarketIntelDashboardBody} from './kolam-dara-market-intel-dashboard-body';
@@ -58,6 +59,9 @@ export function KolamDaraMarketIntelSurface({
     access.canSee ? route : '',
   );
   const platformFeeController = useKolamDaraMarketPlatformFeeController(
+    access.canSee && access.canDraft ? route : '',
+  );
+  const bulkPricingController = useKolamDaraPricingEquipmentController(
     access.canSee && access.canDraft ? route : '',
   );
   const jobsProgress = useKolamDaraMarketIntelJobsProgress(
@@ -136,6 +140,7 @@ export function KolamDaraMarketIntelSurface({
         />
       ) : selectedTab === 'peralatan' ? (
         <KolamDaraMarketIntelPeralatanBody
+          bulkPricingController={bulkPricingController}
           canDraft={access.canDraft}
           platformFeeController={platformFeeController}
         />
