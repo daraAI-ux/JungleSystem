@@ -35,7 +35,7 @@ export function KolamDetailTermsTemplatesPanel({
 }: {
   itemId: string;
   itemLabel: string;
-  itemType: 'product' | 'species';
+  itemType: 'product' | 'species' | 'service';
   summary?: {
     label: string;
     meta: string;

@@ -121,6 +121,12 @@ export interface KolamLayananServiceProductComponent {
   price: number | null;
 }
 
+/** Result of POST /task-manager/spawn/service/:serviceId */
+export interface KolamLayananServiceSpawnTaskResult {
+  taskId: string;
+  created: boolean;
+}
+
 export interface KolamLayananServiceFormState {
   id?: string;
   name: string;
@@ -2214,6 +2220,27 @@ export function findKolamLayananExecutionInTask(
       item => item.id === executionId || item.id.endsWith(executionId),
     ) ?? null
   );
+}
+
+export function normalizeKolamLayananServiceSpawnTaskResult(
+  payload: unknown,
+): KolamLayananServiceSpawnTaskResult {
+  const record = asRecord(payload);
+  const taskPayload = unwrapData(payload);
+  const taskRecord = asRecord(taskPayload);
+  const taskId =
+    getString(taskRecord, '_id') ||
+    getString(taskRecord, 'id') ||
+    getIdFromMaybeRef(taskPayload) ||
+    '';
+  const created =
+    typeof record.created === 'boolean'
+      ? record.created
+      : getBoolean(record, 'created') ?? false;
+  return {
+    taskId,
+    created,
+  };
 }
 
 function unwrapData(payload: unknown): unknown {

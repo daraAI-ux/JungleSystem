@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   formatKolamLayananCommission,
   formatKolamLayananContractDuration,
@@ -16,17 +17,26 @@ import {
   type KolamLayananService,
   type KolamLayananServiceProductComponent,
 } from '../domain/kolam-layanan';
+import {
+  KOLAM_TASK_CATEGORY_BUCKET_LABEL,
+  KOLAM_TASK_MANAGER_ROOT,
+} from '../domain/kolam-task-manager';
+import type { KolamUserListItem } from '../domain/kolam-user';
 import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamLayananController } from '../hooks/use-kolam-layanan-controller';
+import { spawnKolamLayananServiceTask } from '../services/kolam-layanan-api';
+import { getKolamUserList } from '../services/kolam-user-api';
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDescriptionList } from './kolam-description-list';
+import { KolamDetailTermsTemplatesPanel } from './kolam-detail-more-panels';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHtmlContent } from './kolam-html-content';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import {
   KolamPricingMetric,
   KolamPricingMetricsGrid,
@@ -477,6 +487,12 @@ function KolamLayananServiceDetail({
               ) : null}
             </FormSection>
           ) : null}
+
+          <KolamDetailTermsTemplatesPanel
+            itemId={service.id}
+            itemLabel="layanan"
+            itemType="service"
+          />
         </View>
 
         <View style={styles.detailSide}>
@@ -609,9 +625,196 @@ function KolamLayananServiceDetail({
               </View>
             ) : null}
           </FormSection>
+
+          <ServiceTasksPanel
+            onRouteChange={onRouteChange}
+            serviceId={service.id}
+            serviceName={service.name}
+          />
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+function ServiceTasksPanel({
+  onRouteChange,
+  serviceId,
+  serviceName,
+}: {
+  onRouteChange?: (route: string) => void;
+  serviceId: string;
+  serviceName: string;
+}) {
+  const { authUser } = useKolamAuthContext();
+  const [open, setOpen] = React.useState(false);
+  const [title, setTitle] = React.useState('');
+  const [assignedToId, setAssignedToId] = React.useState('');
+  const [staff, setStaff] = React.useState<KolamUserListItem[]>([]);
+  const [staffLoading, setStaffLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const defaultTitle = `Layanan: ${serviceName}`;
+  const staffOptions = React.useMemo(
+    () =>
+      staff.map(user => ({
+        label: user.displayName || user.username || user.email || user.id,
+        value: user.id,
+      })),
+    [staff],
+  );
+
+  React.useEffect(() => {
+    if (!open) {
+      return;
+    }
+    let cancelled = false;
+    setStaffLoading(true);
+    setError('');
+    void getKolamUserList({
+      isEmployee: 'true',
+      limit: 200,
+      page: 1,
+    })
+      .then(result => {
+        if (cancelled) {
+          return;
+        }
+        setStaff(result.items);
+        const currentId = authUser?.id?.trim() || '';
+        setAssignedToId(prev => {
+          if (currentId && result.items.some(user => user.id === currentId)) {
+            return currentId;
+          }
+          if (prev && result.items.some(user => user.id === prev)) {
+            return prev;
+          }
+          return result.items[0]?.id || '';
+        });
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : 'Gagal memuat daftar PIC.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setStaffLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.id, open]);
+
+  const closeModal = () => {
+    if (saving) {
+      return;
+    }
+    setOpen(false);
+    setError('');
+    setTitle('');
+  };
+
+  const onCreate = async () => {
+    if (!assignedToId.trim()) {
+      setError('PIC wajib dipilih.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const result = await spawnKolamLayananServiceTask({
+        serviceId,
+        assignedToId: assignedToId.trim(),
+        title: title.trim() || defaultTitle,
+      });
+      setOpen(false);
+      setTitle('');
+      if (result.taskId) {
+        onRouteChange?.(`${KOLAM_TASK_MANAGER_ROOT}/${result.taskId}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal membuat tugas.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <FormSection
+        description={`Kategori ${KOLAM_TASK_CATEGORY_BUCKET_LABEL.project} — otomatis saat kunjungan berjalan, atau buat manual.`}
+        title="Tugas layanan"
+      >
+        <KolamButton
+          intent="outline"
+          label="Buat tugas"
+          onPress={() => setOpen(true)}
+        />
+      </FormSection>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={closeModal}
+        transparent
+        visible={open}
+      >
+        <View style={styles.spawnOverlay}>
+          <KolamModalBackdrop onPress={closeModal} />
+          <View
+            accessibilityLabel="Tugas untuk layanan"
+            style={styles.spawnDialog}
+          >
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'title',
+                  text: 'Tugas untuk layanan',
+                  style: styles.spawnDialogTitle,
+                },
+              ]}
+            />
+            <FieldShell label="Judul">
+              <KolamFormTextField
+                onChangeText={setTitle}
+                placeholder={defaultTitle}
+                value={title}
+              />
+            </FieldShell>
+            <FieldShell label="PIC" required>
+              <KolamDropdownSelect
+                accessibilityLabel="PIC"
+                label={staffLoading ? 'Memuat PIC…' : 'Pilih PIC'}
+                onChange={setAssignedToId}
+                options={staffOptions}
+                searchable
+                value={assignedToId}
+              />
+            </FieldShell>
+            {error ? <Text style={styles.spawnError}>{error}</Text> : null}
+            <View style={styles.spawnActions}>
+              <KolamButton
+                disabled={saving}
+                label="Batal"
+                onPress={closeModal}
+              />
+              <KolamButton
+                disabled={saving || staffLoading}
+                intent="primary"
+                label={saving ? 'Menyimpan…' : 'Simpan'}
+                onPress={() => {
+                  void onCreate();
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -1220,5 +1423,39 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '600',
+  },
+  spawnOverlay: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  spawnDialog: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 14,
+    maxWidth: '86%',
+    padding: 18,
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    width: 420,
+  },
+  spawnDialogTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  spawnError: {
+    color: V.colors.danger,
+    fontSize: 12,
+  },
+  spawnActions: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
   },
 });

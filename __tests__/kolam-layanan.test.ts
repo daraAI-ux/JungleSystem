@@ -29,6 +29,7 @@ import {
   normalizeKolamLayananScheduleRequirements,
   normalizeKolamLayananService,
   normalizeKolamLayananServiceList,
+  normalizeKolamLayananServiceSpawnTaskResult,
   normalizeKolamLayananSubscriptionDetail,
   normalizeKolamLayananSubscriptionList,
   normalizeKolamLayananTaskDetail,
@@ -162,6 +163,27 @@ describe('kolam-layanan domain', () => {
     expect(formatKolamLayananPricingMethod(service)).toBe('Per m³ & per km');
     expect(formatKolamLayananCommission(service)).toBe('5%');
     expect(formatKolamLayananMemberPoints(service)).toBe('12 poin');
+  });
+
+  it('normalizes service spawn task result', () => {
+    expect(
+      normalizeKolamLayananServiceSpawnTaskResult({
+        created: true,
+        data: {_id: 'task-svc-1', title: 'Layanan: Paket A'},
+      }),
+    ).toEqual({
+      created: true,
+      taskId: 'task-svc-1',
+    });
+    expect(
+      normalizeKolamLayananServiceSpawnTaskResult({
+        created: false,
+        data: {id: 'task-svc-2'},
+      }),
+    ).toEqual({
+      created: false,
+      taskId: 'task-svc-2',
+    });
   });
 
   it('normalizes ops dashboard, pending list, and subscriptions', () => {

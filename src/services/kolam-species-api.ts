@@ -168,7 +168,7 @@ export interface KolamSpeciesTermsTemplate {
   updatedAt: string;
 }
 
-export type KolamTermsItemType = 'product' | 'species';
+export type KolamTermsItemType = 'product' | 'species' | 'service';
 
 export async function getKolamTermsTemplatesForItem(
   itemType: KolamTermsItemType,

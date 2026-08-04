@@ -9,6 +9,7 @@ import {
   normalizeKolamLayananSubscriptionList,
   normalizeKolamLayananSubscriptionPendingVerifications,
   normalizeKolamLayananSubscriptionVisitPreviews,
+  normalizeKolamLayananServiceSpawnTaskResult,
   normalizeKolamLayananTermsContext,
   normalizeKolamLayananTaskDetail,
   normalizeKolamLayananVoucherDetail,
@@ -21,6 +22,7 @@ import {
   type KolamLayananServiceListQuery,
   type KolamLayananServiceListResult,
   type KolamLayananServiceSavePayload,
+  type KolamLayananServiceSpawnTaskResult,
   type KolamLayananSubscriptionDetail,
   type KolamLayananSubscriptionListQuery,
   type KolamLayananSubscriptionListResult,
@@ -378,6 +380,26 @@ export async function setKolamLayananCustomerVerification(params: {
       },
     },
   );
+}
+
+export async function spawnKolamLayananServiceTask(input: {
+  serviceId: string;
+  assignedToId: string;
+  title?: string;
+  description?: string;
+}): Promise<KolamLayananServiceSpawnTaskResult> {
+  const response = await kolamRequest<unknown>(
+    `/task-manager/spawn/service/${encodeURIComponent(input.serviceId)}`,
+    {
+      method: 'POST',
+      body: {
+        assignedToId: input.assignedToId.trim(),
+        title: input.title?.trim() || undefined,
+        description: input.description?.trim() || undefined,
+      },
+    },
+  );
+  return normalizeKolamLayananServiceSpawnTaskResult(response);
 }
 
 function kolamRequest<T>(
