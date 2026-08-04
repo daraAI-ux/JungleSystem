@@ -26,6 +26,7 @@ import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 /** FE `DaraTaxDashboardPage` + `TaxIntelligenceDashboard` shell (Batch 0). */
 export function KolamFinanceTaxSurface({
@@ -60,28 +61,36 @@ export function KolamFinanceTaxSurface({
 
     return (
       <View style={styles.surface}>
-        <View style={styles.toolbar}>
-          <KolamDropdownSelect
-            label="Periode"
-            onChange={value =>
-              controller.onSetPeriod(value as KolamDaraTaxPeriod)
-            }
-            options={KOLAM_DARA_TAX_PERIOD_OPTIONS.map(opt => ({
-              label: opt.label,
-              value: opt.id,
-            }))}
-            showLabelInTrigger={false}
-            style={styles.periodSelect}
-            value={controller.period}
-          />
-          <KolamButton
-            disabled={controller.loading}
-            label={controller.loading ? 'Memuat…' : 'Muat ulang'}
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-            size="sm"
-          />
+        <View style={styles.toolbarWrap}>
+          <View style={kolamTableToolbarStyles.shell}>
+            <View style={kolamTableToolbarStyles.row}>
+              <View style={kolamTableToolbarStyles.filters}>
+                <KolamDropdownSelect
+                  accessibilityLabel="Periode"
+                  label="Periode"
+                  onChange={value =>
+                    controller.onSetPeriod(value as KolamDaraTaxPeriod)
+                  }
+                  options={KOLAM_DARA_TAX_PERIOD_OPTIONS.map(opt => ({
+                    label: opt.label,
+                    value: opt.id,
+                  }))}
+                  showLabelInTrigger={false}
+                  value={controller.period}
+                />
+              </View>
+              <View style={kolamTableToolbarStyles.actions}>
+                <KolamButton
+                  disabled={controller.loading}
+                  label={controller.loading ? 'Memuat…' : 'Muat ulang'}
+                  onPress={() => {
+                    void controller.onRefresh();
+                  }}
+                  size="sm"
+                />
+              </View>
+            </View>
+          </View>
         </View>
 
         {!controller.taxEnabled ? (
@@ -276,14 +285,12 @@ const styles = StyleSheet.create({
     gap: 10,
     minHeight: 0,
   },
-  toolbar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  periodSelect: {
-    minWidth: 160,
+  toolbarWrap: {
+    elevation: 1000,
+    flexShrink: 0,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
   },
   disabledBanner: {
     backgroundColor: '#fffbeb',
