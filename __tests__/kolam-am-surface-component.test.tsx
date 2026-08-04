@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image, ScrollView, StyleSheet, Text, TextInput} from 'react-native';
+import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
@@ -464,6 +464,13 @@ describe('KolamAmSurface', () => {
         paddingBottom: dashboardLayout.page.paddingBottom,
       }),
     );
+    const legacyFrame = renderer!.root
+      .findAllByType(View)
+      .find(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.minHeight === 720 && style?.borderWidth === 1;
+      });
+    expect(legacyFrame).toBeUndefined();
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
   });

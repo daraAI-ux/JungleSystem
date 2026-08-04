@@ -265,57 +265,51 @@ export function KolamAmSurface({
   }, [pageViewPath]);
 
   return (
-    <View style={styles.shell}>
-      <View style={styles.content}>
-        <View style={styles.topBarCompact}>
-          <View style={styles.topBarActions}>
-            <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-          </View>
-        </View>
-        <ScrollView contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
-          {activeRoute === 'dashboard' ? (
-            <AmDashboardPage
-              dashboard={dataset.am.dashboard}
-              onModuleRouteSelect={onModuleRouteSelect}
-            />
-          ) : activeRoute === 'tasks' ? (
-            <AmTasksPage
-              initialTaskId={routeSelection?.taskId}
-              onModuleRouteSelect={onModuleRouteSelect}
-            />
-          ) : activeRoute === 'services' ? (
-            <AmServicesPage />
-          ) : activeRoute === 'hardware' ? (
-            <AmHardwarePage
-              initialRoute={routeSelection?.hardwareRoute}
-              onModuleRouteSelect={onModuleRouteSelect}
-            />
-          ) : activeRoute === 'webhooks' ? (
-            <AmWebhooksPage />
-          ) : activeRoute === 'transactions' ? (
-            <AmTransfersPage
-              initialTransferId={routeSelection?.transferId}
-              onModuleRouteSelect={onModuleRouteSelect}
-            />
-          ) : activeRoute === 'mutasi' ? (
-            <AmMutasiPage
-              initialMutasiId={routeSelection?.mutasiId}
-              onModuleRouteSelect={onModuleRouteSelect}
-            />
-          ) : activeRoute === 'users' ? (
-            <AmUsersPage />
-          ) : activeRoute === 'settings-account' ? (
-            <AmAccountSettingsPage />
-          ) : activeRoute === 'login' ? (
-            <AmLoginPage onModuleRouteSelect={onModuleRouteSelect} />
-          ) : activeRoute === 'activity-log' ? (
-            <AmActivityLogPage />
-          ) : (
-            <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
-          )}
-        </ScrollView>
+    <ScrollView contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
+      <View style={styles.moduleBackRow}>
+        <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
       </View>
-    </View>
+      {activeRoute === 'dashboard' ? (
+        <AmDashboardPage
+          dashboard={dataset.am.dashboard}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />
+      ) : activeRoute === 'tasks' ? (
+        <AmTasksPage
+          initialTaskId={routeSelection?.taskId}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />
+      ) : activeRoute === 'services' ? (
+        <AmServicesPage />
+      ) : activeRoute === 'hardware' ? (
+        <AmHardwarePage
+          initialRoute={routeSelection?.hardwareRoute}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />
+      ) : activeRoute === 'webhooks' ? (
+        <AmWebhooksPage />
+      ) : activeRoute === 'transactions' ? (
+        <AmTransfersPage
+          initialTransferId={routeSelection?.transferId}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />
+      ) : activeRoute === 'mutasi' ? (
+        <AmMutasiPage
+          initialMutasiId={routeSelection?.mutasiId}
+          onModuleRouteSelect={onModuleRouteSelect}
+        />
+      ) : activeRoute === 'users' ? (
+        <AmUsersPage />
+      ) : activeRoute === 'settings-account' ? (
+        <AmAccountSettingsPage />
+      ) : activeRoute === 'login' ? (
+        <AmLoginPage onModuleRouteSelect={onModuleRouteSelect} />
+      ) : activeRoute === 'activity-log' ? (
+        <AmActivityLogPage />
+      ) : (
+        <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
+      )}
+    </ScrollView>
   );
 }
 
@@ -7122,35 +7116,6 @@ function titleCase(value: string) {
 }
 
 const styles = StyleSheet.create({
-  shell: {
-    minHeight: 720,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: V.colors.border,
-    backgroundColor: V.colors.bg,
-  },
-  content: {
-    flex: 1,
-    minWidth: 0,
-    backgroundColor: V.colors.mainSurface,
-  },
-  topBarCompact: {
-    minHeight: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: V.colors.border,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    backgroundColor: V.colors.bg,
-  },
-  topBarActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   pageContent: {
     width: '100%',
     maxWidth: DASHBOARD_LAYOUT_VISUAL.page.maxWidthPx,
@@ -7158,6 +7123,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: DASHBOARD_LAYOUT_VISUAL.page.paddingX,
     paddingTop: DASHBOARD_LAYOUT_VISUAL.page.paddingTop,
     paddingBottom: DASHBOARD_LAYOUT_VISUAL.page.paddingBottom,
+  },
+  moduleBackRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 16,
   },
   pageStack: {
     gap: 16,
