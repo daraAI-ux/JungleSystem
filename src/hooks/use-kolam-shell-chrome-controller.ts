@@ -40,6 +40,7 @@ export function useKolamShellChromeController({
   isCommandPaletteOpen,
   isUserMenuOpen,
   onAttentionClose,
+  onAttentionItemPress,
   onAvatarPress,
   onBreadcrumbPress,
   onBreadcrumbDashboardPress,
@@ -51,6 +52,7 @@ export function useKolamShellChromeController({
   onMoveMenuSection,
   onModuleRouteSelect,
   onNotificationPress,
+  notificationUnreadCount,
   onQuickSearch,
   onRouteContext,
   onSeeAllNotifications,
@@ -88,6 +90,7 @@ export function useKolamShellChromeController({
   isCommandPaletteOpen: boolean;
   isUserMenuOpen: boolean;
   onAttentionClose: () => void;
+  onAttentionItemPress?: (item: AttentionPanelItem) => void;
   onAvatarPress: () => void;
   onBreadcrumbPress?: (item: TopNavBreadcrumbItem) => void;
   onBreadcrumbDashboardPress: () => void;
@@ -101,6 +104,7 @@ export function useKolamShellChromeController({
   onMoveMenuSection: (sectionId: string, direction: 'up' | 'down') => void;
   onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
   onNotificationPress: () => void;
+  notificationUnreadCount?: number;
   onQuickSearch: () => void;
   onRouteContext?: (route: string) => void;
   onSeeAllNotifications: () => void;
@@ -146,6 +150,7 @@ export function useKolamShellChromeController({
     attentionItems,
     chatUnreadCounts,
     displayInitials,
+    notificationUnreadCount,
     onAvatarPress,
     onBreadcrumbPress,
     onBreadcrumbDashboardPress,
@@ -168,6 +173,7 @@ export function useKolamShellChromeController({
     isCommandPaletteOpen,
     isUserMenuOpen,
     onAttentionClose,
+    onAttentionItemPress,
     onCommandPaletteClose,
     onCommandSearchChange,
     onCommandSelect,

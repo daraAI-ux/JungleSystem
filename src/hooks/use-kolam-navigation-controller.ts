@@ -194,9 +194,8 @@ export function useKolamNavigationController({
 
   const seeAllNotifications = () => {
     setIsAttentionPanelOpen(false);
-    setCommandSearch('activity-log');
-    setIsCommandPaletteOpen(true);
-    onMessage('See All notifications membuka pencarian Activity Log native.');
+    handleDashboardRouteContext('/notifications');
+    onMessage('Notifikasi dibuka.');
   };
 
   const handleUserMenuAction = async (

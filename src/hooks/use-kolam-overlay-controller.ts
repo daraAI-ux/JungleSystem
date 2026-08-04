@@ -20,6 +20,7 @@ export function useKolamOverlayController({
   isCommandPaletteOpen,
   isUserMenuOpen,
   onAttentionClose,
+  onAttentionItemPress,
   onCommandPaletteClose,
   onCommandSearchChange,
   onCommandSelect,
@@ -42,6 +43,7 @@ export function useKolamOverlayController({
   isCommandPaletteOpen: boolean;
   isUserMenuOpen: boolean;
   onAttentionClose: () => void;
+  onAttentionItemPress?: (item: AttentionPanelItem) => void;
   onCommandPaletteClose: () => void;
   onCommandSearchChange: (search: string) => void;
   onCommandSelect: (command: CommandEntry) => Promise<void>;
@@ -74,6 +76,7 @@ export function useKolamOverlayController({
         items: attentionItems,
         unreadCount: attentionCount,
         onClose: onAttentionClose,
+        onItemPress: onAttentionItemPress,
         onSeeAll: onSeeAllNotifications,
       },
       commandPalette: {
@@ -97,6 +100,7 @@ export function useKolamOverlayController({
       isCommandPaletteOpen,
       isUserMenuOpen,
       onAttentionClose,
+      onAttentionItemPress,
       onCommandPaletteClose,
       onCommandSearchChange,
       onCommandSelect,

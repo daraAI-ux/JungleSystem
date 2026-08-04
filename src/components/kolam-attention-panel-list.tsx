@@ -6,8 +6,10 @@ import {KolamMappedList} from './kolam-mapped-list';
 
 export function KolamAttentionPanelList({
   items,
+  onItemPress,
 }: {
   items: AttentionPanelItem[];
+  onItemPress?: (item: AttentionPanelItem) => void;
 }) {
   return (
     <KolamListFrame variant="attentionList">
@@ -15,7 +17,9 @@ export function KolamAttentionPanelList({
         items={items}
         limit={8}
         getKey={item => item.id}
-        renderItem={item => <KolamAttentionPanelItem item={item} />}
+        renderItem={item => (
+          <KolamAttentionPanelItem item={item} onItemPress={onItemPress} />
+        )}
       />
     </KolamListFrame>
   );

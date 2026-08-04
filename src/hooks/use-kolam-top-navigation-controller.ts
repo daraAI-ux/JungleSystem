@@ -25,6 +25,7 @@ export function useKolamTopNavigationController({
   attentionItems,
   chatUnreadCounts,
   displayInitials,
+  notificationUnreadCount,
   onAvatarPress,
   onBreadcrumbPress,
   onBreadcrumbDashboardPress,
@@ -44,6 +45,7 @@ export function useKolamTopNavigationController({
   attentionItems: AttentionPanelItem[];
   chatUnreadCounts?: KolamChatUnreadCounts;
   displayInitials: string;
+  notificationUnreadCount?: number;
   onAvatarPress: () => void;
   onBreadcrumbPress?: (item: TopNavBreadcrumbItem) => void;
   onBreadcrumbDashboardPress: () => void;
@@ -54,8 +56,11 @@ export function useKolamTopNavigationController({
   profilePhotoUrl?: string | null;
 }) {
   const attentionCount = useMemo(
-    () => attentionItems.filter(item => item.id !== 'all-clear').length,
-    [attentionItems],
+    () =>
+      typeof notificationUnreadCount === 'number'
+        ? Math.max(0, notificationUnreadCount)
+        : attentionItems.filter(item => item.id !== 'all-clear').length,
+    [attentionItems, notificationUnreadCount],
   );
 
   const topNavigation = useMemo<TopNavigationProps>(

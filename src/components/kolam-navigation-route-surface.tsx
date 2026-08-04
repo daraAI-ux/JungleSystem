@@ -14,6 +14,7 @@ import type {UnifiedDataset} from '../services/unified-data';
 import {KolamCampaignSurface} from './kolam-campaign-surface';
 import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
+import {KolamNotificationsSurface} from './kolam-notifications-surface';
 import {KolamSpeciesSurface} from './kolam-species-surface';
 import {KolamSalesOpsSurface} from './kolam-sales-ops-surface';
 import {KolamTeranuraSurface} from './kolam-teranura-surface';
@@ -32,6 +33,15 @@ export function KolamNavigationRouteSurface({
 }) {
   const contract = getKolamNavigationRouteSurfaceContract(item);
   const routePath = contract.runtimeRoute.split('?')[0];
+
+  if (routePath === '/notifications' || routePath.startsWith('/notifications/')) {
+    return (
+      <KolamNotificationsSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
+  }
 
   if (isKolamCampaignRoute(routePath)) {
     return (

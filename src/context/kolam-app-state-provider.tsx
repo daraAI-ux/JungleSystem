@@ -4,6 +4,7 @@ import {
   type KolamGlobalChatRailMode,
 } from '../components/kolam-global-chat-rail';
 import {KolamWorkspaceTabStrip} from '../components/kolam-workspace-tab-strip';
+import type {AttentionPanelItem} from '../domain/attention-panel';
 import type {DashboardSalesGraphRange} from '../domain/dashboard-sales-graph';
 import type {TopNavRightControl} from '../domain/top-nav';
 import type {KolamWorkspaceTabSnapshot} from '../domain/kolam-workspace-tabs';
@@ -21,6 +22,7 @@ import {useKolamCheckoutController} from '../hooks/use-kolam-checkout-controller
 import {useKolamCustomerController} from '../hooks/use-kolam-customer-controller';
 import {useKolamNavigationController} from '../hooks/use-kolam-navigation-controller';
 import {useKolamNativeDeviceIdentity} from '../hooks/use-kolam-native-device-identity';
+import {useKolamNotificationCenterController} from '../hooks/use-kolam-notification-center-controller';
 import {useKolamPosDatasetMutationController} from '../hooks/use-kolam-pos-dataset-mutation-controller';
 import {useKolamRuntimeActionController} from '../hooks/use-kolam-runtime-action-controller';
 import {useKolamRuntimeSurfaceController} from '../hooks/use-kolam-runtime-surface-controller';
@@ -324,7 +326,6 @@ export function KolamAppStateProvider({
   });
 
   const {
-    attentionItems,
     readinessChecks,
     readinessSummaryText,
     runtimeIdentityItems,
@@ -401,6 +402,45 @@ export function KolamAppStateProvider({
     enabled: Boolean(authUser),
     visibleRailMode: activeChatRail,
   });
+  const notificationCenter = useKolamNotificationCenterController({
+    enabled: Boolean(authUser),
+    limit: 10,
+    playSoundOnNewUnread: true,
+  });
+  const {
+    attentionItems,
+    markAsRead: markNotificationAsRead,
+    unreadCount: notificationUnreadCount,
+  } = notificationCenter;
+  const handleAttentionItemPress = React.useCallback(
+    (item: AttentionPanelItem) => {
+      if (!item.routeHint) {
+        return;
+      }
+
+      setIsAttentionPanelOpen(false);
+      const route = item.routeHint;
+      Promise.resolve(
+        item.notification ? markNotificationAsRead(item.notification) : undefined,
+      )
+        .catch(error => {
+          setAuthMessage(
+            error instanceof Error
+              ? error.message
+              : 'Gagal memproses notifikasi.',
+          );
+        })
+        .finally(() => {
+          handleDashboardRouteContext(route);
+        });
+    },
+    [
+      handleDashboardRouteContext,
+      markNotificationAsRead,
+      setAuthMessage,
+      setIsAttentionPanelOpen,
+    ],
+  );
 
   const {dashboardHeader, overlay, sidebar, topNavigation} =
     useKolamShellChromeController({
@@ -426,6 +466,7 @@ export function KolamAppStateProvider({
       isCommandPaletteOpen,
       isUserMenuOpen,
       onAttentionClose: handleAttentionClose,
+      onAttentionItemPress: handleAttentionItemPress,
       onAvatarPress: toggleUserMenu,
       onBreadcrumbPress: handleBreadcrumbPress,
       onBreadcrumbDashboardPress: openDashboardFromBreadcrumb,
@@ -437,6 +478,7 @@ export function KolamAppStateProvider({
       onMoveMenuSection: handleMoveKolamMenuSection,
       onModuleRouteSelect: handleModuleRouteSelect,
       onNotificationPress: toggleAttentionPanel,
+      notificationUnreadCount,
       onQuickSearch: openQuickSearch,
       onRouteContext: handleDashboardRouteContext,
       onSeeAllNotifications: seeAllNotifications,

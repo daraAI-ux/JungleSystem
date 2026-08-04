@@ -8,11 +8,13 @@ export function KolamAttentionPanel({
   items,
   unreadCount,
   onClose,
+  onItemPress,
   onSeeAll,
 }: {
   items: AttentionPanelItem[];
   unreadCount: number;
   onClose: () => void;
+  onItemPress?: (item: AttentionPanelItem) => void;
   onSeeAll: () => void;
 }) {
   return (
@@ -22,7 +24,7 @@ export function KolamAttentionPanel({
         onClose={onClose}
         onSeeAll={onSeeAll}
       />
-      <KolamAttentionPanelList items={items} />
+      <KolamAttentionPanelList items={items} onItemPress={onItemPress} />
     </KolamPanelFrame>
   );
 }

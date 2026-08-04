@@ -1,5 +1,6 @@
 import type {ReadinessCheck} from './readiness';
 import type {UnifiedSyncStatus} from '../services/unified-data';
+import type {KolamNotification} from './kolam-notifications';
 
 export type AttentionTone = 'success' | 'info' | 'warning' | 'danger';
 
@@ -10,6 +11,8 @@ export interface AttentionPanelItem {
   meta: string;
   tone: AttentionTone;
   isUnread: boolean;
+  notification?: KolamNotification;
+  routeHint?: string;
 }
 
 export interface AttentionPanelHeaderAction {
