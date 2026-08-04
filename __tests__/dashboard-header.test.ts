@@ -182,11 +182,15 @@ describe('dashboard header copy', () => {
   });
 
   it('filters live dashboard header actions using native access scope gates', () => {
-    expect(
-      getDashboardHeaderActions({ kolam: true, pos: false }).map(
-        action => action.id,
-      ),
-    ).toEqual([]);
+    expect(getDashboardHeaderActions({ kolam: true, pos: false })).toEqual([
+      expect.objectContaining({
+        iconKind: 'camera',
+        id: 'media-library',
+        label: 'Media',
+        sourceRoute: '/media',
+        targetModule: 'kolam',
+      }),
+    ]);
     expect(
       getDashboardHeaderActions({ kolam: false, pos: true }).map(
         action => action.id,

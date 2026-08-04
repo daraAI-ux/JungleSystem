@@ -15,6 +15,7 @@ import { isKolamCustomFieldRoute } from '../domain/kolam-custom-field';
 import { isKolamEnclosureNativeRoute } from '../domain/kolam-enclosure';
 import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
 import { isKolamLocationRoute } from '../domain/kolam-location';
+import { isKolamMediaRoute } from '../domain/kolam-media';
 import { isKolamPackingMaterialRoute } from '../domain/kolam-packing-option';
 import { isKolamProductRoute } from '../domain/kolam-product';
 import { isKolamProductSerialRoute } from '../domain/kolam-product-serial';
@@ -74,6 +75,7 @@ import { KolamCustomFieldSurface } from './kolam-custom-field-surface';
 import { KolamEnclosureSurface } from './kolam-enclosure-surface';
 import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
 import { KolamLocationSurface } from './kolam-location-surface';
+import { KolamMediaLibrarySurface } from './kolam-media-library-surface';
 import { KolamPackingMaterialSurface } from './kolam-packing-material-surface';
 import { KolamProductSurface } from './kolam-product-surface';
 import { KolamProductSerialSurface } from './kolam-product-serial-surface';
@@ -216,6 +218,15 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamStockOpnameSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/stock-opname'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamMediaRoute(activeRoutePath)) {
+    return (
+      <KolamMediaLibrarySurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/media'}
       />
     );
   }

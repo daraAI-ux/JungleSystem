@@ -14,9 +14,9 @@ import type {
 export type DashboardHeaderRequiredArea = 'kolam' | 'pos';
 
 export interface DashboardHeaderAction {
-  id: 'new-product' | 'new-order';
+  id: 'media-library' | 'new-product' | 'new-order';
   label: string;
-  iconKind: 'package' | 'plus';
+  iconKind: 'camera' | 'package' | 'plus';
   intent: KolamButtonIntent;
   buttonTone: KolamButtonTone;
   requiredArea: DashboardHeaderRequiredArea;
@@ -393,9 +393,23 @@ function getDashboardHeaderSyncIntent(
 export function getDashboardHeaderActions(
   accessScope?: Pick<AccessScope, 'kolam' | 'pos'>,
 ): DashboardHeaderAction[] {
-  // Beranda no longer exposes quick-create actions (Produk Baru / Order Baru).
-  void accessScope;
-  return [];
+  if (!accessScope?.kolam) {
+    return [];
+  }
+
+  return [
+    {
+      id: 'media-library',
+      label: 'Media',
+      iconKind: 'camera',
+      intent: 'secondary',
+      buttonTone: 'default',
+      requiredArea: 'kolam',
+      targetModule: 'kolam',
+      sourceRoute: '/media',
+      accessibilityLabel: 'Media library',
+    },
+  ];
 }
 
 export function getDashboardHeaderVisualContract(): DashboardHeaderVisualContract {
