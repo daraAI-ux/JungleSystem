@@ -631,9 +631,11 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   kpiGrid: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
+    width: '100%',
   },
   toolbarWrap: {
     elevation: 1000,

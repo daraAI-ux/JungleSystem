@@ -46,7 +46,9 @@ export function KolamDaraSeoCircularKpi({
   const stroke = toneStroke(tone);
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>{label}</Text>
+      <Text numberOfLines={2} style={styles.label}>
+        {label}
+      </Text>
       <View style={styles.gauge}>
         <Svg
           height={GAUGE_SIZE}
@@ -73,12 +75,19 @@ export function KolamDaraSeoCircularKpi({
             strokeWidth={8}
           />
         </Svg>
-        <View style={styles.gaugeCenter}>
-          <Text style={styles.display}>{display}</Text>
-          {sub ? <Text style={styles.sub}>{sub}</Text> : null}
+        <View style={styles.gaugeCenter} pointerEvents="none">
+          <Text numberOfLines={1} style={styles.display}>
+            {display}
+          </Text>
+          {sub ? (
+            <Text numberOfLines={1} style={styles.sub}>
+              {sub}
+            </Text>
+          ) : null}
         </View>
       </View>
       <Text
+        numberOfLines={1}
         style={[
           styles.status,
           tone === 'good'
@@ -89,7 +98,9 @@ export function KolamDaraSeoCircularKpi({
         ]}>
         {status}
       </Text>
-      {trend ? <Text style={styles.trend}>{trend}</Text> : null}
+      <Text numberOfLines={2} style={styles.trend}>
+        {trend ?? ' '}
+      </Text>
     </View>
   );
 }
@@ -97,15 +108,16 @@ export function KolamDaraSeoCircularKpi({
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 6,
     borderWidth: 1,
-    flexGrow: 1,
-    flexShrink: 1,
+    flex: 1,
+    flexBasis: 0,
     gap: 8,
-    minWidth: 140,
-    paddingHorizontal: 12,
+    minWidth: 0,
+    paddingHorizontal: 10,
     paddingVertical: 12,
   },
   label: {
@@ -113,7 +125,9 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+    height: 32,
     textAlign: 'center',
+    width: '100%',
   },
   gauge: {
     alignItems: 'center',
@@ -150,6 +164,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     textAlign: 'center',
+    width: '100%',
   },
   statusGood: {color: V.colors.success},
   statusWarn: {color: V.colors.warning},
@@ -158,6 +173,9 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
+    height: 28,
+    lineHeight: 14,
     textAlign: 'center',
+    width: '100%',
   },
 });
