@@ -31,6 +31,8 @@ import {
   pickKolamDaraSeoLatestSocialSnapshot,
   resolveKolamDaraSeoAccess,
   resolveKolamDaraSeoKeywordDifficulty,
+  resolveKolamDaraSeoScoreTone,
+  resolveKolamDaraSeoSentimentTone,
 } from '../src/domain/kolam-dara-seo';
 
 describe('kolam-dara-seo domain', () => {
@@ -127,6 +129,11 @@ describe('kolam-dara-seo domain', () => {
     expect(formatKolamDaraSeoSentimentStatus(-2)).toBe('Negatif');
     expect(formatKolamDaraSeoSentimentStatus(20)).toBe('Positif');
     expect(formatKolamDaraSeoSentimentStatus(5)).toBe('Netral');
+    expect(resolveKolamDaraSeoScoreTone(80)).toBe('good');
+    expect(resolveKolamDaraSeoScoreTone(20)).toBe('warn');
+    expect(resolveKolamDaraSeoSentimentTone(-2)).toBe('bad');
+    expect(resolveKolamDaraSeoSentimentTone(20)).toBe('good');
+    expect(resolveKolamDaraSeoSentimentTone(5)).toBe('warn');
     expect(formatKolamDaraSeoSuggestionStatus('pending_approval')).toBe(
       'Menunggu approve',
     );

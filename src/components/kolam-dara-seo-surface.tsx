@@ -15,6 +15,8 @@ import {
   formatKolamDaraSeoSentimentStatus,
   getKolamDaraSeoTab,
   resolveKolamDaraSeoAccess,
+  resolveKolamDaraSeoScoreTone,
+  resolveKolamDaraSeoSentimentTone,
   type KolamDaraSeoTabId,
 } from '../domain/kolam-dara-seo';
 import {
@@ -43,6 +45,7 @@ import {useKolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-webs
 import {KolamButton} from './kolam-button';
 import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
 import {KolamDaraSeoAuditLogsBody} from './kolam-dara-seo-audit-logs-body';
+import {KolamDaraSeoCircularKpi} from './kolam-dara-seo-circular-kpi';
 import {KolamDaraSeoIntegrationsBody} from './kolam-dara-seo-integrations-body';
 import {KolamDaraSeoKeywordsBody} from './kolam-dara-seo-keywords-body';
 import {KolamDaraSeoMentionsBody} from './kolam-dara-seo-mentions-body';
@@ -51,7 +54,6 @@ import {KolamDaraSeoSentimentBody} from './kolam-dara-seo-sentiment-body';
 import {KolamDaraSeoSocialBody} from './kolam-dara-seo-social-body';
 import {KolamDaraSeoWebsiteBody} from './kolam-dara-seo-website-body';
 import {KolamEmptyState} from './kolam-empty-state';
-import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -274,62 +276,46 @@ function KolamDaraSeoDashboardBody({
 
   const kpiCards = useMemo(() => {
     if (!dashboard) {
-      return [
-        {id: 'seo', label: 'SEO Score', value: '—', detail: '', tone: 'muted' as const},
-        {
-          id: 'vis',
-          label: 'Search Visibility',
-          value: '—',
-          detail: '',
-          tone: 'muted' as const,
-        },
-        {
-          id: 'brand',
-          label: 'Brand Reputation',
-          value: '—',
-          detail: '',
-          tone: 'muted' as const,
-        },
-        {
-          id: 'sent',
-          label: 'Sentiment Score',
-          value: '—',
-          detail: '',
-          tone: 'muted' as const,
-        },
-      ];
+      return null;
     }
     return [
       {
         id: 'seo',
-        label: 'SEO Score',
-        value: String(dashboard.seoScore),
-        detail: formatKolamDaraSeoScoreStatus(dashboard.seoScore),
-        tone: 'default' as const,
+        label: 'SEO Score (rata-rata)',
+        display: String(dashboard.seoScore),
+        sub: '/100',
+        pct: dashboard.seoScore,
+        status: formatKolamDaraSeoScoreStatus(dashboard.seoScore),
+        tone: resolveKolamDaraSeoScoreTone(dashboard.seoScore),
+        trend: '+8 poin vs 30 hari lalu',
       },
       {
         id: 'vis',
         label: 'Search Visibility',
-        value: `${dashboard.searchVisibility}%`,
-        detail: 'Cukup',
-        tone: 'default' as const,
+        display: `${dashboard.searchVisibility}%`,
+        pct: dashboard.searchVisibility,
+        status: 'Cukup',
+        tone: 'good' as const,
+        trend: '+12% vs bulan lalu',
       },
       {
         id: 'brand',
         label: 'Brand Reputation',
-        value: String(dashboard.brandReputationScore),
-        detail: 'Excellent',
-        tone: 'default' as const,
+        display: String(dashboard.brandReputationScore),
+        sub: '/100',
+        pct: dashboard.brandReputationScore,
+        status: 'Excellent',
+        tone: 'good' as const,
+        trend: 'Stabil',
       },
       {
         id: 'sent',
         label: 'Sentiment Score',
-        value: String(dashboard.sentimentScore),
-        detail: formatKolamDaraSeoSentimentStatus(dashboard.sentimentScore),
-        tone:
-          dashboard.sentimentScore < 0
-            ? ('warning' as const)
-            : ('default' as const),
+        display: String(dashboard.sentimentScore),
+        pct: Math.min(100, Math.abs(dashboard.sentimentScore)),
+        status: formatKolamDaraSeoSentimentStatus(dashboard.sentimentScore),
+        tone: resolveKolamDaraSeoSentimentTone(dashboard.sentimentScore),
+        trend: 'Berdasarkan review terbaru',
       },
     ];
   }, [dashboard]);
@@ -495,7 +481,22 @@ function KolamDaraSeoDashboardBody({
 
       {dashboard ? (
         <>
-          <KolamStatsCardStrip cards={kpiCards} />
+          {kpiCards ? (
+            <View style={styles.kpiGrid}>
+              {kpiCards.map(card => (
+                <KolamDaraSeoCircularKpi
+                  key={card.id}
+                  display={card.display}
+                  label={card.label}
+                  pct={card.pct}
+                  status={card.status}
+                  sub={card.sub}
+                  tone={card.tone}
+                  trend={card.trend}
+                />
+              ))}
+            </View>
+          ) : null}
 
           <View style={styles.metaRow}>
             <Text style={styles.meta}>
@@ -628,6 +629,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: 12,
     paddingBottom: 24,
+  },
+  kpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   toolbarWrap: {
     elevation: 1000,

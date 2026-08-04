@@ -283,6 +283,16 @@ export function formatKolamDaraSeoScoreStatus(score: number) {
   return 'Perlu Perbaikan';
 }
 
+export type KolamDaraSeoKpiTone = 'good' | 'warn' | 'bad';
+
+/** FE CircularKpi tone for SEO / reputation score. */
+export function resolveKolamDaraSeoScoreTone(score: number): KolamDaraSeoKpiTone {
+  if (score >= 50) {
+    return 'good';
+  }
+  return 'warn';
+}
+
 export function formatKolamDaraSeoSentimentStatus(score: number) {
   if (score < 0) {
     return 'Negatif';
@@ -291,6 +301,19 @@ export function formatKolamDaraSeoSentimentStatus(score: number) {
     return 'Positif';
   }
   return 'Netral';
+}
+
+/** FE CircularKpi tone for sentiment score. */
+export function resolveKolamDaraSeoSentimentTone(
+  score: number,
+): KolamDaraSeoKpiTone {
+  if (score < 0) {
+    return 'bad';
+  }
+  if (score >= 15) {
+    return 'good';
+  }
+  return 'warn';
 }
 
 export function normalizeKolamDaraSeoStatus(
