@@ -4975,6 +4975,7 @@ function AmWebhooksPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const testPingRefreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchWebhooks = React.useCallback(async () => {
     try {
@@ -5010,6 +5011,12 @@ function AmWebhooksPage() {
     const interval = setInterval(fetchWebhooks, 10_000);
     return () => clearInterval(interval);
   }, [fetchWebhooks]);
+
+  React.useEffect(() => () => {
+    if (testPingRefreshTimerRef.current) {
+      clearTimeout(testPingRefreshTimerRef.current);
+    }
+  }, []);
 
   const resetWebhookForm = React.useCallback(() => {
     setEditingConfigId(null);
@@ -5126,6 +5133,12 @@ function AmWebhooksPage() {
       const result = await testAmWebhookPing();
       setActionMessage(result.message || 'Test ping dispatched.');
       await fetchWebhooks();
+      if (testPingRefreshTimerRef.current) {
+        clearTimeout(testPingRefreshTimerRef.current);
+      }
+      testPingRefreshTimerRef.current = setTimeout(() => {
+        fetchWebhooks();
+      }, 2000);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Webhook test ping gagal.');
     }

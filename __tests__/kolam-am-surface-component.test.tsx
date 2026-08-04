@@ -48,6 +48,7 @@ import {
   getAmTransfers,
   getAmUsers,
   getAmWebhookConfigs,
+  getAmWebhookEvents,
   getAmWebhookLogs,
   recordAmPageView,
   restartAmTokopediaSession,
@@ -5200,6 +5201,59 @@ describe('KolamAmSurface', () => {
     expect(configText).toContain('Last delivered:');
     expect(configText).toContain('31 Jul 2026');
     expect(configText).toContain('sec...ok');
+  });
+
+  it('refreshes webhook logs again after test ping like AM FE', async () => {
+    jest.useFakeTimers();
+    jest.mocked(getAmWebhookConfigs).mockResolvedValue({
+      data: [
+        {
+          _id: 'webhook-1',
+          url: 'https://example.test/webhook',
+          events: ['transfer.success'],
+          status: 'active',
+          description: 'Existing hook',
+          hasSecret: true,
+          secretMasked: 'sec...ok',
+          lastDeliveredAt: null,
+          failCount: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'webhooks');
+    jest.mocked(getAmWebhookConfigs).mockClear();
+    jest.mocked(getAmWebhookLogs).mockClear();
+    jest.mocked(getAmWebhookEvents).mockClear();
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'Test Ping'}).props.onPress();
+    });
+
+    expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
+    expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
+    expect(getAmWebhookLogs).toHaveBeenCalledTimes(1);
+    expect(getAmWebhookEvents).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    expect(getAmWebhookConfigs).toHaveBeenCalledTimes(2);
+    expect(getAmWebhookLogs).toHaveBeenCalledTimes(2);
+    expect(getAmWebhookEvents).toHaveBeenCalledTimes(2);
   });
 
   it('filters and paginates webhook delivery logs against AM BE query params', async () => {
