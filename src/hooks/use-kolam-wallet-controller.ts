@@ -16,16 +16,20 @@ import {
   type KolamWalletTab,
   type KolamWalletTransaction,
   type KolamWalletTxFilters,
+  type KolamWalletWriteBody,
 } from '../domain/kolam-wallet';
 import { ApiError } from '../lib/api-error';
 import {
   confirmKolamWalletTransaction,
+  createKolamWallet,
+  deleteKolamWallet,
   depositKolamWallet,
   fetchKolamWalletById,
   fetchKolamWalletTransactions,
   fetchKolamWalletsAll,
   fetchKolamWalletsPaginated,
   transferKolamWallet,
+  updateKolamWallet,
   withdrawKolamWallet,
 } from '../services/kolam-wallet-api';
 
@@ -53,11 +57,14 @@ export interface KolamWalletController {
   loadingDetail: boolean;
   submitting: boolean;
   confirmingTxId: string | null;
+  deletingWalletId: string | null;
   actionModal: KolamWalletActionModal;
   error: string;
   statusMessage: string;
   canEdit: boolean;
   canConfirm: boolean;
+  canCreate: boolean;
+  canDelete: boolean;
   onChangeTab: (tab: KolamWalletTab) => void;
   onChangeWalletFilters: (patch: Partial<KolamWalletListFilters>) => void;
   onChangeTxFilters: (patch: Partial<KolamWalletTxFilters>) => void;
@@ -92,6 +99,12 @@ export interface KolamWalletController {
     proofLocalUris?: string[];
   }) => Promise<void>;
   onConfirmTransaction: (tx: KolamWalletTransaction) => Promise<void>;
+  onCreateWallet: (body: KolamWalletWriteBody) => Promise<KolamWallet | null>;
+  onUpdateWallet: (
+    id: string,
+    body: Partial<KolamWalletWriteBody>,
+  ) => Promise<KolamWallet | null>;
+  onDeleteWallet: (wallet: KolamWallet) => Promise<boolean>;
   clearStatusMessage: () => void;
 }
 
@@ -132,6 +145,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmingTxId, setConfirmingTxId] = useState<string | null>(null);
+  const [deletingWalletId, setDeletingWalletId] = useState<string | null>(null);
   const [actionModal, setActionModal] = useState<KolamWalletActionModal>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -149,6 +163,16 @@ export function useKolamWalletController(route: string): KolamWalletController {
   const canConfirm = hasKolamWalletPermission(
     authUser?.permissions,
     'confirm',
+    authUser?.roleKey,
+  );
+  const canCreate = hasKolamWalletPermission(
+    authUser?.permissions,
+    'create',
+    authUser?.roleKey,
+  );
+  const canDelete = hasKolamWalletPermission(
+    authUser?.permissions,
+    'delete',
     authUser?.roleKey,
   );
 
@@ -269,7 +293,7 @@ export function useKolamWalletController(route: string): KolamWalletController {
   ]);
 
   useEffect(() => {
-    if (mode === 'detail') {
+    if (mode === 'detail' || mode === 'edit') {
       void refreshDetail();
     }
   }, [mode, refreshDetail]);
@@ -428,7 +452,9 @@ export function useKolamWalletController(route: string): KolamWalletController {
           refreshTransactions(),
           refreshWallets(),
           refreshAllWallets(),
-          mode === 'detail' ? refreshDetail() : Promise.resolve(),
+          mode === 'detail' || mode === 'edit'
+            ? refreshDetail()
+            : Promise.resolve(),
         ]);
       } catch (err) {
         setError(getErrorMessage(err, 'Gagal mengonfirmasi transaksi.'));
@@ -437,6 +463,73 @@ export function useKolamWalletController(route: string): KolamWalletController {
       }
     },
     [mode, refreshAllWallets, refreshDetail, refreshTransactions, refreshWallets],
+  );
+
+  const onCreateWallet = useCallback(
+    async (body: KolamWalletWriteBody) => {
+      setSubmitting(true);
+      setError('');
+      setStatusMessage('');
+      try {
+        const created = await createKolamWallet(body);
+        setStatusMessage('Dompet berhasil dibuat');
+        await Promise.all([refreshAllWallets(), refreshWallets()]);
+        return created;
+      } catch (err) {
+        setError(getErrorMessage(err, 'Gagal membuat dompet'));
+        return null;
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [refreshAllWallets, refreshWallets],
+  );
+
+  const onUpdateWallet = useCallback(
+    async (id: string, body: Partial<KolamWalletWriteBody>) => {
+      setSubmitting(true);
+      setError('');
+      setStatusMessage('');
+      try {
+        const updated = await updateKolamWallet(id, body);
+        setStatusMessage('Dompet berhasil diperbarui');
+        await Promise.all([
+          refreshAllWallets(),
+          refreshWallets(),
+          refreshDetail(),
+        ]);
+        return updated;
+      } catch (err) {
+        setError(getErrorMessage(err, 'Gagal memperbarui dompet'));
+        return null;
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [refreshAllWallets, refreshDetail, refreshWallets],
+  );
+
+  const onDeleteWallet = useCallback(
+    async (wallet: KolamWallet) => {
+      if (!wallet.id) {
+        return false;
+      }
+      setDeletingWalletId(wallet.id);
+      setError('');
+      setStatusMessage('');
+      try {
+        await deleteKolamWallet(wallet.id);
+        setStatusMessage('Dompet berhasil dihapus');
+        await Promise.all([refreshAllWallets(), refreshWallets()]);
+        return true;
+      } catch (err) {
+        setError(getErrorMessage(err, 'Gagal menghapus dompet'));
+        return false;
+      } finally {
+        setDeletingWalletId(null);
+      }
+    },
+    [refreshAllWallets, refreshWallets],
   );
 
   return {
@@ -461,11 +554,14 @@ export function useKolamWalletController(route: string): KolamWalletController {
     loadingDetail,
     submitting,
     confirmingTxId,
+    deletingWalletId,
     actionModal,
     error,
     statusMessage,
     canEdit,
     canConfirm,
+    canCreate,
+    canDelete,
     onChangeTab,
     onChangeWalletFilters,
     onChangeTxFilters,
@@ -484,6 +580,9 @@ export function useKolamWalletController(route: string): KolamWalletController {
     onWithdraw,
     onTransfer,
     onConfirmTransaction,
+    onCreateWallet,
+    onUpdateWallet,
+    onDeleteWallet,
     clearStatusMessage: () => setStatusMessage(''),
   };
 }

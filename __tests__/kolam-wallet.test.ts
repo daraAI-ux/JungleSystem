@@ -17,12 +17,16 @@ describe('kolam wallet domain', () => {
     expect(isKolamWalletRoute('/wallet')).toBe(true);
     expect(isKolamWalletRoute('/wallet/w1')).toBe(true);
     expect(isKolamWalletRoute('/wallet/create')).toBe(true);
+    expect(isKolamWalletRoute('/wallet/w1/edit')).toBe(true);
     expect(isKolamWalletRoute('/finance')).toBe(false);
     expect(getKolamWalletRouteId('/wallet')).toBe(null);
     expect(getKolamWalletRouteId('/wallet/create')).toBe(null);
     expect(getKolamWalletRouteId('/wallet/w1')).toBe('w1');
+    expect(getKolamWalletRouteId('/wallet/w1/edit')).toBe('w1');
     expect(getKolamWalletSurfaceMode('/wallet')).toBe('list');
+    expect(getKolamWalletSurfaceMode('/wallet/create')).toBe('create');
     expect(getKolamWalletSurfaceMode('/wallet/w1')).toBe('detail');
+    expect(getKolamWalletSurfaceMode('/wallet/w1/edit')).toBe('edit');
   });
 
   it('formats wallet labels', () => {

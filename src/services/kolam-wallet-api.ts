@@ -9,6 +9,7 @@ import {
   type KolamWalletTransaction,
   type KolamWalletTxFilters,
   type KolamWalletType,
+  type KolamWalletWriteBody,
 } from '../domain/kolam-wallet';
 import { apiRequest } from '../lib/api-client';
 import {
@@ -176,6 +177,76 @@ export async function confirmKolamWalletTransaction(
       ? (payload as { data: unknown }).data
       : payload;
   return normalizeKolamWalletTransaction(row);
+}
+
+export async function createKolamWallet(
+  body: KolamWalletWriteBody,
+): Promise<KolamWallet> {
+  const payload = await kolamRequest<unknown>('/wallet', {
+    method: 'POST',
+    body: sanitizeWalletWriteBody(body),
+  });
+  return unwrapWallet(payload);
+}
+
+export async function updateKolamWallet(
+  id: string,
+  body: Partial<KolamWalletWriteBody>,
+): Promise<KolamWallet> {
+  const payload = await kolamRequest<unknown>(
+    `/wallet/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body: sanitizeWalletWriteBody(body),
+    },
+  );
+  return unwrapWallet(payload);
+}
+
+export async function deleteKolamWallet(id: string): Promise<void> {
+  await kolamRequest<unknown>(`/wallet/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+function sanitizeWalletWriteBody(
+  body: Partial<KolamWalletWriteBody>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = {};
+  if (body.name != null) {
+    next.name = String(body.name).trim();
+  }
+  if (body.type != null) {
+    next.type = body.type;
+  }
+  if (body.initialBalance != null) {
+    next.initialBalance = body.initialBalance;
+  }
+  if (body.currentBalance != null) {
+    next.currentBalance = body.currentBalance;
+  }
+  if (body.note != null) {
+    next.note = String(body.note).trim();
+  }
+  if (body.provider != null) {
+    next.provider = String(body.provider).trim();
+  }
+  if (body.accountNumber != null) {
+    next.accountNumber = String(body.accountNumber).trim();
+  }
+  if (body.accountName != null) {
+    next.accountName = String(body.accountName).trim();
+  }
+  if (body.requireDepositProof != null) {
+    next.requireDepositProof = Boolean(body.requireDepositProof);
+  }
+  return next;
+}
+
+function unwrapWallet(payload: unknown): KolamWallet {
+  const root = asRecord(payload);
+  const data = 'data' in root ? root.data : payload;
+  return normalizeKolamWallet(data);
 }
 
 function createWalletMoneyMoveFormData(input: {

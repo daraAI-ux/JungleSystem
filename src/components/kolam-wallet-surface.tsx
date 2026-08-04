@@ -15,8 +15,12 @@ import {
   formatKolamWalletTxTypeLabel,
   formatKolamWalletTypeLabel,
   getKolamWalletConfirmStatusIntent,
+  getKolamWalletCreateRoute,
+  getKolamWalletDetailRoute,
+  getKolamWalletEditRoute,
   getKolamWalletTypeIntent,
   KOLAM_WALLET_CONFIRM_STATUS_OPTIONS,
+  KOLAM_WALLET_CREATE_TYPE_OPTIONS,
   KOLAM_WALLET_ROOT,
   KOLAM_WALLET_TX_SOURCE_OPTIONS,
   KOLAM_WALLET_TX_TYPE_OPTIONS,
@@ -24,6 +28,7 @@ import {
   type KolamWallet,
   type KolamWalletTab,
   type KolamWalletTransaction,
+  type KolamWalletType,
 } from '../domain/kolam-wallet';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -43,6 +48,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type WalletProofPick = {
@@ -55,6 +61,7 @@ const WALLET_COLUMNS = [
   { id: 'type', label: 'Tipe', flex: 0.9 },
   { id: 'balance', label: 'Saldo', flex: 1 },
   { id: 'note', label: 'Catatan', flex: 1.1 },
+  { id: 'action', label: '', flex: 1.1 },
 ] as const;
 
 const TX_COLUMNS = [
@@ -101,21 +108,32 @@ export function KolamWalletSurface({
 
       {controller.mode === 'list' ? (
         <WalletListMode controller={controller} onRouteChange={onRouteChange} />
-      ) : (
+      ) : null}
+      {controller.mode === 'detail' ? (
         <WalletDetailMode controller={controller} onRouteChange={onRouteChange} />
-      )}
+      ) : null}
+      {controller.mode === 'create' ? (
+        <WalletCreateMode controller={controller} onRouteChange={onRouteChange} />
+      ) : null}
+      {controller.mode === 'edit' ? (
+        <WalletEditMode controller={controller} onRouteChange={onRouteChange} />
+      ) : null}
 
-      <WalletActionModal
-        controller={controller}
-        preselectedWalletId={
-          controller.mode === 'detail' ? controller.documentId ?? undefined : undefined
-        }
-        wallets={
-          controller.allWallets.length > 0
-            ? controller.allWallets
-            : controller.wallets
-        }
-      />
+      {controller.mode === 'list' || controller.mode === 'detail' ? (
+        <WalletActionModal
+          controller={controller}
+          preselectedWalletId={
+            controller.mode === 'detail'
+              ? controller.documentId ?? undefined
+              : undefined
+          }
+          wallets={
+            controller.allWallets.length > 0
+              ? controller.allWallets
+              : controller.wallets
+          }
+        />
+      ) : null}
     </View>
   );
 }
@@ -130,7 +148,7 @@ function WalletListMode({
   return (
     <View style={styles.listRoot}>
       <WalletSummaryStrip controller={controller} />
-      <WalletActionBar controller={controller} />
+      <WalletActionBar controller={controller} onRouteChange={onRouteChange} />
       <WalletTabBar
         activeTab={controller.activeTab}
         onChangeTab={controller.onChangeTab}
@@ -152,6 +170,10 @@ function WalletDetailMode({
   onRouteChange?: (route: string) => void;
 }) {
   const wallet = controller.detailWallet;
+  const balanceChange = wallet
+    ? wallet.currentBalance - wallet.initialBalance
+    : 0;
+
   return (
     <View style={styles.listRoot}>
       <View style={styles.detailHeader}>
@@ -170,25 +192,153 @@ function WalletDetailMode({
             />
           </View>
         ) : null}
+        {wallet && controller.canEdit ? (
+          <KolamButton
+            intent="secondary"
+            label="Ubah"
+            onPress={() => onRouteChange?.(getKolamWalletEditRoute(wallet.id))}
+            style={styles.filterTrigger}
+          />
+        ) : null}
       </View>
 
       {controller.loadingDetail ? (
         <Text style={styles.metaText}>Memuat…</Text>
       ) : wallet ? (
-        <View style={styles.detailCards}>
-          <KolamCardFrame style={styles.card}>
-            <Text style={styles.cardLabel}>Saldo</Text>
-            <Text style={styles.cardValue}>{formatRupiah(wallet.currentBalance)}</Text>
+        <>
+          <View style={styles.detailCards}>
+            <KolamCardFrame style={styles.card}>
+              <Text style={styles.cardLabel}>Saldo</Text>
+              <Text style={styles.cardValue}>
+                {formatRupiah(wallet.currentBalance)}
+              </Text>
+            </KolamCardFrame>
+            <KolamCardFrame style={styles.card}>
+              <Text style={styles.cardLabel}>Saldo awal</Text>
+              <Text style={styles.cardValue}>
+                {formatRupiah(wallet.initialBalance)}
+              </Text>
+            </KolamCardFrame>
+            <KolamCardFrame style={styles.card}>
+              <Text style={styles.cardLabel}>Perubahan</Text>
+              <Text
+                style={[
+                  styles.cardValue,
+                  balanceChange > 0
+                    ? styles.valuePrimary
+                    : balanceChange < 0
+                      ? styles.valueDanger
+                      : null,
+                ]}
+              >
+                {balanceChange > 0 ? '+' : ''}
+                {formatRupiah(balanceChange)}
+              </Text>
+            </KolamCardFrame>
+          </View>
+
+          <KolamCardFrame style={styles.profileCard}>
+            <Text style={styles.profileTitle}>Profil Dompet</Text>
+            <View style={styles.profileGrid}>
+              <WalletInfoItem label="Nama" value={wallet.name} />
+              <WalletInfoItem
+                label="Tipe"
+                value={formatKolamWalletTypeLabel(wallet.type)}
+              />
+              <WalletInfoItem
+                label="Provider / Bank"
+                value={wallet.provider || '—'}
+              />
+              <WalletInfoItem
+                label="Nama Rekening"
+                value={wallet.accountName || '—'}
+              />
+              <WalletInfoItem
+                label="Nomor Rekening"
+                value={wallet.accountNumber || '—'}
+              />
+              <View style={styles.profileItem}>
+                <Text style={styles.metaText}>Bukti setoran</Text>
+                <KolamStatusBadge
+                  intent={wallet.requireDepositProof ? 'warning' : 'secondary'}
+                  label={wallet.requireDepositProof ? 'Wajib' : 'Opsional'}
+                />
+              </View>
+              <WalletInfoItem
+                label="Catatan"
+                value={wallet.note || '—'}
+                wide
+              />
+            </View>
           </KolamCardFrame>
-          <KolamCardFrame style={styles.card}>
-            <Text style={styles.cardLabel}>Saldo awal</Text>
-            <Text style={styles.cardValue}>{formatRupiah(wallet.initialBalance)}</Text>
-          </KolamCardFrame>
-        </View>
+        </>
       ) : null}
 
-      <WalletActionBar controller={controller} />
+      <WalletActionBar controller={controller} onRouteChange={onRouteChange} />
       <WalletTransactionPanel controller={controller} showWalletFilter={false} />
+    </View>
+  );
+}
+
+function WalletInfoItem({
+  label,
+  value,
+  wide,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
+  return (
+    <View style={[styles.profileItem, wide ? styles.profileItemWide : null]}>
+      <Text style={styles.metaText}>{label}</Text>
+      <Text style={styles.primaryText}>{value}</Text>
+    </View>
+  );
+}
+
+function WalletActionBar({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamWalletController;
+  onRouteChange?: (route: string) => void;
+}) {
+  if (!controller.canEdit && !controller.canCreate) {
+    return null;
+  }
+  return (
+    <View style={styles.actionBar}>
+      {controller.canEdit ? (
+        <>
+          <KolamButton
+            intent="secondary"
+            label="Drop Dana"
+            onPress={() => controller.onOpenActionModal('deposit')}
+            style={styles.filterTrigger}
+          />
+          <KolamButton
+            intent="secondary"
+            label="Tarik Dana"
+            onPress={() => controller.onOpenActionModal('withdraw')}
+            style={styles.filterTrigger}
+          />
+          <KolamButton
+            intent="secondary"
+            label="Transfer"
+            onPress={() => controller.onOpenActionModal('transfer')}
+            style={styles.filterTrigger}
+          />
+        </>
+      ) : null}
+      {controller.canCreate && controller.mode === 'list' ? (
+        <KolamButton
+          intent="primary"
+          label="Baru"
+          onPress={() => onRouteChange?.(getKolamWalletCreateRoute())}
+          style={styles.filterTrigger}
+        />
+      ) : null}
     </View>
   );
 }
@@ -275,38 +425,6 @@ function WalletSummaryStrip({ controller }: { controller: KolamWalletController 
   );
 }
 
-function WalletActionBar({
-  controller,
-}: {
-  controller: KolamWalletController;
-}) {
-  if (!controller.canEdit) {
-    return null;
-  }
-  return (
-    <View style={styles.actionBar}>
-      <KolamButton
-        intent="secondary"
-        label="Drop Dana"
-        onPress={() => controller.onOpenActionModal('deposit')}
-        style={styles.filterTrigger}
-      />
-      <KolamButton
-        intent="secondary"
-        label="Tarik Dana"
-        onPress={() => controller.onOpenActionModal('withdraw')}
-        style={styles.filterTrigger}
-      />
-      <KolamButton
-        intent="secondary"
-        label="Transfer"
-        onPress={() => controller.onOpenActionModal('transfer')}
-        style={styles.filterTrigger}
-      />
-    </View>
-  );
-}
-
 function WalletTabBar({
   activeTab,
   onChangeTab,
@@ -349,6 +467,7 @@ function WalletListPanel({
   onRouteChange?: (route: string) => void;
 }) {
   const [typeOpen, setTypeOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<KolamWallet | null>(null);
   const typeLabel =
     KOLAM_WALLET_TYPE_OPTIONS.find(
       option => option.value === controller.walletFilters.type,
@@ -358,19 +477,15 @@ function WalletListPanel({
 
   const renderRow = React.useCallback(
     ({ item }: { item: KolamWallet }) => (
-      <Pressable
-        onPress={() =>
-          onRouteChange?.(
-            `${KOLAM_WALLET_ROOT}/${encodeURIComponent(item.id)}`,
-          )
-        }
-        style={styles.row}
-      >
-        <View style={[styles.cell, { flex: 1.2 }]}>
+      <View style={styles.row}>
+        <Pressable
+          onPress={() => onRouteChange?.(getKolamWalletDetailRoute(item.id))}
+          style={[styles.cell, { flex: 1.2 }]}
+        >
           <Text numberOfLines={2} style={styles.primaryText}>
             {item.name}
           </Text>
-        </View>
+        </Pressable>
         <View style={[styles.cell, { flex: 0.9 }]}>
           <KolamStatusBadge
             intent={getKolamWalletTypeIntent(item.type)}
@@ -378,16 +493,34 @@ function WalletListPanel({
           />
         </View>
         <View style={[styles.cell, { flex: 1 }]}>
-          <Text style={styles.primaryText}>{formatRupiah(item.currentBalance)}</Text>
+          <Text style={styles.primaryText}>
+            {formatRupiah(item.currentBalance)}
+          </Text>
         </View>
         <View style={[styles.cell, { flex: 1.1 }]}>
           <Text numberOfLines={2} style={styles.metaText}>
             {item.note || '—'}
           </Text>
         </View>
-      </Pressable>
+        <View style={[styles.cell, styles.rowActions, { flex: 1.1 }]}>
+          {controller.canEdit ? (
+            <KolamButton
+              intent="secondary"
+              label="Ubah"
+              onPress={() => onRouteChange?.(getKolamWalletEditRoute(item.id))}
+            />
+          ) : null}
+          {controller.canDelete ? (
+            <KolamButton
+              intent="secondary"
+              label="Hapus"
+              onPress={() => setDeleteTarget(item)}
+            />
+          ) : null}
+        </View>
+      </View>
     ),
-    [onRouteChange],
+    [controller.canDelete, controller.canEdit, onRouteChange],
   );
 
   return (
@@ -399,7 +532,7 @@ function WalletListPanel({
               onChangeText={value =>
                 controller.onChangeWalletFilters({ search: value })
               }
-              placeholder="Cari dompet"
+              placeholder="Cari dompet..."
               style={kolamTableToolbarStyles.searchInput}
               value={controller.walletFilters.search}
             />
@@ -495,7 +628,9 @@ function WalletListPanel({
               <KolamEmptyState
                 compact
                 title={
-                  controller.loadingWallets ? 'Memuat…' : 'Tidak ada dompet'
+                  controller.loadingWallets
+                    ? 'Memuat…'
+                    : 'Dompet tidak ditemukan'
                 }
               />
             </View>
@@ -516,6 +651,390 @@ function WalletListPanel({
           style={styles.list}
         />
       </KolamCatalogListTableShell>
+
+      {deleteTarget ? (
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setDeleteTarget(null)}
+          transparent
+          visible
+        >
+          <View style={styles.modalRoot}>
+            <KolamModalBackdrop onPress={() => setDeleteTarget(null)} />
+            <View style={styles.modalCard}>
+              <Text style={styles.formTitle}>Hapus Dompet</Text>
+              <Text style={styles.metaText}>
+                Yakin ingin menghapus "{deleteTarget.name}"? Tindakan ini tidak
+                dapat dibatalkan.
+              </Text>
+              <View style={styles.formActions}>
+                <KolamButton
+                  intent="secondary"
+                  label="Batal"
+                  onPress={() => setDeleteTarget(null)}
+                />
+                <KolamButton
+                  disabled={controller.deletingWalletId === deleteTarget.id}
+                  intent="primary"
+                  label={
+                    controller.deletingWalletId === deleteTarget.id
+                      ? 'Menghapus...'
+                      : 'Hapus'
+                  }
+                  onPress={() => {
+                    void (async () => {
+                      const ok = await controller.onDeleteWallet(deleteTarget);
+                      if (ok) {
+                        setDeleteTarget(null);
+                      }
+                    })();
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
+    </View>
+  );
+}
+
+function WalletCreateMode({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamWalletController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [type, setType] = useState<KolamWalletType>('regular');
+  const [initialBalance, setInitialBalance] = useState('0');
+  const [note, setNote] = useState('');
+  const [provider, setProvider] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [requireDepositProof, setRequireDepositProof] = useState(false);
+  const [formError, setFormError] = useState('');
+  const balanceNumber = Number(initialBalance);
+  const safeBalance =
+    Number.isFinite(balanceNumber) && balanceNumber >= 0 ? balanceNumber : 0;
+
+  return (
+    <View style={styles.listRoot}>
+      <View style={styles.detailHeader}>
+        <KolamButton
+          intent="secondary"
+          label="Batal"
+          onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
+          style={styles.filterTrigger}
+        />
+        <Text style={styles.detailTitle}>Dompet Baru</Text>
+      </View>
+
+      <KolamCardFrame style={styles.formCard}>
+        <ScrollView contentContainerStyle={styles.formBody}>
+          {formError ? (
+            <KolamStatusBadge intent="danger" label={formError} numberOfLines={3} />
+          ) : null}
+          <Text style={styles.sectionTitle}>Detail Dompet</Text>
+          <KolamFormTextField
+            onChangeText={setName}
+            placeholder="Nama dompet"
+            value={name}
+          />
+          <KolamDropdownSelect
+            label="Tipe"
+            menuPlacement="inline"
+            onChange={value => setType(value as KolamWalletType)}
+            options={KOLAM_WALLET_CREATE_TYPE_OPTIONS.map(option => ({
+              label: option.label,
+              value: option.value,
+            }))}
+            value={type}
+          />
+          {type === 'main' ? (
+            <Text style={styles.metaText}>
+              Hanya satu dompet utama yang diizinkan per sistem
+            </Text>
+          ) : null}
+          <KolamFormTextField
+            keyboardType="numeric"
+            onChangeText={setInitialBalance}
+            placeholder="Saldo Awal"
+            value={initialBalance}
+          />
+          <KolamFormTextField
+            onChangeText={setNote}
+            placeholder="Catatan"
+            value={note}
+          />
+          <KolamFormTextField
+            onChangeText={setProvider}
+            placeholder="Provider / Bank"
+            value={provider}
+          />
+          <KolamFormTextField
+            onChangeText={setAccountNumber}
+            placeholder="Nomor Rekening"
+            value={accountNumber}
+          />
+          <KolamFormTextField
+            onChangeText={setAccountName}
+            placeholder="Nama Rekening"
+            value={accountName}
+          />
+
+          <Text style={styles.sectionTitle}>Pengaturan Operasional</Text>
+          <View style={styles.switchRow}>
+            <View style={styles.switchCopy}>
+              <Text style={styles.primaryText}>Wajib bukti setoran</Text>
+            </View>
+            <KolamSwitch
+              accessibilityLabel="Wajib bukti setoran"
+              active={requireDepositProof}
+              onPress={() => setRequireDepositProof(current => !current)}
+            />
+          </View>
+
+          <View style={styles.summaryBox}>
+            <Text style={styles.sectionTitle}>Ringkasan</Text>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.metaText}>Tipe Dompet</Text>
+              <KolamStatusBadge
+                intent={getKolamWalletTypeIntent(type)}
+                label={formatKolamWalletTypeLabel(type)}
+              />
+            </View>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.metaText}>Saldo Awal</Text>
+              <Text style={styles.balanceInfoValue}>
+                {formatRupiah(safeBalance)}
+              </Text>
+            </View>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.metaText}>Bukti Setoran</Text>
+              <KolamStatusBadge
+                intent={requireDepositProof ? 'warning' : 'secondary'}
+                label={requireDepositProof ? 'Wajib' : 'Opsional'}
+              />
+            </View>
+          </View>
+
+          <View style={styles.formActions}>
+            <KolamButton
+              intent="secondary"
+              label="Batal"
+              onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
+            />
+            <KolamButton
+              disabled={controller.submitting || !name.trim()}
+              intent="primary"
+              label={
+                controller.submitting ? 'Membuat dompet…' : 'Buat Dompet'
+              }
+              onPress={() => {
+                setFormError('');
+                if (!name.trim()) {
+                  setFormError('Nama dompet wajib diisi.');
+                  return;
+                }
+                void (async () => {
+                  const created = await controller.onCreateWallet({
+                    name: name.trim(),
+                    type,
+                    initialBalance: safeBalance,
+                    currentBalance: safeBalance,
+                    note,
+                    provider,
+                    accountNumber,
+                    accountName,
+                    requireDepositProof,
+                  });
+                  if (created?.id) {
+                    onRouteChange?.(getKolamWalletDetailRoute(created.id));
+                  } else {
+                    setFormError('Gagal membuat dompet');
+                  }
+                })();
+              }}
+            />
+          </View>
+        </ScrollView>
+      </KolamCardFrame>
+    </View>
+  );
+}
+
+function WalletEditMode({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamWalletController;
+  onRouteChange?: (route: string) => void;
+}) {
+  const wallet = controller.detailWallet;
+  const [name, setName] = useState('');
+  const [note, setNote] = useState('');
+  const [provider, setProvider] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [requireDepositProof, setRequireDepositProof] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [hydratedId, setHydratedId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!wallet || wallet.id === hydratedId) {
+      return;
+    }
+    setName(wallet.name);
+    setNote(wallet.note);
+    setProvider(wallet.provider);
+    setAccountNumber(wallet.accountNumber);
+    setAccountName(wallet.accountName);
+    setRequireDepositProof(Boolean(wallet.requireDepositProof));
+    setHydratedId(wallet.id);
+  }, [hydratedId, wallet]);
+
+  if (!controller.canEdit) {
+    return (
+      <View style={styles.listRoot}>
+        <KolamStatusBadge intent="danger" label="Akses ditolak" />
+        <KolamButton
+          intent="secondary"
+          label="Kembali"
+          onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.listRoot}>
+      <View style={styles.detailHeader}>
+        <KolamButton
+          intent="secondary"
+          label="Batal"
+          onPress={() =>
+            onRouteChange?.(
+              wallet
+                ? getKolamWalletDetailRoute(wallet.id)
+                : KOLAM_WALLET_ROOT,
+            )
+          }
+          style={styles.filterTrigger}
+        />
+        <Text style={styles.detailTitle}>Ubah Dompet</Text>
+      </View>
+
+      {controller.loadingDetail || !wallet ? (
+        <Text style={styles.metaText}>Memuat…</Text>
+      ) : (
+        <KolamCardFrame style={styles.formCard}>
+          <ScrollView contentContainerStyle={styles.formBody}>
+            {formError ? (
+              <KolamStatusBadge
+                intent="danger"
+                label={formError}
+                numberOfLines={3}
+              />
+            ) : null}
+            <Text style={styles.sectionTitle}>Detail Dompet</Text>
+            <KolamFormTextField
+              onChangeText={setName}
+              placeholder="Nama dompet"
+              value={name}
+            />
+            <KolamFormTextField
+              onChangeText={setNote}
+              placeholder="Catatan"
+              value={note}
+            />
+            <KolamFormTextField
+              onChangeText={setProvider}
+              placeholder="Provider / Bank"
+              value={provider}
+            />
+            <KolamFormTextField
+              onChangeText={setAccountNumber}
+              placeholder="Nomor Rekening"
+              value={accountNumber}
+            />
+            <KolamFormTextField
+              onChangeText={setAccountName}
+              placeholder="Nama Rekening"
+              value={accountName}
+            />
+            <View style={styles.switchRow}>
+              <View style={styles.switchCopy}>
+                <Text style={styles.primaryText}>Wajib bukti setoran</Text>
+              </View>
+              <KolamSwitch
+                accessibilityLabel="Wajib bukti setoran"
+                active={requireDepositProof}
+                onPress={() => setRequireDepositProof(current => !current)}
+              />
+            </View>
+
+            <Text style={styles.sectionTitle}>Informasi Dompet</Text>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.metaText}>Tipe</Text>
+              <KolamStatusBadge
+                intent={getKolamWalletTypeIntent(wallet.type)}
+                label={formatKolamWalletTypeLabel(wallet.type)}
+              />
+            </View>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.metaText}>Saldo awal</Text>
+              <Text style={styles.balanceInfoValue}>
+                {formatRupiah(wallet.initialBalance)}
+              </Text>
+            </View>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.metaText}>Saldo saat ini</Text>
+              <Text style={styles.balanceInfoValue}>
+                {formatRupiah(wallet.currentBalance)}
+              </Text>
+            </View>
+
+            <View style={styles.formActions}>
+              <KolamButton
+                intent="secondary"
+                label="Batal"
+                onPress={() =>
+                  onRouteChange?.(getKolamWalletDetailRoute(wallet.id))
+                }
+              />
+              <KolamButton
+                disabled={controller.submitting || !name.trim()}
+                intent="primary"
+                label={controller.submitting ? 'Menyimpan…' : 'Simpan'}
+                onPress={() => {
+                  setFormError('');
+                  if (!name.trim()) {
+                    setFormError('Nama dompet wajib diisi.');
+                    return;
+                  }
+                  void (async () => {
+                    const updated = await controller.onUpdateWallet(wallet.id, {
+                      name: name.trim(),
+                      note,
+                      provider,
+                      accountNumber,
+                      accountName,
+                      requireDepositProof,
+                    });
+                    if (updated?.id) {
+                      onRouteChange?.(getKolamWalletDetailRoute(updated.id));
+                    } else {
+                      setFormError('Gagal memperbarui dompet');
+                    }
+                  })();
+                }}
+              />
+            </View>
+          </ScrollView>
+        </KolamCardFrame>
+      )}
     </View>
   );
 }
@@ -1520,6 +2039,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  rowActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  profileCard: {
+    gap: 10,
+    padding: 14,
+  },
+  profileTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  profileGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  profileItem: {
+    flexBasis: '46%',
+    flexGrow: 1,
+    gap: 4,
+    minWidth: 160,
+  },
+  profileItemWide: {
+    flexBasis: '100%',
+  },
+  formCard: {
+    padding: 0,
+  },
+  sectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  switchRow: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  switchCopy: {
+    flex: 1,
+    marginRight: 12,
+  },
+  summaryBox: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 10,
+    gap: 8,
+    padding: 12,
   },
   tabBar: {
     flexDirection: 'row',

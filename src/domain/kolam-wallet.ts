@@ -18,7 +18,7 @@ export type { KolamFinancePermissionEntry as KolamWalletPermissionEntry };
 
 export const KOLAM_WALLET_ROOT = '/wallet';
 
-export type KolamWalletSurfaceMode = 'list' | 'detail';
+export type KolamWalletSurfaceMode = 'list' | 'detail' | 'create' | 'edit';
 
 export type KolamWalletType = 'main' | 'regular' | 'virtual' | 'cash';
 
@@ -154,8 +154,13 @@ export function isKolamWalletRoute(route: string): boolean {
 
 export function getKolamWalletRouteId(route: string): string | null {
   const path = normalizeWalletRoutePath(route);
-  if (path === KOLAM_WALLET_ROOT) {
+  if (path === KOLAM_WALLET_ROOT || path === `${KOLAM_WALLET_ROOT}/create`) {
     return null;
+  }
+  const editMatch = /^\/wallet\/([^/]+)\/edit$/.exec(path);
+  if (editMatch?.[1]) {
+    const segment = decodeURIComponent(editMatch[1]);
+    return segment === 'create' ? null : segment;
   }
   const match = /^\/wallet\/([^/]+)$/.exec(path);
   if (!match?.[1]) {
@@ -169,11 +174,52 @@ export function getKolamWalletRouteId(route: string): string | null {
 }
 
 export function getKolamWalletSurfaceMode(route: string): KolamWalletSurfaceMode {
+  const path = normalizeWalletRoutePath(route);
+  if (path === `${KOLAM_WALLET_ROOT}/create`) {
+    return 'create';
+  }
+  if (/^\/wallet\/[^/]+\/edit$/.test(path)) {
+    return 'edit';
+  }
   if (getKolamWalletRouteId(route)) {
     return 'detail';
   }
   return 'list';
 }
+
+export function getKolamWalletCreateRoute(): string {
+  return `${KOLAM_WALLET_ROOT}/create`;
+}
+
+export function getKolamWalletDetailRoute(id: string): string {
+  return `${KOLAM_WALLET_ROOT}/${encodeURIComponent(id)}`;
+}
+
+export function getKolamWalletEditRoute(id: string): string {
+  return `${KOLAM_WALLET_ROOT}/${encodeURIComponent(id)}/edit`;
+}
+
+export type KolamWalletWriteBody = {
+  name: string;
+  type?: KolamWalletType;
+  initialBalance?: number;
+  currentBalance?: number;
+  note?: string;
+  provider?: string;
+  requireDepositProof?: boolean;
+  accountNumber?: string;
+  accountName?: string;
+};
+
+export const KOLAM_WALLET_CREATE_TYPE_OPTIONS: Array<{
+  label: string;
+  value: KolamWalletType;
+}> = [
+  { label: 'Dompet Utama', value: 'main' },
+  { label: 'Dompet Reguler', value: 'regular' },
+  { label: 'Dompet Virtual', value: 'virtual' },
+  { label: 'Dompet Tunai', value: 'cash' },
+];
 
 export function createInitialWalletListFilters(): KolamWalletListFilters {
   return {
