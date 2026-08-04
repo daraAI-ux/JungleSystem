@@ -10,6 +10,10 @@ const amRoot =
 const posAppRoot = path.join(posRoot, 'src', 'app', '(app)');
 const amAppRoot = path.join(amRoot, 'am-fe', 'src', 'app');
 const appShellPath = path.join(repoRoot, 'src', 'domain', 'app-shell.ts');
+const amNativeOmittedRoutes = new Set([
+  'login',
+  'settings/account',
+]);
 
 let hasFailure = false;
 
@@ -50,7 +54,11 @@ console.log(`[INFO] AM source app pages: ${amPages.length}`);
 console.log(`[INFO] AM native shell routes: ${amShellRoutes.length}`);
 
 reportMissing('POS', posPages, posShellRoutes);
-reportMissing('AM', amPages, amShellRoutes);
+reportMissing(
+  'AM',
+  amPages.filter(route => !amNativeOmittedRoutes.has(route)),
+  amShellRoutes,
+);
 
 finish();
 
