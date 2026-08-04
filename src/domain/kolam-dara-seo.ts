@@ -965,6 +965,7 @@ export type KolamDaraSeoSocialSnapshot = {
 
 export const KOLAM_DARA_SEO_KEYWORDS_PAGE_SIZE = 10;
 export const KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE = 10;
+export const KOLAM_DARA_SEO_SOCIAL_PAGE_SIZE = 10;
 
 export function formatKolamDaraSeoKeywordDifficulty(score: number) {
   const level = resolveKolamDaraSeoKeywordDifficulty(score);
@@ -1042,6 +1043,76 @@ export function paginateKolamDaraSeoMentions(
     total: list.length,
     items: list.slice(start, start + pageSize),
   };
+}
+
+export function paginateKolamDaraSeoSocialSnapshots(
+  list: KolamDaraSeoSocialSnapshot[],
+  page: number,
+  pageSize = KOLAM_DARA_SEO_SOCIAL_PAGE_SIZE,
+) {
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * pageSize;
+  return {
+    page: safePage,
+    totalPages,
+    total: list.length,
+    items: list.slice(start, start + pageSize),
+  };
+}
+
+export function formatKolamDaraSeoSocialStatusLabel(status: string) {
+  if (status === 'success') {
+    return 'Sukses';
+  }
+  if (status === 'pending') {
+    return 'Fetching…';
+  }
+  if (status === 'failed') {
+    return 'Gagal';
+  }
+  return status || '—';
+}
+
+export function formatKolamDaraSeoSocialMetric(
+  value: number | null | undefined,
+) {
+  if (value == null || Number.isNaN(value)) {
+    return 'n/a';
+  }
+  return value.toLocaleString('id-ID');
+}
+
+export function formatKolamDaraSeoSocialDate(value?: string) {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function getKolamDaraSeoSocialStatusIntent(
+  status: string,
+): 'success' | 'warning' | 'danger' | 'secondary' {
+  if (status === 'success') {
+    return 'success';
+  }
+  if (status === 'pending') {
+    return 'warning';
+  }
+  if (status === 'failed') {
+    return 'danger';
+  }
+  return 'secondary';
 }
 
 export function normalizeKolamDaraSeoRankings(payload: unknown): {

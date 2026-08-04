@@ -1,7 +1,8 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   getKolamDaraSeoTab,
   isKolamDaraSeoRoute,
+  paginateKolamDaraSeoSocialSnapshots,
   type KolamDaraSeoSocialPlatform,
   type KolamDaraSeoSocialSnapshot,
 } from '../domain/kolam-dara-seo';
@@ -17,10 +18,14 @@ export interface KolamDaraSeoSocialController {
   error: string | null;
   loading: boolean;
   notice: string | null;
+  page: number;
+  pagedItems: KolamDaraSeoSocialSnapshot[];
   rows: KolamDaraSeoSocialSnapshot[];
-  syncBusyKey: string | null;
+  syncing: boolean;
   total: number;
+  totalPages: number;
   onRefresh: () => Promise<void>;
+  onSetPage: (page: number) => void;
   onSync: (
     platform: KolamDaraSeoSocialPlatform,
     periodDays: 7 | 28,
@@ -31,13 +36,14 @@ export function useKolamDaraSeoSocialController(
   route: string,
 ): KolamDaraSeoSocialController {
   const enabled =
-    isKolamDaraSeoRoute(route) && getKolamDaraSeoTab(route) === 'social-insights';
+    isKolamDaraSeoRoute(route) &&
+    getKolamDaraSeoTab(route) === 'social-insights';
   const [rows, setRows] = useState<KolamDaraSeoSocialSnapshot[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [syncBusyKey, setSyncBusyKey] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [page, setPage] = useState(1);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
@@ -50,10 +56,8 @@ export function useKolamDaraSeoSocialController(
     try {
       const data = await fetchKolamDaraSeoSocialInsights({limit: 30});
       setRows(data.rows);
-      setTotal(data.total);
     } catch (err) {
       setRows([]);
-      setTotal(0);
       setError(
         err instanceof Error && err.message.trim()
           ? sanitizeApiErrorMessage(err.message)
@@ -76,9 +80,7 @@ export function useKolamDaraSeoSocialController(
       return undefined;
     }
     const timer = setInterval(() => {
-      const hasPending = rowsRef.current.some(
-        row => row.status === 'pending',
-      );
+      const hasPending = rowsRef.current.some(row => row.status === 'pending');
       if (!hasPending) {
         return;
       }
@@ -89,10 +91,14 @@ export function useKolamDaraSeoSocialController(
     };
   }, [enabled, onRefresh]);
 
+  const paged = useMemo(
+    () => paginateKolamDaraSeoSocialSnapshots(rows, page),
+    [page, rows],
+  );
+
   const onSync = useCallback(
     async (platform: KolamDaraSeoSocialPlatform, periodDays: 7 | 28) => {
-      const key = `${platform}-${periodDays}`;
-      setSyncBusyKey(key);
+      setSyncing(true);
       setNotice(null);
       try {
         const message = await syncKolamDaraSeoSocialInsights({
@@ -100,15 +106,16 @@ export function useKolamDaraSeoSocialController(
           periodDays,
         });
         setNotice(message);
+        setPage(1);
         await onRefresh();
       } catch (err) {
         setNotice(
           err instanceof Error && err.message.trim()
             ? sanitizeApiErrorMessage(err.message)
-            : 'Sync gagal',
+            : `Gagal sync ${platform}`,
         );
       } finally {
-        setSyncBusyKey(null);
+        setSyncing(false);
       }
     },
     [onRefresh],
@@ -118,10 +125,14 @@ export function useKolamDaraSeoSocialController(
     error,
     loading,
     notice,
+    page: paged.page,
+    pagedItems: paged.items,
     rows,
-    syncBusyKey,
-    total,
+    syncing,
+    total: paged.total,
+    totalPages: paged.totalPages,
     onRefresh,
+    onSetPage: setPage,
     onSync,
   };
 }

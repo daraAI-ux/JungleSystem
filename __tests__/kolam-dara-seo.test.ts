@@ -23,6 +23,7 @@ import {
   normalizeKolamDaraSeoSuggestionDetail,
   normalizeKolamDaraSeoWebsitePreview,
   paginateKolamDaraSeoMentions,
+  paginateKolamDaraSeoSocialSnapshots,
   paginateKolamDaraSeoSuggestions,
   pickKolamDaraSeoLatestSocialSnapshot,
   resolveKolamDaraSeoAccess,
@@ -54,6 +55,33 @@ describe('kolam-dara-seo domain', () => {
     expect(page1.totalPages).toBe(2);
     expect(page1.total).toBe(12);
     expect(paginateKolamDaraSeoMentions(rows, 2).items).toHaveLength(2);
+  });
+
+  it('paginates social snapshots 10 per page', () => {
+    const rows = Array.from({length: 11}, (_, i) => ({
+      id: `s${i}`,
+      platform: i % 2 === 0 ? 'instagram' : 'tiktok',
+      status: 'success',
+      periodDays: 7,
+      metrics: {
+        followers: i,
+        reach: null,
+        impressions: null,
+        profileViews: null,
+        engagementRate: null,
+        videoViews: null,
+        likes: null,
+      },
+      error: '',
+      fetchedAt: '',
+      createdAt: '',
+    }));
+    const page1 = paginateKolamDaraSeoSocialSnapshots(rows as never, 1);
+    expect(page1.items).toHaveLength(10);
+    expect(page1.totalPages).toBe(2);
+    expect(paginateKolamDaraSeoSocialSnapshots(rows as never, 2).items).toHaveLength(
+      1,
+    );
   });
 
   it('matches SEO routes and resolves tabs', () => {
