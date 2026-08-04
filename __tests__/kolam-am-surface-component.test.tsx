@@ -3739,6 +3739,68 @@ describe('KolamAmSurface', () => {
     expect(deleteAmDevices).toHaveBeenCalledWith(['device-1']);
   });
 
+  it('disables hardware save while the create request is pending', async () => {
+    jest.mocked(getAmRacks).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(jest.requireMock('../src/services/am-api').getAmBoxes).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    jest.mocked(getAmDevices).mockResolvedValue({
+      data: [],
+      meta: {total: 0, limit: 20},
+    });
+    let resolveCreateRack: (value: unknown) => void = () => undefined;
+    jest.mocked(createAmRack).mockImplementationOnce(
+      () => new Promise(resolve => {
+        resolveCreateRack = resolve;
+      }) as ReturnType<typeof createAmRack>,
+    );
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'hardware');
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('Pending Room');
+      inputs[1].props.onChangeText('Pending rack');
+      inputs[2].props.onChangeText('10.0.0.99');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
+      await Promise.resolve();
+    });
+
+    const saveButton = renderer!.root.findAllByType(KolamButton).find(
+      button => button.props.accessibilityLabel === 'AM Hardware Save',
+    );
+    expect(saveButton?.props.disabled).toBe(true);
+    expect(saveButton?.props.label).toBe('Menyimpan');
+
+    await act(async () => {
+      resolveCreateRack({
+        _id: 'rack-pending',
+        name: 'Rack Pending',
+        slug: 'rack-pending',
+        location: 'Pending Room',
+        description: 'Pending rack',
+        status: 'active',
+        serverIp: '10.0.0.99',
+        createdAt: '',
+        updatedAt: '',
+      });
+      await Promise.resolve();
+    });
+  });
+
   it('loads banking and admin live routes from the main AM sidebar routes', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',

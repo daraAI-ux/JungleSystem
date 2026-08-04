@@ -2162,6 +2162,7 @@ function AmHardwarePage({
         <AmMetricCard label="Device" value={String(devices.length)} meta={`${connectedDevices} connected`} />
         <AmMetricCard label="ADB Attention" value={String(unauthorizedDevices)} meta="unauthorized device" />
         <KolamButton
+          disabled={isLoading}
           label={isLoading ? 'Memuat' : 'Refresh'}
           intent="outline"
           muted={isLoading}
@@ -2216,6 +2217,7 @@ function AmHardwarePage({
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel={`AM Hardware Confirm Delete ${titleCase(deletingHardware.kind)} ${deletingHardware.id}`}
+              disabled={actingHardwareId === deletingHardware.id}
               intent="danger"
               label={actingHardwareId === deletingHardware.id ? '...' : 'Delete'}
               muted={actingHardwareId === deletingHardware.id}
@@ -2224,6 +2226,7 @@ function AmHardwarePage({
             />
             <KolamButton
               accessibilityLabel="AM Hardware Cancel Delete"
+              disabled={actingHardwareId === deletingHardware.id}
               intent="outline"
               label="Cancel"
               muted={actingHardwareId === deletingHardware.id}
@@ -2330,6 +2333,7 @@ function AmHardwarePage({
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Hardware Save"
+              disabled={isSubmitting}
               label={isSubmitting ? 'Menyimpan' : (editingHardwareId ? 'Save' : 'Create')}
               muted={isSubmitting}
               size="sm"
@@ -3205,6 +3209,7 @@ function AmHardwareRackGrid({
               />
               <KolamButton
                 accessibilityLabel={`AM Hardware Delete Rack ${rack._id}`}
+                disabled={actingHardwareId === rack._id}
                 label={actingHardwareId === rack._id ? '...' : 'Delete'}
                 intent="danger"
                 muted={actingHardwareId === rack._id}
@@ -3261,6 +3266,7 @@ function AmHardwareBoxGrid({
               />
               <KolamButton
                 accessibilityLabel={`AM Hardware Delete Box ${box._id}`}
+                disabled={actingHardwareId === box._id}
                 label={actingHardwareId === box._id ? '...' : 'Delete'}
                 intent="danger"
                 muted={actingHardwareId === box._id}
@@ -3329,6 +3335,7 @@ function AmHardwareDeviceList({
               />
               <KolamButton
                 accessibilityLabel={`AM Hardware Delete Device ${device._id}`}
+                disabled={actingHardwareId === device._id}
                 label={actingHardwareId === device._id ? '...' : 'Delete'}
                 intent="danger"
                 muted={actingHardwareId === device._id}
