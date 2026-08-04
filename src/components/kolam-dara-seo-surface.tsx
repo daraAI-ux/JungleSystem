@@ -152,6 +152,7 @@ export function KolamDaraSeoSurface({
         <KolamDaraSeoAuditLogsBody controller={auditLogsController} />
       ) : selectedTab === 'integrations' ? (
         <KolamDaraSeoIntegrationsBody
+          canDraft={access.canDraft}
           canManageSettings={access.canManageSettings}
           controller={integrationsController}
         />

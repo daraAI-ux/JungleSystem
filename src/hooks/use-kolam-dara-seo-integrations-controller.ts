@@ -1,7 +1,9 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  extractKolamDaraSeoClientEmailFromServiceAccount,
   getKolamDaraSeoTab,
   isKolamDaraSeoRoute,
+  isKolamDaraSeoSecretMaskOnly,
   type KolamDaraSeoIntegrationReport,
   type KolamDaraSeoIntegrationSettings,
 } from '../domain/kolam-dara-seo';
@@ -30,17 +32,21 @@ export interface KolamDaraSeoIntegrationsController {
   firecrawlEnabled: boolean;
   gscClientEmail: string;
   gscEnabled: boolean;
+  gscKeyShown: string;
   gscPrivateKey: string;
   gscPropertyUrl: string;
+  indexUrl: string;
   indexingBusy: boolean;
   indexingClientEmail: string;
   indexingEnabled: boolean;
+  indexingKeyShown: string;
   indexingPrivateKey: string;
   loading: boolean;
   monitorKeywords: string;
   notice: string | null;
   previewBusy: boolean;
   previewReport: KolamDaraSeoIntegrationReport | null;
+  sampleUrl: string;
   saving: boolean;
   searxBaseUrl: string;
   searxEnabled: boolean;
@@ -49,6 +55,9 @@ export interface KolamDaraSeoIntegrationsController {
   settings: KolamDaraSeoIntegrationSettings | null;
   testBusyProviderId: KolamDaraSeoIntegrationProviderId | null;
   testKw: string;
+  onPasteGscKey: (value: string) => void;
+  onPasteIndexingKey: (value: string) => void;
+  onPreview: () => Promise<void>;
   onRefresh: () => Promise<void>;
   onSave: () => Promise<void>;
   onSetDdgEnabled: (value: boolean) => void;
@@ -57,11 +66,10 @@ export interface KolamDaraSeoIntegrationsController {
   onSetFirecrawlEnabled: (value: boolean) => void;
   onSetGscClientEmail: (value: string) => void;
   onSetGscEnabled: (value: boolean) => void;
-  onSetGscPrivateKey: (value: string) => void;
   onSetGscPropertyUrl: (value: string) => void;
+  onSetIndexUrl: (value: string) => void;
   onSetIndexingClientEmail: (value: string) => void;
   onSetIndexingEnabled: (value: boolean) => void;
-  onSetIndexingPrivateKey: (value: string) => void;
   onSetMonitorKeywords: (value: string) => void;
   onSetSearxBaseUrl: (value: string) => void;
   onSetSearxEnabled: (value: boolean) => void;
@@ -70,7 +78,6 @@ export interface KolamDaraSeoIntegrationsController {
   onSetTestKw: (value: string) => void;
   onSubmitIndexing: () => Promise<void>;
   onTest: (providerId: KolamDaraSeoIntegrationProviderId) => Promise<void>;
-  onPreview: () => Promise<void>;
 }
 
 export function useKolamDaraSeoIntegrationsController(
@@ -90,7 +97,8 @@ export function useKolamDaraSeoIntegrationsController(
   const [previewReport, setPreviewReport] =
     useState<KolamDaraSeoIntegrationReport | null>(null);
   const [indexingBusy, setIndexingBusy] = useState(false);
-  const [testKw, setTestKw] = useState('');
+  const [testKw, setTestKw] = useState('dunia anura');
+  const [indexUrl, setIndexUrl] = useState('');
 
   const [monitorKeywords, setMonitorKeywords] = useState('');
   const [serpEnabled, setSerpEnabled] = useState(false);
@@ -100,7 +108,9 @@ export function useKolamDaraSeoIntegrationsController(
   const [searxBaseUrl, setSearxBaseUrl] = useState('');
   const [firecrawlEnabled, setFirecrawlEnabled] = useState(false);
   const [firecrawlApiKey, setFirecrawlApiKey] = useState('');
-  const [firecrawlBaseUrl, setFirecrawlBaseUrl] = useState('');
+  const [firecrawlBaseUrl, setFirecrawlBaseUrl] = useState(
+    'https://api.firecrawl.dev',
+  );
   const [gscEnabled, setGscEnabled] = useState(false);
   const [gscPropertyUrl, setGscPropertyUrl] = useState('');
   const [gscClientEmail, setGscClientEmail] = useState('');
@@ -109,7 +119,7 @@ export function useKolamDaraSeoIntegrationsController(
   const [indexingClientEmail, setIndexingClientEmail] = useState('');
   const [indexingPrivateKey, setIndexingPrivateKey] = useState('');
 
-  const applySettings = (data: KolamDaraSeoIntegrationSettings) => {
+  const applySettings = useCallback((data: KolamDaraSeoIntegrationSettings) => {
     setSettings(data);
     setMonitorKeywords(data.monitorKeywords);
     setSerpEnabled(data.serpApi.enabled);
@@ -119,7 +129,9 @@ export function useKolamDaraSeoIntegrationsController(
     setSearxBaseUrl(data.searxng.baseUrl);
     setFirecrawlEnabled(data.firecrawl.enabled);
     setFirecrawlApiKey('');
-    setFirecrawlBaseUrl(data.firecrawl.baseUrl);
+    setFirecrawlBaseUrl(
+      data.firecrawl.baseUrl || 'https://api.firecrawl.dev',
+    );
     setGscEnabled(data.searchConsole.enabled);
     setGscPropertyUrl(data.searchConsole.propertyUrl);
     setGscClientEmail(data.searchConsole.clientEmail);
@@ -127,7 +139,7 @@ export function useKolamDaraSeoIntegrationsController(
     setIndexingEnabled(data.indexingApi.enabled);
     setIndexingClientEmail(data.indexingApi.clientEmail);
     setIndexingPrivateKey('');
-  };
+  }, []);
 
   const onRefresh = useCallback(async () => {
     if (!enabled) {
@@ -136,8 +148,7 @@ export function useKolamDaraSeoIntegrationsController(
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchKolamDaraSeoIntegrationSettings();
-      applySettings(data);
+      applySettings(await fetchKolamDaraSeoIntegrationSettings());
     } catch (err) {
       setSettings(null);
       setError(
@@ -148,8 +159,7 @@ export function useKolamDaraSeoIntegrationsController(
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- applySettings closes over setters only.
-  }, [enabled]);
+  }, [applySettings, enabled]);
 
   useEffect(() => {
     if (!enabled) {
@@ -158,10 +168,71 @@ export function useKolamDaraSeoIntegrationsController(
     void onRefresh();
   }, [enabled, onRefresh]);
 
+  const sampleUrl = useMemo(
+    () => gscPropertyUrl.trim() || 'https://dunia-anura.com',
+    [gscPropertyUrl],
+  );
+
+  const gscKeyShown = useMemo(() => {
+    if (gscPrivateKey) {
+      return gscPrivateKey;
+    }
+    return settings?.searchConsole.privateKeyMasked ? '******' : '';
+  }, [gscPrivateKey, settings?.searchConsole.privateKeyMasked]);
+
+  const indexingKeyShown = useMemo(() => {
+    if (indexingPrivateKey) {
+      return indexingPrivateKey;
+    }
+    return settings?.indexingApi.privateKeyMasked ? '******' : '';
+  }, [indexingPrivateKey, settings?.indexingApi.privateKeyMasked]);
+
+  const onPasteGscKey = useCallback((raw: string) => {
+    if (isKolamDaraSeoSecretMaskOnly(raw)) {
+      setGscPrivateKey('');
+      return;
+    }
+    setGscPrivateKey(raw);
+    const email = extractKolamDaraSeoClientEmailFromServiceAccount(raw);
+    if (email) {
+      setGscClientEmail(email);
+      setIndexingClientEmail(email);
+    }
+  }, []);
+
+  const onPasteIndexingKey = useCallback((raw: string) => {
+    if (isKolamDaraSeoSecretMaskOnly(raw)) {
+      setIndexingPrivateKey('');
+      return;
+    }
+    setIndexingPrivateKey(raw);
+    const email = extractKolamDaraSeoClientEmailFromServiceAccount(raw);
+    if (email) {
+      setIndexingClientEmail(email);
+    }
+  }, []);
+
   const onSave = useCallback(async () => {
     setSaving(true);
     setNotice(null);
     try {
+      const gscKeyTrim = gscPrivateKey.trim();
+      const idxKeyTrim = indexingPrivateKey.trim();
+      const gscEmailResolved = extractKolamDaraSeoClientEmailFromServiceAccount(
+        gscKeyTrim,
+        gscClientEmail,
+      );
+      let idxEmailResolved = extractKolamDaraSeoClientEmailFromServiceAccount(
+        idxKeyTrim,
+        indexingClientEmail,
+      );
+      if (
+        !idxEmailResolved.endsWith('.iam.gserviceaccount.com') &&
+        gscEmailResolved.endsWith('.iam.gserviceaccount.com')
+      ) {
+        idxEmailResolved = gscEmailResolved;
+      }
+
       const body: Record<string, unknown> = {
         monitorKeywords: monitorKeywords.trim(),
         serpApi: {
@@ -178,20 +249,21 @@ export function useKolamDaraSeoIntegrationsController(
         searchConsole: {
           enabled: gscEnabled,
           propertyUrl: gscPropertyUrl.trim(),
-          clientEmail: gscClientEmail.trim(),
-          ...(gscPrivateKey.trim() ? {privateKey: gscPrivateKey.trim()} : {}),
+          clientEmail: gscEmailResolved,
+          ...(gscKeyTrim && !isKolamDaraSeoSecretMaskOnly(gscKeyTrim)
+            ? {privateKey: gscKeyTrim}
+            : {}),
         },
         indexingApi: {
           enabled: indexingEnabled,
-          clientEmail: indexingClientEmail.trim(),
-          ...(indexingPrivateKey.trim()
-            ? {privateKey: indexingPrivateKey.trim()}
+          clientEmail: idxEmailResolved,
+          ...(idxKeyTrim && !isKolamDaraSeoSecretMaskOnly(idxKeyTrim)
+            ? {privateKey: idxKeyTrim}
             : {}),
         },
       };
-      const next = await updateKolamDaraSeoIntegrationSettings(body);
-      applySettings(next);
-      setNotice('Integrasi tersimpan');
+      applySettings(await updateKolamDaraSeoIntegrationSettings(body));
+      setNotice('Integrasi SEO disimpan');
     } catch (err) {
       setNotice(
         err instanceof Error && err.message.trim()
@@ -202,6 +274,7 @@ export function useKolamDaraSeoIntegrationsController(
       setSaving(false);
     }
   }, [
+    applySettings,
     ddgEnabled,
     firecrawlApiKey,
     firecrawlBaseUrl,
@@ -224,13 +297,21 @@ export function useKolamDaraSeoIntegrationsController(
     async (providerId: KolamDaraSeoIntegrationProviderId) => {
       setTestBusyProviderId(providerId);
       setNotice(null);
+      const needsSampleUrl =
+        providerId === 'firecrawl' || providerId === 'indexingApi';
       try {
         const result = await testKolamDaraSeoIntegration(
           providerId,
           testKw.trim() || undefined,
-          testKw.trim() || undefined,
+          needsSampleUrl ? sampleUrl : undefined,
         );
-        setNotice(result.message);
+        if (result.count != null) {
+          setNotice(`OK — ${result.count} hasil`);
+        } else if (result.fallback) {
+          setNotice(result.message || 'OK');
+        } else {
+          setNotice(result.message || 'OK');
+        }
       } catch (err) {
         setNotice(
           err instanceof Error && err.message.trim()
@@ -241,13 +322,13 @@ export function useKolamDaraSeoIntegrationsController(
         setTestBusyProviderId(null);
       }
     },
-    [testKw],
+    [sampleUrl, testKw],
   );
 
   const onPreview = useCallback(async () => {
     const keyword = testKw.trim();
     if (!keyword) {
-      setNotice('Isi keyword dulu');
+      setNotice('Isi keyword uji dulu');
       return;
     }
     setPreviewBusy(true);
@@ -267,26 +348,25 @@ export function useKolamDaraSeoIntegrationsController(
   }, [testKw]);
 
   const onSubmitIndexing = useCallback(async () => {
-    const url = testKw.trim();
+    const url = indexUrl.trim();
     if (!url) {
-      setNotice('Isi URL dulu');
+      setNotice('Isi URL indexing dulu');
       return;
     }
     setIndexingBusy(true);
     setNotice(null);
     try {
-      const message = await submitKolamDaraSeoGoogleIndexing(url);
-      setNotice(message);
+      setNotice(await submitKolamDaraSeoGoogleIndexing(url));
     } catch (err) {
       setNotice(
         err instanceof Error && err.message.trim()
           ? sanitizeApiErrorMessage(err.message)
-          : 'Gagal mengirim ke Google Indexing',
+          : 'Submit indexing gagal',
       );
     } finally {
       setIndexingBusy(false);
     }
-  }, [testKw]);
+  }, [indexUrl]);
 
   return {
     ddgEnabled,
@@ -296,17 +376,21 @@ export function useKolamDaraSeoIntegrationsController(
     firecrawlEnabled,
     gscClientEmail,
     gscEnabled,
+    gscKeyShown,
     gscPrivateKey,
     gscPropertyUrl,
+    indexUrl,
     indexingBusy,
     indexingClientEmail,
     indexingEnabled,
+    indexingKeyShown,
     indexingPrivateKey,
     loading,
     monitorKeywords,
     notice,
     previewBusy,
     previewReport,
+    sampleUrl,
     saving,
     searxBaseUrl,
     searxEnabled,
@@ -315,6 +399,9 @@ export function useKolamDaraSeoIntegrationsController(
     settings,
     testBusyProviderId,
     testKw,
+    onPasteGscKey,
+    onPasteIndexingKey,
+    onPreview,
     onRefresh,
     onSave,
     onSetDdgEnabled: setDdgEnabled,
@@ -323,11 +410,10 @@ export function useKolamDaraSeoIntegrationsController(
     onSetFirecrawlEnabled: setFirecrawlEnabled,
     onSetGscClientEmail: setGscClientEmail,
     onSetGscEnabled: setGscEnabled,
-    onSetGscPrivateKey: setGscPrivateKey,
     onSetGscPropertyUrl: setGscPropertyUrl,
+    onSetIndexUrl: setIndexUrl,
     onSetIndexingClientEmail: setIndexingClientEmail,
     onSetIndexingEnabled: setIndexingEnabled,
-    onSetIndexingPrivateKey: setIndexingPrivateKey,
     onSetMonitorKeywords: setMonitorKeywords,
     onSetSearxBaseUrl: setSearxBaseUrl,
     onSetSearxEnabled: setSearxEnabled,
@@ -336,6 +422,5 @@ export function useKolamDaraSeoIntegrationsController(
     onSetTestKw: setTestKw,
     onSubmitIndexing,
     onTest,
-    onPreview,
   };
 }

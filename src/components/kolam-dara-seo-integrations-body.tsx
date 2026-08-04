@@ -1,30 +1,47 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import type {
-  KolamDaraSeoIntegrationProviderId,
-  KolamDaraSeoIntegrationsController,
-} from '../hooks/use-kolam-dara-seo-integrations-controller';
+import type {KolamDaraSeoIntegrationsController} from '../hooks/use-kolam-dara-seo-integrations-controller';
 import {KolamButton} from './kolam-button';
+import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
 
+/**
+ * FE parity: DA-Dara-Plugin `dara-seo-integrations.tsx`
+ * Monitor card · Sumber SERP tiles · Google & crawl · Alat cepat · Hasil preview.
+ */
 export function KolamDaraSeoIntegrationsBody({
+  canDraft,
   canManageSettings,
   controller,
 }: {
+  canDraft: boolean;
   canManageSettings: boolean;
   controller: KolamDaraSeoIntegrationsController;
 }) {
   const disabled = !canManageSettings;
   const settings = controller.settings;
+  const showTest = canDraft;
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
-      {!canManageSettings ? (
+      {canManageSettings ? (
+        <View style={styles.topActions}>
+          <KolamButton
+            disabled={controller.saving}
+            intent="primary"
+            label={controller.saving ? 'Menyimpan…' : 'Simpan semua'}
+            onPress={() => {
+              void controller.onSave();
+            }}
+          />
+        </View>
+      ) : (
         <Text style={styles.notice}>
           Lihat & test tersedia; simpan hanya Admin/Owner
         </Text>
-      ) : null}
+      )}
+
       {controller.notice ? (
         <Text style={styles.notice}>{controller.notice}</Text>
       ) : null}
@@ -36,207 +53,334 @@ export function KolamDaraSeoIntegrationsBody({
       ) : null}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Monitor keywords</Text>
-        <TextInput
-          editable={!disabled}
-          onChangeText={controller.onSetMonitorKeywords}
-          placeholder="keyword1, keyword2"
-          placeholderTextColor={V.colors.mutedFg}
-          style={styles.input}
-          value={controller.monitorKeywords}
-        />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Test keyword / URL</Text>
-        <TextInput
-          onChangeText={controller.onSetTestKw}
-          placeholder="Keyword atau URL untuk test/preview"
-          placeholderTextColor={V.colors.mutedFg}
-          style={styles.input}
-          value={controller.testKw}
-        />
-        <View style={styles.rowActions}>
-          <KolamButton
-            disabled={controller.previewBusy}
-            label={controller.previewBusy ? 'Memuat…' : 'Preview laporan'}
-            onPress={() => {
-              void controller.onPreview();
-            }}
+        <Text style={styles.cardTitle}>Keyword monitor & uji</Text>
+        <Text style={styles.hint}>
+          Cron SERP memakai keyword ini. Prioritas laporan: GSC → SerpAPI →
+          DuckDuckGo → SearXNG.
+        </Text>
+        <View style={styles.inlineFields}>
+          <TextInput
+            editable={!disabled}
+            onChangeText={controller.onSetMonitorKeywords}
+            placeholder="keyword1, keyword2"
+            placeholderTextColor={V.colors.mutedFg}
+            style={[styles.input, styles.inlineField]}
+            value={controller.monitorKeywords}
           />
-          {canManageSettings ? (
-            <KolamButton
-              disabled={controller.indexingBusy}
+          <TextInput
+            onChangeText={controller.onSetTestKw}
+            placeholder="Keyword uji integrasi"
+            placeholderTextColor={V.colors.mutedFg}
+            style={[styles.input, styles.inlineField]}
+            value={controller.testKw}
+          />
+        </View>
+        <View style={styles.badges}>
+          {settings?.serpApi.envConfigured ? (
+            <KolamStatusBadge intent="success" label="SerpAPI dari env" />
+          ) : null}
+          {settings?.serpApi.apiKeyMasked ? (
+            <KolamStatusBadge
+              intent="secondary"
+              label={`Key: ${settings.serpApi.apiKeyMasked}`}
+            />
+          ) : null}
+          {settings?.searxng.local ? (
+            <KolamStatusBadge
+              intent={settings.searxng.local.reachable ? 'success' : 'danger'}
               label={
-                controller.indexingBusy ? 'Mengirim…' : 'Kirim indexing'
+                settings.searxng.local.reachable
+                  ? `SearXNG online (${
+                      settings.searxng.local.latencyMs ?? '?'
+                    } ms)`
+                  : 'SearXNG offline'
               }
-              onPress={() => {
-                void controller.onSubmitIndexing();
-              }}
             />
           ) : null}
         </View>
-        {controller.previewReport ? (
-          <View style={styles.previewBlock}>
-            <Text style={styles.meta}>{controller.previewReport.summary}</Text>
-            {controller.previewReport.sections.map(section => (
-              <Text key={section.providerId} style={styles.meta}>
-                {`${section.label}: ${section.ok ? 'OK' : 'Gagal'}${
-                  section.message ? ` — ${section.message}` : ''
-                }`}
-              </Text>
-            ))}
-          </View>
-        ) : null}
       </View>
 
-      <ProviderRow
-        disabled={disabled}
-        enabled={controller.serpEnabled}
-        onSetEnabled={controller.onSetSerpEnabled}
-        onTest={() => void controller.onTest('serpApi')}
-        testBusy={controller.testBusyProviderId === 'serpApi'}
-        title="SERP API">
-        <TextField
-          disabled={disabled}
-          label={`API key${
-            settings?.serpApi.apiKeyMasked
-              ? ` (tersimpan: ${settings.serpApi.apiKeyMasked})`
-              : ''
-          }`}
-          onChangeText={controller.onSetSerpApiKey}
-          placeholder="Isi untuk mengganti key"
-          value={controller.serpApiKey}
-        />
-      </ProviderRow>
+      <View style={styles.group}>
+        <Text style={styles.groupTitle}>Sumber SERP</Text>
+        <View style={styles.tilesRow}>
+          <IntegrationTile
+            disabled={disabled}
+            enabled={controller.serpEnabled}
+            hint="Override key opsional; kosongkan untuk pakai env DARA_SEO_SERP_API_KEY."
+            onEnabled={controller.onSetSerpEnabled}
+            onTest={
+              showTest
+                ? () => void controller.onTest('serpApi')
+                : undefined
+            }
+            testBusy={controller.testBusyProviderId === 'serpApi'}
+            title="SerpAPI">
+            <TextInput
+              editable={!disabled}
+              onChangeText={controller.onSetSerpApiKey}
+              placeholder={
+                settings?.serpApi.apiKeyMasked ||
+                'API key (kosong = tidak ubah)'
+              }
+              placeholderTextColor={V.colors.mutedFg}
+              secureTextEntry
+              style={styles.input}
+              value={controller.serpApiKey}
+            />
+          </IntegrationTile>
 
-      <ProviderRow
-        disabled={disabled}
-        enabled={controller.ddgEnabled}
-        onSetEnabled={controller.onSetDdgEnabled}
-        onTest={() => void controller.onTest('duckduckgo')}
-        testBusy={controller.testBusyProviderId === 'duckduckgo'}
-        title="DuckDuckGo"
-      />
+          <IntegrationTile
+            disabled={disabled}
+            enabled={controller.ddgEnabled}
+            hint="Gratis, tanpa API key."
+            onEnabled={controller.onSetDdgEnabled}
+            onTest={
+              showTest
+                ? () => void controller.onTest('duckduckgo')
+                : undefined
+            }
+            testBusy={controller.testBusyProviderId === 'duckduckgo'}
+            title="DuckDuckGo"
+          />
 
-      <ProviderRow
-        disabled={disabled}
-        enabled={controller.searxEnabled}
-        onSetEnabled={controller.onSetSearxEnabled}
-        onTest={() => void controller.onTest('searxng')}
-        testBusy={controller.testBusyProviderId === 'searxng'}
-        title="SearXNG">
-        <TextField
-          disabled={disabled}
-          label="Base URL"
-          onChangeText={controller.onSetSearxBaseUrl}
-          value={controller.searxBaseUrl}
-        />
-      </ProviderRow>
+          <IntegrationTile
+            disabled={disabled}
+            enabled={controller.searxEnabled}
+            hint="deploy/searxng — loopback JSON API."
+            onEnabled={controller.onSetSearxEnabled}
+            onTest={
+              showTest
+                ? () => void controller.onTest('searxng')
+                : undefined
+            }
+            testBusy={controller.testBusyProviderId === 'searxng'}
+            title="SearXNG (lokal)">
+            <TextInput
+              editable={!disabled}
+              onChangeText={controller.onSetSearxBaseUrl}
+              placeholder={
+                settings?.searxng.defaultBaseUrl || 'http://127.0.0.1:8080'
+              }
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.input}
+              value={controller.searxBaseUrl}
+            />
+          </IntegrationTile>
+        </View>
+      </View>
 
-      <ProviderRow
-        disabled={disabled}
-        enabled={controller.firecrawlEnabled}
-        onSetEnabled={controller.onSetFirecrawlEnabled}
-        onTest={() => void controller.onTest('firecrawl')}
-        testBusy={controller.testBusyProviderId === 'firecrawl'}
-        title="Firecrawl">
-        <TextField
-          disabled={disabled}
-          label="Base URL"
-          onChangeText={controller.onSetFirecrawlBaseUrl}
-          value={controller.firecrawlBaseUrl}
-        />
-        <TextField
-          disabled={disabled}
-          label={`API key${
-            settings?.firecrawl.apiKeyMasked
-              ? ` (tersimpan: ${settings.firecrawl.apiKeyMasked})`
-              : ''
-          }`}
-          onChangeText={controller.onSetFirecrawlApiKey}
-          placeholder="Isi untuk mengganti key"
-          value={controller.firecrawlApiKey}
-        />
-      </ProviderRow>
+      <View style={styles.group}>
+        <Text style={styles.groupTitle}>Google & crawl</Text>
+        <Text style={styles.groupHint}>
+          Paste JSON service account (client_email + private_key), bukan .p12 /
+          .pfx.
+        </Text>
+        <View style={styles.tilesRow}>
+          <IntegrationTile
+            disabled={disabled}
+            enabled={controller.gscEnabled}
+            onEnabled={controller.onSetGscEnabled}
+            onTest={
+              showTest
+                ? () => void controller.onTest('searchConsole')
+                : undefined
+            }
+            testBusy={controller.testBusyProviderId === 'searchConsole'}
+            title="Search Console">
+            <View style={styles.stack}>
+              <TextInput
+                editable={!disabled}
+                onChangeText={controller.onSetGscPropertyUrl}
+                placeholder="https://www.example.com/"
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.input}
+                value={controller.gscPropertyUrl}
+              />
+              <TextInput
+                editable={!disabled}
+                onChangeText={controller.onSetGscClientEmail}
+                placeholder="client_email dari JSON"
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.input}
+                value={controller.gscClientEmail}
+              />
+              <TextInput
+                editable={!disabled}
+                multiline
+                onChangeText={controller.onPasteGscKey}
+                placeholder={
+                  settings?.searchConsole.privateKeyMasked
+                    ? 'JSON tersimpan — paste untuk ganti'
+                    : 'Paste file JSON'
+                }
+                placeholderTextColor={V.colors.mutedFg}
+                style={[styles.input, styles.textarea]}
+                textAlignVertical="top"
+                value={controller.gscKeyShown}
+              />
+            </View>
+          </IntegrationTile>
 
-      <ProviderRow
-        disabled={disabled}
-        enabled={controller.gscEnabled}
-        onSetEnabled={controller.onSetGscEnabled}
-        onTest={() => void controller.onTest('searchConsole')}
-        testBusy={controller.testBusyProviderId === 'searchConsole'}
-        title="Google Search Console">
-        <TextField
-          disabled={disabled}
-          label="Property URL"
-          onChangeText={controller.onSetGscPropertyUrl}
-          value={controller.gscPropertyUrl}
-        />
-        <TextField
-          disabled={disabled}
-          label="Client email"
-          onChangeText={controller.onSetGscClientEmail}
-          value={controller.gscClientEmail}
-        />
-        <TextField
-          disabled={disabled}
-          label={`Private key${
-            settings?.searchConsole.privateKeyMasked
-              ? ` (tersimpan: ${settings.searchConsole.privateKeyMasked})`
-              : ''
-          }`}
-          onChangeText={controller.onSetGscPrivateKey}
-          placeholder="Isi untuk mengganti key"
-          value={controller.gscPrivateKey}
-        />
-      </ProviderRow>
+          <IntegrationTile
+            disabled={disabled}
+            enabled={controller.firecrawlEnabled}
+            onEnabled={controller.onSetFirecrawlEnabled}
+            onTest={
+              showTest
+                ? () => void controller.onTest('firecrawl')
+                : undefined
+            }
+            testBusy={controller.testBusyProviderId === 'firecrawl'}
+            title="Firecrawl">
+            <View style={styles.stack}>
+              <TextInput
+                editable={!disabled}
+                onChangeText={controller.onSetFirecrawlBaseUrl}
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.input}
+                value={controller.firecrawlBaseUrl}
+              />
+              <TextInput
+                editable={!disabled}
+                onChangeText={controller.onSetFirecrawlApiKey}
+                placeholder={settings?.firecrawl.apiKeyMasked || 'API key'}
+                placeholderTextColor={V.colors.mutedFg}
+                secureTextEntry
+                style={styles.input}
+                value={controller.firecrawlApiKey}
+              />
+            </View>
+          </IntegrationTile>
 
-      <ProviderRow
-        disabled={disabled}
-        enabled={controller.indexingEnabled}
-        onSetEnabled={controller.onSetIndexingEnabled}
-        onTest={() => void controller.onTest('indexingApi')}
-        testBusy={controller.testBusyProviderId === 'indexingApi'}
-        title="Indexing API">
-        <TextField
-          disabled={disabled}
-          label="Client email"
-          onChangeText={controller.onSetIndexingClientEmail}
-          value={controller.indexingClientEmail}
-        />
-        <TextField
-          disabled={disabled}
-          label={`Private key${
-            settings?.indexingApi.privateKeyMasked
-              ? ` (tersimpan: ${settings.indexingApi.privateKeyMasked})`
-              : ''
-          }`}
-          onChangeText={controller.onSetIndexingPrivateKey}
-          placeholder="Isi untuk mengganti key"
-          value={controller.indexingPrivateKey}
-        />
-      </ProviderRow>
+          <IntegrationTile
+            disabled={disabled}
+            enabled={controller.indexingEnabled}
+            onEnabled={controller.onSetIndexingEnabled}
+            onTest={
+              showTest
+                ? () => void controller.onTest('indexingApi')
+                : undefined
+            }
+            testBusy={controller.testBusyProviderId === 'indexingApi'}
+            title="Indexing API">
+            <View style={styles.stack}>
+              <TextInput
+                editable={!disabled}
+                onChangeText={controller.onSetIndexingClientEmail}
+                placeholder="Sama dengan GSC"
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.input}
+                value={controller.indexingClientEmail}
+              />
+              <TextInput
+                editable={!disabled}
+                multiline
+                onChangeText={controller.onPasteIndexingKey}
+                placeholder={
+                  settings?.indexingApi.privateKeyMasked
+                    ? 'Key tersimpan — paste untuk ganti'
+                    : 'JSON atau private_key'
+                }
+                placeholderTextColor={V.colors.mutedFg}
+                style={[styles.input, styles.textarea]}
+                textAlignVertical="top"
+                value={controller.indexingKeyShown}
+              />
+            </View>
+          </IntegrationTile>
+        </View>
+      </View>
 
-      {canManageSettings ? (
-        <KolamButton
-          disabled={controller.saving}
-          intent="primary"
-          label={controller.saving ? 'Menyimpan…' : 'Simpan'}
-          onPress={() => {
-            void controller.onSave();
-          }}
-        />
+      <View style={styles.group}>
+        <Text style={styles.groupTitle}>Alat cepat</Text>
+        <View style={styles.toolsRow}>
+          <View style={[styles.card, styles.toolCard]}>
+            <View style={styles.toolCopy}>
+              <Text style={styles.tileTitle}>Preview gabungan</Text>
+              <Text style={styles.hint}>
+                Uji keyword dengan semua sumber aktif.
+              </Text>
+            </View>
+            <View style={styles.toolFooter}>
+              <KolamButton
+                disabled={controller.previewBusy || !controller.testKw.trim()}
+                label={controller.previewBusy ? 'Memuat…' : 'Preview'}
+                onPress={() => {
+                  void controller.onPreview();
+                }}
+              />
+            </View>
+          </View>
+
+          <View style={[styles.card, styles.toolCard]}>
+            <View style={styles.toolCopy}>
+              <Text style={styles.tileTitle}>Submit indexing</Text>
+              <Text style={styles.hint}>
+                Kirim URL ke Google Indexing API.
+              </Text>
+            </View>
+            <View style={styles.toolRow}>
+              <TextInput
+                editable={!disabled}
+                onChangeText={controller.onSetIndexUrl}
+                placeholder={controller.sampleUrl}
+                placeholderTextColor={V.colors.mutedFg}
+                style={[styles.input, styles.toolUrl]}
+                value={controller.indexUrl}
+              />
+              <KolamButton
+                disabled={
+                  controller.indexingBusy ||
+                  !controller.indexUrl.trim() ||
+                  disabled
+                }
+                intent="primary"
+                label={controller.indexingBusy ? '…' : 'Kirim'}
+                onPress={() => {
+                  void controller.onSubmitIndexing();
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {controller.previewReport ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Hasil preview</Text>
+          <Text style={styles.summary}>{controller.previewReport.summary}</Text>
+          <View style={styles.reportGrid}>
+            {controller.previewReport.sections.map(section => (
+              <View key={section.providerId} style={styles.reportItem}>
+                <Text style={styles.reportLabel}>
+                  {`${section.label} ${section.ok ? '✓' : '—'}`}
+                </Text>
+                {section.message ? (
+                  <Text style={styles.meta}>{section.message}</Text>
+                ) : null}
+                {section.rankings.slice(0, 2).map((rank, index) => (
+                  <Text
+                    key={`${section.providerId}-${index}`}
+                    numberOfLines={1}
+                    style={styles.meta}>
+                    {`#${rank.position} ${rank.url}`}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
+        </View>
       ) : null}
     </ScrollView>
   );
 }
 
-function ProviderRow({
+function IntegrationTile({
   children,
   disabled,
   enabled,
-  onSetEnabled,
+  hint,
+  onEnabled,
   onTest,
   testBusy,
   title,
@@ -244,73 +388,52 @@ function ProviderRow({
   children?: React.ReactNode;
   disabled: boolean;
   enabled: boolean;
-  onSetEnabled: (value: boolean) => void;
-  onTest: () => void;
+  hint?: string;
+  onEnabled: (value: boolean) => void;
+  onTest?: () => void;
   testBusy: boolean;
   title: string;
 }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.providerHead}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <KolamSwitch
-          active={enabled}
-          disabled={disabled}
-          onPress={() => onSetEnabled(!enabled)}
-        />
+    <View style={[styles.card, styles.tile]}>
+      <View style={styles.tileHead}>
+        <View style={styles.tileCopy}>
+          <Text style={styles.tileTitle}>{title}</Text>
+          {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+        </View>
+        <View style={styles.tileControls}>
+          <KolamSwitch
+            active={enabled}
+            disabled={disabled}
+            onPress={() => onEnabled(!enabled)}
+          />
+          {onTest ? (
+            <KolamButton
+              disabled={testBusy}
+              label={testBusy ? 'Test…' : 'Test'}
+              onPress={onTest}
+            />
+          ) : null}
+        </View>
       </View>
-      {children}
-      <View style={styles.rowActions}>
-        <KolamButton
-          disabled={testBusy}
-          label={testBusy ? 'Test…' : 'Test'}
-          onPress={onTest}
-        />
-      </View>
-    </View>
-  );
-}
-
-function TextField({
-  disabled,
-  label,
-  onChangeText,
-  placeholder,
-  value,
-}: {
-  disabled: boolean;
-  label: string;
-  onChangeText: (value: string) => void;
-  placeholder?: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        editable={!disabled}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={V.colors.mutedFg}
-        style={styles.input}
-        value={value}
-      />
+      {children ? <View style={styles.tileBody}>{children}</View> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: {flex: 1},
-  content: {gap: 10, paddingBottom: 24},
+  content: {gap: 14, paddingBottom: 24},
+  topActions: {alignItems: 'flex-end'},
   notice: {color: V.colors.mutedFg, fontFamily: V.fontFamily, fontSize: 12},
   warnText: {color: V.colors.warning, fontFamily: V.fontFamily, fontSize: 12},
-  meta: {color: V.colors.mutedFg, fontFamily: V.fontFamily, fontSize: 12},
+  meta: {color: V.colors.mutedFg, fontFamily: V.fontFamily, fontSize: 11},
   card: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
+    gap: 10,
     padding: 12,
   },
   cardTitle: {
@@ -319,18 +442,80 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  providerHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  hint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    lineHeight: 15,
   },
-  field: {gap: 4},
-  fieldLabel: {
+  inlineFields: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  inlineField: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 220,
+  },
+  badges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  group: {gap: 10},
+  groupTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '800',
   },
+  groupHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    marginTop: -4,
+  },
+  tilesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  tile: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 260,
+    maxWidth: '100%',
+  },
+  tileHead: {
+    alignItems: 'flex-start',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+  },
+  tileCopy: {
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  tileTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  tileControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    gap: 6,
+  },
+  tileBody: {gap: 8},
+  stack: {gap: 8},
   input: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -342,6 +527,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  rowActions: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
-  previewBlock: {gap: 4, marginTop: 4},
+  textarea: {
+    fontFamily: 'Consolas',
+    fontSize: 11,
+    minHeight: 88,
+  },
+  toolsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  toolCard: {
+    flexGrow: 1,
+    flexShrink: 1,
+    justifyContent: 'space-between',
+    minWidth: 280,
+  },
+  toolCopy: {gap: 4},
+  toolFooter: {
+    alignItems: 'flex-end',
+  },
+  toolRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  toolUrl: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 160,
+  },
+  summary: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reportGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  reportItem: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 4,
+    minWidth: 160,
+    padding: 10,
+  },
+  reportLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });

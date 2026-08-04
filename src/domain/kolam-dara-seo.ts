@@ -908,10 +908,22 @@ export type KolamDaraSeoIntegrationSettings = {
   serpApi: {
     enabled: boolean;
     configured: boolean;
+    envConfigured: boolean;
     apiKeyMasked: string;
   };
   duckduckgo: {enabled: boolean};
-  searxng: {enabled: boolean; baseUrl: string};
+  searxng: {
+    enabled: boolean;
+    baseUrl: string;
+    defaultBaseUrl: string;
+    local: {
+      reachable: boolean;
+      baseUrl: string;
+      latencyMs: number | null;
+      httpStatus: number | null;
+      message: string;
+    } | null;
+  };
   firecrawl: {enabled: boolean; baseUrl: string; apiKeyMasked: string};
   searchConsole: {
     enabled: boolean;
@@ -1345,6 +1357,11 @@ export function normalizeKolamDaraSeoIntegrationSettings(
   const serp = asRecord(data.serpApi);
   const ddg = asRecord(data.duckduckgo);
   const searx = asRecord(data.searxng);
+  const searxLocalRaw = searx.local;
+  const searxLocal =
+    searxLocalRaw != null && typeof searxLocalRaw === 'object'
+      ? asRecord(searxLocalRaw)
+      : null;
   const firecrawl = asRecord(data.firecrawl);
   const gsc = asRecord(data.searchConsole);
   const indexing = asRecord(data.indexingApi);
@@ -1356,12 +1373,31 @@ export function normalizeKolamDaraSeoIntegrationSettings(
     serpApi: {
       enabled: serp.enabled === true,
       configured: serp.configured === true,
+      envConfigured: serp.envConfigured === true,
       apiKeyMasked: String(serp.apiKeyMasked || '').trim(),
     },
     duckduckgo: {enabled: ddg.enabled === true},
     searxng: {
       enabled: searx.enabled === true,
       baseUrl: String(searx.baseUrl || '').trim(),
+      defaultBaseUrl: String(
+        searx.defaultBaseUrl || 'http://127.0.0.1:8080',
+      ).trim(),
+      local: searxLocal
+        ? {
+            reachable: searxLocal.reachable === true,
+            baseUrl: String(searxLocal.baseUrl || '').trim(),
+            latencyMs:
+              searxLocal.latencyMs == null || searxLocal.latencyMs === ''
+                ? null
+                : toFiniteNumber(searxLocal.latencyMs),
+            httpStatus:
+              searxLocal.httpStatus == null || searxLocal.httpStatus === ''
+                ? null
+                : toFiniteNumber(searxLocal.httpStatus),
+            message: String(searxLocal.message || '').trim(),
+          }
+        : null,
     },
     firecrawl: {
       enabled: firecrawl.enabled === true,
@@ -1380,6 +1416,41 @@ export function normalizeKolamDaraSeoIntegrationSettings(
       privateKeyMasked: String(indexing.privateKeyMasked || '').trim(),
     },
   };
+}
+
+/** FE `STORED_KEY_MASK` — mask-only paste means "don't change". */
+export const KOLAM_DARA_SEO_STORED_KEY_MASK = '******';
+
+export function isKolamDaraSeoSecretMaskOnly(value: string) {
+  const trimmed = String(value || '').trim();
+  return (
+    trimmed === KOLAM_DARA_SEO_STORED_KEY_MASK || /^\*+$/.test(trimmed)
+  );
+}
+
+/** Extract client_email from pasted Google service-account JSON (FE parity). */
+export function extractKolamDaraSeoClientEmailFromServiceAccount(
+  raw: string,
+  fallback = '',
+) {
+  const t = String(raw || '')
+    .trim()
+    .replace(/^\uFEFF/, '');
+  if (!t.startsWith('{')) {
+    return fallback.trim();
+  }
+  try {
+    const parsed = JSON.parse(t) as {client_email?: string};
+    if (parsed.client_email) {
+      return String(parsed.client_email).trim();
+    }
+  } catch {
+    const match = t.match(/"client_email"\s*:\s*"([^"]+)"/);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+  return fallback.trim();
 }
 
 export function normalizeKolamDaraSeoIntegrationReport(

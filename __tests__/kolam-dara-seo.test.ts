@@ -1,5 +1,6 @@
 import {
   buildKolamDaraSeoRoute,
+  extractKolamDaraSeoClientEmailFromServiceAccount,
   filterKolamDaraSeoSuggestions,
   formatKolamDaraSeoKeywordDifficulty,
   formatKolamDaraSeoKeywordVolume,
@@ -11,6 +12,7 @@ import {
   getKolamDaraSeoTab,
   isKolamDaraSeoReadyToApply,
   isKolamDaraSeoRoute,
+  isKolamDaraSeoSecretMaskOnly,
   normalizeKolamDaraSeoBrands,
   normalizeKolamDaraSeoDashboard,
   normalizeKolamDaraSeoIntegrationSettings,
@@ -402,9 +404,19 @@ describe('kolam-dara-seo domain', () => {
     const settings = normalizeKolamDaraSeoIntegrationSettings({
       data: {
         monitorKeywords: 'ikan, koi',
-        serpApi: {enabled: true, configured: true, apiKeyMasked: '******ab'},
+        serpApi: {
+          enabled: true,
+          configured: true,
+          envConfigured: true,
+          apiKeyMasked: '******ab',
+        },
         duckduckgo: {enabled: false},
-        searxng: {enabled: false, baseUrl: 'https://searx.test'},
+        searxng: {
+          enabled: false,
+          baseUrl: 'https://searx.test',
+          defaultBaseUrl: 'http://127.0.0.1:8080',
+          local: {reachable: true, latencyMs: 12, baseUrl: 'http://127.0.0.1:8080'},
+        },
         firecrawl: {enabled: false, baseUrl: 'https://api.firecrawl.dev'},
         searchConsole: {enabled: false, propertyUrl: '', clientEmail: ''},
         indexingApi: {enabled: false, clientEmail: ''},
@@ -412,9 +424,24 @@ describe('kolam-dara-seo domain', () => {
     });
     expect(settings).toMatchObject({
       monitorKeywords: 'ikan, koi',
-      serpApi: {enabled: true, configured: true, apiKeyMasked: '******ab'},
+      serpApi: {
+        enabled: true,
+        configured: true,
+        envConfigured: true,
+        apiKeyMasked: '******ab',
+      },
       duckduckgo: {enabled: false},
+      searxng: {
+        defaultBaseUrl: 'http://127.0.0.1:8080',
+        local: {reachable: true, latencyMs: 12},
+      },
     });
+    expect(isKolamDaraSeoSecretMaskOnly('******')).toBe(true);
+    expect(
+      extractKolamDaraSeoClientEmailFromServiceAccount(
+        '{"client_email":"svc@x.iam.gserviceaccount.com"}',
+      ),
+    ).toBe('svc@x.iam.gserviceaccount.com');
 
     const social = normalizeKolamDaraSeoSocialInsights({
       data: {
