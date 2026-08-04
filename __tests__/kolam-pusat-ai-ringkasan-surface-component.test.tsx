@@ -495,9 +495,10 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(text).toContain('Ringkasan');
     expect(text).toContain('Owner Copilot');
     expect(text).toContain('Transaksi Copilot');
-    expect(text).toContain('Skor SEO');
     expect(text).toContain('DARA SEO');
+    expect(text).toContain('Market Intel');
     expect(text).toContain('Riwayat proses DARA');
+    expect(text).not.toContain('Skor SEO');
     expect(text).not.toContain('Akses cepat');
 
     const quickSeo = renderer!.root.find(

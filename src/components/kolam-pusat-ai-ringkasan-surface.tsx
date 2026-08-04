@@ -66,7 +66,6 @@ import {KolamEmptyState} from './kolam-empty-state';
 import {KolamPusatAiInventoryCopilotBody} from './kolam-pusat-ai-inventory-copilot-body';
 import {KolamPusatAiPoCopilotBody} from './kolam-pusat-ai-po-copilot-body';
 import {KolamPusatAiTransaksiCopilotBody} from './kolam-pusat-ai-transaksi-copilot-body';
-import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -645,7 +644,7 @@ function KolamPusatAiRingkasanBody({
   onRouteChange?: (route: string) => void;
   prosesController: KolamPusatAiProsesController;
 }) {
-  const {hub, loading, error, quickLinks, kpiCards} = controller;
+  const {hub, loading, error, quickLinks} = controller;
   const showBrandFilter = (hub?.brands.length ?? 0) > 0;
 
   return (
@@ -694,8 +693,6 @@ function KolamPusatAiRingkasanBody({
         {error && !hub ? (
           <KolamEmptyState message={error} title="Gagal memuat" />
         ) : null}
-
-        {!error || hub ? <KolamStatsCardStrip cards={kpiCards} /> : null}
 
         {hub ? (
           <View style={styles.modules}>

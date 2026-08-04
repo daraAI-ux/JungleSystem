@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  buildKolamPusatAiRingkasanKpiCards,
   filterKolamPusatAiRingkasanQuickLinks,
   getKolamPusatAiHubTab,
   type KolamDaraMarketingHubSummary,
@@ -16,7 +15,6 @@ export interface KolamPusatAiRingkasanController {
   dataSource: KolamPusatAiRingkasanDataSource;
   error: string | null;
   hub: KolamDaraMarketingHubSummary | null;
-  kpiCards: ReturnType<typeof buildKolamPusatAiRingkasanKpiCards>;
   loading: boolean;
   quickLinks: Array<{href: string; label: string}>;
   onRefresh: () => Promise<void>;
@@ -73,11 +71,6 @@ export function useKolamPusatAiRingkasanController(
     ];
   }, [hub?.brands]);
 
-  const kpiCards = useMemo(
-    () => buildKolamPusatAiRingkasanKpiCards(hub),
-    [hub],
-  );
-
   const quickLinks = useMemo(
     () => filterKolamPusatAiRingkasanQuickLinks(hub?.quickLinks ?? []),
     [hub?.quickLinks],
@@ -89,7 +82,6 @@ export function useKolamPusatAiRingkasanController(
     dataSource,
     error,
     hub,
-    kpiCards,
     loading,
     quickLinks,
     onRefresh,

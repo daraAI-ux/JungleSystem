@@ -1,6 +1,5 @@
 import {
   buildKolamPusatAiHubRoute,
-  buildKolamPusatAiRingkasanKpiCards,
   filterKolamPusatAiHubTabs,
   filterKolamPusatAiRingkasanQuickLinks,
   getKolamPusatAiHubTab,
@@ -57,7 +56,7 @@ describe('kolam-pusat-ai domain', () => {
     ).toEqual([{href: '/campaign/dara-seo', label: 'DARA SEO'}]);
   });
 
-  it('normalizes marketing hub envelope and builds KPI cards', () => {
+  it('normalizes marketing hub envelope', () => {
     const hub = normalizeKolamDaraMarketingHub({
       success: true,
       data: {
@@ -86,13 +85,7 @@ describe('kolam-pusat-ai domain', () => {
     });
 
     expect(hub.seo?.seoScore).toBe(72);
-    const cards = buildKolamPusatAiRingkasanKpiCards(hub);
-    expect(cards.map(card => card.label)).toEqual([
-      'Skor SEO',
-      'Persetujuan',
-      'Snapshot SERP',
-      'Keywords',
-    ]);
-    expect(cards[1].value).toBe('5');
+    expect(hub.serpSnapshotsStored).toBe(11);
+    expect(hub.market.pendingApprovals).toBe(3);
   });
 });

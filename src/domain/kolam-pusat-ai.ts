@@ -162,44 +162,6 @@ export function filterKolamPusatAiRingkasanQuickLinks(
     }));
 }
 
-export function buildKolamPusatAiRingkasanKpiCards(
-  hub: KolamDaraMarketingHubSummary | null,
-) {
-  const pendingTotal =
-    (hub?.seo?.pendingApprovals ?? 0) + (hub?.market?.pendingApprovals ?? 0);
-
-  return [
-    {
-      id: 'seoScore',
-      label: 'Skor SEO',
-      detail: '',
-      value: hub?.seo != null ? String(hub.seo.seoScore) : '—',
-      tone: 'default' as const,
-    },
-    {
-      id: 'approvals',
-      label: 'Persetujuan',
-      detail: '',
-      value: hub ? String(pendingTotal) : '—',
-      tone: (pendingTotal > 0 ? 'warning' : 'muted') as const,
-    },
-    {
-      id: 'serp',
-      label: 'Snapshot SERP',
-      detail: '',
-      value: hub ? String(hub.serpSnapshotsStored) : '—',
-      tone: 'default' as const,
-    },
-    {
-      id: 'keywords',
-      label: 'Keywords',
-      detail: '',
-      value: hub?.seo != null ? String(hub.seo.keywordCount) : '—',
-      tone: 'muted' as const,
-    },
-  ];
-}
-
 export function normalizeKolamDaraMarketingHub(
   payload: unknown,
 ): KolamDaraMarketingHubSummary {
