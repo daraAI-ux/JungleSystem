@@ -2547,6 +2547,35 @@ describe('KolamAmSurface', () => {
       findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
     });
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
+    });
+
+    expect(updateAmServiceAccount).toHaveBeenLastCalledWith('service-1', expect.objectContaining({
+      label: 'BCA Detail Updated',
+      username: 'bca-updated',
+      accountNumber: '9876543210',
+      credentials: {},
+      status: 'inactive',
+    }));
+    expect(updateAmServiceAccount).toHaveBeenLastCalledWith('service-1', expect.not.objectContaining({
+      deviceId: expect.anything(),
+      platform: expect.anything(),
+      password: '',
+      pin: '',
+    }));
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-1'}).props.onPress();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      findInput('Service label')!.props.onChangeText('BCA Detail Updated');
+      findInput('myBCA username')!.props.onChangeText('bca-updated');
+      findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
+    });
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Service Target Phone Target'}).props.onPress();
     });
     await act(async () => {

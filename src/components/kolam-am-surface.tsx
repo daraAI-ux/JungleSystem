@@ -3521,6 +3521,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       if (editingDeviceServiceId) {
         const updatePayload = {...payload};
         delete updatePayload.platform;
+        if (!deviceChanged) {
+          delete updatePayload.deviceId;
+        }
         await updateAmServiceAccount(editingDeviceServiceId, updatePayload);
       } else {
         await createAmServiceAccount({
