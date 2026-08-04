@@ -4361,8 +4361,16 @@ function AmTransferDetailPanel({
               />
             </View>
           ) : null}
+          <View style={styles.detailHeader}>
+            <View>
+              <Text style={styles.panelTitle}>Automation Logs</Text>
+              <Text style={styles.rowMeta}>
+                {transfer.logs.length} line(s){transfer.status === 'processing' ? ' - refreshing every 3s' : ''}
+              </Text>
+            </View>
+          </View>
           <View style={styles.logPanel}>
-            {!transfer.logs.length ? <Text style={styles.logEmptyText}>No transfer logs</Text> : null}
+            {!transfer.logs.length ? <Text style={styles.logEmptyText}>No logs yet...</Text> : null}
             {transfer.logs.map((line, index) => (
               <Text key={`${index}-${line}`} style={styles.logText} numberOfLines={2}>
                 {String(index + 1).padStart(3, '0')} {line}

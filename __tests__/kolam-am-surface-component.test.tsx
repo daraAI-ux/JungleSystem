@@ -4874,6 +4874,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).not.toContain('Other hook');
     expect(joinedText).toMatch(/Screenshot base64 tersedia \(\s*6\s+chars\)/);
     expect(text).toContain('Transaction Proof');
+    expect(text).toContain('Automation Logs');
+    expect(joinedText).toMatch(/35\s+line\(s\)/);
     expect(
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Transaction Proof'}).props.source,
     ).toEqual({uri: 'data:image/png;base64,abc123'});
