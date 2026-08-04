@@ -7,7 +7,8 @@ import type {
   PaymentMethod,
   SaleSummary,
 } from '../domain/pos';
-import {apiGet, apiPost, apiRequest} from '../lib/api-client';
+import {appConfig} from '../config/app';
+import {apiRequest, type RequestOptions} from '../lib/api-client';
 import {formatCashflowSessionDisplayName} from '../lib/cashflow';
 import {getKolamFileUrl} from '../lib/file-url';
 
@@ -17,6 +18,27 @@ interface ListResponse<T> {
 
 interface DataResponse<T> {
   data: T;
+}
+
+type PosRequestOptions = Omit<RequestOptions, 'baseUrl' | 'sourceHeader'>;
+
+function posApiRequest<T>(options: PosRequestOptions): Promise<T> {
+  return apiRequest<T>({
+    ...options,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+}
+
+function posApiGet<T>(
+  path: string,
+  query?: PosRequestOptions['query'],
+): Promise<T> {
+  return posApiRequest<T>({method: 'GET', path, query});
+}
+
+function posApiPost<T>(path: string, body?: unknown): Promise<T> {
+  return posApiRequest<T>({method: 'POST', path, body});
 }
 
 interface BackendProduct {
@@ -116,14 +138,14 @@ interface BackendSaleItem {
 
 export async function getSellableCatalog(): Promise<CatalogItem[]> {
   const [products, species] = await Promise.all([
-    apiGet<ListResponse<BackendProduct>>('/products', {
+    posApiGet<ListResponse<BackendProduct>>('/products', {
       page: 1,
       limit: 50,
       type: 'product',
       status: 'active',
       sellable: true,
     }),
-    apiGet<ListResponse<BackendSpecies>>('/species', {
+    posApiGet<ListResponse<BackendSpecies>>('/species', {
       page: 1,
       limit: 50,
       sellable: true,
@@ -135,7 +157,7 @@ export async function getSellableCatalog(): Promise<CatalogItem[]> {
 }
 
 export async function getCustomers(): Promise<Customer[]> {
-  const response = await apiGet<ListResponse<BackendCustomer>>('/customer', {
+  const response = await posApiGet<ListResponse<BackendCustomer>>('/customer', {
     page: 1,
     limit: 25,
   });
@@ -155,7 +177,7 @@ export interface CreateCustomerBody {
 export async function createCustomer(
   body: CreateCustomerBody,
 ): Promise<Customer> {
-  const response = await apiPost<DataResponse<BackendCustomer>>(
+  const response = await posApiPost<DataResponse<BackendCustomer>>(
     '/customer',
     body,
   );
@@ -164,7 +186,7 @@ export async function createCustomer(
 }
 
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
-  const response = await apiGet<ListResponse<BackendPaymentMethod>>(
+  const response = await posApiGet<ListResponse<BackendPaymentMethod>>(
     '/payment-method',
     {
       page: 1,
@@ -185,7 +207,7 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
 
 export async function getActiveCashflowSession(): Promise<CashflowSession | null> {
   const response =
-    await apiGet<DataResponse<BackendCashflowSession | null>>(
+    await posApiGet<DataResponse<BackendCashflowSession | null>>(
       '/pos/cashflow/active',
     );
 
@@ -197,7 +219,7 @@ export async function getActiveCashflowSession(): Promise<CashflowSession | null
 }
 
 export async function getRecentSales(): Promise<SaleSummary[]> {
-  const response = await apiGet<ListResponse<BackendSale>>('/sales', {
+  const response = await posApiGet<ListResponse<BackendSale>>('/sales', {
     page: 1,
     limit: 10,
   });
@@ -208,7 +230,7 @@ export async function getRecentSales(): Promise<SaleSummary[]> {
 export async function getCashflowSalesPreview(
   sessionId: string,
 ): Promise<CashflowSalesPreview> {
-  const response = await apiGet<DataResponse<CashflowSalesPreview>>(
+  const response = await posApiGet<DataResponse<CashflowSalesPreview>>(
     `/pos/cashflow/${sessionId}/sales-preview`,
   );
 
@@ -238,14 +260,14 @@ export interface CreateSaleDraftBody {
 }
 
 export async function createSaleDraft(body: CreateSaleDraftBody) {
-  return apiPost<DataResponse<BackendSale>>('/sales', body);
+  return posApiPost<DataResponse<BackendSale>>('/sales', body);
 }
 
 export async function updateSaleStatus(
   id: string,
   status: SaleSummary['status'],
 ): Promise<SaleSummary> {
-  const response = await apiRequest<DataResponse<BackendSale>>({
+  const response = await posApiRequest<DataResponse<BackendSale>>({
     method: 'PUT',
     path: `/sales/${id}/status`,
     body: {status},
@@ -259,7 +281,7 @@ export interface OpenCashflowSessionBody {
 }
 
 export async function openCashflowSession(body: OpenCashflowSessionBody = {}) {
-  const response = await apiPost<DataResponse<BackendCashflowSession>>(
+  const response = await posApiPost<DataResponse<BackendCashflowSession>>(
     '/pos/cashflow/open',
     body,
   );
@@ -268,7 +290,7 @@ export async function openCashflowSession(body: OpenCashflowSessionBody = {}) {
 }
 
 export async function closeCashflowSession(sessionId: string) {
-  const response = await apiPost<DataResponse<BackendCashflowSession>>(
+  const response = await posApiPost<DataResponse<BackendCashflowSession>>(
     `/pos/cashflow/${sessionId}/close`,
   );
 
