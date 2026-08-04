@@ -873,15 +873,6 @@ export function KolamDaraTrainingVisionBody({
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Produk sellable</Text>
-            <Text style={styles.meta}>
-              Foto training produk masuk indeks visual saat rebuild dual.
-              Koreksi dari inbox (tab Koreksi) otomatis mirror ke dataset
-              produk.
-            </Text>
-          </View>
-
-          <View style={styles.card}>
             <View style={styles.cardHead}>
               <Text style={styles.sectionTitle}>Daftar produk</Text>
               <View style={styles.searchRow}>
