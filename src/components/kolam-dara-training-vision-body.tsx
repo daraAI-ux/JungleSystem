@@ -1915,7 +1915,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   modalScroll: {
-    flex: 1,
+    flexGrow: 0,
+    maxHeight: 440,
   },
   modalBody: {
     gap: 16,
@@ -1988,7 +1989,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    padding: 12,
+    padding: 24,
   },
   modalCard: {
     backgroundColor: V.colors.bg,
@@ -1996,11 +1997,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     gap: 10,
-    height: '92%',
-    maxWidth: 960,
-    overflow: 'hidden',
+    maxHeight: '90%',
+    maxWidth: 640,
     padding: 16,
-    width: '96%',
+    width: '100%',
     zIndex: 2,
   },
   modalTitle: {
