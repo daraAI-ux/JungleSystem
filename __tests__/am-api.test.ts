@@ -226,6 +226,40 @@ describe('AM API service', () => {
     );
   });
 
+  it('normalizes legacy AM token errors as Kolam SSO rejection after refresh', async () => {
+    const refreshAccessToken = jest.fn().mockResolvedValue('fresh-kolam-token');
+    setAuthSessionHandlers({refreshAccessToken});
+    setAccessToken('expired-kolam-token');
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(
+        {success: false, message: 'Invalid or expired token'},
+        {},
+        401,
+      ))
+      .mockResolvedValueOnce(jsonResponse(
+        {success: false, message: 'Invalid or expired token'},
+        {},
+        401,
+      ));
+
+    await expect(getAmDashboard('https://am.example.test/api')).rejects.toThrow(
+      'Sesi Kolam belum diterima AM.',
+    );
+
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://am.example.test/api/dashboard',
+      expect.objectContaining({
+        credentials: 'omit',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer fresh-kolam-token',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
   it('loads the AM dashboard through the live dashboard endpoint', async () => {
     fetchMock.mockResolvedValue(jsonResponse({
       success: true,

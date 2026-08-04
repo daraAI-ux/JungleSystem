@@ -1,5 +1,6 @@
 import {appConfig} from '../config/app';
-import {apiRequest} from '../lib/api-client';
+import {ApiError} from '../lib/api-error';
+import {apiRequest, type RequestOptions} from '../lib/api-client';
 
 type AmQueryValue = string | number | boolean | string[] | undefined | null;
 const AM_SSO_CREDENTIALS = 'omit' as const;
@@ -1207,7 +1208,7 @@ export async function logoutAmSession(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  await apiRequest<unknown>({
+  await requestAmApi<unknown>({
     method: 'POST',
     path: '/auth/logout',
     baseUrl,
@@ -1278,7 +1279,7 @@ export async function recordAmPageView(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  await apiRequest<unknown>({
+  await requestAmApi<unknown>({
     method: 'POST',
     path: '/activity-log/page-view',
     body: {
@@ -1361,7 +1362,7 @@ export async function sendAmChatMessage(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  const response = await apiRequest<(AmEnvelope<AmChatMessage> & {taskId?: string}) | AmChatMessage>({
+  const response = await requestAmApi<(AmEnvelope<AmChatMessage> & {taskId?: string}) | AmChatMessage>({
     method: 'POST',
     path: '/chat/message/send',
     body: payload,
@@ -1374,6 +1375,10 @@ export async function sendAmChatMessage(
   if (isAmEnvelope(response)) {
     if (!response.success) {
       throw new Error(response.message ?? 'AM API mengembalikan status gagal.');
+    }
+
+    if (response.data === undefined) {
+      throw new Error('AM API mengembalikan payload kosong.');
     }
 
     return {
@@ -1436,7 +1441,7 @@ async function amGet<T>(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  const response = await apiRequest<AmEnvelope<T> | T>({
+  const response = await requestAmApi<AmEnvelope<T> | T>({
     method: 'GET',
     path,
     query,
@@ -1458,7 +1463,7 @@ async function amPost<T>(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  const response = await apiRequest<AmEnvelope<T> | T>({
+  const response = await requestAmApi<AmEnvelope<T> | T>({
     method: 'POST',
     path,
     body,
@@ -1480,7 +1485,7 @@ async function amPut<T>(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  const response = await apiRequest<AmEnvelope<T> | T>({
+  const response = await requestAmApi<AmEnvelope<T> | T>({
     method: 'PUT',
     path,
     body,
@@ -1501,7 +1506,7 @@ async function amDelete<T>(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  const response = await apiRequest<AmEnvelope<T> | T>({
+  const response = await requestAmApi<AmEnvelope<T> | T>({
     method: 'DELETE',
     path,
     baseUrl,
@@ -1522,7 +1527,7 @@ async function amDeleteWithBody<T>(
     throw new Error('URL server AM existing belum dikonfigurasi.');
   }
 
-  const response = await apiRequest<AmEnvelope<T> | T>({
+  const response = await requestAmApi<AmEnvelope<T> | T>({
     method: 'DELETE',
     path,
     body,
@@ -1533,6 +1538,30 @@ async function amDeleteWithBody<T>(
   });
 
   return unwrapAmResponse(response);
+}
+
+async function requestAmApi<T>(options: RequestOptions): Promise<T> {
+  try {
+    return await apiRequest<T>(options);
+  } catch (error) {
+    throw normalizeAmSsoError(error);
+  }
+}
+
+function normalizeAmSsoError(error: unknown) {
+  if (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    error.message === 'Invalid or expired token'
+  ) {
+    return new ApiError(401, {
+      message: 'Sesi Kolam belum diterima AM.',
+      code: error.code,
+      errors: error.errors,
+    });
+  }
+
+  return error;
 }
 
 function unwrapAmResponse<T>(response: AmEnvelope<T> | T): T {
@@ -1546,6 +1575,9 @@ function unwrapAmResponse<T>(response: AmEnvelope<T> | T): T {
     }
 
     const data = response.data;
+    if (data === undefined) {
+      throw new Error('AM API mengembalikan payload kosong.');
+    }
 
     if (
       response.meta &&
