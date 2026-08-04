@@ -5325,6 +5325,59 @@ describe('KolamAmSurface', () => {
     expect(configText).toContain('sec...ok');
   });
 
+  it('disables webhook submit while the save request is pending', async () => {
+    let resolveCreate: (value: unknown) => void = () => undefined;
+    jest.mocked(createAmWebhookConfig).mockImplementationOnce(
+      () => new Promise(resolve => {
+        resolveCreate = resolve;
+      }) as ReturnType<typeof createAmWebhookConfig>,
+    );
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'webhooks');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Register'}).props.onPress();
+    });
+
+    const inputs = renderer!.root.findAllByType(TextInput);
+    await act(async () => {
+      inputs[0].props.onChangeText('https://new.example.test/webhook');
+      inputs[1].props.onChangeText('secret-16-chars-ok');
+      inputs[2].props.onChangeText('New hook');
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Save'}).props.onPress();
+      await Promise.resolve();
+    });
+
+    const saveButton = renderer!.root.findAllByType(KolamButton).find(
+      button => button.props.accessibilityLabel === 'AM Webhook Save',
+    );
+    expect(saveButton?.props.disabled).toBe(true);
+    expect(saveButton?.props.label).toBe('Saving...');
+
+    await act(async () => {
+      resolveCreate({
+        _id: 'webhook-new',
+        url: 'https://new.example.test/webhook',
+        events: ['transfer.success'],
+        status: 'active',
+        description: 'New hook',
+        failCount: 0,
+        createdAt: '',
+        updatedAt: '',
+      });
+      await Promise.resolve();
+    });
+  });
+
   it('refreshes webhook logs again after test ping like AM FE', async () => {
     jest.useFakeTimers();
     jest.mocked(getAmWebhookConfigs).mockResolvedValue({

@@ -5032,6 +5032,7 @@ function AmWebhooksPage() {
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isTestingPing, setIsTestingPing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const testPingRefreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -5187,6 +5188,7 @@ function AmWebhooksPage() {
 
   const testPing = React.useCallback(async () => {
     try {
+      setIsTestingPing(true);
       setActionMessage(null);
       const result = await testAmWebhookPing();
       setActionMessage(result.message || 'Test ping dispatched.');
@@ -5199,6 +5201,8 @@ function AmWebhooksPage() {
       }, 2000);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Webhook test ping gagal.');
+    } finally {
+      setIsTestingPing(false);
     }
   }, [fetchWebhooks]);
 
@@ -5216,8 +5220,8 @@ function AmWebhooksPage() {
       <View style={styles.filterBar}>
         <AmMetricCard label="Endpoints" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
         <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
-        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
-        <KolamButton label="Test Ping" intent="outline" size="sm" onPress={testPing} />
+        <KolamButton disabled={isLoading} label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
+        <KolamButton disabled={isTestingPing} label={isTestingPing ? 'Testing...' : 'Test Ping'} intent="outline" muted={isTestingPing} size="sm" onPress={testPing} />
         <KolamButton
           accessibilityLabel="AM Webhook Register"
           label="Register Webhook"
@@ -5254,6 +5258,7 @@ function AmWebhooksPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel="AM Webhook Save"
+              disabled={isSubmitting}
               intent="warning"
               label={isSubmitting ? 'Saving...' : editingConfigId ? 'Save Webhook' : 'Register'}
               muted={isSubmitting}
@@ -5282,6 +5287,7 @@ function AmWebhooksPage() {
                 <KolamButton accessibilityLabel={`AM Webhook Edit ${config._id}`} label="Edit" intent="outline" size="sm" onPress={() => editWebhook(config)} />
                 <KolamButton
                   accessibilityLabel={`AM Webhook Toggle ${config._id}`}
+                  disabled={actingConfigId === config._id}
                   label={actingConfigId === config._id ? '...' : config.status === 'active' ? 'Deactivate' : 'Activate'}
                   intent="warning"
                   muted={actingConfigId === config._id}
@@ -5290,6 +5296,7 @@ function AmWebhooksPage() {
                 />
                 <KolamButton
                   accessibilityLabel={`AM Webhook Delete ${config._id}`}
+                  disabled={actingConfigId === config._id}
                   label={actingConfigId === config._id ? '...' : 'Delete'}
                   intent="danger"
                   muted={actingConfigId === config._id}
