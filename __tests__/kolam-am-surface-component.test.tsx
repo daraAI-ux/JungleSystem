@@ -460,7 +460,8 @@ describe('KolamAmSurface', () => {
         alignSelf: 'stretch',
       }),
     );
-    expect(amRootStyle?.marginHorizontal).toBeUndefined();
+    expect(amRootStyle?.marginHorizontal).toBe(-16);
+    expect(amRootStyle?.marginLeft).toBeUndefined();
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
     expect(amRootStyle?.paddingTop).toBeUndefined();
@@ -517,8 +518,8 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 118 &&
-          style?.maxWidth === 118 &&
+        return style?.flexBasis === 148 &&
+          style?.maxWidth === 148 &&
           style?.alignItems === 'flex-end';
       });
     expect(recentMetaColumns.length).toBeGreaterThan(0);
@@ -530,11 +531,21 @@ describe('KolamAmSurface', () => {
     })).toBe(true);
     const recentAmountTexts = renderer!.root
       .findAllByType(Text)
-      .filter(node => flattenText(node.props.children).join('').includes('Rp'));
+      .filter(node => {
+        const style = StyleSheet.flatten(node.props.style);
+        return flattenText(node.props.children).join('').includes('Rp') &&
+          style?.textAlign === 'right';
+      });
     expect(recentAmountTexts.some(node => {
       const style = StyleSheet.flatten(node.props.style);
       return style?.maxWidth === 124;
     })).toBe(false);
+    expect(recentAmountTexts.every(node => {
+      const style = StyleSheet.flatten(node.props.style);
+      return style?.maxWidth === '100%' &&
+        style?.flexShrink === 1 &&
+        style?.overflow === 'hidden';
+    })).toBe(true);
     const verticalAmScroll = renderer!.root
       .findAllByType(ScrollView)
       .find(scroll => !scroll.props.horizontal);
