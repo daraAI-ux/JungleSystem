@@ -9,6 +9,7 @@ import {
   type KolamFinanceExpenseKind,
   type KolamFinanceExpenseListFilters,
   type KolamFinanceExpenseListRow,
+  type KolamFinanceExpensePeriodFilter,
   type KolamFinanceExpenseStatusFilter,
 } from '../domain/kolam-finance-expense';
 import { ApiError } from '../lib/api-error';
@@ -16,6 +17,10 @@ import {
   fetchKolamFinanceExpenseList,
   verifyKolamFinanceExpense,
 } from '../services/kolam-finance-expense-api';
+import {
+  getKolamLocations,
+  type KolamLocationOption,
+} from '../services/kolam-location-api';
 
 export interface KolamFinanceExpenseListController {
   kind: KolamFinanceExpenseKind;
@@ -32,14 +37,21 @@ export interface KolamFinanceExpenseListController {
     totalAmount: number;
     totalCount: number;
   } | null;
+  locations: KolamLocationOption[];
   loading: boolean;
   verifyingId: string | null;
   error: string;
   statusMessage: string;
   canView: boolean;
+  canCreate: boolean;
   canVerify: boolean;
   onSearchChange: (value: string) => void;
   onStatusChange: (status: KolamFinanceExpenseStatusFilter) => void;
+  onPeriodChange: (period: KolamFinanceExpensePeriodFilter) => void;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+  onLocationChange: (locationId: string) => void;
+  onClearFilters: () => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onRefresh: () => Promise<void>;
@@ -67,6 +79,7 @@ export function useKolamFinanceExpenseListController(
     totalAmount: number;
     totalCount: number;
   } | null>(null);
+  const [locations, setLocations] = useState<KolamLocationOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -80,6 +93,12 @@ export function useKolamFinanceExpenseListController(
     permissions,
     kind,
     'view',
+    roleKey,
+  );
+  const canCreate = hasKolamFinanceExpensePermission(
+    permissions,
+    kind,
+    'create',
     roleKey,
   );
   const canVerify = hasKolamFinanceExpensePermission(
@@ -133,15 +152,41 @@ export function useKolamFinanceExpenseListController(
   }, [route]);
 
   useEffect(() => {
+    if (mode !== 'list' || !canView || kind !== 'asset-purchase') {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const next = await getKolamLocations();
+        if (!cancelled) {
+          setLocations(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setLocations([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canView, kind, mode]);
+
+  useEffect(() => {
     if (mode !== 'list' || !canView) {
       return;
     }
     void refresh();
   }, [
     canView,
+    filters.endDate,
     filters.limit,
+    filters.locationId,
     filters.page,
+    filters.period,
     filters.search,
+    filters.startDate,
     filters.status,
     mode,
     refresh,
@@ -171,6 +216,51 @@ export function useKolamFinanceExpenseListController(
     },
     [patchFilters],
   );
+
+  const onPeriodChange = useCallback(
+    (period: KolamFinanceExpensePeriodFilter) => {
+      patchFilters({
+        period,
+        startDate: period === 'custom' ? filtersRef.current.startDate : '',
+        endDate: period === 'custom' ? filtersRef.current.endDate : '',
+        page: 1,
+      });
+    },
+    [patchFilters],
+  );
+
+  const onStartDateChange = useCallback(
+    (value: string) => {
+      patchFilters({ startDate: value, period: 'custom', page: 1 });
+    },
+    [patchFilters],
+  );
+
+  const onEndDateChange = useCallback(
+    (value: string) => {
+      patchFilters({ endDate: value, period: 'custom', page: 1 });
+    },
+    [patchFilters],
+  );
+
+  const onLocationChange = useCallback(
+    (locationId: string) => {
+      patchFilters({ locationId, page: 1 });
+    },
+    [patchFilters],
+  );
+
+  const onClearFilters = useCallback(() => {
+    patchFilters({
+      search: '',
+      status: 'all',
+      period: 'all',
+      startDate: '',
+      endDate: '',
+      locationId: '',
+      page: 1,
+    });
+  }, [patchFilters]);
 
   const onPageChange = useCallback(
     (page: number) => {
@@ -221,14 +311,21 @@ export function useKolamFinanceExpenseListController(
       rows,
       pagination,
       totals,
+      locations,
       loading,
       verifyingId,
       error,
       statusMessage,
       canView,
+      canCreate,
       canVerify,
       onSearchChange,
       onStatusChange,
+      onPeriodChange,
+      onStartDateChange,
+      onEndDateChange,
+      onLocationChange,
+      onClearFilters,
       onPageChange,
       onLimitChange,
       onRefresh: refresh,
@@ -241,14 +338,21 @@ export function useKolamFinanceExpenseListController(
       rows,
       pagination,
       totals,
+      locations,
       loading,
       verifyingId,
       error,
       statusMessage,
       canView,
+      canCreate,
       canVerify,
       onSearchChange,
       onStatusChange,
+      onPeriodChange,
+      onStartDateChange,
+      onEndDateChange,
+      onLocationChange,
+      onClearFilters,
       onPageChange,
       onLimitChange,
       refresh,

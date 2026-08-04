@@ -34,9 +34,20 @@ export type KolamFinanceExpensePermissionEntry = {
   actions?: string[];
 };
 
+export type KolamFinanceExpensePeriodFilter =
+  | 'all'
+  | 'weekly'
+  | 'monthly'
+  | 'yearly'
+  | 'custom';
+
 export type KolamFinanceExpenseListFilters = {
   search: string;
   status: KolamFinanceExpenseStatusFilter;
+  period: KolamFinanceExpensePeriodFilter;
+  startDate: string;
+  endDate: string;
+  locationId: string;
   page: number;
   limit: number;
 };
@@ -53,6 +64,7 @@ export type KolamFinanceExpenseListRow = {
   code: string;
   name: string;
   amount: number;
+  price: number;
   total: number;
   walletLabel: string;
   executedAt: string;
@@ -84,6 +96,17 @@ export const KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS: Array<{
   { label: 'Semua status', value: 'all' },
   { label: 'Terverifikasi', value: 'verified' },
   { label: 'Belum terverifikasi', value: 'unverified' },
+];
+
+export const KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS: Array<{
+  label: string;
+  value: KolamFinanceExpensePeriodFilter;
+}> = [
+  { label: 'Semua waktu', value: 'all' },
+  { label: 'Minggu ini', value: 'weekly' },
+  { label: 'Bulan ini', value: 'monthly' },
+  { label: 'Tahun ini', value: 'yearly' },
+  { label: 'Kustom', value: 'custom' },
 ];
 
 const WALLET_FALLBACK_RESOURCES = new Set([
@@ -185,10 +208,22 @@ export function createInitialFinanceExpenseListFilters(
     statusRaw === 'verified' || statusRaw === 'unverified'
       ? statusRaw
       : 'all';
+  const periodRaw = String(query.period ?? '').trim().toLowerCase();
+  const period: KolamFinanceExpensePeriodFilter =
+    periodRaw === 'weekly' ||
+    periodRaw === 'monthly' ||
+    periodRaw === 'yearly' ||
+    periodRaw === 'custom'
+      ? periodRaw
+      : 'all';
 
   return {
     search: query.search?.trim() ?? '',
     status,
+    period,
+    startDate: query.startDate?.trim() ?? '',
+    endDate: query.endDate?.trim() ?? '',
+    locationId: query.locationId?.trim() ?? '',
     page: Math.max(1, Number(query.page || '1') || 1),
     limit: Math.max(1, Number(query.limit || '10') || 10),
   };
@@ -205,6 +240,18 @@ export function buildFinanceExpenseListRoute(
   if (filters.status !== 'all') {
     params.set('status', filters.status);
   }
+  if (filters.period !== 'all') {
+    params.set('period', filters.period);
+  }
+  if (filters.period === 'custom' && filters.startDate.trim()) {
+    params.set('startDate', filters.startDate.trim());
+  }
+  if (filters.period === 'custom' && filters.endDate.trim()) {
+    params.set('endDate', filters.endDate.trim());
+  }
+  if (filters.locationId.trim()) {
+    params.set('locationId', filters.locationId.trim());
+  }
   if (filters.page > 1) {
     params.set('page', String(filters.page));
   }
@@ -214,6 +261,14 @@ export function buildFinanceExpenseListRoute(
   const query = params.toString();
   const root = getKolamFinanceExpenseRoot(kind);
   return query ? `${root}?${query}` : root;
+}
+
+export function getKolamAssetPurchaseDetailRoute(id: string): string {
+  return `${KOLAM_ASSET_PURCHASE_ROOT}/${encodeURIComponent(id)}`;
+}
+
+export function getKolamAssetPurchaseCreateRoute(): string {
+  return `${KOLAM_ASSET_PURCHASE_ROOT}/create`;
 }
 
 export function hasKolamFinanceExpensePermission(
@@ -338,6 +393,7 @@ function normalizeFinanceExpenseRow(
     | KolamFinanceExpenseVerifyStatus
     | '';
   const amount = Number(record.amount ?? record.total ?? 0) || 0;
+  const price = Number(record.price ?? amount) || 0;
   const total = Number(record.total ?? record.amount ?? 0) || 0;
   const executedAt = getString(record, 'executedAt') || getString(record, 'createdAt');
   const asset = asRecord(record.asset);
@@ -347,6 +403,7 @@ function normalizeFinanceExpenseRow(
     code: getString(record, 'code'),
     name: getString(record, 'name') || '—',
     amount,
+    price,
     total,
     walletLabel: resolveWalletLabel(record.wallet),
     executedAt,

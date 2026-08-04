@@ -12,7 +12,14 @@ export async function fetchKolamFinanceExpenseList(
   kind: KolamFinanceExpenseKind,
   filters: Pick<
     KolamFinanceExpenseListFilters,
-    'search' | 'status' | 'page' | 'limit'
+    | 'search'
+    | 'status'
+    | 'period'
+    | 'startDate'
+    | 'endDate'
+    | 'locationId'
+    | 'page'
+    | 'limit'
   >,
 ): Promise<KolamFinanceExpenseListResult> {
   const segment = getKolamFinanceExpenseApiSegment(kind);
@@ -25,6 +32,18 @@ export async function fetchKolamFinanceExpenseList(
   }
   if (filters.status !== 'all') {
     query.status = filters.status;
+  }
+  if (filters.period !== 'all') {
+    query.period = filters.period;
+  }
+  if (filters.period === 'custom' && filters.startDate.trim()) {
+    query.startDate = filters.startDate.trim();
+  }
+  if (filters.period === 'custom' && filters.endDate.trim()) {
+    query.endDate = filters.endDate.trim();
+  }
+  if (filters.locationId.trim()) {
+    query.locationId = filters.locationId.trim();
   }
 
   const payload = await kolamRequest<unknown>(`/${segment}`, { query });

@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   getFinanceExpenseStatusIntent,
+  getKolamAssetPurchaseCreateRoute,
+  getKolamAssetPurchaseDetailRoute,
+  KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS,
   KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS,
   type KolamFinanceExpenseKind,
   type KolamFinanceExpenseListRow,
+  type KolamFinanceExpensePeriodFilter,
   type KolamFinanceExpenseStatusFilter,
 } from '../domain/kolam-finance-expense';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -16,11 +20,13 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamDateField } from './kolam-date-field';
 import {
   KolamDropdownSelect,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -35,6 +41,7 @@ type ColumnDef = {
 function buildColumns(
   kind: KolamFinanceExpenseKind,
   controller: KolamFinanceExpenseListController,
+  onRouteChange?: (route: string) => void,
 ): ColumnDef[] {
   const base: ColumnDef[] = [
     {
@@ -49,7 +56,7 @@ function buildColumns(
     },
     {
       id: 'name',
-      label: 'Nama',
+      label: kind === 'asset-purchase' ? 'Nama aset' : 'Nama',
       flex: 1.2,
       render: row => (
         <Text numberOfLines={2} style={styles.primaryText}>
@@ -72,28 +79,79 @@ function buildColumns(
     });
   }
 
-  base.push(
-    {
-      id: 'status',
-      label: 'Status',
-      flex: 0.9,
-      render: row => (
-        <KolamStatusBadge
-          intent={getFinanceExpenseStatusIntent(row.status)}
-          label={row.statusLabel}
-        />
-      ),
-    },
-    {
+  base.push({
+    id: 'status',
+    label: 'Status',
+    flex: 0.9,
+    render: row => (
+      <KolamStatusBadge
+        intent={getFinanceExpenseStatusIntent(row.status)}
+        label={row.statusLabel}
+      />
+    ),
+  });
+
+  if (kind === 'asset-purchase') {
+    base.push(
+      {
+        id: 'price',
+        label: 'Harga',
+        flex: 0.9,
+        render: row => (
+          <Text style={styles.primaryText}>{formatRupiah(row.price)}</Text>
+        ),
+      },
+      {
+        id: 'shipping',
+        label: 'Pengiriman',
+        flex: 0.8,
+        render: row => (
+          <Text style={styles.metaText}>
+            {row.shippingCost > 0 ? formatRupiah(row.shippingCost) : 'Gratis'}
+          </Text>
+        ),
+      },
+      {
+        id: 'amount',
+        label: 'Total',
+        flex: 0.9,
+        render: row => (
+          <Text style={styles.primaryText}>{formatRupiah(row.total)}</Text>
+        ),
+      },
+      {
+        id: 'bookValue',
+        label: 'Nilai buku',
+        flex: 0.9,
+        render: row => (
+          <Text style={styles.metaText}>
+            {row.bookValue == null ? '—' : formatRupiah(row.bookValue)}
+          </Text>
+        ),
+      },
+      {
+        id: 'location',
+        label: 'Lokasi',
+        flex: 0.8,
+        render: row => (
+          <Text numberOfLines={1} style={styles.metaText}>
+            {row.locationLabel}
+          </Text>
+        ),
+      },
+    );
+  } else {
+    base.push({
       id: 'amount',
-      label: kind === 'asset-purchase' ? 'Total' : 'Jumlah',
+      label: 'Jumlah',
       flex: 1,
       render: row => (
-        <Text style={styles.primaryText}>
-          {formatRupiah(kind === 'asset-purchase' ? row.total : row.amount)}
-        </Text>
+        <Text style={styles.primaryText}>{formatRupiah(row.amount)}</Text>
       ),
-    },
+    });
+  }
+
+  base.push(
     {
       id: 'wallet',
       label: 'Dompet',
@@ -144,12 +202,12 @@ function buildColumns(
 
   if (kind === 'asset-purchase') {
     base.push({
-      id: 'location',
-      label: 'Lokasi',
-      flex: 0.8,
+      id: 'reason',
+      label: 'Alasan',
+      flex: 1,
       render: row => (
-        <Text numberOfLines={1} style={styles.metaText}>
-          {row.locationLabel}
+        <Text numberOfLines={2} style={styles.metaText}>
+          {row.reason || '—'}
         </Text>
       ),
     });
@@ -166,26 +224,35 @@ function buildColumns(
     ),
   });
 
-  if (controller.canVerify) {
-    base.push({
-      id: 'action',
-      label: '',
-      flex: 0.8,
-      render: row =>
-        row.status !== 'verified' ? (
+  base.push({
+    id: 'action',
+    label: '',
+    flex: kind === 'asset-purchase' ? 1.2 : 0.8,
+    render: row => (
+      <View style={styles.rowActions}>
+        {kind === 'asset-purchase' && onRouteChange && row.id ? (
+          <KolamButton
+            intent="secondary"
+            label="Lihat"
+            onPress={() =>
+              onRouteChange(getKolamAssetPurchaseDetailRoute(row.id))
+            }
+            style={styles.actionButton}
+          />
+        ) : null}
+        {controller.canVerify && row.status !== 'verified' ? (
           <KolamButton
             intent="primary"
-            label={
-              controller.verifyingId === row.id ? '…' : 'Verifikasi'
-            }
+            label={controller.verifyingId === row.id ? '…' : 'Verifikasi'}
             onPress={() => {
               void controller.onVerify(row);
             }}
             style={styles.actionButton}
           />
-        ) : null,
-    });
-  }
+        ) : null}
+      </View>
+    ),
+  });
 
   return base;
 }
@@ -231,20 +298,30 @@ export function KolamFinanceExpenseListSurface({
     );
   }
 
-  return <FinanceExpenseListBody controller={controller} kind={kind} />;
+  return (
+    <FinanceExpenseListBody
+      controller={controller}
+      kind={kind}
+      onRouteChange={onRouteChange}
+    />
+  );
 }
 
 function FinanceExpenseListBody({
   controller,
   kind,
+  onRouteChange,
 }: {
   controller: KolamFinanceExpenseListController;
   kind: KolamFinanceExpenseKind;
+  onRouteChange?: (route: string) => void;
 }) {
   const [searchInput, setSearchInput] = useState(controller.filters.search);
+  const [exportOpen, setExportOpen] = useState(false);
+  const isAssetPurchase = kind === 'asset-purchase';
   const columns = React.useMemo(
-    () => buildColumns(kind, controller),
-    [kind, controller],
+    () => buildColumns(kind, controller, onRouteChange),
+    [kind, controller, onRouteChange],
   );
 
   useEffect(() => {
@@ -264,21 +341,59 @@ function FinanceExpenseListBody({
     KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS.find(
       option => option.value === controller.filters.status,
     )?.label ?? 'Semua status';
+  const periodLabel =
+    KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS.find(
+      option => option.value === controller.filters.period,
+    )?.label ?? 'Semua waktu';
+
+  const locationOptions = useMemo(
+    () => [
+      { label: 'Semua lokasi', value: '' },
+      ...controller.locations.map(location => ({
+        label: location.label || location.name,
+        value: location.id,
+      })),
+    ],
+    [controller.locations],
+  );
+
+  const filtersApplied =
+    Boolean(controller.filters.search.trim()) ||
+    controller.filters.status !== 'all' ||
+    controller.filters.period !== 'all' ||
+    Boolean(controller.filters.locationId.trim());
 
   const safePage = Math.max(1, controller.pagination.page);
   const pageCount = Math.max(1, controller.pagination.totalPages);
 
   const renderRow = React.useCallback(
-    ({ item }: { item: KolamFinanceExpenseListRow }) => (
-      <View style={styles.row}>
-        {columns.map(column => (
-          <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-            {column.render(item)}
-          </View>
-        ))}
-      </View>
-    ),
-    [columns],
+    ({ item }: { item: KolamFinanceExpenseListRow }) => {
+      const cells = (
+        <>
+          {columns.map(column => (
+            <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
+              {column.render(item)}
+            </View>
+          ))}
+        </>
+      );
+
+      if (isAssetPurchase && onRouteChange && item.id) {
+        return (
+          <Pressable
+            onPress={() =>
+              onRouteChange(getKolamAssetPurchaseDetailRoute(item.id))
+            }
+            style={styles.row}
+          >
+            {cells}
+          </Pressable>
+        );
+      }
+
+      return <View style={styles.row}>{cells}</View>;
+    },
+    [columns, isAssetPurchase, onRouteChange],
   );
 
   return (
@@ -333,10 +448,77 @@ function FinanceExpenseListBody({
                   value: option.value,
                 }),
               )}
+              showLabelInTrigger={false}
               value={controller.filters.status}
             />
+            {isAssetPurchase ? (
+              <>
+                <KolamDropdownSelect
+                  label={periodLabel}
+                  onChange={value =>
+                    controller.onPeriodChange(
+                      value as KolamFinanceExpensePeriodFilter,
+                    )
+                  }
+                  options={KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS.map(
+                    option => ({
+                      label: option.label,
+                      value: option.value,
+                    }),
+                  )}
+                  showLabelInTrigger={false}
+                  value={controller.filters.period}
+                />
+                {controller.filters.period === 'custom' ? (
+                  <>
+                    <KolamDateField
+                      accessibilityLabel="Tanggal mulai"
+                      label="Dari"
+                      onChange={controller.onStartDateChange}
+                      placeholder="Dari"
+                      showLabelInTrigger={false}
+                      style={styles.dateField}
+                      triggerStyle={styles.dateFieldTrigger}
+                      value={controller.filters.startDate}
+                    />
+                    <KolamDateField
+                      accessibilityLabel="Tanggal sampai"
+                      label="Sampai"
+                      onChange={controller.onEndDateChange}
+                      placeholder="Sampai"
+                      showLabelInTrigger={false}
+                      style={styles.dateField}
+                      triggerStyle={styles.dateFieldTrigger}
+                      value={controller.filters.endDate}
+                    />
+                  </>
+                ) : null}
+                <KolamDropdownSelect
+                  label="Lokasi"
+                  onChange={controller.onLocationChange}
+                  options={locationOptions}
+                  showLabelInTrigger={false}
+                  style={styles.locationSelect}
+                  value={controller.filters.locationId}
+                />
+              </>
+            ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
+            {isAssetPurchase && filtersApplied ? (
+              <KolamButton
+                intent="secondary"
+                label="Reset"
+                onPress={controller.onClearFilters}
+              />
+            ) : null}
+            {isAssetPurchase ? (
+              <KolamButton
+                intent="secondary"
+                label="Ekspor"
+                onPress={() => setExportOpen(true)}
+              />
+            ) : null}
             <KolamButton
               intent="secondary"
               label={controller.loading ? 'Memuat…' : 'Muat ulang'}
@@ -344,6 +526,13 @@ function FinanceExpenseListBody({
                 void controller.onRefresh();
               }}
             />
+            {isAssetPurchase && controller.canCreate && onRouteChange ? (
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                onPress={() => onRouteChange(getKolamAssetPurchaseCreateRoute())}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -413,6 +602,37 @@ function FinanceExpenseListBody({
           />
         </KolamCatalogListTableShell>
       </View>
+
+      {isAssetPurchase ? (
+        <KolamExportDialog
+          catalogEndpoint="/asset-purchase/export/fields"
+          downloadEndpoint="/asset-purchase/export.xlsx"
+          downloadParams={{
+            search: controller.filters.search.trim() || undefined,
+            period:
+              controller.filters.period !== 'all'
+                ? controller.filters.period
+                : undefined,
+            startDate:
+              controller.filters.period === 'custom'
+                ? controller.filters.startDate || undefined
+                : undefined,
+            endDate:
+              controller.filters.period === 'custom'
+                ? controller.filters.endDate || undefined
+                : undefined,
+            status:
+              controller.filters.status !== 'all'
+                ? controller.filters.status
+                : undefined,
+          }}
+          filenameHint="asset-purchase"
+          onOpenChange={setExportOpen}
+          storageKey="asset-purchase-export-fields"
+          title="Ekspor Pembelian Aset"
+          visible={exportOpen}
+        />
+      ) : null}
     </View>
   );
 }
@@ -422,6 +642,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
     minHeight: 0,
+    overflow: 'hidden',
+    position: 'relative',
   },
   banner: {
     alignSelf: 'stretch',
@@ -449,6 +671,18 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  dateField: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 96,
+  },
+  dateFieldTrigger: {
+    minWidth: 96,
+    paddingHorizontal: 8,
+  },
+  locationSelect: {
+    minWidth: 120,
   },
   listRoot: {
     flex: 1,
@@ -504,6 +738,11 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  rowActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   actionButton: {
     alignSelf: 'flex-start',

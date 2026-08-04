@@ -61,8 +61,29 @@ describe('Kolam finance expense domain', () => {
     ).toEqual({
       search: 'gaji',
       status: 'verified',
+      period: 'all',
+      startDate: '',
+      endDate: '',
+      locationId: '',
       page: 2,
       limit: 20,
+    });
+  });
+
+  it('parses asset-purchase period and location filters', () => {
+    expect(
+      createInitialFinanceExpenseListFilters(
+        '/asset-purchase?period=custom&startDate=2026-01-01&endDate=2026-01-31&locationId=loc1&status=unverified',
+      ),
+    ).toEqual({
+      search: '',
+      status: 'unverified',
+      period: 'custom',
+      startDate: '2026-01-01',
+      endDate: '2026-01-31',
+      locationId: 'loc1',
+      page: 1,
+      limit: 10,
     });
   });
 
@@ -71,10 +92,29 @@ describe('Kolam finance expense domain', () => {
       buildFinanceExpenseListRoute('unexpected-expense', {
         search: 'listrik',
         status: 'unverified',
+        period: 'all',
+        startDate: '',
+        endDate: '',
+        locationId: '',
         page: 3,
         limit: 10,
       }),
     ).toBe('/unexpected-expense?search=listrik&status=unverified&page=3');
+  });
+
+  it('builds asset-purchase list route with period and location', () => {
+    expect(
+      buildFinanceExpenseListRoute('asset-purchase', {
+        search: '',
+        status: 'all',
+        period: 'monthly',
+        startDate: '',
+        endDate: '',
+        locationId: 'abc',
+        page: 1,
+        limit: 10,
+      }),
+    ).toBe('/asset-purchase?period=monthly&locationId=abc');
   });
 
   it('normalizes routine expense list payload', () => {
@@ -110,6 +150,41 @@ describe('Kolam finance expense domain', () => {
       createdByLabel: 'Ada Lovelace',
     });
     expect(result.totals).toEqual({ totalAmount: 5000000, totalCount: 1 });
+  });
+
+  it('normalizes asset-purchase list row with price shipping and book value', () => {
+    const result = normalizeKolamFinanceExpenseList(
+      {
+        data: [
+          {
+            _id: 'ap-1',
+            code: 'APUR-001',
+            name: 'Laptop',
+            price: 10000000,
+            shippingCost: 50000,
+            total: 10050000,
+            location: { name: 'Gudang A' },
+            wallet: { name: 'Utama' },
+            status: 'verified',
+            reason: 'Ops',
+            asset: { currentBookValue: 9000000 },
+            executedAt: '2026-07-01T00:00:00.000Z',
+          },
+        ],
+        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      },
+      'asset-purchase',
+    );
+
+    expect(result.data[0]).toMatchObject({
+      id: 'ap-1',
+      price: 10000000,
+      shippingCost: 50000,
+      total: 10050000,
+      locationLabel: 'Gudang A',
+      bookValue: 9000000,
+      reason: 'Ops',
+    });
   });
 });
 
