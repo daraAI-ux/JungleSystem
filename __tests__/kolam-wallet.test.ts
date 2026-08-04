@@ -5,6 +5,7 @@ import {
   formatKolamWalletTypeLabel,
   getKolamWalletRouteId,
   getKolamWalletSurfaceMode,
+  isKolamWalletProofPdf,
   isKolamWalletRoute,
   normalizeKolamWallet,
   normalizeKolamWalletList,
@@ -177,6 +178,7 @@ describe('kolam wallet domain', () => {
         confirmNote: '',
         createdAt: '',
         updatedAt: '',
+        proofs: [],
       },
       {
         id: 'b',
@@ -191,10 +193,27 @@ describe('kolam wallet domain', () => {
         confirmNote: '',
         createdAt: '',
         updatedAt: '',
+        proofs: [],
       },
     ])).toEqual({ credit: 1, debit: 1 });
     expect(formatKolamWalletTxSourceLabel('sale_revenue')).toBe(
       'Pendapatan penjualan',
     );
+  });
+
+  it('normalizes wallet transaction proofs', () => {
+    const tx = normalizeKolamWalletTransaction({
+      _id: 'tx2',
+      wallet: { _id: 'w1', name: 'Kas' },
+      type: 'credit',
+      source: 'deposit',
+      amount: 100,
+      proofs: [{ path: 'media/proof-1.jpg', uploadedAt: '2026-08-01' }],
+    });
+    expect(tx.proofs).toHaveLength(1);
+    expect(tx.proofs[0]?.path).toBe('media/proof-1.jpg');
+    expect(tx.proofs[0]?.uri).toContain('media/proof-1.jpg');
+    expect(isKolamWalletProofPdf('doc.pdf')).toBe(true);
+    expect(isKolamWalletProofPdf('pic.jpg')).toBe(false);
   });
 });

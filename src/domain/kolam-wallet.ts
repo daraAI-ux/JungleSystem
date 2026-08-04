@@ -4,6 +4,7 @@
  */
 
 import type { KolamBadgeIntent } from './kolam-badge';
+import { getKolamFileUrl } from '../lib/file-url';
 import {
   formatKolamFinanceConfirmStatusLabel,
   getKolamFinanceConfirmStatusIntent,
@@ -54,6 +55,12 @@ export type KolamWallet = {
   updatedAt: string;
 };
 
+export type KolamWalletTransactionProof = {
+  path: string;
+  uri: string | null;
+  uploadedAt: string;
+};
+
 export type KolamWalletTransaction = {
   id: string;
   walletId: string;
@@ -67,6 +74,7 @@ export type KolamWalletTransaction = {
   confirmNote: string;
   createdAt: string;
   updatedAt: string;
+  proofs: KolamWalletTransactionProof[];
 };
 
 export type KolamWalletPagination = {
@@ -420,6 +428,27 @@ export function normalizeKolamWalletList(raw: unknown) {
   };
 }
 
+export function isKolamWalletProofPdf(path: string): boolean {
+  return /\.pdf($|\?)/i.test(path);
+}
+
+export function formatKolamWalletShortDate(value: string): string {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function normalizeKolamWalletTransaction(
   raw: unknown,
 ): KolamWalletTransaction {
@@ -456,7 +485,28 @@ export function normalizeKolamWalletTransaction(
     confirmNote: getString(row, 'confirmNote'),
     createdAt: getString(row, 'createdAt'),
     updatedAt: getString(row, 'updatedAt'),
+    proofs: normalizeWalletProofs(row.proofs),
   };
+}
+
+function normalizeWalletProofs(value: unknown): KolamWalletTransactionProof[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const path = getString(record, 'path');
+      if (!path) {
+        return null;
+      }
+      return {
+        path,
+        uri: getKolamFileUrl(path),
+        uploadedAt: getString(record, 'uploadedAt'),
+      } satisfies KolamWalletTransactionProof;
+    })
+    .filter((row): row is KolamWalletTransactionProof => Boolean(row));
 }
 
 export function normalizeKolamWalletTransactionList(raw: unknown) {

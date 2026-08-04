@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import {
   formatKolamWalletConfirmStatusLabel,
+  formatKolamWalletShortDate,
   formatKolamWalletTxSourceLabel,
   formatKolamWalletTxTypeLabel,
   formatKolamWalletTypeLabel,
@@ -19,6 +21,7 @@ import {
   getKolamWalletDetailRoute,
   getKolamWalletEditRoute,
   getKolamWalletTypeIntent,
+  isKolamWalletProofPdf,
   KOLAM_WALLET_CONFIRM_STATUS_OPTIONS,
   KOLAM_WALLET_CREATE_TYPE_OPTIONS,
   KOLAM_WALLET_ROOT,
@@ -45,8 +48,11 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDropdownSelect, KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { type KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -56,14 +62,6 @@ type WalletProofPick = {
   uri: string;
 };
 
-const WALLET_COLUMNS = [
-  { id: 'name', label: 'Nama', flex: 1.2 },
-  { id: 'type', label: 'Tipe', flex: 0.9 },
-  { id: 'balance', label: 'Saldo', flex: 1 },
-  { id: 'note', label: 'Catatan', flex: 1.1 },
-  { id: 'action', label: '', flex: 1.1 },
-] as const;
-
 const TX_COLUMNS = [
   { id: 'date', label: 'Tanggal', flex: 1 },
   { id: 'wallet', label: 'Dompet', flex: 1 },
@@ -71,6 +69,7 @@ const TX_COLUMNS = [
   { id: 'source', label: 'Sumber', flex: 0.9 },
   { id: 'amount', label: 'Jumlah', flex: 1 },
   { id: 'status', label: 'Status', flex: 0.9 },
+  { id: 'bukti', label: 'Bukti', flex: 0.9 },
   { id: 'note', label: 'Catatan', flex: 1 },
   { id: 'action', label: '', flex: 0.8 },
 ] as const;
@@ -475,51 +474,122 @@ function WalletListPanel({
   const safePage = Math.max(1, controller.walletPagination.page);
   const pageCount = Math.max(1, controller.walletPagination.totalPages);
 
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamWallet }) => (
-      <View style={styles.row}>
-        <Pressable
-          onPress={() => onRouteChange?.(getKolamWalletDetailRoute(item.id))}
-          style={[styles.cell, { flex: 1.2 }]}
-        >
-          <Text numberOfLines={2} style={styles.primaryText}>
-            {item.name}
-          </Text>
-        </Pressable>
-        <View style={[styles.cell, { flex: 0.9 }]}>
-          <KolamStatusBadge
-            intent={getKolamWalletTypeIntent(item.type)}
-            label={formatKolamWalletTypeLabel(item.type)}
-          />
-        </View>
-        <View style={[styles.cell, { flex: 1 }]}>
-          <Text style={styles.primaryText}>
-            {formatRupiah(item.currentBalance)}
-          </Text>
-        </View>
-        <View style={[styles.cell, { flex: 1.1 }]}>
-          <Text numberOfLines={2} style={styles.metaText}>
-            {item.note || '—'}
-          </Text>
-        </View>
-        <View style={[styles.cell, styles.rowActions, { flex: 1.1 }]}>
-          {controller.canEdit ? (
-            <KolamButton
-              intent="secondary"
-              label="Ubah"
-              onPress={() => onRouteChange?.(getKolamWalletEditRoute(item.id))}
-            />
-          ) : null}
-          {controller.canDelete ? (
-            <KolamButton
-              intent="secondary"
-              label="Hapus"
-              onPress={() => setDeleteTarget(item)}
-            />
-          ) : null}
-        </View>
-      </View>
-    ),
+  const renderWalletCard = React.useCallback(
+    ({ item }: { item: KolamWallet }) => {
+      const growth = item.currentBalance - item.initialBalance;
+      const accountLabel = item.provider
+        ? `${item.provider}${item.accountNumber ? ` · ${item.accountNumber}` : ''}`
+        : `ID Dompet: ${item.id.slice(-8)}`;
+      return (
+        <KolamCardFrame style={styles.walletCard}>
+          <View style={styles.walletCardHeader}>
+            <View style={styles.walletCardIdentity}>
+              <View style={styles.walletCardIcon}>
+                <Text style={styles.statIconSmall}>💳</Text>
+              </View>
+              <View style={styles.walletCardCopy}>
+                <View style={styles.walletCardTitleRow}>
+                  <Text numberOfLines={1} style={styles.walletCardName}>
+                    {item.name}
+                  </Text>
+                  <KolamStatusBadge
+                    intent={getKolamWalletTypeIntent(item.type)}
+                    label={formatKolamWalletTypeLabel(item.type)}
+                  />
+                </View>
+                <Text numberOfLines={1} style={styles.metaText}>
+                  {accountLabel}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.walletCardBalanceRow}>
+            <View style={styles.walletCardBalanceCopy}>
+              <Text style={styles.metaText}>Saldo Saat Ini</Text>
+              <Text
+                style={[
+                  styles.walletCardBalance,
+                  item.currentBalance < 0 ? styles.valueDanger : styles.valuePrimary,
+                ]}
+              >
+                {formatRupiah(item.currentBalance)}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.growthPill,
+                growth > 0
+                  ? styles.growthPositive
+                  : growth < 0
+                    ? styles.growthNegative
+                    : styles.growthNeutral,
+              ]}
+            >
+              <Text style={styles.growthLabel}>Pertumbuhan</Text>
+              <Text style={styles.growthValue}>
+                {growth > 0 ? '+' : ''}
+                {formatRupiah(growth)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.walletCardMetaGrid}>
+            <View style={styles.walletCardMetaCell}>
+              <Text style={styles.metaText}>Awal</Text>
+              <Text style={styles.primaryText}>
+                {formatRupiah(item.initialBalance)}
+              </Text>
+            </View>
+            <View style={styles.walletCardMetaCell}>
+              <Text style={styles.metaText}>Diperbarui</Text>
+              <Text numberOfLines={1} style={styles.primaryText}>
+                {formatKolamWalletShortDate(item.updatedAt)}
+              </Text>
+            </View>
+          </View>
+
+          {item.note ? (
+            <Text numberOfLines={2} style={styles.walletCardNote}>
+              {item.note}
+            </Text>
+          ) : (
+            <View style={styles.walletCardNoteSpacer} />
+          )}
+
+          <View style={styles.walletCardFooter}>
+            <Text style={styles.metaText}>
+              Dibuat {formatKolamWalletShortDate(item.createdAt)}
+            </Text>
+            <View style={styles.rowActions}>
+              <KolamButton
+                intent="secondary"
+                label="Lihat"
+                onPress={() =>
+                  onRouteChange?.(getKolamWalletDetailRoute(item.id))
+                }
+              />
+              {controller.canEdit ? (
+                <KolamButton
+                  intent="secondary"
+                  label="Ubah"
+                  onPress={() =>
+                    onRouteChange?.(getKolamWalletEditRoute(item.id))
+                  }
+                />
+              ) : null}
+              {controller.canDelete ? (
+                <KolamButton
+                  intent="secondary"
+                  label="Hapus"
+                  onPress={() => setDeleteTarget(item)}
+                />
+              ) : null}
+            </View>
+          </View>
+        </KolamCardFrame>
+      );
+    },
     [controller.canDelete, controller.canEdit, onRouteChange],
   );
 
@@ -582,75 +652,54 @@ function WalletListPanel({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onWalletLimitChange}
-            page={safePage}
-            pageSize={controller.walletFilters.limit}
-            total={controller.walletPagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  intent="secondary"
-                  label="‹"
-                  onPress={() =>
-                    controller.onWalletPageChange(Math.max(1, safePage - 1))
-                  }
-                  style={styles.pageButton}
-                />
-                <Text style={styles.metaText}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  intent="secondary"
-                  label="›"
-                  onPress={() =>
-                    controller.onWalletPageChange(
-                      Math.min(pageCount, safePage + 1),
-                    )
-                  }
-                  style={styles.pageButton}
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        style={styles.tableFrame}
+      {controller.loadingWallets ? (
+        <View style={styles.emptyWrap}>
+          <Text style={styles.metaText}>Memuat…</Text>
+        </View>
+      ) : controller.filteredWallets.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState compact title="Dompet tidak ditemukan" />
+        </View>
+      ) : (
+        <View style={styles.walletCardGrid}>
+          {controller.filteredWallets.map(item => (
+            <View key={item.id} style={styles.walletCardWrap}>
+              {renderWalletCard({ item })}
+            </View>
+          ))}
+        </View>
+      )}
+
+      <KolamTableFooterControls
+        onPageSizeChange={controller.onWalletLimitChange}
+        page={safePage}
+        pageSize={controller.walletFilters.limit}
+        total={controller.walletPagination.total}
       >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.filteredWallets}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={
-                  controller.loadingWallets
-                    ? 'Memuat…'
-                    : 'Dompet tidak ditemukan'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {WALLET_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.list}
-        />
-      </KolamCatalogListTableShell>
+        {pageCount > 1 ? (
+          <View style={styles.paginationBar}>
+            <KolamButton
+              intent="secondary"
+              label="‹"
+              onPress={() =>
+                controller.onWalletPageChange(Math.max(1, safePage - 1))
+              }
+              style={styles.pageButton}
+            />
+            <Text style={styles.metaText}>
+              {safePage} / {pageCount}
+            </Text>
+            <KolamButton
+              intent="secondary"
+              label="›"
+              onPress={() =>
+                controller.onWalletPageChange(Math.min(pageCount, safePage + 1))
+              }
+              style={styles.pageButton}
+            />
+          </View>
+        ) : null}
+      </KolamTableFooterControls>
 
       {deleteTarget ? (
         <Modal
@@ -1049,18 +1098,22 @@ function WalletTransactionPanel({
   const [typeOpen, setTypeOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const safePage = Math.max(1, controller.txPagination.page);
   const pageCount = Math.max(1, controller.txPagination.totalPages);
 
   const walletOptions = useMemo(
     () => [
       { label: 'Semua dompet', value: '' },
-      ...controller.wallets.map(wallet => ({
+      ...(controller.allWallets.length > 0
+        ? controller.allWallets
+        : controller.wallets
+      ).map(wallet => ({
         label: wallet.name,
         value: wallet.id,
       })),
     ],
-    [controller.wallets],
+    [controller.allWallets, controller.wallets],
   );
 
   const typeLabel =
@@ -1105,13 +1158,26 @@ function WalletTransactionPanel({
             </Text>
           </View>
           <View style={[styles.cell, { flex: 1 }]}>
-            <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
+            <Text
+              style={[
+                styles.primaryText,
+                item.type === 'credit'
+                  ? styles.valuePrimary
+                  : styles.valueDanger,
+              ]}
+            >
+              {item.type === 'credit' ? '+' : '-'}
+              {formatRupiah(item.amount)}
+            </Text>
           </View>
           <View style={[styles.cell, { flex: 0.9 }]}>
             <KolamStatusBadge
               intent={getKolamWalletConfirmStatusIntent(item.confirmStatus)}
               label={formatKolamWalletConfirmStatusLabel(item.confirmStatus)}
             />
+          </View>
+          <View style={[styles.cell, { flex: 0.9 }]}>
+            <WalletProofThumbs proofs={item.proofs} />
           </View>
           <View style={[styles.cell, { flex: 1 }]}>
             <Text numberOfLines={2} style={styles.metaText}>
@@ -1217,6 +1283,12 @@ function WalletTransactionPanel({
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               intent="secondary"
+              label="Ekspor"
+              onPress={() => setExportOpen(true)}
+              style={styles.filterTrigger}
+            />
+            <KolamButton
+              intent="secondary"
               label="Reset"
               onPress={controller.onClearTxFilters}
               style={styles.filterTrigger}
@@ -1305,7 +1377,7 @@ function WalletTransactionPanel({
                 title={
                   controller.loadingTransactions
                     ? 'Memuat…'
-                    : 'Tidak ada transaksi'
+                    : 'Transaksi tidak ditemukan'
                 }
               />
             </View>
@@ -1326,6 +1398,94 @@ function WalletTransactionPanel({
           style={styles.list}
         />
       </KolamCatalogListTableShell>
+
+      <KolamExportDialog
+        catalogEndpoint="/wallet-transaction/export/fields"
+        downloadEndpoint="/wallet-transaction/export.xlsx"
+        downloadParams={{
+          wallet: controller.txFilters.walletId || undefined,
+          type:
+            controller.txFilters.type !== 'all'
+              ? controller.txFilters.type
+              : undefined,
+          source:
+            controller.txFilters.source !== 'all'
+              ? controller.txFilters.source
+              : undefined,
+          confirmStatus:
+            controller.txFilters.confirmStatus !== 'all'
+              ? controller.txFilters.confirmStatus
+              : undefined,
+          startDate: controller.txFilters.startDate || undefined,
+          endDate: controller.txFilters.endDate || undefined,
+        }}
+        filenameHint="wallet-transactions"
+        onOpenChange={setExportOpen}
+        storageKey="wallet-tx-export-fields"
+        title="Ekspor Transaksi Dompet"
+        visible={exportOpen}
+      />
+    </View>
+  );
+}
+
+function WalletProofThumbs({
+  proofs,
+}: {
+  proofs: KolamWalletTransaction['proofs'];
+}) {
+  if (!proofs.length) {
+    return <Text style={styles.metaText}>—</Text>;
+  }
+  const visible = proofs.slice(0, 3);
+  const imageItems: KolamImagePreviewItem[] = proofs
+    .filter(proof => proof.uri && !isKolamWalletProofPdf(proof.path))
+    .map((proof, index) => ({
+      title: `Bukti ${index + 1}`,
+      uri: proof.uri as string,
+      revision: proof.path,
+      scope: 'wallet-proof',
+    }));
+
+  return (
+    <View style={styles.proofThumbs}>
+      <Text style={styles.metaText}>Bukti</Text>
+      <View style={styles.proofThumbRow}>
+        {visible.map((proof, index) => {
+          const isPdf = isKolamWalletProofPdf(proof.path);
+          if (isPdf || !proof.uri) {
+            return (
+              <Pressable
+                key={`${proof.path}-${index}`}
+                onPress={() => {
+                  if (proof.uri) {
+                    void Linking.openURL(proof.uri);
+                  }
+                }}
+                style={styles.proofThumbBox}
+              >
+                <Text style={styles.proofThumbPdf}>PDF</Text>
+              </Pressable>
+            );
+          }
+          const previewIndex = imageItems.findIndex(
+            item => item.uri === proof.uri,
+          );
+          return (
+            <KolamRemoteImage
+              key={`${proof.path}-${index}`}
+              accessibilityLabel={`Bukti ${index + 1}`}
+              previewIndex={Math.max(0, previewIndex)}
+              previewItems={imageItems}
+              sourceUri={proof.uri}
+              style={styles.proofThumbImage}
+            />
+          );
+        })}
+        {proofs.length > 3 ? (
+          <Text style={styles.metaText}>+{proofs.length - 3}</Text>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -2044,6 +2204,171 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  walletCardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  walletCardWrap: {
+    flexBasis: 340,
+    flexGrow: 1,
+    maxWidth: '100%',
+    minWidth: 280,
+  },
+  walletCard: {
+    gap: 12,
+    minHeight: 280,
+    padding: 14,
+  },
+  walletCardHeader: {
+    gap: 8,
+  },
+  walletCardIdentity: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  walletCardIcon: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  walletCardCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  walletCardTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  walletCardName: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  walletCardBalanceRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  walletCardBalanceCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  walletCardBalance: {
+    fontFamily: V.fontFamily,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  growthPill: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  growthPositive: {
+    backgroundColor: V.colors.successSoft,
+  },
+  growthNegative: {
+    backgroundColor: V.colors.dangerSoft,
+  },
+  growthNeutral: {
+    backgroundColor: V.colors.muted,
+  },
+  growthLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  growthValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  walletCardMetaGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  walletCardMetaCell: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  walletCardNote: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 8,
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  walletCardNoteSpacer: {
+    flexGrow: 1,
+    minHeight: 8,
+  },
+  walletCardFooter: {
+    alignItems: 'center',
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    marginTop: 'auto',
+    paddingTop: 10,
+  },
+  proofThumbs: {
+    gap: 4,
+  },
+  proofThumbRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  proofThumbBox: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  proofThumbPdf: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 8,
+    fontWeight: '700',
+  },
+  proofThumbImage: {
+    borderColor: V.colors.border,
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 28,
+    width: 28,
   },
   profileCard: {
     gap: 10,
