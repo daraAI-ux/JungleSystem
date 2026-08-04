@@ -503,15 +503,44 @@ function AmDashboardPage({
         <AmMetricCard label="Today's Outgoing" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transactions`} />
         <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta="with active accounts" />
       </View>
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Today's Transfers</Text>
-        <View style={styles.statusRow}>
-          <AmStatusPill label="Pending" value={data.transfers.pending} />
-          <AmStatusPill label="Processing" value={data.transfers.processing} />
-          <AmStatusPill label="Success" value={data.transfers.success} />
-          <AmStatusPill label="Failed" value={data.transfers.failed} danger />
+      <View style={styles.overviewGrid}>
+        <View style={[styles.panel, styles.overviewChartPanel]}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.panelTitle}>Mutations (7 days)</Text>
+            <KolamButton
+              accessibilityLabel="AM Dashboard View Mutations"
+              label="View all"
+              intent="outline"
+              size="sm"
+              onPress={() => openAmRoute('mutasi')}
+            />
+          </View>
+          <Text style={styles.panelText}>Incoming vs outgoing transaction volume over the last 7 days.</Text>
+          <AmMutationChart chartData={data.chartData} />
         </View>
-        <Text style={styles.panelText}>Total amount hari ini: {formatRupiah(data.transfers.totalAmount)}</Text>
+        <View style={[styles.panel, styles.overviewTransferPanel]}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.panelTitle}>Today's Transfers</Text>
+            <KolamButton
+              accessibilityLabel="AM Dashboard View Transfer Status"
+              label="View all"
+              intent="outline"
+              size="sm"
+              onPress={() => openAmRoute('transactions')}
+            />
+          </View>
+          <Text style={styles.panelText}>Transfer breakdown by status.</Text>
+          <View style={styles.transferBreakdownStack}>
+            <AmTransferBreakdownRow label="Pending" value={data.transfers.pending} tone="warning" />
+            <AmTransferBreakdownRow label="Processing" value={data.transfers.processing} tone="info" />
+            <AmTransferBreakdownRow label="Success" value={data.transfers.success} tone="success" />
+            <AmTransferBreakdownRow label="Failed" value={data.transfers.failed} tone="danger" />
+          </View>
+          <View style={styles.transferTotalRow}>
+            <Text style={styles.panelText}>Total Amount</Text>
+            <Text style={styles.amountText}>{formatRupiah(data.transfers.totalAmount)}</Text>
+          </View>
+        </View>
       </View>
       <View style={styles.panelGrid}>
         <AmRecentTransfersPanel
@@ -522,19 +551,6 @@ function AmDashboardPage({
           onOpenRoute={openAmRoute}
           mutasi={data.recentMutasi}
         />
-      </View>
-      <View style={styles.panel}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.panelTitle}>7 Hari Mutasi</Text>
-          <KolamButton
-            accessibilityLabel="AM Dashboard View Mutations"
-            label="View all"
-            intent="outline"
-            size="sm"
-            onPress={() => openAmRoute('mutasi')}
-          />
-        </View>
-        <AmMutationChart chartData={data.chartData} />
       </View>
       {data.devices.length > 0 ? (
         <View style={styles.panel}>
@@ -611,6 +627,23 @@ function AmMutationChart({chartData}: {chartData: Array<{date: string; incoming:
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function AmTransferBreakdownRow({
+  label,
+  tone,
+  value,
+}: {
+  label: string;
+  tone: 'warning' | 'info' | 'success' | 'danger';
+  value: number;
+}) {
+  return (
+    <View style={styles.transferBreakdownRow}>
+      <AmStatusChip label={label} tone={tone} />
+      <Text style={styles.cellText}>{value}</Text>
     </View>
   );
 }
@@ -6863,6 +6896,21 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: 12,
   },
+  overviewGrid: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+    gap: 12,
+  },
+  overviewChartPanel: {
+    flexGrow: 2,
+    flexBasis: 520,
+  },
+  overviewTransferPanel: {
+    flexGrow: 1,
+    flexBasis: 260,
+  },
   panelHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -6983,6 +7031,24 @@ const styles = StyleSheet.create({
     width: 94,
     alignItems: 'flex-end',
     gap: 2,
+  },
+  transferBreakdownStack: {
+    gap: 10,
+  },
+  transferBreakdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  transferTotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingTop: 12,
   },
   amountText: {
     flexShrink: 0,

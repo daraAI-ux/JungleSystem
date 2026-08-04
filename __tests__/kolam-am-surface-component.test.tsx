@@ -407,6 +407,12 @@ describe('KolamAmSurface', () => {
     expect(text).toContain("Today's Incoming");
     expect(text).toContain("Today's Outgoing");
     expect(text).toContain("Today's Transfers");
+    expect(text).toContain('Mutations (7 days)');
+    expect(joinedText).toContain('Incoming vs outgoing transaction volume over the last 7 days.');
+    expect(joinedText).toContain('Transfer breakdown by status.');
+    expect(text.indexOf('Mutations (7 days)')).toBeLessThan(text.indexOf("Today's Transfers"));
+    expect(text.indexOf("Today's Transfers")).toBeLessThan(text.indexOf('Recent Transfers'));
+    expect(text.indexOf('Recent Transfers')).toBeLessThan(text.indexOf('Device Overview'));
     expect(text).not.toContain('Transfer Status');
     expect(text).toContain('Vendor Dashboard');
     expect(text).toContain('Vendor Dashboard Sixth');
