@@ -7001,7 +7001,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
-    marginHorizontal: -V.layout.contentPadding,
     overflow: 'hidden',
   },
   pageStack: {
@@ -7127,10 +7126,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   recentListMeta: {
-    flexBasis: 180,
+    flexBasis: 148,
     flexShrink: 0,
     minWidth: 0,
-    maxWidth: 260,
+    maxWidth: 180,
     alignSelf: 'stretch',
     alignItems: 'flex-end',
     gap: 4,

@@ -460,7 +460,7 @@ describe('KolamAmSurface', () => {
         alignSelf: 'stretch',
       }),
     );
-    expect(amRootStyle?.marginHorizontal).toBe(-V.layout.contentPadding);
+    expect(amRootStyle?.marginHorizontal).toBeUndefined();
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
     expect(amRootStyle?.paddingTop).toBeUndefined();
@@ -512,8 +512,8 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 180 &&
-          style?.maxWidth === 260 &&
+        return style?.flexBasis === 148 &&
+          style?.maxWidth === 180 &&
           style?.alignItems === 'flex-end';
       });
     expect(recentMetaColumns.length).toBeGreaterThan(0);
