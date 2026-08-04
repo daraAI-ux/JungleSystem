@@ -267,36 +267,43 @@ export function KolamAmSurface({
           onBackToCenter={onBackToCenter}
           onModuleRouteSelect={onModuleRouteSelect}
         />
-      ) : activeRoute === 'tasks' ? (
-        <AmTasksPage
-          initialTaskId={routeSelection?.taskId}
-          onModuleRouteSelect={onModuleRouteSelect}
-        />
-      ) : activeRoute === 'services' ? (
-        <AmServicesPage />
-      ) : activeRoute === 'hardware' ? (
-        <AmHardwarePage
-          initialRoute={routeSelection?.hardwareRoute}
-          onModuleRouteSelect={onModuleRouteSelect}
-        />
-      ) : activeRoute === 'webhooks' ? (
-        <AmWebhooksPage />
-      ) : activeRoute === 'transactions' ? (
-        <AmTransfersPage
-          initialTransferId={routeSelection?.transferId}
-          onModuleRouteSelect={onModuleRouteSelect}
-        />
-      ) : activeRoute === 'mutasi' ? (
-        <AmMutasiPage
-          initialMutasiId={routeSelection?.mutasiId}
-          onModuleRouteSelect={onModuleRouteSelect}
-        />
-      ) : activeRoute === 'users' ? (
-        <AmUsersPage />
-      ) : activeRoute === 'activity-log' ? (
-        <AmActivityLogPage />
       ) : (
-        <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
+        <View style={styles.pageStack}>
+          <View style={styles.actionRow}>
+            <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
+          </View>
+          {activeRoute === 'tasks' ? (
+            <AmTasksPage
+              initialTaskId={routeSelection?.taskId}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
+          ) : activeRoute === 'services' ? (
+            <AmServicesPage />
+          ) : activeRoute === 'hardware' ? (
+            <AmHardwarePage
+              initialRoute={routeSelection?.hardwareRoute}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
+          ) : activeRoute === 'webhooks' ? (
+            <AmWebhooksPage />
+          ) : activeRoute === 'transactions' ? (
+            <AmTransfersPage
+              initialTransferId={routeSelection?.transferId}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
+          ) : activeRoute === 'mutasi' ? (
+            <AmMutasiPage
+              initialMutasiId={routeSelection?.mutasiId}
+              onModuleRouteSelect={onModuleRouteSelect}
+            />
+          ) : activeRoute === 'users' ? (
+            <AmUsersPage />
+          ) : activeRoute === 'activity-log' ? (
+            <AmActivityLogPage />
+          ) : (
+            <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
+          )}
+        </View>
       )}
     </View>
   );
@@ -668,33 +675,22 @@ function AmRecentTransfersPanel({
         />
       </View>
       <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
-      <View style={styles.tablePanel}>
-        <View style={styles.dashboardTableHeader}>
-          <Text style={[styles.tableHeaderText, styles.recentAccountCol]}>Account</Text>
-          <Text style={[styles.tableHeaderText, styles.recentRecipientCol]}>Recipient</Text>
-          <Text style={[styles.tableHeaderText, styles.recentAmountCol]}>Amount</Text>
-          <Text style={[styles.tableHeaderText, styles.recentStatusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.recentDateCol]}>Time</Text>
-        </View>
+      <View style={styles.recentList}>
         {transfers.map(transfer => (
           <KolamInteractionFrame
             key={transfer._id}
             accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
             onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
-            style={styles.dashboardTableRow}>
-            <View style={styles.recentAccountCol}>
+            style={styles.recentListRow}>
+            <View style={styles.recentListMain}>
               <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(transfer.accountId)}</Text>
-            </View>
-            <View style={styles.recentRecipientCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
             </View>
-            <Text style={[styles.cellText, styles.recentAmountCol]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>
-            <View style={styles.recentStatusCol}>
+            <View style={styles.recentListMeta}>
+              <Text style={[styles.cellText, styles.amountText]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>
               <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAmDate(transfer.createdAt)}</Text>
             </View>
-            <Text style={[styles.cellText, styles.recentDateCol]} numberOfLines={1}>{formatAmDate(transfer.createdAt)}</Text>
           </KolamInteractionFrame>
         ))}
       </View>
@@ -728,35 +724,29 @@ function AmRecentMutasiPanel({
         />
       </View>
       <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
-      <View style={styles.tablePanel}>
-        <View style={styles.dashboardTableHeader}>
-          <Text style={[styles.tableHeaderText, styles.recentTypeCol]}>Type</Text>
-          <Text style={[styles.tableHeaderText, styles.recentAccountCol]}>Account</Text>
-          <Text style={[styles.tableHeaderText, styles.recentAmountCol]}>Amount</Text>
-          <Text style={[styles.tableHeaderText, styles.recentDateCol]}>Time</Text>
-        </View>
+      <View style={styles.recentList}>
         {mutasi.map(item => (
           <KolamInteractionFrame
             key={item._id}
             accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
             onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
-            style={styles.dashboardTableRow}>
-            <View style={styles.recentTypeCol}>
+            style={styles.recentListRow}>
+            <View style={styles.recentListMain}>
+              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(item.accountId)}</Text>
+            </View>
+            <View style={styles.recentListMeta}>
               <AmStatusChip
                 label={item.type === 'masuk' ? 'In' : 'Out'}
                 tone={item.type === 'masuk' ? 'success' : 'danger'}
               />
+              <Text
+                style={[styles.cellText, styles.amountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
+                numberOfLines={1}>
+                {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
+              </Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
             </View>
-            <View style={styles.recentAccountCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(item.accountId)}</Text>
-            </View>
-            <Text
-              style={[styles.cellText, styles.recentAmountCol, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
-              numberOfLines={1}>
-              {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
-            </Text>
-            <Text style={[styles.cellText, styles.recentDateCol]} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
           </KolamInteractionFrame>
         ))}
       </View>
@@ -6957,6 +6947,33 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     backgroundColor: V.colors.bg,
+  },
+  recentList: {
+    width: '100%',
+    alignSelf: 'stretch',
+    gap: 0,
+  },
+  recentListRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    overflow: 'hidden',
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingVertical: 11,
+  },
+  recentListMain: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  recentListMeta: {
+    flexShrink: 0,
+    maxWidth: 220,
+    alignItems: 'flex-end',
+    gap: 4,
   },
   overviewGrid: {
     width: '100%',

@@ -419,8 +419,6 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Vendor Dashboard Sixth');
     expect(joinedText).toContain('Legacy BCA - 321');
     expect(text).toContain('Recent Mutations');
-    expect(text).toEqual(expect.arrayContaining(['Account', 'Recipient', 'Amount', 'Status', 'Time']));
-    expect(text).toEqual(expect.arrayContaining(['Type', 'Account', 'Amount', 'Time']));
     expect(joinedText).toContain('Legacy BRI - 654');
     expect(text).toContain('Device Overview');
     expect(joinedText).toContain('with active accounts');
@@ -502,28 +500,31 @@ describe('KolamAmSurface', () => {
         return style?.minHeight === 720 && style?.borderWidth === 1;
       });
     expect(legacyFrame).toBeUndefined();
-    const amTableHeaders = renderer!.root
+    const dashboardRecentRows = renderer!.root
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.borderBottomWidth === 1 && style?.backgroundColor;
+        return style?.width === '100%' &&
+          style?.justifyContent === 'space-between' &&
+          style?.borderTopWidth === 1 &&
+          style?.overflow === 'hidden' &&
+          style?.paddingVertical === 11;
       });
-    expect(amTableHeaders.length).toBeGreaterThan(0);
-    expect(amTableHeaders.every(view => {
+    expect(dashboardRecentRows.length).toBeGreaterThan(0);
+    expect(dashboardRecentRows.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%' && style?.overflow === 'hidden';
+      return style?.alignItems === 'center' && style?.gap === 12;
     })).toBe(true);
-    const amTableRows = renderer!.root
+    const dashboardTableHeaders = renderer!.root
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.borderTopWidth === 1 && style?.paddingHorizontal === 12;
+        return style?.borderBottomWidth === 1 &&
+          style?.backgroundColor &&
+          style?.paddingHorizontal === 12 &&
+          style?.paddingVertical === 10;
       });
-    expect(amTableRows.length).toBeGreaterThan(0);
-    expect(amTableRows.every(view => {
-      const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%' && style?.overflow === 'hidden';
-    })).toBe(true);
+    expect(dashboardTableHeaders).toHaveLength(0);
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
@@ -577,6 +578,33 @@ describe('KolamAmSurface', () => {
     });
 
     expect(onBackToCenter).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the Kolam back button available on non-dashboard AM routes', async () => {
+    const onBackToCenter = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface
+          activeModuleRoute={amRoute('services')}
+          dataset={seedUnifiedDataset}
+          onBackToCenter={onBackToCenter}
+        />,
+      );
+    });
+    renderers.push(renderer!);
+
+    const backButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Kembali',
+    });
+
+    act(() => {
+      backButton.props.onPress();
+    });
+
+    expect(onBackToCenter).toHaveBeenCalledTimes(1);
+    expect(recordAmPageView).toHaveBeenCalledWith('/services');
   });
 
   it('opens AM dashboard parity routes from recent panels', async () => {
