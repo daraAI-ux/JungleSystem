@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 1,
     minHeight: 0,
+    overflow: 'visible',
     width: '100%',
   },
   footer: {

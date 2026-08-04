@@ -279,74 +279,117 @@ function buildColumns(
     });
   }
 
+  if (kind === 'asset-purchase') {
+    // Action column rendered by AssetPurchaseListRow (needs menu-open z-index).
+    return base;
+  }
+
   base.push({
     id: 'action',
     label: '',
-    flex: kind === 'asset-purchase' ? 0.45 : 0.8,
-    render: row => {
-      if (kind === 'asset-purchase') {
-        if (!row.id) {
-          return null;
-        }
-        const actions: Array<{
-          label: string;
-          onPress: () => void;
-          tone?: 'default' | 'danger';
-        }> = [];
-        if (onRouteChange) {
-          actions.push({
-            label: 'Lihat',
-            onPress: () =>
-              onRouteChange(getKolamAssetPurchaseDetailRoute(row.id)),
-          });
-          if (controller.canUpdate) {
-            actions.push({
-              label: 'Rubah',
-              onPress: () =>
-                onRouteChange(getKolamAssetPurchaseEditRoute(row.id)),
-            });
-          }
-        }
-        if (controller.canDelete) {
-          actions.push({
-            label: 'Hapus',
-            onPress: () => {
-              onRequestDelete?.(row);
-            },
-            tone: 'danger',
-          });
-        }
-        if (actions.length === 0) {
-          return null;
-        }
-        return (
-          <View style={styles.rowActions}>
-            <KolamOverflowMenuButton
-              accessibilityLabel={`Menu ${row.name || row.code || row.id}`}
-              actions={actions}
-            />
-          </View>
-        );
-      }
-
-      return (
-        <View style={styles.rowActions}>
-          {controller.canVerify && row.status !== 'verified' ? (
-            <KolamButton
-              intent="primary"
-              label={controller.verifyingId === row.id ? '…' : 'Verifikasi'}
-              onPress={() => {
-                void controller.onVerify(row);
-              }}
-              style={styles.actionButton}
-            />
-          ) : null}
-        </View>
-      );
-    },
+    flex: 0.8,
+    render: row => (
+      <View style={styles.rowActions}>
+        {controller.canVerify && row.status !== 'verified' ? (
+          <KolamButton
+            intent="primary"
+            label={controller.verifyingId === row.id ? '…' : 'Verifikasi'}
+            onPress={() => {
+              void controller.onVerify(row);
+            }}
+            style={styles.actionButton}
+          />
+        ) : null}
+      </View>
+    ),
   });
 
   return base;
+}
+
+function buildAssetPurchaseRowActions(
+  row: KolamFinanceExpenseListRow,
+  controller: KolamFinanceExpenseListController,
+  onRouteChange?: (route: string) => void,
+  onRequestDelete?: (row: KolamFinanceExpenseListRow) => void,
+): Array<{
+  label: string;
+  onPress: () => void;
+  tone?: 'default' | 'danger';
+}> {
+  if (!row.id) {
+    return [];
+  }
+  const actions: Array<{
+    label: string;
+    onPress: () => void;
+    tone?: 'default' | 'danger';
+  }> = [];
+  if (onRouteChange) {
+    actions.push({
+      label: 'Lihat',
+      onPress: () => onRouteChange(getKolamAssetPurchaseDetailRoute(row.id)),
+    });
+    if (controller.canUpdate) {
+      actions.push({
+        label: 'Rubah',
+        onPress: () => onRouteChange(getKolamAssetPurchaseEditRoute(row.id)),
+      });
+    }
+  }
+  if (controller.canDelete) {
+    actions.push({
+      label: 'Hapus',
+      onPress: () => {
+        onRequestDelete?.(row);
+      },
+      tone: 'danger',
+    });
+  }
+  return actions;
+}
+
+function AssetPurchaseListRow({
+  columns,
+  controller,
+  item,
+  onRequestDelete,
+  onRouteChange,
+}: {
+  columns: ColumnDef[];
+  controller: KolamFinanceExpenseListController;
+  item: KolamFinanceExpenseListRow;
+  onRequestDelete?: (row: KolamFinanceExpenseListRow) => void;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const actions = buildAssetPurchaseRowActions(
+    item,
+    controller,
+    onRouteChange,
+    onRequestDelete,
+  );
+
+  return (
+    <View style={[styles.row, menuOpen ? styles.rowMenuOpen : null]}>
+      {columns.map(column => (
+        <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
+          {column.render(item)}
+        </View>
+      ))}
+      <View style={[styles.cell, styles.actionsCell]}>
+        {actions.length > 0 ? (
+          <View style={styles.rowActions}>
+            <KolamOverflowMenuButton
+              accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
+              actions={actions}
+              onOpenChange={setMenuOpen}
+            />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
 }
 
 export function KolamFinanceExpenseListSurface({
@@ -470,15 +513,30 @@ function FinanceExpenseListBody({
   const safePage = Math.max(1, controller.pagination.page);
   const pageCount = Math.max(1, controller.pagination.totalPages);
 
-  const renderRow = (item: KolamFinanceExpenseListRow) => (
-    <View key={item.id} style={styles.row}>
-      {columns.map(column => (
-        <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-          {column.render(item)}
-        </View>
-      ))}
-    </View>
-  );
+  const renderRow = (item: KolamFinanceExpenseListRow) => {
+    if (isAssetPurchase) {
+      return (
+        <AssetPurchaseListRow
+          key={item.id}
+          columns={columns}
+          controller={controller}
+          item={item}
+          onRequestDelete={row => setDeleteCandidate(row)}
+          onRouteChange={onRouteChange}
+        />
+      );
+    }
+
+    return (
+      <View key={item.id} style={styles.row}>
+        {columns.map(column => (
+          <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
+            {column.render(item)}
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   const paginationControls =
     pageCount > 1 ? (
@@ -676,6 +734,9 @@ function FinanceExpenseListBody({
                 <Text style={styles.headerCellText}>{column.label}</Text>
               </View>
             ))}
+            {isAssetPurchase ? (
+              <View style={[styles.cell, styles.actionsCell]} />
+            ) : null}
           </View>
           {controller.rows.length === 0 ? (
             <View style={styles.emptyWrap}>
@@ -786,10 +847,14 @@ const styles = StyleSheet.create({
   listRoot: {
     gap: 8,
     overflow: 'visible',
+    position: 'relative',
+    zIndex: 1,
   },
   tableFrame: {
     overflow: 'visible',
+    position: 'relative',
     width: '100%',
+    zIndex: 1,
   },
   emptyWrap: {
     paddingVertical: 24,
@@ -801,7 +866,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     minHeight: 36,
+    overflow: 'visible',
     paddingHorizontal: 8,
+    zIndex: 0,
   },
   headerCellText: {
     color: V.colors.mutedFg,
@@ -822,10 +889,25 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 1,
   },
+  rowMenuOpen: {
+    elevation: 1000,
+    overflow: 'visible',
+    zIndex: 1000,
+  },
   cell: {
     minWidth: 0,
     overflow: 'visible',
     paddingHorizontal: 4,
+  },
+  actionsCell: {
+    alignItems: 'flex-end',
+    flex: 0.45,
+    flexGrow: 0,
+    flexShrink: 0,
+    justifyContent: 'center',
+    minWidth: 48,
+    overflow: 'visible',
+    zIndex: 2,
   },
   primaryText: {
     color: V.colors.fg,
@@ -852,6 +934,7 @@ const styles = StyleSheet.create({
     gap: 4,
     justifyContent: 'flex-end',
     overflow: 'visible',
+    zIndex: 2,
   },
   actionButton: {
     alignSelf: 'flex-start',

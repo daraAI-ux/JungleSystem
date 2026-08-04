@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -57,14 +56,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
-  const triggerRef = React.useRef<View>(null);
-  const viewport = useWindowDimensions();
-  const [triggerFrame, setTriggerFrame] = React.useState({
-    height: 36,
-    width: 190,
-    x: 0,
-    y: 0,
-  });
   const inlineMenu = menuPlacement === 'inline';
   const selected = options.find(option => option.value === value) ?? options[0];
   const selectedLabel = selected?.label ?? '-';
@@ -84,16 +75,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
       ),
     );
   }, [options, query]);
-  const measureTrigger = () => {
-    triggerRef.current?.measureInWindow((x, y, width, height) => {
-      setTriggerFrame({
-        height: height || 36,
-        width: width || 190,
-        x,
-        y,
-      });
-    });
-  };
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
@@ -105,9 +86,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
       if (!next) {
         setQuery('');
       }
-      if (next && !inlineMenu) {
-        requestAnimationFrame(measureTrigger);
-      }
       onOpenChange?.(next);
       return next;
     });
@@ -117,8 +95,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
     <View
       style={[
         styles.menu,
-        inlineMenu && styles.inlineMenu,
-        !inlineMenu && getDropdownPortalMenuStyle(triggerFrame, viewport),
+        inlineMenu ? styles.inlineMenu : styles.anchoredMenu,
         menuStyle,
       ]}
     >
@@ -178,7 +155,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
   );
 
   return (
-    <View ref={triggerRef} style={[styles.root, style, open && styles.rootOpen]}>
+    <View style={[styles.root, style, open && styles.rootOpen]}>
       <KolamInteractionFrame
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
@@ -203,54 +180,17 @@ export function KolamDropdownSelect<TValue extends string = string>({
           <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
         </View>
       </KolamInteractionFrame>
-      {open && inlineMenu ? menu : null}
       {open && !inlineMenu ? (
-        <Modal
-          animationType="none"
-          onRequestClose={closeMenu}
-          transparent
-          visible={open}
-        >
-          <View style={styles.portalOverlay}>
-            <Pressable
-              accessibilityLabel="Tutup dropdown"
-              accessibilityRole="button"
-              onPress={closeMenu}
-              style={styles.portalBackdrop}
-            />
-            {menu}
-          </View>
-        </Modal>
+        <Pressable
+          accessibilityLabel="Tutup dropdown"
+          accessibilityRole="button"
+          onPress={closeMenu}
+          style={styles.dismissLayer}
+        />
       ) : null}
+      {open ? menu : null}
     </View>
   );
-}
-
-function getDropdownPortalMenuStyle(
-  frame: { height: number; width: number; x: number; y: number },
-  viewport: { height: number; width: number },
-): ViewStyle {
-  const menuWidth = Math.min(
-    Math.max(frame.width, 260),
-    Math.max(260, viewport.width - 24),
-  );
-  const left = Math.min(
-    Math.max(12, frame.x),
-    Math.max(12, viewport.width - menuWidth - 12),
-  );
-  const menuHeight = 292;
-  const belowTop = frame.y + frame.height + 4;
-  const top =
-    belowTop + menuHeight > viewport.height - 12
-      ? Math.max(12, frame.y - menuHeight - 4)
-      : belowTop;
-
-  return {
-    left,
-    minWidth: menuWidth,
-    top,
-    width: menuWidth,
-  };
 }
 
 function normalizeDropdownSearch(value: string) {
@@ -475,23 +415,17 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     maxWidth: 220,
   },
-  portalOverlay: {
-    flex: 1,
-  },
-  portalBackdrop: {
+  dismissLayer: {
     position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: 0,
-    elevation: 0,
-    backgroundColor: 'transparent',
+    top: -4000,
+    right: -4000,
+    bottom: -4000,
+    left: -4000,
+    zIndex: 1,
+    elevation: 1,
   },
   menu: {
     position: 'absolute',
-    top: 38,
-    left: 0,
     zIndex: 2,
     elevation: 8,
     minWidth: 190,
@@ -504,6 +438,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
+  },
+  anchoredMenu: {
+    // Same class as profile user menu: fixed pixel anchor, no measureInWindow.
+    top: V.control.inputHeight + 4,
+    left: 0,
+    right: 0,
+    minWidth: 260,
+    zIndex: 2,
+    elevation: 24,
   },
   inlineMenu: {
     alignSelf: 'stretch',
@@ -578,8 +521,8 @@ const styles = StyleSheet.create({
   },
   overflowMenu: {
     position: 'absolute',
-    zIndex: 1200,
-    elevation: 32,
+    zIndex: 200000,
+    elevation: 2000,
     minWidth: 156,
     gap: 3,
     paddingHorizontal: 8,
