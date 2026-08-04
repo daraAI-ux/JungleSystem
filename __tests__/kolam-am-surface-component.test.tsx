@@ -439,6 +439,15 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('bca');
     expect(text).not.toContain('Automation Management');
     expect(text).not.toContain('Ringkasan akun, device, transfer, dan mutasi AM.');
+    expect(text).not.toEqual(
+      expect.arrayContaining([
+        'Overview',
+        'Automation',
+        'Infrastructure',
+        'Banking',
+        'Administration',
+      ]),
+    );
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
