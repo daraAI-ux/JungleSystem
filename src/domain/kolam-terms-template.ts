@@ -1,7 +1,7 @@
 /**
  * Kolam Syarat & Ketentuan (`/terms-templates`) — FE Proyek plugin CMS.
  * Source of truth: FE plugin terms-templates + BE `/api/terms-templates`.
- * T1: list + status (publish / soft-archive). Create/edit form = later batch.
+ * T1: list + status. T2: create / detail / edit form (single TipTap content).
  */
 
 import type { KolamStatusBadgeIntent } from '../components/kolam-status-badge-types';
@@ -128,6 +128,140 @@ export function getKolamTermsTemplateSurfaceMode(
 
 export function buildKolamTermsTemplateDetailRoute(id: string) {
   return `${KOLAM_TERMS_TEMPLATE_ROOT}/${encodeURIComponent(id)}`;
+}
+
+export function buildKolamTermsTemplateEditRoute(id: string) {
+  return `${KOLAM_TERMS_TEMPLATE_ROOT}/${encodeURIComponent(id)}/edit`;
+}
+
+export type KolamTermsTemplateFormState = {
+  title: string;
+  slug: string;
+  category: string;
+  /** Empty string = unset (null on BE). */
+  complaintWindowDays: string;
+  status: KolamTermsTemplateStatus;
+  content: string;
+  changeNote: string;
+};
+
+export type KolamTermsTemplateSaveBody = {
+  title: string;
+  slug?: string;
+  category?: string;
+  content?: string;
+  status?: KolamTermsTemplateStatus;
+  complaintWindowDays?: number | null;
+  changeNote?: string;
+};
+
+export const KOLAM_TERMS_TEMPLATE_CREATE_STATUS_OPTIONS: Array<{
+  value: Exclude<KolamTermsTemplateStatus, 'archived'>;
+  label: string;
+}> = [
+  { value: 'draft', label: 'Draf' },
+  { value: 'published', label: 'Diterbitkan' },
+];
+
+export function createEmptyKolamTermsTemplateFormState(): KolamTermsTemplateFormState {
+  return {
+    title: '',
+    slug: '',
+    category: 'default',
+    complaintWindowDays: '',
+    status: 'draft',
+    content: '',
+    changeNote: '',
+  };
+}
+
+export function createKolamTermsTemplateFormState(
+  item: KolamTermsTemplate,
+): KolamTermsTemplateFormState {
+  return {
+    title: item.title === '—' ? '' : item.title,
+    slug: item.slug,
+    category: item.category || 'default',
+    complaintWindowDays:
+      item.complaintWindowDays == null
+        ? ''
+        : String(item.complaintWindowDays),
+    status: item.status,
+    content: item.content || '',
+    changeNote: '',
+  };
+}
+
+export function isKolamTermsTemplateFormEditable(
+  item: KolamTermsTemplate | null,
+  mode: KolamTermsTemplateSurfaceMode,
+) {
+  if (mode === 'new') {
+    return true;
+  }
+  if (!item) {
+    return false;
+  }
+  return item.status !== 'archived';
+}
+
+export function validateKolamTermsTemplateForm(
+  form: KolamTermsTemplateFormState,
+): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const title = form.title.trim();
+  if (title.length < 3) {
+    errors.push('Judul wajib minimal 3 karakter.');
+  }
+  const daysRaw = form.complaintWindowDays.trim();
+  if (daysRaw) {
+    const days = Number(daysRaw);
+    if (!Number.isFinite(days) || days < 0 || !Number.isInteger(days)) {
+      errors.push('Masa tunggu komplain harus angka bulat ≥ 0 atau kosong.');
+    }
+  }
+  return { isValid: errors.length === 0, errors };
+}
+
+export function buildKolamTermsTemplateCreateBody(
+  form: KolamTermsTemplateFormState,
+): KolamTermsTemplateSaveBody {
+  const slug = form.slug.trim();
+  const category = form.category.trim() || 'default';
+  const daysRaw = form.complaintWindowDays.trim();
+  const body: KolamTermsTemplateSaveBody = {
+    title: form.title.trim(),
+    category,
+    content: form.content,
+    status: form.status === 'published' ? 'published' : 'draft',
+    complaintWindowDays: daysRaw ? Math.trunc(Number(daysRaw)) : null,
+  };
+  if (slug) {
+    body.slug = slug;
+  }
+  return body;
+}
+
+export function buildKolamTermsTemplateUpdateBody(
+  form: KolamTermsTemplateFormState,
+): KolamTermsTemplateSaveBody {
+  const slug = form.slug.trim();
+  const category = form.category.trim() || 'default';
+  const daysRaw = form.complaintWindowDays.trim();
+  const changeNote = form.changeNote.trim();
+  const body: KolamTermsTemplateSaveBody = {
+    title: form.title.trim(),
+    category,
+    content: form.content,
+    complaintWindowDays: daysRaw ? Math.trunc(Number(daysRaw)) : null,
+  };
+  if (slug) {
+    body.slug = slug;
+  }
+  if (changeNote) {
+    body.changeNote = changeNote.slice(0, 500);
+  }
+  return body;
 }
 
 export function formatKolamTermsTemplateStatusLabel(

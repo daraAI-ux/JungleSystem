@@ -7,6 +7,7 @@ import {
   formatKolamTermsTemplateComplaintWindow,
   formatKolamTermsTemplateStatusLabel,
   getKolamTermsTemplateStatusIntent,
+  KOLAM_TERMS_TEMPLATE_CREATE_STATUS_OPTIONS,
   KOLAM_TERMS_TEMPLATE_NEW_ROUTE,
   KOLAM_TERMS_TEMPLATE_ROOT,
   KOLAM_TERMS_TEMPLATE_STATUS_FILTER_OPTIONS,
@@ -35,16 +36,20 @@ import {
   KolamDataTableActionsTrack,
   KolamDataTableMainTrack,
 } from './kolam-data-table-tracks';
-import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamHtmlContent } from './kolam-html-content';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 
 const LIST_COLUMNS: KolamTableColumn[] = [
   { id: 'primary', label: 'Judul', align: 'left', width: 220 },
@@ -60,6 +65,23 @@ const LIST_COLUMNS: KolamTableColumn[] = [
     width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   },
 ];
+
+function FieldShell({
+  children,
+  label,
+  required = false,
+}: {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <View style={settingsWebFormStyles.settingsWebFormField}>
+      <KolamSettingsWebFieldLabel label={label} required={required} />
+      {children}
+    </View>
+  );
+}
 
 export function KolamTermsTemplateSurface({
   onRouteChange,
@@ -79,38 +101,11 @@ export function KolamTermsTemplateSurface({
     );
   }
 
-  if (controller.mode === 'detail') {
-    return (
-      <KolamTermsTemplateDetail
-        controller={controller}
-        onRouteChange={onRouteChange}
-      />
-    );
-  }
-
   return (
-    <View style={styles.surface}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {controller.mode === 'new' ? 'Template baru' : 'Ubah template'}
-            </Text>
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Kembali"
-              onPress={() => onRouteChange?.(KOLAM_TERMS_TEMPLATE_ROOT)}
-              tone="secondary"
-            />
-          </View>
-        </View>
-      </View>
-      <KolamEmptyState
-        message="Form create/edit masuk batch berikutnya. List dan status sudah tersedia."
-        title="Form belum tersedia"
-      />
-    </View>
+    <KolamTermsTemplateFormShell
+      controller={controller}
+      onRouteChange={onRouteChange}
+    />
   );
 }
 
@@ -414,15 +409,23 @@ function TermsTemplateListRow({
   );
 }
 
-function KolamTermsTemplateDetail({
+function KolamTermsTemplateFormShell({
   controller,
   onRouteChange,
 }: {
   controller: KolamTermsTemplateController;
   onRouteChange?: (route: string) => void;
 }) {
-  const item = controller.selected;
   const [pendingArchive, setPendingArchive] = React.useState(false);
+  const item = controller.selected;
+  const form = controller.form;
+  const editable = controller.isFormEditable;
+  const contextLabel =
+    controller.mode === 'new'
+      ? 'Template baru'
+      : controller.mode === 'edit'
+        ? `Ubah · ${item?.title || form.title || 'Template'}`
+        : item?.title || form.title || 'Detail template';
 
   return (
     <View style={styles.surface}>
@@ -430,8 +433,14 @@ function KolamTermsTemplateDetail({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
             <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {item?.title || 'Detail template'}
+              {contextLabel}
             </Text>
+            {item ? (
+              <KolamStatusBadge
+                intent={getKolamTermsTemplateStatusIntent(item.status)}
+                label={formatKolamTermsTemplateStatusLabel(item.status)}
+              />
+            ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
@@ -442,6 +451,16 @@ function KolamTermsTemplateDetail({
               }}
               tone="secondary"
             />
+            {item && item.status === 'archived' ? (
+              <KolamButton
+                disabled={controller.mutating}
+                label="Buka draf"
+                onPress={() => {
+                  void controller.onSetDraft(item);
+                }}
+                tone="secondary"
+              />
+            ) : null}
             {item && canPublishKolamTermsTemplate(item) ? (
               <KolamButton
                 disabled={controller.mutating}
@@ -457,6 +476,31 @@ function KolamTermsTemplateDetail({
                 label="Arsipkan"
                 onPress={() => setPendingArchive(true)}
                 tone="secondary"
+              />
+            ) : null}
+            {controller.mode === 'detail' && editable ? (
+              <KolamButton
+                label="Ubah"
+                onPress={() => controller.onEdit()}
+                tone="secondary"
+              />
+            ) : null}
+            {(controller.mode === 'new' ||
+              controller.mode === 'edit' ||
+              (controller.mode === 'detail' && editable)) &&
+            editable ? (
+              <KolamButton
+                disabled={controller.mutating}
+                label={
+                  controller.mutating
+                    ? 'Menyimpan…'
+                    : controller.mode === 'new'
+                      ? 'Buat'
+                      : 'Simpan'
+                }
+                onPress={() => {
+                  void controller.onSave();
+                }}
               />
             ) : null}
           </View>
@@ -480,13 +524,19 @@ function KolamTermsTemplateDetail({
         />
       ) : null}
 
-      {controller.loading && !item ? (
-        <KolamEmptyState message="Memuat…" title="Detail" />
-      ) : !item ? (
-        <KolamEmptyState
-          message="Template tidak ditemukan."
-          title="Tidak ada data"
+      {!editable && item?.status === 'archived' ? (
+        <KolamStatusBadge
+          intent="warning"
+          label="Diarsipkan — buka draf atau terbitkan sebelum mengubah."
+          numberOfLines={2}
+          style={styles.banner}
         />
+      ) : null}
+
+      {controller.loading &&
+      (controller.mode === 'detail' || controller.mode === 'edit') &&
+      !item ? (
+        <KolamEmptyState message="Memuat…" title="Detail" />
       ) : (
         <ScrollView contentContainerStyle={styles.detailContent}>
           <KolamContentFrame variant="nativeFormSection">
@@ -500,54 +550,119 @@ function KolamTermsTemplateDetail({
                 },
               ]}
             />
-            <KolamDescriptionList
-              rows={[
+            <KolamContentFrame variant="nativeFormControls">
+              <View style={settingsWebFormStyles.settingsWebFormFields}>
+                <FieldShell label="Judul" required>
+                  <KolamFormTextField
+                    editable={editable && !controller.mutating}
+                    onChangeText={title => controller.onChangeForm({ title })}
+                    placeholder="Judul template"
+                    value={form.title}
+                  />
+                </FieldShell>
+                <FieldShell label="Slug">
+                  <KolamFormTextField
+                    editable={editable && !controller.mutating}
+                    onChangeText={slug => controller.onChangeForm({ slug })}
+                    placeholder="otomatis dari judul jika kosong"
+                    value={form.slug}
+                  />
+                </FieldShell>
+                <FieldShell label="Kategori">
+                  <KolamFormTextField
+                    editable={editable && !controller.mutating}
+                    onChangeText={category =>
+                      controller.onChangeForm({ category })
+                    }
+                    placeholder="default"
+                    value={form.category}
+                  />
+                </FieldShell>
+                <FieldShell label="Masa tunggu komplain (hari)">
+                  <KolamFormTextField
+                    editable={editable && !controller.mutating}
+                    keyboardType="number-pad"
+                    onChangeText={complaintWindowDays =>
+                      controller.onChangeForm({ complaintWindowDays })
+                    }
+                    placeholder="kosong = default web setting"
+                    value={form.complaintWindowDays}
+                  />
+                </FieldShell>
+                {controller.mode === 'new' ? (
+                  <FieldShell label="Status awal">
+                    <KolamDropdownSelect
+                      label={
+                        KOLAM_TERMS_TEMPLATE_CREATE_STATUS_OPTIONS.find(
+                          option => option.value === form.status,
+                        )?.label ?? 'Draf'
+                      }
+                      onChange={value =>
+                        controller.onChangeForm({
+                          status:
+                            value === 'published' ? 'published' : 'draft',
+                        })
+                      }
+                      options={KOLAM_TERMS_TEMPLATE_CREATE_STATUS_OPTIONS.map(
+                        option => ({
+                          label: option.label,
+                          value: option.value,
+                        }),
+                      )}
+                      showLabelInTrigger={false}
+                      value={
+                        form.status === 'published' ? 'published' : 'draft'
+                      }
+                    />
+                  </FieldShell>
+                ) : null}
+                {controller.mode !== 'new' && editable ? (
+                  <FieldShell label="Catatan perubahan">
+                    <KolamFormTextField
+                      editable={!controller.mutating}
+                      onChangeText={changeNote =>
+                        controller.onChangeForm({ changeNote })
+                      }
+                      placeholder="Opsional"
+                      value={form.changeNote}
+                    />
+                  </FieldShell>
+                ) : null}
+              </View>
+            </KolamContentFrame>
+          </KolamContentFrame>
+
+          <KolamContentFrame variant="nativeFormSection">
+            <KolamCopyStack
+              containerStyle={styles.sectionCopy}
+              items={[
                 {
-                  id: 'title',
-                  label: 'Judul',
-                  meta: '',
-                  tone: 'default',
-                  value: item.title,
-                },
-                {
-                  id: 'slug',
-                  label: 'Slug',
-                  meta: '',
-                  tone: 'default',
-                  value: item.slug || '—',
-                },
-                {
-                  id: 'category',
-                  label: 'Kategori',
-                  meta: '',
-                  tone: 'default',
-                  value: item.category || '—',
-                },
-                {
-                  id: 'status',
-                  label: 'Status',
-                  meta: '',
-                  tone: 'default',
-                  value: formatKolamTermsTemplateStatusLabel(item.status),
-                },
-                {
-                  id: 'version',
-                  label: 'Versi',
-                  meta: '',
-                  tone: 'default',
-                  value: String(item.version),
-                },
-                {
-                  id: 'complaint',
-                  label: 'Masa tunggu komplain (hari)',
-                  meta: '',
-                  tone: 'default',
-                  value: formatKolamTermsTemplateComplaintWindow(
-                    item.complaintWindowDays,
-                  ),
+                  id: 'content',
+                  text: 'Isi S&K',
+                  style: styles.sectionTitle,
                 },
               ]}
             />
+            {editable ? (
+              <View style={styles.editorWrap}>
+                <KolamTipTapRichTextEditor
+                  editable={!controller.mutating}
+                  onChangeText={content =>
+                    controller.onChangeForm({ content })
+                  }
+                  placeholder="Tulis syarat dan ketentuan…"
+                  value={form.content}
+                />
+              </View>
+            ) : (
+              <View style={styles.htmlPreview}>
+                {form.content.trim() ? (
+                  <KolamHtmlContent html={form.content} />
+                ) : (
+                  <Text style={styles.emptyContent}>Belum ada konten.</Text>
+                )}
+              </View>
+            )}
           </KolamContentFrame>
         </ScrollView>
       )}
@@ -604,6 +719,7 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 14,
     fontWeight: '600',
+    maxWidth: 360,
   },
   detailContent: {
     gap: 12,
@@ -629,5 +745,16 @@ const styles = StyleSheet.create({
   pageLabel: {
     color: V.colors.mutedFg,
     fontSize: 12,
+  },
+  editorWrap: {
+    minHeight: 280,
+  },
+  htmlPreview: {
+    minHeight: 120,
+    padding: 8,
+  },
+  emptyContent: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
   },
 });

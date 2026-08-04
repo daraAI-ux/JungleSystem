@@ -1,18 +1,23 @@
 import {
+  buildKolamTermsTemplateCreateBody,
   buildKolamTermsTemplateDetailRoute,
+  buildKolamTermsTemplateUpdateBody,
   canArchiveKolamTermsTemplate,
   canPublishKolamTermsTemplate,
+  createEmptyKolamTermsTemplateFormState,
   formatKolamTermsTemplateComplaintWindow,
   formatKolamTermsTemplateStatusLabel,
   getKolamTermsTemplateRouteId,
   getKolamTermsTemplateSurfaceMode,
   isKolamTermsTemplateDetailRoute,
   isKolamTermsTemplateEditRoute,
+  isKolamTermsTemplateFormEditable,
   isKolamTermsTemplateListRoute,
   isKolamTermsTemplateNewRoute,
   isKolamTermsTemplateRoute,
   normalizeKolamTermsTemplate,
   normalizeKolamTermsTemplateList,
+  validateKolamTermsTemplateForm,
 } from '../src/domain/kolam-terms-template';
 
 describe('kolam terms-template domain', () => {
@@ -99,5 +104,41 @@ describe('kolam terms-template domain', () => {
     expect(detail.status).toBe('archived');
     expect(canPublishKolamTermsTemplate(detail)).toBe(true);
     expect(canArchiveKolamTermsTemplate(detail)).toBe(false);
+    expect(isKolamTermsTemplateFormEditable(detail, 'detail')).toBe(false);
+    expect(isKolamTermsTemplateFormEditable(null, 'new')).toBe(true);
+  });
+
+  it('validates and builds create/update bodies', () => {
+    const invalid = validateKolamTermsTemplateForm(
+      createEmptyKolamTermsTemplateFormState(),
+    );
+    expect(invalid.isValid).toBe(false);
+
+    const form = {
+      ...createEmptyKolamTermsTemplateFormState(),
+      title: 'Garansi Premium',
+      slug: 'garansi-premium',
+      category: 'warranty',
+      complaintWindowDays: '14',
+      status: 'published' as const,
+      content: '<p>Isi</p>',
+      changeNote: 'revisi',
+    };
+    expect(validateKolamTermsTemplateForm(form).isValid).toBe(true);
+    expect(buildKolamTermsTemplateCreateBody(form)).toEqual(
+      expect.objectContaining({
+        title: 'Garansi Premium',
+        slug: 'garansi-premium',
+        status: 'published',
+        complaintWindowDays: 14,
+      }),
+    );
+    expect(buildKolamTermsTemplateUpdateBody(form)).toEqual(
+      expect.objectContaining({
+        title: 'Garansi Premium',
+        changeNote: 'revisi',
+      }),
+    );
+    expect(buildKolamTermsTemplateUpdateBody(form).status).toBeUndefined();
   });
 });

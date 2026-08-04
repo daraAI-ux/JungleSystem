@@ -5,6 +5,7 @@ import {
   type KolamTermsTemplate,
   type KolamTermsTemplateListQuery,
   type KolamTermsTemplateListResult,
+  type KolamTermsTemplateSaveBody,
   type KolamTermsTemplateStatus,
 } from '../domain/kolam-terms-template';
 import { apiRequest } from '../lib/api-client';
@@ -32,6 +33,30 @@ export async function getKolamTermsTemplate(
 ): Promise<KolamTermsTemplate> {
   const payload = await kolamRequest<unknown>(
     `/terms-templates/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamTermsTemplate(payload);
+}
+
+export async function createKolamTermsTemplate(
+  body: KolamTermsTemplateSaveBody,
+): Promise<KolamTermsTemplate> {
+  const payload = await kolamRequest<unknown>('/terms-templates', {
+    method: 'POST',
+    body,
+  });
+  return normalizeKolamTermsTemplate(payload);
+}
+
+export async function updateKolamTermsTemplate(
+  id: string,
+  body: KolamTermsTemplateSaveBody,
+): Promise<KolamTermsTemplate> {
+  const payload = await kolamRequest<unknown>(
+    `/terms-templates/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
   );
   return normalizeKolamTermsTemplate(payload);
 }
