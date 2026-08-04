@@ -439,10 +439,6 @@ export function KolamDaraTrainingVisionBody({
       {section === 'ringkasan' && stats ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Status pipeline</Text>
-          <Text style={styles.meta}>
-            Fase 8: LLM fallback opsional untuk weak match. Eval holdout di tab
-            Eval.
-          </Text>
           <View style={styles.statGrid}>
             <StatBox
               label="Closed-world"
@@ -453,11 +449,7 @@ export function KolamDaraTrainingVisionBody({
               label="Embed aktif"
               value={stats.embedFamily || 'siglip'}
             />
-            <StatBox
-              hint="Cosine — tune via DARA_EMBED_MIN_SCORE"
-              label="Threshold min"
-              value={stats.embedMinScore ?? '—'}
-            />
+            <StatBox label="Threshold min" value={stats.embedMinScore ?? '—'} />
             <StatBox
               label="Indeks model OK"
               value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
@@ -481,11 +473,7 @@ export function KolamDaraTrainingVisionBody({
               value={stats.detectCropMode || 'auto'}
             />
             <StatBox
-              hint={
-                stats.ocrEngine ?
-                  `Engine: ${stats.ocrEngine}${stats.ocrTesseractFallback === false ? ' (no fallback)' : ''}`
-                : 'PaddleOCR → Tesseract'
-              }
+              hint={stats.ocrEngine || undefined}
               label="OCR unified"
               value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
             />
@@ -509,17 +497,6 @@ export function KolamDaraTrainingVisionBody({
               }
               label="YOLO produk"
               value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
-            />
-            <StatBox
-              hint={
-                stats.visionLlmFallbackEnabled ?
-                  stats.visionLlmFallbackReady ?
-                    'Weak match → katalog'
-                  : 'Butuh OPENAI_API_KEY'
-                : 'DARA_VISION_LLM_FALLBACK=true'
-              }
-              label="LLM fallback"
-              value={stats.visionLlmFallbackEnabled ? 'Aktif' : 'Nonaktif'}
             />
             <StatBox
               hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
@@ -1498,36 +1475,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statGrid: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    width: '100%',
   },
   statBox: {
-    backgroundColor: V.colors.muted,
+    backgroundColor: V.colors.secondary,
     borderColor: V.colors.border,
-    borderRadius: 8,
+    borderRadius: V.radius.lg,
     borderWidth: 1,
+    flexBasis: '23%',
+    flexGrow: 1,
+    flexShrink: 1,
     gap: 2,
-    minWidth: 140,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    justifyContent: 'flex-start',
+    minHeight: 72,
+    minWidth: 148,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   statLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
+    fontWeight: '700',
   },
   statValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 18,
     fontWeight: '700',
+    marginTop: 2,
   },
   statHint: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 2,
   },
   statWarn: {
     color: V.colors.fg,
