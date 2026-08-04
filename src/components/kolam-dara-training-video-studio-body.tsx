@@ -353,7 +353,12 @@ export function KolamDaraTrainingVideoStudioBody({
         sourceVideoUrl: job.sourceVideoUrl,
       });
       setActiveJob(retried);
-      setJobs(current => [retried, ...current]);
+      setJobs(current =>
+        [retried, ...current.filter(row => row.id !== retried.id)].slice(
+          0,
+          VIDEO_STUDIO_JOB_HISTORY_LIMIT,
+        ),
+      );
       setNotice('Retry task BytePlus dikirim');
       void pollUntilTerminal(retried);
     } catch (err) {
@@ -542,17 +547,19 @@ export function KolamDaraTrainingVideoStudioBody({
               />
             </View>
 
-            <View style={styles.field}>
+            <View style={styles.promptBlock}>
               <Text style={styles.fieldLabel}>Prompt</Text>
-              <KolamFormTextField
-                editable={canManage && !busy}
-                multiline
-                nestedScrollEnabled
-                onChangeText={setPrompt}
-                scrollEnabled
-                style={styles.promptInput}
-                value={prompt}
-              />
+              <View style={styles.promptInputShell}>
+                <KolamFormTextField
+                  editable={canManage && !busy}
+                  multiline
+                  nestedScrollEnabled
+                  onChangeText={setPrompt}
+                  scrollEnabled
+                  style={styles.promptInput}
+                  value={prompt}
+                />
+              </View>
             </View>
 
             <View style={styles.rowActions}>
@@ -694,7 +701,7 @@ export function KolamDaraTrainingVideoStudioBody({
               ) : null}
             </View>
 
-            <View style={styles.panel}>
+            <View style={styles.historyPanel}>
               <View style={styles.panelHead}>
                 <Text style={styles.panelTitle}>Histori job</Text>
                 <KolamButton
@@ -754,6 +761,7 @@ export function KolamDaraTrainingVideoStudioBody({
 
 const styles = StyleSheet.create({
   root: {
+    flexGrow: 1,
     gap: 12,
   },
   card: {
@@ -761,6 +769,7 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    flexGrow: 1,
     gap: 12,
     padding: 12,
   },
@@ -789,8 +798,9 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   columns: {
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     flexDirection: 'row',
+    flexGrow: 1,
     gap: 16,
   },
   columnMain: {
@@ -833,9 +843,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
+  promptBlock: {
+    flex: 1,
+    gap: 4,
+    minHeight: 260,
+  },
+  promptInputShell: {
+    flex: 1,
+    minHeight: 200,
+  },
   promptInput: {
-    height: 200,
-    maxHeight: 200,
+    flex: 1,
     minHeight: 200,
   },
   dropdownGrid: {
@@ -883,6 +901,15 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 10,
   },
+  historyPanel: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 10,
+    minHeight: 260,
+    padding: 10,
+  },
   panelHead: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -928,7 +955,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   historyList: {
-    maxHeight: 260,
+    flex: 1,
+    minHeight: 200,
   },
   historyRow: {
     borderBottomColor: V.colors.border,
