@@ -2572,12 +2572,17 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexWrap: 'nowrap',
     gap: 4,
+    justifyContent: 'flex-end',
+    marginLeft: 'auto',
     paddingLeft: 0,
   },
   txToolbarRow: {
     alignItems: 'center',
+    flexDirection: 'row',
     flexWrap: 'nowrap',
     gap: 4,
+    justifyContent: 'space-between',
+    width: '100%',
   },
   txToolbarFiltersScroll: {
     flexGrow: 1,
@@ -2587,6 +2592,7 @@ const styles = StyleSheet.create({
   txToolbarFiltersContent: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexGrow: 0,
     flexWrap: 'nowrap',
     gap: 4,
     paddingRight: 4,
@@ -2774,6 +2780,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   actionFormActions: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
     borderTopColor: V.colors.border,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
@@ -2781,5 +2789,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    width: '100%',
   },
 });
