@@ -460,7 +460,7 @@ describe('KolamAmSurface', () => {
         alignSelf: 'stretch',
       }),
     );
-    expect(amRootStyle?.marginHorizontal).toBe(-16);
+    expect(amRootStyle?.marginHorizontal).toBeUndefined();
     expect(amRootStyle?.marginLeft).toBeUndefined();
     expect(amRootStyle?.maxWidth).toBeUndefined();
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
@@ -479,7 +479,7 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 0 &&
+        return style?.flexBasis === 360 &&
           style?.borderWidth === 1 &&
           style?.maxWidth === '100%' &&
           style?.overflow === 'hidden';
@@ -526,7 +526,7 @@ describe('KolamAmSurface', () => {
     expect(recentMetaColumns.every(view => {
       const style = StyleSheet.flatten(view.props.style);
       return style?.minWidth === 0 &&
-        style?.flexShrink === 0 &&
+        style?.flexShrink === 1 &&
         style?.overflow === 'hidden';
     })).toBe(true);
     const recentAmountTexts = renderer!.root

@@ -6427,7 +6427,7 @@ function AmStatusChip({
         tone === 'info' && styles.statusChipInfo,
         tone === 'danger' && styles.statusChipDanger,
       ]}>
-      <Text style={styles.statusChipText}>{titleCase(label)}</Text>
+      <Text style={styles.statusChipText} numberOfLines={1}>{titleCase(label)}</Text>
     </View>
   );
 }
@@ -7029,7 +7029,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
-    marginHorizontal: -V.layout.contentPadding,
     overflow: 'hidden',
   },
   pageStack: {
@@ -7121,7 +7120,7 @@ const styles = StyleSheet.create({
   dashboardRecentPanel: {
     width: '100%',
     alignSelf: 'stretch',
-    flexBasis: 0,
+    flexBasis: 360,
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 0,
@@ -7144,6 +7143,7 @@ const styles = StyleSheet.create({
   },
   recentListRow: {
     width: '100%',
+    alignSelf: 'stretch',
     maxWidth: '100%',
     minWidth: 0,
     flexShrink: 1,
@@ -7166,7 +7166,7 @@ const styles = StyleSheet.create({
   recentListMeta: {
     flexBasis: 148,
     flexGrow: 0,
-    flexShrink: 0,
+    flexShrink: 1,
     minWidth: 0,
     maxWidth: 148,
     alignSelf: 'stretch',
@@ -7765,6 +7765,9 @@ const styles = StyleSheet.create({
   },
   statusChip: {
     alignSelf: 'flex-start',
+    maxWidth: '100%',
+    flexShrink: 1,
+    overflow: 'hidden',
     borderRadius: V.control.badgeRadius,
     paddingHorizontal: 8,
     paddingVertical: 3,
