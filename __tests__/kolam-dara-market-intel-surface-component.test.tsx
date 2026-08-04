@@ -173,8 +173,14 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
     platformFeeMetaMock.mockResolvedValue({
       sellerTiers: [{id: 'star', label: 'Star'}],
-      programs: {shopee: [{id: 'promoXtra', label: 'Promo'}]},
-      categories: {shopee: [{id: 'cat1', label: 'Elektronik'}]},
+      programs: {
+        shopee: [{id: 'promoXtra', label: 'Promo'}],
+        tokopedia: [{id: 'plus', label: 'Plus'}],
+      },
+      categories: {
+        shopee: [{id: 'cat1', label: 'Elektronik'}],
+        tokopedia: [{id: 'cat2', label: 'Fashion'}],
+      },
     });
     platformFeeProfilesMock.mockResolvedValue([
       {
@@ -184,6 +190,15 @@ describe('KolamDaraMarketIntelSurface', () => {
         programs: {promoXtra: true},
         primaryCategoryId: 'cat1',
         primaryCategoryLabel: 'Elektronik',
+        notes: '',
+      },
+      {
+        id: 'p2',
+        platform: 'tokopedia',
+        sellerTier: 'star',
+        programs: {plus: false},
+        primaryCategoryId: 'cat2',
+        primaryCategoryLabel: 'Fashion',
         notes: '',
       },
     ]);
@@ -536,6 +551,10 @@ describe('KolamDaraMarketIntelSurface', () => {
     expect(text).toContain('Monitor');
     expect(text).toContain('Kalkulasi');
     expect(text).toContain('Cek semua URL');
+    expect(text).toContain('Tier penjual');
+    expect(text).toContain('Kategori produk utama');
+    expect(text).toContain('shopee');
+    expect(text).toContain('tokopedia');
     expect(text).toContain('DARA Peralatan — Bulk Harga');
     expect(text).toContain('Harga Kolam (onlinePrice)');
     expect(text).toContain('Console log');

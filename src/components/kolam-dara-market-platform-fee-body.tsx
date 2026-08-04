@@ -17,6 +17,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraMarketPlatformFeeController} from '../hooks/use-kolam-dara-market-platform-fee-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
@@ -102,10 +103,19 @@ function MonitorTab({
   controller: KolamDaraMarketPlatformFeeController;
   meta: KolamDaraMarketPlatformFeeMeta;
 }) {
+  /** FE `lg:grid-cols-2` — Shopee | Tokopedia side by side. */
+  const orderedProfiles = (['shopee', 'tokopedia'] as const)
+    .map(platform =>
+      controller.profiles.find(profile => profile.platform === platform),
+    )
+    .filter(
+      (profile): profile is NonNullable<typeof profile> => profile != null,
+    );
+
   return (
     <View style={styles.tabBody}>
       <View style={styles.profileGrid}>
-        {controller.profiles.map(profile => (
+        {orderedProfiles.map(profile => (
           <ProfileFormCard
             key={profile.platform}
             meta={meta}
@@ -270,50 +280,55 @@ function ProfileFormCard({
   const categoryOptions = meta.categories[profile.platform] || [];
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, styles.profileCard]}>
       <Text style={styles.sectionTitle}>{profile.platform}</Text>
+
       <Text style={styles.fieldLabel}>Tier penjual</Text>
-      <View style={styles.chipRow}>
-        {meta.sellerTiers.map(tier => (
-          <Pressable
-            key={tier.id}
-            onPress={() => setSellerTier(tier.id)}
-            style={[
-              styles.chip,
-              sellerTier === tier.id ? styles.chipOn : null,
-            ]}>
-            <Text style={styles.chipText}>{tier.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <KolamDropdownSelect
+        label="Tier"
+        onChange={setSellerTier}
+        options={meta.sellerTiers.map(tier => ({
+          label: tier.label,
+          value: tier.id,
+        }))}
+        showLabelInTrigger={false}
+        style={styles.fullSelect}
+        value={sellerTier || meta.sellerTiers[0]?.id || ''}
+      />
 
       <Text style={styles.fieldLabel}>Kategori produk utama</Text>
-      <View style={styles.chipRow}>
-        {categoryOptions.map(cat => (
-          <Pressable
-            key={cat.id}
-            onPress={() => setPrimaryCategoryId(cat.id)}
-            style={[
-              styles.chip,
-              primaryCategoryId === cat.id ? styles.chipOn : null,
-            ]}>
-            <Text style={styles.chipText}>{cat.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <KolamDropdownSelect
+        label="Kategori"
+        onChange={setPrimaryCategoryId}
+        options={[
+          {label: '— Pilih kategori —', value: ''},
+          ...categoryOptions.map(cat => ({
+            label: cat.label,
+            value: cat.id,
+          })),
+        ]}
+        showLabelInTrigger={false}
+        style={styles.fullSelect}
+        value={primaryCategoryId}
+      />
 
       <Text style={styles.fieldLabel}>Program aktif</Text>
-      <View style={styles.chipRow}>
+      <View style={styles.programList}>
         {programOptions.map(program => {
           const on = !!programs[program.id];
           return (
             <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{checked: on}}
               key={program.id}
               onPress={() =>
                 setPrograms(prev => ({...prev, [program.id]: !on}))
               }
-              style={[styles.chip, on ? styles.chipOn : null]}>
-              <Text style={styles.chipText}>{program.label}</Text>
+              style={styles.programRow}>
+              <View style={[styles.check, on ? styles.checkOn : null]}>
+                <Text style={styles.checkMark}>{on ? '✓' : ''}</Text>
+              </View>
+              <Text style={styles.programLabel}>{program.label}</Text>
             </Pressable>
           );
         })}
@@ -330,7 +345,9 @@ function ProfileFormCard({
         disabled={saving}
         label={saving ? 'Menyimpan…' : 'Simpan profil'}
         onPress={() => {
-          const cat = categoryOptions.find(item => item.id === primaryCategoryId);
+          const cat = categoryOptions.find(
+            item => item.id === primaryCategoryId,
+          );
           setSaving(true);
           void onSave({
             sellerTier,
@@ -550,7 +567,52 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   profileGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
+  },
+  profileCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 280,
+  },
+  fullSelect: {
+    width: '100%',
+  },
+  programList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  programRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  programLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  check: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 16,
+    justifyContent: 'center',
+    width: 16,
+  },
+  checkOn: {
+    backgroundColor: V.colors.fg,
+    borderColor: V.colors.fg,
+  },
+  checkMark: {
+    color: V.colors.bg,
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 12,
   },
   card: {
     backgroundColor: V.colors.bg,
