@@ -128,6 +128,7 @@ export function resolveKolamDaraTaxAccess(input: {
     canSee: isAdmin || isOwner || can('view'),
     canDraft: isAdmin || isOwner || can('draft'),
     canApprove: isAdmin || isOwner || can('approve'),
+    isAdmin: isAdmin || isOwner,
   };
 }
 

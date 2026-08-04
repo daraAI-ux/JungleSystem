@@ -169,5 +169,6 @@ describe('kolam finance tax domain', () => {
         permissions: [{resource: 'tax', actions: ['draft']}],
       }).canDraft,
     ).toBe(true);
+    expect(resolveKolamDaraTaxAccess({roleKey: 'admin'}).isAdmin).toBe(true);
   });
 });

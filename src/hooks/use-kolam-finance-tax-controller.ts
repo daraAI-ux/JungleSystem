@@ -6,6 +6,10 @@ import type {
   KolamDaraTaxOverviewSeries,
   KolamDaraTaxSptPpnMasaPreview,
 } from '../domain/kolam-dara-tax';
+import type {
+  KolamDaraTaxRegulationVersion,
+  KolamDaraTaxTaxStatus,
+} from '../domain/kolam-dara-tax-regulasi';
 import {
   getKolamDaraTaxTab,
   getKolamFinanceTaxSurfaceMode,
@@ -20,7 +24,10 @@ import {
   fetchKolamDaraTaxDashboard,
   fetchKolamDaraTaxJournalPreview,
   fetchKolamDaraTaxOverviewSeries,
+  fetchKolamDaraTaxRegulationVersions,
   fetchKolamDaraTaxSptPpnMasaPreview,
+  fetchKolamDaraTaxStatus,
+  runKolamDaraTaxRegulationWatcher,
 } from '../services/kolam-dara-tax-api';
 import {
   getKolamTaxCompanyProfile,
@@ -32,6 +39,8 @@ export interface KolamFinanceTaxController {
   profile: KolamTaxCompanyProfile | null;
   loading: boolean;
   error: string;
+  notice: string;
+  onSetNotice: (message: string) => void;
   /** FE `daraTaxEnabled !== false` — default on when unset. */
   taxEnabled: boolean;
   period: KolamDaraTaxPeriod;
@@ -42,6 +51,12 @@ export interface KolamFinanceTaxController {
   journal: KolamDaraTaxJournalPreview | null;
   sptPreview: KolamDaraTaxSptPpnMasaPreview | null;
   opsLoading: boolean;
+  taxStatus: KolamDaraTaxTaxStatus | null;
+  regulationVersions: KolamDaraTaxRegulationVersion[];
+  monitoringLoading: boolean;
+  watcherRunning: boolean;
+  onRunWatcher: () => Promise<void>;
+  onRefreshMonitoring: () => Promise<void>;
   onRefresh: () => Promise<void>;
 }
 
@@ -53,7 +68,10 @@ export function useKolamFinanceTaxController(
   const [profile, setProfile] = useState<KolamTaxCompanyProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [opsLoading, setOpsLoading] = useState(false);
+  const [monitoringLoading, setMonitoringLoading] = useState(false);
+  const [watcherRunning, setWatcherRunning] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [period, setPeriod] = useState<KolamDaraTaxPeriod>(
     KOLAM_DARA_TAX_DEFAULT_PERIOD,
@@ -69,6 +87,12 @@ export function useKolamFinanceTaxController(
   );
   const [sptPreview, setSptPreview] =
     useState<KolamDaraTaxSptPpnMasaPreview | null>(null);
+  const [taxStatus, setTaxStatus] = useState<KolamDaraTaxTaxStatus | null>(
+    null,
+  );
+  const [regulationVersions, setRegulationVersions] = useState<
+    KolamDaraTaxRegulationVersion[]
+  >([]);
 
   const loadCore = useCallback(async () => {
     if (mode !== 'dashboard') {
@@ -77,11 +101,12 @@ export function useKolamFinanceTaxController(
     setLoading(true);
     setError('');
     try {
-      const [settingSettled, dashSettled, seriesSettled] =
+      const [settingSettled, dashSettled, seriesSettled, versionsSettled] =
         await Promise.allSettled([
           getKolamWebSetting(),
           fetchKolamDaraTaxDashboard(period),
           fetchKolamDaraTaxOverviewSeries(6),
+          fetchKolamDaraTaxRegulationVersions(),
         ]);
 
       if (settingSettled.status === 'fulfilled') {
@@ -107,6 +132,12 @@ export function useKolamFinanceTaxController(
       } else {
         setSeries(null);
       }
+
+      if (versionsSettled.status === 'fulfilled') {
+        setRegulationVersions(versionsSettled.value);
+      } else {
+        setRegulationVersions([]);
+      }
       setProfile(null);
     } finally {
       setLoading(false);
@@ -131,6 +162,25 @@ export function useKolamFinanceTaxController(
       setOpsLoading(false);
     }
   }, [mode, period]);
+
+  const loadMonitoring = useCallback(async () => {
+    if (mode !== 'dashboard') {
+      return;
+    }
+    setMonitoringLoading(true);
+    try {
+      const [statusRes, versionsRes] = await Promise.allSettled([
+        fetchKolamDaraTaxStatus(),
+        fetchKolamDaraTaxRegulationVersions(),
+      ]);
+      setTaxStatus(statusRes.status === 'fulfilled' ? statusRes.value : null);
+      if (versionsRes.status === 'fulfilled') {
+        setRegulationVersions(versionsRes.value);
+      }
+    } finally {
+      setMonitoringLoading(false);
+    }
+  }, [mode]);
 
   const loadProfile = useCallback(async () => {
     if (mode !== 'tax-profile') {
@@ -160,6 +210,36 @@ export function useKolamFinanceTaxController(
     }
   }, [mode]);
 
+  const onRunWatcher = useCallback(async () => {
+    setWatcherRunning(true);
+    setNotice('');
+    try {
+      await runKolamDaraTaxRegulationWatcher();
+      setNotice('Watcher selesai');
+      await loadMonitoring();
+      await loadCore();
+    } catch (err) {
+      const status =
+        err && typeof err === 'object' && 'status' in err
+          ? Number((err as {status?: number}).status)
+          : 0;
+      if (status === 409) {
+        setNotice('Watcher sudah berjalan');
+        await loadMonitoring();
+      } else {
+        setNotice(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Watcher gagal — coba cek per URL',
+        );
+      }
+    } finally {
+      setWatcherRunning(false);
+    }
+  }, [loadCore, loadMonitoring]);
+
   const onRefresh = useCallback(async () => {
     if (mode === 'tax-profile') {
       await loadProfile();
@@ -169,7 +249,17 @@ export function useKolamFinanceTaxController(
     if (selectedTab === 'operasional') {
       await loadOperasional();
     }
-  }, [loadCore, loadOperasional, loadProfile, mode, selectedTab]);
+    if (selectedTab === 'regulasi') {
+      await loadMonitoring();
+    }
+  }, [
+    loadCore,
+    loadMonitoring,
+    loadOperasional,
+    loadProfile,
+    mode,
+    selectedTab,
+  ]);
 
   useEffect(() => {
     if (mode === 'tax-profile') {
@@ -186,11 +276,20 @@ export function useKolamFinanceTaxController(
     void loadOperasional();
   }, [loadOperasional, mode, selectedTab]);
 
+  useEffect(() => {
+    if (mode !== 'dashboard' || selectedTab !== 'regulasi') {
+      return;
+    }
+    void loadMonitoring();
+  }, [loadMonitoring, mode, selectedTab]);
+
   return {
     mode,
     profile,
     loading,
     error,
+    notice,
+    onSetNotice: setNotice,
     taxEnabled,
     period,
     onSetPeriod: setPeriod,
@@ -200,6 +299,12 @@ export function useKolamFinanceTaxController(
     journal,
     sptPreview,
     opsLoading,
+    taxStatus,
+    regulationVersions,
+    monitoringLoading,
+    watcherRunning,
+    onRunWatcher,
+    onRefreshMonitoring: loadMonitoring,
     onRefresh,
   };
 }

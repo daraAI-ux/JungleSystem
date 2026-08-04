@@ -18,6 +18,7 @@ import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-contr
 import {KolamButton} from './kolam-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamDaraTaxOperasionalBody} from './kolam-dara-tax-operasional-body';
+import {KolamDaraTaxRegulasiBody} from './kolam-dara-tax-regulasi-body';
 import {KolamDaraTaxRingkasanBody} from './kolam-dara-tax-ringkasan-body';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -121,6 +122,27 @@ export function KolamFinanceTaxSurface({
               period={controller.period}
               sptPreview={controller.sptPreview}
               taxEnabled={controller.taxEnabled}
+            />
+          ) : selectedTab === 'regulasi' ? (
+            <KolamDaraTaxRegulasiBody
+              canApprove={access.canApprove}
+              isAdmin={access.isAdmin}
+              monitoringLoading={controller.monitoringLoading}
+              notice={controller.notice}
+              onNotice={controller.onSetNotice}
+              onRefreshMonitoring={() => {
+                void controller.onRefreshMonitoring();
+              }}
+              onRunWatcher={() => {
+                void controller.onRunWatcher();
+              }}
+              pendingDraftCount={
+                controller.dashboard?.pendingRegulationDraftCount ?? 0
+              }
+              taxEnabled={controller.taxEnabled}
+              taxStatus={controller.taxStatus}
+              versions={controller.regulationVersions}
+              watcherRunning={controller.watcherRunning}
             />
           ) : (
             <View style={styles.stubCard}>

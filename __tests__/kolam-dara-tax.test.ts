@@ -9,6 +9,12 @@ import {
   normalizeKolamDaraTaxOverviewSeries,
   normalizeKolamDaraTaxSptPpnMasaPreview,
 } from '../src/domain/kolam-dara-tax';
+import {
+  normalizeKolamDaraTaxKitab,
+  normalizeKolamDaraTaxRegulationDrafts,
+  normalizeKolamDaraTaxRegulationVersions,
+  normalizeKolamDaraTaxTaxStatus,
+} from '../src/domain/kolam-dara-tax-regulasi';
 
 describe('kolam-dara-tax domain', () => {
   it('normalizes dashboard overview, scores, risks, and deadlines', () => {
@@ -164,5 +170,81 @@ describe('kolam-dara-tax domain', () => {
     });
     expect(pos[0]?.poCode).toBe('PO-1');
     expect(pos[0]?.fakturStatus).toBe('none');
+  });
+
+  it('normalizes regulasi status, versions, drafts, and kitab', () => {
+    const status = normalizeKolamDaraTaxTaxStatus({
+      data: {
+        taxEnabled: true,
+        taxRegulationWatcherEnabled: true,
+        monitoring: {
+          watcher: {
+            runtimeStatus: 'idle',
+            cron: '0 */6 * * *',
+            timezone: 'Asia/Jakarta',
+          },
+          summary: {monitored: 2, total: 3, withError: 0, dueNow: 1},
+          sources: [
+            {
+              _id: 'src1',
+              name: 'DJP',
+              url: 'https://example.test',
+              watchStatus: 'due',
+              lastCheckedAt: '2026-08-01T00:00:00.000Z',
+            },
+          ],
+        },
+      },
+    });
+    expect(status.watcherEnabled).toBe(true);
+    expect(status.sources[0]?.name).toBe('DJP');
+
+    const versions = normalizeKolamDaraTaxRegulationVersions({
+      data: {
+        items: [
+          {
+            _id: 'v1',
+            versionNumber: '1.0',
+            title: 'PPN 11',
+            status: 'active',
+            effectiveDate: '2026-01-01',
+            formulas: {ppnRate: 11},
+          },
+        ],
+      },
+    });
+    expect(versions[0]?.ppnRate).toBe(11);
+
+    const drafts = normalizeKolamDaraTaxRegulationDrafts({
+      data: {
+        items: [
+          {
+            _id: 'd1',
+            title: 'Draft',
+            status: 'pending_review',
+            aiSummary: 'Ringkas',
+            extractedFormulas: {ppnRate: 12},
+          },
+        ],
+      },
+    });
+    expect(drafts[0]?.ppnRate).toBe(12);
+
+    const kitab = normalizeKolamDaraTaxKitab({
+      data: {
+        profileSummary: {taxpayerLabel: 'PKP', legalName: 'PT X'},
+        activeRegulation: {versionNumber: '1.0', title: 'Aktif'},
+        rows: [
+          {
+            moduleId: 'ppn',
+            modul: 'PPN',
+            systemFormula: '11%',
+            dasarHukum: 'UU',
+            status: {code: 'ok', label: 'OK'},
+          },
+        ],
+      },
+    });
+    expect(kitab.rows[0]?.modul).toBe('PPN');
   });
 });

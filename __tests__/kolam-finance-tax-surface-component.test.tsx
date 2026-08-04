@@ -9,8 +9,10 @@ import {
   fetchKolamDaraTaxJournalPreview,
   fetchKolamDaraTaxOverviewSeries,
   fetchKolamDaraTaxPoMissingFaktur,
+  fetchKolamDaraTaxRegulationVersions,
   fetchKolamDaraTaxSalesMissingFaktur,
   fetchKolamDaraTaxSptPpnMasaPreview,
+  fetchKolamDaraTaxStatus,
 } from '../src/services/kolam-dara-tax-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
@@ -29,6 +31,25 @@ jest.mock('../src/services/kolam-dara-tax-api', () => ({
   fetchKolamDaraTaxSptPpnMasaPreview: jest.fn(),
   fetchKolamDaraTaxSalesMissingFaktur: jest.fn(),
   fetchKolamDaraTaxPoMissingFaktur: jest.fn(),
+  fetchKolamDaraTaxStatus: jest.fn(),
+  fetchKolamDaraTaxRegulationVersions: jest.fn(),
+  fetchKolamDaraTaxRegulationDrafts: jest.fn(),
+  fetchKolamDaraTaxRegulationSources: jest.fn(),
+  fetchKolamDaraTaxKnowledge: jest.fn(),
+  fetchKolamDaraTaxAuditLogs: jest.fn(),
+  fetchKolamDaraTaxKitab: jest.fn(),
+  runKolamDaraTaxRegulationWatcher: jest.fn(),
+  createKolamDaraTaxRegulationSource: jest.fn(),
+  deleteKolamDaraTaxRegulationSource: jest.fn(),
+  checkKolamDaraTaxRegulationSource: jest.fn(),
+  approveKolamDaraTaxRegulationDraft: jest.fn(),
+  rejectKolamDaraTaxRegulationDraft: jest.fn(),
+  compareKolamDaraTaxRegulationVersions: jest.fn(),
+  rollbackKolamDaraTaxRegulationVersion: jest.fn(),
+  aiFillKolamDaraTaxKitab: jest.fn(),
+  runKolamDaraTaxBootstrap: jest.fn(),
+  runKolamDaraTaxSnapshotBackfill: jest.fn(),
+  runKolamDaraTaxReaccruePph21: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-financial-settings-api', () => ({
@@ -67,6 +88,12 @@ const salesMissingMock =
   >;
 const poMissingMock = fetchKolamDaraTaxPoMissingFaktur as jest.MockedFunction<
   typeof fetchKolamDaraTaxPoMissingFaktur
+>;
+const statusMock = fetchKolamDaraTaxStatus as jest.MockedFunction<
+  typeof fetchKolamDaraTaxStatus
+>;
+const versionsMock = fetchKolamDaraTaxRegulationVersions as jest.MockedFunction<
+  typeof fetchKolamDaraTaxRegulationVersions
 >;
 
 describe('KolamFinanceTaxSurface', () => {
@@ -163,6 +190,39 @@ describe('KolamFinanceTaxSurface', () => {
     });
     salesMissingMock.mockResolvedValue([]);
     poMissingMock.mockResolvedValue([]);
+    statusMock.mockResolvedValue({
+      taxEnabled: true,
+      watcherEnabled: true,
+      disclaimer: '',
+      watcherRuntimeStatus: 'idle',
+      watcherCron: '0 */6 * * *',
+      watcherTimezone: 'Asia/Jakarta',
+      watcherManualInFlight: false,
+      monitored: 1,
+      total: 1,
+      withError: 0,
+      dueNow: 0,
+      sources: [
+        {
+          id: 'src1',
+          name: 'DJP',
+          url: 'https://example.test',
+          watchStatus: 'waiting_interval',
+          lastCheckedAt: '2026-08-01T00:00:00.000Z',
+        },
+      ],
+      checkedAt: '2026-08-01T00:00:00.000Z',
+    });
+    versionsMock.mockResolvedValue([
+      {
+        id: 'v1',
+        versionNumber: '1.0',
+        title: 'PPN 11',
+        status: 'active',
+        effectiveDate: '2026-01-01',
+        ppnRate: 11,
+      },
+    ]);
   });
 
   it('renders Inteligensi Pajak shell with tabs, period, and reload', async () => {
@@ -216,6 +276,30 @@ describe('KolamFinanceTaxSurface', () => {
     expect(sptMock).toHaveBeenCalled();
     expect(salesMissingMock).toHaveBeenCalled();
     expect(poMissingMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders regulasi RMS shell when tab=regulasi', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamFinanceTaxSurface route="/finance/tax?tab=regulasi" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Regulation Watcher');
+    expect(text).toContain('Regulasi aktif');
+    expect(text).toContain('Kitab');
+    expect(text).toContain('Sumber');
+    expect(statusMock).toHaveBeenCalled();
+    expect(versionsMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
