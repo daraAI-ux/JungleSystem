@@ -149,7 +149,8 @@ describe('native runtime API identity', () => {
     ).rejects.toMatchObject({
       name: 'ApiError',
       status: 503,
-      message: 'Server sedang maintenance.',
+      message:
+        'API mengembalikan halaman HTML (503). Backend mungkin down / gateway error.',
     });
   });
 });

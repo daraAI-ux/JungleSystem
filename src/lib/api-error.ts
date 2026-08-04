@@ -34,7 +34,7 @@ export function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-/** Strip HTML/maintenance pages so RN empty-states never dump raw markup. */
+/** Strip HTML bodies so RN empty-states never dump raw markup. */
 export function sanitizeApiErrorMessage(
   message: string,
   status?: number,
@@ -47,13 +47,16 @@ export function sanitizeApiErrorMessage(
   }
 
   if (looksLikeHtmlDocument(text)) {
-    if (/maintenance/i.test(text)) {
-      return 'Server sedang maintenance.';
+    const statusPart = status ? ` (${status})` : '';
+    // Nginx/static maintenance.html is often served on 502/503 when BE is down —
+    // not the same as Settings "maintenance POS".
+    if (
+      /dunia anura - maintenance/i.test(text) ||
+      (/maintenance/i.test(text) && /dunia anura/i.test(text))
+    ) {
+      return `API mengembalikan halaman HTML${statusPart}. Backend mungkin down / gateway error.`;
     }
-    if (status) {
-      return `API gagal (${status}).`;
-    }
-    return 'API mengembalikan respons non-JSON.';
+    return `API mengembalikan HTML${statusPart}, bukan JSON.`;
   }
 
   if (text.length > 280) {
