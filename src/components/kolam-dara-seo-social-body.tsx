@@ -275,18 +275,23 @@ function PlatformCard({
 function SocialPlatformLogo({platform}: {platform: KolamDaraSeoSocialPlatform}) {
   if (platform === 'tiktok') {
     return (
-      <Image
-        resizeMode="contain"
-        source={TIKTOK_LOGO}
-        style={styles.tiktokLogoImage}
-      />
+      <View style={styles.logoSlot}>
+        {/* Asset has black padding; overscale + cover so the glyph matches IG visual size. */}
+        <Image
+          resizeMode="cover"
+          source={TIKTOK_LOGO}
+          style={styles.tiktokLogoImage}
+        />
+      </View>
     );
   }
 
   return (
-    <View style={styles.instagramLogo}>
-      <View style={styles.instagramLens} />
-      <View style={styles.instagramFlash} />
+    <View style={styles.logoSlot}>
+      <View style={styles.instagramLogo}>
+        <View style={styles.instagramLens} />
+        <View style={styles.instagramFlash} />
+      </View>
     </View>
   );
 }
@@ -341,40 +346,47 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   platformLogoCorner: {
-    bottom: 12,
-    opacity: 0.9,
+    bottom: 10,
     position: 'absolute',
-    right: 12,
+    right: 10,
+  },
+  logoSlot: {
+    alignItems: 'center',
+    height: 36,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 36,
   },
   tiktokLogoImage: {
-    height: 28,
-    width: 28,
+    // Crop black padding in tiktok.webp so the white glyph reads ~same size as IG.
+    height: 52,
+    width: 52,
   },
   instagramLogo: {
     alignItems: 'center',
     backgroundColor: '#fff0f6',
     borderColor: '#e1306c',
-    borderRadius: 8,
-    borderWidth: 2,
-    height: 28,
+    borderRadius: 9,
+    borderWidth: 2.5,
+    height: 36,
     justifyContent: 'center',
-    width: 28,
+    width: 36,
   },
   instagramLens: {
     borderColor: '#e1306c',
-    borderRadius: 6,
-    borderWidth: 2,
-    height: 12,
-    width: 12,
+    borderRadius: 7,
+    borderWidth: 2.5,
+    height: 15,
+    width: 15,
   },
   instagramFlash: {
     backgroundColor: '#e1306c',
-    borderRadius: 2,
-    height: 4,
+    borderRadius: 2.5,
+    height: 5,
     position: 'absolute',
-    right: 4,
-    top: 4,
-    width: 4,
+    right: 5,
+    top: 5,
+    width: 5,
   },
   platformHead: {
     alignItems: 'flex-start',
@@ -429,7 +441,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    paddingRight: 40,
+    paddingRight: 48,
   },
   historyCard: {
     backgroundColor: V.colors.bg,
