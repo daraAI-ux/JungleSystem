@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,28 +21,12 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamAssetPurchaseDepreciationTab } from './kolam-asset-purchase-depreciation-tab';
 import { KolamButton } from './kolam-button';
-import { KolamContentFrame } from './kolam-content-frame';
-import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDescriptionList } from './kolam-description-list';
+import type { KolamDescriptionListRow } from './kolam-description-list-types';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-type AssetPurchaseInfoPresentation =
-  | 'plain'
-  | 'code'
-  | 'status'
-  | 'total'
-  | 'link';
-
-type AssetPurchaseInfoRow = {
-  id: string;
-  label: string;
-  value: string;
-  presentation: AssetPurchaseInfoPresentation;
-  onPress?: () => void;
-  statusIntent?: ReturnType<typeof getFinanceExpenseStatusIntent>;
-};
 
 export function KolamAssetPurchaseDetailSurface({
   onRouteChange,
@@ -124,7 +107,7 @@ function AssetPurchaseDetailBody({
 }) {
   const detail = controller.detail!;
 
-  const infoRows = useMemo((): AssetPurchaseInfoRow[] => {
+  const infoRows = useMemo((): KolamDescriptionListRow[] => {
     const locationValue = detail.locationLabel
       ? detail.locationType
         ? `${detail.locationLabel} (${detail.locationType})`
@@ -136,32 +119,41 @@ function AssetPurchaseDetailBody({
         id: 'code',
         label: 'Kode',
         value: detail.code || '—',
-        presentation: detail.code ? 'code' : 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'status',
         label: 'Status',
         value: formatFinanceExpenseStatusLabel(detail.status),
-        presentation: 'status',
-        statusIntent: getFinanceExpenseStatusIntent(detail.status),
+        meta: '',
+        tone:
+          detail.status === 'verified'
+            ? 'success'
+            : detail.status === 'unverified'
+              ? 'warning'
+              : 'default',
       },
       {
         id: 'name',
         label: 'Nama Aset',
         value: detail.name || '—',
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'total',
         label: 'Total',
         value: formatRupiah(detail.total),
-        presentation: 'total',
+        meta: '',
+        tone: 'danger',
       },
       {
         id: 'executedAt',
         label: 'Dieksekusi Pada',
         value: formatFinanceExpenseDateTime(detail.executedAt),
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'wallet',
@@ -169,38 +161,44 @@ function AssetPurchaseDetailBody({
         value: detail.walletId
           ? detail.walletLabel || detail.walletId
           : 'Dompet Utama Default',
-        presentation: detail.walletId ? 'link' : 'plain',
+        meta: '',
+        tone: 'default',
         onPress: detail.walletId ? controller.onOpenWallet : undefined,
       },
       {
         id: 'location',
         label: 'Lokasi',
         value: locationValue,
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'series',
         label: 'Nomor Seri',
         value: detail.series || '—',
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'reason',
         label: 'Alasan Pembelian',
         value: detail.reason || '—',
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'createdAt',
         label: 'Dibuat Pada',
         value: formatFinanceExpenseDateTime(detail.createdAt),
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
       {
         id: 'updatedAt',
         label: 'Terakhir Diperbarui',
         value: formatFinanceExpenseDateTime(detail.updatedAt),
-        presentation: 'plain',
+        meta: '',
+        tone: 'default',
       },
     ];
   }, [controller.onOpenWallet, detail]);
@@ -281,7 +279,10 @@ function AssetPurchaseDetailBody({
             selectedTabId={controller.tab}
             tabs={controller.tabs}
           />
-          <ScrollView contentContainerStyle={styles.content} style={styles.mainScroll}>
+          <ScrollView
+            contentContainerStyle={styles.content}
+            style={styles.mainScroll}
+          >
             {controller.tab === 'details' ? (
               <DetailsTab
                 customFields={detail.customFieldValues}
@@ -304,6 +305,7 @@ function AssetPurchaseDetailBody({
             ) : null}
           </ScrollView>
         </View>
+
         <View style={styles.historyPane}>
           <HistoryPanel items={controller.historyItems} />
         </View>
@@ -318,41 +320,30 @@ function DetailsTab({
   photos,
 }: {
   customFields: Array<{ label: string; value: string }>;
-  infoRows: AssetPurchaseInfoRow[];
+  infoRows: KolamDescriptionListRow[];
   photos: string[];
 }) {
   return (
     <View style={styles.tabBody}>
-      <KolamContentFrame variant="nativeFormSection">
-        <Text style={styles.sectionTitle}>Informasi Aset</Text>
-        <View style={styles.infoList}>
-          {infoRows.map((row, index) => (
-            <View
-              key={row.id}
-              style={[styles.infoRow, index === 0 ? styles.infoRowFirst : null]}
-            >
-              <Text style={styles.infoLabel}>{row.label}</Text>
-              <View style={styles.infoValue}>
-                <InfoValue row={row} />
-              </View>
+      <Text style={styles.sectionTitle}>Informasi Aset</Text>
+      <KolamDescriptionList
+        accessibilityLabel="Informasi aset"
+        rows={infoRows}
+      />
+      {customFields.length > 0 ? (
+        <View style={styles.specBlock}>
+          <Text style={styles.specTitle}>Spesifikasi</Text>
+          {customFields.map((field, index) => (
+            <View key={`${field.label}-${index}`} style={styles.specRow}>
+              <Text style={styles.specLabel}>{field.label}</Text>
+              <Text style={styles.specValue}>{field.value || '—'}</Text>
             </View>
           ))}
         </View>
-        {customFields.length > 0 ? (
-          <View style={styles.specBlock}>
-            <Text style={styles.specTitle}>Spesifikasi</Text>
-            {customFields.map((field, index) => (
-              <View key={`${field.label}-${index}`} style={styles.specRow}>
-                <Text style={styles.specLabel}>{field.label}</Text>
-                <Text style={styles.specValue}>{field.value || '—'}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </KolamContentFrame>
+      ) : null}
 
       {photos.length > 0 ? (
-        <KolamContentFrame variant="nativeFormSection">
+        <View style={styles.photoSection}>
           <Text style={styles.sectionTitle}>Foto</Text>
           <View style={styles.photoGrid}>
             {photos.map((path, index) => {
@@ -366,39 +357,10 @@ function DetailsTab({
               );
             })}
           </View>
-        </KolamContentFrame>
+        </View>
       ) : null}
     </View>
   );
-}
-
-function InfoValue({ row }: { row: AssetPurchaseInfoRow }) {
-  if (row.presentation === 'code') {
-    return <KolamStatusBadge intent="secondary" label={row.value} />;
-  }
-  if (row.presentation === 'status') {
-    return (
-      <KolamStatusBadge
-        intent={row.statusIntent || 'secondary'}
-        label={row.value}
-      />
-    );
-  }
-  if (row.presentation === 'total') {
-    return <KolamStatusBadge intent="danger" label={row.value} />;
-  }
-  if (row.presentation === 'link' && row.onPress) {
-    return (
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={row.value}
-        onPress={row.onPress}
-      >
-        <Text style={styles.infoLink}>{row.value}</Text>
-      </Pressable>
-    );
-  }
-  return <Text style={styles.infoText}>{row.value}</Text>;
 }
 
 function PricingTab({
@@ -411,17 +373,8 @@ function PricingTab({
   total: number;
 }) {
   return (
-    <KolamContentFrame variant="nativeFormSection">
-      <KolamCopyStack
-        containerStyle={styles.sectionCopy}
-        items={[
-          {
-            id: 'title',
-            text: 'Rincian Biaya',
-            style: styles.sectionTitle,
-          },
-        ]}
-      />
+    <View style={styles.tabBody}>
+      <Text style={styles.sectionTitle}>Rincian Biaya</Text>
       <View style={styles.priceRow}>
         <Text style={styles.priceLabel}>Harga Aset</Text>
         <Text style={styles.priceValue}>{formatRupiah(price)}</Text>
@@ -436,7 +389,7 @@ function PricingTab({
         <Text style={styles.priceTotalLabel}>Total</Text>
         <Text style={styles.priceTotalValue}>{formatRupiah(total)}</Text>
       </View>
-    </KolamContentFrame>
+    </View>
   );
 }
 
@@ -446,17 +399,17 @@ function HistoryPanel({
   items: KolamAssetPurchaseDetailController['historyItems'];
 }) {
   return (
-    <KolamContentFrame style={styles.historyFrame} variant="nativeFormSection">
+    <View style={styles.historyFrame}>
       <Text style={styles.historyTitle}>Riwayat Aktivitas</Text>
       {items.length === 0 ? (
-        <KolamEmptyState compact title="Belum ada riwayat" />
+        <Text style={styles.historyEmpty}>Belum ada riwayat</Text>
       ) : (
         <ScrollView
           contentContainerStyle={styles.historyScroll}
           style={styles.historyScrollView}
         >
           {items.map(item => (
-            <View key={item.id} style={styles.historyRow}>
+            <View key={item.id} style={styles.historyItem}>
               <Text style={styles.historyItemTitle}>{item.title}</Text>
               <Text style={styles.historyItemMeta}>{item.atLabel}</Text>
               {item.lines.map((line, index) => (
@@ -471,7 +424,7 @@ function HistoryPanel({
           ))}
         </ScrollView>
       )}
-    </KolamContentFrame>
+    </View>
   );
 }
 
@@ -501,16 +454,14 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     flex: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    gap: 20,
     minHeight: 0,
   },
   mainPane: {
     flex: 3,
-    flexBasis: 0,
     gap: 10,
     minHeight: 0,
-    minWidth: 320,
+    minWidth: 0,
   },
   mainScroll: {
     flex: 1,
@@ -518,14 +469,13 @@ const styles = StyleSheet.create({
   },
   historyPane: {
     flex: 1,
-    flexBasis: 0,
+    maxWidth: 300,
     minHeight: 0,
     minWidth: 240,
-    maxWidth: 320,
   },
   historyFrame: {
     flex: 1,
-    gap: 10,
+    gap: 12,
     minHeight: 0,
   },
   historyTitle: {
@@ -533,18 +483,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  historyEmpty: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+  },
   historyScrollView: {
     flex: 1,
     minHeight: 0,
   },
   historyScroll: {
+    gap: 14,
     paddingBottom: 8,
   },
-  historyRow: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  historyItem: {
     gap: 3,
-    paddingVertical: 10,
   },
   historyItemTitle: {
     color: V.colors.fg,
@@ -565,63 +517,23 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   tabBody: {
-    gap: 16,
-  },
-  sectionCopy: {
-    marginBottom: 8,
+    gap: 8,
   },
   sectionTitle: {
     color: V.colors.fg,
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  infoList: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  infoRow: {
-    alignItems: 'flex-start',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 16,
-    paddingVertical: 12,
-  },
-  infoRowFirst: {
-    borderTopWidth: 0,
-  },
-  infoLabel: {
-    color: V.colors.mutedFg,
-    flexShrink: 0,
-    fontSize: 13,
-    lineHeight: 20,
-    width: '38%',
-  },
-  infoValue: {
-    flex: 1,
-    minWidth: 0,
-  },
-  infoText: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 20,
-    textAlign: 'left',
-  },
-  infoLink: {
-    color: V.colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 20,
-    textAlign: 'left',
-    textDecorationLine: 'underline',
+  photoSection: {
+    gap: 8,
+    marginTop: 8,
   },
   specBlock: {
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: 12,
+    marginTop: 8,
     overflow: 'hidden',
   },
   specTitle: {
