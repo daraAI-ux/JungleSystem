@@ -29,6 +29,8 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
+  KolamOverflowMenuButton,
+  KolamPaginationSummaryLabel,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -280,54 +282,68 @@ function buildColumns(
   base.push({
     id: 'action',
     label: '',
-    flex: kind === 'asset-purchase' ? 1.6 : 0.8,
-    render: row => (
-      <View style={styles.rowActions}>
-        {kind === 'asset-purchase' && onRouteChange && row.id ? (
-          <KolamButton
-            intent="secondary"
-            label="Lihat"
-            onPress={() =>
-              onRouteChange(getKolamAssetPurchaseDetailRoute(row.id))
-            }
-            style={styles.actionButton}
-          />
-        ) : null}
-        {kind === 'asset-purchase' &&
-        controller.canUpdate &&
-        onRouteChange &&
-        row.id ? (
-          <KolamButton
-            intent="secondary"
-            label="Rubah"
-            onPress={() =>
-              onRouteChange(getKolamAssetPurchaseEditRoute(row.id))
-            }
-            style={styles.actionButton}
-          />
-        ) : null}
-        {controller.canVerify && row.status !== 'verified' ? (
-          <KolamButton
-            intent="primary"
-            label={controller.verifyingId === row.id ? '…' : 'Verifikasi'}
-            onPress={() => {
-              void controller.onVerify(row);
-            }}
-            style={styles.actionButton}
-          />
-        ) : null}
-        {kind === 'asset-purchase' && controller.canDelete && row.id ? (
-          <KolamButton
-            intent="secondary"
-            label={controller.deletingId === row.id ? '…' : 'Hapus'}
-            onPress={() => {
+    flex: kind === 'asset-purchase' ? 0.45 : 0.8,
+    render: row => {
+      if (kind === 'asset-purchase') {
+        if (!row.id) {
+          return null;
+        }
+        const actions: Array<{
+          label: string;
+          onPress: () => void;
+          tone?: 'default' | 'danger';
+        }> = [];
+        if (onRouteChange) {
+          actions.push({
+            label: 'Lihat',
+            onPress: () =>
+              onRouteChange(getKolamAssetPurchaseDetailRoute(row.id)),
+          });
+          if (controller.canUpdate) {
+            actions.push({
+              label: 'Rubah',
+              onPress: () =>
+                onRouteChange(getKolamAssetPurchaseEditRoute(row.id)),
+            });
+          }
+        }
+        if (controller.canDelete) {
+          actions.push({
+            label: 'Hapus',
+            onPress: () => {
               onRequestDelete?.(row);
-            }}
-            style={styles.actionButton}
-          />
-        ) : null}
-      </View>
-    ),
+            },
+            tone: 'danger',
+          });
+        }
+        if (actions.length === 0) {
+          return null;
+        }
+        return (
+          <View style={styles.rowActions}>
+            <KolamOverflowMenuButton
+              accessibilityLabel={`Menu ${row.name || row.code || row.id}`}
+              actions={actions}
+            />
+          </View>
+        );
+      }
+
+      return (
+        <View style={styles.rowActions}>
+          {controller.canVerify && row.status !== 'verified' ? (
+            <KolamButton
+              intent="primary"
+              label={controller.verifyingId === row.id ? '…' : 'Verifikasi'}
+              onPress={() => {
+                void controller.onVerify(row);
+              }}
+              style={styles.actionButton}
+            />
+          ) : null}
+        </View>
+      );
+    },
   });
 
   return base;
@@ -410,6 +426,13 @@ function FinanceExpenseListBody({
   }, [controller.filters.search]);
 
   useEffect(() => {
+    if (!isAssetPurchase || controller.filters.limit === 10) {
+      return;
+    }
+    controller.onLimitChange(10);
+  }, [controller, isAssetPurchase]);
+
+  useEffect(() => {
     const handle = setTimeout(() => {
       if (searchInput !== controller.filters.search) {
         controller.onSearchChange(searchInput);
@@ -447,37 +470,56 @@ function FinanceExpenseListBody({
   const safePage = Math.max(1, controller.pagination.page);
   const pageCount = Math.max(1, controller.pagination.totalPages);
 
-  const renderRow = (item: KolamFinanceExpenseListRow) => {
-    const cells = (
-      <>
-        {columns.map(column => (
-          <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-            {column.render(item)}
-          </View>
-        ))}
-      </>
-    );
+  const renderRow = (item: KolamFinanceExpenseListRow) => (
+    <View key={item.id} style={styles.row}>
+      {columns.map(column => (
+        <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
+          {column.render(item)}
+        </View>
+      ))}
+    </View>
+  );
 
-    if (isAssetPurchase && onRouteChange && item.id) {
-      return (
-        <Pressable
-          key={item.id}
+  const paginationControls =
+    pageCount > 1 ? (
+      <View style={styles.paginationBar}>
+        <KolamButton
+          disabled={safePage <= 1 || controller.loading}
+          label="Sebelumnya"
+          onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
+        />
+        <Text style={styles.pageLabel}>
+          {safePage} / {pageCount}
+        </Text>
+        <KolamButton
+          disabled={safePage >= pageCount || controller.loading}
+          label="Berikutnya"
           onPress={() =>
-            onRouteChange(getKolamAssetPurchaseDetailRoute(item.id))
+            controller.onPageChange(Math.min(pageCount, safePage + 1))
           }
-          style={styles.row}
-        >
-          {cells}
-        </Pressable>
-      );
-    }
-
-    return (
-      <View key={item.id} style={styles.row}>
-        {cells}
+        />
       </View>
-    );
-  };
+    ) : null;
+
+  const tableFooter = isAssetPurchase ? (
+    <View style={styles.fixedPageFooter}>
+      <KolamPaginationSummaryLabel
+        page={safePage}
+        pageSize={10}
+        total={controller.pagination.total}
+      />
+      {paginationControls}
+    </View>
+  ) : (
+    <KolamTableFooterControls
+      onPageSizeChange={controller.onLimitChange}
+      page={safePage}
+      pageSize={controller.pagination.limit}
+      total={controller.pagination.total}
+    >
+      {paginationControls}
+    </KolamTableFooterControls>
+  );
 
   return (
     <View style={styles.surface}>
@@ -622,38 +664,7 @@ function FinanceExpenseListBody({
 
       <View style={styles.listRoot}>
         <KolamCatalogListTableShell
-          footer={
-            <KolamTableFooterControls
-              onPageSizeChange={controller.onLimitChange}
-              page={safePage}
-              pageSize={controller.pagination.limit}
-              total={controller.pagination.total}
-            >
-              {pageCount > 1 ? (
-                <View style={styles.paginationBar}>
-                  <KolamButton
-                    disabled={safePage <= 1 || controller.loading}
-                    label="Sebelumnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.max(1, safePage - 1))
-                    }
-                  />
-                  <Text style={styles.pageLabel}>
-                    {safePage} / {pageCount}
-                  </Text>
-                  <KolamButton
-                    disabled={safePage >= pageCount || controller.loading}
-                    label="Berikutnya"
-                    onPress={() =>
-                      controller.onPageChange(
-                        Math.min(pageCount, safePage + 1),
-                      )
-                    }
-                  />
-                </View>
-              ) : null}
-            </KolamTableFooterControls>
-          }
+          footer={tableFooter}
           style={styles.tableFrame}
         >
           <View style={styles.headerRow}>
@@ -774,8 +785,10 @@ const styles = StyleSheet.create({
   },
   listRoot: {
     gap: 8,
+    overflow: 'visible',
   },
   tableFrame: {
+    overflow: 'visible',
     width: '100%',
   },
   emptyWrap: {
@@ -803,11 +816,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     minHeight: 44,
+    overflow: 'visible',
     paddingHorizontal: 8,
     paddingVertical: 6,
+    position: 'relative',
+    zIndex: 1,
   },
   cell: {
     minWidth: 0,
+    overflow: 'visible',
     paddingHorizontal: 4,
   },
   primaryText: {
@@ -829,12 +846,23 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   rowActions: {
+    alignItems: 'flex-end',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+    justifyContent: 'flex-end',
+    overflow: 'visible',
   },
   actionButton: {
     alignSelf: 'flex-start',
+  },
+  fixedPageFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    width: '100%',
   },
   paginationBar: {
     alignItems: 'center',
