@@ -2058,6 +2058,72 @@ describe('KolamAmSurface', () => {
     expect(clearAmServiceAccountSession).toHaveBeenCalledWith('service-2');
   });
 
+  it('disables service clear session confirmation while the request is pending', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-clear-pending',
+          platform: 'tokopedia',
+          label: 'Tokopedia Pending Clear',
+          deviceId: {
+            _id: 'device-clear-pending',
+            name: 'Browser Pending',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'active',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    let resolveClear: (value: unknown) => void = () => undefined;
+    jest.mocked(clearAmServiceAccountSession).mockImplementationOnce(
+      () => new Promise(resolve => {
+        resolveClear = resolve;
+      }) as ReturnType<typeof clearAmServiceAccountSession>,
+    );
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Pending Clear'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-clear-pending'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Confirm Clear Session service-clear-pending'}).props.onPress();
+      await Promise.resolve();
+    });
+
+    const confirmButton = renderer!.root.findAllByType(KolamButton).find(
+      button => button.props.accessibilityLabel === 'AM Service Confirm Clear Session service-clear-pending',
+    );
+    const cancelButton = renderer!.root.findAllByType(KolamButton).find(
+      button => button.props.accessibilityLabel === 'AM Service Cancel Clear Session',
+    );
+    expect(confirmButton?.props.disabled).toBe(true);
+    expect(confirmButton?.props.label).toBe('Clearing...');
+    expect(cancelButton?.props.disabled).toBe(true);
+
+    await act(async () => {
+      resolveClear({stopped: true, deleted: ['session.json'], missing: []});
+      await Promise.resolve();
+    });
+  });
+
   it('renders Tokopedia session parity actions from Services detail', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [

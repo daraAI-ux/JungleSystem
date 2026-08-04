@@ -1477,6 +1477,7 @@ function AmServicesPage() {
           onSelect={handleServiceStatusChange}
         />
         <KolamButton
+          disabled={isLoading}
           label={isLoading ? 'Memuat' : 'Refresh'}
           intent="outline"
           muted={isLoading}
@@ -1502,6 +1503,7 @@ function AmServicesPage() {
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel={`AM Service Confirm Clear Session ${sessionToClear._id}`}
+              disabled={actingServiceId === sessionToClear._id}
               intent="danger"
               label={actingServiceId === sessionToClear._id ? 'Clearing...' : 'Clear Session'}
               muted={actingServiceId === sessionToClear._id}
@@ -1510,6 +1512,7 @@ function AmServicesPage() {
             />
             <KolamButton
               accessibilityLabel="AM Service Cancel Clear Session"
+              disabled={actingServiceId === sessionToClear._id}
               intent="outline"
               label="Cancel"
               muted={actingServiceId === sessionToClear._id}
