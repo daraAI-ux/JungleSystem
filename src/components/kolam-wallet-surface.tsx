@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Text,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import {
   formatKolamWalletConfirmStatusLabel,
@@ -307,15 +309,17 @@ function WalletToolbarActions({
   controller,
   onRouteChange,
   showCreate = true,
+  style,
   trailing,
 }: {
   controller: KolamWalletController;
   onRouteChange?: (route: string) => void;
   showCreate?: boolean;
+  style?: StyleProp<ViewStyle>;
   trailing?: React.ReactNode;
 }) {
   return (
-    <View style={kolamTableToolbarStyles.actions}>
+    <View style={[kolamTableToolbarStyles.actions, style]}>
       {controller.canEdit ? (
         <>
           <KolamButton
@@ -1297,38 +1301,39 @@ function WalletTransactionPanel({
               value={controller.txFilters.endDate}
             />
           </View>
-          <WalletToolbarActions
-            controller={controller}
-            onRouteChange={onRouteChange}
-            showCreate={showCreateButton && controller.mode === 'list'}
-            trailing={
-              <>
-                <KolamButton
-                  intent="secondary"
-                  label="Ekspor"
-                  onPress={() => setExportOpen(true)}
-                  style={styles.filterTrigger}
-                />
-                <KolamButton
-                  intent="secondary"
-                  label="Reset"
-                  onPress={controller.onClearTxFilters}
-                  style={styles.filterTrigger}
-                />
-                <KolamButton
-                  intent="secondary"
-                  label={
-                    controller.loadingTransactions ? 'Memuat…' : 'Muat ulang'
-                  }
-                  onPress={() => {
-                    void controller.onRefreshTransactions();
-                  }}
-                  style={styles.filterTrigger}
-                />
-              </>
-            }
-          />
         </View>
+        <WalletToolbarActions
+          controller={controller}
+          onRouteChange={onRouteChange}
+          showCreate={showCreateButton && controller.mode === 'list'}
+          style={styles.txToolbarActions}
+          trailing={
+            <>
+              <KolamButton
+                intent="secondary"
+                label="Ekspor"
+                onPress={() => setExportOpen(true)}
+                style={styles.filterTrigger}
+              />
+              <KolamButton
+                intent="secondary"
+                label="Reset"
+                onPress={controller.onClearTxFilters}
+                style={styles.filterTrigger}
+              />
+              <KolamButton
+                intent="secondary"
+                label={
+                  controller.loadingTransactions ? 'Memuat…' : 'Muat ulang'
+                }
+                onPress={() => {
+                  void controller.onRefreshTransactions();
+                }}
+                style={styles.filterTrigger}
+              />
+            </>
+          }
+        />
 
         {typeOpen ? (
           <FilterPanel
@@ -2505,6 +2510,15 @@ const styles = StyleSheet.create({
   },
   filterTrigger: {
     minHeight: 32,
+  },
+  txToolbarActions: {
+    borderLeftWidth: 0,
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 4,
+    paddingLeft: 0,
+    paddingTop: 8,
+    width: '100%',
   },
   filterPanel: {
     backgroundColor: V.colors.bg,
