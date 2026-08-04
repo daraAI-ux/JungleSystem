@@ -6273,17 +6273,17 @@ function AmActivityLogPage() {
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>User</Text>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Tipe</Text>
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Method</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Path</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>IP</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Durasi</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat activity logs..." emptyText="No activity logs found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat activity logs..." emptyText="Tidak ada log" />
         {logs.map(log => (
           <View key={log._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.timestamp)}</Text>

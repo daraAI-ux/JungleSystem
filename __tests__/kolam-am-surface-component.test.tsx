@@ -3393,6 +3393,8 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Semua tipe');
     expect(joinedText).toContain('Semua status');
     expect(joinedText).toContain('Semua method');
+    expect(text).toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Durasi', 'Aksi']));
+    expect(text).not.toEqual(expect.arrayContaining(['Time', 'Type', 'Duration', 'Action']));
     expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
     expect(joinedText).toContain('/dashboard');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
