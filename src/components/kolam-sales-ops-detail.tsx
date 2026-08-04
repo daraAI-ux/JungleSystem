@@ -1095,22 +1095,44 @@ export function KolamSalesOpsDetail({
           {sale.saleHistories.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>Riwayat Status</Text>
-              {sale.saleHistories.map(history => (
-                <View key={history.id} style={styles.historyRow}>
-                  <Text style={styles.primaryText}>
-                    {formatKolamSalePaymentStatusLabel(history.status)}
-                  </Text>
-                  <Text style={styles.metaText}>
-                    {formatShortDateTime(history.changedAt)}
-                    {history.changedByName
-                      ? ` · ${history.changedByName}`
-                      : ''}
-                  </Text>
-                  {history.note ? (
-                    <Text style={styles.metaText}>{history.note}</Text>
-                  ) : null}
+              <ScrollView
+                contentContainerStyle={styles.historyScroll}
+                nestedScrollEnabled
+                style={styles.historyScrollView}
+              >
+                <View style={styles.historyTimeline}>
+                  {[...sale.saleHistories]
+                    .sort(
+                      (a, b) =>
+                        new Date(b.changedAt).getTime() -
+                        new Date(a.changedAt).getTime(),
+                    )
+                    .map(history => (
+                      <View key={history.id} style={styles.historyTimelineItem}>
+                        <View
+                          style={[
+                            styles.historyTimelineDot,
+                            historyTimelineDotStyle(history.status),
+                          ]}
+                        />
+                        <View style={styles.historyTimelineBody}>
+                          <Text style={styles.historyTimelineTitle}>
+                            {formatKolamSalePaymentStatusLabel(history.status)}
+                          </Text>
+                          <Text style={styles.metaText}>
+                            {formatShortDateTime(history.changedAt)}
+                            {history.changedByName
+                              ? ` · ${history.changedByName}`
+                              : ''}
+                          </Text>
+                          {history.note ? (
+                            <Text style={styles.metaText}>{history.note}</Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
                 </View>
-              ))}
+              </ScrollView>
             </>
           ) : null}
         </View>
@@ -1324,6 +1346,20 @@ function formatShortDateTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function historyTimelineDotStyle(status: string) {
+  const intent = getKolamSalePaymentStatusIntent(status);
+  if (intent === 'success') {
+    return styles.historyTimelineDotSuccess;
+  }
+  if (intent === 'danger') {
+    return styles.historyTimelineDotDanger;
+  }
+  if (intent === 'warning') {
+    return styles.historyTimelineDotWarning;
+  }
+  return styles.historyTimelineDotSecondary;
 }
 
 const styles = StyleSheet.create({
@@ -1678,10 +1714,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  historyRow: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  historyScrollView: {
+    maxHeight: 320,
+  },
+  historyScroll: {
+    paddingBottom: 4,
+    paddingTop: 2,
+  },
+  historyTimeline: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 2,
+    gap: 14,
+    paddingLeft: 12,
+  },
+  historyTimelineItem: {
+    paddingLeft: 4,
+    position: 'relative',
+  },
+  historyTimelineDot: {
+    borderColor: V.colors.bg,
+    borderRadius: 6,
+    borderWidth: 2,
+    height: 10,
+    left: -18,
+    position: 'absolute',
+    top: 3,
+    width: 10,
+  },
+  historyTimelineDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  historyTimelineDotDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  historyTimelineDotWarning: {
+    backgroundColor: V.colors.warning,
+  },
+  historyTimelineDotSecondary: {
+    backgroundColor: V.colors.mutedFg,
+  },
+  historyTimelineBody: {
     gap: 2,
-    paddingVertical: 8,
+  },
+  historyTimelineTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
