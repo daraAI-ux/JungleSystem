@@ -23,11 +23,16 @@ import {
 import {KolamButton} from './kolam-button';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import {KolamMediaPlayer} from './kolam-media-player';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 const PAGE_SIZE = 48;
+const FILTER_PANEL_WIDTH = 220;
 
 export function KolamMediaLibrarySurface({
   onRouteChange,
@@ -43,7 +48,12 @@ export function KolamMediaLibrarySurface({
     null,
   );
   const [error, setError] = React.useState<string | null>(null);
+  const [filterPanelOpen, setFilterPanelOpen] = React.useState(false);
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const toolbarRef = React.useRef<View>(null);
+  const filterTriggerRef = React.useRef<View>(null);
   const {width} = useWindowDimensions();
 
   React.useEffect(() => {
@@ -112,51 +122,130 @@ export function KolamMediaLibrarySurface({
 
   const columns = Math.max(2, Math.min(6, Math.floor((width - 360) / 180)));
   const items = result?.items ?? [];
+  const selectedFilter =
+    kolamMediaFilterOptions.find(option => option.id === routeState.filter) ??
+    kolamMediaFilterOptions[0];
+
+  const closeFilterPanel = React.useCallback(() => {
+    setFilterPanelOpen(false);
+    setPanelAnchor(null);
+  }, []);
+
+  const toggleFilterPanel = React.useCallback(() => {
+    if (filterPanelOpen) {
+      closeFilterPanel();
+      return;
+    }
+
+    setFilterPanelOpen(false);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        filterTriggerRef.current,
+        FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setFilterPanelOpen(true);
+        },
+      );
+    });
+  }, [closeFilterPanel, filterPanelOpen]);
+
+  React.useEffect(() => {
+    if (!filterPanelOpen) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        filterTriggerRef.current,
+        FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
+    });
+  }, [filterPanelOpen, width]);
 
   return (
     <View style={styles.root}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <KolamFormTextField
-              mode="search"
-              onChangeText={setDraftSearch}
-              onSubmitEditing={() => setRoute({page: 1, search: draftSearch})}
-              placeholder="Cari media"
-              returnKeyType="search"
-              style={kolamTableToolbarStyles.searchInput}
-              value={draftSearch}
-            />
-            <KolamTableFilterTrigger
-              active={routeState.type === 'image'}
-              label="Gambar"
-              onPress={() => setRoute({page: 1, type: 'image'})}
-            />
-            <KolamTableFilterTrigger
-              active={routeState.type === 'video'}
-              label="Video"
-              onPress={() => setRoute({page: 1, type: 'video'})}
-            />
-            <View style={styles.filterWrap}>
-              {kolamMediaFilterOptions.map(option => (
+      <View ref={toolbarRef} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamFormTextField
+                mode="search"
+                onChangeText={setDraftSearch}
+                onSubmitEditing={() => setRoute({page: 1, search: draftSearch})}
+                placeholder="Cari media"
+                returnKeyType="search"
+                style={kolamTableToolbarStyles.searchInput}
+                value={draftSearch}
+              />
+              <KolamTableFilterTrigger
+                active={routeState.type === 'image'}
+                label="Gambar"
+                onPress={() => setRoute({page: 1, type: 'image'})}
+              />
+              <KolamTableFilterTrigger
+                active={routeState.type === 'video'}
+                label="Video"
+                onPress={() => setRoute({page: 1, type: 'video'})}
+              />
+              <View ref={filterTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
-                  key={option.id}
-                  active={routeState.filter === option.id}
-                  label={option.label}
-                  onPress={() => setRoute({filter: option.id, page: 1})}
+                  active={filterPanelOpen || routeState.filter !== 'all'}
+                  label={`Filter: ${selectedFilter.label}`}
+                  onPress={toggleFilterPanel}
+                  open={filterPanelOpen}
                   variant="quiet"
                 />
-              ))}
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                label="Cari"
+                onPress={() => setRoute({page: 1, search: draftSearch})}
+              />
+              <KolamButton label="Refresh" onPress={() => setRoute({})} />
             </View>
           </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Cari"
-              onPress={() => setRoute({page: 1, search: draftSearch})}
-            />
-            <KolamButton label="Refresh" onPress={() => setRoute({})} />
-          </View>
         </View>
+
+        {filterPanelOpen && panelAnchor ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+                width: FILTER_PANEL_WIDTH,
+              },
+            ]}
+          >
+            <ScrollView
+              contentContainerStyle={styles.filterPanelContent}
+              keyboardShouldPersistTaps="handled"
+              style={styles.filterPanelScroll}
+            >
+              {kolamMediaFilterOptions.map(option => (
+                <KolamButton
+                  intent={routeState.filter === option.id ? 'primary' : 'plain'}
+                  key={option.id}
+                  label={option.label}
+                  onPress={() => {
+                    setRoute({filter: option.id, page: 1});
+                    closeFilterPanel();
+                  }}
+                  style={styles.filterPanelOption}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.filterPanelFooter}>
+              <KolamButton label="Tutup" onPress={closeFilterPanel} />
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.content}>
@@ -317,11 +406,10 @@ const styles = StyleSheet.create({
     gap: 12,
     minHeight: 0,
   },
-  filterWrap: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
+  toolbarWrap: {
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 200,
   },
   content: {
     flexDirection: 'row',
@@ -355,6 +443,36 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '600',
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 32,
+    maxHeight: 310,
+    overflow: 'hidden',
+    padding: 8,
+    position: 'absolute',
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    zIndex: 9400,
+  },
+  filterPanelContent: {
+    gap: 4,
+    paddingBottom: 4,
+  },
+  filterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    paddingTop: 8,
+  },
+  filterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  filterPanelScroll: {
+    maxHeight: 250,
   },
   grid: {
     flexDirection: 'row',
