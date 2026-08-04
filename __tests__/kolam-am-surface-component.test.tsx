@@ -687,6 +687,39 @@ describe('KolamAmSurface', () => {
         style?.alignSelf === 'stretch' &&
         style?.minWidth === 0;
     })).toBe(true);
+    const routeTableHeaders = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.borderBottomWidth === 1 &&
+          style?.paddingHorizontal === 12 &&
+          style?.paddingVertical === 10;
+      });
+    expect(routeTableHeaders.length).toBeGreaterThan(0);
+    expect(routeTableHeaders.every(view => {
+      const style = StyleSheet.flatten(view.props.style);
+      return style?.width === '100%' &&
+        style?.alignSelf === 'stretch' &&
+        style?.minWidth === 0 &&
+        style?.overflow === 'hidden';
+    })).toBe(true);
+    const routeFilterBars = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.flexWrap === 'wrap' &&
+          style?.alignItems === 'center' &&
+          style?.gap === 10;
+      });
+    expect(routeFilterBars.length).toBeGreaterThan(0);
+    expect(routeFilterBars.every(view => {
+      const style = StyleSheet.flatten(view.props.style);
+      return style?.width === '100%' &&
+        style?.alignSelf === 'stretch' &&
+        style?.minWidth === 0 &&
+        style?.maxWidth === '100%' &&
+        style?.overflow === 'hidden';
+    })).toBe(true);
     expect(
       renderer!.root
         .findAllByType(View)

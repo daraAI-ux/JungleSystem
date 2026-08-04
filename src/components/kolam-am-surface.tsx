@@ -7364,6 +7364,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
+    maxWidth: '100%',
+    overflow: 'hidden',
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -7463,6 +7465,9 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    overflow: 'hidden',
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: V.colors.border,
