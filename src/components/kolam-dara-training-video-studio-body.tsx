@@ -407,9 +407,8 @@ export function KolamDaraTrainingVideoStudioBody({
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
         <View style={styles.columns}>
-          <View style={styles.column}>
+          <View style={styles.columnMain}>
             <View style={styles.uploadBox}>
-              <Text style={styles.fieldLabel}>Video RAW</Text>
               <Text style={styles.meta}>{selectedFileLabel}</Text>
               {upload ? (
                 <KolamStatusBadge
@@ -463,7 +462,7 @@ export function KolamDaraTrainingVideoStudioBody({
                     ? modelOptions.map(item => ({label: item, value: item}))
                     : [{label: 'Konfigurasi env model', value: ''}]
                 }
-                style={styles.dropdown}
+                style={styles.dropdownCell}
                 value={model}
               />
               <KolamDropdownSelect
@@ -474,22 +473,24 @@ export function KolamDaraTrainingVideoStudioBody({
                   label: `${item}s`,
                   value: String(item),
                 }))}
-                style={styles.dropdown}
+                style={styles.dropdownCell}
                 value={duration}
               />
-              <KolamDropdownSelect
-                label="Ratio video"
-                menuPlacement="inline"
-                onChange={setAspectRatio}
-                options={aspectRatioOptions.map(item => ({
-                  label:
-                    KOLAM_DARA_TRAINING_VIDEO_STUDIO_RATIO_LABEL[item] || item,
-                  value: item,
-                }))}
-                style={styles.dropdown}
-                value={aspectRatio}
-              />
-              <Text style={styles.hint}>Auto tidak memaksa 16:9.</Text>
+              <View style={styles.dropdownCell}>
+                <KolamDropdownSelect
+                  label="Ratio video"
+                  menuPlacement="inline"
+                  onChange={setAspectRatio}
+                  options={aspectRatioOptions.map(item => ({
+                    label:
+                      KOLAM_DARA_TRAINING_VIDEO_STUDIO_RATIO_LABEL[item] ||
+                      item,
+                    value: item,
+                  }))}
+                  value={aspectRatio}
+                />
+                <Text style={styles.hint}>Auto tidak memaksa 16:9.</Text>
+              </View>
               <KolamDropdownSelect
                 label="Resolusi"
                 menuPlacement="inline"
@@ -498,7 +499,7 @@ export function KolamDaraTrainingVideoStudioBody({
                   label: item || 'Auto',
                   value: item,
                 }))}
-                style={styles.dropdown}
+                style={styles.dropdownCell}
                 value={resolution}
               />
             </View>
@@ -536,6 +537,7 @@ export function KolamDaraTrainingVideoStudioBody({
                 multiline
                 onChangeText={setPrompt}
                 placeholderTextColor={V.colors.mutedFg}
+                scrollEnabled
                 style={[styles.input, styles.promptInput]}
                 value={prompt}
               />
@@ -562,7 +564,7 @@ export function KolamDaraTrainingVideoStudioBody({
             </View>
           </View>
 
-          <View style={styles.column}>
+          <View style={styles.columnSide}>
             <View style={styles.panel}>
               <View style={styles.panelHead}>
                 <View>
@@ -783,12 +785,24 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   columns: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  column: {
-    flex: 1,
+  columnMain: {
+    flexGrow: 1.05,
+    flexShrink: 1,
+    flexBasis: 420,
     gap: 10,
-    minWidth: 0,
+    minWidth: 320,
+  },
+  columnSide: {
+    flexGrow: 0.95,
+    flexShrink: 1,
+    flexBasis: 360,
+    gap: 10,
+    minWidth: 300,
   },
   uploadBox: {
     borderColor: V.colors.border,
@@ -820,14 +834,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   promptInput: {
-    minHeight: 220,
+    height: 120,
+    maxHeight: 120,
     textAlignVertical: 'top',
   },
   dropdownGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  dropdown: {
-    flexGrow: 0,
+  dropdownCell: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 4,
+    minWidth: 160,
   },
   hint: {
     color: V.colors.mutedFg,
@@ -884,12 +905,12 @@ const styles = StyleSheet.create({
   },
   previewPlayer: {
     backgroundColor: '#0f172a',
-    height: 240,
+    height: 200,
     width: '100%',
   },
   historyList: {
     gap: 0,
-    maxHeight: 520,
+    maxHeight: 360,
   },
   historyRow: {
     borderBottomColor: V.colors.border,
