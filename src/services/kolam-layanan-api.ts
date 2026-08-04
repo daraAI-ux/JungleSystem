@@ -8,6 +8,7 @@ import {
   normalizeKolamLayananSubscriptionDetail,
   normalizeKolamLayananSubscriptionList,
   normalizeKolamLayananSubscriptionPendingVerifications,
+  normalizeKolamLayananSubscriptionSpawnVisitsResult,
   normalizeKolamLayananSubscriptionVisitPreviews,
   normalizeKolamLayananServiceSpawnTaskResult,
   normalizeKolamLayananTermsContext,
@@ -27,7 +28,9 @@ import {
   type KolamLayananSubscriptionListQuery,
   type KolamLayananSubscriptionListResult,
   type KolamLayananSubscriptionPendingVerification,
-  type KolamLayananSubscriptionVisitPreview,
+  type KolamLayananSubscriptionSpawnVisitsResult,
+  type KolamLayananSubscriptionUpdatePayload,
+  type KolamLayananSubscriptionVisitPreviewResult,
   type KolamLayananTaskDetail,
   type KolamLayananTermsContext,
   type KolamLayananVisitSlot,
@@ -140,9 +143,13 @@ export async function getKolamLayananSubscription(
 
 export async function getKolamLayananSubscriptionUpcomingVisits(
   id: string,
-): Promise<KolamLayananSubscriptionVisitPreview[]> {
+  lookaheadDays = 14,
+): Promise<KolamLayananSubscriptionVisitPreviewResult> {
   const payload = await kolamRequest<unknown>(
     `/subscriptions/${encodeURIComponent(id)}/upcoming-visits`,
+    {
+      query: { lookaheadDays },
+    },
   );
   return normalizeKolamLayananSubscriptionVisitPreviews(payload);
 }
@@ -154,6 +161,44 @@ export async function getKolamLayananSubscriptionPendingVerifications(
     `/subscriptions/${encodeURIComponent(id)}/pending-customer-verifications`,
   );
   return normalizeKolamLayananSubscriptionPendingVerifications(payload);
+}
+
+export async function updateKolamLayananSubscription(
+  id: string,
+  body: KolamLayananSubscriptionUpdatePayload,
+): Promise<KolamLayananSubscriptionDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/subscriptions/${encodeURIComponent(id)}`,
+    {
+      method: 'PATCH',
+      body,
+    },
+  );
+  return normalizeKolamLayananSubscriptionDetail(payload);
+}
+
+export async function syncKolamLayananSubscriptionFromPending(
+  pendingServiceId: string,
+): Promise<KolamLayananSubscriptionDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/subscriptions/sync/pending/${encodeURIComponent(pendingServiceId)}`,
+    { method: 'POST' },
+  );
+  return normalizeKolamLayananSubscriptionDetail(payload);
+}
+
+export async function spawnKolamLayananSubscriptionVisits(
+  id: string,
+  lookaheadDays = 14,
+): Promise<KolamLayananSubscriptionSpawnVisitsResult> {
+  const payload = await kolamRequest<unknown>(
+    `/subscriptions/${encodeURIComponent(id)}/spawn-visits`,
+    {
+      method: 'POST',
+      body: { lookaheadDays },
+    },
+  );
+  return normalizeKolamLayananSubscriptionSpawnVisitsResult(payload);
 }
 
 export async function downloadKolamLayananSubscriptionInvoice(

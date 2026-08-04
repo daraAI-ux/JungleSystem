@@ -32,9 +32,12 @@ import {
   normalizeKolamLayananServiceSpawnTaskResult,
   normalizeKolamLayananSubscriptionDetail,
   normalizeKolamLayananSubscriptionList,
+  normalizeKolamLayananSubscriptionVisitPreviews,
   normalizeKolamLayananTaskDetail,
   normalizeKolamLayananTermsContext,
   normalizeKolamLayananVoucherDetail,
+  createKolamLayananSubscriptionContractForm,
+  createKolamLayananSubscriptionUpdatePayload,
   validateKolamLayananMaterialLines,
   validateKolamLayananServiceForm,
 } from '../src/domain/kolam-layanan';
@@ -496,6 +499,69 @@ describe('kolam-layanan domain', () => {
       '/complaints',
     );
     expect(links.find(link => link.id === 'stock')?.available).toBe(true);
+  });
+
+  it('normalizes subscription visit preview and contract form payload', () => {
+    const visits = normalizeKolamLayananSubscriptionVisitPreviews({
+      data: {
+        skipped: false,
+        ops: 3,
+        taskId: 'task-1',
+        taskType: 'dosing',
+        preview: [
+          {
+            packageTaskCode: 'DOS-1',
+            visitTitle: 'Dosing A',
+            scheduled_time: '2026-08-05T10:00:00.000Z',
+            estimatedAt: '2026-08-05T12:00:00.000Z',
+          },
+        ],
+      },
+    });
+    expect(visits.preview).toHaveLength(1);
+    expect(visits.preview[0].packageTaskCode).toBe('DOS-1');
+    expect(visits.ops).toBe(3);
+    expect(visits.skipped).toBe(false);
+
+    const form = createKolamLayananSubscriptionContractForm({
+      id: 'sub1',
+      subscriptionNumber: 'SUB-1',
+      customerName: 'Andi',
+      serviceName: 'Paket',
+      packageCode: 'PKG',
+      voucherSerial: 'SRV-1',
+      voucherId: 'ps1',
+      startDate: '2026-01-01T00:00:00.000Z',
+      endDate: '2026-12-31T00:00:00.000Z',
+      status: 'active',
+      autoRenew: true,
+      customerId: 'c1',
+      customerPhone: null,
+      customerEmail: null,
+      serviceId: 's1',
+      taskType: 'dosing',
+      saleId: null,
+      saleInvoiceCode: null,
+      saleStatus: null,
+      notes: 'Catatan',
+      transportCostDefault: 15000,
+      packageTasksCount: 1,
+      enclosureId: null,
+      enclosureName: null,
+      createdAt: null,
+      updatedAt: null,
+    });
+    expect(form.startDate).toBe('2026-01-01');
+    expect(form.transportCostDefault).toBe('15000');
+    expect(createKolamLayananSubscriptionUpdatePayload(form)).toEqual(
+      expect.objectContaining({
+        status: 'active',
+        customerId: 'c1',
+        autoRenew: true,
+        transportCostDefault: 15000,
+        notes: 'Catatan',
+      }),
+    );
   });
 });
 

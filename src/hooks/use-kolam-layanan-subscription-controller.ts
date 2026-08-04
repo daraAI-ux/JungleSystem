@@ -1,32 +1,58 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { KolamCustomer } from '../domain/kolam-customer';
 import {
-  buildKolamLayananSubscriptionCrossLinks,
+  createKolamLayananSubscriptionContractForm,
+  createKolamLayananSubscriptionUpdatePayload,
   getKolamLayananSubscriptionIdFromRoute,
-  type KolamLayananSubscriptionCrossLink,
+  type KolamLayananSubscriptionContractFormState,
   type KolamLayananSubscriptionDetail,
   type KolamLayananSubscriptionPendingVerification,
-  type KolamLayananSubscriptionVisitPreview,
+  type KolamLayananSubscriptionVisitPreviewResult,
 } from '../domain/kolam-layanan';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
+import { getKolamCustomerList } from '../services/kolam-customer-api';
 import {
   downloadKolamLayananSubscriptionInvoice,
   getKolamLayananSubscription,
   getKolamLayananSubscriptionPendingVerifications,
   getKolamLayananSubscriptionUpcomingVisits,
   getKolamLayananVoucher,
+  spawnKolamLayananSubscriptionVisits,
+  syncKolamLayananSubscriptionFromPending,
+  updateKolamLayananSubscription,
 } from '../services/kolam-layanan-api';
 
+const EMPTY_VISIT_RESULT: KolamLayananSubscriptionVisitPreviewResult = {
+  preview: [],
+  skipped: false,
+  reason: null,
+  taskId: null,
+  taskType: null,
+  ops: null,
+};
+
 export interface KolamLayananSubscriptionController {
-  crossLinks: KolamLayananSubscriptionCrossLink[];
+  contractForm: KolamLayananSubscriptionContractFormState;
+  customers: KolamCustomer[];
+  customersLoading: boolean;
   downloadingInvoice: boolean;
   error: string | null;
   loading: boolean;
   notice: string | null;
   pendingVerifications: KolamLayananSubscriptionPendingVerification[];
+  saving: boolean;
+  spawningVisits: boolean;
   subscription: KolamLayananSubscriptionDetail | null;
-  upcomingVisits: KolamLayananSubscriptionVisitPreview[];
+  syncing: boolean;
+  visitPreview: KolamLayananSubscriptionVisitPreviewResult;
+  onChangeContractForm: (
+    patch: Partial<KolamLayananSubscriptionContractFormState>,
+  ) => void;
   onDownloadInvoice: () => Promise<boolean>;
   onRefresh: () => Promise<void>;
+  onSaveContract: () => Promise<boolean>;
+  onSpawnVisits: () => Promise<boolean>;
+  onSyncFromVoucher: () => Promise<boolean>;
 }
 
 export function useKolamLayananSubscriptionController(
@@ -38,13 +64,21 @@ export function useKolamLayananSubscriptionController(
   );
   const [subscription, setSubscription] =
     useState<KolamLayananSubscriptionDetail | null>(null);
-  const [upcomingVisits, setUpcomingVisits] = useState<
-    KolamLayananSubscriptionVisitPreview[]
-  >([]);
+  const [contractForm, setContractForm] =
+    useState<KolamLayananSubscriptionContractFormState>(
+      createKolamLayananSubscriptionContractForm(null),
+    );
+  const [visitPreview, setVisitPreview] =
+    useState<KolamLayananSubscriptionVisitPreviewResult>(EMPTY_VISIT_RESULT);
   const [pendingVerifications, setPendingVerifications] = useState<
     KolamLayananSubscriptionPendingVerification[]
   >([]);
+  const [customers, setCustomers] = useState<KolamCustomer[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [spawningVisits, setSpawningVisits] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -79,23 +113,24 @@ export function useKolamLayananSubscriptionController(
       }
 
       setSubscription(detail);
+      setContractForm(createKolamLayananSubscriptionContractForm(detail));
 
       const [visits, verifications] = await Promise.all([
         detail.status === 'active'
           ? getKolamLayananSubscriptionUpcomingVisits(subscriptionId).catch(
-              () => [],
+              () => EMPTY_VISIT_RESULT,
             )
-          : Promise.resolve([]),
+          : Promise.resolve(EMPTY_VISIT_RESULT),
         getKolamLayananSubscriptionPendingVerifications(subscriptionId).catch(
           () => [],
         ),
       ]);
-      setUpcomingVisits(visits);
+      setVisitPreview(visits);
       setPendingVerifications(verifications);
     } catch (loadError) {
       setError(getErrorMessage(loadError));
       setSubscription(null);
-      setUpcomingVisits([]);
+      setVisitPreview(EMPTY_VISIT_RESULT);
       setPendingVerifications([]);
     } finally {
       setLoading(false);
@@ -105,6 +140,37 @@ export function useKolamLayananSubscriptionController(
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCustomersLoading(true);
+    void getKolamCustomerList({ limit: 500, page: 1 })
+      .then(result => {
+        if (!cancelled) {
+          setCustomers(result.items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCustomers([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCustomersLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onChangeContractForm = useCallback(
+    (patch: Partial<KolamLayananSubscriptionContractFormState>) => {
+      setContractForm(prev => ({ ...prev, ...patch }));
+    },
+    [],
+  );
 
   const onDownloadInvoice = useCallback(async () => {
     if (!subscription?.saleId) {
@@ -130,38 +196,120 @@ export function useKolamLayananSubscriptionController(
     }
   }, [subscription]);
 
-  const crossLinks = useMemo(
-    () =>
-      subscription
-        ? buildKolamLayananSubscriptionCrossLinks(subscription)
-        : [],
-    [subscription],
-  );
+  const onSaveContract = useCallback(async () => {
+    if (!subscriptionId) {
+      setError('Langganan tidak ditemukan.');
+      return false;
+    }
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await updateKolamLayananSubscription(
+        subscriptionId,
+        createKolamLayananSubscriptionUpdatePayload(contractForm),
+      );
+      setNotice('Langganan disimpan');
+      await refresh();
+      return true;
+    } catch (saveError) {
+      setError(getErrorMessage(saveError));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [contractForm, refresh, subscriptionId]);
+
+  const onSyncFromVoucher = useCallback(async () => {
+    if (!subscription?.voucherId) {
+      setError('Langganan tidak terhubung ke voucher.');
+      return false;
+    }
+    setSyncing(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await syncKolamLayananSubscriptionFromPending(subscription.voucherId);
+      setNotice('Disinkronkan dari voucher');
+      await refresh();
+      return true;
+    } catch (syncError) {
+      setError(getErrorMessage(syncError));
+      return false;
+    } finally {
+      setSyncing(false);
+    }
+  }, [refresh, subscription?.voucherId]);
+
+  const onSpawnVisits = useCallback(async () => {
+    if (!subscriptionId) {
+      setError('Langganan tidak ditemukan.');
+      return false;
+    }
+    setSpawningVisits(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await spawnKolamLayananSubscriptionVisits(subscriptionId, 14);
+      setVisitPreview(result);
+      if (result.skipped) {
+        setNotice(result.reason || 'Jadwal tidak dibuat');
+      } else {
+        setNotice(
+          `Jadwal dibuat: ${result.ops ?? 0} slot baru di Kontrol Layanan`,
+        );
+      }
+      return !result.skipped;
+    } catch (spawnError) {
+      setError(getErrorMessage(spawnError));
+      return false;
+    } finally {
+      setSpawningVisits(false);
+    }
+  }, [subscriptionId]);
 
   return useMemo(
     () => ({
-      crossLinks,
+      contractForm,
+      customers,
+      customersLoading,
       downloadingInvoice,
       error,
       loading,
       notice,
       pendingVerifications,
+      saving,
+      spawningVisits,
       subscription,
-      upcomingVisits,
+      syncing,
+      visitPreview,
+      onChangeContractForm,
       onDownloadInvoice,
       onRefresh: refresh,
+      onSaveContract,
+      onSpawnVisits,
+      onSyncFromVoucher,
     }),
     [
-      crossLinks,
+      contractForm,
+      customers,
+      customersLoading,
       downloadingInvoice,
       error,
       loading,
       notice,
+      onChangeContractForm,
       onDownloadInvoice,
+      onSaveContract,
+      onSpawnVisits,
+      onSyncFromVoucher,
       pendingVerifications,
       refresh,
+      saving,
+      spawningVisits,
       subscription,
-      upcomingVisits,
+      syncing,
+      visitPreview,
     ],
   );
 }

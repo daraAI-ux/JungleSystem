@@ -781,6 +781,44 @@ export interface KolamLayananSubscriptionVisitPreview {
   estimatedAt: string | null;
 }
 
+export interface KolamLayananSubscriptionVisitPreviewResult {
+  preview: KolamLayananSubscriptionVisitPreview[];
+  skipped: boolean;
+  reason: string | null;
+  taskId: string | null;
+  taskType: string | null;
+  ops: number | null;
+}
+
+export interface KolamLayananSubscriptionUpdatePayload {
+  status?: KolamLayananSubscriptionStatus | string;
+  customerId?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  autoRenew?: boolean;
+  notes?: string;
+  transportCostDefault?: number;
+}
+
+export interface KolamLayananSubscriptionSpawnVisitsResult {
+  preview: KolamLayananSubscriptionVisitPreview[];
+  skipped: boolean;
+  reason: string | null;
+  taskId: string | null;
+  taskType: string | null;
+  ops: number | null;
+}
+
+export interface KolamLayananSubscriptionContractFormState {
+  status: KolamLayananSubscriptionStatus | string;
+  customerId: string;
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  notes: string;
+  transportCostDefault: string;
+}
+
 export interface KolamLayananSubscriptionPendingVerification {
   taskId: string;
   executionId: string;
@@ -1714,27 +1752,69 @@ export function normalizeKolamLayananSubscriptionDetail(
   };
 }
 
+export function createKolamLayananSubscriptionContractForm(
+  detail: KolamLayananSubscriptionDetail | null | undefined,
+): KolamLayananSubscriptionContractFormState {
+  return {
+    status: detail?.status || 'draft',
+    customerId: detail?.customerId || '',
+    startDate: detail?.startDate ? detail.startDate.slice(0, 10) : '',
+    endDate: detail?.endDate ? detail.endDate.slice(0, 10) : '',
+    autoRenew: Boolean(detail?.autoRenew),
+    notes: detail?.notes || '',
+    transportCostDefault: String(detail?.transportCostDefault ?? 0),
+  };
+}
+
+export function createKolamLayananSubscriptionUpdatePayload(
+  form: KolamLayananSubscriptionContractFormState,
+): KolamLayananSubscriptionUpdatePayload {
+  const transport = Number(form.transportCostDefault.replace(/[^\d.-]/g, ''));
+  return {
+    status: form.status,
+    customerId: form.customerId.trim() || null,
+    startDate: form.startDate.trim() || null,
+    endDate: form.endDate.trim() || null,
+    autoRenew: form.autoRenew,
+    notes: form.notes,
+    transportCostDefault: Number.isFinite(transport) ? transport : 0,
+  };
+}
+
 export function normalizeKolamLayananSubscriptionVisitPreviews(
   payload: unknown,
-): KolamLayananSubscriptionVisitPreview[] {
+): KolamLayananSubscriptionVisitPreviewResult {
   const record = asRecord(unwrapData(payload));
   const list = Array.isArray(record.preview)
     ? record.preview
     : Array.isArray(payload)
       ? payload
       : [];
-  return list.map(item => {
-    const row = asRecord(item);
-    return {
-      packageTaskCode: getString(row, 'packageTaskCode'),
-      visitTitle: getString(row, 'visitTitle') || 'Kunjungan',
-      scheduledTime:
-        getString(row, 'scheduled_time') ||
-        getString(row, 'scheduledTime') ||
-        null,
-      estimatedAt: getString(row, 'estimatedAt') || null,
-    };
-  });
+  return {
+    preview: list.map(item => {
+      const row = asRecord(item);
+      return {
+        packageTaskCode: getString(row, 'packageTaskCode'),
+        visitTitle: getString(row, 'visitTitle') || 'Kunjungan',
+        scheduledTime:
+          getString(row, 'scheduled_time') ||
+          getString(row, 'scheduledTime') ||
+          null,
+        estimatedAt: getString(row, 'estimatedAt') || null,
+      };
+    }),
+    skipped: getBoolean(record, 'skipped') ?? false,
+    reason: getString(record, 'reason') || null,
+    taskId: getString(record, 'taskId') || null,
+    taskType: getString(record, 'taskType') || null,
+    ops: getNumber(record, 'ops'),
+  };
+}
+
+export function normalizeKolamLayananSubscriptionSpawnVisitsResult(
+  payload: unknown,
+): KolamLayananSubscriptionSpawnVisitsResult {
+  return normalizeKolamLayananSubscriptionVisitPreviews(payload);
 }
 
 export function normalizeKolamLayananSubscriptionPendingVerifications(
