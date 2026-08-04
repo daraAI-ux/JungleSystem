@@ -1229,6 +1229,7 @@ export async function logoutAmSession(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 }
 
@@ -1303,6 +1304,7 @@ export async function recordAmPageView(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 }
 
@@ -1382,6 +1384,7 @@ export async function sendAmChatMessage(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 
   if (isAmEnvelope(response)) {
@@ -1456,6 +1459,7 @@ async function amGet<T>(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 
   return unwrapAmResponse(response);
@@ -1477,6 +1481,7 @@ async function amPost<T>(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 
   return unwrapAmResponse(response);
@@ -1498,6 +1503,7 @@ async function amPut<T>(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 
   return unwrapAmResponse(response);
@@ -1517,6 +1523,7 @@ async function amDelete<T>(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 
   return unwrapAmResponse(response);
@@ -1538,6 +1545,7 @@ async function amDeleteWithBody<T>(
     baseUrl,
     sourceHeader: appConfig.amSourceHeader,
     credentials: AM_SSO_CREDENTIALS,
+    notifyOnAuthFailure: true,
   });
 
   return unwrapAmResponse(response);

@@ -222,6 +222,35 @@ describe('AM API service', () => {
     );
   });
 
+  it('notifies the Kolam session handler when AM SSO refresh cannot recover a 401', async () => {
+    const refreshAccessToken = jest.fn().mockResolvedValue(undefined);
+    const onSessionExpired = jest.fn();
+    setAuthSessionHandlers({refreshAccessToken, onSessionExpired});
+    setAccessToken('expired-kolam-token');
+    fetchMock.mockResolvedValueOnce(jsonResponse(
+      {success: false, message: 'Invalid or expired Kolam session'},
+      {},
+      401,
+    ));
+
+    await expect(getAmDashboard('https://am.example.test/api')).rejects.toThrow(
+      'Invalid or expired Kolam session',
+    );
+
+    expect(refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://am.example.test/api/dashboard',
+      expect.objectContaining({
+        credentials: 'omit',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer expired-kolam-token',
+          'x-source': appConfig.amSourceHeader,
+        }),
+      }),
+    );
+  });
+
   it('loads the AM dashboard through the live dashboard endpoint', async () => {
     fetchMock.mockResolvedValue(jsonResponse({
       success: true,
