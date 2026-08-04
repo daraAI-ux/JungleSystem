@@ -1389,10 +1389,12 @@ function KolamEnclosureRow({
           style={[
             styles.listCell,
             styles.picCell,
-            styles.overflowVisible,
             speciesColumn
               ? getKolamDataTableColumnStyle(speciesColumn)
               : null,
+            // Must come after column lock style — that helper defaults overflow:hidden
+            // and would clip KolamHoverTooltip the same way PIC avoids by ordering.
+            styles.overflowVisible,
           ]}
         >
           <KolamEnclosureSpeciesThumbs
@@ -1479,55 +1481,54 @@ function KolamEnclosureSpeciesThumbs({
 
   const visible = species.slice(0, ENCLOSURE_LIST_SPECIES_THUMB_LIMIT);
   const overflow = species.length - visible.length;
-  const label = species.map(getEnclosureSpeciesHoverLabel).join(' · ');
 
   return (
-    <KolamHoverTooltip
-      align="center"
-      containerStyle={styles.picTooltip}
-      label={label}
-      onOpenChange={onTooltipOpenChange}
-      placement="top"
-    >
-      <View accessibilityLabel={label} style={styles.speciesThumbRow}>
-        {visible.map((item, index) => {
-          const photoUri = getKolamFileUrl(item.thumbnailUrl);
-          const initial = (
-            item.speciesName ||
-            item.scientificName ||
-            '?'
-          )
+    <View style={styles.speciesThumbRow}>
+      {visible.map((item, index) => {
+        const photoUri = getKolamFileUrl(item.thumbnailUrl);
+        const label = getEnclosureSpeciesHoverLabel(item);
+        const initial =
+          (item.speciesName || item.scientificName || '?')
             .charAt(0)
-            .toUpperCase();
-          return (
-            <View
-              key={`${item.speciesId}:${item.variantId}:${index}`}
-              pointerEvents="none"
-              style={styles.speciesThumb}
-            >
-              {photoUri ? (
-                <Image
-                  accessibilityIgnoresInvertColors
-                  pointerEvents="none"
-                  resizeMode="cover"
-                  source={{uri: photoUri}}
-                  style={styles.speciesThumbImage}
-                />
-              ) : (
-                <Text style={styles.speciesThumbPlaceholderText}>
-                  {initial}
-                </Text>
-              )}
+            .toUpperCase() || '?';
+        return (
+          <KolamHoverTooltip
+            align="center"
+            containerStyle={styles.picTooltip}
+            key={`${item.speciesId}:${item.variantId}:${index}`}
+            label={label}
+            onOpenChange={onTooltipOpenChange}
+          >
+            <View accessibilityLabel={label} style={styles.picAvatar}>
+              <KolamProfileAvatarContent
+                imageStyle={styles.picAvatarImage}
+                imageUrl={photoUri}
+                initials={initial}
+                textStyle={styles.picAvatarText}
+              />
             </View>
-          );
-        })}
-        {overflow > 0 ? (
-          <View pointerEvents="none" style={styles.speciesThumbMore}>
-            <Text style={styles.speciesThumbMoreText}>+{overflow}</Text>
+          </KolamHoverTooltip>
+        );
+      })}
+      {overflow > 0 ? (
+        <KolamHoverTooltip
+          align="center"
+          containerStyle={styles.picTooltip}
+          label={species
+            .slice(ENCLOSURE_LIST_SPECIES_THUMB_LIMIT)
+            .map(getEnclosureSpeciesHoverLabel)
+            .join(' · ')}
+          onOpenChange={onTooltipOpenChange}
+        >
+          <View
+            accessibilityLabel={`+${overflow} spesies lainnya`}
+            style={styles.picAvatar}
+          >
+            <Text style={styles.picAvatarText}>+{overflow}</Text>
           </View>
-        ) : null}
-      </View>
-    </KolamHoverTooltip>
+        </KolamHoverTooltip>
+      ) : null}
+    </View>
   );
 }
 

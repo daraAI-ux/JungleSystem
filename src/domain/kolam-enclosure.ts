@@ -1963,7 +1963,8 @@ function normalizeKolamEnclosureSpeciesRef(
     speciesId,
     speciesName,
     scientificName,
-    variantId: getString(record, 'variantId'),
+    variantId:
+      getString(record, 'variantId') || getIdFromRef(record.variant),
     variantLabel: getString(record, 'variantLabel'),
     thumbnailUrl:
       getString(record, 'thumbnailImage') ||
