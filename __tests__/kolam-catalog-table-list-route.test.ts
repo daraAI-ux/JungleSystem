@@ -27,10 +27,11 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/wallet')).toBe(false);
     expect(isCatalogTableListRoute('/payable')).toBe(true);
     expect(isCatalogTableListRoute('/receivable')).toBe(true);
-    expect(isCatalogTableListRoute('/routine-expenses')).toBe(true);
-    expect(isCatalogTableListRoute('/unexpected-expense')).toBe(true);
-    expect(isCatalogTableListRoute('/unexpected-income')).toBe(true);
-    expect(isCatalogTableListRoute('/asset-purchase')).toBe(true);
+    // Mapped-row expense/income lists use shell ScrollView (same as /finance).
+    expect(isCatalogTableListRoute('/routine-expenses')).toBe(false);
+    expect(isCatalogTableListRoute('/unexpected-expense')).toBe(false);
+    expect(isCatalogTableListRoute('/unexpected-income')).toBe(false);
+    expect(isCatalogTableListRoute('/asset-purchase')).toBe(false);
     expect(isCatalogTableListRoute('/commissions')).toBe(true);
     expect(isCatalogTableListRoute('/finance/payroll')).toBe(true);
     expect(isCatalogTableListRoute('/finance/bonus')).toBe(true);

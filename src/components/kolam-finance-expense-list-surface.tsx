@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   buildKolamAssetPurchaseDetailRoute,
   getFinanceExpenseStatusIntent,
@@ -447,35 +447,37 @@ function FinanceExpenseListBody({
   const safePage = Math.max(1, controller.pagination.page);
   const pageCount = Math.max(1, controller.pagination.totalPages);
 
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamFinanceExpenseListRow }) => {
-      const cells = (
-        <>
-          {columns.map(column => (
-            <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-              {column.render(item)}
-            </View>
-          ))}
-        </>
+  const renderRow = (item: KolamFinanceExpenseListRow) => {
+    const cells = (
+      <>
+        {columns.map(column => (
+          <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
+            {column.render(item)}
+          </View>
+        ))}
+      </>
+    );
+
+    if (isAssetPurchase && onRouteChange && item.id) {
+      return (
+        <Pressable
+          key={item.id}
+          onPress={() =>
+            onRouteChange(getKolamAssetPurchaseDetailRoute(item.id))
+          }
+          style={styles.row}
+        >
+          {cells}
+        </Pressable>
       );
+    }
 
-      if (isAssetPurchase && onRouteChange && item.id) {
-        return (
-          <Pressable
-            onPress={() =>
-              onRouteChange(getKolamAssetPurchaseDetailRoute(item.id))
-            }
-            style={styles.row}
-          >
-            {cells}
-          </Pressable>
-        );
-      }
-
-      return <View style={styles.row}>{cells}</View>;
-    },
-    [columns, isAssetPurchase, onRouteChange],
-  );
+    return (
+      <View key={item.id} style={styles.row}>
+        {cells}
+      </View>
+    );
+  };
 
   return (
     <View style={styles.surface}>
@@ -654,33 +656,26 @@ function FinanceExpenseListBody({
           }
           style={styles.tableFrame}
         >
-          <FlatList
-            contentContainerStyle={styles.listContent}
-            data={controller.rows}
-            keyExtractor={item => item.id}
-            ListEmptyComponent={
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  title={controller.loading ? 'Memuat…' : 'Tidak ada data'}
-                />
+          <View style={styles.headerRow}>
+            {columns.map(column => (
+              <View
+                key={column.id}
+                style={[styles.cell, { flex: column.flex }]}
+              >
+                <Text style={styles.headerCellText}>{column.label}</Text>
               </View>
-            }
-            ListHeaderComponent={
-              <View style={styles.headerRow}>
-                {columns.map(column => (
-                  <View
-                    key={column.id}
-                    style={[styles.cell, { flex: column.flex }]}
-                  >
-                    <Text style={styles.headerCellText}>{column.label}</Text>
-                  </View>
-                ))}
-              </View>
-            }
-            renderItem={renderRow}
-            style={styles.list}
-          />
+            ))}
+          </View>
+          {controller.rows.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <KolamEmptyState
+                compact
+                title={controller.loading ? 'Memuat…' : 'Tidak ada data'}
+              />
+            </View>
+          ) : (
+            controller.rows.map(item => renderRow(item))
+          )}
         </KolamCatalogListTableShell>
       </View>
 
@@ -736,11 +731,7 @@ function FinanceExpenseListBody({
 
 const styles = StyleSheet.create({
   surface: {
-    flex: 1,
     gap: 10,
-    minHeight: 0,
-    overflow: 'hidden',
-    position: 'relative',
   },
   banner: {
     alignSelf: 'stretch',
@@ -782,17 +773,10 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   listRoot: {
-    flex: 1,
-    minHeight: 240,
+    gap: 8,
   },
   tableFrame: {
-    flex: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
+    width: '100%',
   },
   emptyWrap: {
     paddingVertical: 24,
@@ -823,6 +807,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   cell: {
+    minWidth: 0,
     paddingHorizontal: 4,
   },
   primaryText: {
