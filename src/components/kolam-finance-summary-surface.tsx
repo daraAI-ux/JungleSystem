@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamFinanceConfirmStatusLabel,
   formatKolamFinanceTxTypeLabel,
@@ -7,6 +7,7 @@ import {
   KOLAM_FINANCE_CONFIRM_STATUS_OPTIONS,
   KOLAM_FINANCE_RANGE_OPTIONS,
   txMatchesFinanceFocusId,
+  type KolamFinanceConfirmStatusFilter,
   type KolamFinanceRange,
   type KolamFinanceTransaction,
 } from '../domain/kolam-finance-summary';
@@ -19,10 +20,17 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const TX_COLUMNS = [
@@ -34,6 +42,10 @@ const TX_COLUMNS = [
   { id: 'note', label: 'Catatan', flex: 1.2 },
   { id: 'action', label: '', flex: 0.8 },
 ] as const;
+
+const FINANCE_FILTER_PANEL_WIDTH = 220;
+
+type FinanceSummaryFilterPanel = 'range' | 'status';
 
 /**
  * Finance Summary — FE `/finance` ops hub (range + cards + TX confirm).
@@ -78,8 +90,15 @@ function FinanceSummaryToolbar({
 }: {
   controller: KolamFinanceSummaryController;
 }) {
-  const [rangeOpen, setRangeOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    useState<FinanceSummaryFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] = useState<KolamFilterPanelAnchor | null>(
+    null,
+  );
+  const toolbarRef = useRef<View>(null);
+  const rangeTriggerRef = useRef<View>(null);
+  const statusTriggerRef = useRef<View>(null);
+
   const rangeLabel =
     KOLAM_FINANCE_RANGE_OPTIONS.find(
       option => option.value === controller.filters.range,
@@ -89,125 +108,199 @@ function FinanceSummaryToolbar({
       option => option.value === controller.filters.confirmStatus,
     )?.label ?? 'Semua status';
 
+  const getFilterTriggerRef = (panel: FinanceSummaryFilterPanel) =>
+    panel === 'range' ? rangeTriggerRef : statusTriggerRef;
+
+  const closeFilterPanel = useCallback(() => {
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+  }, []);
+
+  const openFilterPanel = (panel: FinanceSummaryFilterPanel) => {
+    if (activeFilterPanel === panel) {
+      closeFilterPanel();
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        FINANCE_FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
+  };
+
+  useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(activeFilterPanel).current,
+        FINANCE_FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
+    });
+  }, [activeFilterPanel]);
+
+  const panelOptions =
+    activeFilterPanel === 'range'
+      ? KOLAM_FINANCE_RANGE_OPTIONS.map(option => ({
+          label: option.label,
+          value: option.value,
+        }))
+      : activeFilterPanel === 'status'
+        ? KOLAM_FINANCE_CONFIRM_STATUS_OPTIONS.map(option => ({
+            label: option.label,
+            value: option.value,
+          }))
+        : [];
+
   return (
-    <View style={kolamTableToolbarStyles.shell}>
-      <View style={kolamTableToolbarStyles.row}>
-        <View style={kolamTableToolbarStyles.filters}>
-          <KolamButton
-            intent={rangeOpen ? 'primary' : 'secondary'}
-            label={rangeLabel}
-            onPress={() => {
-              setStatusOpen(false);
-              setRangeOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
-          <KolamButton
-            intent={
-              statusOpen || controller.filters.confirmStatus !== 'all'
-                ? 'primary'
-                : 'secondary'
-            }
-            label={statusLabel}
-            onPress={() => {
-              setRangeOpen(false);
-              setStatusOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
-          {controller.filters.range === 'custom' ? (
-            <>
-              <KolamFormTextField
-                onChangeText={value =>
-                  controller.onChangeCustomDates(
-                    value,
-                    controller.filters.endDate,
-                  )
+    <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <View ref={rangeTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'range' ||
+                  controller.filters.range !== 'month'
                 }
-                placeholder="Mulai YYYY-MM-DD"
-                style={styles.dateInput}
-                value={controller.filters.startDate}
+                label={rangeLabel}
+                onPress={() => openFilterPanel('range')}
+                open={activeFilterPanel === 'range'}
+                variant="quiet"
               />
-              <KolamFormTextField
-                onChangeText={value =>
-                  controller.onChangeCustomDates(
-                    controller.filters.startDate,
-                    value,
-                  )
+            </View>
+            <View ref={statusTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'status' ||
+                  controller.filters.confirmStatus !== 'all'
                 }
-                placeholder="Akhir YYYY-MM-DD"
-                style={styles.dateInput}
-                value={controller.filters.endDate}
+                label={statusLabel}
+                onPress={() => openFilterPanel('status')}
+                open={activeFilterPanel === 'status'}
+                variant="quiet"
               />
-            </>
-          ) : null}
-        </View>
-        <View style={kolamTableToolbarStyles.actions}>
-          <KolamButton
-            disabled={controller.downloadingLedger}
-            intent="secondary"
-            label={
-              controller.downloadingLedger ? 'Mengunduh…' : 'Unduh buku besar'
-            }
-            onPress={() => {
-              void controller.onDownloadLedger();
-            }}
-            style={styles.filterTrigger}
-          />
-          <KolamButton
-            intent="secondary"
-            label={controller.loading ? 'Memuat…' : 'Muat ulang'}
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-            style={styles.filterTrigger}
-          />
+            </View>
+            {controller.filters.range === 'custom' ? (
+              <>
+                <KolamFormTextField
+                  onChangeText={value =>
+                    controller.onChangeCustomDates(
+                      value,
+                      controller.filters.endDate,
+                    )
+                  }
+                  placeholder="Mulai YYYY-MM-DD"
+                  style={styles.dateInput}
+                  value={controller.filters.startDate}
+                />
+                <KolamFormTextField
+                  onChangeText={value =>
+                    controller.onChangeCustomDates(
+                      controller.filters.startDate,
+                      value,
+                    )
+                  }
+                  placeholder="Akhir YYYY-MM-DD"
+                  style={styles.dateInput}
+                  value={controller.filters.endDate}
+                />
+              </>
+            ) : null}
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              disabled={controller.downloadingLedger}
+              intent="secondary"
+              label={
+                controller.downloadingLedger ? 'Mengunduh…' : 'Unduh buku besar'
+              }
+              onPress={() => {
+                closeFilterPanel();
+                void controller.onDownloadLedger();
+              }}
+              style={styles.actionButton}
+            />
+            <KolamButton
+              intent="secondary"
+              label={controller.loading ? 'Memuat…' : 'Muat ulang'}
+              onPress={() => {
+                closeFilterPanel();
+                void controller.onRefresh();
+              }}
+              style={styles.actionButton}
+            />
+          </View>
         </View>
       </View>
 
-      {rangeOpen ? (
-        <View style={styles.filterPanel}>
-          {KOLAM_FINANCE_RANGE_OPTIONS.map(option => (
-            <Pressable
-              key={option.value}
-              onPress={() => {
-                controller.onChangeRange(option.value as KolamFinanceRange);
-                setRangeOpen(false);
-              }}
-              style={styles.filterOption}
-            >
-              <Text style={styles.filterOptionText}>{option.label}</Text>
-            </Pressable>
-          ))}
-          <KolamButton
-            intent="secondary"
-            label="Tutup"
-            onPress={() => setRangeOpen(false)}
-            style={styles.filterClose}
-          />
-        </View>
-      ) : null}
-
-      {statusOpen ? (
-        <View style={styles.filterPanel}>
-          {KOLAM_FINANCE_CONFIRM_STATUS_OPTIONS.map(option => (
-            <Pressable
-              key={option.value}
-              onPress={() => {
-                controller.onChangeConfirmStatus(option.value);
-                setStatusOpen(false);
-              }}
-              style={styles.filterOption}
-            >
-              <Text style={styles.filterOptionText}>{option.label}</Text>
-            </Pressable>
-          ))}
-          <KolamButton
-            intent="secondary"
-            label="Tutup"
-            onPress={() => setStatusOpen(false)}
-            style={styles.filterClose}
-          />
+      {activeFilterPanel && panelAnchor ? (
+        <View
+          style={[
+            styles.filterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: FINANCE_FILTER_PANEL_WIDTH,
+            },
+          ]}
+        >
+          {panelOptions.map(option => {
+            const selected =
+              activeFilterPanel === 'range'
+                ? controller.filters.range === option.value
+                : controller.filters.confirmStatus === option.value;
+            return (
+              <KolamInteractionFrame
+                accessibilityLabel={option.label}
+                key={`${activeFilterPanel}-${option.value}`}
+                onPress={() => {
+                  if (activeFilterPanel === 'range') {
+                    controller.onChangeRange(option.value as KolamFinanceRange);
+                  } else {
+                    controller.onChangeConfirmStatus(
+                      option.value as KolamFinanceConfirmStatusFilter,
+                    );
+                  }
+                  closeFilterPanel();
+                }}
+                selected={selected}
+                style={[
+                  styles.filterMenuItem,
+                  selected ? styles.filterMenuItemSelected : null,
+                ]}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.filterMenuItemLabel,
+                    selected ? styles.filterMenuItemLabelSelected : null,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {selected ? (
+                  <KolamCheckmarkIcon color={V.colors.primary} size="sm" />
+                ) : (
+                  <View style={styles.filterMenuItemCheckSpacer} />
+                )}
+              </KolamInteractionFrame>
+            );
+          })}
+          <View style={styles.filterPanelFooter}>
+            <KolamButton label="Tutup" onPress={closeFilterPanel} />
+          </View>
         </View>
       ) : null}
     </View>
@@ -441,37 +534,70 @@ const styles = StyleSheet.create({
   banner: {
     alignSelf: 'stretch',
   },
-  filterTrigger: {
-    flexGrow: 0,
-    flexShrink: 0,
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
   },
   dateInput: {
     flexGrow: 0,
     minWidth: 140,
     width: 150,
   },
-  filterPanel: {
+  actionButton: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
+    elevation: 1200,
     gap: 2,
-    marginTop: 6,
     padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    zIndex: 120000,
   },
-  filterOption: {
-    borderRadius: 6,
+  filterMenuItem: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  filterOptionText: {
+  filterMenuItemSelected: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterMenuItemLabel: {
     color: V.colors.fg,
+    flex: 1,
     fontFamily: V.fontFamily,
     fontSize: 13,
+    fontWeight: '600',
   },
-  filterClose: {
-    alignSelf: 'flex-start',
+  filterMenuItemLabelSelected: {
+    color: V.colors.primary,
+    fontWeight: '800',
+  },
+  filterMenuItemCheckSpacer: {
+    height: 14,
+    width: 14,
+  },
+  filterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
     marginTop: 4,
+    paddingTop: 6,
   },
   cardsRow: {
     flexDirection: 'row',
