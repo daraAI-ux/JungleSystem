@@ -172,6 +172,34 @@ export async function getKolamAdminCashflowByInvoice(
   return normalizeKolamAdminCashflowInvoiceGroups(payload);
 }
 
+export async function confirmKolamAdminCashflowTransaction(
+  sessionId: string,
+  trxId: string,
+): Promise<void> {
+  await kolamRequest(
+    `/cashflow/${encodeURIComponent(sessionId)}/transactions/${encodeURIComponent(
+      trxId,
+    )}/confirm`,
+    { method: 'POST' },
+  );
+}
+
+export async function rejectKolamAdminCashflowTransaction(
+  sessionId: string,
+  trxId: string,
+  note: string,
+): Promise<void> {
+  await kolamRequest(
+    `/cashflow/${encodeURIComponent(sessionId)}/transactions/${encodeURIComponent(
+      trxId,
+    )}/reject`,
+    {
+      method: 'POST',
+      body: { note },
+    },
+  );
+}
+
 export async function confirmKolamAdminCashflowInvoice(
   sessionId: string,
   saleId: string,

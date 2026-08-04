@@ -26,6 +26,20 @@ import { isKolamSpeciesRoute } from '../domain/kolam-species';
 import { isKolamStockTransactionRoute } from '../domain/kolam-stock-transaction';
 import { isKolamStockOpnameRoute } from '../domain/kolam-stock-opname';
 import { isKolamAdminCashflowSessionRoute } from '../domain/kolam-admin-cashflow-session';
+import { isKolamCommissionRoute } from '../domain/kolam-commission';
+import {
+  isKolamAssetPurchaseRoute,
+  isKolamRoutineExpenseRoute,
+  isKolamUnexpectedExpenseRoute,
+  isKolamUnexpectedIncomeRoute,
+} from '../domain/kolam-finance-expense';
+import { isKolamBonusRoute } from '../domain/kolam-bonus';
+import { isKolamFinanceSummaryRoute } from '../domain/kolam-finance-summary';
+import { isKolamFinanceTaxRoute } from '../domain/kolam-finance-tax';
+import { isKolamPayrollRoute } from '../domain/kolam-payroll';
+import { isKolamPayableRoute } from '../domain/kolam-payable';
+import { isKolamReceivableRoute } from '../domain/kolam-receivable';
+import { isKolamWalletRoute } from '../domain/kolam-wallet';
 import { isKolamCampaignRoute } from '../domain/kolam-campaign';
 import { isKolamDaraMarketIntelRoute } from '../domain/kolam-dara-market-intel';
 import { isKolamDaraSeoRoute } from '../domain/kolam-dara-seo';
@@ -69,6 +83,20 @@ import { KolamSpeciesSurface } from './kolam-species-surface';
 import { KolamStockTransactionSurface } from './kolam-stock-transaction-surface';
 import { KolamStockOpnameSurface } from './kolam-stock-opname-surface';
 import { KolamAdminCashflowSessionSurface } from './kolam-admin-cashflow-session-surface';
+import { KolamCommissionSurface } from './kolam-commission-surface';
+import {
+  KolamAssetPurchaseSurface,
+  KolamRoutineExpenseSurface,
+  KolamUnexpectedExpenseSurface,
+  KolamUnexpectedIncomeSurface,
+} from './kolam-finance-expense-list-surface';
+import { KolamBonusSurface } from './kolam-bonus-surface';
+import { KolamFinanceSummarySurface } from './kolam-finance-summary-surface';
+import { KolamFinanceTaxSurface } from './kolam-finance-tax-surface';
+import { KolamPayrollSurface } from './kolam-payroll-surface';
+import { KolamPayableSurface } from './kolam-payable-surface';
+import { KolamReceivableSurface } from './kolam-receivable-surface';
+import { KolamWalletSurface } from './kolam-wallet-surface';
 import { KolamSalesOpsSurface } from './kolam-sales-ops-surface';
 import { KolamSourceSurface } from './kolam-source-surface';
 import { KolamSupplierSurface } from './kolam-supplier-surface';
@@ -197,6 +225,114 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamAdminCashflowSessionSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/cashflow-session'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamPayrollRoute(activeRoutePath)) {
+    return (
+      <KolamPayrollSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/finance/payroll'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamBonusRoute(activeRoutePath)) {
+    return (
+      <KolamBonusSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/finance/bonus'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamFinanceTaxRoute(activeRoutePath)) {
+    return (
+      <KolamFinanceTaxSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/finance/tax'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamFinanceSummaryRoute(activeRoutePath)) {
+    return (
+      <KolamFinanceSummarySurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/finance'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamRoutineExpenseRoute(activeRoutePath)) {
+    return (
+      <KolamRoutineExpenseSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/routine-expenses'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamUnexpectedExpenseRoute(activeRoutePath)) {
+    return (
+      <KolamUnexpectedExpenseSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/unexpected-expense'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamUnexpectedIncomeRoute(activeRoutePath)) {
+    return (
+      <KolamUnexpectedIncomeSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/unexpected-income'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamAssetPurchaseRoute(activeRoutePath)) {
+    return (
+      <KolamAssetPurchaseSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/asset-purchase'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamCommissionRoute(activeRoutePath)) {
+    return (
+      <KolamCommissionSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/commissions'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamPayableRoute(activeRoutePath)) {
+    return (
+      <KolamPayableSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/payable'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamReceivableRoute(activeRoutePath)) {
+    return (
+      <KolamReceivableSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/receivable'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamWalletRoute(activeRoutePath)) {
+    return (
+      <KolamWalletSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/wallet'}
       />
     );
   }
