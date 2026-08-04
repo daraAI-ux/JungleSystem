@@ -2157,6 +2157,89 @@ describe('KolamAmSurface', () => {
     });
   });
 
+  it('disables unavailable Tokopedia live session actions', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValue({
+      data: [
+        {
+          _id: 'service-tokopedia-missing',
+          platform: 'tokopedia',
+          label: 'Tokopedia Missing',
+          deviceId: {
+            _id: 'device-tokopedia-missing',
+            name: 'Browser Missing',
+            connectionType: 'browser',
+            tcpAddress: null,
+            udid: null,
+          },
+          status: 'inactive',
+          credentials: {},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 1},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValue({
+      logs: [],
+      processRunning: false,
+    });
+    jest.mocked(getAmTokopediaSession).mockResolvedValue({
+      status: 'missing',
+      cookieCount: 0,
+      expiredCount: 0,
+      sessionCookieCount: 0,
+      updatedAt: null,
+      hasFingerprint: false,
+      serviceStatus: 'inactive',
+      hasDevice: true,
+      captchaAutoSolve: false,
+      hasAnthropicApiKey: false,
+      anthropicApiKeyPreview: null,
+      envFallbackAvailable: false,
+      qrTiktokLogin: true,
+      loginFillOnly: false,
+    });
+    jest.mocked(getAmDeviceServices).mockResolvedValue([
+      {
+        serviceAccountId: 'service-tokopedia-missing',
+        label: 'Tokopedia Missing',
+        platform: 'tokopedia',
+        accountNumber: '',
+        serviceStatus: 'inactive',
+        taskStatus: 'idle',
+        processRunning: false,
+        isBanking: false,
+      },
+    ]);
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Missing'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Missing Session'}).props.onPress();
+    });
+
+    const buttonByLabel = (accessibilityLabel: string) =>
+      renderer!.root.findAllByType(KolamButton).find(button => button.props.accessibilityLabel === accessibilityLabel);
+
+    expect(buttonByLabel('AM Tokopedia Verify service-tokopedia-missing')?.props.disabled).toBe(true);
+    expect(buttonByLabel('AM Tokopedia Restart service-tokopedia-missing')?.props.disabled).toBe(true);
+    expect(buttonByLabel('AM Tokopedia QR Start service-tokopedia-missing')?.props.disabled).toBe(true);
+    expect(buttonByLabel('AM Tokopedia Api Monitor service-tokopedia-missing')?.props.disabled).toBe(true);
+    expect(buttonByLabel('AM Tokopedia Save Cookies service-tokopedia-missing')?.props.disabled).toBe(true);
+    expect(buttonByLabel('AM Tokopedia Clear Cookies service-tokopedia-missing')?.props.disabled).toBe(true);
+  });
+
   it('loads live hardware topology from the Hardware route', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

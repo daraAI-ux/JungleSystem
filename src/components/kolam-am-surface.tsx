@@ -2862,6 +2862,7 @@ function AmTokopediaSessionPanel({
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel={`AM Tokopedia Login Password ${account._id}`}
+              disabled={!canRunSessionAction || acting === 'login-method'}
               intent={loginMode === 'password' ? 'warning' : 'outline'}
               label="Password"
               muted={!canRunSessionAction || acting === 'login-method'}
@@ -2870,6 +2871,7 @@ function AmTokopediaSessionPanel({
             />
             <KolamButton
               accessibilityLabel={`AM Tokopedia Login Fill Only ${account._id}`}
+              disabled={!canRunSessionAction || acting === 'login-method'}
               intent={loginMode === 'fill' ? 'warning' : 'outline'}
               label="Fill Only"
               muted={!canRunSessionAction || acting === 'login-method'}
@@ -2878,6 +2880,7 @@ function AmTokopediaSessionPanel({
             />
             <KolamButton
               accessibilityLabel={`AM Tokopedia Login QR ${account._id}`}
+              disabled={!canRunSessionAction || acting === 'login-method'}
               intent={loginMode === 'qr' ? 'warning' : 'outline'}
               label="QR TikTok"
               muted={!canRunSessionAction || acting === 'login-method'}
@@ -2892,6 +2895,7 @@ function AmTokopediaSessionPanel({
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel={`AM Tokopedia Captcha Toggle ${account._id}`}
+              disabled={!canRunSessionAction || acting === 'captcha'}
               intent={captchaAutoSolve ? 'warning' : 'outline'}
               label={captchaAutoSolve ? 'Auto On' : 'Auto Off'}
               muted={!canRunSessionAction || acting === 'captcha'}
@@ -2900,6 +2904,7 @@ function AmTokopediaSessionPanel({
             />
             <KolamButton
               accessibilityLabel={`AM Tokopedia Captcha Save ${account._id}`}
+              disabled={!canRunSessionAction || acting === 'captcha'}
               label={acting === 'captcha' ? 'Menyimpan' : 'Simpan Captcha'}
               muted={!canRunSessionAction || acting === 'captcha'}
               size="sm"
@@ -2908,6 +2913,7 @@ function AmTokopediaSessionPanel({
             {info?.hasAnthropicApiKey ? (
               <KolamButton
                 accessibilityLabel={`AM Tokopedia Captcha Clear Key ${account._id}`}
+                disabled={!canRunSessionAction || acting === 'captcha-clear-key'}
                 intent="outline"
                 label={acting === 'captcha-clear-key' ? 'Menghapus' : 'Hapus Key'}
                 muted={!canRunSessionAction || acting === 'captcha-clear-key'}
@@ -2944,13 +2950,15 @@ function AmTokopediaSessionPanel({
         <View style={styles.inlineActions}>
           <KolamButton
             accessibilityLabel={`AM Tokopedia Save Cookies ${account._id}`}
+            disabled={!canRunSessionAction || acting === 'upload-cookies' || !cookiesJson.trim() || Boolean(cookiesPreview.error)}
             label={acting === 'upload-cookies' ? 'Menyimpan' : 'Simpan Session'}
-            muted={!canRunSessionAction || acting === 'upload-cookies' || !cookiesJson.trim()}
+            muted={!canRunSessionAction || acting === 'upload-cookies' || !cookiesJson.trim() || Boolean(cookiesPreview.error)}
             size="sm"
             onPress={uploadManualCookies}
           />
           <KolamButton
             accessibilityLabel={`AM Tokopedia Clear Cookies ${account._id}`}
+            disabled={!cookiesJson.trim()}
             intent="outline"
             label="Bersihkan"
             muted={!cookiesJson.trim()}
@@ -2965,6 +2973,7 @@ function AmTokopediaSessionPanel({
       <View style={styles.inlineActions}>
         <KolamButton
           accessibilityLabel={`AM Tokopedia Verify ${account._id}`}
+          disabled={!canRunSessionAction || info?.status === 'missing'}
           intent="outline"
           label={acting === 'verify' ? 'Mengecek' : 'Cek Login'}
           muted={!canRunSessionAction || info?.status === 'missing'}
@@ -2978,6 +2987,7 @@ function AmTokopediaSessionPanel({
         />
         <KolamButton
           accessibilityLabel={`AM Tokopedia Restart ${account._id}`}
+          disabled={!canRunSessionAction || !processRunning}
           intent="outline"
           label={acting === 'restart' ? 'Restart...' : 'Restart Tokopedia'}
           muted={!canRunSessionAction || !processRunning}
@@ -2989,6 +2999,7 @@ function AmTokopediaSessionPanel({
         />
         <KolamButton
           accessibilityLabel={`AM Tokopedia QR Start ${account._id}`}
+          disabled={!canRunSessionAction || !processRunning || !info?.qrTiktokLogin}
           intent="outline"
           label={acting === 'qr-start' ? 'Memuat QR' : 'Mulai Scan QR'}
           muted={!canRunSessionAction || !processRunning || !info?.qrTiktokLogin}
@@ -3001,6 +3012,7 @@ function AmTokopediaSessionPanel({
         />
         <KolamButton
           accessibilityLabel={`AM Tokopedia Api Monitor ${account._id}`}
+          disabled={!canRunSessionAction || monitorRunning || info?.status === 'missing' || info?.status === 'empty'}
           intent="outline"
           label={monitorRunning ? 'Monitor berjalan' : 'Perbarui Session'}
           muted={!canRunSessionAction || monitorRunning || info?.status === 'missing' || info?.status === 'empty'}
@@ -3016,6 +3028,7 @@ function AmTokopediaSessionPanel({
         />
         <KolamButton
           accessibilityLabel={`AM Tokopedia Refresh ${account._id}`}
+          disabled={isLoading}
           intent="outline"
           label={isLoading ? 'Memuat' : 'Refresh'}
           muted={isLoading}
