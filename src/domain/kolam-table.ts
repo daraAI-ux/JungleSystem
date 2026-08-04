@@ -793,6 +793,13 @@ const kolamTableColumns: Record<KolamTableId, KolamTableColumn[]> = {
       width: 108,
     },
     {
+      id: 'raws',
+      label: 'Spesies',
+      align: 'center',
+      headerAlign: 'center',
+      width: 112,
+    },
+    {
       id: 'marketplace',
       label: 'PIC',
       align: 'center',

@@ -38,6 +38,7 @@ import {
   type KolamEnclosureLivestockFilter,
   type KolamEnclosureLivestockPurpose,
   type KolamEnclosureProductionEvent,
+  type KolamEnclosureSpeciesRef,
   type KolamEnclosureStatistics,
   type KolamEnclosureStatisticsEvent,
   type KolamSpeciesTaxonomyProduction,
@@ -109,6 +110,7 @@ const ENCLOSURE_EDIT_STATUS_OPTIONS = [
   'quarantine',
 ] as const;
 const ENCLOSURE_EDIT_SIZE_UNIT_INITIALS = new Set(['Cm', 'Mm', 'M']);
+const ENCLOSURE_LIST_SPECIES_THUMB_LIMIT = 4;
 
 type EnclosureEditFormState = {
   acquired_date: string;
@@ -1291,6 +1293,7 @@ function KolamEnclosureRow({
   const primaryColumn = columnOf('primary');
   const typeColumn = columnOf('notes');
   const livestockColumn = columnOf('products');
+  const speciesColumn = columnOf('raws');
   const picColumn = columnOf('marketplace');
   const statusColumn = columnOf('status');
   const actionsColumn = columnOf('actions');
@@ -1382,6 +1385,19 @@ function KolamEnclosureRow({
         <View
           style={[
             styles.listCell,
+            styles.centerCell,
+            styles.overflowVisible,
+            speciesColumn
+              ? getKolamDataTableColumnStyle(speciesColumn)
+              : null,
+          ]}
+        >
+          <KolamEnclosureSpeciesThumbs species={enclosure.species} />
+        </View>
+
+        <View
+          style={[
+            styles.listCell,
             styles.picCell,
             picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
             styles.overflowVisible,
@@ -1427,6 +1443,89 @@ function KolamEnclosureRow({
         />
       </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
+  );
+}
+
+function getEnclosureSpeciesHoverLabel(item: KolamEnclosureSpeciesRef) {
+  return (
+    [
+      item.speciesName || item.scientificName || 'Spesies',
+      item.variantLabel,
+      item.quantity > 0
+        ? `${item.quantity}${item.unitLabel ? ` ${item.unitLabel}` : ''}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'Spesies'
+  );
+}
+
+function KolamEnclosureSpeciesThumbs({
+  species,
+}: {
+  species: KolamEnclosureSpeciesRef[];
+}) {
+  if (!species.length) {
+    return <Text style={styles.mutedText}>—</Text>;
+  }
+
+  const visible = species.slice(0, ENCLOSURE_LIST_SPECIES_THUMB_LIMIT);
+  const overflow = species.length - visible.length;
+  const overflowLabel = species
+    .slice(ENCLOSURE_LIST_SPECIES_THUMB_LIMIT)
+    .map(getEnclosureSpeciesHoverLabel)
+    .join('\n');
+
+  return (
+    <View style={styles.speciesThumbRow}>
+      {visible.map((item, index) => {
+        const photoUri = getKolamFileUrl(item.thumbnailUrl);
+        const label = getEnclosureSpeciesHoverLabel(item);
+        return (
+          <KolamHoverTooltip
+            align="center"
+            containerStyle={styles.speciesThumbTooltip}
+            key={`${item.speciesId}:${item.variantId}:${index}`}
+            label={label}
+          >
+            {photoUri ? (
+              <KolamRemoteImage
+                accessibilityLabel={label}
+                resizeMode="cover"
+                scope="enclosure-list-species"
+                sourceUri={photoUri}
+                style={styles.speciesThumb}
+              />
+            ) : (
+              <View
+                accessibilityLabel={label}
+                style={styles.speciesThumbPlaceholder}
+              >
+                <Text style={styles.speciesThumbPlaceholderText}>
+                  {(item.speciesName || item.scientificName || '?')
+                    .charAt(0)
+                    .toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </KolamHoverTooltip>
+        );
+      })}
+      {overflow > 0 ? (
+        <KolamHoverTooltip
+          align="center"
+          containerStyle={styles.speciesThumbTooltip}
+          label={overflowLabel || `+${overflow} spesies`}
+        >
+          <View
+            accessibilityLabel={`+${overflow} spesies lainnya`}
+            style={styles.speciesThumbMore}
+          >
+            <Text style={styles.speciesThumbMoreText}>+{overflow}</Text>
+          </View>
+        </KolamHoverTooltip>
+      ) : null}
+    </View>
   );
 }
 
@@ -3225,6 +3324,57 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     height: 40,
     width: 40,
+  },
+  speciesThumbRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 4,
+    justifyContent: 'center',
+  },
+  speciesThumbTooltip: {
+    alignSelf: 'center',
+  },
+  speciesThumb: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 5,
+    borderWidth: 1,
+    height: 28,
+    width: 28,
+  },
+  speciesThumbPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 5,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  speciesThumbPlaceholderText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  speciesThumbMore: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 5,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    minWidth: 28,
+    paddingHorizontal: 4,
+  },
+  speciesThumbMoreText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   cell: {
     justifyContent: 'center',
