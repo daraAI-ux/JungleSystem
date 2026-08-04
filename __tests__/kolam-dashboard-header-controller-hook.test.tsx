@@ -116,6 +116,36 @@ describe('Kolam dashboard header controller hook', () => {
     );
   });
 
+  it('uses AM dashboard copy for the root AM shell header', async () => {
+    const messages: string[] = [];
+    let latest: DashboardHeaderController | null = null;
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <HeaderHarness
+          activeModule="am"
+          messages={messages}
+          onRender={controller => {
+            latest = controller;
+          }}
+          onSelectModule={() => undefined}
+        />,
+      );
+    });
+
+    expect(requireController(latest).dashboardHeader).toEqual(
+      expect.objectContaining({
+        eyebrow: undefined,
+        actions: [],
+        title: 'AM',
+        subtitle: 'Ringkasan akun, device, transfer, dan mutasi AM.',
+      }),
+    );
+    expect(requireController(latest).dashboardHeader.subtitle).not.toContain(
+      'native Windows',
+    );
+  });
+
   it('uses active route context in the native page header', async () => {
     const messages: string[] = [];
     const saleDraftRoute = getShellModuleRouteEntry('checkout', 'sale-draft');
