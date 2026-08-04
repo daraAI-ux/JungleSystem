@@ -1,11 +1,15 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamDaraTrainingFeedbackList,
   normalizeKolamDaraTrainingPhrase,
   normalizeKolamDaraTrainingPhraseList,
+  normalizeKolamDaraTrainingRerankResult,
   normalizeKolamDaraTrainingStats,
+  type KolamDaraTrainingFeedback,
   type KolamDaraTrainingPhrase,
   type KolamDaraTrainingPhraseCategory,
   type KolamDaraTrainingPhraseScope,
+  type KolamDaraTrainingRerankResult,
   type KolamDaraTrainingStats,
 } from '../domain/kolam-dara-training';
 import {apiRequest} from '../lib/api-client';
@@ -78,6 +82,32 @@ export async function deleteKolamDaraTrainingPhrase(id: string): Promise<void> {
   await kolamRequest(`/dara-training/phrases/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
+}
+
+/** GET /dara-training/feedback — FE `listFeedback(1, 20)`. */
+export async function listKolamDaraTrainingFeedback(opts?: {
+  page?: number;
+  limit?: number;
+}): Promise<KolamDaraTrainingFeedback[]> {
+  const payload = await kolamRequest<unknown>('/dara-training/feedback', {
+    query: {
+      page: opts?.page ?? 1,
+      limit: opts?.limit ?? 20,
+    },
+  });
+  return normalizeKolamDaraTrainingFeedbackList(payload);
+}
+
+/** POST /dara-training/run-product-rerank */
+export async function runKolamDaraTrainingProductRerank(opts?: {
+  poc?: boolean;
+  minSamples?: number;
+}): Promise<KolamDaraTrainingRerankResult> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/run-product-rerank',
+    {method: 'POST', body: opts ?? {}},
+  );
+  return normalizeKolamDaraTrainingRerankResult(payload);
 }
 
 function unwrapData(payload: unknown): unknown {

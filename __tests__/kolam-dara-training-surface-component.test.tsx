@@ -4,6 +4,7 @@ import {KolamDaraTrainingSurface} from '../src/components/kolam-dara-training-su
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
   fetchKolamDaraTrainingStats,
+  listKolamDaraTrainingFeedback,
   listKolamDaraTrainingPhrases,
 } from '../src/services/kolam-dara-training-api';
 
@@ -14,9 +15,11 @@ jest.mock('../src/context/kolam-app-contexts', () => ({
 jest.mock('../src/services/kolam-dara-training-api', () => ({
   fetchKolamDaraTrainingStats: jest.fn(),
   listKolamDaraTrainingPhrases: jest.fn(),
+  listKolamDaraTrainingFeedback: jest.fn(),
   createKolamDaraTrainingPhrase: jest.fn(),
   updateKolamDaraTrainingPhrase: jest.fn(),
   deleteKolamDaraTrainingPhrase: jest.fn(),
+  runKolamDaraTrainingProductRerank: jest.fn(),
 }));
 
 const authMock = useKolamAuthContext as jest.MockedFunction<
@@ -27,6 +30,9 @@ const statsMock = fetchKolamDaraTrainingStats as jest.MockedFunction<
 >;
 const phrasesMock = listKolamDaraTrainingPhrases as jest.MockedFunction<
   typeof listKolamDaraTrainingPhrases
+>;
+const feedbackMock = listKolamDaraTrainingFeedback as jest.MockedFunction<
+  typeof listKolamDaraTrainingFeedback
 >;
 
 describe('KolamDaraTrainingSurface', () => {
@@ -78,6 +84,18 @@ describe('KolamDaraTrainingSurface', () => {
         },
       ];
     });
+    feedbackMock.mockResolvedValue([
+      {
+        id: 'fb1',
+        query: 'cari soil',
+        suggestedProductName: 'Wrong Soil',
+        correctProductName: 'Frog Soil',
+        correctSku: 'SKU-1',
+        notes: '',
+        source: 'inbox',
+        createdAt: '2026-08-01T10:00:00.000Z',
+      },
+    ]);
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -129,6 +147,30 @@ describe('KolamDaraTrainingSurface', () => {
     expect(phrasesMock).toHaveBeenCalledWith(
       expect.objectContaining({scope: 'fulfillment'}),
     );
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders product corrections and training actions on products tab', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=products" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Training ranking produk');
+    expect(text).toContain('Training POC (≥5)');
+    expect(text).toContain('Training penuh (≥50)');
+    expect(text).toContain('Riwayat koreksi produk');
+    expect(text).toContain('cari soil');
+    expect(text).toContain('Frog Soil');
+    expect(feedbackMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

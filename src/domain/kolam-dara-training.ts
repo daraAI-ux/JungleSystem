@@ -76,6 +76,26 @@ export type KolamDaraTrainingPhrase = {
   updatedAt: string;
 };
 
+export type KolamDaraTrainingFeedback = {
+  id: string;
+  query: string;
+  suggestedProductName: string;
+  correctProductName: string;
+  correctSku: string;
+  notes: string;
+  source: string;
+  createdAt: string;
+};
+
+export type KolamDaraTrainingRerankResult = {
+  success: boolean;
+  message: string;
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  rerankModelExists: boolean;
+};
+
 /** FE `PHRASE_CATEGORY_LABELS`. */
 export const KOLAM_DARA_TRAINING_PHRASE_CATEGORY_LABELS: Record<
   KolamDaraTrainingPhraseCategory,
@@ -298,6 +318,74 @@ export function normalizeKolamDaraTrainingPhrase(
     createdAt: String(row.createdAt || '').trim(),
     updatedAt: String(row.updatedAt || '').trim(),
   };
+}
+
+export function normalizeKolamDaraTrainingFeedbackList(
+  payload: unknown,
+): KolamDaraTrainingFeedback[] {
+  const root = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+      ? root.data
+      : [];
+  return list
+    .map(normalizeKolamDaraTrainingFeedback)
+    .filter((row): row is KolamDaraTrainingFeedback => row != null);
+}
+
+export function normalizeKolamDaraTrainingFeedback(
+  payload: unknown,
+): KolamDaraTrainingFeedback | null {
+  const row = asRecord(payload);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    query: String(row.query || '').trim(),
+    suggestedProductName: String(row.suggestedProductName || '').trim(),
+    correctProductName: String(row.correctProductName || '').trim(),
+    correctSku: String(row.correctSku || '').trim(),
+    notes: String(row.notes || '').trim(),
+    source: String(row.source || '').trim(),
+    createdAt: String(row.createdAt || '').trim(),
+  };
+}
+
+export function normalizeKolamDaraTrainingRerankResult(
+  payload: unknown,
+): KolamDaraTrainingRerankResult {
+  const root = asRecord(payload);
+  const data = asRecord(root.data);
+  return {
+    success: root.success === true,
+    message: String(root.message || '').trim(),
+    exitCode: asNumber(data.exitCode),
+    stdout: String(data.stdout || '').trim(),
+    stderr: String(data.stderr || '').trim(),
+    rerankModelExists: data.rerankModelExists === true,
+  };
+}
+
+/** FE `formatDate` on products feedback table. */
+export function formatKolamDaraTrainingDateTime(iso?: string | null) {
+  if (!iso) {
+    return '—';
+  }
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  try {
+    return new Intl.DateTimeFormat('id-ID', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(date);
+  } catch {
+    return iso;
+  }
 }
 
 function isPhraseCategory(

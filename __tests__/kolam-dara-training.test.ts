@@ -3,6 +3,7 @@ import {
   buildKolamDaraTrainingStatsCards,
   getKolamDaraTrainingTab,
   isKolamDaraTrainingRoute,
+  normalizeKolamDaraTrainingFeedbackList,
   normalizeKolamDaraTrainingPhraseList,
   normalizeKolamDaraTrainingStats,
   resolveKolamDaraTrainingAccess,
@@ -102,6 +103,28 @@ describe('kolam-dara-training domain', () => {
       customReply: 'Saya DARA',
       enabled: true,
       priority: 10,
+    });
+  });
+
+  it('normalizes product correction feedback list', () => {
+    const rows = normalizeKolamDaraTrainingFeedbackList({
+      data: [
+        {
+          _id: 'fb1',
+          query: 'cari soil',
+          suggestedProductName: 'Wrong',
+          correctProductName: 'Frog Soil',
+          correctSku: 'SKU-1',
+          createdAt: '2026-08-01T10:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      id: 'fb1',
+      query: 'cari soil',
+      correctProductName: 'Frog Soil',
+      correctSku: 'SKU-1',
     });
   });
 });
