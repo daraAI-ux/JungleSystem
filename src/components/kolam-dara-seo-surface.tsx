@@ -285,6 +285,7 @@ function KolamDaraSeoDashboardBody({
       </View>
 
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+      {error && dashboard ? <Text style={styles.warnText}>{error}</Text> : null}
       {!controller.seoEnabled ? (
         <Text style={styles.warnText}>DARA SEO dimatikan di pengaturan.</Text>
       ) : null}

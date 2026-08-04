@@ -57,29 +57,54 @@ export function useKolamDaraSeoController(route: string): KolamDaraSeoController
     }
     setLoading(true);
     setError(null);
-    try {
-      const [status, brandRes, dash, pendingRes] = await Promise.all([
-        fetchKolamDaraSeoStatus(),
-        fetchKolamDaraSeoActiveBrands().catch(() => ({
-          brands: [] as KolamDaraSeoBrand[],
-          defaultBrandId: 'all',
-        })),
-        fetchKolamDaraSeoDashboard(brandId),
-        fetchKolamDaraSeoPendingSuggestions(brandId, 10),
-      ]);
-      setSeoEnabled(status.seoEnabled);
-      setBrands(brandRes.brands);
-      setDashboard(dash);
-      setPending(pendingRes);
-      setDataSource('live');
-    } catch (err) {
-      setDashboard(null);
-      setPending([]);
-      setDataSource('error');
-      setError(getControllerErrorMessage(err, 'Gagal memuat dashboard DARA SEO'));
-    } finally {
-      setLoading(false);
+    const [statusRes, brandRes, dashRes, pendingRes] = await Promise.allSettled([
+      fetchKolamDaraSeoStatus(),
+      fetchKolamDaraSeoActiveBrands(),
+      fetchKolamDaraSeoDashboard(brandId),
+      fetchKolamDaraSeoPendingSuggestions(brandId, 10),
+    ]);
+
+    if (statusRes.status === 'fulfilled') {
+      setSeoEnabled(statusRes.value.seoEnabled);
     }
+    if (brandRes.status === 'fulfilled') {
+      setBrands(brandRes.value.brands);
+    }
+
+    if (dashRes.status === 'fulfilled') {
+      setDashboard(dashRes.value);
+      setDataSource('live');
+    }
+    if (pendingRes.status === 'fulfilled') {
+      setPending(pendingRes.value);
+    }
+
+    if (dashRes.status === 'rejected') {
+      const message = getControllerErrorMessage(
+        dashRes.reason,
+        'Gagal memuat dashboard DARA SEO',
+      );
+      setError(message);
+      setDataSource(current => (current === 'live' ? 'live' : 'error'));
+    } else if (
+      statusRes.status === 'rejected' &&
+      pendingRes.status === 'rejected'
+    ) {
+      setError(
+        getControllerErrorMessage(
+          statusRes.reason,
+          'Gagal memuat dashboard DARA SEO',
+        ),
+      );
+      setDataSource(current => (current === 'live' ? 'live' : 'error'));
+    } else {
+      setError(null);
+      if (dashRes.status === 'fulfilled') {
+        setDataSource('live');
+      }
+    }
+
+    setLoading(false);
   }, [brandId, enabled]);
 
   useEffect(() => {
@@ -105,6 +130,7 @@ export function useKolamDaraSeoController(route: string): KolamDaraSeoController
           label,
         });
         setNotice(`Job dimulai: ${label || jobType}`);
+        // Soft refresh — do not wipe KPI if dashboard/gateway returns 502.
         await onRefresh();
       } catch (err) {
         setNotice(getControllerErrorMessage(err, 'Gagal memulai job SEO'));
