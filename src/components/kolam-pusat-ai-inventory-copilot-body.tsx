@@ -393,15 +393,9 @@ function KpiTile({
 }) {
   return (
     <View style={styles.kpiCard}>
-      <View style={styles.kpiTop}>
-        <View>
-          <Text style={styles.kpiLabel}>{title}</Text>
-          <Text style={styles.kpiValue}>
-            {value.toLocaleString('id-ID')}
-          </Text>
-          {hint ? <Text style={styles.kpiTrend}>{hint}</Text> : null}
-        </View>
-      </View>
+      <Text style={styles.kpiLabel}>{title}</Text>
+      <Text style={styles.kpiValue}>{value.toLocaleString('id-ID')}</Text>
+      {hint ? <Text style={styles.kpiTrend}>{hint}</Text> : null}
     </View>
   );
 }
