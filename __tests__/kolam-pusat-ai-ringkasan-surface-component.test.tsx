@@ -572,7 +572,7 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(text).toContain('running');
     expect(text).toContain('Update');
     expect(text).toContain('Tutup');
-    expect(text).toContain('Perbaiki tipe SEO lama');
+    expect(text).not.toContain('Perbaiki tipe SEO lama');
     expect(fetchJobsMock).toHaveBeenCalled();
   });
 

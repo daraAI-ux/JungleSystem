@@ -13,24 +13,19 @@ import {getErrorMessage as getApiErrorMessage} from '../lib/api-error';
 import {
   fetchKolamDaraJob,
   fetchKolamDaraJobsList,
-  normalizeKolamDaraSeoTargetTypes,
 } from '../services/kolam-dara-jobs-api';
 
 export type KolamPusatAiProsesDataSource = 'idle' | 'live' | 'error';
 
 export interface KolamPusatAiProsesController {
-  canNormalize: boolean;
   dataSource: KolamPusatAiProsesDataSource;
   error: string | null;
   jobs: KolamDaraAsyncJob[];
   loading: boolean;
   moduleFilter: KolamDaraJobsModuleFilter;
-  normalizeBusy: boolean;
-  notice: string | null;
   pollingJobId: string | null;
   statusFilter: KolamDaraJobsStatusFilter;
   onDismissJob: (jobId: string) => void;
-  onNormalizeSeo: () => Promise<void>;
   onPollJob: (jobId: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   onSetModuleFilter: (value: KolamDaraJobsModuleFilter) => void;
@@ -39,10 +34,8 @@ export interface KolamPusatAiProsesController {
 
 export function useKolamPusatAiProsesController(
   route: string,
-  opts?: {canNormalize?: boolean},
 ): KolamPusatAiProsesController {
   const enabled = getKolamPusatAiHubTab(route) === 'ringkasan';
-  const canNormalize = opts?.canNormalize === true;
   const [moduleFilter, setModuleFilter] =
     useState<KolamDaraJobsModuleFilter>('all');
   const [statusFilter, setStatusFilter] =
@@ -50,10 +43,8 @@ export function useKolamPusatAiProsesController(
   const [rawJobs, setRawJobs] = useState<KolamDaraAsyncJob[]>([]);
   const [dismissTick, setDismissTick] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [normalizeBusy, setNormalizeBusy] = useState(false);
   const [pollingJobId, setPollingJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [dataSource, setDataSource] =
     useState<KolamPusatAiProsesDataSource>('idle');
 
@@ -114,37 +105,15 @@ export function useKolamPusatAiProsesController(
     setDismissTick(tick => tick + 1);
   }, []);
 
-  const onNormalizeSeo = useCallback(async () => {
-    if (!canNormalize) {
-      return;
-    }
-    setNormalizeBusy(true);
-    setNotice(null);
-    try {
-      const result = await normalizeKolamDaraSeoTargetTypes(false);
-      setNotice(
-        `Data SEO dinormalisasi (${result.updated ?? 0} baris diperbaiki)`,
-      );
-    } catch (err) {
-      setNotice(getApiErrorMessage(err, 'Normalisasi gagal'));
-    } finally {
-      setNormalizeBusy(false);
-    }
-  }, [canNormalize]);
-
   return {
-    canNormalize,
     dataSource,
     error,
     jobs,
     loading,
     moduleFilter,
-    normalizeBusy,
-    notice,
     pollingJobId,
     statusFilter,
     onDismissJob,
-    onNormalizeSeo,
     onPollJob,
     onRefresh,
     onSetModuleFilter: setModuleFilter,

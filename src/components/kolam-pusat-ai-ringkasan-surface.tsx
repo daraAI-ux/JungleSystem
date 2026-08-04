@@ -87,10 +87,7 @@ export function KolamPusatAiRingkasanSurface({
   const hubTabs = useMemo(() => filterKolamPusatAiHubTabs(isAdmin), [isAdmin]);
   const selectedTab = resolveSelectedHubTab(route, isAdmin);
   const ringkasanController = useKolamPusatAiRingkasanController(route);
-  const prosesController = useKolamPusatAiProsesController(route, {
-    canNormalize: isAdmin,
-  });
-  const ownerController = useKolamPusatAiOwnerCopilotController(route);
+  const prosesController = useKolamPusatAiProsesController(route);  const ownerController = useKolamPusatAiOwnerCopilotController(route);
   const logDaraController = useKolamPusatAiLogDaraController(route);
   const transaksiController = useKolamPusatAiTransaksiCopilotController(route);
   const poController = useKolamPusatAiPoCopilotController(route);
@@ -470,34 +467,6 @@ function KolamPusatAiProsesBody({
         <Text style={styles.helperText}>{KOLAM_PUSAT_AI_PROSES_HELPER_COPY}</Text>
       </View>
 
-      <View style={styles.prosesActions}>
-        <KolamButton
-          disabled={controller.loading}
-          intent="outline"
-          label="Refresh"
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-        />
-        {controller.canNormalize ? (
-          <KolamButton
-            disabled={controller.normalizeBusy}
-            intent="outline"
-            label={
-              controller.normalizeBusy
-                ? 'Memperbaiki…'
-                : 'Perbaiki tipe SEO lama'
-            }
-            onPress={() => {
-              void controller.onNormalizeSeo();
-            }}
-          />
-        ) : null}
-      </View>
-
-      {controller.notice ? (
-        <Text style={styles.noticeText}>{controller.notice}</Text>
-      ) : null}
       {controller.error ? (
         <Text style={styles.noticeText}>{controller.error}</Text>
       ) : null}
@@ -676,10 +645,13 @@ function KolamPusatAiRingkasanBody({
                 ))
               : null}
             <KolamButton
-              disabled={loading}
-              label={loading ? 'Memuat…' : 'Refresh'}
+              disabled={loading || prosesController.loading}
+              label={
+                loading || prosesController.loading ? 'Memuat…' : 'Refresh'
+              }
               onPress={() => {
                 void controller.onRefresh();
+                void prosesController.onRefresh();
               }}
               size="sm"
             />
@@ -1153,11 +1125,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     lineHeight: 18,
-  },
-  prosesActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
   },
   noticeText: {
     color: V.colors.mutedFg,
