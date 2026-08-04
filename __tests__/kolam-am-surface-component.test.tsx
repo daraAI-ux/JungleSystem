@@ -3367,9 +3367,10 @@ describe('KolamAmSurface', () => {
         'alice',
         'Top Paths',
         '/activity-log',
-        'Super Admin audit log',
+        'Activity Log',
       ]),
     );
+    expect(joinedText).not.toContain('Super Admin audit log');
     expect(joinedText).toContain('Catatan page/API request AM. Otomatis hapus setelah 90 hari.');
     expect(joinedText).toContain('Super Admin bisa hapus manual per baris terpilih atau sesuai filter.');
     expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
@@ -3574,7 +3575,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/activity-log');
 
     const joinedText = renderText(renderer!).join(' ');
-    expect(joinedText).toContain('Super Admin audit log');
+    expect(joinedText).toContain('Activity Log');
+    expect(joinedText).not.toContain('Super Admin audit log');
     expect(joinedText).toContain('/activity-log');
     expect(getAmActivityLogs).toHaveBeenCalledWith({
       page: 1,

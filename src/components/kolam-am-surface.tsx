@@ -6131,7 +6131,7 @@ function AmActivityLogPage() {
         <AmMetricCard label="Success" value={String(successCount)} meta={`${failedCount} failed`} />
       </View>
       <View style={styles.emptyPanel}>
-        <Text style={styles.panelTitle}>Super Admin audit log</Text>
+        <Text style={styles.panelTitle}>Activity Log</Text>
         <Text style={styles.panelText}>
           Catatan page/API request AM. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.
         </Text>
