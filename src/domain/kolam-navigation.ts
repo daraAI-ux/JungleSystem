@@ -1249,19 +1249,19 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/asset-purchase',
     labelSuffix: 'Create',
     route: '/asset-purchase/create',
-    description: 'Create asset purchase page from live Kolam',
+    description: 'Buat pembelian aset',
   },
   {
     baseRoute: '/asset-purchase',
     labelSuffix: 'Detail',
     route: '/asset-purchase/:id',
-    description: 'Asset purchase detail page from live Kolam',
+    description: 'Detail dan informasi pembelian aset',
   },
   {
     baseRoute: '/asset-purchase',
     labelSuffix: 'Edit',
     route: '/asset-purchase/:id/edit',
-    description: 'Edit asset purchase page from live Kolam',
+    description: 'Ubah pembelian aset',
   },
   {
     baseRoute: '/wallet',
