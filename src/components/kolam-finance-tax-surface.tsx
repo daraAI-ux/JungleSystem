@@ -80,6 +80,16 @@ export function KolamFinanceTaxSurface({
                 />
               </View>
               <View style={kolamTableToolbarStyles.actions}>
+                {onRouteChange ? (
+                  <KolamButton
+                    intent="secondary"
+                    label="Profil pajak perusahaan"
+                    onPress={() =>
+                      onRouteChange(KOLAM_FINANCE_TAX_PROFILE_ROUTE)
+                    }
+                    size="sm"
+                  />
+                ) : null}
                 <KolamButton
                   disabled={controller.loading}
                   label={controller.loading ? 'Memuat…' : 'Muat ulang'}
@@ -171,15 +181,6 @@ export function KolamFinanceTaxSurface({
               <Text style={styles.stubTitle}>{selectedTabLabel}</Text>
             </View>
           )}
-          {onRouteChange ? (
-            <KolamButton
-              intent="secondary"
-              label="Profil pajak perusahaan"
-              onPress={() => onRouteChange(KOLAM_FINANCE_TAX_PROFILE_ROUTE)}
-              size="sm"
-              style={styles.profileLink}
-            />
-          ) : null}
         </ScrollView>
       </View>
     );
@@ -330,9 +331,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
-  },
-  profileLink: {
-    alignSelf: 'flex-start',
   },
   banner: {
     alignSelf: 'stretch',
