@@ -5068,7 +5068,7 @@ function AmWebhooksPage() {
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <AmMetricCard label="Configs" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
+        <AmMetricCard label="Endpoints" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
         <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
         <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchWebhooks} />
         <KolamButton label="Test Ping" intent="outline" size="sm" onPress={testPing} />
@@ -5119,7 +5119,7 @@ function AmWebhooksPage() {
         </View>
       ) : null}
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Webhook Config</Text>
+        <Text style={styles.panelTitle}>Endpoints</Text>
         <AmLoadingOrEmpty isLoading={isLoading} items={configs} loadingText="Memuat webhook configs..." emptyText="No webhooks registered" />
         <View style={styles.cardGrid}>
           {configs.map(config => (

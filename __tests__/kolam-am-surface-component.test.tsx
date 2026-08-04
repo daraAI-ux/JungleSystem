@@ -5043,6 +5043,8 @@ describe('KolamAmSurface', () => {
     expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
     const configText = renderText(renderer!).join(' ');
+    expect(configText).toContain('Endpoints');
+    expect(configText).not.toContain('Webhook Config');
     expect(configText).toContain('Test ping dispatched to 1 active config(s)');
     expect(configText).toContain('Last delivered:');
     expect(configText).toContain('31 Jul 2026');
