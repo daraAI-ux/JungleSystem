@@ -3753,7 +3753,8 @@ describe('KolamAmSurface', () => {
     });
     expect(getAmMutasiSummary).toHaveBeenLastCalledWith(undefined);
 
-    const joinedText = renderText(renderer!).join(' ');
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
     expect(joinedText).toContain('Total Incoming');
     expect(joinedText).toContain('Total Outgoing');
     expect(joinedText).toContain('Net Balance');
@@ -3763,6 +3764,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('All devices');
     expect(joinedText).not.toContain('All Accounts');
     expect(joinedText).not.toContain('All Devices');
+    expect(text).toContain('BCA Main');
     expect(joinedText).toContain('Phone 1');
     expect(joinedText).toContain('Box Green / Rack Mutasi');
     expect(joinedText).toContain('Incoming');

@@ -4644,7 +4644,7 @@ function AmMutasiPage({
               />
             </View>
             <View style={styles.accountWideCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
+              <Text style={styles.cellText} numberOfLines={1}>{formatAccountLabel(item.accountId)}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
             </View>
             <Text style={[styles.cellText, styles.amountCol]}>{formatMutasiSignedAmount(item)}</Text>
@@ -6754,6 +6754,11 @@ function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountI
   const accountNumber = account.accountNumber || account.account_number;
   const suffix = accountNumber ? ` - ${accountNumber}` : '';
   return `${label}${suffix}`;
+}
+
+function formatAccountLabel(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
+  if (!account || typeof account === 'string') return '-';
+  return account.label || account.name || account.accountNumber || account.account_number || account.platform || account.type || 'Account';
 }
 
 function formatAccountNumber(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
