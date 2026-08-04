@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -1481,40 +1482,41 @@ function KolamEnclosureSpeciesThumbs({
       {visible.map((item, index) => {
         const photoUri = getKolamFileUrl(item.thumbnailUrl);
         const label = getEnclosureSpeciesHoverLabel(item);
+        const initial = (
+          item.speciesName ||
+          item.scientificName ||
+          '?'
+        )
+          .charAt(0)
+          .toUpperCase();
         return (
           <KolamHoverTooltip
             align="center"
-            containerStyle={styles.speciesThumbTooltip}
+            containerStyle={styles.picTooltip}
             key={`${item.speciesId}:${item.variantId}:${index}`}
             label={label}
           >
-            {photoUri ? (
-              <KolamRemoteImage
-                accessibilityLabel={label}
-                resizeMode="cover"
-                scope="enclosure-list-species"
-                sourceUri={photoUri}
-                style={styles.speciesThumb}
-              />
-            ) : (
-              <View
-                accessibilityLabel={label}
-                style={styles.speciesThumbPlaceholder}
-              >
+            <View accessibilityLabel={label} style={styles.speciesThumb}>
+              {photoUri ? (
+                <Image
+                  accessibilityIgnoresInvertColors
+                  resizeMode="cover"
+                  source={{uri: photoUri}}
+                  style={styles.speciesThumbImage}
+                />
+              ) : (
                 <Text style={styles.speciesThumbPlaceholderText}>
-                  {(item.speciesName || item.scientificName || '?')
-                    .charAt(0)
-                    .toUpperCase()}
+                  {initial}
                 </Text>
-              </View>
-            )}
+              )}
+            </View>
           </KolamHoverTooltip>
         );
       })}
       {overflow > 0 ? (
         <KolamHoverTooltip
           align="center"
-          containerStyle={styles.speciesThumbTooltip}
+          containerStyle={styles.picTooltip}
           label={overflowLabel || `+${overflow} spesies`}
         >
           <View
@@ -3331,19 +3333,9 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
     gap: 4,
     justifyContent: 'center',
-  },
-  speciesThumbTooltip: {
-    alignSelf: 'center',
+    overflow: 'visible',
   },
   speciesThumb: {
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 5,
-    borderWidth: 1,
-    height: 28,
-    width: 28,
-  },
-  speciesThumbPlaceholder: {
     alignItems: 'center',
     backgroundColor: V.colors.secondary,
     borderColor: V.colors.border,
@@ -3351,6 +3343,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 28,
     justifyContent: 'center',
+    overflow: 'hidden',
+    width: 28,
+  },
+  speciesThumbImage: {
+    height: 28,
     width: 28,
   },
   speciesThumbPlaceholderText: {
@@ -3368,6 +3365,7 @@ const styles = StyleSheet.create({
     height: 28,
     justifyContent: 'center',
     minWidth: 28,
+    overflow: 'hidden',
     paddingHorizontal: 4,
   },
   speciesThumbMoreText: {
