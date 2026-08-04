@@ -1127,7 +1127,7 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 1, limit: 20},
     });
-    let resolveCancel: (value: unknown) => void = () => undefined;
+    let resolveCancel: (value: Awaited<ReturnType<typeof cancelAmTask>>) => void = () => undefined;
     jest.mocked(cancelAmTask).mockImplementationOnce(
       () => new Promise(resolve => {
         resolveCancel = resolve;
@@ -1155,7 +1155,7 @@ describe('KolamAmSurface', () => {
     expect(cancelButton?.props.label).toBe('...');
 
     await act(async () => {
-      resolveCancel({_id: 'task-pending-action'});
+      resolveCancel({_id: 'task-pending-action'} as Awaited<ReturnType<typeof cancelAmTask>>);
       await Promise.resolve();
     });
   });
@@ -2147,7 +2147,9 @@ describe('KolamAmSurface', () => {
       ],
       meta: {total: 1, limit: 20},
     });
-    let resolveClear: (value: unknown) => void = () => undefined;
+    let resolveClear: (
+      value: Awaited<ReturnType<typeof clearAmServiceAccountSession>>
+    ) => void = () => undefined;
     jest.mocked(clearAmServiceAccountSession).mockImplementationOnce(
       () => new Promise(resolve => {
         resolveClear = resolve;
@@ -2843,7 +2845,9 @@ describe('KolamAmSurface', () => {
       findInput('myBCA username')!.props.onChangeText('bca-updated');
       findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
     });
-    let resolveUpdateServiceAccount: ((value: {_id: string}) => void) | undefined;
+    let resolveUpdateServiceAccount:
+      | ((value: Awaited<ReturnType<typeof updateAmServiceAccount>>) => void)
+      | undefined;
     jest.mocked(updateAmServiceAccount).mockImplementationOnce(() => new Promise(resolve => {
       resolveUpdateServiceAccount = resolve;
     }));
@@ -2859,7 +2863,9 @@ describe('KolamAmSurface', () => {
     expect(pendingSaveButton.props.label).toBe('Menyimpan');
 
     await act(async () => {
-      resolveUpdateServiceAccount?.({_id: 'service-1'});
+      resolveUpdateServiceAccount?.(
+        {_id: 'service-1'} as Awaited<ReturnType<typeof updateAmServiceAccount>>,
+      );
       await Promise.resolve();
     });
 
@@ -3855,7 +3861,9 @@ describe('KolamAmSurface', () => {
       data: [],
       meta: {total: 0, limit: 20},
     });
-    let resolveCreateRack: (value: unknown) => void = () => undefined;
+    let resolveCreateRack: (
+      value: Awaited<ReturnType<typeof createAmRack>>
+    ) => void = () => undefined;
     jest.mocked(createAmRack).mockImplementationOnce(
       () => new Promise(resolve => {
         resolveCreateRack = resolve;
@@ -4698,7 +4706,9 @@ describe('KolamAmSurface', () => {
       data: [],
       meta: {total: 0, limit: 100},
     });
-    let resolveCreate: (value: unknown) => void = () => undefined;
+    let resolveCreate: (
+      value: Awaited<ReturnType<typeof createAmUser>>
+    ) => void = () => undefined;
     jest.mocked(createAmUser).mockImplementationOnce(
       () => new Promise(resolve => {
         resolveCreate = resolve;
@@ -4736,7 +4746,7 @@ describe('KolamAmSurface', () => {
     expect(saveButton?.props.label).toBe('Menyimpan');
 
     await act(async () => {
-      resolveCreate({_id: 'user-new'});
+      resolveCreate({_id: 'user-new'} as Awaited<ReturnType<typeof createAmUser>>);
       await Promise.resolve();
     });
   });
@@ -5687,13 +5697,16 @@ describe('KolamAmSurface', () => {
           status: 'active',
           description: 'Existing hook',
           failCount: 0,
+          lastDeliveredAt: null,
           createdAt: '',
           updatedAt: '',
         },
       ],
       meta: {total: 1, limit: 1},
     });
-    let resolveCreate: (value: unknown) => void = () => undefined;
+    let resolveCreate: (
+      value: Awaited<ReturnType<typeof createAmWebhookConfig>>
+    ) => void = () => undefined;
     jest.mocked(createAmWebhookConfig).mockImplementationOnce(
       () => new Promise(resolve => {
         resolveCreate = resolve;
@@ -5759,9 +5772,10 @@ describe('KolamAmSurface', () => {
         status: 'active',
         description: 'New hook',
         failCount: 0,
+        lastDeliveredAt: null,
         createdAt: '',
         updatedAt: '',
-      });
+      } as Awaited<ReturnType<typeof createAmWebhookConfig>>);
       await Promise.resolve();
     });
   });

@@ -55,7 +55,6 @@ describe('unified application registry', () => {
       'mutasi',
       'users',
       'activity-log',
-      'settings-account',
     ]);
     expect(getAmSurfaceById('tasks')).toEqual(
       expect.objectContaining({
@@ -65,6 +64,7 @@ describe('unified application registry', () => {
     );
     expect(getAmSurfaceById('marketplace')).toBeNull();
     expect(getAmSurfaceById('operations')).toBeNull();
+    expect(getAmSurfaceById('settings-account')).toBeNull();
     expect(getAmSurfaceById('login')).toBeNull();
     expect(getAmSurfaceById('missing')).toBeNull();
   });

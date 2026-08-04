@@ -127,9 +127,7 @@ export function getKolamSurfaceById(
   return surfaces.find(surface => surface.id === surfaceId) ?? null;
 }
 
-export const amSurfaces: UnifiedSurface[] = AM_ROUTES.filter(
-  route => route.id !== 'login',
-).map(route => ({
+export const amSurfaces: UnifiedSurface[] = AM_ROUTES.map(route => ({
   id: route.id,
   label: route.label,
   route: route.moduleRoute,

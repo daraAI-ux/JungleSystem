@@ -1,5 +1,21 @@
-import fs from 'fs';
-import path from 'path';
+declare const require: <T = unknown>(name: string) => T;
+
+interface MinimalDirent {
+  name: string;
+  isDirectory(): boolean;
+  isFile(): boolean;
+}
+
+const fs = require<{
+  existsSync(path: string): boolean;
+  readdirSync(path: string, options: {withFileTypes: true}): MinimalDirent[];
+}>('fs');
+const path = require<{
+  dirname(path: string): string;
+  join(...paths: string[]): string;
+  relative(from: string, to: string): string;
+  sep: string;
+}>('path');
 import {
   AM_ROUTES,
   AM_ROUTE_SECTIONS,

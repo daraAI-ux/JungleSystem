@@ -513,8 +513,8 @@ describe('AM API service', () => {
     await createAmBox({rackId: 'rack-1', description: 'Box'}, 'https://am.example.test/api');
     await updateAmBox('box-1', {description: 'Box Updated', status: 'inactive'}, 'https://am.example.test/api');
     await deleteAmBoxes(['box-1'], 'https://am.example.test/api');
-    await createAmDevice({boxId: 'box-1', name: 'Phone', connectionType: 'tcp'}, 'https://am.example.test/api');
-    await updateAmDevice('device-1', {name: 'Phone 2', connectionType: 'tcp'}, 'https://am.example.test/api');
+    await createAmDevice({boxId: 'box-1', brand: 'Phone', model: 'A1', connectionType: 'tcp'}, 'https://am.example.test/api');
+    await updateAmDevice('device-1', {brand: 'Phone', model: 'A2', connectionType: 'tcp'}, 'https://am.example.test/api');
     await deleteAmDevices(['device-1'], 'https://am.example.test/api');
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://am.example.test/api/rack?page=1&limit=20', expect.objectContaining({method: 'GET'}));

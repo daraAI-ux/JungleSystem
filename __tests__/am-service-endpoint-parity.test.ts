@@ -1,5 +1,22 @@
-import fs from 'fs';
-import path from 'path';
+export {};
+
+declare const __dirname: string;
+declare const require: <T = unknown>(name: string) => T;
+
+interface MinimalDirent {
+  name: string;
+  isDirectory(): boolean;
+  isFile(): boolean;
+}
+
+const fs = require<{
+  readFileSync(path: string, encoding: 'utf8'): string;
+  readdirSync(path: string): string[];
+  readdirSync(path: string, options: {withFileTypes: true}): MinimalDirent[];
+}>('fs');
+const path = require<{
+  join(...paths: string[]): string;
+}>('path');
 
 const AM_FE_SERVICES_ROOT =
   'E:\\Projects\\da-automation-management\\am-fe\\src\\services';
