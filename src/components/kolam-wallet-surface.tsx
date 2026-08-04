@@ -306,6 +306,22 @@ function WalletInfoItem({
   );
 }
 
+function WalletToolbarPipe() {
+  return <Text style={styles.toolbarPipe}>|</Text>;
+}
+
+function renderWalletToolbarItems(
+  items: Array<React.ReactElement | null | false | undefined>,
+) {
+  const nodes = items.filter(Boolean) as React.ReactElement[];
+  return nodes.map((node, index) => (
+    <React.Fragment key={node.key ?? `toolbar-item-${index}`}>
+      {index > 0 ? <WalletToolbarPipe /> : null}
+      {node}
+    </React.Fragment>
+  ));
+}
+
 function WalletToolbarActions({
   controller,
   onRouteChange,
@@ -317,41 +333,49 @@ function WalletToolbarActions({
   onRouteChange?: (route: string) => void;
   showCreate?: boolean;
   style?: StyleProp<ViewStyle>;
-  trailing?: React.ReactNode;
+  trailing?: Array<React.ReactElement | null | false | undefined>;
 }) {
   return (
     <View style={[kolamTableToolbarStyles.actions, style]}>
-      {controller.canEdit ? (
-        <>
+      {renderWalletToolbarItems([
+        controller.canEdit ? (
           <KolamButton
+            key="drop"
             intent="secondary"
             label="Drop Dana"
             onPress={() => controller.onOpenActionModal('deposit')}
             style={styles.filterTrigger}
           />
+        ) : null,
+        controller.canEdit ? (
           <KolamButton
+            key="withdraw"
             intent="secondary"
             label="Tarik Dana"
             onPress={() => controller.onOpenActionModal('withdraw')}
             style={styles.filterTrigger}
           />
+        ) : null,
+        controller.canEdit ? (
           <KolamButton
+            key="transfer"
             intent="secondary"
             label="Transfer"
             onPress={() => controller.onOpenActionModal('transfer')}
             style={styles.filterTrigger}
           />
-        </>
-      ) : null}
-      {showCreate && controller.canCreate ? (
-        <KolamButton
-          intent="primary"
-          label="Baru"
-          onPress={() => onRouteChange?.(getKolamWalletCreateRoute())}
-          style={styles.filterTrigger}
-        />
-      ) : null}
-      {trailing}
+        ) : null,
+        showCreate && controller.canCreate ? (
+          <KolamButton
+            key="create"
+            intent="primary"
+            label="Baru"
+            onPress={() => onRouteChange?.(getKolamWalletCreateRoute())}
+            style={styles.filterTrigger}
+          />
+        ) : null,
+        ...(trailing ?? []),
+      ])}
     </View>
   );
 }
@@ -634,16 +658,17 @@ function WalletListPanel({
           <WalletToolbarActions
             controller={controller}
             onRouteChange={onRouteChange}
-            trailing={
+            trailing={[
               <KolamButton
+                key="reload-wallets"
                 intent="secondary"
                 label={controller.loadingWallets ? 'Memuat…' : 'Muat ulang'}
                 onPress={() => {
                   void controller.onRefreshWallets();
                 }}
                 style={styles.filterTrigger}
-              />
-            }
+              />,
+            ]}
           />
         </View>
         {typeOpen ? (
@@ -1309,27 +1334,27 @@ function WalletTransactionPanel({
               value={controller.txFilters.endDate}
             />
           </View>
-        </View>
-        <WalletToolbarActions
-          controller={controller}
-          onRouteChange={onRouteChange}
-          showCreate={showCreateButton && controller.mode === 'list'}
-          style={styles.txToolbarActions}
-          trailing={
-            <>
+          <WalletToolbarActions
+            controller={controller}
+            onRouteChange={onRouteChange}
+            showCreate={showCreateButton && controller.mode === 'list'}
+            trailing={[
               <KolamButton
+                key="export"
                 intent="secondary"
                 label="Ekspor"
                 onPress={() => setExportOpen(true)}
                 style={styles.filterTrigger}
-              />
+              />,
               <KolamButton
+                key="reset"
                 intent="secondary"
                 label="Reset"
                 onPress={controller.onClearTxFilters}
                 style={styles.filterTrigger}
-              />
+              />,
               <KolamButton
+                key="reload-tx"
                 intent="secondary"
                 label={
                   controller.loadingTransactions ? 'Memuat…' : 'Muat ulang'
@@ -1338,10 +1363,10 @@ function WalletTransactionPanel({
                   void controller.onRefreshTransactions();
                 }}
                 style={styles.filterTrigger}
-              />
-            </>
-          }
-        />
+              />,
+            ]}
+          />
+        </View>
 
         {typeOpen ? (
           <FilterPanel
@@ -2519,14 +2544,11 @@ const styles = StyleSheet.create({
   filterTrigger: {
     minHeight: 32,
   },
-  txToolbarActions: {
-    borderLeftWidth: 0,
-    borderTopColor: V.colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 4,
-    paddingLeft: 0,
-    paddingTop: 8,
-    width: '100%',
+  toolbarPipe: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    paddingHorizontal: 2,
   },
   filterPanel: {
     backgroundColor: V.colors.bg,
