@@ -21,6 +21,7 @@ import {KolamDaraTaxLaporanBody} from './kolam-dara-tax-laporan-body';
 import {KolamDaraTaxOperasionalBody} from './kolam-dara-tax-operasional-body';
 import {KolamDaraTaxRegulasiBody} from './kolam-dara-tax-regulasi-body';
 import {KolamDaraTaxRingkasanBody} from './kolam-dara-tax-ringkasan-body';
+import {KolamDaraTaxSetoranBody} from './kolam-dara-tax-setoran-body';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -154,6 +155,8 @@ export function KolamFinanceTaxSurface({
               period={controller.period}
               taxEnabled={controller.taxEnabled}
             />
+          ) : selectedTab === 'pelunasan' ? (
+            <KolamDaraTaxSetoranBody />
           ) : (
             <View style={styles.stubCard}>
               <Text style={styles.stubTitle}>{selectedTabLabel}</Text>

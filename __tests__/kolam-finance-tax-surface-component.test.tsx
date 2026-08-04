@@ -14,6 +14,10 @@ import {
   fetchKolamDaraTaxSptPpnMasaPreview,
   fetchKolamDaraTaxStatus,
 } from '../src/services/kolam-dara-tax-api';
+import {
+  listKolamDaraTaxSettlements,
+  listKolamDaraTaxSettlementWallets,
+} from '../src/services/kolam-dara-tax-settlement-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
@@ -57,6 +61,13 @@ jest.mock('../src/services/kolam-financial-settings-api', () => ({
   getKolamTaxCompanyProfile: jest.fn(),
 }));
 
+jest.mock('../src/services/kolam-dara-tax-settlement-api', () => ({
+  listKolamDaraTaxSettlements: jest.fn(),
+  listKolamDaraTaxSettlementWallets: jest.fn(),
+  createKolamDaraTaxSettlement: jest.fn(),
+  verifyKolamDaraTaxSettlement: jest.fn(),
+}));
+
 jest.mock('../src/lib/native-clipboard', () => ({
   copyTextToClipboard: jest.fn(async () => undefined),
 }));
@@ -96,6 +107,12 @@ const statusMock = fetchKolamDaraTaxStatus as jest.MockedFunction<
 const versionsMock = fetchKolamDaraTaxRegulationVersions as jest.MockedFunction<
   typeof fetchKolamDaraTaxRegulationVersions
 >;
+const listSettlementsMock = listKolamDaraTaxSettlements as jest.MockedFunction<
+  typeof listKolamDaraTaxSettlements
+>;
+const listWalletsMock = listKolamDaraTaxSettlementWallets as jest.MockedFunction<
+  typeof listKolamDaraTaxSettlementWallets
+>;
 
 describe('KolamFinanceTaxSurface', () => {
   beforeEach(() => {
@@ -106,6 +123,8 @@ describe('KolamFinanceTaxSurface', () => {
     webSettingMock.mockResolvedValue({
       daraTaxEnabled: true,
     } as Awaited<ReturnType<typeof getKolamWebSetting>>);
+    listSettlementsMock.mockResolvedValue([]);
+    listWalletsMock.mockResolvedValue([]);
     dashboardMock.mockResolvedValue({
       period: 'month',
       overview: {
@@ -342,6 +361,44 @@ describe('KolamFinanceTaxSurface', () => {
     expect(text).toContain('Buat draft ringkasan');
     expect(text).toContain('Ringkasan Agustus');
     expect(text).toContain('Ringkasan estimasi periode terpilih.');
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders setoran panel when tab=pelunasan', async () => {
+    listSettlementsMock.mockResolvedValue([
+      {
+        id: 's1',
+        code: 'TAX-01',
+        taxType: 'ppn',
+        title: 'Setoran PPN Mei',
+        amount: 110000,
+        periodKey: '2026-05',
+        note: '',
+        status: 'unverified',
+        executedAt: '2026-08-01T00:00:00.000Z',
+      },
+    ]);
+    listWalletsMock.mockResolvedValue([{id: 'w1', name: 'Kas'}]);
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamFinanceTaxSurface route="/finance/tax?tab=pelunasan" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Setoran baru');
+    expect(text).toContain('Catat setoran DJP');
+    expect(text).toContain('Setoran PPN Mei');
+    expect(text).toContain('Verifikasi');
+    expect(listSettlementsMock).toHaveBeenCalled();
+    expect(listWalletsMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
