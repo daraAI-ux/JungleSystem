@@ -1427,7 +1427,7 @@ function AmServicesPage() {
     try {
       setServiceInputSending(true);
       setDetailError(null);
-      await sendAmDeviceServiceInput(device._id, inputType, value);
+      await sendAmDeviceServiceInput(device._id, 'otp', value);
       setServiceInputValue('');
       setActionMessage(`${inputType === 'password' ? 'Password' : 'OTP'} dikirim ke ${account.label}.`);
       await loadServiceLogs(account);
