@@ -6,7 +6,7 @@ import {KolamDaraMarketBulkPricingBody} from './kolam-dara-market-bulk-pricing-b
 import {KolamDaraMarketPlatformFeeBody} from './kolam-dara-market-platform-fee-body';
 import {KolamEmptyState} from './kolam-empty-state';
 
-/** FE `DaraMarketPeralatanPage` — platform fee + bulk pricing. */
+/** FE `DaraMarketPeralatanPage` — single page scroll: platform fee then bulk. */
 export function KolamDaraMarketIntelPeralatanBody({
   bulkPricingController,
   canDraft,
@@ -28,35 +28,25 @@ export function KolamDaraMarketIntelPeralatanBody({
   }
 
   return (
-    <View style={styles.root}>
-      <View style={styles.fee}>
-        <KolamDaraMarketPlatformFeeBody controller={platformFeeController} />
-      </View>
-      <ScrollView
-        contentContainerStyle={styles.bulkContent}
-        style={styles.bulk}>
-        <KolamDaraMarketBulkPricingBody controller={bulkPricingController} />
-      </ScrollView>
-    </View>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      style={styles.scroll}>
+      <KolamDaraMarketPlatformFeeBody controller={platformFeeController} />
+      <KolamDaraMarketBulkPricingBody controller={bulkPricingController} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    gap: 12,
-    minHeight: 0,
   },
-  fee: {
+  scroll: {
     flex: 1,
-    minHeight: 0,
   },
-  bulk: {
-    flexGrow: 0,
-    flexShrink: 1,
-    maxHeight: '48%',
-  },
-  bulkContent: {
-    paddingBottom: 8,
+  /** FE `space-y-8` between platform-fee and bulk panels. */
+  scrollContent: {
+    gap: 32,
+    paddingBottom: 24,
   },
 });

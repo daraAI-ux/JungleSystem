@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -43,7 +42,8 @@ export function KolamDaraMarketPlatformFeeBody({
           <Text style={styles.heroTitle}>Monitor Biaya Platform</Text>
           <Text style={styles.meta}>
             Pantau URL kebijakan fee Shopee/Tokopedia. Isi profil toko, approve
-            draft mapping, lalu lihat Kalkulasi untuk rincian per komponen.
+            draft mapping, lalu lihat Kalkulasi untuk rincian per komponen
+            (bukan estimasi % gabungan).
           </Text>
           {controller.summary &&
           controller.summary.pendingSnapshotCount > 0 ? (
@@ -52,16 +52,18 @@ export function KolamDaraMarketPlatformFeeBody({
             </Text>
           ) : null}
         </View>
-        <KolamSurfacePanelTabs
-          onSelectTab={tabId =>
-            controller.onSetPanelTab(tabId as 'monitor' | 'kalkulasi')
-          }
-          selectedTabId={controller.panelTab}
-          tabs={[
-            {id: 'monitor', label: 'Monitor'},
-            {id: 'kalkulasi', label: 'Kalkulasi'},
-          ]}
-        />
+        <View style={styles.heroTabs}>
+          <KolamSurfacePanelTabs
+            onSelectTab={tabId =>
+              controller.onSetPanelTab(tabId as 'monitor' | 'kalkulasi')
+            }
+            selectedTabId={controller.panelTab}
+            tabs={[
+              {id: 'monitor', label: 'Monitor'},
+              {id: 'kalkulasi', label: 'Kalkulasi'},
+            ]}
+          />
+        </View>
       </View>
 
       {controller.notice ? (
@@ -101,9 +103,7 @@ function MonitorTab({
   meta: KolamDaraMarketPlatformFeeMeta;
 }) {
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      style={styles.scroll}>
+    <View style={styles.tabBody}>
       <View style={styles.profileGrid}>
         {controller.profiles.map(profile => (
           <ProfileFormCard
@@ -232,7 +232,7 @@ function MonitorTab({
           ))}
         </View>
       ) : null}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -358,9 +358,7 @@ function KalkulasiTab({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      style={styles.scroll}>
+    <View style={styles.tabBody}>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Contoh harga jual</Text>
         <Text style={styles.meta}>
@@ -465,7 +463,7 @@ function KalkulasiTab({
           ) : null}
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -519,19 +517,28 @@ function LabeledInput({
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
+    flexGrow: 0,
     gap: 12,
   },
   hero: {
+    alignItems: 'flex-start',
     backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
     padding: 12,
   },
   heroText: {
+    flex: 1,
     gap: 4,
+    minWidth: 200,
+  },
+  heroTabs: {
+    flexShrink: 0,
   },
   heroTitle: {
     color: V.colors.fg,
@@ -539,12 +546,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
+  tabBody: {
     gap: 12,
-    paddingBottom: 24,
   },
   profileGrid: {
     gap: 12,

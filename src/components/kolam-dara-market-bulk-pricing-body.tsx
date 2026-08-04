@@ -16,6 +16,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraPricingEquipmentController} from '../hooks/use-kolam-dara-pricing-equipment-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDropdownSelect} from './kolam-dropdown-select';
 
 /** FE `DaraMarketBulkPricingToolsPanel`. */
 export function KolamDaraMarketBulkPricingBody({
@@ -41,7 +42,8 @@ export function KolamDaraMarketBulkPricingBody({
         <Text style={styles.heroTitle}>DARA Peralatan — Bulk Harga</Text>
         <Text style={styles.meta}>
           Empat operasi bulk: hitung dari vendor pembelian terakhir (PO), markup
-          per item, lalu push harga DB ke Tokopedia atau Shopee.
+          per item, lalu push harga DB ke Tokopedia atau Shopee. Hanya
+          admin/owner.
         </Text>
       </View>
 
@@ -51,48 +53,49 @@ export function KolamDaraMarketBulkPricingBody({
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Markup default (per item)</Text>
-        <Text style={styles.fieldLabel}>Tipe</Text>
-        <View style={styles.chipRow}>
-          {(
-            [
-              {value: 'percent', label: 'Persen (%)'},
-              {value: 'fixed', label: 'Nominal (Rp)'},
-            ] as Array<{value: KolamDaraPricingMarkupType; label: string}>
-          ).map(opt => (
-            <Pressable
-              key={opt.value}
-              onPress={() => controller.onSetMarkupType(opt.value)}
-              style={[
-                styles.chip,
-                controller.markupType === opt.value ? styles.chipOn : null,
-              ]}>
-              <Text style={styles.chipText}>{opt.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={styles.fieldLabel}>{markupLabel}</Text>
-        <TextInput
-          keyboardType="numeric"
-          onChangeText={controller.onSetMarkupValue}
-          placeholderTextColor={V.colors.mutedFg}
-          style={styles.input}
-          value={controller.markupValue}
-        />
-        <View style={styles.checkRowWrap}>
-          <CheckRow
-            checked={controller.includeProducts}
-            label="Produk"
-            onPress={() =>
-              controller.onSetIncludeProducts(!controller.includeProducts)
-            }
-          />
-          <CheckRow
-            checked={controller.includeSpecies}
-            label="Species"
-            onPress={() =>
-              controller.onSetIncludeSpecies(!controller.includeSpecies)
-            }
-          />
+        <View style={styles.markupRow}>
+          <View style={styles.markupField}>
+            <Text style={styles.fieldLabel}>Tipe</Text>
+            <KolamDropdownSelect
+              label="Tipe"
+              onChange={value =>
+                controller.onSetMarkupType(value as KolamDaraPricingMarkupType)
+              }
+              options={[
+                {label: 'Persen (%)', value: 'percent'},
+                {label: 'Nominal (Rp)', value: 'fixed'},
+              ]}
+              showLabelInTrigger={false}
+              style={styles.markupSelect}
+              value={controller.markupType}
+            />
+          </View>
+          <View style={styles.markupField}>
+            <Text style={styles.fieldLabel}>{markupLabel}</Text>
+            <TextInput
+              keyboardType="numeric"
+              onChangeText={controller.onSetMarkupValue}
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.input}
+              value={controller.markupValue}
+            />
+          </View>
+          <View style={styles.checkRowWrap}>
+            <CheckRow
+              checked={controller.includeProducts}
+              label="Produk"
+              onPress={() =>
+                controller.onSetIncludeProducts(!controller.includeProducts)
+              }
+            />
+            <CheckRow
+              checked={controller.includeSpecies}
+              label="Species"
+              onPress={() =>
+                controller.onSetIncludeSpecies(!controller.includeSpecies)
+              }
+            />
+          </View>
         </View>
       </View>
 
@@ -120,25 +123,21 @@ export function KolamDaraMarketBulkPricingBody({
               </Text>
             </View>
             <Text style={styles.fieldLabel}>Mode operasi B</Text>
-            <View style={styles.modeList}>
-              {KOLAM_DARA_PRICING_MARKETPLACE_MODE_OPTIONS.map(opt => (
-                <Pressable
-                  key={opt.value}
-                  onPress={() =>
-                    controller.onSetMarketplaceMode(
-                      opt.value as KolamDaraPricingMarketplaceMode,
-                    )
-                  }
-                  style={[
-                    styles.modeChip,
-                    controller.marketplaceMode === opt.value
-                      ? styles.chipOn
-                      : null,
-                  ]}>
-                  <Text style={styles.chipText}>{opt.label}</Text>
-                </Pressable>
-              ))}
-            </View>
+            <KolamDropdownSelect
+              label="Mode"
+              onChange={value =>
+                controller.onSetMarketplaceMode(
+                  value as KolamDaraPricingMarketplaceMode,
+                )
+              }
+              options={KOLAM_DARA_PRICING_MARKETPLACE_MODE_OPTIONS.map(opt => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
+              showLabelInTrigger={false}
+              style={styles.modeSelect}
+              value={controller.marketplaceMode}
+            />
             {marketplaceMeta ? (
               <Text style={styles.meta}>{marketplaceMeta.hint}</Text>
             ) : null}
@@ -374,7 +373,7 @@ function CheckRow({
 
 const styles = StyleSheet.create({
   root: {
-    gap: 10,
+    gap: 16,
   },
   hero: {
     backgroundColor: V.colors.muted,
@@ -387,8 +386,8 @@ const styles = StyleSheet.create({
   heroTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
   },
   card: {
     backgroundColor: V.colors.bg,
@@ -427,39 +426,22 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  chipRow: {
+  markupRow: {
+    alignItems: 'flex-end',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 12,
   },
-  chip: {
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  markupField: {
+    gap: 4,
+    minWidth: 128,
   },
-  chipOn: {
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.primary,
+  markupSelect: {
+    minWidth: 140,
   },
-  chipText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modeList: {
-    gap: 6,
-  },
-  modeChip: {
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  modeSelect: {
+    maxWidth: 420,
+    width: '100%',
   },
   input: {
     backgroundColor: V.colors.bg,
@@ -470,13 +452,16 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     maxWidth: 140,
+    minWidth: 112,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   checkRowWrap: {
+    alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    paddingBottom: 6,
   },
   checkRow: {
     alignItems: 'center',
