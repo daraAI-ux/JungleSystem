@@ -72,8 +72,6 @@ describe('kolamNavigationSections', () => {
         '/sales/discount-approval',
         '/vouchers',
         '/shipping-method',
-        '/custom-project',
-        '/custom-project/instances/new',
         '/terms-templates',
         '/proyek',
         '/appointments',
@@ -163,8 +161,63 @@ describe('kolamNavigationSections', () => {
     expect(kolamRoutes).toContain('/sales/discount-approval');
     expect(kolamRoutes).toContain('/vouchers');
     expect(kolamRoutes).toContain('/shipping-method');
-    expect(kolamRoutes).toContain('/custom-project/instances/new');
+    expect(kolamRoutes).not.toContain('/custom-project');
+    expect(kolamRoutes).not.toContain('/custom-project/instances/new');
     expect(kolamRoutes).toContain('/terms-templates');
+    expect(kolamRoutes).toContain('/proyek');
+    expect(getKolamNavigationItemByRoute('/terms-templates')).toEqual(
+      expect.objectContaining({
+        label: 'Syarat & Ketentuan',
+        route: '/terms-templates',
+        group: 'Penjualan',
+      }),
+    );
+    expect(getKolamNavigationItemByRoute('/custom-project')).toBeNull();
+    expect(
+      kolamSidebarNavigationSections
+        .flatMap(section => section.items)
+        .map(item => item.route),
+    ).not.toContain('/custom-project');
+    expect(
+      kolamSidebarNavigationSections
+        .flatMap(section => section.items)
+        .some(
+          item =>
+            /custom project/i.test(item.label) ||
+            /custom project/i.test(item.group ?? ''),
+        ),
+    ).toBe(false);
+    expect(
+      kolamSidebarNavigationSections
+        .find(section => section.id === 'sales')
+        ?.items.find(item => item.route === '/terms-templates'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Syarat & Ketentuan',
+        group: 'Penjualan',
+      }),
+    );
+    expect(
+      kolamSidebarNavigationSections
+        .find(section => section.id === 'sales')
+        ?.items.find(item => item.route === '/layanan'),
+    ).toEqual(
+      expect.objectContaining({
+        label: 'Layanan',
+        group: 'Penjualan',
+        route: '/layanan',
+      }),
+    );
+    const sidebarPenjualanRoutes = kolamSidebarNavigationSections
+      .find(section => section.id === 'sales')!
+      .items.filter(item => item.group === 'Penjualan')
+      .map(item => item.route);
+    expect(sidebarPenjualanRoutes.indexOf('/layanan')).toBeGreaterThan(
+      sidebarPenjualanRoutes.indexOf('/complaints'),
+    );
+    expect(sidebarPenjualanRoutes.indexOf('/layanan')).toBeLessThan(
+      sidebarPenjualanRoutes.indexOf('/terms-templates'),
+    );
     expect(kolamRoutes).toContain('/asset-purchase');
     expect(kolamRoutes).toContain('/commissions');
     expect(kolamRoutes).toContain('/routine-expenses');
@@ -349,7 +402,7 @@ describe('kolamNavigationSections', () => {
   it('indexes live create detail and edit route variants for native command search', () => {
     const variants = getKolamNavigationRouteVariants();
 
-    expect(variants).toHaveLength(165);
+    expect(variants).toHaveLength(163);
     expect(variants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

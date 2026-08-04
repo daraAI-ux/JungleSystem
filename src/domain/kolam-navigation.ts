@@ -769,12 +769,13 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/sales', { group: 'Penjualan', label: 'Penjualan' }),
       sidebarItem('/source', { group: 'Penjualan', label: 'Sumber' }),
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
+      // FE sales section: Layanan sits with Sales cluster (RNW = Penjualan group).
+      sidebarItem('/layanan', { group: 'Penjualan', label: 'Layanan' }),
       sidebarItem('/terms-templates', {
         group: 'Penjualan',
         label: 'Syarat & Ketentuan',
       }),
       sidebarItem('/proyek', { group: 'Penjualan', label: 'Proyek' }),
-      sidebarItem('/layanan', { group: undefined, label: 'Layanan' }),
       sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
       sidebarItem('/sales/discount-approval', {
         group: 'Kampanye',
