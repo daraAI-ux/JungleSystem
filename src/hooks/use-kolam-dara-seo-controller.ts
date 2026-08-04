@@ -7,7 +7,6 @@ import {
   type KolamDaraSeoPendingSuggestion,
 } from '../domain/kolam-dara-seo';
 import {sanitizeApiErrorMessage} from '../lib/api-error';
-import {startKolamDaraJob} from '../services/kolam-dara-jobs-api';
 import {
   fetchKolamDaraSeoActiveBrands,
   fetchKolamDaraSeoDashboard,
@@ -23,18 +22,11 @@ export interface KolamDaraSeoController {
   dashboard: KolamDaraSeoDashboard | null;
   dataSource: KolamDaraSeoDataSource;
   error: string | null;
-  jobBusyType: string | null;
   loading: boolean;
-  notice: string | null;
   pending: KolamDaraSeoPendingSuggestion[];
   seoEnabled: boolean;
   onRefresh: () => Promise<void>;
   onSetBrandId: (brandId: string) => void;
-  onStartSeoJob: (
-    jobType: string,
-    params?: Record<string, unknown>,
-    label?: string,
-  ) => Promise<void>;
 }
 
 export function useKolamDaraSeoController(route: string): KolamDaraSeoController {
@@ -47,8 +39,6 @@ export function useKolamDaraSeoController(route: string): KolamDaraSeoController
   const [seoEnabled, setSeoEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [jobBusyType, setJobBusyType] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<KolamDaraSeoDataSource>('idle');
 
   const onRefresh = useCallback(async () => {
@@ -104,46 +94,17 @@ export function useKolamDaraSeoController(route: string): KolamDaraSeoController
     void onRefresh();
   }, [enabled, onRefresh]);
 
-  const onStartSeoJob = useCallback(
-    async (
-      jobType: string,
-      params?: Record<string, unknown>,
-      label?: string,
-    ) => {
-      setJobBusyType(jobType);
-      setNotice(null);
-      try {
-        await startKolamDaraJob({
-          module: 'seo',
-          jobType,
-          params,
-          label,
-        });
-        // FE/plugin: startJob only — no immediate dashboard reload while BE runs the job.
-        setNotice(`Job dimulai: ${label || jobType}`);
-      } catch (err) {
-        setNotice(getControllerErrorMessage(err, 'Gagal memulai job SEO'));
-      } finally {
-        setJobBusyType(null);
-      }
-    },
-    [],
-  );
-
   return {
     brandId,
     brands,
     dashboard,
     dataSource,
     error,
-    jobBusyType,
     loading,
-    notice,
     pending,
     seoEnabled,
     onRefresh,
     onSetBrandId: setBrandId,
-    onStartSeoJob,
   };
 }
 

@@ -10,7 +10,7 @@ import {
   fetchKolamDaraSeoSuggestion,
   fetchKolamDaraSeoSuggestions,
 } from '../src/services/kolam-dara-seo-api';
-import {startKolamDaraJob} from '../src/services/kolam-dara-jobs-api';
+import {startKolamDaraJob, fetchKolamDaraJobsList, fetchKolamDaraJob} from '../src/services/kolam-dara-jobs-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
@@ -34,6 +34,8 @@ jest.mock('../src/services/kolam-dara-seo-api', () => ({
 
 jest.mock('../src/services/kolam-dara-jobs-api', () => ({
   startKolamDaraJob: jest.fn(),
+  fetchKolamDaraJobsList: jest.fn(),
+  fetchKolamDaraJob: jest.fn(),
 }));
 
 const authMock = useKolamAuthContext as jest.MockedFunction<
@@ -57,6 +59,9 @@ const suggestionsMock = fetchKolamDaraSeoSuggestions as jest.MockedFunction<
 const suggestionMock = fetchKolamDaraSeoSuggestion as jest.MockedFunction<
   typeof fetchKolamDaraSeoSuggestion
 >;
+const jobsListMock = fetchKolamDaraJobsList as jest.MockedFunction<
+  typeof fetchKolamDaraJobsList
+>;
 
 describe('KolamDaraSeoSurface', () => {
   beforeEach(() => {
@@ -66,6 +71,7 @@ describe('KolamDaraSeoSurface', () => {
     } as ReturnType<typeof useKolamAuthContext>);
     statusMock.mockResolvedValue({seoEnabled: true});
     brandsMock.mockResolvedValue({brands: [], defaultBrandId: 'all'});
+    jobsListMock.mockResolvedValue([]);
     dashMock.mockResolvedValue({
       seoScore: 70,
       searchVisibility: 50,
@@ -152,7 +158,48 @@ describe('KolamDaraSeoSurface', () => {
     expect(text).toContain('Filter');
     expect(statusMock).toHaveBeenCalled();
     expect(dashMock).toHaveBeenCalled();
+    expect(jobsListMock).toHaveBeenCalledWith({module: 'seo', hours: 48});
     expect(startKolamDaraJob).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('shows SEO job progress strip for queued/running bulk jobs', async () => {
+    jobsListMock.mockResolvedValue([
+      {
+        id: 'job-bulk-1',
+        module: 'seo',
+        jobType: 'seo.bulk_products',
+        status: 'running',
+        label: 'Audit bulk produk',
+        progressCurrent: 4,
+        progressTotal: 30,
+        progressMessage: 'Produk 4/30',
+        error: '',
+        createdAt: '2026-08-04T00:00:00.000Z',
+        finishedAt: '',
+      },
+    ]);
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Audit bulk produk');
+    expect(text).toContain('Berjalan');
+    expect(text).toContain('4/30');
+    expect(text).toContain('13%');
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
   });
 
   it('renders approvals list and opens detail', async () => {
@@ -186,6 +233,9 @@ describe('KolamDaraSeoSurface', () => {
     expect(suggestionMock).toHaveBeenCalledWith('s1');
     expect(text).toContain('Approve & terapkan');
     expect(text).toContain('Meta title');
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
   });
 
   it('shows module placeholder on later SEO tabs', async () => {
@@ -201,5 +251,8 @@ describe('KolamDaraSeoSurface', () => {
     expect(text).toContain('Belum tersedia');
     expect(dashMock).not.toHaveBeenCalled();
     expect(suggestionsMock).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
   });
 });

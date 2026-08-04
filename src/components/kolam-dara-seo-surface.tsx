@@ -17,12 +17,21 @@ import {
   resolveKolamDaraSeoAccess,
   type KolamDaraSeoTabId,
 } from '../domain/kolam-dara-seo';
+import {
+  formatKolamDaraJobProgressLabel,
+  getKolamDaraJobProgressPercent,
+  type KolamDaraAsyncJob,
+} from '../domain/kolam-pusat-ai-jobs';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {
   useKolamDaraSeoController,
   type KolamDaraSeoController,
 } from '../hooks/use-kolam-dara-seo-controller';
+import {
+  useKolamDaraSeoJobsProgress,
+  type KolamDaraSeoJobsProgressController,
+} from '../hooks/use-kolam-dara-seo-jobs-progress';
 import {KolamButton} from './kolam-button';
 import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -46,6 +55,7 @@ export function KolamDaraSeoSurface({
   });
   const controller = useKolamDaraSeoController(route);
   const approvalsController = useKolamDaraSeoApprovalsController(route);
+  const jobsProgress = useKolamDaraSeoJobsProgress(route);
 
   return (
     <View style={styles.surface}>
@@ -66,10 +76,19 @@ export function KolamDaraSeoSurface({
         />
       </View>
 
+      <KolamDaraSeoJobsProgressStrip
+        jobs={jobsProgress.activeJobs}
+        onOpenJobs={() => onRouteChange?.(KOLAM_DARA_SEO_JOBS_HREF)}
+      />
+      {jobsProgress.notice ? (
+        <Text style={styles.notice}>{jobsProgress.notice}</Text>
+      ) : null}
+
       {selectedTab === 'dashboard' ? (
         <KolamDaraSeoDashboardBody
           canDraft={access.canDraft}
           controller={controller}
+          jobsProgress={jobsProgress}
           onRouteChange={onRouteChange}
         />
       ) : selectedTab === 'approvals' ? (
@@ -86,17 +105,78 @@ export function KolamDaraSeoSurface({
   );
 }
 
+function KolamDaraSeoJobsProgressStrip({
+  jobs,
+  onOpenJobs,
+}: {
+  jobs: KolamDaraAsyncJob[];
+  onOpenJobs?: () => void;
+}) {
+  if (!jobs.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.jobsStrip}>
+      {jobs.map(job => {
+        const percent = getKolamDaraJobProgressPercent(job);
+        return (
+          <Pressable
+            accessibilityRole="button"
+            key={job.id}
+            onPress={onOpenJobs}
+            style={styles.jobPanel}>
+            <View style={styles.jobHead}>
+              <View style={styles.jobHeadText}>
+                <Text style={styles.jobTitle}>{job.label}</Text>
+                <Text style={styles.jobMeta}>
+                  {formatSeoJobStatusLabel(job.status)}
+                  {job.progressMessage ? ` · ${job.progressMessage}` : ''}
+                  {job.progressTotal > 0
+                    ? ` · ${formatKolamDaraJobProgressLabel(job)}`
+                    : ''}
+                </Text>
+              </View>
+              <Text style={styles.jobPct}>{`${percent}%`}</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, {width: `${percent}%`}]} />
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function formatSeoJobStatusLabel(status: string) {
+  if (status === 'queued') {
+    return 'Antrian';
+  }
+  if (status === 'running') {
+    return 'Berjalan';
+  }
+  if (status === 'completed') {
+    return 'Selesai';
+  }
+  if (status === 'failed') {
+    return 'Gagal';
+  }
+  return status;
+}
+
 function KolamDaraSeoDashboardBody({
   controller,
   canDraft,
+  jobsProgress,
   onRouteChange,
 }: {
   controller: KolamDaraSeoController;
   canDraft: boolean;
+  jobsProgress: KolamDaraSeoJobsProgressController;
   onRouteChange?: (route: string) => void;
 }) {
-  const {dashboard, pending, loading, error, notice, brandId, brands} =
-    controller;
+  const {dashboard, pending, loading, error, brandId, brands} = controller;
   const toolbarRef = useRef<View>(null);
   const brandTriggerRef = useRef<View>(null);
   const [brandPanelOpen, setBrandPanelOpen] = useState(false);
@@ -221,14 +301,14 @@ function KolamDaraSeoDashboardBody({
               {canDraft ? (
                 <>
                   <KolamButton
-                    disabled={controller.jobBusyType === 'seo.bulk_products'}
+                    disabled={jobsProgress.isRunning('seo.bulk_products')}
                     label={
-                      controller.jobBusyType === 'seo.bulk_products'
+                      jobsProgress.isRunning('seo.bulk_products')
                         ? 'Audit produk…'
                         : 'Audit 30 produk'
                     }
                     onPress={() => {
-                      void controller.onStartSeoJob(
+                      void jobsProgress.onStartSeoJob(
                         'seo.bulk_products',
                         {limit: 30, generateDraft: true},
                         'Audit bulk produk',
@@ -236,14 +316,14 @@ function KolamDaraSeoDashboardBody({
                     }}
                   />
                   <KolamButton
-                    disabled={controller.jobBusyType === 'seo.bulk_blogs'}
+                    disabled={jobsProgress.isRunning('seo.bulk_blogs')}
                     label={
-                      controller.jobBusyType === 'seo.bulk_blogs'
+                      jobsProgress.isRunning('seo.bulk_blogs')
                         ? 'Audit blog…'
                         : 'Audit 30 blog'
                     }
                     onPress={() => {
-                      void controller.onStartSeoJob(
+                      void jobsProgress.onStartSeoJob(
                         'seo.bulk_blogs',
                         {limit: 30, generateDraft: true},
                         'Audit bulk blog',
@@ -251,14 +331,14 @@ function KolamDaraSeoDashboardBody({
                     }}
                   />
                   <KolamButton
-                    disabled={controller.jobBusyType === 'seo.bulk_species'}
+                    disabled={jobsProgress.isRunning('seo.bulk_species')}
                     label={
-                      controller.jobBusyType === 'seo.bulk_species'
+                      jobsProgress.isRunning('seo.bulk_species')
                         ? 'Audit livestock…'
                         : 'Audit 30 livestock'
                     }
                     onPress={() => {
-                      void controller.onStartSeoJob(
+                      void jobsProgress.onStartSeoJob(
                         'seo.bulk_species',
                         {limit: 30, generateDraft: true},
                         'Audit bulk livestock',
@@ -266,14 +346,14 @@ function KolamDaraSeoDashboardBody({
                     }}
                   />
                   <KolamButton
-                    disabled={controller.jobBusyType === 'seo.serp_monitor'}
+                    disabled={jobsProgress.isRunning('seo.serp_monitor')}
                     label={
-                      controller.jobBusyType === 'seo.serp_monitor'
+                      jobsProgress.isRunning('seo.serp_monitor')
                         ? 'Monitor…'
                         : 'Run SERP monitor'
                     }
                     onPress={() => {
-                      void controller.onStartSeoJob(
+                      void jobsProgress.onStartSeoJob(
                         'seo.serp_monitor',
                         {},
                         'SERP monitor',
@@ -340,7 +420,6 @@ function KolamDaraSeoDashboardBody({
         ) : null}
       </View>
 
-      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {error && dashboard ? <Text style={styles.warnText}>{error}</Text> : null}
       {!controller.seoEnabled ? (
         <Text style={styles.warnText}>DARA SEO dimatikan di pengaturan.</Text>
@@ -432,6 +511,56 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexShrink: 0,
+  },
+  jobsStrip: {
+    gap: 8,
+  },
+  jobPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  jobHead: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  jobHeadText: {
+    flex: 1,
+    gap: 2,
+  },
+  jobTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  jobMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  jobPct: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  progressTrack: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 999,
+    height: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    backgroundColor: V.colors.primary,
+    borderRadius: 999,
+    height: 8,
   },
   scroll: {
     flex: 1,
