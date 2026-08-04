@@ -417,6 +417,86 @@ describe('KolamAppShellSurface', () => {
     );
   });
 
+  it('keeps AM route paths inside the centered app wrapper', async () => {
+    const visual = getDashboardLayoutVisualContract();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAppShellSurface
+          sidebar={{
+            accessScope: { am: true, kolam: true, pos: true },
+            activeModule: 'settings',
+            activeRoute: '/am/mutasi',
+            collapsed: false,
+            expandedSections: {},
+            filterMenuByAccess: false,
+            onMoveMenuSection: () => undefined,
+            onQuickSearch: () => undefined,
+            onSelectMenuItem: () => undefined,
+            onSelectModule: () => undefined,
+            onToggleMenuSection: () => undefined,
+            sectionOrder: [],
+          }}
+          topNavigation={{
+            attentionCount: 0,
+            breadcrumbItems: getTopNavBreadcrumbItems('am'),
+            displayInitials: 'DA',
+            rightControls: getTopNavRightControls(),
+            onAvatarPress: () => undefined,
+            onBreadcrumbDashboardPress: () => undefined,
+            onNotificationPress: () => undefined,
+            onToggleSidebar: () => undefined,
+          }}
+          overlay={{
+            isAttentionOpen: false,
+            isCommandPaletteOpen: false,
+            isUserMenuOpen: false,
+            userMenu: {
+              items: [],
+              displayName: 'Dunia Anura',
+              initials: 'DA',
+              email: 'seed@kolam.local',
+              accessScope: { am: true, kolam: true, pos: true },
+              onClose: () => undefined,
+              onSelect: () => undefined,
+            },
+            attention: {
+              items: [],
+              unreadCount: 0,
+              onClose: () => undefined,
+              onSeeAll: () => undefined,
+            },
+            commandPalette: {
+              commands: [],
+              search: '',
+              onSearchChange: () => undefined,
+              onClose: () => undefined,
+              onSelect: () => undefined,
+            },
+          }}
+          dashboardHeader={{
+            actions: getDashboardHeaderActions(),
+            title: 'AM',
+            subtitle: 'AM',
+            syncIndicator: seedHeaderSyncIndicator,
+            onSelectModule: () => undefined,
+          }}
+        >
+          <Text>AM route child</Text>
+        </KolamAppShellSurface>,
+      );
+    });
+
+    expect(getMainContentStyle(renderer!)).toEqual(
+      expect.objectContaining({
+        maxWidth: visual.page.maxWidthPx,
+        alignSelf: 'center',
+        paddingHorizontal: visual.page.paddingX,
+      }),
+    );
+  });
+
   it('disables shell ScrollView on catalog table list routes so FlatList owns scroll', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

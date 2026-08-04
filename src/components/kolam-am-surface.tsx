@@ -7019,12 +7019,15 @@ function titleCase(value: string) {
 
 const styles = StyleSheet.create({
   pageContent: {
+    flex: 1,
+    flexGrow: 1,
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
     overflow: 'hidden',
   },
   pageStack: {
+    flexGrow: 1,
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
@@ -7112,10 +7115,10 @@ const styles = StyleSheet.create({
   dashboardRecentPanel: {
     width: '100%',
     alignSelf: 'stretch',
-    flexBasis: 420,
+    flexBasis: 0,
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 320,
+    minWidth: 0,
     maxWidth: '100%',
     overflow: 'hidden',
     gap: 12,
@@ -7137,6 +7140,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: '100%',
     minWidth: 0,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -7148,15 +7152,17 @@ const styles = StyleSheet.create({
   },
   recentListMain: {
     flex: 1,
+    flexBasis: 0,
     minWidth: 0,
     maxWidth: '100%',
     overflow: 'hidden',
   },
   recentListMeta: {
-    flexBasis: 132,
-    flexShrink: 1,
+    flexBasis: 118,
+    flexGrow: 0,
+    flexShrink: 0,
     minWidth: 0,
-    maxWidth: '42%',
+    maxWidth: 118,
     alignSelf: 'stretch',
     alignItems: 'flex-end',
     gap: 4,
@@ -7241,6 +7247,8 @@ const styles = StyleSheet.create({
   },
   deviceRow: {
     width: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -7447,6 +7455,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -7482,6 +7491,8 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     width: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
@@ -7582,6 +7593,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   detailListHeader: {
+    width: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

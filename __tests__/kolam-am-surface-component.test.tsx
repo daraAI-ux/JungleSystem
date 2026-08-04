@@ -478,7 +478,10 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 420 && style?.borderWidth === 1;
+        return style?.flexBasis === 0 &&
+          style?.borderWidth === 1 &&
+          style?.maxWidth === '100%' &&
+          style?.overflow === 'hidden';
       });
     expect(amRecentPanels.length).toBeGreaterThanOrEqual(2);
     expect(amRecentPanels.every(view => {
@@ -486,7 +489,9 @@ describe('KolamAmSurface', () => {
       return style?.alignSelf === 'stretch' &&
         style?.flexGrow === 1 &&
         style?.flexShrink === 1 &&
-        style?.minWidth === 320;
+        style?.minWidth === 0 &&
+        style?.maxWidth === '100%' &&
+        style?.overflow === 'hidden';
     })).toBe(true);
     const dashboardPanelStack = renderer!.root
       .findAllByType(View)
@@ -512,15 +517,15 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 132 &&
-          style?.maxWidth === '42%' &&
+        return style?.flexBasis === 118 &&
+          style?.maxWidth === 118 &&
           style?.alignItems === 'flex-end';
       });
     expect(recentMetaColumns.length).toBeGreaterThan(0);
     expect(recentMetaColumns.every(view => {
       const style = StyleSheet.flatten(view.props.style);
       return style?.minWidth === 0 &&
-        style?.flexShrink === 1 &&
+        style?.flexShrink === 0 &&
         style?.overflow === 'hidden';
     })).toBe(true);
     const recentAmountTexts = renderer!.root

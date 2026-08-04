@@ -133,6 +133,7 @@ export function isCatalogTableListRoute(route?: string | null) {
 const KOLAM_CENTERED_EXACT_ROUTES = ['/list-of-users'];
 
 const KOLAM_CENTERED_ROUTE_PREFIXES = [
+  '/am',
   '/pengaturan',
   '/label-dan-field',
   '/merek',
