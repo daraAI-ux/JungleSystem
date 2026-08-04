@@ -147,7 +147,6 @@ function WalletListMode({
   return (
     <View style={styles.listRoot}>
       <WalletSummaryStrip controller={controller} />
-      <WalletActionBar controller={controller} onRouteChange={onRouteChange} />
       <WalletTabBar
         activeTab={controller.activeTab}
         onChangeTab={controller.onChangeTab}
@@ -155,7 +154,11 @@ function WalletListMode({
       {controller.activeTab === 'wallets' ? (
         <WalletListPanel controller={controller} onRouteChange={onRouteChange} />
       ) : (
-        <WalletTransactionPanel controller={controller} showWalletFilter />
+        <WalletTransactionPanel
+          controller={controller}
+          onRouteChange={onRouteChange}
+          showWalletFilter
+        />
       )}
     </View>
   );
@@ -273,8 +276,12 @@ function WalletDetailMode({
         </>
       ) : null}
 
-      <WalletActionBar controller={controller} onRouteChange={onRouteChange} />
-      <WalletTransactionPanel controller={controller} showWalletFilter={false} />
+      <WalletTransactionPanel
+        controller={controller}
+        onRouteChange={onRouteChange}
+        showCreateButton={false}
+        showWalletFilter={false}
+      />
     </View>
   );
 }
@@ -296,18 +303,19 @@ function WalletInfoItem({
   );
 }
 
-function WalletActionBar({
+function WalletToolbarActions({
   controller,
   onRouteChange,
+  showCreate = true,
+  trailing,
 }: {
   controller: KolamWalletController;
   onRouteChange?: (route: string) => void;
+  showCreate?: boolean;
+  trailing?: React.ReactNode;
 }) {
-  if (!controller.canEdit && !controller.canCreate) {
-    return null;
-  }
   return (
-    <View style={styles.actionBar}>
+    <View style={kolamTableToolbarStyles.actions}>
       {controller.canEdit ? (
         <>
           <KolamButton
@@ -330,7 +338,7 @@ function WalletActionBar({
           />
         </>
       ) : null}
-      {controller.canCreate && controller.mode === 'list' ? (
+      {showCreate && controller.canCreate ? (
         <KolamButton
           intent="primary"
           label="Baru"
@@ -338,6 +346,7 @@ function WalletActionBar({
           style={styles.filterTrigger}
         />
       ) : null}
+      {trailing}
     </View>
   );
 }
@@ -617,16 +626,20 @@ function WalletListPanel({
               style={styles.filterTrigger}
             />
           </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              intent="secondary"
-              label={controller.loadingWallets ? 'Memuat…' : 'Muat ulang'}
-              onPress={() => {
-                void controller.onRefreshWallets();
-              }}
-              style={styles.filterTrigger}
-            />
-          </View>
+          <WalletToolbarActions
+            controller={controller}
+            onRouteChange={onRouteChange}
+            trailing={
+              <KolamButton
+                intent="secondary"
+                label={controller.loadingWallets ? 'Memuat…' : 'Muat ulang'}
+                onPress={() => {
+                  void controller.onRefreshWallets();
+                }}
+                style={styles.filterTrigger}
+              />
+            }
+          />
         </View>
         {typeOpen ? (
           <View style={styles.filterPanel}>
@@ -1090,9 +1103,13 @@ function WalletEditMode({
 
 function WalletTransactionPanel({
   controller,
+  onRouteChange,
+  showCreateButton = true,
   showWalletFilter,
 }: {
   controller: KolamWalletController;
+  onRouteChange?: (route: string) => void;
+  showCreateButton?: boolean;
   showWalletFilter: boolean;
 }) {
   const [typeOpen, setTypeOpen] = useState(false);
@@ -1280,28 +1297,37 @@ function WalletTransactionPanel({
               value={controller.txFilters.endDate}
             />
           </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              intent="secondary"
-              label="Ekspor"
-              onPress={() => setExportOpen(true)}
-              style={styles.filterTrigger}
-            />
-            <KolamButton
-              intent="secondary"
-              label="Reset"
-              onPress={controller.onClearTxFilters}
-              style={styles.filterTrigger}
-            />
-            <KolamButton
-              intent="secondary"
-              label={controller.loadingTransactions ? 'Memuat…' : 'Muat ulang'}
-              onPress={() => {
-                void controller.onRefreshTransactions();
-              }}
-              style={styles.filterTrigger}
-            />
-          </View>
+          <WalletToolbarActions
+            controller={controller}
+            onRouteChange={onRouteChange}
+            showCreate={showCreateButton && controller.mode === 'list'}
+            trailing={
+              <>
+                <KolamButton
+                  intent="secondary"
+                  label="Ekspor"
+                  onPress={() => setExportOpen(true)}
+                  style={styles.filterTrigger}
+                />
+                <KolamButton
+                  intent="secondary"
+                  label="Reset"
+                  onPress={controller.onClearTxFilters}
+                  style={styles.filterTrigger}
+                />
+                <KolamButton
+                  intent="secondary"
+                  label={
+                    controller.loadingTransactions ? 'Memuat…' : 'Muat ulang'
+                  }
+                  onPress={() => {
+                    void controller.onRefreshTransactions();
+                  }}
+                  style={styles.filterTrigger}
+                />
+              </>
+            }
+          />
         </View>
 
         {typeOpen ? (
