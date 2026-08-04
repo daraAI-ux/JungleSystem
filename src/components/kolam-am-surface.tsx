@@ -146,6 +146,19 @@ const AM_WEBHOOK_LOG_DIRECTIONS = ['all', 'outgoing'];
 const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
 const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const AM_ACTIVITY_LOG_TYPE_LABELS: Record<string, string> = {
+  all: 'Semua tipe',
+  api: 'API',
+  page: 'Page',
+};
+const AM_ACTIVITY_LOG_STATUS_LABELS: Record<string, string> = {
+  all: 'Semua status',
+  success: 'Success',
+  failed: 'Failed',
+};
+const AM_ACTIVITY_LOG_METHOD_LABELS: Record<string, string> = {
+  all: 'Semua method',
+};
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
@@ -6155,9 +6168,9 @@ function AmActivityLogPage() {
           containerStyle={styles.activitySearch}
           trailingLabel={`${total} log`}
         />
-        <AmSegmentGroup active={type} items={AM_ACTIVITY_LOG_TYPES} onSelect={handleTypeChange} />
-        <AmSegmentGroup active={status} items={AM_ACTIVITY_LOG_STATUSES} onSelect={handleStatusChange} />
-        <AmSegmentGroup active={method} items={AM_ACTIVITY_LOG_METHODS} onSelect={handleMethodChange} />
+        <AmSegmentGroup active={type} items={AM_ACTIVITY_LOG_TYPES} labels={AM_ACTIVITY_LOG_TYPE_LABELS} onSelect={handleTypeChange} />
+        <AmSegmentGroup active={status} items={AM_ACTIVITY_LOG_STATUSES} labels={AM_ACTIVITY_LOG_STATUS_LABELS} onSelect={handleStatusChange} />
+        <AmSegmentGroup active={method} items={AM_ACTIVITY_LOG_METHODS} labels={AM_ACTIVITY_LOG_METHOD_LABELS} onSelect={handleMethodChange} />
         {hasActiveFilters ? (
           <KolamButton label="Reset" intent="outline" size="sm" onPress={resetFilters} />
         ) : null}

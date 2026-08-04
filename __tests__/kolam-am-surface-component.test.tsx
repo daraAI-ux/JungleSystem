@@ -3390,6 +3390,9 @@ describe('KolamAmSurface', () => {
     expect(joinedText).not.toContain('Super Admin audit log');
     expect(joinedText).toContain('Catatan page/API request AM. Otomatis hapus setelah 90 hari.');
     expect(joinedText).toContain('Super Admin bisa hapus manual per baris terpilih atau sesuai filter.');
+    expect(joinedText).toContain('Semua tipe');
+    expect(joinedText).toContain('Semua status');
+    expect(joinedText).toContain('Semua method');
     expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
     expect(joinedText).toContain('/dashboard');
     expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
@@ -3439,7 +3442,7 @@ describe('KolamAmSurface', () => {
     joinedText = text.join(' ');
     expect(text).toContain('Activity Detail');
     expect(text).toEqual(expect.arrayContaining(['Timestamp', 'Type', 'Status', 'User Agent']));
-    expect(joinedText).toContain('Api');
+    expect(joinedText).toContain('API');
     expect(joinedText).toContain('200 (success)');
     expect(joinedText).toContain('REQ-1');
     expect(joinedText).toContain('Jest');
