@@ -1,14 +1,20 @@
 import {
   KOLAM_DARA_MARKET_INTEL_DESCRIPTION,
   KOLAM_DARA_MARKET_INTEL_TITLE,
+  buildKolamDaraMarketIntelMetricLines,
   buildKolamDaraMarketIntelRoute,
+  filterKolamDaraMarketIntelRecommendationsForMargin,
+  formatKolamDaraMarketIntelEntityName,
   formatKolamDaraMarketIntelIdr,
   formatKolamDaraMarketIntelTaxSource,
   getKolamDaraMarketIntelTab,
+  isKolamDaraMarketIntelApprovable,
   isKolamDaraMarketIntelRoute,
   normalizeKolamDaraMarketIntelBrands,
   normalizeKolamDaraMarketIntelDashboard,
+  normalizeKolamDaraMarketIntelRecommendations,
   normalizeKolamDaraMarketIntelStatus,
+  paginateKolamDaraMarketIntelRecommendations,
   resolveKolamDaraMarketIntelAccess,
 } from '../src/domain/kolam-dara-market-intel';
 
@@ -185,5 +191,67 @@ describe('kolam-dara-market-intel domain', () => {
     expect(formatKolamDaraMarketIntelTaxSource('po_latest')).toBe(
       'PO terbaru',
     );
+  });
+
+  it('normalizes recommendations and gates margin categories', () => {
+    const list = normalizeKolamDaraMarketIntelRecommendations({
+      data: {
+        total: 2,
+        items: [
+          {
+            _id: 'r1',
+            category: 'pricing',
+            status: 'draft_ready',
+            title: 'Naikkan harga',
+            summary: 'Margin rendah',
+            daraMessage: 'Detail AI',
+            productId: {_id: 'p1', name: 'Produk A', sku: 'A1'},
+            metrics: {currentSellPrice: 100000, idealPrice: 150000},
+          },
+          {
+            _id: 'r2',
+            category: 'purchasing',
+            status: 'pending_approval',
+            title: 'Ganti supplier',
+            productId: {_id: 'p2', name: 'Produk B'},
+          },
+        ],
+      },
+    });
+    expect(list.total).toBe(2);
+    expect(list.items[0]).toMatchObject({
+      id: 'r1',
+      category: 'pricing',
+      title: 'Naikkan harga',
+    });
+    expect(formatKolamDaraMarketIntelEntityName(list.items[0])).toBe(
+      'Produk A',
+    );
+    expect(isKolamDaraMarketIntelApprovable(list.items[0])).toBe(true);
+    expect(
+      filterKolamDaraMarketIntelRecommendationsForMargin(list.items, false),
+    ).toHaveLength(1);
+    expect(
+      filterKolamDaraMarketIntelRecommendationsForMargin(list.items, false)[0]
+        .category,
+    ).toBe('purchasing');
+
+    const page = paginateKolamDaraMarketIntelRecommendations(
+      Array.from({length: 12}, (_, i) => ({
+        ...list.items[1],
+        id: `id-${i}`,
+      })),
+      2,
+    );
+    expect(page.totalPages).toBe(2);
+    expect(page.items).toHaveLength(2);
+
+    const lines = buildKolamDaraMarketIntelMetricLines('pricing', {
+      currentSellPrice: 100000,
+      idealPrice: 150000,
+      marginPercent: 12.5,
+    });
+    expect(lines.some(line => line.label === 'Harga ideal')).toBe(true);
+    expect(lines.some(line => line.label === 'Margin')).toBe(true);
   });
 });

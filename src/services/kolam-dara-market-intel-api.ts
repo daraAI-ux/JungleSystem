@@ -1,10 +1,15 @@
 import {appConfig} from '../config/app';
 import {
   normalizeKolamDaraMarketIntelBrands,
+  normalizeKolamDaraMarketIntelBulkActionResults,
   normalizeKolamDaraMarketIntelDashboard,
+  normalizeKolamDaraMarketIntelRecommendation,
+  normalizeKolamDaraMarketIntelRecommendations,
   normalizeKolamDaraMarketIntelStatus,
   type KolamDaraMarketIntelBrand,
+  type KolamDaraMarketIntelBulkActionResult,
   type KolamDaraMarketIntelDashboard,
+  type KolamDaraMarketIntelRecommendation,
   type KolamDaraMarketIntelStatus,
 } from '../domain/kolam-dara-market-intel';
 import {apiRequest} from '../lib/api-client';
@@ -45,6 +50,87 @@ export async function fetchKolamDaraMarketIntelDashboard(
     throw new Error('Dashboard Intel Pasar kosong');
   }
   return dash;
+}
+
+/** GET /dara-market-intel/recommendations — FE `fetchMarketRecommendations`. */
+export async function fetchKolamDaraMarketIntelRecommendations(params?: {
+  status?: string;
+  brandId?: string;
+  category?: string;
+  limit?: number;
+  page?: number;
+}): Promise<{items: KolamDaraMarketIntelRecommendation[]; total: number}> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-market-intel/recommendations',
+    {
+      query: {
+        ...(params?.status ? {status: params.status} : {}),
+        ...(params?.category ? {category: params.category} : {}),
+        ...(params?.limit != null ? {limit: params.limit} : {}),
+        ...(params?.page != null ? {page: params.page} : {}),
+        ...(params?.brandId && params.brandId !== 'all'
+          ? {brandId: params.brandId}
+          : {}),
+      },
+    },
+  );
+  return normalizeKolamDaraMarketIntelRecommendations(payload);
+}
+
+/** GET /dara-market-intel/recommendations/:id */
+export async function fetchKolamDaraMarketIntelRecommendation(
+  id: string,
+): Promise<KolamDaraMarketIntelRecommendation> {
+  const payload = await kolamRequest<unknown>(
+    `/dara-market-intel/recommendations/${encodeURIComponent(id)}`,
+  );
+  const item = normalizeKolamDaraMarketIntelRecommendation(payload);
+  if (!item) {
+    throw new Error('Rekomendasi tidak ditemukan');
+  }
+  return item;
+}
+
+/** POST /dara-market-intel/recommendations/:id/approve */
+export async function approveKolamDaraMarketIntelRecommendation(
+  id: string,
+  note?: string,
+) {
+  await kolamRequest(
+    `/dara-market-intel/recommendations/${encodeURIComponent(id)}/approve`,
+    {
+      method: 'POST',
+      body: note != null && note.trim() ? {note} : {},
+    },
+  );
+}
+
+/** POST /dara-market-intel/recommendations/:id/reject */
+export async function rejectKolamDaraMarketIntelRecommendation(
+  id: string,
+  note?: string,
+) {
+  await kolamRequest(
+    `/dara-market-intel/recommendations/${encodeURIComponent(id)}/reject`,
+    {
+      method: 'POST',
+      body: {note},
+    },
+  );
+}
+
+/** POST /dara-market-intel/recommendations/bulk-approve */
+export async function bulkApproveKolamDaraMarketIntelRecommendations(
+  ids: string[],
+): Promise<KolamDaraMarketIntelBulkActionResult[]> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-market-intel/recommendations/bulk-approve',
+    {
+      method: 'POST',
+      body: {ids},
+    },
+  );
+  return normalizeKolamDaraMarketIntelBulkActionResults(payload);
 }
 
 function kolamRequest<T>(

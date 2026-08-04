@@ -3,9 +3,13 @@ import ReactTestRenderer from 'react-test-renderer';
 import {KolamDaraMarketIntelSurface} from '../src/components/kolam-dara-market-intel-surface';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
+  approveKolamDaraMarketIntelRecommendation,
+  bulkApproveKolamDaraMarketIntelRecommendations,
   fetchKolamDaraMarketIntelActiveBrands,
   fetchKolamDaraMarketIntelDashboard,
+  fetchKolamDaraMarketIntelRecommendations,
   fetchKolamDaraMarketIntelStatus,
+  rejectKolamDaraMarketIntelRecommendation,
 } from '../src/services/kolam-dara-market-intel-api';
 import {
   fetchKolamDaraJobsList,
@@ -20,6 +24,11 @@ jest.mock('../src/services/kolam-dara-market-intel-api', () => ({
   fetchKolamDaraMarketIntelStatus: jest.fn(),
   fetchKolamDaraMarketIntelActiveBrands: jest.fn(),
   fetchKolamDaraMarketIntelDashboard: jest.fn(),
+  fetchKolamDaraMarketIntelRecommendations: jest.fn(),
+  fetchKolamDaraMarketIntelRecommendation: jest.fn(),
+  approveKolamDaraMarketIntelRecommendation: jest.fn(),
+  rejectKolamDaraMarketIntelRecommendation: jest.fn(),
+  bulkApproveKolamDaraMarketIntelRecommendations: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-dara-jobs-api', () => ({
@@ -40,6 +49,9 @@ const brandsMock = fetchKolamDaraMarketIntelActiveBrands as jest.MockedFunction<
 const dashMock = fetchKolamDaraMarketIntelDashboard as jest.MockedFunction<
   typeof fetchKolamDaraMarketIntelDashboard
 >;
+const recsMock = fetchKolamDaraMarketIntelRecommendations as jest.MockedFunction<
+  typeof fetchKolamDaraMarketIntelRecommendations
+>;
 const jobsListMock = fetchKolamDaraJobsList as jest.MockedFunction<
   typeof fetchKolamDaraJobsList
 >;
@@ -59,7 +71,9 @@ describe('KolamDaraMarketIntelSurface', () => {
       disclaimer: '',
     });
     brandsMock.mockResolvedValue({
-      brands: [{id: 'b1', name: 'Anura', productCount: 3, monitoringActive: true}],
+      brands: [
+        {id: 'b1', name: 'Anura', productCount: 3, monitoringActive: true},
+      ],
       defaultBrandId: 'all',
     });
     jobsListMock.mockResolvedValue([]);
@@ -97,6 +111,24 @@ describe('KolamDaraMarketIntelSurface', () => {
         taxDisclaimer: '',
       },
     });
+    recsMock.mockResolvedValue({
+      total: 1,
+      items: [
+        {
+          id: 'r1',
+          category: 'pricing',
+          status: 'draft_ready',
+          title: 'Naikkan harga Produk A',
+          summary: 'Margin rendah',
+          daraMessage: 'Usulan AI',
+          product: {id: 'p1', name: 'Produk A', sku: 'A1'},
+          species: null,
+          vendor: null,
+          metrics: {currentSellPrice: 100000, idealPrice: 150000},
+          createdAt: '',
+        },
+      ],
+    });
   });
 
   it('renders dashboard KPIs and panels from live API', async () => {
@@ -131,19 +163,50 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
   });
 
-  it('shows placeholder on non-dashboard tabs', async () => {
+  it('renders approvals list from recommendations API', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
         <KolamDaraMarketIntelSurface route="/campaign/dara-market-intel/approvals" />,
       );
       await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Produk A');
+    expect(text).toContain('Pricing');
+    expect(text).toContain('Naikkan harga Produk A');
+    expect(text).toContain('Review');
+    expect(text).toContain('Setujui (0)');
+    expect(recsMock).toHaveBeenCalledWith({
+      status: 'draft_ready',
+      limit: 100,
+      brandId: 'all',
+    });
+    expect(dashMock).not.toHaveBeenCalled();
+    expect(approveKolamDaraMarketIntelRecommendation).not.toHaveBeenCalled();
+    expect(rejectKolamDaraMarketIntelRecommendation).not.toHaveBeenCalled();
+    expect(bulkApproveKolamDaraMarketIntelRecommendations).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('shows placeholder on unimplemented tabs', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraMarketIntelSurface route="/campaign/dara-market-intel/competitors" />,
+      );
+      await Promise.resolve();
     });
 
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Belum tersedia');
-    expect(text).toContain('Persetujuan');
+    expect(text).toContain('Kompetitor');
     expect(dashMock).not.toHaveBeenCalled();
+    expect(recsMock).not.toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

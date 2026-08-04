@@ -16,8 +16,10 @@ import {
   type KolamDaraAsyncJob,
 } from '../domain/kolam-pusat-ai-jobs';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {useKolamDaraMarketIntelApprovalsController} from '../hooks/use-kolam-dara-market-intel-approvals-controller';
 import {useKolamDaraMarketIntelDashboardController} from '../hooks/use-kolam-dara-market-intel-dashboard-controller';
 import {useKolamDaraMarketIntelJobsProgress} from '../hooks/use-kolam-dara-market-intel-jobs-progress';
+import {KolamDaraMarketIntelApprovalsBody} from './kolam-dara-market-intel-approvals-body';
 import {KolamDaraMarketIntelDashboardBody} from './kolam-dara-market-intel-dashboard-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
@@ -38,6 +40,10 @@ export function KolamDaraMarketIntelSurface({
   });
   const dashboardController = useKolamDaraMarketIntelDashboardController(
     access.canSee ? route : '',
+  );
+  const approvalsController = useKolamDaraMarketIntelApprovalsController(
+    access.canSee ? route : '',
+    access.canViewMargin,
   );
   const jobsProgress = useKolamDaraMarketIntelJobsProgress(
     access.canSee ? route : '',
@@ -96,6 +102,12 @@ export function KolamDaraMarketIntelSurface({
           controller={dashboardController}
           jobsProgress={jobsProgress}
           onRouteChange={onRouteChange}
+        />
+      ) : selectedTab === 'approvals' ? (
+        <KolamDaraMarketIntelApprovalsBody
+          canApprove={access.canApprove}
+          canViewMargin={access.canViewMargin}
+          controller={approvalsController}
         />
       ) : (
         <KolamDaraMarketIntelPlaceholderTab tabId={selectedTab} />

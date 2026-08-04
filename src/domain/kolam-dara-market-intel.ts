@@ -436,3 +436,441 @@ export function formatKolamDaraMarketIntelTaxSource(source: string) {
   }
   return source.trim() || '—';
 }
+
+export type KolamDaraMarketIntelRecStatus =
+  | 'draft_ready'
+  | 'pending_approval'
+  | 'approved'
+  | 'applied'
+  | 'rejected'
+  | 'deferred'
+  | string;
+
+export type KolamDaraMarketIntelRecCategory =
+  | 'pricing'
+  | 'purchasing'
+  | 'supplier'
+  | 'competitor_alert'
+  | 'channel_pricing'
+  | string;
+
+export type KolamDaraMarketIntelStatusFilterId =
+  | 'all'
+  | 'draft_ready'
+  | 'pending_approval'
+  | 'applied'
+  | 'rejected';
+
+export const KOLAM_DARA_MARKET_INTEL_STATUS_FILTERS: Array<{
+  id: KolamDaraMarketIntelStatusFilterId;
+  label: string;
+}> = [
+  {id: 'all', label: 'Semua'},
+  {id: 'draft_ready', label: 'Draft'},
+  {id: 'pending_approval', label: 'Menunggu'},
+  {id: 'applied', label: 'Disetujui'},
+  {id: 'rejected', label: 'Ditolak'},
+];
+
+export const KOLAM_DARA_MARKET_INTEL_APPROVALS_PAGE_SIZE = 10;
+
+export type KolamDaraMarketIntelEntityRef = {
+  id: string;
+  name: string;
+  sku?: string;
+};
+
+export type KolamDaraMarketIntelRecommendation = {
+  id: string;
+  category: KolamDaraMarketIntelRecCategory;
+  status: KolamDaraMarketIntelRecStatus;
+  title: string;
+  summary: string;
+  daraMessage: string;
+  product: KolamDaraMarketIntelEntityRef | null;
+  species: KolamDaraMarketIntelEntityRef | null;
+  vendor: KolamDaraMarketIntelEntityRef | null;
+  metrics: Record<string, number | null> | null;
+  createdAt: string;
+};
+
+export type KolamDaraMarketIntelBulkActionResult = {
+  id: string;
+  ok: boolean;
+  error?: string;
+};
+
+export type KolamDaraMarketIntelMetricLine = {
+  label: string;
+  value: string;
+};
+
+export function formatKolamDaraMarketIntelCategory(
+  category: KolamDaraMarketIntelRecCategory,
+) {
+  if (category === 'pricing') {
+    return 'Pricing';
+  }
+  if (category === 'purchasing') {
+    return 'Pembelian';
+  }
+  if (category === 'channel_pricing') {
+    return 'Channel';
+  }
+  if (category === 'supplier') {
+    return 'Supplier';
+  }
+  if (category === 'competitor_alert') {
+    return 'Kompetitor';
+  }
+  return String(category || '—');
+}
+
+export function formatKolamDaraMarketIntelRecStatus(
+  status: KolamDaraMarketIntelRecStatus,
+) {
+  if (status === 'draft_ready') {
+    return 'Draft';
+  }
+  if (status === 'pending_approval') {
+    return 'Menunggu';
+  }
+  if (status === 'applied' || status === 'approved') {
+    return 'Disetujui';
+  }
+  if (status === 'rejected') {
+    return 'Ditolak';
+  }
+  if (status === 'deferred') {
+    return 'Ditunda';
+  }
+  return String(status || '—');
+}
+
+/** FE `isApprovable`. */
+export function isKolamDaraMarketIntelApprovable(
+  item: Pick<KolamDaraMarketIntelRecommendation, 'status'>,
+) {
+  return item.status === 'draft_ready' || item.status === 'pending_approval';
+}
+
+/** FE `entityName`. */
+export function formatKolamDaraMarketIntelEntityName(
+  item: Pick<
+    KolamDaraMarketIntelRecommendation,
+    'category' | 'product' | 'species'
+  >,
+) {
+  if (item.category === 'channel_pricing' && item.species) {
+    return item.species.name || 'Species';
+  }
+  return item.product?.name || item.product?.sku || 'Produk';
+}
+
+/** FE client margin gate: hide pricing / channel_pricing rows. */
+export function filterKolamDaraMarketIntelRecommendationsForMargin(
+  items: KolamDaraMarketIntelRecommendation[],
+  canViewMargin: boolean,
+) {
+  if (canViewMargin) {
+    return items;
+  }
+  return items.filter(
+    item =>
+      item.category !== 'pricing' && item.category !== 'channel_pricing',
+  );
+}
+
+export function paginateKolamDaraMarketIntelRecommendations(
+  items: KolamDaraMarketIntelRecommendation[],
+  page: number,
+  pageSize = KOLAM_DARA_MARKET_INTEL_APPROVALS_PAGE_SIZE,
+) {
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * pageSize;
+  return {
+    page: safePage,
+    totalPages,
+    total,
+    items: items.slice(start, start + pageSize),
+  };
+}
+
+function formatMetricIdr(value?: number | null) {
+  if (value == null || !Number.isFinite(value) || value === 0) {
+    return null;
+  }
+  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+}
+
+function formatMetricPct(value?: number | null) {
+  if (value == null || !Number.isFinite(value) || value === 0) {
+    return null;
+  }
+  return `${Number(value).toFixed(1)}%`;
+}
+
+/** FE `MarketMetricsSummary` / `linesFromMetrics`. */
+export function buildKolamDaraMarketIntelMetricLines(
+  category: KolamDaraMarketIntelRecCategory,
+  metrics: Record<string, number | null> | null | undefined,
+): KolamDaraMarketIntelMetricLine[] {
+  if (!metrics || typeof metrics !== 'object') {
+    return [];
+  }
+  const m = metrics;
+  const out: KolamDaraMarketIntelMetricLine[] = [];
+
+  const stockDays = m.stockDaysLeft;
+  const recQty = m.recommendedPurchaseQty;
+  if (stockDays != null && stockDays > 0) {
+    const qty =
+      recQty != null && recQty > 0
+        ? ` — rekomendasi beli ${recQty} unit`
+        : '';
+    out.push({
+      label: 'Stok',
+      value: `Perkiraan sisa ${stockDays} hari${qty}`,
+    });
+  } else if (recQty != null && recQty > 0) {
+    out.push({
+      label: 'Pembelian',
+      value: `Rekomendasi beli ${recQty} unit`,
+    });
+  }
+
+  const sell = formatMetricIdr(m.currentSellPrice);
+  const ideal = formatMetricIdr(m.idealPrice);
+  const minP = formatMetricIdr(m.minPrice);
+  const prem = formatMetricIdr(m.premiumPrice);
+  const comp = formatMetricIdr(m.competitorPrice);
+  const hpp = formatMetricIdr(m.hpp);
+  const sup = formatMetricIdr(m.supplierPrice);
+
+  if (category === 'channel_pricing') {
+    const recWeb = formatMetricIdr(m.recommendedWebPrice);
+    const recOl = formatMetricIdr(m.recommendedOnlinePrice);
+    if (sell) {
+      out.push({label: 'Harga web sekarang', value: sell});
+    }
+    if (recWeb) {
+      out.push({label: 'Rekomendasi web/POS', value: recWeb});
+    }
+    if (recOl) {
+      out.push({label: 'Rekomendasi listing olshop', value: recOl});
+    }
+    const webMk = formatMetricPct(m.websiteMarkupPercent);
+    if (webMk) {
+      out.push({label: 'Markup web', value: webMk});
+    }
+    if (hpp) {
+      out.push({label: 'HPP', value: hpp});
+    }
+  }
+
+  if (category === 'pricing' || sell || ideal) {
+    if (sell) {
+      out.push({label: 'Harga jual sekarang', value: sell});
+    }
+    if (ideal) {
+      out.push({label: 'Harga ideal', value: ideal});
+    }
+    if (minP) {
+      out.push({label: 'Batas bawah', value: minP});
+    }
+    if (prem) {
+      out.push({label: 'Harga premium', value: prem});
+    }
+    if (comp) {
+      out.push({label: 'Harga kompetitor', value: comp});
+    }
+    const margin = formatMetricPct(m.marginPercent);
+    if (margin) {
+      out.push({label: 'Margin', value: margin});
+    }
+    const extra = formatMetricIdr(m.extraProfitPotential);
+    if (extra) {
+      out.push({label: 'Potensi laba tambahan', value: extra});
+    }
+  }
+
+  if (category === 'purchasing' || hpp || sup) {
+    if (hpp) {
+      out.push({label: 'HPP', value: hpp});
+    }
+    if (sup) {
+      out.push({label: 'Harga supplier', value: sup});
+    }
+    const save = formatMetricIdr(m.purchaseSavingsPotential);
+    if (save) {
+      out.push({label: 'Potensi hemat beli', value: save});
+    }
+  }
+
+  if (m.supplierScore != null && m.supplierScore > 0) {
+    out.push({
+      label: 'Skor supplier',
+      value: `${Math.round(m.supplierScore)}/100`,
+    });
+  }
+
+  const tax = formatMetricPct(m.taxRatePercent);
+  if (tax) {
+    out.push({label: 'PPN (estimasi)', value: tax});
+  }
+
+  const estMargin = formatMetricIdr(m.estimatedMargin);
+  if (estMargin && !out.some(line => line.label === 'Margin')) {
+    out.push({label: 'Estimasi margin (Rp)', value: estMargin});
+  }
+
+  return out;
+}
+
+export function normalizeKolamDaraMarketIntelRecommendations(
+  payload: unknown,
+): {items: KolamDaraMarketIntelRecommendation[]; total: number} {
+  const data = unwrapDataRecord(payload);
+  const rawItems = Array.isArray(data.items)
+    ? data.items
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  const items = rawItems
+    .map(normalizeKolamDaraMarketIntelRecommendation)
+    .filter(
+      (item): item is KolamDaraMarketIntelRecommendation => item != null,
+    );
+  const total =
+    typeof data.total === 'number' && Number.isFinite(data.total)
+      ? data.total
+      : items.length;
+  return {items, total};
+}
+
+export function normalizeKolamDaraMarketIntelRecommendation(
+  payload: unknown,
+): KolamDaraMarketIntelRecommendation | null {
+  const row = unwrapDataRecord(payload);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  const metricsRaw = row.metrics;
+  let metrics: Record<string, number | null> | null = null;
+  if (
+    metricsRaw &&
+    typeof metricsRaw === 'object' &&
+    !Array.isArray(metricsRaw)
+  ) {
+    metrics = {};
+    for (const [key, value] of Object.entries(asRecord(metricsRaw))) {
+      if (value == null || value === '') {
+        metrics[key] = null;
+      } else {
+        const n = typeof value === 'number' ? value : Number(value);
+        metrics[key] = Number.isFinite(n) ? n : null;
+      }
+    }
+  }
+
+  return {
+    id,
+    category: String(row.category || '').trim() || 'pricing',
+    status: String(row.status || '').trim() || 'draft_ready',
+    title: String(row.title || '').trim() || id,
+    summary: String(row.summary || '').trim(),
+    daraMessage: String(row.daraMessage || '').trim(),
+    product: normalizeEntityRef(row.productId, 'name'),
+    species: normalizeSpeciesRef(row.speciesId),
+    vendor: normalizeEntityRef(row.vendorId, 'name'),
+    metrics,
+    createdAt: String(row.createdAt || '').trim(),
+  };
+}
+
+export function normalizeKolamDaraMarketIntelBulkActionResults(
+  payload: unknown,
+): KolamDaraMarketIntelBulkActionResult[] {
+  const data = unwrapDataRecord(payload);
+  const raw = Array.isArray(data)
+    ? data
+    : Array.isArray(data.data)
+      ? data.data
+      : Array.isArray(payload)
+        ? payload
+        : Array.isArray(data.results)
+          ? data.results
+          : [];
+  return raw
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row.id || row._id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        ok: row.ok === true,
+        error:
+          typeof row.error === 'string' && row.error.trim()
+            ? row.error.trim()
+            : undefined,
+      } satisfies KolamDaraMarketIntelBulkActionResult;
+    })
+    .filter(
+      (item): item is KolamDaraMarketIntelBulkActionResult => item != null,
+    );
+}
+
+function normalizeEntityRef(
+  value: unknown,
+  nameKey: string,
+): KolamDaraMarketIntelEntityRef | null {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const id = String(value).trim();
+    return id ? {id, name: id} : null;
+  }
+  const row = asRecord(value);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  const name =
+    typeof row[nameKey] === 'string' && String(row[nameKey]).trim()
+      ? String(row[nameKey]).trim()
+      : typeof row.sku === 'string' && row.sku.trim()
+        ? row.sku.trim()
+        : id;
+  const sku =
+    typeof row.sku === 'string' && row.sku.trim() ? row.sku.trim() : undefined;
+  return {id, name, sku};
+}
+
+function normalizeSpeciesRef(
+  value: unknown,
+): KolamDaraMarketIntelEntityRef | null {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const id = String(value).trim();
+    return id ? {id, name: 'Species'} : null;
+  }
+  const row = asRecord(value);
+  const id = String(row._id || row.id || '').trim();
+  if (!id) {
+    return null;
+  }
+  const name =
+    (typeof row.commonName === 'string' && row.commonName.trim()) ||
+    (typeof row.localName === 'string' && row.localName.trim()) ||
+    (typeof row.scientificName === 'string' && row.scientificName.trim()) ||
+    'Species';
+  return {id, name};
+}
