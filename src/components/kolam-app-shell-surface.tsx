@@ -30,6 +30,7 @@ export interface KolamAppShellSurfaceProps {
   rightRail?: React.ReactNode;
   sidebar: KolamSidebarProps;
   topNavigation: KolamTopNavigationProps;
+  workspaceTabs?: React.ReactNode;
 }
 
 function KolamAppShellSurfaceComponent({
@@ -39,6 +40,7 @@ function KolamAppShellSurfaceComponent({
   rightRail,
   sidebar,
   topNavigation,
+  workspaceTabs,
 }: KolamAppShellSurfaceProps) {
   if (sidebar.activeModule === 'checkout') {
     return (
@@ -65,6 +67,7 @@ function KolamAppShellSurfaceComponent({
 
       <KolamShellFrame variant="appMain">
         <MemoKolamTopNavigation {...topNavigation} />
+        {workspaceTabs}
         <MemoKolamOverlaySurface {...overlay} />
 
         {ownsListScroll ? (

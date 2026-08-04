@@ -17,6 +17,7 @@ import {
   kolamSidebarNavigationSections,
 } from '../domain/kolam-navigation';
 import { isKolamCampaignRoute } from '../domain/kolam-campaign';
+import type {KolamWorkspaceTabSnapshot} from '../domain/kolam-workspace-tabs';
 import { runtimeActions, type RuntimeAction } from '../domain/runtime-actions';
 import type {
   TopNavBreadcrumbItem,
@@ -459,6 +460,23 @@ export function useKolamNavigationController({
     setActiveModuleRoute(null);
   };
 
+  const restoreWorkspaceTabSnapshot = (snapshot: KolamWorkspaceTabSnapshot) => {
+    setActiveModule(snapshot.activeModule);
+    setActiveNavigationItem(snapshot.activeNavigationItem ?? null);
+    setActivePluginRoute(snapshot.activePluginRoute ?? null);
+    setActiveAmSurface(snapshot.activeAmSurface ?? null);
+    setActiveKolamSurface(snapshot.activeKolamSurface ?? null);
+    setActiveModuleRoute(snapshot.activeModuleRoute ?? null);
+    setCommandSearch(
+      snapshot.activeNavigationItem?.route?.replace(/^\//, '') ??
+        snapshot.activePluginRoute?.route ??
+        snapshot.activeKolamSurface?.route ??
+        snapshot.activeAmSurface?.route ??
+        snapshot.activeModuleRoute?.route ??
+        '',
+    );
+  };
+
   const handleMoveKolamMenuSection = (
     sectionId: string,
     direction: 'up' | 'down',
@@ -518,6 +536,7 @@ export function useKolamNavigationController({
     openDashboardFromBreadcrumb,
     openQuickSearch,
     pluginSearch,
+    restoreWorkspaceTabSnapshot,
     seeAllNotifications,
     setCommandSearch,
     setIsAttentionPanelOpen,

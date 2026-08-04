@@ -6,6 +6,7 @@ import type {KolamWorkspaceSurfaceProps} from '../components/kolam-workspace-sur
 import type {AppModule, ShellModuleRouteEntry} from '../domain/app-shell';
 import type {AccessScope, AuthSource} from '../domain/auth';
 import type {KolamNavigationItem} from '../domain/kolam-navigation';
+import type {KolamWorkspaceTab} from '../domain/kolam-workspace-tabs';
 import type {SettingsTabItem} from '../domain/settings-surface';
 import type {SyncActivityEntry} from '../domain/sync-activity';
 import type {PluginRouteEntry, UnifiedSurface} from '../domain/unified';
@@ -83,6 +84,7 @@ export type KolamShellChromeContextValue = {
   rightRail: KolamAppShellSurfaceProps['rightRail'];
   sidebar: KolamAppShellSurfaceProps['sidebar'];
   topNavigation: KolamAppShellSurfaceProps['topNavigation'];
+  workspaceTabs: KolamAppShellSurfaceProps['workspaceTabs'];
 };
 
 export type KolamWorkspaceViewContextValue = {
@@ -90,6 +92,11 @@ export type KolamWorkspaceViewContextValue = {
   workspace: Omit<KolamWorkspaceSurfaceProps, 'runtime'> & {
     runtime?: KolamRuntimeSurfaceProps;
   };
+};
+
+export type KolamWorkspaceTabsContextValue = {
+  activeTabId: string;
+  tabs: KolamWorkspaceTab[];
 };
 
 export const KolamAuthContext = createContext<KolamAuthContextValue | null>(
@@ -104,6 +111,8 @@ export const KolamShellChromeContext =
   createContext<KolamShellChromeContextValue | null>(null);
 export const KolamWorkspaceViewContext =
   createContext<KolamWorkspaceViewContextValue | null>(null);
+export const KolamWorkspaceTabsContext =
+  createContext<KolamWorkspaceTabsContextValue | null>(null);
 
 function requireContext<T>(value: T | null, label: string): T {
   if (!value) {
@@ -138,5 +147,12 @@ export function useKolamWorkspaceViewContext() {
   return requireContext(
     useContext(KolamWorkspaceViewContext),
     'useKolamWorkspaceViewContext',
+  );
+}
+
+export function useKolamWorkspaceTabsContext() {
+  return requireContext(
+    useContext(KolamWorkspaceTabsContext),
+    'useKolamWorkspaceTabsContext',
   );
 }

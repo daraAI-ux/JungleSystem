@@ -39,8 +39,14 @@ const KolamSignedInLayout = React.memo(function KolamSignedInLayout() {
 });
 
 function KolamShellWorkspaceHost() {
-  const {dashboardHeader, overlay, rightRail, sidebar, topNavigation} =
-    useKolamShellChromeContext();
+  const {
+    dashboardHeader,
+    overlay,
+    rightRail,
+    sidebar,
+    topNavigation,
+    workspaceTabs,
+  } = useKolamShellChromeContext();
 
   return (
     <KolamAppShellSurface
@@ -49,6 +55,7 @@ function KolamShellWorkspaceHost() {
       overlay={overlay}
       dashboardHeader={dashboardHeader}
       rightRail={rightRail}
+      workspaceTabs={workspaceTabs}
     >
       <KolamWorkspaceHost />
     </KolamAppShellSurface>

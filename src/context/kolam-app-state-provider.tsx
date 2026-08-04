@@ -3,8 +3,10 @@ import {
   KolamGlobalChatRail,
   type KolamGlobalChatRailMode,
 } from '../components/kolam-global-chat-rail';
+import {KolamWorkspaceTabStrip} from '../components/kolam-workspace-tab-strip';
 import type {DashboardSalesGraphRange} from '../domain/dashboard-sales-graph';
 import type {TopNavRightControl} from '../domain/top-nav';
+import type {KolamWorkspaceTabSnapshot} from '../domain/kolam-workspace-tabs';
 import {
   DEFAULT_SETTINGS_TAB_ID,
   getSettingsTabItemById,
@@ -29,16 +31,19 @@ import {useKolamShellChromeController} from '../hooks/use-kolam-shell-chrome-con
 import {useKolamShellInteractionController} from '../hooks/use-kolam-shell-interaction-controller';
 import {useKolamUnifiedDataController} from '../hooks/use-kolam-unified-data-controller';
 import {useKolamWorkspaceSurfaceController} from '../hooks/use-kolam-workspace-surface-controller';
+import {useKolamWorkspaceTabsController} from '../hooks/use-kolam-workspace-tabs-controller';
 import {
   KolamAuthContext,
   KolamDataContext,
   KolamNavigationContext,
   KolamShellChromeContext,
+  KolamWorkspaceTabsContext,
   KolamWorkspaceViewContext,
   type KolamAuthContextValue,
   type KolamDataContextValue,
   type KolamNavigationContextValue,
   type KolamShellChromeContextValue,
+  type KolamWorkspaceTabsContextValue,
   type KolamWorkspaceViewContextValue,
 } from './kolam-app-contexts';
 
@@ -114,6 +119,7 @@ export function KolamAppStateProvider({
     openDashboardFromBreadcrumb,
     openQuickSearch,
     pluginSearch,
+    restoreWorkspaceTabSnapshot,
     seeAllNotifications,
     setCommandSearch,
     setIsAttentionPanelOpen,
@@ -127,6 +133,58 @@ export function KolamAppStateProvider({
   } = useKolamNavigationController({
     onMessage: setAuthMessage,
   });
+  const workspaceTabSnapshot = React.useMemo(
+    () => ({
+      activeAmSurface,
+      activeKolamSurface,
+      activeModule,
+      activeModuleRoute,
+      activeNavigationItem,
+      activePluginRoute,
+      activeSettingsTab,
+    }),
+    [
+      activeAmSurface,
+      activeKolamSurface,
+      activeModule,
+      activeModuleRoute,
+      activeNavigationItem,
+      activePluginRoute,
+      activeSettingsTab,
+    ],
+  );
+  const {
+    activeTabId,
+    handleCreateTab,
+    handleTabClose,
+    handleTabSelect,
+    tabs,
+  } = useKolamWorkspaceTabsController({
+    snapshot: workspaceTabSnapshot,
+  });
+  const restoreWorkspaceTab = React.useCallback(
+    (tabSnapshot: KolamWorkspaceTabSnapshot | null) => {
+      if (!tabSnapshot) {
+        return;
+      }
+
+      restoreWorkspaceTabSnapshot(tabSnapshot);
+      setActiveSettingsTab(tabSnapshot.activeSettingsTab ?? null);
+    },
+    [restoreWorkspaceTabSnapshot],
+  );
+  const handleWorkspaceTabSelect = React.useCallback(
+    (tabId: string) => {
+      restoreWorkspaceTab(handleTabSelect(tabId));
+    },
+    [handleTabSelect, restoreWorkspaceTab],
+  );
+  const handleWorkspaceTabClose = React.useCallback(
+    (tabId: string) => {
+      restoreWorkspaceTab(handleTabClose(tabId));
+    },
+    [handleTabClose, restoreWorkspaceTab],
+  );
   const {
     activeCategory,
     activeType,
@@ -502,6 +560,24 @@ export function KolamAppStateProvider({
       ) : null,
     [activeChatRail, handleChatRailClose],
   );
+  const workspaceTabsNode = React.useMemo(
+    () => (
+      <KolamWorkspaceTabStrip
+        activeTabId={activeTabId}
+        onCreateTab={handleCreateTab}
+        onTabClose={handleWorkspaceTabClose}
+        onTabSelect={handleWorkspaceTabSelect}
+        tabs={tabs}
+      />
+    ),
+    [
+      activeTabId,
+      handleCreateTab,
+      handleWorkspaceTabClose,
+      handleWorkspaceTabSelect,
+      tabs,
+    ],
+  );
 
   const authValue = React.useMemo<KolamAuthContextValue>(
     () => ({
@@ -616,8 +692,16 @@ export function KolamAppStateProvider({
       rightRail: rightRailNode,
       sidebar,
       topNavigation,
+      workspaceTabs: workspaceTabsNode,
     }),
-    [dashboardHeader, overlay, rightRailNode, sidebar, topNavigation],
+    [
+      dashboardHeader,
+      overlay,
+      rightRailNode,
+      sidebar,
+      topNavigation,
+      workspaceTabsNode,
+    ],
   );
 
   const workspaceViewValue = React.useMemo<KolamWorkspaceViewContextValue>(
@@ -627,15 +711,24 @@ export function KolamAppStateProvider({
     }),
     [runtime, workspace],
   );
+  const workspaceTabsValue = React.useMemo<KolamWorkspaceTabsContextValue>(
+    () => ({
+      activeTabId,
+      tabs,
+    }),
+    [activeTabId, tabs],
+  );
 
   return (
     <KolamAuthContext.Provider value={authValue}>
       <KolamDataContext.Provider value={dataValue}>
         <KolamNavigationContext.Provider value={navigationValue}>
           <KolamShellChromeContext.Provider value={shellChromeValue}>
-            <KolamWorkspaceViewContext.Provider value={workspaceViewValue}>
-              {children}
-            </KolamWorkspaceViewContext.Provider>
+            <KolamWorkspaceTabsContext.Provider value={workspaceTabsValue}>
+              <KolamWorkspaceViewContext.Provider value={workspaceViewValue}>
+                {children}
+              </KolamWorkspaceViewContext.Provider>
+            </KolamWorkspaceTabsContext.Provider>
           </KolamShellChromeContext.Provider>
         </KolamNavigationContext.Provider>
       </KolamDataContext.Provider>
