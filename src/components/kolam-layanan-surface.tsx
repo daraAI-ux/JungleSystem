@@ -181,23 +181,24 @@ function KolamLayananList({
         <KolamStatsCardStrip cards={kpiCards} />
       </View>
 
+      <View style={[styles.tabNav, styles.fullWidth]}>
+        {KOLAM_LAYANAN_LIST_TABS.map(tab => (
+          <KolamButton
+            intent={controller.activeTab === tab.id ? 'primary' : 'outline'}
+            key={tab.id}
+            label={tab.label}
+            onPress={() => {
+              const href = controller.onTabChange(tab.id);
+              onRouteChange?.(href);
+            }}
+            style={styles.tabButton}
+          />
+        ))}
+      </View>
+
       <View style={[kolamTableToolbarStyles.shell, styles.fullWidth]}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
-            {KOLAM_LAYANAN_LIST_TABS.map(tab => (
-              <KolamButton
-                intent={
-                  controller.activeTab === tab.id ? 'primary' : 'outline'
-                }
-                key={tab.id}
-                label={tab.label}
-                onPress={() => {
-                  const href = controller.onTabChange(tab.id);
-                  onRouteChange?.(href);
-                }}
-                style={styles.tabButton}
-              />
-            ))}
             {controller.activeTab === 'daftar' ||
             controller.activeTab === 'langganan' ? (
               <KolamSearchField
@@ -894,6 +895,17 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     minWidth: 0,
     width: '100%',
+  },
+  tabNav: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    padding: 4,
   },
   errorBadge: {
     alignSelf: 'stretch',
