@@ -4511,6 +4511,12 @@ describe('KolamAmSurface', () => {
     });
 
     const joinedText = renderText(renderer!).join(' ');
+    expect(
+      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search recipient...'),
+    ).toBe(true);
+    expect(
+      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search transfer...'),
+    ).toBe(false);
     expect(joinedText).toContain('Total Transfers');
     expect(joinedText).toContain('Total Amount');
     expect(joinedText).toContain('Pending');

@@ -4001,7 +4001,7 @@ function AmTransfersPage({
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search transfer..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
+        <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search recipient..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
         <AmSegmentGroup active={status} items={['all', 'pending', 'processing', 'success', 'failed']} onSelect={handleTransferStatusChange} />
         <KolamButton
           accessibilityLabel="AM New Transfer"
