@@ -181,13 +181,29 @@ describe('Kolam workspace tabs', () => {
       accessibilityLabel: 'Tutup Produk',
     });
 
-    expect(closeButton.props.style).toEqual(
-      expect.objectContaining({
-        backgroundColor: V.colors.danger,
-        borderRadius: 9,
-        height: 18,
-        width: 18,
-      }),
+    const closeDefaultStyle = closeButton.props.style({
+      hovered: false,
+      pressed: false,
+    });
+    const closeHoverStyle = closeButton.props.style({
+      hovered: true,
+      pressed: false,
+    });
+
+    expect(closeDefaultStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundColor: V.colors.mutedFg,
+          borderRadius: 7.5,
+          height: 15,
+          width: 15,
+        }),
+      ]),
+    );
+    expect(closeHoverStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({backgroundColor: V.colors.danger}),
+      ]),
     );
     expect(renderer!.root.findAllByType(KolamXIcon)[0].props.color).toBe(
       V.colors.primaryFg,

@@ -20,9 +20,12 @@ describe('KolamXIcon', () => {
       const views = renderer!.root.findAllByType(View);
       const svg = renderer!.root.findByType(Svg);
       const path = renderer!.root.findByType(Path);
+      const expectedGlyphSize = size === 'sm' ? 6 : size === 'md' ? 13 : 11;
 
       expect(views).toHaveLength(1);
       expect(svg.props.viewBox).toBe('0 0 12 12');
+      expect(svg.props.height).toBe(expectedGlyphSize);
+      expect(svg.props.width).toBe(expectedGlyphSize);
       expect(path.props).toEqual(
         expect.objectContaining({
           d: 'M2 2 L10 10 M10 2 L2 10',

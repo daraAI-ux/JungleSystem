@@ -5,6 +5,7 @@ import type {KolamWorkspaceTab} from '../domain/kolam-workspace-tabs';
 import {KolamActionGlyph} from './kolam-action-glyph';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
+import {KolamPressable} from './kolam-pressable';
 import {KolamXIcon} from './kolam-x-icon';
 
 export interface KolamWorkspaceTabStripProps {
@@ -77,15 +78,16 @@ function WorkspaceTabButton({
         {label}
       </Text>
       {closable ? (
-        <KolamIconButton
+        <KolamPressable
           accessibilityLabel={`Tutup ${label}`}
+          accessibilityRole="button"
           onPress={onClose}
-          size={22}
-          radius="full"
-          variant="ghost"
-          style={styles.closeButton}>
+          style={({hovered, pressed}: {hovered?: boolean; pressed?: boolean}) => [
+            styles.closeButton,
+            (hovered || pressed) && styles.closeButtonHovered,
+          ]}>
           <KolamXIcon color={V.colors.primaryFg} size="sm" />
-        </KolamIconButton>
+        </KolamPressable>
       ) : null}
       {active ? <View style={styles.indicator} /> : null}
     </KolamInteractionFrame>
@@ -138,11 +140,16 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
   },
   closeButton: {
-    backgroundColor: V.colors.danger,
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedFg,
+    borderRadius: 7.5,
     flexShrink: 0,
-    height: 18,
-    width: 18,
-    borderRadius: 9,
+    height: 15,
+    justifyContent: 'center',
+    width: 15,
+  },
+  closeButtonHovered: {
+    backgroundColor: V.colors.danger,
   },
   addButton: {
     flexShrink: 0,

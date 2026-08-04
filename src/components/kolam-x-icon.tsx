@@ -43,7 +43,7 @@ function getBoxSize(size: KolamXIconSize) {
 
 function getGlyphSize(size: KolamXIconSize) {
   if (size === 'sm') {
-    return 8;
+    return 6;
   }
 
   return size === 'md' ? 13 : 11;

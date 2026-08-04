@@ -345,37 +345,37 @@ function BotProfileSection({
             Foto & nama bot deterministik Inventory Copilot.
           </Text>
         </View>
-      </View>
-      <View style={[styles.botStripActions, {marginTop: 12}]}>
-        {photoUri ? (
-          <Image source={{uri: photoUri}} style={styles.botAvatar} />
-        ) : (
-          <View style={styles.botAvatarPh}>
-            <Text style={styles.botAvatarPhText}>BOT</Text>
-          </View>
-        )}
-        <Pressable
-          accessibilityRole="button"
-          disabled={controller.photoUploading}
-          onPress={() => {
-            void controller.onPickBotPhoto();
-          }}
-          style={styles.botUpload}>
-          <Text style={styles.botUploadText}>
-            {controller.photoUploading ? 'Mengunggah…' : 'Unggah foto bot'}
-          </Text>
-        </Pressable>
-        <View style={styles.botNameField}>
-          <Text style={styles.botNameLabel}>Nama PIC bot</Text>
-          <TextInput
-            editable={!controller.photoUploading}
-            onBlur={() => {
-              void controller.onSaveBotName();
+        <View style={styles.botStripActions}>
+          {photoUri ? (
+            <Image source={{uri: photoUri}} style={styles.botAvatar} />
+          ) : (
+            <View style={styles.botAvatarPh}>
+              <Text style={styles.botAvatarPhText}>BOT</Text>
+            </View>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            disabled={controller.photoUploading}
+            onPress={() => {
+              void controller.onPickBotPhoto();
             }}
-            onChangeText={controller.onSetBotNameDraft}
-            style={styles.botNameInput}
-            value={controller.botNameDraft}
-          />
+            style={styles.botUpload}>
+            <Text style={styles.botUploadText}>
+              {controller.photoUploading ? 'Mengunggah…' : 'Unggah foto bot'}
+            </Text>
+          </Pressable>
+          <View style={styles.botNameField}>
+            <Text style={styles.botNameLabel}>Nama PIC bot</Text>
+            <TextInput
+              editable={!controller.photoUploading}
+              onBlur={() => {
+                void controller.onSaveBotName();
+              }}
+              onChangeText={controller.onSetBotNameDraft}
+              style={styles.botNameInput}
+              value={controller.botNameDraft}
+            />
+          </View>
         </View>
       </View>
     </View>
