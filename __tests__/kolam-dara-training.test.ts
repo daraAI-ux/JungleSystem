@@ -5,6 +5,7 @@ import {
   isKolamDaraTrainingRoute,
   normalizeKolamDaraTrainingConversationReviewList,
   normalizeKolamDaraTrainingFeedbackList,
+  normalizeKolamDaraTrainingFineTuneSummary,
   normalizeKolamDaraTrainingPhraseList,
   normalizeKolamDaraTrainingStats,
   resolveKolamDaraTrainingAccess,
@@ -155,6 +156,34 @@ describe('kolam-dara-training domain', () => {
       contactLabel: 'Buyer A',
       rating: 2,
       customerComment: 'Lambat',
+    });
+  });
+
+  it('normalizes fine-tune summary', () => {
+    const summary = normalizeKolamDaraTrainingFineTuneSummary({
+      data: {
+        datasetTotal: 12,
+        approvedCount: 3,
+        blockedCount: 1,
+        exportedCount: 0,
+        candidateSourceCounts: {phrase_rule: 5},
+        statusCounts: {candidate: 9},
+        benchmarkTotal: 50,
+        minBenchmarkRequired: 50,
+        runtime: {
+          useFineTune: false,
+          fallback: true,
+          reason: 'env_disabled',
+          timeoutMs: 1000,
+        },
+      },
+    });
+    expect(summary).toMatchObject({
+      datasetTotal: 12,
+      approvedCount: 3,
+      blockedCount: 1,
+      benchmarkTotal: 50,
+      runtime: {useFineTune: false, reason: 'env_disabled'},
     });
   });
 });

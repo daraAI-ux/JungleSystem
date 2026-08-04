@@ -119,6 +119,160 @@ export type KolamDaraTrainingConversationReviewList = {
   limit: number;
 };
 
+export type KolamDaraTrainingFineTuneValidationStatus =
+  | 'valid'
+  | 'needs_review'
+  | 'blocked';
+
+export type KolamDaraTrainingFineTuneDatasetStatus =
+  | 'candidate'
+  | 'approved'
+  | 'rejected'
+  | 'exported';
+
+export type KolamDaraTrainingFineTuneDatasetFilter =
+  | KolamDaraTrainingFineTuneDatasetStatus
+  | 'all';
+
+export type KolamDaraTrainingFineTuneSourceType =
+  | 'phrase_rule'
+  | 'search_feedback'
+  | 'conversation_review'
+  | 'eval_case'
+  | 'planner_audit'
+  | 'team_chat_feedback'
+  | string;
+
+/** FE `DaraFineTuneDatasetItem`. */
+export type KolamDaraTrainingFineTuneDatasetItem = {
+  id: string;
+  sourceType: KolamDaraTrainingFineTuneSourceType;
+  sourceId: string;
+  input: string;
+  output: string;
+  validationStatus: KolamDaraTrainingFineTuneValidationStatus | string;
+  status: KolamDaraTrainingFineTuneDatasetStatus | string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** FE `DaraFineTuneRun`. */
+export type KolamDaraTrainingFineTuneRun = {
+  id: string;
+  runKey: string;
+  status: string;
+  baseModel: string;
+  modelName: string;
+  runtimeEligible: boolean;
+  datasetItemCount: number;
+  createdAt: string;
+};
+
+/** FE `DaraFineTuneBenchmarkScenario`. */
+export type KolamDaraTrainingFineTuneBenchmarkScenario = {
+  id: string;
+  index: number;
+  query: string;
+  expectedCapability: string;
+};
+
+export type KolamDaraTrainingFineTuneBenchmark = {
+  scenarios: KolamDaraTrainingFineTuneBenchmarkScenario[];
+  total: number;
+  minRequired: number;
+  ok: boolean;
+};
+
+/** FE fine-tune summary (tab `Summary`). */
+export type KolamDaraTrainingFineTuneSummary = {
+  datasetTotal: number;
+  approvedCount: number;
+  blockedCount: number;
+  exportedCount: number;
+  candidateSourceCounts: Record<string, number>;
+  statusCounts: Record<string, number>;
+  benchmarkTotal: number;
+  minBenchmarkRequired: number;
+  runtime: {
+    useFineTune: boolean;
+    fallback: boolean;
+    reason: string;
+    timeoutMs: number;
+    modelName: string;
+  };
+};
+
+export type KolamDaraTrainingFineTuneImportResult = {
+  message: string;
+  imported: number;
+  updated: number;
+  blocked: number;
+};
+
+export type KolamDaraTrainingFineTuneExportResult = {
+  message: string;
+  filePath: string;
+  lineCount: number;
+};
+
+/** FE `SOURCE_LABELS`. */
+export const KOLAM_DARA_TRAINING_FINE_TUNE_SOURCE_LABELS: Record<string, string> =
+  {
+    phrase_rule: 'Frasa',
+    search_feedback: 'Koreksi produk',
+    conversation_review: 'Review chat',
+    eval_case: 'Eval',
+    planner_audit: 'Planner audit',
+    team_chat_feedback: 'Feedback Team Chat',
+  };
+
+/** FE `STATUS_LABELS`. */
+export const KOLAM_DARA_TRAINING_FINE_TUNE_STATUS_LABELS: Record<string, string> =
+  {
+    candidate: 'Kandidat',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    exported: 'Exported',
+    valid: 'Valid',
+    needs_review: 'Review',
+    blocked: 'Blocked',
+    all: 'all',
+  };
+
+export const KOLAM_DARA_TRAINING_FINE_TUNE_DATASET_FILTERS: KolamDaraTrainingFineTuneDatasetFilter[] =
+  ['all', 'candidate', 'approved', 'exported', 'rejected'];
+
+export function formatKolamDaraTrainingFineTuneSourceCounts(
+  counts: Record<string, number>,
+) {
+  const entries = Object.entries(counts || {});
+  if (!entries.length) {
+    return 'Belum ada dataset tersimpan';
+  }
+  return entries
+    .map(
+      ([key, value]) =>
+        `${KOLAM_DARA_TRAINING_FINE_TUNE_SOURCE_LABELS[key] || key}: ${value}`,
+    )
+    .join(' · ');
+}
+
+export function resolveKolamDaraTrainingFineTuneStatusIntent(
+  status: string,
+): 'success' | 'danger' | 'warning' | 'muted' {
+  if (status === 'approved' || status === 'valid' || status === 'exported') {
+    return 'success';
+  }
+  if (status === 'blocked' || status === 'rejected') {
+    return 'danger';
+  }
+  if (status === 'needs_review' || status === 'candidate') {
+    return 'warning';
+  }
+  return 'muted';
+}
+
 /** FE `PHRASE_CATEGORY_LABELS`. */
 export const KOLAM_DARA_TRAINING_PHRASE_CATEGORY_LABELS: Record<
   KolamDaraTrainingPhraseCategory,
@@ -435,6 +589,154 @@ export function normalizeKolamDaraTrainingConversationReview(
   };
 }
 
+export function normalizeKolamDaraTrainingFineTuneSummary(
+  payload: unknown,
+): KolamDaraTrainingFineTuneSummary {
+  const root = asRecord(payload);
+  const data = asRecord(root.data ?? payload);
+  const runtime = asRecord(data.runtime);
+  return {
+    datasetTotal: asNumber(data.datasetTotal),
+    approvedCount: asNumber(data.approvedCount),
+    blockedCount: asNumber(data.blockedCount),
+    exportedCount: asNumber(data.exportedCount),
+    candidateSourceCounts: asStringNumberMap(data.candidateSourceCounts),
+    statusCounts: asStringNumberMap(data.statusCounts),
+    benchmarkTotal: asNumber(data.benchmarkTotal),
+    minBenchmarkRequired: asNumber(data.minBenchmarkRequired) || 50,
+    runtime: {
+      useFineTune: runtime.useFineTune === true,
+      fallback: runtime.fallback === true,
+      reason: String(runtime.reason || '').trim(),
+      timeoutMs: asNumber(runtime.timeoutMs),
+      modelName: String(runtime.modelName || '').trim(),
+    },
+  };
+}
+
+export function normalizeKolamDaraTrainingFineTuneDatasetItem(
+  payload: unknown,
+): KolamDaraTrainingFineTuneDatasetItem | null {
+  const row = asRecord(payload);
+  const id = String(row._id || row.id || '').trim();
+  if (!id && !String(row.sourceId || '').trim()) {
+    return null;
+  }
+  const sourceId = String(row.sourceId || '').trim();
+  return {
+    id: id || `${row.sourceType}:${sourceId}`,
+    sourceType: String(row.sourceType || '').trim() || 'unknown',
+    sourceId,
+    input: String(row.input || '').trim(),
+    output: String(row.output || '').trim(),
+    validationStatus: String(row.validationStatus || '').trim() || 'needs_review',
+    status: String(row.status || '').trim() || 'candidate',
+    notes: String(row.notes || '').trim(),
+    createdAt: String(row.createdAt || '').trim(),
+    updatedAt: String(row.updatedAt || '').trim(),
+  };
+}
+
+export function normalizeKolamDaraTrainingFineTuneDatasetList(
+  payload: unknown,
+): KolamDaraTrainingFineTuneDatasetItem[] {
+  const root = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+      ? root.data
+      : [];
+  return list
+    .map(normalizeKolamDaraTrainingFineTuneDatasetItem)
+    .filter((row): row is KolamDaraTrainingFineTuneDatasetItem => row != null);
+}
+
+export function normalizeKolamDaraTrainingFineTuneBenchmark(
+  payload: unknown,
+): KolamDaraTrainingFineTuneBenchmark {
+  const root = asRecord(payload);
+  const data = asRecord(root.data ?? payload);
+  const scenariosRaw = Array.isArray(data.scenarios) ? data.scenarios : [];
+  const scenarios = scenariosRaw
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        index: asNumber(row.index),
+        query: String(row.query || '').trim(),
+        expectedCapability: String(row.expectedCapability || '').trim(),
+      };
+    })
+    .filter(
+      (row): row is KolamDaraTrainingFineTuneBenchmarkScenario => row != null,
+    );
+  return {
+    scenarios,
+    total: asNumber(data.total) || scenarios.length,
+    minRequired: asNumber(data.minRequired) || 50,
+    ok: data.ok === true,
+  };
+}
+
+export function normalizeKolamDaraTrainingFineTuneRunList(
+  payload: unknown,
+): KolamDaraTrainingFineTuneRun[] {
+  const root = asRecord(payload);
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(root.data)
+      ? root.data
+      : [];
+  return list
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row._id || row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        runKey: String(row.runKey || '').trim() || id,
+        status: String(row.status || '').trim(),
+        baseModel: String(row.baseModel || '').trim(),
+        modelName: String(row.modelName || '').trim(),
+        runtimeEligible: row.runtimeEligible === true,
+        datasetItemCount: asNumber(row.datasetItemCount),
+        createdAt: String(row.createdAt || '').trim(),
+      };
+    })
+    .filter((row): row is KolamDaraTrainingFineTuneRun => row != null);
+}
+
+export function normalizeKolamDaraTrainingFineTuneImportResult(
+  payload: unknown,
+): KolamDaraTrainingFineTuneImportResult {
+  const root = asRecord(payload);
+  const data = asRecord(root.data);
+  return {
+    message: String(root.message || '').trim() || 'Import selesai',
+    imported: asNumber(data.imported),
+    updated: asNumber(data.updated),
+    blocked: asNumber(data.blocked),
+  };
+}
+
+export function normalizeKolamDaraTrainingFineTuneExportResult(
+  payload: unknown,
+): KolamDaraTrainingFineTuneExportResult {
+  const root = asRecord(payload);
+  const data = asRecord(root.data);
+  return {
+    message: String(root.message || '').trim() || 'Export selesai',
+    filePath: String(data.filePath || '').trim(),
+    lineCount: asNumber(data.lineCount),
+  };
+}
+
 /** FE `formatDate` on products feedback table. */
 export function formatKolamDaraTrainingDateTime(iso?: string | null) {
   if (!iso) {
@@ -482,4 +784,16 @@ function asRecord(value: unknown): Record<string, unknown> {
 function asNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+function asStringNumberMap(value: unknown): Record<string, number> {
+  const root = asRecord(value);
+  const out: Record<string, number> = {};
+  for (const [key, raw] of Object.entries(root)) {
+    const n = asNumber(raw);
+    if (key) {
+      out[key] = n;
+    }
+  }
+  return out;
 }

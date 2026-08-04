@@ -3,9 +3,14 @@ import ReactTestRenderer from 'react-test-renderer';
 import {KolamDaraTrainingSurface} from '../src/components/kolam-dara-training-surface';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
+  fetchKolamDaraTrainingFineTuneBenchmark,
+  fetchKolamDaraTrainingFineTuneSummary,
   fetchKolamDaraTrainingStats,
   listKolamDaraTrainingConversationReviews,
   listKolamDaraTrainingFeedback,
+  listKolamDaraTrainingFineTuneCandidates,
+  listKolamDaraTrainingFineTuneDataset,
+  listKolamDaraTrainingFineTuneRuns,
   listKolamDaraTrainingPhrases,
 } from '../src/services/kolam-dara-training-api';
 
@@ -23,6 +28,14 @@ jest.mock('../src/services/kolam-dara-training-api', () => ({
   updateKolamDaraTrainingPhrase: jest.fn(),
   deleteKolamDaraTrainingPhrase: jest.fn(),
   runKolamDaraTrainingProductRerank: jest.fn(),
+  fetchKolamDaraTrainingFineTuneSummary: jest.fn(),
+  listKolamDaraTrainingFineTuneCandidates: jest.fn(),
+  listKolamDaraTrainingFineTuneDataset: jest.fn(),
+  fetchKolamDaraTrainingFineTuneBenchmark: jest.fn(),
+  listKolamDaraTrainingFineTuneRuns: jest.fn(),
+  importKolamDaraTrainingFineTuneCandidates: jest.fn(),
+  exportKolamDaraTrainingFineTuneJsonl: jest.fn(),
+  updateKolamDaraTrainingFineTuneDatasetItem: jest.fn(),
 }));
 
 const authMock = useKolamAuthContext as jest.MockedFunction<
@@ -39,6 +52,25 @@ const feedbackMock = listKolamDaraTrainingFeedback as jest.MockedFunction<
 >;
 const reviewsMock = listKolamDaraTrainingConversationReviews as jest.MockedFunction<
   typeof listKolamDaraTrainingConversationReviews
+>;
+const fineTuneSummaryMock =
+  fetchKolamDaraTrainingFineTuneSummary as jest.MockedFunction<
+    typeof fetchKolamDaraTrainingFineTuneSummary
+  >;
+const fineTuneCandidatesMock =
+  listKolamDaraTrainingFineTuneCandidates as jest.MockedFunction<
+    typeof listKolamDaraTrainingFineTuneCandidates
+  >;
+const fineTuneDatasetMock =
+  listKolamDaraTrainingFineTuneDataset as jest.MockedFunction<
+    typeof listKolamDaraTrainingFineTuneDataset
+  >;
+const fineTuneBenchmarkMock =
+  fetchKolamDaraTrainingFineTuneBenchmark as jest.MockedFunction<
+    typeof fetchKolamDaraTrainingFineTuneBenchmark
+  >;
+const fineTuneRunsMock = listKolamDaraTrainingFineTuneRuns as jest.MockedFunction<
+  typeof listKolamDaraTrainingFineTuneRuns
 >;
 
 describe('KolamDaraTrainingSurface', () => {
@@ -121,6 +153,65 @@ describe('KolamDaraTrainingSurface', () => {
       page: 1,
       limit: 20,
     });
+    fineTuneSummaryMock.mockResolvedValue({
+      datasetTotal: 4,
+      approvedCount: 1,
+      blockedCount: 0,
+      exportedCount: 0,
+      candidateSourceCounts: {phrase_rule: 2},
+      statusCounts: {candidate: 3, approved: 1},
+      benchmarkTotal: 50,
+      minBenchmarkRequired: 50,
+      runtime: {
+        useFineTune: false,
+        fallback: true,
+        reason: 'env_disabled',
+        timeoutMs: 1000,
+        modelName: '',
+      },
+    });
+    fineTuneCandidatesMock.mockResolvedValue([
+      {
+        id: 'c1',
+        sourceType: 'phrase_rule',
+        sourceId: 'p1',
+        input: 'anda siapa',
+        output: 'Saya DARA',
+        validationStatus: 'valid',
+        status: 'candidate',
+        notes: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ]);
+    fineTuneDatasetMock.mockResolvedValue([
+      {
+        id: 'd1',
+        sourceType: 'phrase_rule',
+        sourceId: 'p1',
+        input: 'anda siapa',
+        output: 'Saya DARA',
+        validationStatus: 'valid',
+        status: 'candidate',
+        notes: '',
+        createdAt: '',
+        updatedAt: '',
+      },
+    ]);
+    fineTuneBenchmarkMock.mockResolvedValue({
+      scenarios: [
+        {
+          id: 'b1',
+          index: 1,
+          query: 'cek stok',
+          expectedCapability: 'inventory',
+        },
+      ],
+      total: 50,
+      minRequired: 50,
+      ok: true,
+    });
+    fineTuneRunsMock.mockResolvedValue([]);
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -222,6 +313,33 @@ describe('KolamDaraTrainingSurface', () => {
     expect(reviewsMock).toHaveBeenCalledWith(
       expect.objectContaining({status: 'pending', page: 1, limit: 20}),
     );
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders fine-tuning foundation on fineTune tab', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=fineTune" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Fine-tuning foundation');
+    expect(text).toContain('Import kandidat');
+    expect(text).toContain('Export JSONL');
+    expect(text).toContain('Dataset kandidat');
+    expect(text).toContain('Sanitizer / validasi');
+    expect(text).toContain('Eval benchmark');
+    expect(text).toContain('Training runs / registry');
+    expect(text).toContain('anda siapa');
+    expect(fineTuneSummaryMock).toHaveBeenCalled();
+    expect(fineTuneCandidatesMock).toHaveBeenCalled();
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();

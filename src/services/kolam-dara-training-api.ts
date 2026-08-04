@@ -2,6 +2,13 @@ import {appConfig} from '../config/app';
 import {
   normalizeKolamDaraTrainingConversationReviewList,
   normalizeKolamDaraTrainingFeedbackList,
+  normalizeKolamDaraTrainingFineTuneBenchmark,
+  normalizeKolamDaraTrainingFineTuneDatasetItem,
+  normalizeKolamDaraTrainingFineTuneDatasetList,
+  normalizeKolamDaraTrainingFineTuneExportResult,
+  normalizeKolamDaraTrainingFineTuneImportResult,
+  normalizeKolamDaraTrainingFineTuneRunList,
+  normalizeKolamDaraTrainingFineTuneSummary,
   normalizeKolamDaraTrainingPhrase,
   normalizeKolamDaraTrainingPhraseList,
   normalizeKolamDaraTrainingRerankResult,
@@ -9,6 +16,14 @@ import {
   type KolamDaraTrainingConversationReviewList,
   type KolamDaraTrainingConversationReviewStatus,
   type KolamDaraTrainingFeedback,
+  type KolamDaraTrainingFineTuneBenchmark,
+  type KolamDaraTrainingFineTuneDatasetFilter,
+  type KolamDaraTrainingFineTuneDatasetItem,
+  type KolamDaraTrainingFineTuneDatasetStatus,
+  type KolamDaraTrainingFineTuneExportResult,
+  type KolamDaraTrainingFineTuneImportResult,
+  type KolamDaraTrainingFineTuneRun,
+  type KolamDaraTrainingFineTuneSummary,
   type KolamDaraTrainingPhrase,
   type KolamDaraTrainingPhraseCategory,
   type KolamDaraTrainingPhraseScope,
@@ -141,6 +156,103 @@ export async function completeKolamDaraTrainingConversationReview(
     `/chat/conversations/${encodeURIComponent(conversationId)}/review-complete`,
     {method: 'POST', body: {notes}},
   );
+}
+
+/** GET /dara-training/fine-tune/summary */
+export async function fetchKolamDaraTrainingFineTuneSummary(): Promise<KolamDaraTrainingFineTuneSummary> {
+  const payload = await kolamRequest<unknown>('/dara-training/fine-tune/summary');
+  return normalizeKolamDaraTrainingFineTuneSummary(payload);
+}
+
+/** GET /dara-training/fine-tune/candidates */
+export async function listKolamDaraTrainingFineTuneCandidates(opts?: {
+  limit?: number;
+  sourceType?: string;
+}): Promise<KolamDaraTrainingFineTuneDatasetItem[]> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/fine-tune/candidates',
+    {
+      query: {
+        limit: opts?.limit ?? 80,
+        sourceType: opts?.sourceType ?? 'all',
+      },
+    },
+  );
+  return normalizeKolamDaraTrainingFineTuneDatasetList(payload);
+}
+
+/** POST /dara-training/fine-tune/import-candidates */
+export async function importKolamDaraTrainingFineTuneCandidates(opts?: {
+  limit?: number;
+  sourceType?: string;
+}): Promise<KolamDaraTrainingFineTuneImportResult> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/fine-tune/import-candidates',
+    {method: 'POST', body: opts ?? {limit: 120}},
+  );
+  return normalizeKolamDaraTrainingFineTuneImportResult(payload);
+}
+
+/** GET /dara-training/fine-tune/dataset */
+export async function listKolamDaraTrainingFineTuneDataset(opts?: {
+  page?: number;
+  limit?: number;
+  status?: KolamDaraTrainingFineTuneDatasetFilter;
+}): Promise<KolamDaraTrainingFineTuneDatasetItem[]> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/fine-tune/dataset',
+    {
+      query: {
+        page: opts?.page ?? 1,
+        limit: opts?.limit ?? 30,
+        status: opts?.status ?? 'all',
+      },
+    },
+  );
+  return normalizeKolamDaraTrainingFineTuneDatasetList(payload);
+}
+
+/** PUT /dara-training/fine-tune/dataset/:id */
+export async function updateKolamDaraTrainingFineTuneDatasetItem(
+  id: string,
+  body: Partial<{
+    status: KolamDaraTrainingFineTuneDatasetStatus;
+    notes: string;
+  }>,
+): Promise<KolamDaraTrainingFineTuneDatasetItem | null> {
+  const payload = await kolamRequest<unknown>(
+    `/dara-training/fine-tune/dataset/${encodeURIComponent(id)}`,
+    {method: 'PUT', body},
+  );
+  return normalizeKolamDaraTrainingFineTuneDatasetItem(unwrapData(payload));
+}
+
+/** POST /dara-training/fine-tune/export-jsonl */
+export async function exportKolamDaraTrainingFineTuneJsonl(opts?: {
+  minItems?: number;
+  purpose?: string;
+}): Promise<KolamDaraTrainingFineTuneExportResult> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/fine-tune/export-jsonl',
+    {method: 'POST', body: opts ?? {minItems: 1}},
+  );
+  return normalizeKolamDaraTrainingFineTuneExportResult(payload);
+}
+
+/** GET /dara-training/fine-tune/benchmark */
+export async function fetchKolamDaraTrainingFineTuneBenchmark(): Promise<KolamDaraTrainingFineTuneBenchmark> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-training/fine-tune/benchmark',
+  );
+  return normalizeKolamDaraTrainingFineTuneBenchmark(payload);
+}
+
+/** GET /dara-training/fine-tune/runs */
+export async function listKolamDaraTrainingFineTuneRuns(): Promise<
+  KolamDaraTrainingFineTuneRun[]
+> {
+  const payload = await kolamRequest<unknown>('/dara-training/fine-tune/runs');
+  return normalizeKolamDaraTrainingFineTuneRunList(payload);
 }
 
 function unwrapData(payload: unknown): unknown {
