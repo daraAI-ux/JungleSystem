@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import {
@@ -202,6 +203,7 @@ export function KolamDaraTrainingVisionBody({
   canManage: boolean;
   refreshKey?: number;
 }) {
+  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
   const [section, setSection] =
     useState<KolamDaraTrainingVisionSectionId>('ringkasan');
   const [stats, setStats] = useState<KolamDaraTrainingVisionStats | null>(null);
@@ -498,6 +500,7 @@ export function KolamDaraTrainingVisionBody({
     'Foto training';
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.root}>
       <View style={styles.introCard}>
         <Text style={styles.introTitle}>Vision inbox — closed-world</Text>
@@ -1491,13 +1494,18 @@ export function KolamDaraTrainingVisionBody({
           ) : null}
         </View>
       ) : null}
+    </ScrollView>
 
       <Modal
         animationType="fade"
         onRequestClose={closePhotoModal}
         transparent
         visible={photoModalOpen}>
-        <View style={styles.modalRoot}>
+        <View
+          style={[
+            styles.modalRoot,
+            {height: windowHeight, width: windowWidth},
+          ]}>
           <KolamModalBackdrop onPress={closePhotoModal} />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
@@ -1594,7 +1602,7 @@ export function KolamDaraTrainingVisionBody({
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </>
   );
 }
 
@@ -1987,7 +1995,6 @@ const styles = StyleSheet.create({
   },
   modalRoot: {
     alignItems: 'center',
-    flex: 1,
     justifyContent: 'center',
     padding: 24,
   },
