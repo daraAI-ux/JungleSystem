@@ -818,7 +818,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     id: 'finance',
     title: 'Keuangan',
     items: [
-      sidebarItem('/finance', { label: 'Keuangan' }),
+      sidebarItem('/finance', { label: 'Ringkasan Keuangan' }),
       sidebarItem('/wallet', { label: 'Dompet' }),
       sidebarItem('/asset-purchase', { group: 'Pengeluaran & Pemasukan', label: 'Pembelian Aset' }),
       sidebarItem('/commissions', { group: 'Pengeluaran & Pemasukan', label: 'Komisi' }),
