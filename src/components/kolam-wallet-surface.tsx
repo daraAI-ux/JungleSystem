@@ -1395,6 +1395,7 @@ function WalletTransactionPanel({
             </View>
           }
           renderItem={renderRow}
+          scrollEnabled={false}
           style={styles.list}
         />
       </KolamCatalogListTableShell>

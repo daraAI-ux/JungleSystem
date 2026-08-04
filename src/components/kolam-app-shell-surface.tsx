@@ -117,7 +117,6 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/stock-transaction' ||
     routePath === '/customers' ||
     routePath === '/list-of-users' ||
-    routePath === '/wallet' ||
     routePath === '/payable' ||
     routePath === '/receivable' ||
     routePath === '/routine-expenses' ||

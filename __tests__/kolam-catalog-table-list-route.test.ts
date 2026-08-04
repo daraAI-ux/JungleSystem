@@ -23,7 +23,8 @@ describe('isCatalogTableListRoute', () => {
   it('matches Keuangan FlatList list roots', () => {
     expect(isCatalogTableListRoute('/finance')).toBe(false);
     expect(isCatalogTableListRoute('/finance/abc123')).toBe(false);
-    expect(isCatalogTableListRoute('/wallet')).toBe(true);
+    // Dompet uses shell ScrollView (card grid + mapped TX); owned FlatList scroll would clip.
+    expect(isCatalogTableListRoute('/wallet')).toBe(false);
     expect(isCatalogTableListRoute('/payable')).toBe(true);
     expect(isCatalogTableListRoute('/receivable')).toBe(true);
     expect(isCatalogTableListRoute('/routine-expenses')).toBe(true);
