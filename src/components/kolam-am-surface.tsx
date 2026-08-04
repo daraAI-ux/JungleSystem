@@ -4157,7 +4157,7 @@ function AmTransfersPage({
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
         <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfers AM..." emptyText="No transfers found" />
         {transfers.map(transfer => (

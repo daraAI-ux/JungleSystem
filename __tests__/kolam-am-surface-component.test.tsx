@@ -4566,8 +4566,14 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Total Transfers');
     expect(joinedText).toContain('Total Amount');
     expect(joinedText).toContain('Pending');
+    expect(joinedText).toContain('Account');
+    expect(joinedText).toContain('Recipient');
     expect(joinedText).toContain('Bank');
+    expect(joinedText).toContain('Amount');
+    expect(joinedText).toContain('Status');
     expect(joinedText).toContain('Device');
+    expect(joinedText).toContain('Created');
+    expect(joinedText).not.toContain('Action');
     expect(joinedText).toContain('Box A / Rack Blue');
     expect(joinedText).toMatch(/Fee\s+Rp\s*2\.500/);
     expect(joinedText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
