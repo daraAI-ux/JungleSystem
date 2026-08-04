@@ -2737,8 +2737,29 @@ describe('KolamAmSurface', () => {
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
 
+    let resolveDeleteServiceAccount: (() => void) | undefined;
+    jest.mocked(deleteAmServiceAccount).mockImplementationOnce(() => new Promise<void>(resolve => {
+      resolveDeleteServiceAccount = resolve;
+    }));
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Delete Service Account service-1'}).props.onPress();
+    });
+
+    const pendingDeleteButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Device Delete Service Account service-1',
+    });
+    expect(pendingDeleteButton.props.disabled).toBe(true);
+    expect(pendingDeleteButton.props.muted).toBe(true);
+    expect(pendingDeleteButton.props.label).toBe('...');
+    const pendingDeleteEditButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Device Edit Service Account service-1',
+    });
+    expect(pendingDeleteEditButton.props.disabled).toBe(true);
+
+    await act(async () => {
+      resolveDeleteServiceAccount?.();
+      await Promise.resolve();
     });
 
     expect(deleteAmServiceAccount).toHaveBeenCalledWith('service-1');
@@ -2756,8 +2777,24 @@ describe('KolamAmSurface', () => {
       findInput('myBCA username')!.props.onChangeText('bca-updated');
       findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
     });
+    let resolveUpdateServiceAccount: ((value: {_id: string}) => void) | undefined;
+    jest.mocked(updateAmServiceAccount).mockImplementationOnce(() => new Promise(resolve => {
+      resolveUpdateServiceAccount = resolve;
+    }));
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
+    });
+
+    const pendingSaveButton = renderer!.root.findByProps({
+      accessibilityLabel: 'AM Device Save Service Account device-1',
+    });
+    expect(pendingSaveButton.props.disabled).toBe(true);
+    expect(pendingSaveButton.props.muted).toBe(true);
+    expect(pendingSaveButton.props.label).toBe('Menyimpan');
+
+    await act(async () => {
+      resolveUpdateServiceAccount?.({_id: 'service-1'});
+      await Promise.resolve();
     });
 
     expect(updateAmServiceAccount).toHaveBeenLastCalledWith('service-1', expect.objectContaining({

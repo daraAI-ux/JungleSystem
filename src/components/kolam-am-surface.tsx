@@ -3752,6 +3752,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel={`AM Device Save Service Account ${device._id}`}
+                disabled={isSubmittingService}
                 label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Update Service' : 'Create Service'}
                 muted={isSubmittingService}
                 size="sm"
@@ -3809,6 +3810,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                   <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
                   <KolamButton
                     accessibilityLabel={`AM Device Edit Service Account ${account._id}`}
+                    disabled={isSubmittingService || actingDeviceServiceId === account._id}
                     intent="outline"
                     label="Edit"
                     muted={isSubmittingService || actingDeviceServiceId === account._id}
@@ -3817,6 +3819,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                   />
                   <KolamButton
                     accessibilityLabel={`AM Device Delete Service Account ${account._id}`}
+                    disabled={actingDeviceServiceId === account._id}
                     intent="danger"
                     label={actingDeviceServiceId === account._id ? '...' : 'Delete'}
                     muted={actingDeviceServiceId === account._id}
