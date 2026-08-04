@@ -82,21 +82,23 @@ function StatBox({
   );
 }
 
-function PipelineGroup({
-  title,
-  lines,
+/** Plain scannable row — no tile/box chrome. */
+function PipelineField({
+  hint,
+  label,
+  value,
 }: {
-  title: string;
-  lines: string[];
+  hint?: string;
+  label: string;
+  value: string | number;
 }) {
   return (
-    <View style={styles.pipelineGroup}>
-      <Text style={styles.pipelineGroupTitle}>{title}</Text>
-      {lines.map(line => (
-        <Text key={line} style={styles.pipelineLine}>
-          {line}
-        </Text>
-      ))}
+    <View style={styles.pipelineField}>
+      <Text style={styles.pipelineFieldLabel}>{label}</Text>
+      <View style={styles.pipelineFieldRight}>
+        <Text style={styles.pipelineFieldValue}>{value}</Text>
+        {hint ? <Text style={styles.pipelineFieldHint}>{hint}</Text> : null}
+      </View>
     </View>
   );
 }
@@ -458,41 +460,73 @@ export function KolamDaraTrainingVisionBody({
       {section === 'ringkasan' && stats ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Status pipeline</Text>
-          <View style={styles.pipelineGroups}>
-            <PipelineGroup
-              lines={[
-                `Closed-world ${stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'} · Embed ${stats.embedFamily || 'siglip'}${stats.embedModelId.split('/').pop() ? ` (${stats.embedModelId.split('/').pop()})` : ''} · Threshold ${stats.embedMinScore ?? '—'}`,
-                `Indeks model OK ${stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}${(stats.embedIndexStale ?? 0) > 0 ? ` · Perlu rebuild ${stats.embedIndexStale}` : ''}`,
-              ]}
-              title="Model"
+          <View style={styles.pipelineFields}>
+            <PipelineField
+              label="Closed-world"
+              value={stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'}
             />
-            <PipelineGroup
-              lines={[
-                `Detect/crop ${stats.detectCropMode || 'auto'}${
-                  stats.detectCropBackend === 'sam' ?
-                    ` · ${stats.detectCropModel.split('/').pop() || 'mobile_sam'}`
-                  : ` · ${stats.detectCropModel.split('/').pop() || 'yolov8n'}`
-                }`,
-                `OCR ${stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}${stats.ocrEngine ? ` · ${stats.ocrEngine}` : ''}`,
-              ]}
-              title="Deteksi"
+            <PipelineField
+              hint={stats.embedModelId.split('/').pop()}
+              label="Embed aktif"
+              value={stats.embedFamily || 'siglip'}
             />
-            <PipelineGroup
-              lines={[
-                `Foto species ${stats.speciesTrainingPhotos ?? stats.trainingPhotos} · Foto produk ${stats.productTrainingPhotos ?? 0}`,
-                `YOLO species ${stats.yoloModelReady ? 'Aktif' : 'Belum'} · YOLO produk ${stats.yoloProductModelReady ? 'Aktif' : 'Belum'}${
-                  stats.yoloProductClassCount ?
-                    ` · ${stats.yoloProductClassCount} SKU`
-                  : ` · Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
-                }`,
-              ]}
-              title="Training"
+            <PipelineField label="Threshold min" value={stats.embedMinScore ?? '—'} />
+            <PipelineField
+              label="Indeks model OK"
+              value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
             />
-            <PipelineGroup
-              lines={[
-                `Koreksi ${stats.feedbackTotal ?? 0} (species ${stats.feedbackSpeciesTotal ?? '—'} · produk ${stats.feedbackProductTotal ?? '—'}) · Antrian ${stats.feedbackPending ?? 0}`,
-              ]}
-              title="Inbox"
+            <PipelineField
+              hint={
+                (stats.embedIndexStale ?? 0) > 0 ?
+                  'Jalankan rebuild dual'
+                : undefined
+              }
+              label="Perlu rebuild"
+              value={stats.embedIndexStale ?? 0}
+            />
+            <PipelineField
+              hint={
+                stats.detectCropBackend === 'sam' ?
+                  stats.detectCropModel.split('/').pop() || 'mobile_sam'
+                : stats.detectCropModel.split('/').pop() || 'yolov8n'
+              }
+              label="Detect/crop"
+              value={stats.detectCropMode || 'auto'}
+            />
+            <PipelineField
+              hint={stats.ocrEngine || undefined}
+              label="OCR unified"
+              value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
+            />
+            <PipelineField
+              label="Foto training species"
+              value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
+            />
+            <PipelineField
+              label="Foto training produk"
+              value={stats.productTrainingPhotos ?? 0}
+            />
+            <PipelineField
+              label="YOLO species"
+              value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
+            />
+            <PipelineField
+              hint={
+                stats.yoloProductClassCount ?
+                  `${stats.yoloProductClassCount} SKU`
+                : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
+              }
+              label="YOLO produk"
+              value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
+            />
+            <PipelineField
+              hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
+              label="Koreksi inbox"
+              value={stats.feedbackTotal ?? 0}
+            />
+            <PipelineField
+              label="Antrian feedback"
+              value={stats.feedbackPending ?? 0}
             />
           </View>
         </View>
@@ -1464,26 +1498,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  pipelineGroups: {
-    gap: 14,
+  pipelineFields: {
+    gap: 0,
     width: '100%',
   },
-  pipelineGroup: {
-    gap: 4,
+  pipelineField: {
+    alignItems: 'flex-start',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 16,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
-  pipelineGroupTitle: {
+  pipelineFieldLabel: {
     color: V.colors.mutedFg,
+    flex: 1,
     fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    lineHeight: 18,
+    paddingTop: 1,
   },
-  pipelineLine: {
+  pipelineFieldRight: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+    gap: 2,
+    maxWidth: '55%',
+  },
+  pipelineFieldValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
-    lineHeight: 19,
+    fontWeight: '700',
+    lineHeight: 18,
+    textAlign: 'right',
+  },
+  pipelineFieldHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    lineHeight: 15,
+    textAlign: 'right',
   },
   statGrid: {
     alignItems: 'stretch',
