@@ -57,11 +57,13 @@ import {
   useKolamPusatAiRingkasanController,
   type KolamPusatAiRingkasanController,
 } from '../hooks/use-kolam-pusat-ai-ringkasan-controller';
+import {useKolamPusatAiInventoryCopilotController} from '../hooks/use-kolam-pusat-ai-inventory-copilot-controller';
 import {useKolamPusatAiPoCopilotController} from '../hooks/use-kolam-pusat-ai-po-copilot-controller';
 import {useKolamPusatAiTransaksiCopilotController} from '../hooks/use-kolam-pusat-ai-transaksi-copilot-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamPusatAiInventoryCopilotBody} from './kolam-pusat-ai-inventory-copilot-body';
 import {KolamPusatAiPoCopilotBody} from './kolam-pusat-ai-po-copilot-body';
 import {KolamPusatAiTransaksiCopilotBody} from './kolam-pusat-ai-transaksi-copilot-body';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
@@ -93,6 +95,8 @@ export function KolamPusatAiRingkasanSurface({
   const logDaraController = useKolamPusatAiLogDaraController(route);
   const transaksiController = useKolamPusatAiTransaksiCopilotController(route);
   const poController = useKolamPusatAiPoCopilotController(route);
+  const inventoryController =
+    useKolamPusatAiInventoryCopilotController(route);
 
   return (
     <View style={styles.surface}>
@@ -128,6 +132,11 @@ export function KolamPusatAiRingkasanSurface({
       ) : selectedTab === 'po-copilot' ? (
         <KolamPusatAiPoCopilotBody
           controller={poController}
+          onRouteChange={onRouteChange}
+        />
+      ) : selectedTab === 'inventory-copilot' ? (
+        <KolamPusatAiInventoryCopilotBody
+          controller={inventoryController}
           onRouteChange={onRouteChange}
         />
       ) : (

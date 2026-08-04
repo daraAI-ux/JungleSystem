@@ -17,6 +17,11 @@ import {
   fetchKolamRajaAnemonHealth,
 } from '../src/services/kolam-dara-po-copilot-api';
 import {
+  fetchKolamInventoryCopilotDashboard,
+  fetchKolamInventoryOpsLog,
+  fetchKolamPangeranIsopodHealth,
+} from '../src/services/kolam-dara-inventory-copilot-api';
+import {
   getKolamTeamChatRooms,
   getKolamWebSetting,
 } from '../src/services/kolam-api';
@@ -50,6 +55,12 @@ jest.mock('../src/services/kolam-dara-po-copilot-api', () => ({
   fetchKolamPoCopilotStats: jest.fn(),
   fetchKolamPoOpsLog: jest.fn(),
   fetchKolamRajaAnemonHealth: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-dara-inventory-copilot-api', () => ({
+  fetchKolamInventoryCopilotDashboard: jest.fn(),
+  fetchKolamInventoryOpsLog: jest.fn(),
+  fetchKolamPangeranIsopodHealth: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-api', () => ({
@@ -96,6 +107,17 @@ const fetchPoOpsMock = fetchKolamPoOpsLog as jest.MockedFunction<
 const fetchRajaHealthMock = fetchKolamRajaAnemonHealth as jest.MockedFunction<
   typeof fetchKolamRajaAnemonHealth
 >;
+const fetchInvDashMock =
+  fetchKolamInventoryCopilotDashboard as jest.MockedFunction<
+    typeof fetchKolamInventoryCopilotDashboard
+  >;
+const fetchInvOpsMock = fetchKolamInventoryOpsLog as jest.MockedFunction<
+  typeof fetchKolamInventoryOpsLog
+>;
+const fetchPangeranHealthMock =
+  fetchKolamPangeranIsopodHealth as jest.MockedFunction<
+    typeof fetchKolamPangeranIsopodHealth
+  >;
 const getRoomsMock = getKolamTeamChatRooms as jest.MockedFunction<
   typeof getKolamTeamChatRooms
 >;
@@ -130,6 +152,9 @@ describe('KolamPusatAiRingkasanSurface', () => {
     fetchPoStatsMock.mockReset();
     fetchPoOpsMock.mockReset();
     fetchRajaHealthMock.mockReset();
+    fetchInvDashMock.mockReset();
+    fetchInvOpsMock.mockReset();
+    fetchPangeranHealthMock.mockReset();
     getRoomsMock.mockReset();
     getWebSettingMock.mockReset();
     getSourcesMock.mockReset();
@@ -146,6 +171,10 @@ describe('KolamPusatAiRingkasanSurface', () => {
       rajaAnemonWorkerPhotoUrl: '',
       poCopilotChatNotifyEnabled: true,
       poCopilotTeamRoomId: 'room-ops',
+      pangeranIsopodWorkerName: 'Pangeran',
+      pangeranIsopodWorkerPhotoUrl: '',
+      inventoryCopilotChatNotifyEnabled: true,
+      inventoryCopilotTeamRoomId: 'room-ops',
     } as never);
     getSourcesMock.mockResolvedValue({
       items: [],
@@ -285,6 +314,80 @@ describe('KolamPusatAiRingkasanSurface', () => {
       notifyRoom: {
         id: 'room-ops',
         name: 'Ops Transaksi',
+        webHref: '/team-chat?room=room-ops',
+      },
+      note: '',
+    });
+    fetchInvDashMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      lookbackHours: 24,
+      note: '',
+      priorityHint: 'Prioritas stok',
+      counts: {
+        lowStock: 4,
+        outOfStock: 1,
+        slowMovers: 2,
+        criticalSku: 3,
+        openOpnameSessions: 5,
+        agedOpenOpname: 1,
+        opnameDraft: 2,
+        opnameInReview: 1,
+        opnameReadyToPost: 0,
+        opnameVarianceDocs: 2,
+        opnameVarianceQty: 9,
+        receivingBacklog: 1,
+        packQueueTotal: 3,
+        packSlaRisk: 1,
+      },
+      pangeranIsopodProfile: {name: 'Pangeran', photoUrl: ''},
+      teamChat: {
+        aiRoomId: 'room-ops',
+        roomName: 'Ops',
+        webHref: '/team-chat?room=room-ops',
+        suggestedPrompts: ['SKU mana yang low stock atau habis?'],
+      },
+      links: [
+        {id: 'productsLowStock', label: 'Products low stock', href: '/products'},
+        {id: 'stockOpname', label: 'Stock opname', href: '/stock-opname'},
+      ],
+      lowStockLines: [{key: 'a', text: 'SKU A · stok 2 / thr 5'}],
+      varianceLines: [{key: 'v', text: 'SO-1 · Gudang · Δ3'}],
+      openOpnameLines: [{key: 'o', text: 'SO-2 · draft · Rak'}],
+      physicalQueueLines: [{key: 'p', text: 'PO-9 · received · Vendor'}],
+      packHandoffLabel: 'Pack antrian 3',
+      slowMoverLines: [],
+      opnameByLocationLines: [],
+    });
+    fetchInvOpsMock.mockResolvedValue({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      note: '',
+      dara: [
+        {
+          id: 'd1',
+          at: '2026-08-03T11:00:00.000Z',
+          action: '',
+          status: 'warn',
+          detail: 'Low stock naik',
+        },
+      ],
+      bot: [],
+    });
+    fetchPangeranHealthMock.mockResolvedValue({
+      checkedAt: '2026-08-03T12:00:00.000Z',
+      overallHealthy: true,
+      overallState: 'ready',
+      platforms: [
+        {
+          platform: 'Team Chat',
+          enabled: true,
+          healthy: true,
+          state: 'ready',
+          reason: '',
+        },
+      ],
+      notifyRoom: {
+        id: 'room-ops',
+        name: 'Ops',
         webHref: '/team-chat?room=room-ops',
       },
       note: '',
@@ -592,6 +695,34 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(fetchPoStatsMock).toHaveBeenCalled();
     expect(fetchPoOpsMock).toHaveBeenCalled();
     expect(fetchRajaHealthMock).toHaveBeenCalled();
+  });
+
+  it('loads Inventory Copilot dashboard for admin', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamPusatAiRingkasanSurface route="/pusat-ai?tab=inventory-copilot" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!).join(' ');
+    expect(text).not.toContain('Belum tersedia');
+    expect(text).toContain('Inventory Copilot');
+    expect(text).toContain('Room log Inventory Copilot');
+    expect(text).toContain('Kesehatan Bot — Pangeran Isopod');
+    expect(text).toContain('Profil Bot — Pangeran Isopod');
+    expect(text).toContain('Kesehatan stok (SKU)');
+    expect(text).toContain('Operasi gudang');
+    expect(text).toContain('Low stock');
+    expect(text).toContain('Saran prompt room DARA');
+    expect(text).toContain('Console operasi — Log DARA');
+    expect(fetchInvDashMock).toHaveBeenCalled();
+    expect(fetchInvOpsMock).toHaveBeenCalled();
+    expect(fetchPangeranHealthMock).toHaveBeenCalled();
   });
 
   it('hides admin tabs for non-admin roles', async () => {

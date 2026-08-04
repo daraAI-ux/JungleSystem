@@ -44,6 +44,22 @@ export function uploadKolamRajaAnemonWorkerPhoto(localUri: string) {
   );
 }
 
+export interface KolamPangeranIsopodWorkerPhotoResponse {
+  success?: boolean;
+  message?: string;
+  pangeranIsopodWorkerPhotoUrl?: string;
+}
+
+export function uploadKolamPangeranIsopodWorkerPhoto(localUri: string) {
+  const body = new FormData();
+  body.append('image', createImageFilePart(localUri) as unknown as Blob);
+
+  return kolamPost<KolamPangeranIsopodWorkerPhotoResponse>(
+    '/websetting/pangeran-isopod-worker-photo',
+    body,
+  );
+}
+
 function kolamPost<T = unknown>(path: string, body: unknown) {
   return apiRequest<T>({
     method: 'POST',
