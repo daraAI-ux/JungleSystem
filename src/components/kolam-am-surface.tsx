@@ -7004,12 +7004,18 @@ const styles = StyleSheet.create({
     flexBasis: 260,
   },
   panelHeaderRow: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
   },
   detailGrid: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     gap: 8,
   },
   panelTitle: {
@@ -7188,10 +7194,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   taskSearch: {
-    width: 240,
+    flexBasis: 240,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 240,
   },
   activitySearch: {
-    width: 300,
+    flexBasis: 300,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 260,
   },
   segmentList: {
     gap: 6,
@@ -7247,6 +7259,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   sectionHeaderRow: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -7311,6 +7326,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.mutedSoft,
   },
   detailHeader: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -7350,6 +7368,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   proofPanel: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     gap: 8,
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7366,6 +7387,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.muted,
   },
   detailList: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7391,6 +7415,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   runtimePanel: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     gap: 10,
     borderWidth: 1,
     borderColor: V.colors.border,
@@ -7565,6 +7592,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   formGrid: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
     gap: 10,
   },
   formField: {

@@ -679,6 +679,18 @@ describe('KolamAmSurface', () => {
         style?.alignSelf === 'stretch' &&
         style?.minWidth === 0;
     })).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(View)
+        .some(view => {
+          const style = StyleSheet.flatten(view.props.style);
+          return style?.flexBasis === 240 &&
+            style?.flexGrow === 1 &&
+            style?.flexShrink === 1 &&
+            style?.minWidth === 240 &&
+            style?.width === undefined;
+        }),
+    ).toBe(true);
 
     await updateAmRoute(renderer!, 'mutasi');
 
@@ -691,7 +703,7 @@ describe('KolamAmSurface', () => {
           style?.minWidth === 0;
       });
 
-    expect(mutasiBodyStacks.length).toBeGreaterThanOrEqual(4);
+    expect(mutasiBodyStacks.length).toBeGreaterThanOrEqual(5);
     expect(recordAmPageView).toHaveBeenCalledWith('/services');
     expect(recordAmPageView).toHaveBeenCalledWith('/mutasi');
   });
