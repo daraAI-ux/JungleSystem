@@ -115,32 +115,11 @@ export function KolamDaraMarketBulkPricingBody({
 
       <View style={styles.card}>
         <View style={styles.opHead}>
-          <View style={styles.opText}>
-            <View style={styles.badgeRow}>
-              <Text style={styles.badge}>B</Text>
-              <Text style={styles.opTitle}>
-                Harga olshop & webstore (DB saja)
-              </Text>
-            </View>
-            <Text style={styles.fieldLabel}>Mode operasi B</Text>
-            <KolamDropdownSelect
-              label="Mode"
-              onChange={value =>
-                controller.onSetMarketplaceMode(
-                  value as KolamDaraPricingMarketplaceMode,
-                )
-              }
-              options={KOLAM_DARA_PRICING_MARKETPLACE_MODE_OPTIONS.map(opt => ({
-                label: opt.label,
-                value: opt.value,
-              }))}
-              showLabelInTrigger={false}
-              style={styles.modeSelect}
-              value={controller.marketplaceMode}
-            />
-            {marketplaceMeta ? (
-              <Text style={styles.meta}>{marketplaceMeta.hint}</Text>
-            ) : null}
+          <View style={styles.badgeRow}>
+            <Text style={styles.badge}>B</Text>
+            <Text style={styles.opTitle}>
+              Harga olshop & webstore (DB saja)
+            </Text>
           </View>
           <View style={styles.opActions}>
             <KolamButton
@@ -150,6 +129,7 @@ export function KolamDaraMarketBulkPricingBody({
               onPress={() => {
                 void controller.onPreview('marketplace_db');
               }}
+              size="sm"
             />
             <KolamButton
               disabled={busy}
@@ -162,9 +142,30 @@ export function KolamDaraMarketBulkPricingBody({
               onPress={() => {
                 void controller.onRun('marketplace_db');
               }}
+              size="sm"
             />
           </View>
         </View>
+        <Text style={styles.fieldLabel}>Mode operasi B</Text>
+        <KolamDropdownSelect
+          label="Mode"
+          onChange={value =>
+            controller.onSetMarketplaceMode(
+              value as KolamDaraPricingMarketplaceMode,
+            )
+          }
+          options={KOLAM_DARA_PRICING_MARKETPLACE_MODE_OPTIONS.map(opt => ({
+            label: opt.label,
+            value: opt.value,
+          }))}
+          showLabelInTrigger={false}
+          style={styles.modeSelect}
+          triggerTextStyle={styles.modeSelectText}
+          value={controller.marketplaceMode}
+        />
+        {marketplaceMeta ? (
+          <Text style={styles.meta}>{marketplaceMeta.hint}</Text>
+        ) : null}
       </View>
 
       <OperationCard
@@ -440,8 +441,13 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   modeSelect: {
-    maxWidth: 420,
+    alignSelf: 'stretch',
+    maxWidth: 576,
     width: '100%',
+  },
+  modeSelectText: {
+    flexShrink: 1,
+    maxWidth: 520,
   },
   input: {
     backgroundColor: V.colors.bg,
@@ -493,6 +499,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   opHead: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
@@ -506,7 +513,9 @@ const styles = StyleSheet.create({
   badgeRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 1,
     gap: 8,
+    minWidth: 0,
   },
   badge: {
     backgroundColor: V.colors.fg,
@@ -527,6 +536,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   opActions: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     flexShrink: 0,
     gap: 8,
