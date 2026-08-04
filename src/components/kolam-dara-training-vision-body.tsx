@@ -460,74 +460,81 @@ export function KolamDaraTrainingVisionBody({
       {section === 'ringkasan' && stats ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Status pipeline</Text>
-          <View style={styles.pipelineFields}>
-            <PipelineField
-              label="Closed-world"
-              value={stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'}
-            />
-            <PipelineField
-              hint={stats.embedModelId.split('/').pop()}
-              label="Embed aktif"
-              value={stats.embedFamily || 'siglip'}
-            />
-            <PipelineField label="Threshold min" value={stats.embedMinScore ?? '—'} />
-            <PipelineField
-              label="Indeks model OK"
-              value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
-            />
-            <PipelineField
-              hint={
-                (stats.embedIndexStale ?? 0) > 0 ?
-                  'Jalankan rebuild dual'
-                : undefined
-              }
-              label="Perlu rebuild"
-              value={stats.embedIndexStale ?? 0}
-            />
-            <PipelineField
-              hint={
-                stats.detectCropBackend === 'sam' ?
-                  stats.detectCropModel.split('/').pop() || 'mobile_sam'
-                : stats.detectCropModel.split('/').pop() || 'yolov8n'
-              }
-              label="Detect/crop"
-              value={stats.detectCropMode || 'auto'}
-            />
-            <PipelineField
-              hint={stats.ocrEngine || undefined}
-              label="OCR unified"
-              value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
-            />
-            <PipelineField
-              label="Foto training species"
-              value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
-            />
-            <PipelineField
-              label="Foto training produk"
-              value={stats.productTrainingPhotos ?? 0}
-            />
-            <PipelineField
-              label="YOLO species"
-              value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
-            />
-            <PipelineField
-              hint={
-                stats.yoloProductClassCount ?
-                  `${stats.yoloProductClassCount} SKU`
-                : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
-              }
-              label="YOLO produk"
-              value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
-            />
-            <PipelineField
-              hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
-              label="Koreksi inbox"
-              value={stats.feedbackTotal ?? 0}
-            />
-            <PipelineField
-              label="Antrian feedback"
-              value={stats.feedbackPending ?? 0}
-            />
+          <View style={styles.pipelineColumns}>
+            <View style={styles.pipelineColumn}>
+              <PipelineField
+                label="Closed-world"
+                value={stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'}
+              />
+              <PipelineField
+                hint={stats.embedModelId.split('/').pop()}
+                label="Embed aktif"
+                value={stats.embedFamily || 'siglip'}
+              />
+              <PipelineField
+                label="Threshold min"
+                value={stats.embedMinScore ?? '—'}
+              />
+              <PipelineField
+                label="Indeks model OK"
+                value={stats.embedIndexCurrentModel ?? stats.clipIndexClipCount}
+              />
+              <PipelineField
+                hint={
+                  (stats.embedIndexStale ?? 0) > 0 ?
+                    'Jalankan rebuild dual'
+                  : undefined
+                }
+                label="Perlu rebuild"
+                value={stats.embedIndexStale ?? 0}
+              />
+              <PipelineField
+                hint={
+                  stats.detectCropBackend === 'sam' ?
+                    stats.detectCropModel.split('/').pop() || 'mobile_sam'
+                  : stats.detectCropModel.split('/').pop() || 'yolov8n'
+                }
+                label="Detect/crop"
+                value={stats.detectCropMode || 'auto'}
+              />
+              <PipelineField
+                hint={stats.ocrEngine || undefined}
+                label="OCR unified"
+                value={stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'}
+              />
+            </View>
+            <View style={styles.pipelineColumn}>
+              <PipelineField
+                label="Foto training species"
+                value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
+              />
+              <PipelineField
+                label="Foto training produk"
+                value={stats.productTrainingPhotos ?? 0}
+              />
+              <PipelineField
+                label="YOLO species"
+                value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
+              />
+              <PipelineField
+                hint={
+                  stats.yoloProductClassCount ?
+                    `${stats.yoloProductClassCount} SKU`
+                  : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
+                }
+                label="YOLO produk"
+                value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
+              />
+              <PipelineField
+                hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
+                label="Koreksi inbox"
+                value={stats.feedbackTotal ?? 0}
+              />
+              <PipelineField
+                label="Antrian feedback"
+                value={stats.feedbackPending ?? 0}
+              />
+            </View>
           </View>
         </View>
       ) : null}
@@ -1498,46 +1505,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  pipelineFields: {
-    gap: 0,
+  pipelineColumns: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 20,
     width: '100%',
+  },
+  pipelineColumn: {
+    flex: 1,
+    minWidth: 0,
   },
   pipelineField: {
     alignItems: 'flex-start',
     borderBottomColor: V.colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: 16,
+    gap: 10,
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 7,
   },
   pipelineFieldLabel: {
     color: V.colors.mutedFg,
     flex: 1,
     fontFamily: V.fontFamily,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
     paddingTop: 1,
   },
   pipelineFieldRight: {
     alignItems: 'flex-end',
     flexShrink: 0,
     gap: 2,
-    maxWidth: '55%',
+    maxWidth: '48%',
   },
   pipelineFieldValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    lineHeight: 18,
+    lineHeight: 17,
     textAlign: 'right',
   },
   pipelineFieldHint: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
+    lineHeight: 14,
     textAlign: 'right',
   },
   statGrid: {
