@@ -874,7 +874,7 @@ function AmTasksPage({
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
           <Text style={[styles.tableHeaderText, styles.errorCol]}>Error</Text>
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
         {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat tasks AM...</Text> : null}
         {!isLoading && !tasks.length ? <Text style={styles.loadingText}>No tasks found</Text> : null}

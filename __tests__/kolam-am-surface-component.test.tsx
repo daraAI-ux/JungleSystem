@@ -867,7 +867,10 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'tasks');
-    expect(renderText(renderer!)).toContain('queued');
+    const taskListText = renderText(renderer!);
+    expect(taskListText).toContain('queued');
+    expect(taskListText).toEqual(expect.arrayContaining(['Type', 'Status', 'Device', 'Account', 'Error', 'Created']));
+    expect(taskListText).not.toContain('Action');
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Queued'}),
     ).toHaveLength(0);
