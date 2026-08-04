@@ -475,12 +475,15 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === '100%' && style?.borderWidth === 1;
+        return style?.flexBasis === 420 && style?.borderWidth === 1;
       });
     expect(amRecentPanels.length).toBeGreaterThanOrEqual(2);
     expect(amRecentPanels.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%' && style?.alignSelf === 'stretch';
+      return style?.alignSelf === 'stretch' &&
+        style?.flexGrow === 1 &&
+        style?.flexShrink === 1 &&
+        style?.minWidth === 320;
     })).toBe(true);
     const dashboardPanelStack = renderer!.root
       .findAllByType(View)
@@ -488,7 +491,8 @@ describe('KolamAmSurface', () => {
         const style = StyleSheet.flatten(view.props.style);
         return style?.width === '100%' &&
           style?.alignSelf === 'stretch' &&
-          style?.flexDirection === 'column' &&
+          style?.flexDirection === 'row' &&
+          style?.flexWrap === 'wrap' &&
           style?.alignItems === 'stretch';
       });
     expect(dashboardPanelStack).toBeTruthy();
@@ -505,12 +509,16 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.maxWidth === 220 && style?.alignItems === 'flex-end';
+        return style?.flexBasis === 156 &&
+          style?.maxWidth === 220 &&
+          style?.alignItems === 'flex-end';
       });
     expect(recentMetaColumns.length).toBeGreaterThan(0);
     expect(recentMetaColumns.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.minWidth === 0 && style?.overflow === 'hidden';
+      return style?.minWidth === 0 &&
+        style?.flexShrink === 1 &&
+        style?.overflow === 'hidden';
     })).toBe(true);
     const recentAmountTexts = renderer!.root
       .findAllByType(Text)
