@@ -120,17 +120,18 @@ export function KolamDaraSeoSentimentBody({
                   onPress={() => controller.onSetText('')}
                   style={styles.chip}
                 />
+                <KolamButton
+                  disabled={controller.busy || !controller.text.trim()}
+                  intent="primary"
+                  label={
+                    controller.busy ? 'Menganalisis…' : 'Analisis Sentimen'
+                  }
+                  onPress={() => {
+                    void controller.onIngest();
+                  }}
+                  style={styles.chip}
+                />
               </View>
-              <KolamButton
-                disabled={controller.busy || !controller.text.trim()}
-                intent="primary"
-                label={
-                  controller.busy ? 'Menganalisis…' : 'Analisis Sentimen'
-                }
-                onPress={() => {
-                  void controller.onIngest();
-                }}
-              />
             </View>
           ) : null}
 
@@ -476,6 +477,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   chipsRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
