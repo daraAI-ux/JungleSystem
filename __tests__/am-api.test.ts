@@ -1,5 +1,5 @@
 import {appConfig} from '../src/config/app';
-import {clearResponseCookieJar} from '../src/lib/api-client';
+import {clearResponseCookieJar, setAccessToken} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
   cancelAmTask,
@@ -86,6 +86,7 @@ describe('AM API service', () => {
     fetchMock.mockReset();
     fetchMock.mockResolvedValue(jsonResponse({success: true, message: 'Logout success'}));
     globalThis.fetch = fetchMock;
+    setAccessToken(undefined);
     clearResponseCookieJar();
   });
 
@@ -129,8 +130,9 @@ describe('AM API service', () => {
     );
   });
 
-  it('reuses the live AM auth cookie after login', async () => {
+  it('keeps Kolam bearer SSO ahead of legacy AM auth cookies', async () => {
     const payload = {username: 'admin', password: 'secret'};
+    setAccessToken('kolam-token');
     fetchMock
       .mockResolvedValueOnce(jsonResponse(
         {success: true, data: {user: {_id: 'user-current', username: 'admin'}}},
@@ -150,9 +152,15 @@ describe('AM API service', () => {
         method: 'GET',
         credentials: 'include',
         headers: expect.objectContaining({
-          Cookie: 'am_accessToken=token-123',
+          Authorization: 'Bearer kolam-token',
+          Cookie: 'kolamCsrf=',
           'x-source': appConfig.amSourceHeader,
         }),
+      }),
+    );
+    expect(fetchMock.mock.calls[1][1].headers).toEqual(
+      expect.not.objectContaining({
+        Cookie: 'am_accessToken=token-123',
       }),
     );
   });
