@@ -14,7 +14,11 @@ import {
   type KolamTermsTemplate,
   type KolamTermsTemplateStatus,
 } from '../domain/kolam-terms-template';
-import { type KolamTableColumn } from '../domain/kolam-table';
+import {
+  fitKolamDataTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamTermsTemplateController,
@@ -51,7 +55,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 
-const LIST_COLUMNS: KolamTableColumn[] = [
+const LIST_COLUMNS_BASE: KolamTableColumn[] = [
   { id: 'primary', label: 'Judul', align: 'left', width: 220 },
   { id: 'meta', label: 'Slug', align: 'left', width: 140 },
   { id: 'children', label: 'Kategori', align: 'left', width: 100 },
@@ -65,6 +69,16 @@ const LIST_COLUMNS: KolamTableColumn[] = [
     width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   },
 ];
+
+function fitTermsTemplateListColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(LIST_COLUMNS_BASE, containerWidth, {
+    actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+    paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+    primaryMinWidth: 160,
+    secondaryMinWidth: 56,
+  });
+}
 
 function FieldShell({
   children,
@@ -119,6 +133,16 @@ function KolamTermsTemplateList({
   const [searchInput, setSearchInput] = React.useState(controller.search);
   const [pendingArchive, setPendingArchive] =
     React.useState<KolamTermsTemplate | null>(null);
+  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const columns = React.useMemo(
+    () => fitTermsTemplateListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const actionsWidth = Math.max(
+    columns.find(column => column.id === 'actions')?.width ??
+      KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+    KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+  );
 
   React.useEffect(() => {
     setSearchInput(controller.search);
@@ -236,8 +260,9 @@ function KolamTermsTemplateList({
             ) : null}
           </KolamTableFooterControls>
         }
+        onBodyWidthChange={setTableBodyWidth}
       >
-        <KolamDataTableHeader columns={LIST_COLUMNS} />
+        <KolamDataTableHeader columns={columns} />
         {!controller.loading && controller.items.length === 0 ? (
           <View style={styles.emptyWrap}>
             <KolamEmptyState message="Belum ada template." title="Kosong" />
@@ -245,7 +270,8 @@ function KolamTermsTemplateList({
         ) : null}
         {controller.items.map(item => (
           <TermsTemplateListRow
-            columns={LIST_COLUMNS}
+            actionsWidth={actionsWidth}
+            columns={columns}
             item={item}
             key={item.id}
             mutating={controller.mutating}
@@ -285,6 +311,7 @@ function KolamTermsTemplateList({
 }
 
 function TermsTemplateListRow({
+  actionsWidth,
   columns,
   item,
   mutating,
@@ -292,6 +319,7 @@ function TermsTemplateListRow({
   onOpen,
   onPublish,
 }: {
+  actionsWidth: number;
   columns: KolamTableColumn[];
   item: KolamTermsTemplate;
   mutating: boolean;
@@ -402,7 +430,7 @@ function TermsTemplateListRow({
             })}
         </Pressable>
       </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
+      <KolamDataTableActionsTrack width={actionsWidth}>
         {actions.length > 0 ? <KolamOverflowMenuButton actions={actions} /> : null}
       </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
@@ -701,10 +729,12 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   rowPressable: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
+    flexGrow: 0,
+    flexShrink: 1,
     gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+    minWidth: 0,
   },
   primaryText: {
     color: V.colors.fg,
