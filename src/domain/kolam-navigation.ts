@@ -711,7 +711,7 @@ const sidebarFallbackDescriptions: Record<string, string> = {
     'Kelola kategori produk dan spesies dari Label dan Field Kolam',
   '/products/archive': 'Arsip produk (riwayat baca saja)',
   '/list-of-users/dara-training':
-    'Frasa respons cepat dan pelatihan ranking produk',
+    'Kamus respons cepat, consent pengiriman, koreksi ranking produk, dan vision inbox (species + produk + bukti bayar).',
   '/list-of-users/kpi': 'Dashboard kinerja tim (admin)',
   '/task-manager/settings/categories': 'Kategori dinamis (admin)',
   '/task-manager/settings/task-types':
@@ -1433,7 +1433,8 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/list-of-users',
     labelSuffix: 'DARA Training',
     route: '/list-of-users/dara-training',
-    description: 'DARA training page from live Kolam',
+    description:
+      'Kamus respons cepat, consent pengiriman, koreksi ranking produk, dan vision inbox (species + produk + bukti bayar).',
   },
   {
     baseRoute: '/list-of-users',

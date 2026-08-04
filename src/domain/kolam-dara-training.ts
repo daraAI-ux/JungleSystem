@@ -1,0 +1,243 @@
+/**
+ * Pelatihan DARA — FE `/list-of-users/dara-training` (`DaraTrainingPage`).
+ * SoT: DA-Dara-Plugin `pages/dara-training.tsx` + FE `api/dara-training`.
+ */
+
+export const KOLAM_DARA_TRAINING_ROOT = '/list-of-users/dara-training';
+
+/** FE HeaderDescription — also shell nav description. */
+export const KOLAM_DARA_TRAINING_DESCRIPTION =
+  'Kamus respons cepat, consent pengiriman, koreksi ranking produk, dan vision inbox (species + produk + bukti bayar).';
+
+export type KolamDaraTrainingTabId =
+  | 'phrases'
+  | 'fulfillment'
+  | 'products'
+  | 'vision'
+  | 'videoStudio'
+  | 'reviews'
+  | 'fineTune';
+
+export const KOLAM_DARA_TRAINING_TABS: Array<{
+  id: KolamDaraTrainingTabId;
+  label: string;
+}> = [
+  {id: 'phrases', label: 'Frasa respons cepat'},
+  {id: 'fulfillment', label: 'Consent kirim'},
+  {id: 'products', label: 'Koreksi produk'},
+  {id: 'vision', label: 'Vision inbox'},
+  {id: 'videoStudio', label: 'Video Studio'},
+  {id: 'reviews', label: 'Review percakapan'},
+  {id: 'fineTune', label: 'Fine-tuning'},
+];
+
+export const KOLAM_DARA_TRAINING_DEFAULT_TAB: KolamDaraTrainingTabId =
+  'phrases';
+
+export type KolamDaraTrainingPermissionEntry = {
+  resource?: string | null;
+  actions?: Array<string | null> | null;
+};
+
+export type KolamDaraTrainingStats = {
+  phraseCount: number;
+  enabledPhrases: number;
+  fulfillmentGrantCount: number;
+  fulfillmentDeclineCount: number;
+  feedbackCount: number;
+  minSamplesDefault: number;
+  minSamplesPoc: number;
+  hasSearchRankLog: boolean;
+  trainScriptReady: boolean;
+  rerankModelPath: string;
+  rerankModelExists: boolean;
+};
+
+export function isKolamDaraTrainingRoute(route: string): boolean {
+  const path = normalizeTrainingPath(route);
+  return (
+    path === KOLAM_DARA_TRAINING_ROOT ||
+    path.startsWith(`${KOLAM_DARA_TRAINING_ROOT}/`)
+  );
+}
+
+/** FE `?tab=` — empty / unknown → phrases. */
+export function getKolamDaraTrainingTab(route: string): KolamDaraTrainingTabId {
+  const query = route.includes('?') ? route.split('?')[1] || '' : '';
+  const raw = String(new URLSearchParams(query).get('tab') || '').trim();
+  const match = KOLAM_DARA_TRAINING_TABS.find(tab => tab.id === raw);
+  return match?.id ?? KOLAM_DARA_TRAINING_DEFAULT_TAB;
+}
+
+export function buildKolamDaraTrainingRoute(
+  tab: KolamDaraTrainingTabId = KOLAM_DARA_TRAINING_DEFAULT_TAB,
+): string {
+  if (tab === KOLAM_DARA_TRAINING_DEFAULT_TAB) {
+    return KOLAM_DARA_TRAINING_ROOT;
+  }
+  return `${KOLAM_DARA_TRAINING_ROOT}?tab=${tab}`;
+}
+
+/**
+ * FE `usePermission`:
+ * canView = superadmin || dara-training:view || chat:view
+ * canManage = superadmin || dara-training:update || websetting:update || chat:update
+ */
+export function resolveKolamDaraTrainingAccess(input: {
+  roleKey?: string | null;
+  permissions?: KolamDaraTrainingPermissionEntry[] | null;
+  isOwner?: boolean | null;
+}) {
+  const role = String(input.roleKey ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_]+/g, '-');
+  const isAdmin =
+    role === 'admin' ||
+    role === 'super-admin' ||
+    role === 'super-administrator' ||
+    role === 'superadmin';
+  const isOwner = input.isOwner === true || role === 'owner';
+
+  const canOn = (resource: string, action: string) => {
+    if (isAdmin || isOwner) {
+      return true;
+    }
+    const permissions = input.permissions;
+    if (permissions == null) {
+      return false;
+    }
+    const wantedResource = resource.toLowerCase();
+    const wantedAction = action.toLowerCase();
+    return permissions.some(permission => {
+      const res = String(permission.resource ?? '')
+        .trim()
+        .toLowerCase();
+      const actions = (permission.actions ?? []).map(item =>
+        String(item).trim().toLowerCase(),
+      );
+      return (
+        (res === wantedResource || res === '*') &&
+        (actions.includes(wantedAction) ||
+          actions.includes('*') ||
+          (wantedAction === 'view' && actions.length > 0))
+      );
+    });
+  };
+
+  return {
+    canSee:
+      isAdmin ||
+      isOwner ||
+      canOn('dara-training', 'view') ||
+      canOn('chat', 'view'),
+    canManage:
+      isAdmin ||
+      isOwner ||
+      canOn('dara-training', 'update') ||
+      canOn('websetting', 'update') ||
+      canOn('chat', 'update'),
+    isAdmin: isAdmin || isOwner,
+  };
+}
+
+export function normalizeKolamDaraTrainingStats(
+  payload: unknown,
+): KolamDaraTrainingStats {
+  const data = unwrapDataRecord(payload);
+  return {
+    phraseCount: asNumber(data.phraseCount),
+    enabledPhrases: asNumber(data.enabledPhrases),
+    fulfillmentGrantCount: asNumber(data.fulfillmentGrantCount),
+    fulfillmentDeclineCount: asNumber(data.fulfillmentDeclineCount),
+    feedbackCount: asNumber(data.feedbackCount),
+    minSamplesDefault: asNumber(data.minSamplesDefault) || 50,
+    minSamplesPoc: asNumber(data.minSamplesPoc) || 5,
+    hasSearchRankLog: data.hasSearchRankLog === true,
+    trainScriptReady: data.trainScriptReady === true,
+    rerankModelPath: String(data.rerankModelPath || '').trim(),
+    rerankModelExists: data.rerankModelExists === true,
+  };
+}
+
+/** FE StatTile grid for shell KPI strip. */
+export function buildKolamDaraTrainingStatsCards(
+  stats: KolamDaraTrainingStats,
+): Array<{
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+  tone: 'default' | 'success' | 'warning' | 'muted';
+}> {
+  const feedbackReady = stats.feedbackCount >= stats.minSamplesPoc;
+  const feedbackFull = stats.feedbackCount >= stats.minSamplesDefault;
+  return [
+    {
+      id: 'phrases',
+      label: 'Frasa aktif',
+      value: String(stats.enabledPhrases),
+      detail: `${stats.phraseCount} total`,
+      tone: 'default',
+    },
+    {
+      id: 'grant',
+      label: 'Consent setuju',
+      value: String(stats.fulfillmentGrantCount),
+      detail: 'Autopilot pengiriman',
+      tone: 'default',
+    },
+    {
+      id: 'decline',
+      label: 'Consent tahan',
+      value: String(stats.fulfillmentDeclineCount),
+      detail: 'Autopilot pengiriman',
+      tone: 'default',
+    },
+    {
+      id: 'feedback',
+      label: 'Koreksi produk',
+      value: String(stats.feedbackCount),
+      detail: `Min. ${stats.minSamplesDefault} untuk training penuh`,
+      tone: feedbackFull ? 'success' : feedbackReady ? 'warning' : 'default',
+    },
+    {
+      id: 'rank-log',
+      label: 'Log ranking',
+      value: stats.hasSearchRankLog ? 'Ada' : 'Belum',
+      detail: 'search_rank_*.jsonl di da-ai-service',
+      tone: stats.hasSearchRankLog ? 'success' : 'warning',
+    },
+    {
+      id: 'rerank',
+      label: 'Model rerank',
+      value: stats.rerankModelExists ? 'Terlatih' : 'Belum',
+      detail: 'Model ranking XGBoost',
+      tone: stats.rerankModelExists ? 'success' : 'default',
+    },
+  ];
+}
+
+function normalizeTrainingPath(route: string): string {
+  const path = String(route || '').split('?')[0].replace(/\/+$/, '') || '/';
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+function unwrapDataRecord(payload: unknown): Record<string, unknown> {
+  const root = asRecord(payload);
+  if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+    return asRecord(root.data);
+  }
+  return root;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asNumber(value: unknown): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
