@@ -1171,3 +1171,178 @@ function nullableNumber(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : null;
 }
+
+export type KolamDaraMarketIntelStoreHealthTone = 'good' | 'warn' | 'bad';
+
+export type KolamDaraMarketIntelStoreHealthIssue = {
+  code: string;
+  message: string;
+  level: 'blocker' | 'warning';
+};
+
+export type KolamDaraMarketIntelStoreHealthProductRow = {
+  productId: string;
+  sku: string;
+  name: string;
+  score: number;
+  blockers: number;
+  warnings: number;
+  issues: KolamDaraMarketIntelStoreHealthIssue[];
+  complete: boolean;
+};
+
+export type KolamDaraMarketIntelStoreHealthParameter = {
+  id: string;
+  label: string;
+  level: 'blocker' | 'warning';
+  sellableOnly: boolean;
+  pass: number;
+  fail: number;
+  passRate: number;
+};
+
+export type KolamDaraMarketIntelStoreHealthScan = {
+  generatedAt: string;
+  sellableOnly: boolean;
+  formula: {
+    storeScore: string;
+    productScore: string;
+    complete: string;
+  };
+  summary: {
+    total: number;
+    complete: number;
+    incomplete: number;
+    blockerProducts: number;
+    storeHealthScore: number;
+  };
+  parameters: KolamDaraMarketIntelStoreHealthParameter[];
+  products: KolamDaraMarketIntelStoreHealthProductRow[];
+};
+
+/** FE `scoreTone` on store-health gauge. */
+export function resolveKolamDaraMarketIntelStoreHealthTone(
+  score: number,
+): KolamDaraMarketIntelStoreHealthTone {
+  if (score >= 100) {
+    return 'good';
+  }
+  if (score >= 70) {
+    return 'warn';
+  }
+  return 'bad';
+}
+
+export function buildKolamDaraMarketIntelProductEditRoute(productId: string) {
+  return `/products/${encodeURIComponent(productId)}/edit`;
+}
+
+export function normalizeKolamDaraMarketIntelStoreHealthScan(
+  payload: unknown,
+): KolamDaraMarketIntelStoreHealthScan | null {
+  const data = unwrapDataRecord(payload);
+  if (!Object.keys(data).length) {
+    return null;
+  }
+  const summary = asRecord(data.summary);
+  const formula = asRecord(data.formula);
+  return {
+    generatedAt: String(data.generatedAt || '').trim(),
+    sellableOnly: data.sellableOnly !== false,
+    formula: {
+      storeScore: String(formula.storeScore || '').trim(),
+      productScore: String(formula.productScore || '').trim(),
+      complete: String(formula.complete || '').trim(),
+    },
+    summary: {
+      total: toFiniteNumber(summary.total),
+      complete: toFiniteNumber(summary.complete),
+      incomplete: toFiniteNumber(summary.incomplete),
+      blockerProducts: toFiniteNumber(summary.blockerProducts),
+      storeHealthScore: toFiniteNumber(summary.storeHealthScore),
+    },
+    parameters: normalizeStoreHealthParameters(data.parameters),
+    products: normalizeStoreHealthProducts(data.products),
+  };
+}
+
+function normalizeStoreHealthParameters(
+  value: unknown,
+): KolamDaraMarketIntelStoreHealthParameter[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const row = asRecord(item);
+      const id = String(row.id || '').trim();
+      if (!id) {
+        return null;
+      }
+      return {
+        id,
+        label: String(row.label || '').trim() || id,
+        level: row.level === 'blocker' ? 'blocker' : 'warning',
+        sellableOnly: row.sellableOnly === true,
+        pass: toFiniteNumber(row.pass),
+        fail: toFiniteNumber(row.fail),
+        passRate: toFiniteNumber(row.passRate),
+      } satisfies KolamDaraMarketIntelStoreHealthParameter;
+    })
+    .filter(
+      (item): item is KolamDaraMarketIntelStoreHealthParameter => item != null,
+    );
+}
+
+function normalizeStoreHealthProducts(
+  value: unknown,
+): KolamDaraMarketIntelStoreHealthProductRow[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const row = asRecord(item);
+      const productId = String(row.productId || row._id || '').trim();
+      if (!productId) {
+        return null;
+      }
+      return {
+        productId,
+        sku: String(row.sku || '').trim(),
+        name: String(row.name || '').trim() || productId,
+        score: toFiniteNumber(row.score),
+        blockers: toFiniteNumber(row.blockers),
+        warnings: toFiniteNumber(row.warnings),
+        issues: normalizeStoreHealthIssues(row.issues),
+        complete: row.complete === true,
+      } satisfies KolamDaraMarketIntelStoreHealthProductRow;
+    })
+    .filter(
+      (item): item is KolamDaraMarketIntelStoreHealthProductRow => item != null,
+    );
+}
+
+function normalizeStoreHealthIssues(
+  value: unknown,
+): KolamDaraMarketIntelStoreHealthIssue[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const row = asRecord(item);
+      const code = String(row.code || '').trim();
+      if (!code) {
+        return null;
+      }
+      return {
+        code,
+        message: String(row.message || '').trim() || code,
+        level: row.level === 'blocker' ? 'blocker' : 'warning',
+      } satisfies KolamDaraMarketIntelStoreHealthIssue;
+    })
+    .filter(
+      (item): item is KolamDaraMarketIntelStoreHealthIssue => item != null,
+    );
+}

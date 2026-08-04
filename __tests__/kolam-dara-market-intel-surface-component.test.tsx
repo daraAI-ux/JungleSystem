@@ -10,6 +10,7 @@ import {
   fetchKolamDaraMarketIntelDashboard,
   fetchKolamDaraMarketIntelRecommendations,
   fetchKolamDaraMarketIntelStatus,
+  fetchKolamDaraMarketIntelStoreHealthProducts,
   rejectKolamDaraMarketIntelRecommendation,
 } from '../src/services/kolam-dara-market-intel-api';
 import {
@@ -37,6 +38,7 @@ jest.mock('../src/services/kolam-dara-market-intel-api', () => ({
   deleteKolamDaraMarketIntelCompetitorLink: jest.fn(),
   fetchKolamDaraMarketIntelCompetitorLinkPrice: jest.fn(),
   sendKolamDaraMarketIntelCompetitorReport: jest.fn(),
+  fetchKolamDaraMarketIntelStoreHealthProducts: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-product-api', () => ({
@@ -67,6 +69,10 @@ const recsMock = fetchKolamDaraMarketIntelRecommendations as jest.MockedFunction
 const linksMock = fetchKolamDaraMarketIntelCompetitorLinks as jest.MockedFunction<
   typeof fetchKolamDaraMarketIntelCompetitorLinks
 >;
+const storeHealthMock =
+  fetchKolamDaraMarketIntelStoreHealthProducts as jest.MockedFunction<
+    typeof fetchKolamDaraMarketIntelStoreHealthProducts
+  >;
 const productsMock = getKolamProducts as jest.MockedFunction<
   typeof getKolamProducts
 >;
@@ -123,6 +129,45 @@ describe('KolamDaraMarketIntelSurface', () => {
     productsMock.mockResolvedValue({
       data: [],
       pagination: {page: 1, limit: 250, total: 0, totalPages: 0},
+    });
+    storeHealthMock.mockResolvedValue({
+      generatedAt: '2026-01-01',
+      sellableOnly: true,
+      formula: {
+        storeScore: 'avg',
+        productScore: 'weighted',
+        complete: '100%',
+      },
+      summary: {
+        total: 5,
+        complete: 3,
+        incomplete: 2,
+        blockerProducts: 1,
+        storeHealthScore: 68,
+      },
+      parameters: [
+        {
+          id: 'sku',
+          label: 'SKU',
+          level: 'blocker',
+          sellableOnly: false,
+          pass: 4,
+          fail: 1,
+          passRate: 80,
+        },
+      ],
+      products: [
+        {
+          productId: 'p1',
+          sku: 'A1',
+          name: 'Filter',
+          score: 55,
+          blockers: 1,
+          warnings: 0,
+          issues: [{code: 'sku', message: 'SKU kosong', level: 'blocker'}],
+          complete: false,
+        },
+      ],
     });
     dashMock.mockResolvedValue({
       pendingApprovals: 2,
@@ -263,7 +308,7 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
   });
 
-  it('shows placeholder on unimplemented tabs', async () => {
+  it('renders store-health idle state then scan results', async () => {
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
@@ -272,12 +317,54 @@ describe('KolamDaraMarketIntelSurface', () => {
       await Promise.resolve();
     });
 
+    let text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Scan seluruh produk');
+    expect(text).toContain('Hanya produk sellable');
+    expect(text).toContain('Tekan scan');
+    expect(storeHealthMock).not.toHaveBeenCalled();
+
+    const scan = tree!.root.findAll(
+      node =>
+        typeof node.props?.onPress === 'function' &&
+        String(node.props?.accessibilityLabel || '').includes(
+          'Scan seluruh produk',
+        ),
+    )[0];
+    expect(scan).toBeTruthy();
+
+    await ReactTestRenderer.act(async () => {
+      scan.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    text = JSON.stringify(tree!.toJSON());
+    expect(storeHealthMock).toHaveBeenCalledWith({sellableOnly: true});
+    expect(text).toContain('Kesehatan toko');
+    expect(text).toContain('Parameter kesehatan produk');
+    expect(text).toContain('Filter');
+    expect(text).toContain('Buka edit');
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('shows placeholder on unimplemented tabs', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraMarketIntelSurface route="/campaign/dara-market-intel/peralatan" />,
+      );
+      await Promise.resolve();
+    });
+
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Belum tersedia');
-    expect(text).toContain('Kesehatan Toko');
+    expect(text).toContain('Peralatan');
     expect(dashMock).not.toHaveBeenCalled();
     expect(recsMock).not.toHaveBeenCalled();
     expect(linksMock).not.toHaveBeenCalled();
+    expect(storeHealthMock).not.toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

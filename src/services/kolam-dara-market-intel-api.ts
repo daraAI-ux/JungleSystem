@@ -9,6 +9,7 @@ import {
   normalizeKolamDaraMarketIntelRecommendation,
   normalizeKolamDaraMarketIntelRecommendations,
   normalizeKolamDaraMarketIntelStatus,
+  normalizeKolamDaraMarketIntelStoreHealthScan,
   type KolamDaraMarketIntelBrand,
   type KolamDaraMarketIntelBulkActionResult,
   type KolamDaraMarketIntelCompetitorBaseline,
@@ -17,6 +18,7 @@ import {
   type KolamDaraMarketIntelDashboard,
   type KolamDaraMarketIntelRecommendation,
   type KolamDaraMarketIntelStatus,
+  type KolamDaraMarketIntelStoreHealthScan,
 } from '../domain/kolam-dara-market-intel';
 import {apiRequest} from '../lib/api-client';
 
@@ -225,6 +227,24 @@ export async function sendKolamDaraMarketIntelCompetitorReport(
     method: 'POST',
     body: brandId && brandId !== 'all' ? {brandId} : {},
   });
+}
+
+/** GET /dara-market-intel/store-health/products — FE `scanStoreHealthProducts`. */
+export async function fetchKolamDaraMarketIntelStoreHealthProducts(opts?: {
+  sellableOnly?: boolean;
+}): Promise<KolamDaraMarketIntelStoreHealthScan> {
+  const payload = await kolamRequest<unknown>(
+    '/dara-market-intel/store-health/products',
+    {
+      query:
+        opts?.sellableOnly === false ? {sellableOnly: '0'} : undefined,
+    },
+  );
+  const scan = normalizeKolamDaraMarketIntelStoreHealthScan(payload);
+  if (!scan) {
+    throw new Error('Respons scan kosong');
+  }
+  return scan;
 }
 
 function kolamRequest<T>(

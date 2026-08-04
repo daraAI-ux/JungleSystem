@@ -20,9 +20,11 @@ import {useKolamDaraMarketIntelApprovalsController} from '../hooks/use-kolam-dar
 import {useKolamDaraMarketIntelCompetitorsController} from '../hooks/use-kolam-dara-market-intel-competitors-controller';
 import {useKolamDaraMarketIntelDashboardController} from '../hooks/use-kolam-dara-market-intel-dashboard-controller';
 import {useKolamDaraMarketIntelJobsProgress} from '../hooks/use-kolam-dara-market-intel-jobs-progress';
+import {useKolamDaraMarketIntelStoreHealthController} from '../hooks/use-kolam-dara-market-intel-store-health-controller';
 import {KolamDaraMarketIntelApprovalsBody} from './kolam-dara-market-intel-approvals-body';
 import {KolamDaraMarketIntelCompetitorsBody} from './kolam-dara-market-intel-competitors-body';
 import {KolamDaraMarketIntelDashboardBody} from './kolam-dara-market-intel-dashboard-body';
+import {KolamDaraMarketIntelStoreHealthBody} from './kolam-dara-market-intel-store-health-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
@@ -48,6 +50,9 @@ export function KolamDaraMarketIntelSurface({
     access.canViewMargin,
   );
   const competitorsController = useKolamDaraMarketIntelCompetitorsController(
+    access.canSee ? route : '',
+  );
+  const storeHealthController = useKolamDaraMarketIntelStoreHealthController(
     access.canSee ? route : '',
   );
   const jobsProgress = useKolamDaraMarketIntelJobsProgress(
@@ -118,6 +123,11 @@ export function KolamDaraMarketIntelSurface({
         <KolamDaraMarketIntelCompetitorsBody
           canDraft={access.canDraft}
           controller={competitorsController}
+        />
+      ) : selectedTab === 'kesehatan' ? (
+        <KolamDaraMarketIntelStoreHealthBody
+          controller={storeHealthController}
+          onRouteChange={onRouteChange}
         />
       ) : (
         <KolamDaraMarketIntelPlaceholderTab tabId={selectedTab} />

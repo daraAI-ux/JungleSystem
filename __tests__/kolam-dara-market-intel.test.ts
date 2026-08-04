@@ -2,6 +2,7 @@ import {
   KOLAM_DARA_MARKET_INTEL_DESCRIPTION,
   KOLAM_DARA_MARKET_INTEL_TITLE,
   buildKolamDaraMarketIntelMetricLines,
+  buildKolamDaraMarketIntelProductEditRoute,
   buildKolamDaraMarketIntelRoute,
   filterKolamDaraMarketIntelRecommendationsForMargin,
   formatKolamDaraMarketIntelEntityName,
@@ -17,8 +18,10 @@ import {
   normalizeKolamDaraMarketIntelDashboard,
   normalizeKolamDaraMarketIntelRecommendations,
   normalizeKolamDaraMarketIntelStatus,
+  normalizeKolamDaraMarketIntelStoreHealthScan,
   paginateKolamDaraMarketIntelRecommendations,
   resolveKolamDaraMarketIntelAccess,
+  resolveKolamDaraMarketIntelStoreHealthTone,
 } from '../src/domain/kolam-dara-market-intel';
 
 describe('kolam-dara-market-intel domain', () => {
@@ -304,5 +307,55 @@ describe('kolam-dara-market-intel domain', () => {
         website: true,
       },
     ]);
+  });
+
+  it('normalizes store-health scan and score tone', () => {
+    const scan = normalizeKolamDaraMarketIntelStoreHealthScan({
+      data: {
+        generatedAt: '2026-01-01',
+        sellableOnly: true,
+        formula: {
+          storeScore: 'avg',
+          productScore: 'weighted',
+          complete: '100%',
+        },
+        summary: {
+          total: 10,
+          complete: 7,
+          incomplete: 3,
+          blockerProducts: 1,
+          storeHealthScore: 72,
+        },
+        parameters: [
+          {
+            id: 'sku',
+            label: 'SKU',
+            level: 'blocker',
+            pass: 9,
+            fail: 1,
+            passRate: 90,
+          },
+        ],
+        products: [
+          {
+            productId: 'p1',
+            sku: 'A1',
+            name: 'Filter',
+            score: 60,
+            blockers: 1,
+            warnings: 0,
+            issues: [{code: 'sku', message: 'SKU kosong', level: 'blocker'}],
+            complete: false,
+          },
+        ],
+      },
+    });
+    expect(scan?.summary.storeHealthScore).toBe(72);
+    expect(resolveKolamDaraMarketIntelStoreHealthTone(72)).toBe('warn');
+    expect(resolveKolamDaraMarketIntelStoreHealthTone(100)).toBe('good');
+    expect(scan?.products[0].issues[0].message).toBe('SKU kosong');
+    expect(buildKolamDaraMarketIntelProductEditRoute('p1')).toBe(
+      '/products/p1/edit',
+    );
   });
 });
