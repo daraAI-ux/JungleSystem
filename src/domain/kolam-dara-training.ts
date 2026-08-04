@@ -94,6 +94,10 @@ export const KOLAM_DARA_TRAINING_PHRASE_CATEGORY_LABELS: Record<
 export const KOLAM_DARA_TRAINING_REPLY_CATEGORIES: KolamDaraTrainingPhraseCategory[] =
   ['chitchat', 'identity', 'greeting', 'custom', 'payment_hint'];
 
+/** FE `FULFILLMENT_CONSENT_CATEGORIES`. */
+export const KOLAM_DARA_TRAINING_FULFILLMENT_CATEGORIES: KolamDaraTrainingPhraseCategory[] =
+  ['fulfillment_grant', 'fulfillment_decline'];
+
 export function isKolamDaraTrainingRoute(route: string): boolean {
   const path = normalizeTrainingPath(route);
   return (

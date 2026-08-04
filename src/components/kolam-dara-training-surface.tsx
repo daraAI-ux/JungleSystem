@@ -12,6 +12,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamDaraTrainingController} from '../hooks/use-kolam-dara-training-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDaraTrainingFulfillmentBody} from './kolam-dara-training-fulfillment-body';
 import {KolamDaraTrainingPhrasesBody} from './kolam-dara-training-phrases-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
@@ -37,6 +38,7 @@ export function KolamDaraTrainingSurface({
     enabled: access.canSee,
   });
   const [phrasesRefreshKey, setPhrasesRefreshKey] = useState(0);
+  const [fulfillmentRefreshKey, setFulfillmentRefreshKey] = useState(0);
 
   const selectedTab = getKolamDaraTrainingTab(route);
   const selectedTabLabel =
@@ -54,6 +56,7 @@ export function KolamDaraTrainingSurface({
   const onToolbarRefresh = async () => {
     await controller.onRefresh();
     setPhrasesRefreshKey(key => key + 1);
+    setFulfillmentRefreshKey(key => key + 1);
   };
 
   if (!access.canSee) {
@@ -114,6 +117,11 @@ export function KolamDaraTrainingSurface({
           <KolamDaraTrainingPhrasesBody
             canManage={access.canManage}
             refreshKey={phrasesRefreshKey}
+          />
+        ) : selectedTab === 'fulfillment' ? (
+          <KolamDaraTrainingFulfillmentBody
+            canManage={access.canManage}
+            refreshKey={fulfillmentRefreshKey}
           />
         ) : controller.loading && !controller.stats ? (
           <Text style={styles.meta}>Memuat…</Text>

@@ -48,19 +48,36 @@ describe('KolamDaraTrainingSurface', () => {
       rerankModelPath: '',
       rerankModelExists: false,
     });
-    phrasesMock.mockResolvedValue([
-      {
-        id: 'p1',
-        phrase: 'anda siapa',
-        category: 'identity',
-        customReply: 'Saya DARA',
-        enabled: true,
-        priority: 5,
-        notes: '',
-        createdAt: '',
-        updatedAt: '',
-      },
-    ]);
+    phrasesMock.mockImplementation(async opts => {
+      if (opts?.scope === 'fulfillment') {
+        return [
+          {
+            id: 'f1',
+            phrase: 'gas kirim aja',
+            category: 'fulfillment_grant',
+            customReply: '',
+            enabled: true,
+            priority: 2,
+            notes: '',
+            createdAt: '',
+            updatedAt: '',
+          },
+        ];
+      }
+      return [
+        {
+          id: 'p1',
+          phrase: 'anda siapa',
+          category: 'identity',
+          customReply: 'Saya DARA',
+          enabled: true,
+          priority: 5,
+          notes: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ];
+    });
   });
 
   it('renders shell with KPI, tabs, and phrase kamus', async () => {
@@ -87,6 +104,31 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Identitas DARA');
     expect(phrasesMock).toHaveBeenCalled();
     expect(statsMock).toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders consent kirim vocabulary on fulfillment tab', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraTrainingSurface route="/list-of-users/dara-training?tab=fulfillment" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Kosa kata consent kirim');
+    expect(text).toContain('Setuju kirim');
+    expect(text).toContain('Tahan kirim');
+    expect(text).toContain('gas kirim aja');
+    expect(text).toContain('Aksi autopilot');
+    expect(phrasesMock).toHaveBeenCalledWith(
+      expect.objectContaining({scope: 'fulfillment'}),
+    );
 
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
