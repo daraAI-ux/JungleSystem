@@ -18,8 +18,6 @@ describe('AM navigation parity', () => {
       'mutasi',
       'admin/users',
       'admin/activity-log',
-      'settings/account',
-      'login',
     ]);
   });
 
@@ -58,9 +56,6 @@ describe('AM navigation parity', () => {
       AM_ROUTES.find(route => route.moduleRoute === 'admin/users')?.description,
     ).toBe('Manage user accounts, assign roles, and control access permissions.');
     expect(
-      AM_ROUTES.find(route => route.moduleRoute === 'settings/account')?.description,
-    ).toBe('Manage your personal information, photo, and other profile details.');
-    expect(
       AM_ROUTES.find(route => route.moduleRoute === 'admin/activity-log')?.description,
     ).toBe(
       'Catatan setiap akses halaman dan API request. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.',
@@ -78,10 +73,8 @@ describe('AM navigation parity', () => {
     expect(getAmRouteByModuleRoute('mutasi/mutasi-1').moduleRoute).toBe(
       'mutasi',
     );
-    expect(getAmRouteByModuleRoute('/settings/account/').moduleRoute).toBe(
-      'settings/account',
-    );
-    expect(getAmRouteByModuleRoute('login').moduleRoute).toBe('login');
+    expect(getAmRouteByModuleRoute('/settings/account/').moduleRoute).toBe('/');
+    expect(getAmRouteByModuleRoute('login').moduleRoute).toBe('/');
   });
 
   it('normalizes AM module routes before matching them', () => {

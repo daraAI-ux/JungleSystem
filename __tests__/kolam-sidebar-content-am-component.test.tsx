@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamSidebarContent } from '../src/components/kolam-sidebar-content';
 import { getShellModuleRouteEntry } from '../src/domain/app-shell';
-import { getAmCurrentUser, logoutAmSession } from '../src/services/am-api';
+import { getAmCurrentUser } from '../src/services/am-api';
 
 jest.mock('../src/services/am-api', () => ({
   getAmCurrentUser: jest.fn(() =>
@@ -19,7 +19,6 @@ jest.mock('../src/services/am-api', () => ({
       },
     }),
   ),
-  logoutAmSession: jest.fn(() => Promise.resolve(undefined)),
 }));
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
@@ -148,10 +147,11 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).not.toContain('Automation Management');
     expect(text).not.toContain('Kolam Menu');
     expect(text).not.toContain('Kembali ke Kolam');
-    expect(text).toContain('Super Admin');
-    expect(text).toContain('@super@dunia-anura.com');
-    expect(text).toContain('Settings');
-    expect(text).toContain('Log out');
+    expect(text).not.toContain('Super Admin');
+    expect(text).not.toContain('@super@dunia-anura.com');
+    expect(text).not.toContain('Settings');
+    expect(text).not.toContain('Log out');
+    expect(text).not.toContain('Login');
   });
 
   it('uses the AM shell route as the active sidebar route', async () => {
@@ -356,7 +356,7 @@ describe('KolamSidebarContent AM mode', () => {
     expect(onSelectModule).toHaveBeenCalledWith('kolam');
   });
 
-  it('opens AM account actions from the sidebar footer', async () => {
+  it('keeps AM login and account actions out of the sidebar footer', async () => {
     const onModuleRouteSelect = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -386,35 +386,19 @@ describe('KolamSidebarContent AM mode', () => {
       await Promise.resolve();
     });
 
-    await ReactTestRenderer.act(async () => {
-      renderer!.root
-        .findByProps({ accessibilityLabel: 'AM Sidebar Settings' })
-        .props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        moduleId: 'am',
-        route: 'settings/account',
-      }),
-    );
-
-    await ReactTestRenderer.act(async () => {
-      await renderer!.root
-        .findByProps({ accessibilityLabel: 'AM Sidebar Logout' })
-        .props.onPress();
-    });
-
-    expect(logoutAmSession).toHaveBeenCalledTimes(1);
-    expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        moduleId: 'am',
-        route: 'login',
-      }),
-    );
+    expect(
+      renderer!.root.findAllByProps({ accessibilityLabel: 'AM Sidebar Settings' }),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({ accessibilityLabel: 'AM Sidebar Login' }),
+    ).toHaveLength(0);
+    expect(
+      renderer!.root.findAllByProps({ accessibilityLabel: 'AM Sidebar Logout' }),
+    ).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
-  it('refreshes the AM sidebar account after the AM route changes', async () => {
+  it('refreshes the AM sidebar permissions after the AM route changes', async () => {
     jest
       .mocked(getAmCurrentUser)
       .mockRejectedValueOnce(new Error('Unauthorized'))
@@ -457,7 +441,7 @@ describe('KolamSidebarContent AM mode', () => {
       await Promise.resolve();
     });
 
-    expect(renderText(renderer!)).toContain('Login');
+    expect(renderText(renderer!)).not.toContain('Login');
     expect(renderText(renderer!)).not.toContain('Logged In AM');
 
     await ReactTestRenderer.act(async () => {
@@ -489,9 +473,9 @@ describe('KolamSidebarContent AM mode', () => {
     const text = renderText(renderer!);
 
     expect(getAmCurrentUser).toHaveBeenCalledTimes(2);
-    expect(text).toContain('Logged In AM');
-    expect(text).toContain('@logged@dunia-anura.com');
-    expect(text).toContain('Log out');
+    expect(text).not.toContain('Logged In AM');
+    expect(text).not.toContain('@logged@dunia-anura.com');
+    expect(text).not.toContain('Log out');
     expect(text).not.toContain('Login');
   });
 

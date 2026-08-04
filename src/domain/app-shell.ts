@@ -280,8 +280,6 @@ export const shellModules: ShellModule[] = [
       'webhooks',
       'admin/users',
       'admin/activity-log',
-      'settings/account',
-      'login',
       ':catchAll',
     ],
   },
