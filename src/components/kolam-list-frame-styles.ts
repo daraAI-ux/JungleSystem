@@ -84,13 +84,15 @@ export const listFrameStyles = StyleSheet.create({
     gap: 8,
   },
   statsCardStrip: {
+    alignItems: 'stretch',
+    backgroundColor: V.colors.bg,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     paddingHorizontal: V.layout.tableCellPaddingX,
     paddingVertical: 12,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    backgroundColor: V.colors.bg,
   },
   pendingOrdersGrid: {
     gap: 0,

@@ -1,7 +1,9 @@
 import React from 'react';
+import {View} from 'react-native';
 import {KolamListFrame} from './kolam-list-frame';
 import {KolamMappedList} from './kolam-mapped-list';
 import {KolamStatsCard} from './kolam-stats-card';
+import {statsCardStripStyles as styles} from './kolam-stats-card-strip-styles';
 import {
   type KolamStatsCardItem,
   type KolamStatsCardStripProps,
@@ -20,7 +22,11 @@ export function KolamStatsCardStrip({cards}: KolamStatsCardStripProps) {
       <KolamMappedList
         items={cards}
         getKey={card => card.id}
-        renderItem={card => <KolamStatsCard card={card} />}
+        renderItem={card => (
+          <View style={styles.cardSlot}>
+            <KolamStatsCard card={card} />
+          </View>
+        )}
       />
     </KolamListFrame>
   );
