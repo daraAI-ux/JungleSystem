@@ -4,8 +4,10 @@ import type {AttentionPanelItem} from '../domain/attention-panel';
 import {attentionPanelStyles as styles} from './kolam-attention-panel-styles';
 
 export function KolamAttentionToneBadge({
+  label,
   tone,
 }: {
+  label?: string;
   tone: AttentionPanelItem['tone'];
 }) {
   return (
@@ -13,7 +15,7 @@ export function KolamAttentionToneBadge({
       items={[
         {
           id: 'tone',
-          text: tone.toUpperCase(),
+          text: label ?? tone.toUpperCase(),
           style: [
             styles.attentionTone,
             tone === 'success' && styles.attentionToneSuccess,

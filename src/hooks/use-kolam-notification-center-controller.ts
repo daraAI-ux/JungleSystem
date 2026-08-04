@@ -271,6 +271,7 @@ export function getKolamNotificationAttentionItem(
     message: notification.message,
     meta: formatKolamNotificationDateTime(notification.createdAt),
     tone: getNotificationTone(notification.type),
+    badgeLabel: notification.type.toUpperCase(),
     isUnread: !notification.isRead,
     notification,
     routeHint: getKolamNotificationLink(notification),

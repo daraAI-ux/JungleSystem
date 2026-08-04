@@ -11,11 +11,6 @@ export function KolamAttentionPanelTitleBlock() {
           text: 'Notifications',
           style: styles.attentionPanelTitle,
         },
-        {
-          id: 'description',
-          text: 'Status operasional terbaru',
-          style: styles.attentionPanelDescription,
-        },
       ]}
     />
   );

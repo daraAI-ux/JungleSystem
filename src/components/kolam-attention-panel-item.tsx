@@ -15,7 +15,7 @@ export function KolamAttentionPanelItem({
 }) {
   const content = (
     <>
-      <KolamAttentionToneBadge tone={item.tone} />
+      <KolamAttentionToneBadge label={item.badgeLabel} tone={item.tone} />
       <KolamAttentionItemCopy item={item} />
     </>
   );

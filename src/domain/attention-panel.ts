@@ -10,6 +10,7 @@ export interface AttentionPanelItem {
   message: string;
   meta: string;
   tone: AttentionTone;
+  badgeLabel?: string;
   isUnread: boolean;
   notification?: KolamNotification;
   routeHint?: string;

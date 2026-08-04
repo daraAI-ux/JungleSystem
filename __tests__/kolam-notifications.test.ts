@@ -82,6 +82,7 @@ describe('kolam notifications parity helpers', () => {
         id: 'notification-n-kasbon',
         label: 'Pengajuan kasbon baru',
         tone: 'warning',
+        badgeLabel: 'WARNING',
         isUnread: true,
         routeHint: '/list-of-users/users/user-1',
       }),
