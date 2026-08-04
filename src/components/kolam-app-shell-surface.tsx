@@ -106,18 +106,46 @@ function isKolamCenteredRoute(route?: string | null) {
   );
 }
 
-/** Catalog table lists own scrolling via FlatList; disable shell ScrollView nesting. */
+/** Catalog/ops table lists own scrolling via FlatList; disable shell ScrollView nesting. */
 export function isCatalogTableListRoute(route?: string | null) {
   const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
 
-  return (
+  if (
     routePath === '/species' ||
     routePath === '/products' ||
     routePath === '/products/archive' ||
     routePath === '/stock-transaction' ||
     routePath === '/customers' ||
-    routePath === '/list-of-users'
-  );
+    routePath === '/list-of-users' ||
+    routePath === '/wallet' ||
+    routePath === '/payable' ||
+    routePath === '/receivable' ||
+    routePath === '/routine-expenses' ||
+    routePath === '/unexpected-expense' ||
+    routePath === '/unexpected-income' ||
+    routePath === '/asset-purchase' ||
+    routePath === '/commissions' ||
+    routePath === '/finance/payroll' ||
+    routePath === '/finance/bonus' ||
+    routePath === '/cashflow-session'
+  ) {
+    return true;
+  }
+
+  // `/finance` summary (+ optional `/finance/:txId` focus) owns FlatList scroll.
+  if (routePath === '/finance') {
+    return true;
+  }
+  if (routePath.startsWith('/finance/')) {
+    const rest = routePath.slice('/finance/'.length);
+    if (!rest || rest.includes('/')) {
+      return false;
+    }
+    const blocked = new Set(['payroll', 'bonus', 'tax', 'settings']);
+    return !blocked.has(rest.toLowerCase());
+  }
+
+  return false;
 }
 
 const KOLAM_CENTERED_EXACT_ROUTES = ['/list-of-users'];

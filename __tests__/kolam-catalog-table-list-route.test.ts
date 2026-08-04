@@ -20,6 +20,27 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/stock-opname')).toBe(false);
   });
 
+  it('matches Keuangan FlatList list roots', () => {
+    expect(isCatalogTableListRoute('/finance')).toBe(true);
+    expect(isCatalogTableListRoute('/finance/abc123')).toBe(true);
+    expect(isCatalogTableListRoute('/wallet')).toBe(true);
+    expect(isCatalogTableListRoute('/payable')).toBe(true);
+    expect(isCatalogTableListRoute('/receivable')).toBe(true);
+    expect(isCatalogTableListRoute('/routine-expenses')).toBe(true);
+    expect(isCatalogTableListRoute('/unexpected-expense')).toBe(true);
+    expect(isCatalogTableListRoute('/unexpected-income')).toBe(true);
+    expect(isCatalogTableListRoute('/asset-purchase')).toBe(true);
+    expect(isCatalogTableListRoute('/commissions')).toBe(true);
+    expect(isCatalogTableListRoute('/finance/payroll')).toBe(true);
+    expect(isCatalogTableListRoute('/finance/bonus')).toBe(true);
+    expect(isCatalogTableListRoute('/cashflow-session')).toBe(true);
+    expect(isCatalogTableListRoute('/finance/tax')).toBe(false);
+    expect(isCatalogTableListRoute('/finance/settings/tax-profile')).toBe(false);
+    expect(isCatalogTableListRoute('/finance/payroll/2026-08')).toBe(false);
+    expect(isCatalogTableListRoute('/wallet/w1')).toBe(false);
+    expect(isCatalogTableListRoute('/payable/p1')).toBe(false);
+  });
+
   it('keeps detail and edit routes on shell ScrollView', () => {
     expect(isCatalogTableListRoute('/species/betta-splendens')).toBe(false);
     expect(isCatalogTableListRoute('/species/baru')).toBe(false);
