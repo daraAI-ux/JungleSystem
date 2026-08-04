@@ -306,22 +306,6 @@ function WalletInfoItem({
   );
 }
 
-function WalletToolbarPipe() {
-  return <Text style={styles.toolbarPipe}>|</Text>;
-}
-
-function renderWalletToolbarItems(
-  items: Array<React.ReactElement | null | false | undefined>,
-) {
-  const nodes = items.filter(Boolean) as React.ReactElement[];
-  return nodes.map((node, index) => (
-    <React.Fragment key={node.key ?? `toolbar-item-${index}`}>
-      {index > 0 ? <WalletToolbarPipe /> : null}
-      {node}
-    </React.Fragment>
-  ));
-}
-
 function WalletToolbarActions({
   controller,
   onRouteChange,
@@ -336,46 +320,40 @@ function WalletToolbarActions({
   trailing?: Array<React.ReactElement | null | false | undefined>;
 }) {
   return (
-    <View style={[kolamTableToolbarStyles.actions, style]}>
-      {renderWalletToolbarItems([
-        controller.canEdit ? (
-          <KolamButton
-            key="drop"
-            intent="secondary"
-            label="Drop Dana"
-            onPress={() => controller.onOpenActionModal('deposit')}
-            style={styles.filterTrigger}
-          />
-        ) : null,
-        controller.canEdit ? (
-          <KolamButton
-            key="withdraw"
-            intent="secondary"
-            label="Tarik Dana"
-            onPress={() => controller.onOpenActionModal('withdraw')}
-            style={styles.filterTrigger}
-          />
-        ) : null,
-        controller.canEdit ? (
-          <KolamButton
-            key="transfer"
-            intent="secondary"
-            label="Transfer"
-            onPress={() => controller.onOpenActionModal('transfer')}
-            style={styles.filterTrigger}
-          />
-        ) : null,
-        showCreate && controller.canCreate ? (
-          <KolamButton
-            key="create"
-            intent="primary"
-            label="Baru"
-            onPress={() => onRouteChange?.(getKolamWalletCreateRoute())}
-            style={styles.filterTrigger}
-          />
-        ) : null,
-        ...(trailing ?? []),
-      ])}
+    <View style={[kolamTableToolbarStyles.actions, styles.toolbarActionsCompact, style]}>
+      {controller.canEdit ? (
+        <KolamButton
+          intent="secondary"
+          label="Drop"
+          onPress={() => controller.onOpenActionModal('deposit')}
+          style={styles.filterTrigger}
+        />
+      ) : null}
+      {controller.canEdit ? (
+        <KolamButton
+          intent="secondary"
+          label="Tarik"
+          onPress={() => controller.onOpenActionModal('withdraw')}
+          style={styles.filterTrigger}
+        />
+      ) : null}
+      {controller.canEdit ? (
+        <KolamButton
+          intent="secondary"
+          label="Transfer"
+          onPress={() => controller.onOpenActionModal('transfer')}
+          style={styles.filterTrigger}
+        />
+      ) : null}
+      {showCreate && controller.canCreate ? (
+        <KolamButton
+          intent="primary"
+          label="Baru"
+          onPress={() => onRouteChange?.(getKolamWalletCreateRoute())}
+          style={styles.filterTrigger}
+        />
+      ) : null}
+      {(trailing ?? []).filter(Boolean)}
     </View>
   );
 }
@@ -1164,17 +1142,23 @@ function WalletTransactionPanel({
   );
 
   const typeLabel =
-    KOLAM_WALLET_TX_TYPE_OPTIONS.find(
-      option => option.value === controller.txFilters.type,
-    )?.label ?? 'Semua tipe';
+    controller.txFilters.type === 'all'
+      ? 'Tipe'
+      : (KOLAM_WALLET_TX_TYPE_OPTIONS.find(
+          option => option.value === controller.txFilters.type,
+        )?.label ?? 'Tipe');
   const sourceLabel =
-    KOLAM_WALLET_TX_SOURCE_OPTIONS.find(
-      option => option.value === controller.txFilters.source,
-    )?.label ?? 'Semua sumber';
+    controller.txFilters.source === 'all'
+      ? 'Sumber'
+      : (KOLAM_WALLET_TX_SOURCE_OPTIONS.find(
+          option => option.value === controller.txFilters.source,
+        )?.label ?? 'Sumber');
   const statusLabel =
-    KOLAM_WALLET_CONFIRM_STATUS_OPTIONS.find(
-      option => option.value === controller.txFilters.confirmStatus,
-    )?.label ?? 'Semua status';
+    controller.txFilters.confirmStatus === 'all'
+      ? 'Status'
+      : (KOLAM_WALLET_CONFIRM_STATUS_OPTIONS.find(
+          option => option.value === controller.txFilters.confirmStatus,
+        )?.label ?? 'Status');
 
   const renderRow = React.useCallback(
     ({ item }: { item: KolamWalletTransaction }) => {
@@ -1254,8 +1238,8 @@ function WalletTransactionPanel({
   return (
     <View style={styles.panel}>
       <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
+        <View style={[kolamTableToolbarStyles.row, styles.txToolbarRow]}>
+          <View style={[kolamTableToolbarStyles.filters, styles.txToolbarFilters]}>
             {showWalletFilter ? (
               <KolamDropdownSelect
                 label="Dompet"
@@ -2542,13 +2526,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   filterTrigger: {
+    flexShrink: 0,
     minHeight: 32,
   },
-  toolbarPipe: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    paddingHorizontal: 2,
+  toolbarActionsCompact: {
+    flexShrink: 0,
+    flexWrap: 'nowrap',
+    gap: 4,
+  },
+  txToolbarRow: {
+    flexWrap: 'nowrap',
+    gap: 4,
+  },
+  txToolbarFilters: {
+    flexWrap: 'nowrap',
+    gap: 4,
   },
   filterPanel: {
     backgroundColor: V.colors.bg,
@@ -2574,12 +2566,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   dateField: {
-    maxWidth: 140,
-    minWidth: 108,
-    width: 120,
+    flexShrink: 0,
+    maxWidth: 108,
+    minWidth: 88,
+    width: 96,
   },
   walletSelect: {
-    minWidth: 160,
+    flexShrink: 0,
+    maxWidth: 120,
+    minWidth: 88,
+    width: 100,
   },
   row: {
     alignItems: 'center',
