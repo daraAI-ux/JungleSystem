@@ -18,6 +18,13 @@ import {
   startKolamDaraJob,
 } from '../src/services/kolam-dara-jobs-api';
 import {getKolamProducts} from '../src/services/kolam-product-api';
+import {
+  fetchKolamDaraMarketPlatformFeeMeta,
+  fetchKolamDaraMarketPlatformFeeProfiles,
+  fetchKolamDaraMarketPlatformFeeSnapshots,
+  fetchKolamDaraMarketPlatformFeeSources,
+  fetchKolamDaraMarketPlatformFeeSummary,
+} from '../src/services/kolam-dara-market-platform-fee-api';
 
 jest.mock('../src/context/kolam-app-contexts', () => ({
   useKolamAuthContext: jest.fn(),
@@ -39,6 +46,20 @@ jest.mock('../src/services/kolam-dara-market-intel-api', () => ({
   fetchKolamDaraMarketIntelCompetitorLinkPrice: jest.fn(),
   sendKolamDaraMarketIntelCompetitorReport: jest.fn(),
   fetchKolamDaraMarketIntelStoreHealthProducts: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-dara-market-platform-fee-api', () => ({
+  fetchKolamDaraMarketPlatformFeeMeta: jest.fn(),
+  fetchKolamDaraMarketPlatformFeeProfiles: jest.fn(),
+  fetchKolamDaraMarketPlatformFeeSources: jest.fn(),
+  fetchKolamDaraMarketPlatformFeeSnapshots: jest.fn(),
+  fetchKolamDaraMarketPlatformFeeSummary: jest.fn(),
+  fetchKolamDaraMarketPlatformFeeCalculation: jest.fn(),
+  addKolamDaraMarketPlatformFeeSource: jest.fn(),
+  checkKolamDaraMarketPlatformFeeSource: jest.fn(),
+  saveKolamDaraMarketPlatformFeeProfile: jest.fn(),
+  approveKolamDaraMarketPlatformFeeSnapshot: jest.fn(),
+  rejectKolamDaraMarketPlatformFeeSnapshot: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-product-api', () => ({
@@ -79,6 +100,26 @@ const productsMock = getKolamProducts as jest.MockedFunction<
 const jobsListMock = fetchKolamDaraJobsList as jest.MockedFunction<
   typeof fetchKolamDaraJobsList
 >;
+const platformFeeMetaMock =
+  fetchKolamDaraMarketPlatformFeeMeta as jest.MockedFunction<
+    typeof fetchKolamDaraMarketPlatformFeeMeta
+  >;
+const platformFeeProfilesMock =
+  fetchKolamDaraMarketPlatformFeeProfiles as jest.MockedFunction<
+    typeof fetchKolamDaraMarketPlatformFeeProfiles
+  >;
+const platformFeeSourcesMock =
+  fetchKolamDaraMarketPlatformFeeSources as jest.MockedFunction<
+    typeof fetchKolamDaraMarketPlatformFeeSources
+  >;
+const platformFeeSnapshotsMock =
+  fetchKolamDaraMarketPlatformFeeSnapshots as jest.MockedFunction<
+    typeof fetchKolamDaraMarketPlatformFeeSnapshots
+  >;
+const platformFeeSummaryMock =
+  fetchKolamDaraMarketPlatformFeeSummary as jest.MockedFunction<
+    typeof fetchKolamDaraMarketPlatformFeeSummary
+  >;
 
 describe('KolamDaraMarketIntelSurface', () => {
   beforeEach(() => {
@@ -129,6 +170,40 @@ describe('KolamDaraMarketIntelSurface', () => {
     productsMock.mockResolvedValue({
       data: [],
       pagination: {page: 1, limit: 250, total: 0, totalPages: 0},
+    });
+    platformFeeMetaMock.mockResolvedValue({
+      sellerTiers: [{id: 'star', label: 'Star'}],
+      programs: {shopee: [{id: 'promoXtra', label: 'Promo'}]},
+      categories: {shopee: [{id: 'cat1', label: 'Elektronik'}]},
+    });
+    platformFeeProfilesMock.mockResolvedValue([
+      {
+        id: 'p1',
+        platform: 'shopee',
+        sellerTier: 'star',
+        programs: {promoXtra: true},
+        primaryCategoryId: 'cat1',
+        primaryCategoryLabel: 'Elektronik',
+        notes: '',
+      },
+    ]);
+    platformFeeSourcesMock.mockResolvedValue([
+      {
+        id: 's1',
+        name: 'Fee Shopee',
+        url: 'https://seller.shopee.test',
+        platform: 'shopee',
+        sourceKind: 'policy',
+        isActive: true,
+        lastCheckedAt: '',
+        lastChangedAt: '',
+        lastError: '',
+      },
+    ]);
+    platformFeeSnapshotsMock.mockResolvedValue([]);
+    platformFeeSummaryMock.mockResolvedValue({
+      generatedAt: '',
+      pendingSnapshotCount: 0,
     });
     storeHealthMock.mockResolvedValue({
       generatedAt: '2026-01-01',
@@ -349,7 +424,37 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
   });
 
-  it('shows placeholder on unimplemented tabs', async () => {
+  it('renders peralatan platform-fee monitor shell', async () => {
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraMarketIntelSurface route="/campaign/dara-market-intel/peralatan" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Monitor Biaya Platform');
+    expect(text).toContain('Monitor');
+    expect(text).toContain('Kalkulasi');
+    expect(text).toContain('Cek semua URL');
+    expect(text).toContain('Bulk harga');
+    expect(platformFeeMetaMock).toHaveBeenCalled();
+    expect(platformFeeSourcesMock).toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('denies peralatan without draft permission', async () => {
+    authMock.mockReturnValue({
+      authUser: {
+        roleKey: 'staff',
+        permissions: [{resource: 'ai-market-intel', actions: ['view']}],
+      },
+    } as ReturnType<typeof useKolamAuthContext>);
+
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
       tree = ReactTestRenderer.create(
@@ -359,12 +464,9 @@ describe('KolamDaraMarketIntelSurface', () => {
     });
 
     const text = JSON.stringify(tree!.toJSON());
-    expect(text).toContain('Belum tersedia');
-    expect(text).toContain('Peralatan');
-    expect(dashMock).not.toHaveBeenCalled();
-    expect(recsMock).not.toHaveBeenCalled();
-    expect(linksMock).not.toHaveBeenCalled();
-    expect(storeHealthMock).not.toHaveBeenCalled();
+    expect(text).toContain('Akses ditolak');
+    expect(text).toContain('izin draft');
+    expect(platformFeeMetaMock).not.toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

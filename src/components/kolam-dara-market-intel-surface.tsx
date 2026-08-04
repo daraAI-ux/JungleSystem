@@ -21,9 +21,11 @@ import {useKolamDaraMarketIntelCompetitorsController} from '../hooks/use-kolam-d
 import {useKolamDaraMarketIntelDashboardController} from '../hooks/use-kolam-dara-market-intel-dashboard-controller';
 import {useKolamDaraMarketIntelJobsProgress} from '../hooks/use-kolam-dara-market-intel-jobs-progress';
 import {useKolamDaraMarketIntelStoreHealthController} from '../hooks/use-kolam-dara-market-intel-store-health-controller';
+import {useKolamDaraMarketPlatformFeeController} from '../hooks/use-kolam-dara-market-platform-fee-controller';
 import {KolamDaraMarketIntelApprovalsBody} from './kolam-dara-market-intel-approvals-body';
 import {KolamDaraMarketIntelCompetitorsBody} from './kolam-dara-market-intel-competitors-body';
 import {KolamDaraMarketIntelDashboardBody} from './kolam-dara-market-intel-dashboard-body';
+import {KolamDaraMarketIntelPeralatanBody} from './kolam-dara-market-intel-peralatan-body';
 import {KolamDaraMarketIntelStoreHealthBody} from './kolam-dara-market-intel-store-health-body';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
@@ -54,6 +56,9 @@ export function KolamDaraMarketIntelSurface({
   );
   const storeHealthController = useKolamDaraMarketIntelStoreHealthController(
     access.canSee ? route : '',
+  );
+  const platformFeeController = useKolamDaraMarketPlatformFeeController(
+    access.canSee && access.canDraft ? route : '',
   );
   const jobsProgress = useKolamDaraMarketIntelJobsProgress(
     access.canSee ? route : '',
@@ -128,6 +133,11 @@ export function KolamDaraMarketIntelSurface({
         <KolamDaraMarketIntelStoreHealthBody
           controller={storeHealthController}
           onRouteChange={onRouteChange}
+        />
+      ) : selectedTab === 'peralatan' ? (
+        <KolamDaraMarketIntelPeralatanBody
+          canDraft={access.canDraft}
+          platformFeeController={platformFeeController}
         />
       ) : (
         <KolamDaraMarketIntelPlaceholderTab tabId={selectedTab} />
