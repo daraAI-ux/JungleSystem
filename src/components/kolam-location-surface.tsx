@@ -1220,6 +1220,7 @@ function KolamLocationList({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() => onRouteChange?.('/locations/create')}
                 style={styles.toolbarButton}
               />

@@ -338,6 +338,7 @@ function KolamTeranuraList({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() => onRouteChange?.('/teranura/create')}
               />
             </View>

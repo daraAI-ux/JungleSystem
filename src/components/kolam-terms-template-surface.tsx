@@ -220,6 +220,7 @@ function KolamTermsTemplateList({
             />
             <KolamButton
               label="Baru"
+              tone="positive"
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(KOLAM_TERMS_TEMPLATE_NEW_ROUTE);

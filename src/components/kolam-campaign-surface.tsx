@@ -215,6 +215,7 @@ function KolamCampaignList({
               <KolamButton
                 intent="outline"
                 label="Baru"
+                tone="positive"
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(KOLAM_CAMPAIGN_CREATE_ROUTE);

@@ -382,6 +382,7 @@ function KolamStockOpnameList({
                 <KolamButton
                   intent="primary"
                   label="Baru"
+                  tone="positive"
                   onPress={() =>
                     onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/new`)
                   }

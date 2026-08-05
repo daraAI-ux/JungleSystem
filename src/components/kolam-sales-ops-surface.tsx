@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   estimateKolamSaleCreateItemLineTotal,
@@ -392,6 +392,7 @@ function KolamSalesOpsList({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() => onRouteChange?.(`${KOLAM_SALES_ROOT}/create`)}
                 style={styles.toolbarButton}
               />

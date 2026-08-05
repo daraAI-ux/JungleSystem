@@ -227,6 +227,7 @@ function AdminCashflowList({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() =>
                   onRouteChange?.(`${KOLAM_ADMIN_CASHFLOW_SESSION_ROOT}/create`)
                 }

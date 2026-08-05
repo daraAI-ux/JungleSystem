@@ -254,6 +254,7 @@ function KolamCustomerListSurface({
             <KolamButton
               intent="primary"
               label="Baru"
+              tone="positive"
               onPress={() => onRouteChange?.('/customers/create')}
               style={styles.toolbarButton}
             />

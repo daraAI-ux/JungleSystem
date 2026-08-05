@@ -207,6 +207,7 @@ function KolamVoucherList({
               <KolamButton
                 intent="outline"
                 label="Baru"
+                tone="positive"
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(KOLAM_VOUCHER_CREATE_ROUTE);

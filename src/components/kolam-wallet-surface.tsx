@@ -355,6 +355,7 @@ function WalletToolbarActions({
         <KolamButton
           intent="primary"
           label="Baru"
+          tone="positive"
           onPress={() => onRouteChange?.(getKolamWalletCreateRoute())}
           style={styles.filterTrigger}
         />

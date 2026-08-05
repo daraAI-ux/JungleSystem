@@ -254,6 +254,7 @@ function KolamLayananList({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/create`);

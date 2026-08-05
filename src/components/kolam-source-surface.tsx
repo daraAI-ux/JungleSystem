@@ -309,6 +309,7 @@ function KolamSourceList({
             <KolamButton
               intent="primary"
               label="Baru"
+              tone="positive"
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_SOURCE_ROOT}/create`);

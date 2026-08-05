@@ -777,6 +777,7 @@ function FinanceExpenseListBody({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() => onRouteChange(getKolamAssetPurchaseCreateRoute())}
               />
             ) : null}

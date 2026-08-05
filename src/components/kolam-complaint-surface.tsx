@@ -388,6 +388,7 @@ function KolamComplaintList({
             <KolamButton
               intent="primary"
               label="Baru"
+              tone="positive"
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/create`);

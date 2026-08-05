@@ -253,6 +253,7 @@ function KolamCategoryList({
             <KolamButton
               intent="primary"
               label="Baru"
+              tone="positive"
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.('/label-dan-field/kategori/baru');

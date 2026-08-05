@@ -247,6 +247,7 @@ function KolamProyekList({
             {controller.canCreate ? (
               <KolamButton
                 label="Baru"
+                tone="positive"
                 onPress={() => {
                   controller.onCreateNew();
                 }}

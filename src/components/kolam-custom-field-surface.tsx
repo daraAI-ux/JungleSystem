@@ -343,6 +343,7 @@ function KolamCustomFieldList({
               <KolamButton
                 intent="primary"
                 label="Baru"
+                tone="positive"
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/custom-fields/baru');

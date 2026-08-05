@@ -7557,6 +7557,7 @@ function MarketplaceLandingControlsPanel({
             <KolamActionControlButton
               disabled={disabled}
               label="Baru"
+              tone="positive"
               onPress={onClearHeroDraft}
             />
           </View>
@@ -7618,6 +7619,7 @@ function MarketplaceLandingControlsPanel({
             <KolamActionControlButton
               disabled={disabled}
               label="Baru"
+              tone="positive"
               onPress={onClearCategoryDraft}
             />
           </View>
@@ -7683,6 +7685,7 @@ function MarketplaceLandingControlsPanel({
             <KolamActionControlButton
               disabled={disabled}
               label="Baru"
+              tone="positive"
               onPress={onClearAnnouncementDraft}
             />
           </View>
