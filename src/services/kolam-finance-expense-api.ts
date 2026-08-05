@@ -3,12 +3,15 @@ import {
   getKolamFinanceExpenseApiSegment,
   normalizeKolamAssetPurchaseDetail,
   normalizeKolamFinanceExpenseList,
+  normalizeKolamUnexpectedExpenseDetail,
   normalizeKolamUnexpectedIncomeDetail,
   type KolamAssetPurchaseDetail,
   type KolamAssetPurchaseWritePayload,
   type KolamFinanceExpenseKind,
   type KolamFinanceExpenseListFilters,
   type KolamFinanceExpenseListResult,
+  type KolamUnexpectedExpenseDetail,
+  type KolamUnexpectedExpenseWritePayload,
   type KolamUnexpectedIncomeDetail,
   type KolamUnexpectedIncomeWritePayload,
 } from '../domain/kolam-finance-expense';
@@ -140,6 +143,39 @@ export async function updateKolamUnexpectedIncome(
     },
   );
   return normalizeKolamUnexpectedIncomeDetail(payload);
+}
+
+export async function fetchKolamUnexpectedExpenseById(
+  id: string,
+): Promise<KolamUnexpectedExpenseDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/unexpected-expense/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamUnexpectedExpenseDetail(payload);
+}
+
+export async function createKolamUnexpectedExpense(
+  body: KolamUnexpectedExpenseWritePayload,
+): Promise<KolamUnexpectedExpenseDetail> {
+  const payload = await kolamRequest<unknown>('/unexpected-expense', {
+    method: 'POST',
+    body,
+  });
+  return normalizeKolamUnexpectedExpenseDetail(payload);
+}
+
+export async function updateKolamUnexpectedExpense(
+  id: string,
+  body: KolamUnexpectedExpenseWritePayload,
+): Promise<KolamUnexpectedExpenseDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/unexpected-expense/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  );
+  return normalizeKolamUnexpectedExpenseDetail(payload);
 }
 
 export async function uploadKolamAssetPurchasePhotos(

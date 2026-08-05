@@ -981,6 +981,243 @@ export function normalizeKolamUnexpectedIncomeDetail(
   };
 }
 
+export type KolamUnexpectedExpenseSurfaceMode =
+  | 'list'
+  | 'create'
+  | 'edit'
+  | 'detail'
+  | 'unsupported';
+
+export type KolamUnexpectedExpenseDetailTab = 'details' | 'history';
+
+export type KolamUnexpectedExpenseDetail = {
+  id: string;
+  code: string;
+  name: string;
+  amount: number;
+  walletId: string;
+  walletLabel: string;
+  executedAt: string;
+  reason: string;
+  status: KolamFinanceExpenseVerifyStatus | '';
+  verifiedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type KolamUnexpectedExpenseFormState = {
+  name: string;
+  amountText: string;
+  walletId: string;
+  executedAt: string;
+  reason: string;
+};
+
+export type KolamUnexpectedExpenseWritePayload = {
+  name: string;
+  amount: number;
+  wallet?: string;
+  executedAt: string;
+  reason?: string;
+};
+
+export type KolamUnexpectedExpenseHistoryItem = {
+  id: string;
+  title: string;
+  at: string;
+  atLabel: string;
+  lines: string[];
+};
+
+export const KOLAM_UNEXPECTED_EXPENSE_DETAIL_TABS: Array<{
+  id: KolamUnexpectedExpenseDetailTab;
+  label: string;
+}> = [
+  { id: 'details', label: 'Detail' },
+  { id: 'history', label: 'Riwayat' },
+];
+
+export function getKolamUnexpectedExpenseSurfaceMode(
+  route: string,
+): KolamUnexpectedExpenseSurfaceMode {
+  if (!isKolamUnexpectedExpenseRoute(route)) {
+    return 'unsupported';
+  }
+  const path = normalizeFinanceExpensePath(route);
+  if (path === KOLAM_UNEXPECTED_EXPENSE_ROOT) {
+    return 'list';
+  }
+  if (path === `${KOLAM_UNEXPECTED_EXPENSE_ROOT}/create`) {
+    return 'create';
+  }
+  if (/^\/unexpected-expense\/[^/]+\/edit$/.test(path)) {
+    return 'edit';
+  }
+  if (/^\/unexpected-expense\/[^/]+$/.test(path)) {
+    return 'detail';
+  }
+  return 'unsupported';
+}
+
+export function getKolamUnexpectedExpenseIdFromRoute(
+  route: string,
+): string | null {
+  const path = normalizeFinanceExpensePath(route);
+  const editMatch = /^\/unexpected-expense\/([^/]+)\/edit$/.exec(path);
+  if (editMatch?.[1]) {
+    return decodeURIComponent(editMatch[1]);
+  }
+  const detailMatch = /^\/unexpected-expense\/([^/]+)$/.exec(path);
+  if (detailMatch?.[1] && detailMatch[1] !== 'create') {
+    return decodeURIComponent(detailMatch[1]);
+  }
+  return null;
+}
+
+export function getKolamUnexpectedExpenseCreateRoute(): string {
+  return `${KOLAM_UNEXPECTED_EXPENSE_ROOT}/create`;
+}
+
+export function getKolamUnexpectedExpenseDetailRoute(id: string): string {
+  return `${KOLAM_UNEXPECTED_EXPENSE_ROOT}/${encodeURIComponent(id)}`;
+}
+
+export function getKolamUnexpectedExpenseEditRoute(id: string): string {
+  return `${KOLAM_UNEXPECTED_EXPENSE_ROOT}/${encodeURIComponent(id)}/edit`;
+}
+
+export function getKolamUnexpectedExpenseDetailTab(
+  route: string,
+): KolamUnexpectedExpenseDetailTab {
+  const query = parseFinanceExpenseRouteQuery(route);
+  const tab = String(query.tab ?? '')
+    .trim()
+    .toLowerCase();
+  return tab === 'history' ? 'history' : 'details';
+}
+
+export function buildKolamUnexpectedExpenseDetailRoute(
+  id: string,
+  tab: KolamUnexpectedExpenseDetailTab = 'details',
+): string {
+  const base = getKolamUnexpectedExpenseDetailRoute(id);
+  if (tab === 'details') {
+    return base;
+  }
+  return `${base}?tab=${tab}`;
+}
+
+export function createEmptyKolamUnexpectedExpenseForm(
+  executedAt = formatFinanceExpenseIsoDate(new Date()),
+): KolamUnexpectedExpenseFormState {
+  return {
+    name: '',
+    amountText: '',
+    walletId: '',
+    executedAt,
+    reason: '',
+  };
+}
+
+export function createKolamUnexpectedExpenseFormFromDetail(
+  detail: KolamUnexpectedExpenseDetail,
+): KolamUnexpectedExpenseFormState {
+  return {
+    name: detail.name,
+    amountText: detail.amount > 0 ? String(detail.amount) : '',
+    walletId: detail.walletId,
+    executedAt: toFinanceExpenseIsoDate(detail.executedAt),
+    reason: detail.reason,
+  };
+}
+
+export function buildKolamUnexpectedExpenseCreatePayload(
+  form: KolamUnexpectedExpenseFormState,
+): KolamUnexpectedExpenseWritePayload {
+  const amount = parseAssetPurchaseMoneyText(form.amountText);
+  const reason = form.reason.trim();
+  return {
+    name: form.name.trim() || 'UEXP',
+    amount,
+    ...(form.walletId.trim() ? { wallet: form.walletId.trim() } : {}),
+    executedAt: financeExpenseIsoDateToUtcIso(form.executedAt),
+    ...(reason ? { reason } : {}),
+  };
+}
+
+export function buildKolamUnexpectedExpenseUpdatePayload(
+  form: KolamUnexpectedExpenseFormState,
+): KolamUnexpectedExpenseWritePayload {
+  const amount = parseAssetPurchaseMoneyText(form.amountText);
+  const reason = form.reason.trim();
+  return {
+    name: form.name.trim() || 'UEXP',
+    amount,
+    ...(form.walletId.trim() ? { wallet: form.walletId.trim() } : {}),
+    executedAt: financeExpenseIsoDateToUtcIso(form.executedAt),
+    ...(reason ? { reason } : {}),
+  };
+}
+
+export function validateKolamUnexpectedExpenseForm(
+  form: KolamUnexpectedExpenseFormState,
+): string | null {
+  if (parseAssetPurchaseMoneyText(form.amountText) <= 0) {
+    return 'Masukkan jumlah yang valid';
+  }
+  if (!form.executedAt.trim()) {
+    return 'Pilih tanggal eksekusi';
+  }
+  return null;
+}
+
+export function buildKolamUnexpectedExpenseHistoryItems(
+  detail: KolamUnexpectedExpenseDetail,
+): KolamUnexpectedExpenseHistoryItem[] {
+  const items: KolamUnexpectedExpenseHistoryItem[] = [];
+  const createdAt = detail.createdAt || detail.executedAt;
+  const updatedAt = detail.updatedAt || createdAt;
+
+  if (createdAt && updatedAt && createdAt !== updatedAt) {
+    items.push({
+      id: 'updated',
+      title: 'Pengeluaran Diperbarui',
+      at: updatedAt,
+      atLabel: formatFinanceExpenseDateTime(updatedAt),
+      lines: [],
+    });
+  }
+
+  const createLines = [
+    `Jumlah: ${formatAssetPurchaseHistoryMoney(detail.amount)}`,
+  ];
+  if (detail.reason.trim()) {
+    const reason =
+      detail.reason.length > 100
+        ? `${detail.reason.slice(0, 100)}...`
+        : detail.reason;
+    createLines.push(`Alasan: ${reason}`);
+  }
+
+  items.push({
+    id: 'created',
+    title: 'Pengeluaran Dibuat',
+    at: createdAt,
+    atLabel: formatFinanceExpenseDateTime(createdAt),
+    lines: createLines,
+  });
+
+  return items;
+}
+
+export function normalizeKolamUnexpectedExpenseDetail(
+  payload: unknown,
+): KolamUnexpectedExpenseDetail {
+  return normalizeKolamUnexpectedIncomeDetail(
+    payload,
+  ) as KolamUnexpectedExpenseDetail;
+}
+
 export function hasKolamFinanceExpensePermission(
   permissions: KolamFinanceExpensePermissionEntry[] | null | undefined,
   kind: KolamFinanceExpenseKind,

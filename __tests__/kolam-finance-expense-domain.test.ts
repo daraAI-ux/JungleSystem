@@ -13,11 +13,15 @@ import {
   buildKolamAssetPurchaseHistoryItems,
   buildKolamUnexpectedIncomeCreatePayload,
   buildKolamUnexpectedIncomeHistoryItems,
+  buildKolamUnexpectedExpenseCreatePayload,
+  buildKolamUnexpectedExpenseHistoryItems,
   createEmptyKolamAssetPurchaseForm,
   createEmptyKolamUnexpectedIncomeForm,
+  createEmptyKolamUnexpectedExpenseForm,
   createInitialFinanceExpenseListFilters,
   createKolamAssetPurchaseFormFromDetail,
   createKolamUnexpectedIncomeFormFromDetail,
+  createKolamUnexpectedExpenseFormFromDetail,
   getAssetPurchaseFormTotal,
   getKolamAssetPurchaseDetailTab,
   getKolamAssetPurchaseEditRoute,
@@ -29,6 +33,10 @@ import {
   getKolamUnexpectedIncomeEditRoute,
   getKolamUnexpectedIncomeIdFromRoute,
   getKolamUnexpectedIncomeSurfaceMode,
+  getKolamUnexpectedExpenseCreateRoute,
+  getKolamUnexpectedExpenseEditRoute,
+  getKolamUnexpectedExpenseIdFromRoute,
+  getKolamUnexpectedExpenseSurfaceMode,
   isKolamAssetPurchaseRoute,
   isKolamFinanceExpenseListRoute,
   isKolamFinanceExpenseRoute,
@@ -38,8 +46,10 @@ import {
   normalizeKolamAssetPurchaseDetail,
   normalizeKolamFinanceExpenseList,
   normalizeKolamUnexpectedIncomeDetail,
+  normalizeKolamUnexpectedExpenseDetail,
   validateKolamAssetPurchaseForm,
   validateKolamUnexpectedIncomeForm,
+  validateKolamUnexpectedExpenseForm,
 } from '../src/domain/kolam-finance-expense';
 
 describe('Kolam finance expense domain', () => {
@@ -411,6 +421,76 @@ describe('Kolam finance expense domain', () => {
     expect(form.walletId).toBe('w1');
     expect(buildKolamUnexpectedIncomeHistoryItems(detail)[0]?.title).toBe(
       'Pemasukan Diperbarui',
+    );
+  });
+
+  it('maps unexpected-expense create, detail, and edit surface modes', () => {
+    expect(getKolamUnexpectedExpenseSurfaceMode('/unexpected-expense')).toBe(
+      'list',
+    );
+    expect(
+      getKolamUnexpectedExpenseSurfaceMode('/unexpected-expense/create'),
+    ).toBe('create');
+    expect(
+      getKolamUnexpectedExpenseSurfaceMode('/unexpected-expense/abc'),
+    ).toBe('detail');
+    expect(
+      getKolamUnexpectedExpenseSurfaceMode('/unexpected-expense/abc/edit'),
+    ).toBe('edit');
+    expect(
+      getKolamUnexpectedExpenseIdFromRoute('/unexpected-expense/abc'),
+    ).toBe('abc');
+    expect(
+      getKolamUnexpectedExpenseIdFromRoute('/unexpected-expense/abc/edit'),
+    ).toBe('abc');
+    expect(getKolamUnexpectedExpenseCreateRoute()).toBe(
+      '/unexpected-expense/create',
+    );
+    expect(getKolamUnexpectedExpenseEditRoute('abc')).toBe(
+      '/unexpected-expense/abc/edit',
+    );
+  });
+
+  it('builds unexpected-expense create payload and validates form', () => {
+    const form = createEmptyKolamUnexpectedExpenseForm('2026-08-05');
+    expect(validateKolamUnexpectedExpenseForm(form)).toBe(
+      'Masukkan jumlah yang valid',
+    );
+    form.amountText = '75000';
+    form.walletId = 'w1';
+    form.reason = 'Belanja darurat';
+    expect(validateKolamUnexpectedExpenseForm(form)).toBeNull();
+    expect(buildKolamUnexpectedExpenseCreatePayload(form)).toMatchObject({
+      name: 'UEXP',
+      amount: 75000,
+      wallet: 'w1',
+      reason: 'Belanja darurat',
+    });
+  });
+
+  it('normalizes unexpected-expense detail for edit form', () => {
+    const detail = normalizeKolamUnexpectedExpenseDetail({
+      data: {
+        _id: 'exp1',
+        code: 'UEXP-01',
+        name: 'Biaya tak terduga',
+        amount: 75000,
+        status: 'unverified',
+        wallet: { _id: 'w1', name: 'Kas' },
+        executedAt: '2026-08-01T00:00:00.000Z',
+        reason: 'Darurat',
+        createdAt: '2026-08-01T00:00:00.000Z',
+        updatedAt: '2026-08-02T00:00:00.000Z',
+      },
+    });
+    expect(detail.id).toBe('exp1');
+    expect(detail.walletLabel).toBe('Kas');
+    const form = createKolamUnexpectedExpenseFormFromDetail(detail);
+    expect(form.name).toBe('Biaya tak terduga');
+    expect(form.amountText).toBe('75000');
+    expect(form.walletId).toBe('w1');
+    expect(buildKolamUnexpectedExpenseHistoryItems(detail)[0]?.title).toBe(
+      'Pengeluaran Diperbarui',
     );
   });
 });
