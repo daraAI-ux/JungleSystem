@@ -199,10 +199,13 @@ function CommissionListBody({
               <View style={styles.releaseRow}>
                 <KolamDropdownSelect
                   label="Dompet"
+                  menuStyle={styles.releaseWalletMenu}
                   onChange={value => controller.onWalletChange(item.id, value)}
                   options={walletSelectOptions}
                   showLabelInTrigger={false}
                   style={styles.releaseWalletSelect}
+                  triggerStyle={styles.releaseWalletTrigger}
+                  triggerTextStyle={styles.releaseWalletTriggerText}
                   value={selectedWallet}
                 />
                 <KolamButton
@@ -920,7 +923,19 @@ const styles = StyleSheet.create({
     flexBasis: 0,
     flexGrow: 1,
     flexShrink: 1,
+    maxWidth: 118,
     minWidth: 0,
+  },
+  releaseWalletTrigger: {
+    minWidth: 0,
+    paddingHorizontal: 8,
+  },
+  releaseWalletTriggerText: {
+    fontSize: 12,
+    maxWidth: 72,
+  },
+  releaseWalletMenu: {
+    minWidth: 118,
   },
   releaseButton: {
     flexGrow: 0,
