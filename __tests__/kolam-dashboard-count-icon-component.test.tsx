@@ -88,7 +88,7 @@ describe('KolamDashboardCountIcon', () => {
 
     expect(icon.props.height).toBe(46);
     expect(icon.props.width).toBe(46);
-    expect(icon.props.viewBox).toBe('0 0 1024 1024');
+    expect(icon.props.viewBox).toBe('220 140 584 690');
     expect(renderer!.root.findAllByType(Path)).toHaveLength(7);
     expect(renderer!.root.findAllByType(Rect)).toHaveLength(1);
   });

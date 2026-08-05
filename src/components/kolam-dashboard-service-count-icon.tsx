@@ -3,7 +3,7 @@ import Svg, {Path, Rect} from 'react-native-svg';
 
 export function KolamDashboardServiceCountIcon() {
   return (
-    <Svg height={46} width={46} viewBox="0 0 1024 1024" fill="none">
+    <Svg height={46} width={46} viewBox="220 140 584 690" fill="none">
       <Path
         d="M512 156C354.6 156 227 270.4 227 411.5c0 74.7 35.8 141.9 92.9 188.6l-18.7 109.7c-3.5 20.6 18.8 35.9 37.1 25.7l115.2-64.3c18.8 3.1 38.4 4.8 58.5 4.8 157.4 0 285-114.4 285-264.5S669.4 156 512 156Z"
         fill="#B8F26E"
