@@ -397,7 +397,11 @@ function normalizeRecipientSummaryRow(
     displayName: getString(record, 'displayName') || '—',
     username: getString(record, 'username'),
     email: getString(record, 'email'),
-    profilePicture: getString(record, 'profilePicture'),
+    profilePicture:
+      getString(record, 'profilePicture') ||
+      getString(record, 'profile_picture') ||
+      getString(record, 'employeePhoto') ||
+      getString(record, 'photo'),
     totalAccrued: Number(record.totalAccrued || 0) || 0,
     totalReleased: Number(record.totalReleased || 0) || 0,
     countAccrued: Number(record.countAccrued || 0) || 0,
