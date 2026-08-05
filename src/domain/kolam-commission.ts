@@ -19,6 +19,7 @@ export type KolamCommissionPermissionEntry = {
 };
 
 export type KolamCommissionListFilters = {
+  recipientUser: string;
   search: string;
   status: KolamCommissionStatusFilter;
   page: number;
@@ -42,17 +43,63 @@ export type KolamCommissionListRow = {
   quantity: number;
   commissionAmount: number;
   commissionRateLabel: string;
+  pph21: KolamCommissionPph21;
   status: KolamCommissionStatus;
   statusLabel: string;
+  deliveryStatus: string;
   deliveryStatusLabel: string;
+  releasedAt: string;
   releasedAtLabel: string;
+  transferProof: KolamCommissionTransferProof | null;
   canRelease: boolean;
   saleId: string;
+  saleStatus: string;
+  saleCashflowSessionStatus: string;
+  saleCashflowSessionClosedAt: string;
+  saleCashflowClosed: boolean;
+  customProjectId: string;
+  customProjectQuotationNumber: string;
 };
 
 export type KolamCommissionListResult = {
   data: KolamCommissionListRow[];
   pagination: KolamCommissionPagination;
+};
+
+export type KolamCommissionPph21 = {
+  applicable: boolean;
+  rate: number;
+  amount: number;
+  netPayable: number;
+};
+
+export type KolamCommissionTransferProof = {
+  path: string;
+  uploadedAt: string;
+  uploadedAtLabel: string;
+};
+
+export type KolamCommissionRecipientSummaryRow = {
+  recipientUser: string;
+  displayName: string;
+  username: string;
+  email: string;
+  totalAccrued: number;
+  totalReleased: number;
+  countAccrued: number;
+  countReleased: number;
+};
+
+export type KolamCommissionRecipientSummaryResult = {
+  data: KolamCommissionRecipientSummaryRow[];
+};
+
+export type KolamCommissionSummaryTotals = {
+  totalAccrued: number;
+  totalReleased: number;
+  countAccrued: number;
+  countReleased: number;
+  recipientCount: number;
 };
 
 export const KOLAM_COMMISSION_STATUS_FILTER_OPTIONS: Array<{
@@ -91,6 +138,7 @@ export function createInitialCommissionListFilters(
       : 'all';
 
   return {
+    recipientUser: query.recipientUser?.trim() ?? '',
     search: query.search?.trim() ?? '',
     status,
     page: Math.max(1, Number(query.page || '1') || 1),
@@ -104,6 +152,9 @@ export function buildCommissionListRoute(
   const params = new URLSearchParams();
   if (filters.search.trim()) {
     params.set('search', filters.search.trim());
+  }
+  if (filters.recipientUser.trim()) {
+    params.set('recipientUser', filters.recipientUser.trim());
   }
   if (filters.status !== 'all') {
     params.set('status', filters.status);
@@ -212,21 +263,63 @@ export function normalizeKolamCommissionList(payload: unknown): KolamCommissionL
   };
 }
 
+export function normalizeKolamCommissionRecipientSummary(
+  payload: unknown,
+): KolamCommissionRecipientSummaryResult {
+  const record = asRecord(payload);
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  return {
+    data: rows.map(normalizeRecipientSummaryRow),
+  };
+}
+
+export function getKolamCommissionSummaryTotals(
+  rows: KolamCommissionRecipientSummaryRow[],
+): KolamCommissionSummaryTotals {
+  return rows.reduce<KolamCommissionSummaryTotals>(
+    (total, row) => ({
+      totalAccrued: total.totalAccrued + row.totalAccrued,
+      totalReleased: total.totalReleased + row.totalReleased,
+      countAccrued: total.countAccrued + row.countAccrued,
+      countReleased: total.countReleased + row.countReleased,
+      recipientCount: total.recipientCount,
+    }),
+    {
+      totalAccrued: 0,
+      totalReleased: 0,
+      countAccrued: 0,
+      countReleased: 0,
+      recipientCount: rows.length,
+    },
+  );
+}
+
 function normalizeCommissionRow(value: unknown): KolamCommissionListRow {
   const record = asRecord(value);
   const id = getString(record, '_id') || getString(record, 'id');
   const sale = asRecord(record.sale);
+  const saleCashflowSession = asRecord(sale.cashflowSession);
   const customProject = asRecord(record.customProject);
   const status = String(record.status ?? 'accrued').toLowerCase() as KolamCommissionStatus;
   const commissionType = getString(record, 'commissionType');
   const commissionValue = Number(record.commissionValue || 0) || 0;
+  const customProjectQuotationNumber = getString(customProject, 'quotationNumber');
+  const deliveryStatus = getString(sale, 'deliveryStatus');
+  const releasedAt = getString(record, 'releasedAt');
+  const saleCashflowSessionStatus = getString(saleCashflowSession, 'status');
+  const saleCashflowSessionClosedAt = getString(saleCashflowSession, 'closedAt');
 
   return {
     id,
     invoiceLabel:
       getString(sale, 'invoiceCode') ||
-      (getString(customProject, 'quotationNumber')
-        ? `Proyek ${getString(customProject, 'quotationNumber')}`
+      (customProjectQuotationNumber
+        ? `Proyek ${customProjectQuotationNumber}`
         : '—'),
     recipientLabel: resolveRecipientLabel(record.recipientUser),
     itemLabel: resolveCommissionItemLabel(record),
@@ -238,14 +331,25 @@ function normalizeCommissionRow(value: unknown): KolamCommissionListRow {
       commissionType === 'percentage'
         ? `${commissionValue}%`
         : String(commissionValue),
+    pph21: normalizeCommissionPph21(record.pph21),
     status,
     statusLabel: formatCommissionStatusLabel(status),
-    deliveryStatusLabel: formatCommissionDeliveryStatusLabel(
-      getString(sale, 'deliveryStatus'),
-    ),
-    releasedAtLabel: formatCommissionReleasedAt(getString(record, 'releasedAt')),
+    deliveryStatus,
+    deliveryStatusLabel: formatCommissionDeliveryStatusLabel(deliveryStatus),
+    releasedAt,
+    releasedAtLabel: formatCommissionReleasedAt(releasedAt),
+    transferProof: normalizeCommissionTransferProof(record.transferProof),
     canRelease: canReleaseCommissionRow(record),
     saleId: getString(sale, '_id'),
+    saleStatus: getString(sale, 'status'),
+    saleCashflowSessionStatus,
+    saleCashflowSessionClosedAt,
+    saleCashflowClosed:
+      Boolean(saleCashflowSessionClosedAt) ||
+      saleCashflowSessionStatus === 'locked' ||
+      saleCashflowSessionStatus === 'verified',
+    customProjectId: getString(customProject, '_id'),
+    customProjectQuotationNumber,
   };
 }
 
@@ -281,6 +385,48 @@ function resolveRecipientLabel(value: unknown): string {
   const last = getString(record, 'last_name');
   const combined = `${first} ${last}`.trim();
   return combined || getString(record, 'email') || '—';
+}
+
+function normalizeRecipientSummaryRow(
+  value: unknown,
+): KolamCommissionRecipientSummaryRow {
+  const record = asRecord(value);
+  return {
+    recipientUser: getString(record, 'recipientUser'),
+    displayName: getString(record, 'displayName') || '—',
+    username: getString(record, 'username'),
+    email: getString(record, 'email'),
+    totalAccrued: Number(record.totalAccrued || 0) || 0,
+    totalReleased: Number(record.totalReleased || 0) || 0,
+    countAccrued: Number(record.countAccrued || 0) || 0,
+    countReleased: Number(record.countReleased || 0) || 0,
+  };
+}
+
+function normalizeCommissionPph21(value: unknown): KolamCommissionPph21 {
+  const record = asRecord(value);
+  return {
+    applicable: Boolean(record.applicable),
+    rate: Number(record.rate || 0) || 0,
+    amount: Number(record.amount || 0) || 0,
+    netPayable: Number(record.netPayable || 0) || 0,
+  };
+}
+
+function normalizeCommissionTransferProof(
+  value: unknown,
+): KolamCommissionTransferProof | null {
+  const record = asRecord(value);
+  const path = getString(record, 'path');
+  if (!path) {
+    return null;
+  }
+  const uploadedAt = getString(record, 'uploadedAt');
+  return {
+    path,
+    uploadedAt,
+    uploadedAtLabel: formatCommissionReleasedAt(uploadedAt),
+  };
 }
 
 function resolveCommissionItemLabel(record: Record<string, unknown>): string {

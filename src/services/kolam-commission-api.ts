@@ -1,6 +1,8 @@
 import { appConfig } from '../config/app';
 import {
+  normalizeKolamCommissionRecipientSummary,
   normalizeKolamCommissionList,
+  type KolamCommissionRecipientSummaryResult,
   type KolamCommissionListFilters,
   type KolamCommissionListResult,
 } from '../domain/kolam-commission';
@@ -9,7 +11,7 @@ import { apiRequest } from '../lib/api-client';
 export async function fetchKolamCommissionList(
   filters: Pick<
     KolamCommissionListFilters,
-    'search' | 'status' | 'page' | 'limit'
+    'recipientUser' | 'search' | 'status' | 'page' | 'limit'
   >,
 ): Promise<KolamCommissionListResult> {
   const query: Record<string, string | number> = {
@@ -19,12 +21,20 @@ export async function fetchKolamCommissionList(
   if (filters.search.trim()) {
     query.search = filters.search.trim();
   }
+  if (filters.recipientUser.trim()) {
+    query.recipientUser = filters.recipientUser.trim();
+  }
   if (filters.status !== 'all') {
     query.status = filters.status;
   }
 
   const payload = await kolamRequest<unknown>('/commission', { query });
   return normalizeKolamCommissionList(payload);
+}
+
+export async function fetchKolamCommissionRecipientSummary(): Promise<KolamCommissionRecipientSummaryResult> {
+  const payload = await kolamRequest<unknown>('/commission/recipient-summary');
+  return normalizeKolamCommissionRecipientSummary(payload);
 }
 
 export async function releaseKolamCommission(

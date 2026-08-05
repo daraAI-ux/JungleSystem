@@ -347,6 +347,7 @@ describe('Kolam commission domain', () => {
     expect(
       createInitialCommissionListFilters('/commissions?status=accrued&page=2'),
     ).toEqual({
+      recipientUser: '',
       search: '',
       status: 'accrued',
       page: 2,
@@ -355,12 +356,13 @@ describe('Kolam commission domain', () => {
 
     expect(
       buildCommissionListRoute({
+        recipientUser: 'user-1',
         search: 'INV',
         status: 'released',
         page: 1,
         limit: 20,
       }),
-    ).toBe('/commissions?search=INV&status=released');
+    ).toBe('/commissions?search=INV&recipientUser=user-1&status=released');
   });
 
   it('normalizes commission list row release eligibility', () => {

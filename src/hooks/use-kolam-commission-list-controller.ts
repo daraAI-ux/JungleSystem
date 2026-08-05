@@ -3,15 +3,19 @@ import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildCommissionListRoute,
   createInitialCommissionListFilters,
+  getKolamCommissionSummaryTotals,
   getKolamCommissionSurfaceMode,
   hasKolamCommissionPermission,
   type KolamCommissionListFilters,
   type KolamCommissionListRow,
+  type KolamCommissionRecipientSummaryRow,
+  type KolamCommissionSummaryTotals,
   type KolamCommissionStatusFilter,
 } from '../domain/kolam-commission';
 import type { KolamWalletOption } from '../domain/kolam-wallet-option';
 import { ApiError } from '../lib/api-error';
 import {
+  fetchKolamCommissionRecipientSummary,
   fetchKolamCommissionList,
   releaseKolamCommission,
 } from '../services/kolam-commission-api';
@@ -21,6 +25,8 @@ export interface KolamCommissionListController {
   mode: 'list' | 'unsupported';
   filters: KolamCommissionListFilters;
   rows: KolamCommissionListRow[];
+  recipientSummaryRows: KolamCommissionRecipientSummaryRow[];
+  summaryTotals: KolamCommissionSummaryTotals;
   pagination: {
     page: number;
     limit: number;
@@ -30,12 +36,14 @@ export interface KolamCommissionListController {
   wallets: KolamWalletOption[];
   walletByRow: Record<string, string>;
   loading: boolean;
+  summaryLoading: boolean;
   releasingId: string | null;
   error: string;
   statusMessage: string;
   canView: boolean;
   canRelease: boolean;
   onSearchChange: (value: string) => void;
+  onRecipientFilterChange: (recipientUser: string) => void;
   onStatusChange: (status: KolamCommissionStatusFilter) => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
@@ -54,6 +62,9 @@ export function useKolamCommissionListController(
     createInitialCommissionListFilters(route),
   );
   const [rows, setRows] = useState<KolamCommissionListRow[]>([]);
+  const [recipientSummaryRows, setRecipientSummaryRows] = useState<
+    KolamCommissionRecipientSummaryRow[]
+  >([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -63,6 +74,7 @@ export function useKolamCommissionListController(
   const [wallets, setWallets] = useState<KolamWalletOption[]>([]);
   const [walletByRow, setWalletByRow] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [releasingId, setReleasingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -115,6 +127,21 @@ export function useKolamCommissionListController(
     }
   }, [canView, mode]);
 
+  const refreshSummary = useCallback(async () => {
+    if (!canView || mode !== 'list') {
+      return;
+    }
+    setSummaryLoading(true);
+    try {
+      const result = await fetchKolamCommissionRecipientSummary();
+      setRecipientSummaryRows(result.data);
+    } catch {
+      setRecipientSummaryRows([]);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [canView, mode]);
+
   useEffect(() => {
     setFilters(createInitialCommissionListFilters(route));
   }, [route]);
@@ -128,11 +155,19 @@ export function useKolamCommissionListController(
     canView,
     filters.limit,
     filters.page,
+    filters.recipientUser,
     filters.search,
     filters.status,
     mode,
     refresh,
   ]);
+
+  useEffect(() => {
+    if (mode !== 'list' || !canView) {
+      return;
+    }
+    void refreshSummary();
+  }, [canView, mode, refreshSummary]);
 
   useEffect(() => {
     if (!canRelease || mode !== 'list') {
@@ -169,6 +204,13 @@ export function useKolamCommissionListController(
   const onSearchChange = useCallback(
     (value: string) => {
       patchFilters({ search: value, page: 1 });
+    },
+    [patchFilters],
+  );
+
+  const onRecipientFilterChange = useCallback(
+    (recipientUser: string) => {
+      patchFilters({ recipientUser, page: 1 });
     },
     [patchFilters],
   );
@@ -218,6 +260,7 @@ export function useKolamCommissionListController(
         await releaseKolamCommission(row.id, walletFrom);
         setStatusMessage('Komisi dibayar');
         await refresh();
+        await refreshSummary();
       } catch (err) {
         setError(
           err instanceof ApiError
@@ -230,7 +273,12 @@ export function useKolamCommissionListController(
         setReleasingId(null);
       }
     },
-    [canRelease, refresh, walletByRow],
+    [canRelease, refresh, refreshSummary, walletByRow],
+  );
+
+  const summaryTotals = useMemo(
+    () => getKolamCommissionSummaryTotals(recipientSummaryRows),
+    [recipientSummaryRows],
   );
 
   return useMemo(
@@ -238,16 +286,20 @@ export function useKolamCommissionListController(
       mode,
       filters,
       rows,
+      recipientSummaryRows,
+      summaryTotals,
       pagination,
       wallets,
       walletByRow,
       loading,
+      summaryLoading,
       releasingId,
       error,
       statusMessage,
       canView,
       canRelease,
       onSearchChange,
+      onRecipientFilterChange,
       onStatusChange,
       onPageChange,
       onLimitChange,
@@ -259,16 +311,20 @@ export function useKolamCommissionListController(
       mode,
       filters,
       rows,
+      recipientSummaryRows,
+      summaryTotals,
       pagination,
       wallets,
       walletByRow,
       loading,
+      summaryLoading,
       releasingId,
       error,
       statusMessage,
       canView,
       canRelease,
       onSearchChange,
+      onRecipientFilterChange,
       onStatusChange,
       onPageChange,
       onLimitChange,
