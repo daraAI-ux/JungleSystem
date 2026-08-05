@@ -35,11 +35,6 @@ import {
   type KolamSalePaymentStatus,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import {
@@ -49,17 +44,8 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
-import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import { KolamDataTableMainTrack } from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
@@ -68,6 +54,10 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSalesOpsAnalyticsPanel } from './kolam-sales-ops-analytics-panel';
 import { KolamSalesOpsDetail } from './kolam-sales-ops-detail';
@@ -187,7 +177,6 @@ function KolamSalesOpsList({
   const [panelAnchor, setPanelAnchor] = useState<KolamFilterPanelAnchor | null>(
     null,
   );
-  const [tableBodyWidth, setTableBodyWidth] = useState(0);
   const toolbarRef = React.useRef<View>(null);
   const lifecycleTriggerRef = React.useRef<View>(null);
   const statusTriggerRef = React.useRef<View>(null);
@@ -205,8 +194,14 @@ function KolamSalesOpsList({
     controller.filters.endDate,
   ].filter(Boolean).length;
   const listColumns = useMemo(
-    () => fitSalesOpsListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () =>
+      buildSalesOpsListColumns({
+        onSelect: sale => {
+          controller.onSelectSale(sale);
+          onRouteChange?.(`${KOLAM_SALES_ROOT}/${sale.id}`);
+        },
+      }),
+    [controller, onRouteChange],
   );
   const lifecycleFilterLabel =
     KOLAM_SALE_LIFECYCLE_OPTIONS.find(
@@ -468,137 +463,57 @@ function KolamSalesOpsList({
         range={controller.analyticsRange}
       />
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  disabled={safePage >= pageCount || controller.loading}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        columns={listColumns}
+        emptyTitle={
+          controller.loading ? 'Memuat penjualan...' : 'Belum ada penjualan'
         }
-        onBodyWidthChange={setTableBodyWidth}
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        rows={controller.sales}
         style={styles.tableFrame}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {controller.sales.length ? (
-          controller.sales.map(item => (
-            <KolamSalesOpsRow
-              columns={listColumns}
-              key={item.id}
-              onSelect={() => {
-                controller.onSelectSale(item);
-                onRouteChange?.(`${KOLAM_SALES_ROOT}/${item.id}`);
-              }}
-              sale={item}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message={
-                controller.loading
-                  ? 'Mengambil daftar dari server Kolam.'
-                  : filtersAppliedCount > 0
-                    ? `Coba ubah filter atau kata kunci. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
-                    : `Belum ada invoice pada tampilan ini. (total server: ${controller.pagination.total}, sumber: ${controller.dataSource})`
-              }
-              title={
-                controller.loading
-                  ? 'Memuat penjualan…'
-                  : 'Belum ada penjualan'
-              }
-            />
-          </View>
-        )}
-      </KolamCatalogListTableShell>
+      />
     </View>
   );
 }
 
-function KolamSalesOpsRow({
-  columns,
+function buildSalesOpsListColumns({
   onSelect,
-  sale,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
-  onSelect: () => void;
-  sale: KolamSale;
-}) {
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const childrenColumn = columnOf('children');
-  const amountColumn = columnOf('amount');
-  const statusColumn = columnOf('status');
-  const marketplaceColumn = columnOf('marketplace');
-  const metaColumn = columnOf('meta');
-  const skipShipping = kolamSaleSkipsShippingFlow(sale);
-  const deliveryBadgeLabel = skipShipping
-    ? getKolamNoShippingDeliveryLabel(sale)
-    : formatKolamSaleDeliveryStatusLabel(
-        sale.deliveryStatus,
-        sale.status,
-        sale,
-      );
-  const deliveryBadgeIntent = skipShipping
-    ? 'info'
-    : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
-  const complaintDisplay = getKolamSaleListComplaintDisplay(sale);
-  const sourceName = sale.sourceRef?.name?.trim() || 'Sumber';
-  const sourceLogoUri = sale.sourceRef?.logoUri?.trim() || '';
-
-  return (
-    <Pressable onPress={onSelect}>
-      <KolamDataTableRowFrame>
-        <KolamDataTableMainTrack>
-          <View
-            style={[
-              styles.listCell,
-              styles.identityCell,
-              primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-            ]}
-          >
-            <Text numberOfLines={1} style={styles.invoiceCode}>
-              {sale.invoiceCode}
-            </Text>
-            <Text numberOfLines={1} style={styles.metaText}>
-              {formatShortDate(sale.transactionDate || sale.createdAt)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.listCell,
-              styles.sourceCell,
-              childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
-            ]}
-          >
+  onSelect: (sale: KolamSale) => void;
+}): Array<KolamListTableColumn<KolamSale>> {
+  return [
+    {
+      flex: 1,
+      id: 'invoice',
+      label: 'Invoice',
+      render: sale => (
+        <Pressable onPress={() => onSelect(sale)} style={styles.identityCell}>
+          <Text numberOfLines={1} style={styles.invoiceCode}>
+            {sale.invoiceCode}
+          </Text>
+          <Text numberOfLines={1} style={styles.metaText}>
+            {formatShortDate(sale.transactionDate || sale.createdAt)}
+          </Text>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.7,
+      id: 'source',
+      label: 'Sumber',
+      render: sale => {
+        const sourceName = sale.sourceRef?.name?.trim() || 'Sumber';
+        const sourceLogoUri = sale.sourceRef?.logoUri?.trim() || '';
+        return (
+          <View style={styles.sourceCell}>
             {sourceLogoUri ? (
               <KolamRemoteImage
                 accessibilityLabel={sourceName}
@@ -607,46 +522,55 @@ function KolamSalesOpsRow({
               />
             ) : (
               <Text numberOfLines={2} style={styles.sourceName}>
-                {sourceName === 'Sumber' ? '—' : sourceName}
+                {sourceName === 'Sumber' ? '-' : sourceName}
               </Text>
             )}
           </View>
-
-          <View
-            style={[
-              styles.listCell,
-              amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-            ]}
-          >
-            <Text numberOfLines={1} style={styles.primaryText}>
-              {formatRupiah(sale.finalTotal)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.listCell,
-              styles.statusCell,
-              statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-            ]}
-          >
-            <KolamStatusBadge
-              intent={getKolamSalePaymentStatusIntent(sale.status)}
-              label={formatKolamSalePaymentStatusLabel(sale.status)}
-              numberOfLines={2}
-              style={styles.centerBadge}
-            />
-          </View>
-
-          <View
-            style={[
-              styles.listCell,
-              styles.statusCell,
-              marketplaceColumn
-                ? getKolamDataTableColumnStyle(marketplaceColumn)
-                : null,
-            ]}
-          >
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'total',
+      label: 'Total',
+      render: sale => (
+        <Text numberOfLines={1} style={styles.primaryText}>
+          {formatRupiah(sale.finalTotal)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.85,
+      id: 'payment',
+      label: 'Bayar',
+      render: sale => (
+        <View style={styles.statusCell}>
+          <KolamStatusBadge
+            intent={getKolamSalePaymentStatusIntent(sale.status)}
+            label={formatKolamSalePaymentStatusLabel(sale.status)}
+            numberOfLines={2}
+            style={styles.centerBadge}
+          />
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'delivery',
+      label: 'Pengiriman',
+      render: sale => {
+        const skipShipping = kolamSaleSkipsShippingFlow(sale);
+        const deliveryBadgeLabel = skipShipping
+          ? getKolamNoShippingDeliveryLabel(sale)
+          : formatKolamSaleDeliveryStatusLabel(sale.deliveryStatus, sale.status, sale);
+        const deliveryBadgeIntent = skipShipping
+          ? 'info'
+          : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
+        return (
+          <View style={styles.statusCell}>
             <KolamStatusBadge
               intent={deliveryBadgeIntent}
               label={deliveryBadgeLabel}
@@ -654,14 +578,18 @@ function KolamSalesOpsRow({
               style={styles.centerBadge}
             />
           </View>
-
-          <View
-            style={[
-              styles.listCell,
-              styles.statusCell,
-              metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-            ]}
-          >
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'complaint',
+      label: 'Komplain',
+      render: sale => {
+        const complaintDisplay = getKolamSaleListComplaintDisplay(sale);
+        return (
+          <View style={styles.statusCell}>
             {complaintDisplay.asBadge ? (
               <KolamStatusBadge
                 intent={complaintDisplay.intent}
@@ -675,10 +603,10 @@ function KolamSalesOpsRow({
               </Text>
             )}
           </View>
-        </KolamDataTableMainTrack>
-      </KolamDataTableRowFrame>
-    </Pressable>
-  );
+        );
+      },
+    },
+  ];
 }
 
 function KolamSalesOpsCreateForm({
@@ -2167,35 +2095,6 @@ function formatShortDate(value: string) {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  });
-}
-
-function fitSalesOpsListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('sales-ops');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(0, containerWidth - paddingX - gapsTotal);
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, base.length)),
-  );
-  let remainder = contentBudget - equalWidth * base.length;
-  const lastId = base[base.length - 1]?.id;
-
-  return base.map(column => {
-    const extra = column.id === lastId ? remainder : 0;
-    if (column.id === lastId) {
-      remainder = 0;
-    }
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
   });
 }
 

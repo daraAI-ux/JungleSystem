@@ -1,5 +1,5 @@
 import React from 'react';
-import {Linking, StyleSheet, Text, View} from 'react-native';
+import {Linking, Pressable, StyleSheet, Text, View} from 'react-native';
 import {
   getKolamLocationRouteMode,
   getKolamLocationTierLabel,
@@ -67,6 +67,10 @@ import {
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 import {
@@ -1050,10 +1054,13 @@ function KolamLocationList({
   const [deleting, setDeleting] = React.useState(false);
   const [pagination, setPagination] =
     React.useState<KolamLocationPagination>(INITIAL_PAGINATION);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const listColumns = React.useMemo(
-    () => fitLocationListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () =>
+      buildLocationListColumns({
+        parentLookup,
+        onSelect: location => onRouteChange?.(`/locations/${location.id}`),
+      }),
+    [onRouteChange, parentLookup],
   );
 
   React.useEffect(() => {
@@ -1256,79 +1263,34 @@ function KolamLocationList({
           style={styles.errorBadge}
         />
       ) : null}
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={next => {
-              setPageSize(next);
-              setPage(1);
-            }}
-            page={safePage}
-            pageSize={pageSize}
-            total={tableTotal}>
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={
+          searchEmpty
+            ? `Tidak ada lokasi untuk "${search.trim()}"`
+            : loading
+              ? 'Memuat lokasi...'
+              : 'Belum ada lokasi'
         }
-        onBodyWidthChange={setTableBodyWidth}>
-        <KolamDataTableHeader columns={listColumns} />
-        {visibleItems.length ? (
-          visibleItems.map(location => (
-            <KolamLocationRow
-              columns={listColumns}
-              key={location.id}
-              location={location}
-              onDelete={() => setDeleteTarget(location)}
-              onEdit={() => onRouteChange?.(`/locations/${location.id}/edit`)}
-              onSelect={() => onRouteChange?.(`/locations/${location.id}`)}
-              parentLookup={parentLookup}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            {searchEmpty ? (
-              <KolamEmptyState
-                compact
-                message={
-                  shouldSearchApi
-                    ? 'Coba kata kunci lain'
-                    : 'Mencari lebih banyak hasil...'
-                }
-                title={`Tidak ada lokasi untuk "${search.trim()}"`}
-              />
-            ) : (
-              <KolamEmptyState
-                compact
-                message="Data lokasi belum tersedia dari server."
-                title={loading ? 'Memuat lokasi...' : 'Belum ada lokasi'}
-              />
-            )}
-          </View>
+        getRowKey={location => location.id}
+        loading={loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: tableTotal,
+        }}
+        renderActions={location => (
+          <KolamLocationActionsMenu
+            location={location}
+            onDelete={() => setDeleteTarget(location)}
+            onEdit={() => onRouteChange?.(`/locations/${location.id}/edit`)}
+            onSelect={() => onRouteChange?.(`/locations/${location.id}`)}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={visibleItems}
+      />
       <KolamConfirmDialog
         confirmLabel={deleting ? 'Menghapus...' : 'Hapus'}
         destructive
@@ -1354,170 +1316,127 @@ function KolamLocationList({
   );
 }
 
-function KolamLocationRow({
-  columns,
+function buildLocationListColumns({
+  onSelect,
+  parentLookup,
+}: {
+  onSelect: (location: KolamLocationListItem) => void;
+  parentLookup: Record<string, KolamLocationOption>;
+}): Array<KolamListTableColumn<KolamLocationListItem>> {
+  return [
+    {
+      flex: 1.12,
+      id: 'name',
+      label: 'Lokasi',
+      render: location => (
+        <Pressable onPress={() => onSelect(location)} style={styles.identityCell}>
+          <Text numberOfLines={1} style={styles.locationNameText}>
+            {location.name}
+          </Text>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'type',
+      label: 'Tipe',
+      render: location => (
+        <KolamStatusBadge
+          intent={getLocationTypeIntent(location.type)}
+          label={getKolamLocationTypeLabel(location.type)}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.68,
+      id: 'tier',
+      label: 'Tingkat',
+      render: location => (
+        <Text numberOfLines={1} style={styles.locationMetaText}>
+          {getKolamLocationTierLabel(location.tier)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1,
+      id: 'parent',
+      label: 'Parent',
+      render: location => {
+        const parent = resolveLocationParent(location, parentLookup);
+        return (
+          <View style={styles.parentCopy}>
+            <Text numberOfLines={1} style={styles.parentNameText}>
+              {parent?.name || '-'}
+            </Text>
+            {parent?.type ? (
+              <Text numberOfLines={1} style={styles.parentTypeText}>
+                {getKolamLocationTypeLabel(parent.type)}
+              </Text>
+            ) : null}
+          </View>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'phone',
+      label: 'Telepon',
+      render: location => (
+        <Text numberOfLines={1} style={styles.locationMetaText}>
+          {location.phoneNumber || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1,
+      id: 'description',
+      label: 'Catatan',
+      render: location => (
+        <Text numberOfLines={2} style={styles.locationMetaText}>
+          {truncateLocationDescription(location.description)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'created',
+      label: 'Dibuat',
+      render: location => (
+        <Text numberOfLines={1} style={styles.locationMetaText}>
+          {formatLocationDateTime(location.createdAt)}
+        </Text>
+      ),
+    },
+  ];
+}
+
+function KolamLocationActionsMenu({
   location,
   onDelete,
   onEdit,
   onSelect,
-  parentLookup,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
   location: KolamLocationListItem;
   onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
-  parentLookup: Record<string, KolamLocationOption>;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const parent = resolveLocationParent(location, parentLookup);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const typeColumn = columnOf('meta');
-  const tierColumn = columnOf('children');
-  const parentColumn = columnOf('notes');
-  const phoneColumn = columnOf('marketplace');
-  const descriptionColumn = columnOf('status');
-  const createdColumn = columnOf('amount');
-  const actionsColumn = columnOf('actions');
-
   return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <KolamDataTableMainTrack>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'name',
-                text: location.name,
-                style: styles.locationNameText,
-                textProps: {numberOfLines: 1},
-              },
-            ]}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            typeColumn ? getKolamDataTableColumnStyle(typeColumn) : null,
-          ]}>
-          <KolamStatusBadge
-            intent={getLocationTypeIntent(location.type)}
-            label={getKolamLocationTypeLabel(location.type)}
-            style={styles.centerBadge}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            tierColumn ? getKolamDataTableColumnStyle(tierColumn) : null,
-          ]}>
-          <Text numberOfLines={1} style={styles.locationMetaText}>
-            {getKolamLocationTierLabel(location.tier)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            parentColumn ? getKolamDataTableColumnStyle(parentColumn) : null,
-          ]}>
-          <KolamCopyStack
-            containerStyle={styles.parentCopy}
-            items={[
-              {
-                id: 'parent-name',
-                text: parent?.name || '-',
-                style: styles.parentNameText,
-                textProps: {numberOfLines: 1},
-              },
-              ...(parent?.type
-                ? [
-                    {
-                      id: 'parent-type',
-                      text: getKolamLocationTypeLabel(parent.type),
-                      style: styles.parentTypeText,
-                      textProps: {numberOfLines: 1},
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            phoneColumn ? getKolamDataTableColumnStyle(phoneColumn) : null,
-          ]}>
-          <Text numberOfLines={1} style={styles.locationMetaText}>
-            {location.phoneNumber || '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            descriptionColumn
-              ? getKolamDataTableColumnStyle(descriptionColumn)
-              : null,
-          ]}>
-          <Text numberOfLines={2} style={styles.locationMetaText}>
-            {truncateLocationDescription(location.description)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            createdColumn ? getKolamDataTableColumnStyle(createdColumn) : null,
-          ]}>
-          <Text numberOfLines={1} style={styles.locationMetaText}>
-            {formatLocationDateTime(location.createdAt)}
-          </Text>
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}>
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${location.name}`}
-          actions={[
-            {label: 'Lihat', onPress: onSelect},
-            {label: 'Rubah', onPress: onEdit},
-            {
-              label: 'Hapus',
-              onPress: onDelete,
-              tone: 'danger',
-            },
-          ]}
-          onOpenChange={setActionMenuOpen}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
-}
-
-function fitLocationListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('location'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 160,
-      secondaryMinWidth: 56,
-    },
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${location.name}`}
+      actions={[
+        {label: 'Lihat', onPress: onSelect},
+        {label: 'Rubah', onPress: onEdit},
+        {label: 'Hapus', onPress: onDelete, tone: 'danger'},
+      ]}
+    />
   );
 }
 

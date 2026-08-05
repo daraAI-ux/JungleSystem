@@ -15,7 +15,6 @@ import {
   type KolamSourceCostField,
   type KolamSourceCostFieldType,
 } from '../domain/kolam-source';
-import { type KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import { pickNativeImageFile } from '../services/native-file-picker';
@@ -25,30 +24,21 @@ import {
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -73,21 +63,6 @@ function FieldShell({
     </View>
   );
 }
-
-const LIST_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Nama', align: 'left', width: 220 },
-  { id: 'meta', label: 'Logo', align: 'left', width: 72 },
-  { id: 'children', label: 'Tipe', align: 'left', width: 88 },
-  { id: 'marketplace', label: 'Dompet', align: 'left', width: 140 },
-  { id: 'notes', label: 'Field Biaya', align: 'left', width: 160 },
-  { id: 'status', label: 'Status', align: 'left', width: 110 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
 
 function descRow(
   id: string,
@@ -252,32 +227,10 @@ function KolamSourceList({
 }) {
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamSource | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-
-  const columns = React.useMemo(() => {
-    if (tableBodyWidth <= 0) {
-      return LIST_COLUMNS;
-    }
-    const flexible = LIST_COLUMNS.filter(column => column.id !== 'actions');
-    const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-    const gapTotal = KOLAM_DATA_TABLE_COLUMN_GAP * (LIST_COLUMNS.length - 1);
-    const available = Math.max(
-      320,
-      tableBodyWidth - actionsWidth - gapTotal,
-    );
-    const baseWidth = flexible.reduce(
-      (sum, column) => sum + (column.width ?? 100),
-      0,
-    );
-    const scale = available / Math.max(1, baseWidth);
-    return [
-      ...flexible.map(column => ({
-        ...column,
-        width: Math.max(64, Math.round((column.width ?? 100) * scale)),
-      })),
-      { ...LIST_COLUMNS[LIST_COLUMNS.length - 1], width: actionsWidth },
-    ];
-  }, [tableBodyWidth]);
+  const columns = React.useMemo(
+    () => buildSourceListColumns({ controller, onRouteChange }),
+    [controller, onRouteChange],
+  );
 
   return (
     <View style={styles.stack}>
@@ -319,153 +272,30 @@ function KolamSourceList({
         </View>
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle={
+          controller.loading ? 'Memuat sumber...' : 'Sumber penjualan kosong'
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={columns} />
-        {!controller.loading && controller.sources.length === 0 ? (
-          <KolamEmptyState
-            message="Belum ada sumber penjualan, atau pencarian tidak menemukan hasil."
-            title="Sumber penjualan kosong"
+        getRowKey={source => source.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
+        renderActions={source => (
+          <KolamSourceActionsMenu
+            controller={controller}
+            onDelete={() => setDeleteCandidate(source)}
+            onRouteChange={onRouteChange}
+            source={source}
           />
-        ) : null}
-        {controller.sources.map(source => (
-          <KolamDataTableRowFrame key={source.id}>
-            <KolamDataTableMainTrack>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  void controller.onSelectSource(source).then(() => {
-                    onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}`);
-                  });
-                }}
-                style={getKolamDataTableColumnStyle(columns[0])}
-              >
-                <Text numberOfLines={1} style={styles.primaryText}>
-                  {source.name}
-                </Text>
-                {source.description ? (
-                  <Text numberOfLines={1} style={styles.metaText}>
-                    {source.description}
-                  </Text>
-                ) : null}
-              </Pressable>
-              <View style={getKolamDataTableColumnStyle(columns[1])}>
-                {source.logoUri ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={`Logo ${source.name}`}
-                    resizeMode="contain"
-                    sourceUri={source.logoUri}
-                    style={styles.listLogo}
-                  />
-                ) : (
-                  <Text style={styles.metaText}>—</Text>
-                )}
-              </View>
-              <View style={getKolamDataTableColumnStyle(columns[2])}>
-                <KolamStatusBadge
-                  intent={source.type === 'online' ? 'info' : 'secondary'}
-                  label={getKolamSourceTypeLabel(source.type)}
-                />
-              </View>
-              <View style={getKolamDataTableColumnStyle(columns[3])}>
-                <Text numberOfLines={1} style={styles.cellText}>
-                  {source.wallet?.name || '—'}
-                </Text>
-              </View>
-              <View style={getKolamDataTableColumnStyle(columns[4])}>
-                <Text numberOfLines={2} style={styles.metaText}>
-                  {source.costFields.length
-                    ? source.costFields
-                        .map(field => formatKolamSourceCostField(field))
-                        .join(' · ')
-                    : '—'}
-                </Text>
-              </View>
-              <View
-                style={[
-                  getKolamDataTableColumnStyle(columns[5]),
-                  styles.statusCell,
-                ]}
-              >
-                <KolamSwitch
-                  active={source.isActive}
-                  disabled={controller.saving}
-                  onPress={() => {
-                    void controller.onToggleActive(source, !source.isActive);
-                  }}
-                />
-                <Text style={styles.metaText}>
-                  {getKolamSourceStatusLabel(source.isActive)}
-                </Text>
-              </View>
-            </KolamDataTableMainTrack>
-            <KolamDataTableActionsTrack>
-              <KolamOverflowMenuButton
-                accessibilityLabel={`Menu ${source.name}`}
-                actions={[
-                  {
-                    label: 'Lihat',
-                    onPress: () => {
-                      void controller.onSelectSource(source).then(() => {
-                        onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}`);
-                      });
-                    },
-                  },
-                  {
-                    label: 'Ubah',
-                    onPress: () => {
-                      void controller.onSelectSource(source).then(() => {
-                        controller.onEdit();
-                        onRouteChange?.(
-                          `${KOLAM_SOURCE_ROOT}/${source.id}/edit`,
-                        );
-                      });
-                    },
-                  },
-                  {
-                    label: 'Hapus',
-                    onPress: () => setDeleteCandidate(source),
-                    tone: 'danger',
-                  },
-                ]}
-              />
-            </KolamDataTableActionsTrack>
-          </KolamDataTableRowFrame>
-        ))}
-      </KolamCatalogListTableShell>
+        )}
+        rows={controller.sources}
+      />
 
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
@@ -486,6 +316,153 @@ function KolamSourceList({
         visible={Boolean(deleteCandidate)}
       />
     </View>
+  );
+}
+
+function buildSourceListColumns({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamSourceController;
+  onRouteChange?: (route: string) => void;
+}): Array<KolamListTableColumn<KolamSource>> {
+  return [
+    {
+      flex: 1.18,
+      id: 'name',
+      label: 'Nama',
+      render: source => (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            void controller.onSelectSource(source).then(() => {
+              onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}`);
+            });
+          }}
+          style={styles.identityCell}
+        >
+          <Text numberOfLines={1} style={styles.primaryText}>
+            {source.name}
+          </Text>
+          {source.description ? (
+            <Text numberOfLines={1} style={styles.metaText}>
+              {source.description}
+            </Text>
+          ) : null}
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.48,
+      id: 'logo',
+      label: 'Logo',
+      render: source =>
+        source.logoUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={`Logo ${source.name}`}
+            resizeMode="contain"
+            sourceUri={source.logoUri}
+            style={styles.listLogo}
+          />
+        ) : (
+          <Text style={styles.metaText}>-</Text>
+        ),
+    },
+    {
+      align: 'center',
+      flex: 0.64,
+      id: 'type',
+      label: 'Tipe',
+      render: source => (
+        <KolamStatusBadge
+          intent={source.type === 'online' ? 'info' : 'secondary'}
+          label={getKolamSourceTypeLabel(source.type)}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'wallet',
+      label: 'Dompet',
+      render: source => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {source.wallet?.name || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1,
+      id: 'costFields',
+      label: 'Field Biaya',
+      render: source => (
+        <Text numberOfLines={2} style={styles.metaText}>
+          {source.costFields.length
+            ? source.costFields.map(field => formatKolamSourceCostField(field)).join(' · ')
+            : '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'status',
+      label: 'Status',
+      render: source => (
+        <View style={styles.statusCell}>
+          <KolamSwitch
+            active={source.isActive}
+            disabled={controller.saving}
+            onPress={() => {
+              void controller.onToggleActive(source, !source.isActive);
+            }}
+          />
+          <Text style={styles.metaText}>
+            {getKolamSourceStatusLabel(source.isActive)}
+          </Text>
+        </View>
+      ),
+    },
+  ];
+}
+
+function KolamSourceActionsMenu({
+  controller,
+  onDelete,
+  onRouteChange,
+  source,
+}: {
+  controller: KolamSourceController;
+  onDelete: () => void;
+  onRouteChange?: (route: string) => void;
+  source: KolamSource;
+}) {
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${source.name}`}
+      actions={[
+        {
+          label: 'Lihat',
+          onPress: () => {
+            void controller.onSelectSource(source).then(() => {
+              onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}`);
+            });
+          },
+        },
+        {
+          label: 'Ubah',
+          onPress: () => {
+            void controller.onSelectSource(source).then(() => {
+              controller.onEdit();
+              onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${source.id}/edit`);
+            });
+          },
+        },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 
@@ -1076,6 +1053,12 @@ const styles = StyleSheet.create({
   cellText: {
     color: V.colors.fg,
     fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
+  },
+  identityCell: {
+    minWidth: 0,
+    width: '100%',
   },
   listLogo: {
     height: 36,
