@@ -1414,29 +1414,35 @@ function KolamProyekDetailRead({
                 {activityEntries.length === 0 ? (
                   <Text style={styles.metaText}>Belum ada aktivitas.</Text>
                 ) : (
-                  <View style={styles.historyTimeline}>
-                    {[...activityEntries].reverse().map((entry, index) => (
-                      <View
-                        key={`${entry.at}-${index}`}
-                        style={styles.historyTimelineItem}
-                      >
+                  <ScrollView
+                    contentContainerStyle={styles.historyListScroll}
+                    nestedScrollEnabled
+                    style={styles.historyListScrollView}
+                  >
+                    <View style={styles.historyTimeline}>
+                      {[...activityEntries].reverse().map((entry, index) => (
                         <View
-                          style={[
-                            styles.historyTimelineDot,
-                            styles.historyTimelineDotPrimary,
-                          ]}
-                        />
-                        <View style={styles.historyTimelineBody}>
-                          <Text style={styles.historyTimelineTitle}>
-                            {entry.label}
-                          </Text>
-                          <Text style={styles.metaText}>
-                            {formatShortDateTime(entry.at)}
-                          </Text>
+                          key={`${entry.at}-${index}`}
+                          style={styles.historyTimelineItem}
+                        >
+                          <View
+                            style={[
+                              styles.historyTimelineDot,
+                              styles.historyTimelineDotPrimary,
+                            ]}
+                          />
+                          <View style={styles.historyTimelineBody}>
+                            <Text style={styles.historyTimelineTitle}>
+                              {entry.label}
+                            </Text>
+                            <Text style={styles.metaText}>
+                              {formatShortDateTime(entry.at)}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
-                    ))}
-                  </View>
+                      ))}
+                    </View>
+                  </ScrollView>
                 )}
               </DetailSection>
 
@@ -2187,50 +2193,56 @@ function ProyekLifecycleTimeline({
       {history.length === 0 ? (
         <Text style={styles.metaText}>Belum ada perubahan status.</Text>
       ) : (
-        <View style={styles.historyTimeline}>
-          {history.slice(0, 20).map((entry, index) => (
-            <View
-              key={`${entry.at}-${entry.to}-${index}`}
-              style={styles.historyTimelineItem}
-            >
+        <ScrollView
+          contentContainerStyle={styles.historyListScroll}
+          nestedScrollEnabled
+          style={styles.historyListScrollView}
+        >
+          <View style={styles.historyTimeline}>
+            {history.map((entry, index) => (
               <View
-                style={[
-                  styles.historyTimelineDot,
-                  entry.to === 'completed' || entry.to === 'dp_paid'
-                    ? styles.historyTimelineDotSuccess
-                    : entry.to === 'cancelled' || entry.to === 'refunded'
-                      ? styles.historyTimelineDotDanger
-                      : entry.to === 'revision_in_progress'
-                        ? styles.historyTimelineDotWarning
-                        : styles.historyTimelineDotPrimary,
-                ]}
-              />
-              <View style={styles.historyTimelineBody}>
-                <View style={styles.dpRowHeader}>
-                  <KolamStatusBadge
-                    intent={getKolamProyekLifecycleIntent(entry.from)}
-                    label={
-                      entry.from
-                        ? formatKolamProyekLifecycleLabel(entry.from)
-                        : '—'
-                    }
-                  />
-                  <Text style={styles.metaText}>→</Text>
-                  <KolamStatusBadge
-                    intent={getKolamProyekLifecycleIntent(entry.to)}
-                    label={formatKolamProyekLifecycleLabel(entry.to)}
-                  />
+                key={`${entry.at}-${entry.to}-${index}`}
+                style={styles.historyTimelineItem}
+              >
+                <View
+                  style={[
+                    styles.historyTimelineDot,
+                    entry.to === 'completed' || entry.to === 'dp_paid'
+                      ? styles.historyTimelineDotSuccess
+                      : entry.to === 'cancelled' || entry.to === 'refunded'
+                        ? styles.historyTimelineDotDanger
+                        : entry.to === 'revision_in_progress'
+                          ? styles.historyTimelineDotWarning
+                          : styles.historyTimelineDotPrimary,
+                  ]}
+                />
+                <View style={styles.historyTimelineBody}>
+                  <View style={styles.dpRowHeader}>
+                    <KolamStatusBadge
+                      intent={getKolamProyekLifecycleIntent(entry.from)}
+                      label={
+                        entry.from
+                          ? formatKolamProyekLifecycleLabel(entry.from)
+                          : '—'
+                      }
+                    />
+                    <Text style={styles.metaText}>→</Text>
+                    <KolamStatusBadge
+                      intent={getKolamProyekLifecycleIntent(entry.to)}
+                      label={formatKolamProyekLifecycleLabel(entry.to)}
+                    />
+                  </View>
+                  <Text style={styles.metaText}>
+                    {entry.at ? formatShortDateTime(entry.at) : '—'}
+                  </Text>
+                  {entry.note ? (
+                    <Text style={styles.metaText}>{entry.note}</Text>
+                  ) : null}
                 </View>
-                <Text style={styles.metaText}>
-                  {entry.at ? formatShortDateTime(entry.at) : '—'}
-                </Text>
-                {entry.note ? (
-                  <Text style={styles.metaText}>{entry.note}</Text>
-                ) : null}
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        </ScrollView>
       )}
 
       {showDomainInfo ? (
