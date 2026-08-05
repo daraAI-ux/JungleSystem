@@ -265,8 +265,11 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
-              style={styles.complaintFilterTrigger}
-              triggerStyle={styles.complaintFilterButton}
+              style={styles.complaintFilterSource}
+              triggerStyle={[
+                styles.complaintFilterButton,
+                styles.complaintFilterSourceButton,
+              ]}
               triggerTextStyle={styles.complaintFilterText}
               value={controller.sourceFilter}
             />
@@ -285,8 +288,11 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
-              style={styles.complaintFilterTrigger}
-              triggerStyle={styles.complaintFilterButton}
+              style={styles.complaintFilterStatus}
+              triggerStyle={[
+                styles.complaintFilterButton,
+                styles.complaintFilterStatusButton,
+              ]}
               triggerTextStyle={styles.complaintFilterText}
               value={controller.statusFilter}
             />
@@ -305,8 +311,11 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
-              style={styles.complaintFilterTrigger}
-              triggerStyle={styles.complaintFilterButton}
+              style={styles.complaintFilterDecision}
+              triggerStyle={[
+                styles.complaintFilterButton,
+                styles.complaintFilterDecisionButton,
+              ]}
               triggerTextStyle={styles.complaintFilterText}
               value={controller.decisionFilter}
             />
@@ -325,8 +334,11 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
-              style={styles.complaintFilterTrigger}
-              triggerStyle={styles.complaintFilterButton}
+              style={styles.complaintFilterPriority}
+              triggerStyle={[
+                styles.complaintFilterButton,
+                styles.complaintFilterPriorityButton,
+              ]}
               triggerTextStyle={styles.complaintFilterText}
               value={controller.priorityFilter}
             />
@@ -345,8 +357,11 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
-              style={styles.complaintFilterTrigger}
-              triggerStyle={styles.complaintFilterButton}
+              style={styles.complaintFilterCategory}
+              triggerStyle={[
+                styles.complaintFilterButton,
+                styles.complaintFilterCategoryButton,
+              ]}
               triggerTextStyle={styles.complaintFilterText}
               value={controller.categoryFilter}
             />
@@ -2659,10 +2674,35 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 104,
   },
-  complaintFilterTrigger: {
+  complaintFilterSource: {
     alignSelf: 'flex-start',
     flexGrow: 0,
     flexShrink: 0,
+    minWidth: 74,
+  },
+  complaintFilterStatus: {
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 72,
+  },
+  complaintFilterDecision: {
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 104,
+  },
+  complaintFilterPriority: {
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 92,
+  },
+  complaintFilterCategory: {
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 90,
   },
   complaintFilterButton: {
     flexGrow: 0,
@@ -2670,6 +2710,21 @@ const styles = StyleSheet.create({
     minHeight: 34,
     minWidth: 0,
     paddingHorizontal: 8,
+  },
+  complaintFilterSourceButton: {
+    minWidth: 74,
+  },
+  complaintFilterStatusButton: {
+    minWidth: 72,
+  },
+  complaintFilterDecisionButton: {
+    minWidth: 104,
+  },
+  complaintFilterPriorityButton: {
+    minWidth: 92,
+  },
+  complaintFilterCategoryButton: {
+    minWidth: 90,
   },
   complaintFilterText: {
     flexShrink: 0,
