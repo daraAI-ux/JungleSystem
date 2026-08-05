@@ -84,7 +84,7 @@ export async function listKolamDaraTrainingVisionFeedback(opts?: {
   const payload = await kolamRequest<unknown>('/dara-training/vision/feedback', {
     query: {
       page: opts?.page ?? 1,
-      limit: opts?.limit ?? 20,
+      limit: opts?.limit ?? KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
       q: opts?.q || undefined,
       entityKind: kind === 'all' ? undefined : kind,
     },

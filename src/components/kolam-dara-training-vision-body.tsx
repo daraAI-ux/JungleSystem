@@ -12,6 +12,7 @@ import {
 import {
   formatKolamDaraTrainingVisionDateTime,
   formatKolamDaraTrainingVisionTrainStatusLabel,
+  KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
   KOLAM_DARA_TRAINING_VISION_MATCH_LABELS,
   KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
   KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
@@ -286,7 +287,7 @@ export function KolamDaraTrainingVisionBody({
           }),
           listKolamDaraTrainingVisionFeedback({
             page: feedbackPage,
-            limit: 20,
+            limit: KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
             q: feedbackSearch,
             entityKind: feedbackKind,
           }),
