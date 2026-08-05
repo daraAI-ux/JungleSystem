@@ -295,6 +295,7 @@ function buildTermsTemplateListColumns({
           <KolamStatusBadge
             intent={getKolamTermsTemplateStatusIntent(item.status)}
             label={formatKolamTermsTemplateStatusLabel(item.status)}
+            style={styles.centeredBadge}
           />
         </View>
       ),
@@ -669,6 +670,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 0,
     width: '100%',
+  },
+  centeredBadge: {
+    alignSelf: 'center',
   },
   cellTextCenter: {
     color: V.colors.fg,
