@@ -1,3 +1,5 @@
+import {buildKolamProyekDetailRoute} from './kolam-proyek';
+
 export type KolamNotificationType =
   | 'info'
   | 'success'
@@ -146,7 +148,7 @@ export function getKolamNotificationLink(
     return `/sales/${id}`;
   }
   if (type === 'CustomProject' && id) {
-    return `/proyek/${id}`;
+    return buildKolamProyekDetailRoute(id);
   }
   if (type === 'TaskManager' && id) {
     return `/task-manager/${id}`;

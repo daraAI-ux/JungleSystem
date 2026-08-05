@@ -1,4 +1,5 @@
 import { appConfig } from '../config/app';
+import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
 import {
   normalizeKolamProyekDetail,
   normalizeKolamProyekList,
@@ -9,7 +10,13 @@ import {
   type KolamProyekQuotationPayload,
   type KolamProyekSubmitRoundInput,
 } from '../domain/kolam-proyek';
-import { apiRequest } from '../lib/api-client';
+import {
+  apiRequest,
+  getAccessToken,
+  getNativeDeviceIdentity,
+} from '../lib/api-client';
+import { ApiError } from '../lib/api-error';
+import { saveNativeBase64File } from './native-file-saver';
 
 interface DataResponse<T> {
   data: T;
@@ -263,6 +270,19 @@ export async function closeKolamProyek(id: string): Promise<KolamProyekDetail> {
   return detail;
 }
 
+export async function downloadKolamProyekInvoice(
+  id: string,
+  quotationNumber?: string | null,
+): Promise<{ path?: string; name: string }> {
+  const base = appConfig.kolamApiBaseUrl.replace(/\/+$/, '');
+  const url = `${base}/custom-project/${encodeURIComponent(id)}/invoice`;
+  const safe = String(quotationNumber || id || 'invoice').replace(
+    /[^\w.-]+/g,
+    '_',
+  );
+  return downloadKolamProyekBinary(url, `Invoice-${safe}.pdf`);
+}
+
 async function submitKolamProyekRound(
   path: string,
   input: KolamProyekSubmitRoundInput,
@@ -338,6 +358,94 @@ function inferFileMimeType(fileName: string) {
     default:
       return 'application/octet-stream';
   }
+}
+
+async function downloadKolamProyekBinary(
+  url: string,
+  fallbackName: string,
+): Promise<{ path?: string; name: string }> {
+  const headers: Record<string, string> = {
+    Accept: 'application/pdf,*/*',
+    ...getRuntimeClientHeaders({ sourceHeader: appConfig.kolamSourceHeader }),
+  };
+  const token = getAccessToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const nativeIdentity = getNativeDeviceIdentity();
+  const macHeader = nativeIdentity.macAddresses?.join(',');
+  if (macHeader) {
+    headers['x-device-mac'] = macHeader;
+  }
+  if (nativeIdentity.macSignature) {
+    headers['x-device-mac-signature'] = nativeIdentity.macSignature;
+  }
+
+  const response = await fetch(url, { method: 'GET', headers });
+  if (!response.ok) {
+    let message: string | undefined;
+    let code: string | undefined;
+    try {
+      const body: unknown = await response.json();
+      const record =
+        body && typeof body === 'object'
+          ? (body as Record<string, unknown>)
+          : {};
+      message = typeof record.message === 'string' ? record.message : undefined;
+      code =
+        typeof record.errorCode === 'string'
+          ? record.errorCode
+          : typeof record.code === 'string'
+            ? record.code
+            : undefined;
+    } catch {
+      message = await response.text();
+    }
+    throw new ApiError(response.status, { message, code });
+  }
+
+  const filename =
+    deriveFilenameFromDisposition(
+      response.headers.get('content-disposition') ?? undefined,
+    ) ?? fallbackName;
+  const buffer = await response.arrayBuffer();
+  const saveResult = await saveNativeBase64File(
+    filename,
+    arrayBufferToBase64(buffer),
+  );
+  if (saveResult.cancelled) {
+    throw new Error('Unduhan dibatalkan.');
+  }
+  return {
+    name: saveResult.name ?? filename,
+    path: saveResult.path,
+  };
+}
+
+function deriveFilenameFromDisposition(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+  const utfMatch = /filename\*=UTF-8''([^;]+)/i.exec(value);
+  if (utfMatch?.[1]) {
+    try {
+      return decodeURIComponent(utfMatch[1]);
+    } catch {
+      return utfMatch[1];
+    }
+  }
+  const plainMatch = /filename="?([^";]+)"?/i.exec(value);
+  return plainMatch?.[1]?.trim() || undefined;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return globalThis.btoa(binary);
 }
 
 function kolamRequest<T>(

@@ -98,6 +98,28 @@ export function KolamProyekSurface({
 }) {
   const controller = useKolamProyekController(route, onRouteChange);
 
+  if (!controller.pluginEnabled) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState
+          message="Plugin Proyek dinonaktifkan di Settings. Aktifkan plugin untuk membuka modul ini."
+          title="Plugin nonaktif"
+        />
+      </View>
+    );
+  }
+
+  if (!controller.canView) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState
+          message="Tidak ada izin view custom-project untuk membuka modul Proyek."
+          title="Akses ditolak"
+        />
+      </View>
+    );
+  }
+
   if (controller.mode === 'list') {
     return <KolamProyekList controller={controller} />;
   }
@@ -188,12 +210,14 @@ function KolamProyekList({
                 void controller.onRefresh();
               }}
             />
-            <KolamButton
-              label="Baru"
-              onPress={() => {
-                controller.onCreateNew();
-              }}
-            />
+            {controller.canCreate ? (
+              <KolamButton
+                label="Baru"
+                onPress={() => {
+                  controller.onCreateNew();
+                }}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -453,6 +477,18 @@ function KolamProyekDetailRead({
               label="Kembali ke daftar"
               onPress={controller.onBackToList}
             />
+            {controller.canDownloadInvoice ? (
+              <KolamButton
+                disabled={controller.acting}
+                intent="outline"
+                label={
+                  controller.acting ? 'Mengunduh…' : 'Unduh invoice'
+                }
+                onPress={() => {
+                  void controller.onDownloadInvoice();
+                }}
+              />
+            ) : null}
             {controller.canEdit ? (
               <KolamButton label="Ubah" onPress={controller.onEdit} />
             ) : null}

@@ -9,6 +9,7 @@ import {
   canCloseKolamProyek,
   canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
+  canDownloadKolamProyekInvoice,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
@@ -31,6 +32,7 @@ import {
   getKolamProyekRouteRef,
   getKolamProyekSectionVisibility,
   getKolamProyekSurfaceMode,
+  hasKolamProyekPermission,
   isKolamProyekDetailRoute,
   isKolamProyekEditRoute,
   isKolamProyekListRoute,
@@ -398,5 +400,49 @@ describe('kolam-proyek domain', () => {
     expect(
       formatKolamProyekReviewDecisionLabel('revision_requested'),
     ).toBe('Diminta revisi');
+  });
+
+  it('gates custom-project RBAC and invoice download', () => {
+    expect(hasKolamProyekPermission(null, 'view')).toBe(true);
+    expect(
+      hasKolamProyekPermission(
+        [{ resource: 'custom-project', actions: ['view'] }],
+        'view',
+      ),
+    ).toBe(true);
+    expect(
+      hasKolamProyekPermission(
+        [{ resource: 'custom-project', actions: ['view'] }],
+        'create',
+      ),
+    ).toBe(false);
+    expect(
+      hasKolamProyekPermission(
+        [{ resource: 'custom_project', actions: ['update_status'] }],
+        'update_status',
+      ),
+    ).toBe(true);
+    expect(
+      hasKolamProyekPermission(
+        [{ resource: 'sales', actions: ['*'] }],
+        'view',
+      ),
+    ).toBe(false);
+    expect(
+      hasKolamProyekPermission([], 'view', 'super_administrator'),
+    ).toBe(true);
+    expect(
+      hasKolamProyekPermission(
+        [{ resource: '*', actions: ['*'] }],
+        'delete',
+      ),
+    ).toBe(true);
+
+    expect(canDownloadKolamProyekInvoice('draft')).toBe(false);
+    expect(canDownloadKolamProyekInvoice('quotation_sent')).toBe(false);
+    expect(canDownloadKolamProyekInvoice('awaiting_dp')).toBe(true);
+    expect(canDownloadKolamProyekInvoice('in_progress')).toBe(true);
+    expect(canDownloadKolamProyekInvoice('closed')).toBe(true);
+    expect(canDownloadKolamProyekInvoice('cancelled')).toBe(false);
   });
 });

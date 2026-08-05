@@ -6,6 +6,7 @@ import type { KolamProyekController } from '../hooks/use-kolam-proyek-controller
 import { KolamButton } from './kolam-button';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -18,6 +19,7 @@ export function KolamProyekQuotationForm({
 }) {
   const { form } = controller;
   const isEdit = controller.mode === 'edit';
+  const canSubmit = isEdit ? controller.canUpdate : controller.canCreate;
   const contractValue = Number(String(form.contractValueText).replace(/[^\d.-]/g, '')) || 0;
   const minDpRaw = Number(form.minDpValueText) || 0;
   const dpPreview =
@@ -64,6 +66,30 @@ export function KolamProyekQuotationForm({
     [controller.termsOptions],
   );
 
+  if (isEdit && !controller.canUpdate) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState
+          message="Anda tidak memiliki izin mengubah surat penawaran proyek."
+          title="Akses ditolak"
+        />
+        <KolamButton label="Kembali" onPress={controller.onBackToList} />
+      </View>
+    );
+  }
+
+  if (!isEdit && !controller.canCreate) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState
+          message="Anda tidak memiliki izin membuat surat penawaran proyek."
+          title="Akses ditolak"
+        />
+        <KolamButton label="Kembali" onPress={controller.onBackToList} />
+      </View>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.formContent}>
       <View style={kolamTableToolbarStyles.shell}>
@@ -78,7 +104,7 @@ export function KolamProyekQuotationForm({
               onPress={controller.onBackToList}
             />
             <KolamButton
-              disabled={controller.saving}
+              disabled={controller.saving || !canSubmit}
               label={
                 controller.saving
                   ? 'Menyimpan…'
@@ -478,6 +504,11 @@ function Field({
 }
 
 const styles = StyleSheet.create({
+  surface: {
+    flex: 1,
+    gap: 12,
+    padding: 16,
+  },
   formContent: {
     gap: 16,
     padding: 16,

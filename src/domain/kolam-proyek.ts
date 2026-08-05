@@ -8,6 +8,18 @@ import type { KolamStatusBadgeIntent } from '../components/kolam-status-badge-ty
 export const KOLAM_PROYEK_ROOT = '/proyek';
 export const KOLAM_PROYEK_NEW_ROUTE = `${KOLAM_PROYEK_ROOT}/new`;
 
+export type KolamProyekPermissionAction =
+  | 'view'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'update_status';
+
+export type KolamProyekPermissionEntry = {
+  resource?: string;
+  actions?: string[];
+};
+
 export type KolamProyekLifecycleStatus =
   | 'draft'
   | 'quotation_sent'
@@ -680,6 +692,55 @@ export function canCancelKolamProyekQuotation(status?: string | null) {
 
 export function canDeleteKolamProyekQuotation(status?: string | null) {
   return getKolamProyekSectionVisibility(status, 'dangerDelete') === 'active';
+}
+
+/** Mirror BE `checkPermission("custom-project", action)` + super-admin. */
+export function hasKolamProyekPermission(
+  permissions: KolamProyekPermissionEntry[] | null | undefined,
+  action: KolamProyekPermissionAction,
+  roleKey?: string | null,
+): boolean {
+  const normalizedRole = String(roleKey ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (
+    normalizedRole === 'super_administrator' ||
+    normalizedRole === 'super_admin' ||
+    normalizedRole === 'superadmin'
+  ) {
+    return true;
+  }
+  if (permissions == null) {
+    return true;
+  }
+  const wanted = action.toLowerCase();
+  return permissions.some(permission => {
+    const resource = String(permission.resource ?? '')
+      .trim()
+      .toLowerCase();
+    const actions = (permission.actions ?? []).map(item =>
+      String(item).trim().toLowerCase(),
+    );
+    return (
+      (resource === 'custom-project' ||
+        resource === 'custom_project' ||
+        resource === '*') &&
+      (actions.includes(wanted) || actions.includes('*'))
+    );
+  });
+}
+
+/** Invoice PDF after quotation leaves early draft/sent/revision stages (FE detail). */
+export function canDownloadKolamProyekInvoice(status?: string | null) {
+  const key = String(status || '').trim();
+  return ![
+    '',
+    'draft',
+    'quotation_sent',
+    'revision_in_progress',
+    'cancelled',
+  ].includes(key);
 }
 
 /** Finance confirm DP rows while schedule section is active (approved / awaiting_dp). */

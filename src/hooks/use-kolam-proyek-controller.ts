@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamProyekDetailRoute,
   buildKolamProyekDetailRouteForItem,
@@ -10,6 +11,7 @@ import {
   canCloseKolamProyek,
   canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
+  canDownloadKolamProyekInvoice,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
@@ -24,6 +26,7 @@ import {
   getKolamProyekDpRowOutstanding,
   getKolamProyekRouteRef,
   getKolamProyekSurfaceMode,
+  hasKolamProyekPermission,
   isKolamProyekLinkedTaskDone,
   isKolamProyekRoute,
   validateKolamProyekDpConfirmAmount,
@@ -38,7 +41,12 @@ import {
   type KolamProyekSubmitRoundInput,
   type KolamProyekSurfaceMode,
 } from '../domain/kolam-proyek';
+import {
+  isPluginEnabledByConfig,
+  type PluginEnabledConfig,
+} from '../domain/unified';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
+import { getKolamWebSetting } from '../services/kolam-api';
 import { getKolamCustomerList } from '../services/kolam-customer-api';
 import {
   cancelKolamProyek,
@@ -46,6 +54,7 @@ import {
   confirmKolamProyekDpReceived,
   createKolamProyekQuotation,
   deleteKolamProyek,
+  downloadKolamProyekInvoice,
   getKolamProyek,
   getKolamProyekList,
   resendKolamProyekQuotation,
@@ -74,14 +83,18 @@ export interface KolamProyekController {
   canCancel: boolean;
   canClose: boolean;
   canConfirmDp: boolean;
+  canCreate: boolean;
   canDelete: boolean;
+  canDownloadInvoice: boolean;
   canEdit: boolean;
   canResend: boolean;
   canSend: boolean;
   canStartWork: boolean;
   canSubmitDelivery: boolean;
   canSubmitDesign: boolean;
+  canUpdate: boolean;
   canUpdateProgress: boolean;
+  canView: boolean;
   closeBlockReason: string | null;
   customerOptions: KolamProyekPickerOption[];
   dataSource: KolamProyekDataSource;
@@ -95,6 +108,7 @@ export interface KolamProyekController {
   mode: KolamProyekSurfaceMode;
   page: number;
   pageSize: number;
+  pluginEnabled: boolean;
   saving: boolean;
   search: string;
   selected: KolamProyekDetail | null;
@@ -114,6 +128,7 @@ export interface KolamProyekController {
   ) => Promise<boolean>;
   onCreateNew: () => void;
   onDeleteDraft: (password: string) => Promise<boolean>;
+  onDownloadInvoice: () => Promise<boolean>;
   onEdit: () => void;
   onFormChange: (patch: Partial<KolamProyekQuotationFormState>) => void;
   onOpenItem: (item: KolamProyekListItem) => void;
@@ -143,6 +158,7 @@ export function useKolamProyekController(
   route: string,
   onRouteChange?: (route: string) => void,
 ): KolamProyekController {
+  const { authUser } = useKolamAuthContext();
   const mode = getKolamProyekSurfaceMode(route);
   const routeRef = getKolamProyekRouteRef(route);
 
@@ -166,6 +182,7 @@ export function useKolamProyekController(
   >('');
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [pluginEnabled, setPluginEnabled] = useState(true);
   const [customerOptions, setCustomerOptions] = useState<
     KolamProyekPickerOption[]
   >([]);
@@ -176,27 +193,77 @@ export function useKolamProyekController(
     [],
   );
 
-  const canEdit = canEditKolamProyekQuotation(selected?.lifecycleStatus);
-  const canSend = canSendKolamProyekQuotation(selected?.lifecycleStatus);
-  const canResend = canResendKolamProyekQuotation(selected?.lifecycleStatus);
-  const canCancel = canCancelKolamProyekQuotation(selected?.lifecycleStatus);
-  const canDelete = canDeleteKolamProyekQuotation(selected?.lifecycleStatus);
-  const canConfirmDp = canConfirmKolamProyekDp(
-    selected?.lifecycleStatus,
-    selected?.paymentMode,
+  const permissions = authUser?.permissions;
+  const roleKey = authUser?.roleKey;
+  const canView = hasKolamProyekPermission(permissions, 'view', roleKey);
+  const canCreate = hasKolamProyekPermission(permissions, 'create', roleKey);
+  const canUpdate = hasKolamProyekPermission(permissions, 'update', roleKey);
+  const canDeletePerm = hasKolamProyekPermission(
+    permissions,
+    'delete',
+    roleKey,
   );
-  const canStartWork = canStartKolamProyekWork(selected?.lifecycleStatus);
-  const canUpdateProgress = canUpdateKolamProyekProgress(
-    selected?.lifecycleStatus,
+  const canUpdateStatus = hasKolamProyekPermission(
+    permissions,
+    'update_status',
+    roleKey,
   );
-  const canSubmitDesign = canSubmitKolamProyekDesign(selected);
-  const canSubmitDelivery = canSubmitKolamProyekDelivery(selected);
-  const canClose = canCloseKolamProyek(selected);
+
+  const canEdit =
+    canUpdate && canEditKolamProyekQuotation(selected?.lifecycleStatus);
+  const canSend =
+    canUpdate && canSendKolamProyekQuotation(selected?.lifecycleStatus);
+  const canResend =
+    canUpdate && canResendKolamProyekQuotation(selected?.lifecycleStatus);
+  const canCancel =
+    canUpdate && canCancelKolamProyekQuotation(selected?.lifecycleStatus);
+  const canDelete =
+    canDeletePerm &&
+    canDeleteKolamProyekQuotation(selected?.lifecycleStatus);
+  const canConfirmDp =
+    canUpdateStatus &&
+    canConfirmKolamProyekDp(
+      selected?.lifecycleStatus,
+      selected?.paymentMode,
+    );
+  const canStartWork =
+    canUpdate && canStartKolamProyekWork(selected?.lifecycleStatus);
+  const canUpdateProgress =
+    canUpdate && canUpdateKolamProyekProgress(selected?.lifecycleStatus);
+  const canSubmitDesign =
+    canUpdate && canSubmitKolamProyekDesign(selected);
+  const canSubmitDelivery =
+    canUpdate && canSubmitKolamProyekDelivery(selected);
+  const canClose = canUpdate && canCloseKolamProyek(selected);
+  const canDownloadInvoice =
+    canView && canDownloadKolamProyekInvoice(selected?.lifecycleStatus);
   const closeBlockReason = getKolamProyekCloseBlockReason(selected);
   const linkedTaskDone = isKolamProyekLinkedTaskDone(selected?.linkedTask);
 
+  useEffect(() => {
+    let cancelled = false;
+    void getKolamWebSetting()
+      .then(setting => {
+        if (cancelled) {
+          return;
+        }
+        const config = (setting.kolamPlugins ?? null) as PluginEnabledConfig | null;
+        setPluginEnabled(
+          isPluginEnabledByConfig({ id: 'proyek' }, config),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPluginEnabled(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const refreshList = useCallback(async () => {
-    if (!isKolamProyekRoute(route)) {
+    if (!isKolamProyekRoute(route) || !canView || !pluginEnabled) {
       return;
     }
     setLoading(true);
@@ -231,10 +298,18 @@ export function useKolamProyekController(
     } finally {
       setLoading(false);
     }
-  }, [lifecycleFilter, page, pageSize, route, search]);
+  }, [
+    canView,
+    lifecycleFilter,
+    page,
+    pageSize,
+    pluginEnabled,
+    route,
+    search,
+  ]);
 
   const refreshDetail = useCallback(async () => {
-    if (!routeRef) {
+    if (!routeRef || !canView || !pluginEnabled) {
       setSelected(null);
       return;
     }
@@ -254,9 +329,12 @@ export function useKolamProyekController(
     } finally {
       setLoading(false);
     }
-  }, [mode, routeRef]);
+  }, [canView, mode, pluginEnabled, routeRef]);
 
   useEffect(() => {
+    if (!canView || !pluginEnabled) {
+      return;
+    }
     if (mode === 'list') {
       void refreshList();
       return;
@@ -271,10 +349,14 @@ export function useKolamProyekController(
       setError(null);
       setDataSource('idle');
     }
-  }, [mode, refreshDetail, refreshList]);
+  }, [canView, mode, pluginEnabled, refreshDetail, refreshList]);
 
   useEffect(() => {
-    if (mode !== 'new' && mode !== 'edit') {
+    if (
+      !canView ||
+      !pluginEnabled ||
+      (mode !== 'new' && mode !== 'edit')
+    ) {
       return;
     }
     let cancelled = false;
@@ -336,7 +418,7 @@ export function useKolamProyekController(
     return () => {
       cancelled = true;
     };
-  }, [mode]);
+  }, [canView, mode, pluginEnabled]);
 
   const onRefresh = useCallback(async () => {
     setStatusMessage(null);
@@ -355,13 +437,17 @@ export function useKolamProyekController(
   }, [onRouteChange]);
 
   const onCreateNew = useCallback(() => {
+    if (!canCreate) {
+      setError('Anda tidak memiliki izin membuat surat penawaran.');
+      return;
+    }
     setStatusMessage(null);
     setForm(createEmptyKolamProyekQuotationForm());
     onRouteChange?.(buildKolamProyekNewRoute());
-  }, [onRouteChange]);
+  }, [canCreate, onRouteChange]);
 
   const onEdit = useCallback(() => {
-    if (!selected || !canEditKolamProyekQuotation(selected.lifecycleStatus)) {
+    if (!selected || !canEdit) {
       return;
     }
     setStatusMessage(null);
@@ -372,7 +458,7 @@ export function useKolamProyekController(
         selected.id,
       ),
     );
-  }, [onRouteChange, selected]);
+  }, [canEdit, onRouteChange, selected]);
 
   const onOpenItem = useCallback(
     (item: KolamProyekListItem) => {
@@ -451,6 +537,14 @@ export function useKolamProyekController(
   }, []);
 
   const onSaveQuotation = useCallback(async () => {
+    if (mode === 'new' && !canCreate) {
+      setError('Anda tidak memiliki izin membuat surat penawaran.');
+      return null;
+    }
+    if (mode === 'edit' && !canUpdate) {
+      setError('Anda tidak memiliki izin mengubah surat penawaran.');
+      return null;
+    }
     const validationError = validateKolamProyekQuotationForm(form);
     if (validationError) {
       setError(validationError);
@@ -482,7 +576,7 @@ export function useKolamProyekController(
     } finally {
       setSaving(false);
     }
-  }, [form, mode, onRouteChange, selected]);
+  }, [canCreate, canUpdate, form, mode, onRouteChange, selected]);
 
   const onSendQuotation = useCallback(async () => {
     if (!selected || !canSendKolamProyekQuotation(selected.lifecycleStatus)) {
@@ -779,7 +873,7 @@ export function useKolamProyekController(
   );
 
   const onCloseProject = useCallback(async () => {
-    if (!selected || !canCloseKolamProyek(selected)) {
+    if (!selected || !canClose) {
       const reason = getKolamProyekCloseBlockReason(selected);
       if (reason) {
         setError(reason);
@@ -800,7 +894,33 @@ export function useKolamProyekController(
     } finally {
       setActing(false);
     }
-  }, [selected]);
+  }, [canClose, selected]);
+
+  const onDownloadInvoice = useCallback(async () => {
+    if (!selected || !canDownloadInvoice) {
+      return false;
+    }
+    setActing(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const result = await downloadKolamProyekInvoice(
+        selected.id,
+        selected.quotationNumber,
+      );
+      setStatusMessage(
+        result.path
+          ? `Invoice disimpan: ${result.name}`
+          : `Invoice diunduh: ${result.name}`,
+      );
+      return true;
+    } catch (downloadError) {
+      setError(getApiErrorMessage(downloadError));
+      return false;
+    } finally {
+      setActing(false);
+    }
+  }, [canDownloadInvoice, selected]);
 
   const mergedCustomerOptions = useMemo(() => {
     if (!selected?.clientId) {
@@ -854,14 +974,18 @@ export function useKolamProyekController(
       canCancel,
       canClose,
       canConfirmDp,
+      canCreate,
       canDelete,
+      canDownloadInvoice,
       canEdit,
       canResend,
       canSend,
       canStartWork,
       canSubmitDelivery,
       canSubmitDesign,
+      canUpdate,
       canUpdateProgress,
+      canView,
       closeBlockReason,
       customerOptions: mergedCustomerOptions,
       dataSource,
@@ -875,6 +999,7 @@ export function useKolamProyekController(
       mode,
       page,
       pageSize,
+      pluginEnabled,
       saving,
       search,
       selected,
@@ -890,6 +1015,7 @@ export function useKolamProyekController(
       onConfirmDpReceived,
       onCreateNew,
       onDeleteDraft,
+      onDownloadInvoice,
       onEdit,
       onFormChange,
       onOpenItem,
@@ -913,14 +1039,18 @@ export function useKolamProyekController(
       canCancel,
       canClose,
       canConfirmDp,
+      canCreate,
       canDelete,
+      canDownloadInvoice,
       canEdit,
       canResend,
       canSend,
       canStartWork,
       canSubmitDelivery,
       canSubmitDesign,
+      canUpdate,
       canUpdateProgress,
+      canView,
       closeBlockReason,
       dataSource,
       error,
@@ -941,6 +1071,7 @@ export function useKolamProyekController(
       onConfirmDpReceived,
       onCreateNew,
       onDeleteDraft,
+      onDownloadInvoice,
       onEdit,
       onFormChange,
       onOpenItem,
@@ -960,6 +1091,7 @@ export function useKolamProyekController(
       onUpdateProgress,
       page,
       pageSize,
+      pluginEnabled,
       saving,
       search,
       selected,
