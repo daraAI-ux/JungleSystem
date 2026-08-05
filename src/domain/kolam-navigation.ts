@@ -761,10 +761,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         group: 'Pengadaan',
         label: 'Pesanan Pembelian',
       }),
-      sidebarItem('/locations', {
-        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
-        label: 'Lokasi',
-      }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
       sidebarItem('/product-serials', {
         group: 'Produksi',
@@ -773,6 +769,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/enclosures', {
         group: 'Produksi',
         label: 'Daftar Enclosure',
+      }),
+      sidebarItem('/locations', {
+        description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
+        group: undefined,
+        label: 'Lokasi',
       }),
     ],
   },
