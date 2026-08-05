@@ -229,10 +229,21 @@ function KolamComplaintList({
   return (
     <View style={styles.stack}>
       <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
+        <View
+          style={[
+            kolamTableToolbarStyles.row,
+            styles.complaintToolbarRow,
+          ]}>
+          <View
+            style={[
+              kolamTableToolbarStyles.filters,
+              styles.complaintToolbarFilters,
+            ]}>
             <KolamSearchField
-              containerStyle={kolamTableToolbarStyles.searchInput}
+              containerStyle={[
+                kolamTableToolbarStyles.searchInput,
+                styles.complaintSearchInput,
+              ]}
               onChangeText={controller.onSearchChange}
               placeholder="Cari tiket, invoice, pelanggan…"
               value={controller.search}
@@ -325,7 +336,11 @@ function KolamComplaintList({
               value={controller.categoryFilter}
             />
           </View>
-          <View style={kolamTableToolbarStyles.actions}>
+          <View
+            style={[
+              kolamTableToolbarStyles.actions,
+              styles.complaintToolbarActions,
+            ]}>
             <View style={styles.switchInline}>
               <Text style={styles.metaText}>Proyek khusus</Text>
               <KolamSwitch
@@ -2610,6 +2625,28 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  complaintToolbarRow: {
+    flexWrap: 'nowrap',
+    minWidth: 0,
+  },
+  complaintToolbarFilters: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexWrap: 'nowrap',
+    minWidth: 0,
+  },
+  complaintSearchInput: {
+    flexBasis: 180,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 120,
+  },
+  complaintToolbarActions: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexWrap: 'nowrap',
+    marginLeft: 'auto',
   },
   primaryText: {
     color: V.colors.fg,
