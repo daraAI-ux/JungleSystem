@@ -34,6 +34,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -91,19 +92,16 @@ export function KolamPayableSurface({
       {controller.mode === 'list' ? (
         <>
           <PayableSummaryCards controller={controller} />
-          <PayableToolbar controller={controller} />
-          <PayableList
+          <PayableToolbar
             controller={controller}
             onRouteChange={onRouteChange}
           />
+          <PayableList controller={controller} onRouteChange={onRouteChange} />
         </>
       ) : null}
 
       {controller.mode === 'detail' ? (
-        <PayableDetail
-          controller={controller}
-          onRouteChange={onRouteChange}
-        />
+        <PayableDetail controller={controller} onRouteChange={onRouteChange} />
       ) : null}
     </View>
   );
@@ -144,9 +142,7 @@ function PayableSummaryCards({
         <KolamCardFrame key={card.id} style={styles.card}>
           <Text style={styles.cardLabel}>{card.label}</Text>
           <Text style={styles.cardValue}>{formatRupiah(card.value)}</Text>
-          {card.meta ? (
-            <Text style={styles.cardMeta}>{card.meta}</Text>
-          ) : null}
+          {card.meta ? <Text style={styles.cardMeta}>{card.meta}</Text> : null}
         </KolamCardFrame>
       ))}
     </View>
@@ -155,8 +151,10 @@ function PayableSummaryCards({
 
 function PayableToolbar({
   controller,
+  onRouteChange,
 }: {
   controller: KolamPayableController;
+  onRouteChange?: (route: string) => void;
 }) {
   const toolbarRef = React.useRef<View>(null);
   const statusTriggerRef = React.useRef<View>(null);
@@ -169,6 +167,7 @@ function PayableToolbar({
   const [installmentOpen, setInstallmentOpen] = useState(false);
   const [periodOpen, setPeriodOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [panelAnchor, setPanelAnchor] = useState<{
     left: number;
     top: number;
@@ -177,33 +176,33 @@ function PayableToolbar({
   const statusLabel =
     controller.filters.status === ''
       ? 'Status'
-      : (KOLAM_PAYABLE_STATUS_OPTIONS.find(
+      : KOLAM_PAYABLE_STATUS_OPTIONS.find(
           option => option.value === controller.filters.status,
-        )?.label ?? 'Status');
+        )?.label ?? 'Status';
   const sourceLabel =
     controller.filters.sourceModel === ''
       ? 'Sumber'
-      : (KOLAM_PAYABLE_SOURCE_OPTIONS.find(
+      : KOLAM_PAYABLE_SOURCE_OPTIONS.find(
           option => option.value === controller.filters.sourceModel,
-        )?.label ?? 'Sumber');
+        )?.label ?? 'Sumber';
   const installmentLabel =
     controller.filters.installmentDue === 'all'
       ? 'Cicilan'
-      : (KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS.find(
+      : KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS.find(
           option => option.value === controller.filters.installmentDue,
-        )?.label ?? 'Cicilan');
+        )?.label ?? 'Cicilan';
   const periodLabel =
     controller.filters.period === 'all'
       ? 'Periode'
-      : (KOLAM_PAYABLE_PERIOD_OPTIONS.find(
+      : KOLAM_PAYABLE_PERIOD_OPTIONS.find(
           option => option.value === controller.filters.period,
-        )?.label ?? 'Periode');
+        )?.label ?? 'Periode';
   const sortLabel =
     controller.filters.sort === 'newest'
       ? 'Sort'
-      : (KOLAM_PAYABLE_SORT_OPTIONS.find(
+      : KOLAM_PAYABLE_SORT_OPTIONS.find(
           option => option.value === controller.filters.sort,
-        )?.label ?? 'Sort');
+        )?.label ?? 'Sort';
   const hasFilters =
     Boolean(controller.filters.search.trim()) ||
     controller.filters.status !== '' ||
@@ -254,203 +253,249 @@ function PayableToolbar({
   };
 
   return (
-    <View ref={toolbarRef} style={styles.toolbarWrap}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-          <KolamFormTextField
-            onChangeText={controller.onSearchChange}
-            placeholder="Cari kode atau nama"
-            style={kolamTableToolbarStyles.searchInput}
-            value={controller.filters.search}
-          />
-          <View ref={statusTriggerRef} collapsable={false}>
-            <KolamTableFilterTrigger
-              active={statusOpen || Boolean(controller.filters.status)}
-              label={statusLabel}
-              onPress={() =>
-                togglePanel(statusOpen, statusTriggerRef, setStatusOpen)
-              }
-              open={statusOpen}
-              style={styles.filterTrigger}
-              variant="quiet"
-            />
-          </View>
-          <View ref={sourceTriggerRef} collapsable={false}>
-            <KolamTableFilterTrigger
-              active={sourceOpen || Boolean(controller.filters.sourceModel)}
-              label={sourceLabel}
-              onPress={() =>
-                togglePanel(sourceOpen, sourceTriggerRef, setSourceOpen)
-              }
-              open={sourceOpen}
-              style={styles.filterTrigger}
-              variant="quiet"
-            />
-          </View>
-          <View ref={installmentTriggerRef} collapsable={false}>
-            <KolamTableFilterTrigger
-              active={
-                installmentOpen || controller.filters.installmentDue !== 'all'
-              }
-              label={installmentLabel}
-              onPress={() =>
-                togglePanel(
-                  installmentOpen,
-                  installmentTriggerRef,
-                  setInstallmentOpen,
-                )
-              }
-              open={installmentOpen}
-              style={styles.filterTrigger}
-              variant="quiet"
-            />
-          </View>
-          <View ref={periodTriggerRef} collapsable={false}>
-            <KolamTableFilterTrigger
-              active={periodOpen || controller.filters.period !== 'all'}
-              label={periodLabel}
-              onPress={() =>
-                togglePanel(periodOpen, periodTriggerRef, setPeriodOpen)
-              }
-              open={periodOpen}
-              style={styles.filterTrigger}
-              variant="quiet"
-            />
-          </View>
-          <KolamButton
-            intent={controller.filters.overdue ? 'primary' : 'secondary'}
-            label="Jatuh tempo"
-            onPress={controller.onOverdueToggle}
-            style={styles.filterTrigger}
-          />
-          <View ref={sortTriggerRef} collapsable={false}>
-            <KolamTableFilterTrigger
-              active={sortOpen || controller.filters.sort !== 'newest'}
-              label={sortLabel}
-              onPress={() => togglePanel(sortOpen, sortTriggerRef, setSortOpen)}
-              open={sortOpen}
-              style={styles.filterTrigger}
-              variant="quiet"
-            />
-          </View>
-          {controller.filters.period === 'custom' ? (
-            <>
-              <KolamDateField
-                accessibilityLabel="Tanggal dari"
-                label="Dari"
-                onChange={controller.onStartDateChange}
-                placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
-                triggerStyle={styles.dateFieldTrigger}
-                value={controller.filters.startDate}
+    <>
+      <View ref={toolbarRef} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamFormTextField
+                onChangeText={controller.onSearchChange}
+                placeholder="Cari kode atau nama"
+                style={kolamTableToolbarStyles.searchInput}
+                value={controller.filters.search}
               />
-              <KolamDateField
-                accessibilityLabel="Tanggal sampai"
-                label="Sampai"
-                onChange={controller.onEndDateChange}
-                placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
-                triggerStyle={styles.dateFieldTrigger}
-                value={controller.filters.endDate}
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={statusOpen || Boolean(controller.filters.status)}
+                  label={statusLabel}
+                  onPress={() =>
+                    togglePanel(statusOpen, statusTriggerRef, setStatusOpen)
+                  }
+                  open={statusOpen}
+                  style={styles.filterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={sourceTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={sourceOpen || Boolean(controller.filters.sourceModel)}
+                  label={sourceLabel}
+                  onPress={() =>
+                    togglePanel(sourceOpen, sourceTriggerRef, setSourceOpen)
+                  }
+                  open={sourceOpen}
+                  style={styles.filterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={installmentTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    installmentOpen ||
+                    controller.filters.installmentDue !== 'all'
+                  }
+                  label={installmentLabel}
+                  onPress={() =>
+                    togglePanel(
+                      installmentOpen,
+                      installmentTriggerRef,
+                      setInstallmentOpen,
+                    )
+                  }
+                  open={installmentOpen}
+                  style={styles.filterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={periodTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={periodOpen || controller.filters.period !== 'all'}
+                  label={periodLabel}
+                  onPress={() =>
+                    togglePanel(periodOpen, periodTriggerRef, setPeriodOpen)
+                  }
+                  open={periodOpen}
+                  style={styles.filterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <KolamButton
+                intent={controller.filters.overdue ? 'primary' : 'secondary'}
+                label="Jatuh tempo"
+                onPress={controller.onOverdueToggle}
+                style={styles.filterTrigger}
               />
-            </>
-          ) : null}
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
-          {hasFilters ? (
-            <KolamButton
-              intent="secondary"
-              label="Reset"
-              onPress={() => {
-                closePanels();
-                controller.onClearFilters();
-              }}
-              style={styles.filterTrigger}
-            />
-          ) : null}
-          <KolamRefreshButton
-            accessibilityLabel="Muat ulang"
-            intent="secondary"
-
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-            style={styles.filterTrigger}
-          />
+              <View ref={sortTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={sortOpen || controller.filters.sort !== 'newest'}
+                  label={sortLabel}
+                  onPress={() =>
+                    togglePanel(sortOpen, sortTriggerRef, setSortOpen)
+                  }
+                  open={sortOpen}
+                  style={styles.filterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              {controller.filters.period === 'custom' ? (
+                <>
+                  <KolamDateField
+                    accessibilityLabel="Tanggal dari"
+                    label="Dari"
+                    onChange={controller.onStartDateChange}
+                    placeholder="Dari"
+                    showLabelInTrigger={false}
+                    style={styles.dateField}
+                    triggerStyle={styles.dateFieldTrigger}
+                    value={controller.filters.startDate}
+                  />
+                  <KolamDateField
+                    accessibilityLabel="Tanggal sampai"
+                    label="Sampai"
+                    onChange={controller.onEndDateChange}
+                    placeholder="Sampai"
+                    showLabelInTrigger={false}
+                    style={styles.dateField}
+                    triggerStyle={styles.dateFieldTrigger}
+                    value={controller.filters.endDate}
+                  />
+                </>
+              ) : null}
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                intent="secondary"
+                label="Export XLS"
+                onPress={() => {
+                  closePanels();
+                  setExportOpen(true);
+                }}
+                style={styles.filterTrigger}
+              />
+              {controller.canCreate ? (
+                <KolamButton
+                  intent="secondary"
+                  label="Hutang Baru"
+                  onPress={() => {
+                    closePanels();
+                    onRouteChange?.(`${KOLAM_PAYABLE_ROOT}/create`);
+                  }}
+                  style={styles.filterTrigger}
+                />
+              ) : null}
+              {hasFilters ? (
+                <KolamButton
+                  intent="secondary"
+                  label="Reset"
+                  onPress={() => {
+                    closePanels();
+                    controller.onClearFilters();
+                  }}
+                  style={styles.filterTrigger}
+                />
+              ) : null}
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
+                intent="secondary"
+                onPress={() => {
+                  void controller.onRefresh();
+                }}
+                style={styles.filterTrigger}
+              />
+            </View>
           </View>
         </View>
+
+        {statusOpen && panelAnchor ? (
+          <FilterPanel
+            activeValue={controller.filters.status}
+            anchor={panelAnchor}
+            onClose={() => setStatusOpen(false)}
+            options={KOLAM_PAYABLE_STATUS_OPTIONS}
+            onSelect={value => {
+              controller.onStatusChange(value as '' | KolamPayableStatus);
+              setStatusOpen(false);
+            }}
+          />
+        ) : null}
+
+        {sourceOpen && panelAnchor ? (
+          <FilterPanel
+            activeValue={controller.filters.sourceModel}
+            anchor={panelAnchor}
+            onClose={() => setSourceOpen(false)}
+            options={KOLAM_PAYABLE_SOURCE_OPTIONS}
+            onSelect={value => {
+              controller.onSourceModelChange(
+                value as '' | KolamPayableSourceModel,
+              );
+              setSourceOpen(false);
+            }}
+          />
+        ) : null}
+
+        {installmentOpen && panelAnchor ? (
+          <FilterPanel
+            activeValue={controller.filters.installmentDue}
+            anchor={panelAnchor}
+            onClose={() => setInstallmentOpen(false)}
+            options={KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS}
+            onSelect={value => {
+              controller.onInstallmentDueChange(
+                value as KolamPayableInstallmentDueFilter,
+              );
+              setInstallmentOpen(false);
+            }}
+          />
+        ) : null}
+
+        {periodOpen && panelAnchor ? (
+          <FilterPanel
+            activeValue={controller.filters.period}
+            anchor={panelAnchor}
+            onClose={() => setPeriodOpen(false)}
+            options={KOLAM_PAYABLE_PERIOD_OPTIONS}
+            onSelect={value => {
+              controller.onPeriodChange(value as KolamPayablePeriodFilter);
+              setPeriodOpen(false);
+            }}
+          />
+        ) : null}
+
+        {sortOpen && panelAnchor ? (
+          <FilterPanel
+            activeValue={controller.filters.sort}
+            anchor={panelAnchor}
+            onClose={() => setSortOpen(false)}
+            options={KOLAM_PAYABLE_SORT_OPTIONS}
+            onSelect={value => {
+              controller.onSortChange(value as KolamPayableSortOption);
+              setSortOpen(false);
+            }}
+          />
+        ) : null}
       </View>
-
-      {statusOpen && panelAnchor ? (
-        <FilterPanel
-          activeValue={controller.filters.status}
-          anchor={panelAnchor}
-          onClose={() => setStatusOpen(false)}
-          options={KOLAM_PAYABLE_STATUS_OPTIONS}
-          onSelect={value => {
-            controller.onStatusChange(value as '' | KolamPayableStatus);
-            setStatusOpen(false);
-          }}
-        />
-      ) : null}
-
-      {sourceOpen && panelAnchor ? (
-        <FilterPanel
-          activeValue={controller.filters.sourceModel}
-          anchor={panelAnchor}
-          onClose={() => setSourceOpen(false)}
-          options={KOLAM_PAYABLE_SOURCE_OPTIONS}
-          onSelect={value => {
-            controller.onSourceModelChange(value as '' | KolamPayableSourceModel);
-            setSourceOpen(false);
-          }}
-        />
-      ) : null}
-
-      {installmentOpen && panelAnchor ? (
-        <FilterPanel
-          activeValue={controller.filters.installmentDue}
-          anchor={panelAnchor}
-          onClose={() => setInstallmentOpen(false)}
-          options={KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS}
-          onSelect={value => {
-            controller.onInstallmentDueChange(
-              value as KolamPayableInstallmentDueFilter,
-            );
-            setInstallmentOpen(false);
-          }}
-        />
-      ) : null}
-
-      {periodOpen && panelAnchor ? (
-        <FilterPanel
-          activeValue={controller.filters.period}
-          anchor={panelAnchor}
-          onClose={() => setPeriodOpen(false)}
-          options={KOLAM_PAYABLE_PERIOD_OPTIONS}
-          onSelect={value => {
-            controller.onPeriodChange(value as KolamPayablePeriodFilter);
-            setPeriodOpen(false);
-          }}
-        />
-      ) : null}
-
-      {sortOpen && panelAnchor ? (
-        <FilterPanel
-          activeValue={controller.filters.sort}
-          anchor={panelAnchor}
-          onClose={() => setSortOpen(false)}
-          options={KOLAM_PAYABLE_SORT_OPTIONS}
-          onSelect={value => {
-            controller.onSortChange(value as KolamPayableSortOption);
-            setSortOpen(false);
-          }}
-        />
-      ) : null}
-    </View>
+      <KolamExportDialog
+        catalogEndpoint="/payable/export/fields"
+        downloadEndpoint="/payable/export.xlsx"
+        downloadParams={{
+          search: controller.filters.search.trim() || undefined,
+          status: controller.filters.status || undefined,
+          sourceModel: controller.filters.sourceModel || undefined,
+          period:
+            controller.filters.period !== 'all'
+              ? controller.filters.period
+              : undefined,
+          startDate: controller.filters.startDate || undefined,
+          endDate: controller.filters.endDate || undefined,
+        }}
+        filenameHint="payable"
+        onOpenChange={setExportOpen}
+        storageKey="export:payable:v1"
+        title="Export Hutang"
+        visible={exportOpen}
+      />
+    </>
   );
 }
 
@@ -548,9 +593,7 @@ function PayableList({
             ) : null}
           </View>
           <View style={[styles.cell, { flex: 1 }]}>
-            <Text style={styles.primaryText}>
-              {formatRupiah(item.amount)}
-            </Text>
+            <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
             {item.paidAmount > 0 && item.paidAmount < item.amount ? (
               <Text style={styles.metaText}>
                 Dibayar {formatRupiah(item.paidAmount)}
@@ -568,9 +611,7 @@ function PayableList({
             ) : null}
           </View>
           <View style={[styles.cell, { flex: 1.15 }]}>
-            <PayableInstallmentSummaryCell
-              summary={item.installmentSummary}
-            />
+            <PayableInstallmentSummaryCell summary={item.installmentSummary} />
           </View>
           <View style={[styles.cell, { flex: 0.9 }]}>
             <KolamStatusBadge
@@ -588,9 +629,7 @@ function PayableList({
           >
             <KolamOverflowMenuButton
               accessibilityLabel={`Menu ${item.code || item.name || 'hutang'}`}
-              onOpenChange={open =>
-                setActionMenuOpenId(open ? item.id : null)
-              }
+              onOpenChange={open => setActionMenuOpenId(open ? item.id : null)}
               actions={[
                 {
                   label: 'Lihat detail',
@@ -722,8 +761,9 @@ function PayableDetail({
   const due = item ? getPayableDueTone(item.status, item.dueDate) : null;
   const payment = item?.paymentTransaction ?? null;
   const firstPendingInstallmentId =
-    controller.installments.find(installment => installment.status === 'pending')
-      ?.id ?? '';
+    controller.installments.find(
+      installment => installment.status === 'pending',
+    )?.id ?? '';
   const overdueInstallments = controller.installments.filter(installment => {
     const days = getDaysUntilDue(installment.dueDate);
     return installment.status === 'pending' && days != null && days < 0;
@@ -746,7 +786,9 @@ function PayableDetail({
               />
             </View>
           ) : null}
-          {item ? <Text style={styles.primaryText}>{item.name || '-'}</Text> : null}
+          {item ? (
+            <Text style={styles.primaryText}>{item.name || '-'}</Text>
+          ) : null}
         </View>
         <KolamButton
           intent="secondary"
@@ -782,7 +824,7 @@ function PayableDetail({
                 <View
                   style={[
                     styles.progressFill,
-                    {width: `${progress}%` as `${number}%`},
+                    { width: `${progress}%` as `${number}%` },
                   ]}
                 />
               </View>
@@ -835,7 +877,9 @@ function PayableDetail({
               <View style={styles.detailGrid}>
                 <DetailField
                   label="Dibayar"
-                  value={formatDateTime(item.paidAt || payment?.createdAt || '')}
+                  value={formatDateTime(
+                    item.paidAt || payment?.createdAt || '',
+                  )}
                 />
                 <DetailField
                   label="Wallet"
@@ -853,7 +897,10 @@ function PayableDetail({
               {payment?.proofs.length ? (
                 <View style={styles.proofList}>
                   {payment.proofs.map((proof, index) => (
-                    <View key={`${proof.path}-${index}`} style={styles.proofItem}>
+                    <View
+                      key={`${proof.path}-${index}`}
+                      style={styles.proofItem}
+                    >
                       <Text style={styles.proofName} numberOfLines={1}>
                         Bukti {index + 1}
                       </Text>
@@ -887,7 +934,9 @@ function PayableDetail({
       ) : (
         <KolamEmptyState
           compact
-          title={controller.detailLoading ? 'Memuat detail...' : 'Detail tidak ada'}
+          title={
+            controller.detailLoading ? 'Memuat detail...' : 'Detail tidak ada'
+          }
         />
       )}
 
@@ -969,7 +1018,8 @@ function InstallmentDetailCard({
   const isPaying = payingId === installment.id;
   const isUploading = uploadingProofId === installment.id;
   const paidAt = installment.paidAt || '';
-  const paidAmount = installment.paidAmount || (isPaid ? installment.amount : 0);
+  const paidAmount =
+    installment.paidAmount || (isPaid ? installment.amount : 0);
 
   return (
     <KolamCardFrame style={styles.installmentCard}>
@@ -985,7 +1035,9 @@ function InstallmentDetailCard({
         <View style={styles.installmentBadgeRow}>
           {due.label && isPending ? (
             <KolamStatusBadge
-              intent={due.textStyle === styles.dueDangerText ? 'danger' : 'warning'}
+              intent={
+                due.textStyle === styles.dueDangerText ? 'danger' : 'warning'
+              }
               label={due.label}
             />
           ) : null}
@@ -1016,7 +1068,9 @@ function InstallmentDetailCard({
                 Bukti {index + 1}
               </Text>
               <Text style={styles.metaText} numberOfLines={1}>
-                {proof.uploadedAt ? formatDateTime(proof.uploadedAt) : proof.path}
+                {proof.uploadedAt
+                  ? formatDateTime(proof.uploadedAt)
+                  : proof.path}
               </Text>
             </View>
           ))}
@@ -1104,7 +1158,8 @@ function PayableInstallmentSummaryCell({
       </View>
       {next ? (
         <Text numberOfLines={1} style={styles.installmentNextText}>
-          Berikutnya: #{next.installmentNumber} - {formatShortDate(next.dueDate)}
+          Berikutnya: #{next.installmentNumber} -{' '}
+          {formatShortDate(next.dueDate)}
         </Text>
       ) : (
         <Text style={styles.installmentNextText}>Semua cicilan lunas</Text>

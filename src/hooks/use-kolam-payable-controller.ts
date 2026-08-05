@@ -55,6 +55,7 @@ export interface KolamPayableController {
   error: string;
   statusMessage: string;
   canView: boolean;
+  canCreate: boolean;
   canPay: boolean;
   onSearchChange: (search: string) => void;
   onStatusChange: (status: '' | KolamPayableStatus) => void;
@@ -83,7 +84,9 @@ export interface KolamPayableController {
   clearStatusMessage: () => void;
 }
 
-export function useKolamPayableController(route: string): KolamPayableController {
+export function useKolamPayableController(
+  route: string,
+): KolamPayableController {
   const { authUser } = useKolamAuthContext();
   const mode = getKolamPayableSurfaceMode(route);
   const documentId = getKolamPayableRouteId(route);
@@ -127,6 +130,11 @@ export function useKolamPayableController(route: string): KolamPayableController
     'update',
     authUser?.roleKey,
   );
+  const canCreate = hasKolamPayablePermission(
+    authUser?.permissions,
+    'create',
+    authUser?.roleKey,
+  );
 
   const refreshList = useCallback(async () => {
     const current = filtersRef.current;
@@ -163,8 +171,8 @@ export function useKolamPayableController(route: string): KolamPayableController
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal memuat hutang',
+          ? err.message
+          : 'Gagal memuat hutang',
       );
     } finally {
       setLoading(false);
@@ -203,8 +211,8 @@ export function useKolamPayableController(route: string): KolamPayableController
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal memuat detail hutang',
+          ? err.message
+          : 'Gagal memuat detail hutang',
       );
     } finally {
       setDetailLoading(false);
@@ -326,8 +334,8 @@ export function useKolamPayableController(route: string): KolamPayableController
           err instanceof ApiError
             ? err.message
             : err instanceof Error
-              ? err.message
-              : 'Gagal melunasi hutang',
+            ? err.message
+            : 'Gagal melunasi hutang',
         );
       } finally {
         setPayingId(null);
@@ -386,7 +394,12 @@ export function useKolamPayableController(route: string): KolamPayableController
       installment: KolamPayableInstallment,
       withProof = false,
     ) => {
-      if (!item.id || !installment.id || !canPay || installment.status !== 'pending') {
+      if (
+        !item.id ||
+        !installment.id ||
+        !canPay ||
+        installment.status !== 'pending'
+      ) {
         return;
       }
       const nextPending = installments.find(row => row.status === 'pending');
@@ -450,7 +463,12 @@ export function useKolamPayableController(route: string): KolamPayableController
 
   const onUploadInstallmentProof = useCallback(
     async (item: KolamPayable, installment: KolamPayableInstallment) => {
-      if (!item.id || !installment.id || !canPay || installment.status !== 'paid') {
+      if (
+        !item.id ||
+        !installment.id ||
+        !canPay ||
+        installment.status !== 'paid'
+      ) {
         return;
       }
       setError('');
@@ -528,6 +546,7 @@ export function useKolamPayableController(route: string): KolamPayableController
     error,
     statusMessage,
     canView,
+    canCreate,
     canPay,
     onSearchChange,
     onStatusChange,
