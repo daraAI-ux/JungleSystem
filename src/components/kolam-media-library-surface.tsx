@@ -513,52 +513,92 @@ function KolamMediaOrphanCleanupDialog({
   const ignoreBackdropPress = React.useCallback(() => undefined, []);
 
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
-      <View style={styles.cleanupOverlay}>
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible={visible}>
+      <View style={styles.cleanupModalRoot}>
         <KolamModalBackdrop onPress={busy ? ignoreBackdropPress : onClose} />
-        <View accessibilityLabel="Cleanup orphan" style={styles.cleanupDialog}>
-          <Text style={styles.cleanupTitle}>Hapus orphan</Text>
-          {cleanupPhase === 'checking' ? (
-            <Text style={styles.cleanupText}>Memeriksa file orphan...</Text>
-          ) : null}
-          {cleanupPhase === 'review' ? (
-            <View style={styles.cleanupBody}>
-              <Text style={styles.cleanupText}>
-                {candidateCount} kandidat, {safeCount} aman, {unsafeCount} dilewati.
-              </Text>
-              {cleanupError ? (
+        <View accessibilityLabel="Cleanup orphan" style={styles.cleanupModalCard}>
+          <View style={styles.cleanupModalHeader}>
+            <Text style={styles.cleanupTitle}>Hapus orphan</Text>
+            <Text style={styles.cleanupText}>
+              Re-check file orphan sebelum hapus.
+            </Text>
+          </View>
+
+          <ScrollView style={styles.cleanupModalScroll}>
+            <View style={styles.cleanupModalBody}>
+              {cleanupPhase === 'checking' ? (
+                <Text style={styles.cleanupText}>Memeriksa file orphan...</Text>
+              ) : null}
+
+              {cleanupPhase === 'review' ? (
+                <>
+                  <View style={styles.cleanupMetricRow}>
+                    <KolamMediaCleanupMetric label="Kandidat" value={candidateCount} />
+                    <KolamMediaCleanupMetric label="Aman" value={safeCount} />
+                    <KolamMediaCleanupMetric label="Lewati" value={unsafeCount} />
+                  </View>
+
+                  {cleanupError ? (
+                    <Text style={styles.cleanupError}>{cleanupError}</Text>
+                  ) : null}
+
+                  {safeCount > 0 ? (
+                    <View style={styles.cleanupSection}>
+                      <Text style={styles.cleanupSectionTitle}>Aman</Text>
+                      {checkResult?.safe.slice(0, 10).map(filename => (
+                        <Text key={filename} style={styles.cleanupListText}>
+                          {filename}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : null}
+
+                  {unsafeCount > 0 ? (
+                    <View style={styles.cleanupSection}>
+                      <Text style={styles.cleanupSectionTitle}>Dilewati</Text>
+                      {checkResult?.unsafe.slice(0, 10).map(entry => (
+                        <Text key={entry.filename} style={styles.cleanupListText}>
+                          {entry.filename} -{' '}
+                          {entry.foundIn.join(', ') || 'Referenced'}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : null}
+                </>
+              ) : null}
+
+              {cleanupPhase === 'deleting' ? (
+                <Text style={styles.cleanupText}>Menghapus orphan...</Text>
+              ) : null}
+
+              {cleanupPhase === 'done' ? (
+                <View style={styles.cleanupMetricRow}>
+                  <KolamMediaCleanupMetric
+                    label="Terhapus"
+                    value={cleanupResult?.deleted ?? 0}
+                  />
+                  <KolamMediaCleanupMetric
+                    label="Gagal"
+                    value={cleanupResult?.failed.length ?? 0}
+                  />
+                  <KolamMediaCleanupMetric
+                    label="Lewati"
+                    value={cleanupResult?.skippedUnsafe ?? 0}
+                  />
+                </View>
+              ) : null}
+
+              {cleanupPhase === 'ready' && cleanupError ? (
                 <Text style={styles.cleanupError}>{cleanupError}</Text>
               ) : null}
-              {unsafeCount > 0 ? (
-                <ScrollView style={styles.cleanupList}>
-                  {checkResult?.unsafe.slice(0, 8).map(entry => (
-                    <Text key={entry.filename} style={styles.cleanupListText}>
-                      {entry.filename} - {entry.foundIn.join(', ') || 'Referenced'}
-                    </Text>
-                  ))}
-                </ScrollView>
-              ) : null}
             </View>
-          ) : null}
-          {cleanupPhase === 'deleting' ? (
-            <Text style={styles.cleanupText}>Menghapus orphan...</Text>
-          ) : null}
-          {cleanupPhase === 'done' ? (
-            <View style={styles.cleanupBody}>
-              <Text style={styles.cleanupText}>
-                Terhapus {cleanupResult?.deleted ?? 0}. Gagal{' '}
-                {cleanupResult?.failed.length ?? 0}. Dilewati{' '}
-                {cleanupResult?.skippedUnsafe ?? 0}.
-              </Text>
-              {cleanupError ? (
-                <Text style={styles.cleanupError}>{cleanupError}</Text>
-              ) : null}
-            </View>
-          ) : null}
-          {cleanupPhase === 'ready' && cleanupError ? (
-            <Text style={styles.cleanupError}>{cleanupError}</Text>
-          ) : null}
-          <View style={styles.cleanupActions}>
+          </ScrollView>
+
+          <View style={styles.cleanupModalFooter}>
             <KolamButton disabled={busy} label="Tutup" onPress={onClose} />
             {cleanupPhase === 'review' && safeCount > 0 ? (
               <KolamButton
@@ -573,6 +613,21 @@ function KolamMediaOrphanCleanupDialog({
         </View>
       </View>
     </Modal>
+  );
+}
+
+function KolamMediaCleanupMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <View style={styles.cleanupMetric}>
+      <Text style={styles.cleanupMetricLabel}>{label}</Text>
+      <Text style={styles.cleanupMetricValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -767,40 +822,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  cleanupActions: {
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-  },
-  cleanupBody: {
-    gap: 8,
-  },
-  cleanupDialog: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 14,
-    maxWidth: '86%',
-    padding: 18,
-    shadowColor: V.colors.fg,
-    shadowOffset: {width: 0, height: 16},
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    width: 520,
-  },
   cleanupError: {
     color: V.colors.danger,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
-  },
-  cleanupList: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    maxHeight: 140,
-    padding: 8,
   },
   cleanupListText: {
     color: V.colors.mutedFg,
@@ -809,10 +835,85 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 18,
   },
-  cleanupOverlay: {
+  cleanupMetric: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+    minWidth: 110,
+    padding: 10,
+  },
+  cleanupMetricLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cleanupMetricRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  cleanupMetricValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  cleanupModalBody: {
+    gap: 14,
+    paddingVertical: 4,
+  },
+  cleanupModalCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 10,
+    maxHeight: '90%',
+    maxWidth: 640,
+    padding: 16,
+    width: '100%',
+    zIndex: 2,
+  },
+  cleanupModalFooter: {
+    alignItems: 'center',
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+    paddingTop: 10,
+  },
+  cleanupModalHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingBottom: 10,
+  },
+  cleanupModalRoot: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+    padding: 24,
+  },
+  cleanupModalScroll: {
+    flexGrow: 0,
+    maxHeight: 440,
+  },
+  cleanupSection: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    padding: 10,
+  },
+  cleanupSectionTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
   },
   cleanupText: {
     color: V.colors.mutedFg,
@@ -824,7 +925,7 @@ const styles = StyleSheet.create({
   cleanupTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
