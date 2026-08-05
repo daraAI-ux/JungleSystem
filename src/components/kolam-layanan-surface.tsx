@@ -43,9 +43,19 @@ import {
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatsCard } from './kolam-stats-card';
 import { KolamStatusBadge } from './kolam-status-badge';
+import type { KolamStatusBadgeIntent } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const WEEKDAY_HEADERS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+type LayananAlertQueueId = 'overdue' | 'supervisor' | 'customer';
+
+type LayananAlertQueue = {
+  id: LayananAlertQueueId;
+  intent: KolamStatusBadgeIntent;
+  label: string;
+  rows: KolamLayananOpsAlert[];
+};
 
 export function KolamLayananSurface({
   onRouteChange,
@@ -253,50 +263,120 @@ function KolamLayananAlertRail({
     return null;
   }
 
-  const panels: Array<{ title: string; rows: KolamLayananOpsAlert[] }> = [
-    { title: 'Kunjungan terlambat', rows: dashboard.alerts.overdue },
-    {
-      title: 'Tunggu verifikasi supervisor',
-      rows: dashboard.alerts.pendingSupervisor,
-    },
-    {
-      title: 'Tunggu konfirmasi pelanggan',
-      rows: dashboard.alerts.pendingCustomerConfirm,
-    },
-  ].filter(panel => panel.rows.length > 0);
+  const queues = React.useMemo<LayananAlertQueue[]>(
+    () => [
+      {
+        id: 'overdue',
+        intent: 'danger',
+        label: 'Terlambat',
+        rows: dashboard.alerts.overdue,
+      },
+      {
+        id: 'supervisor',
+        intent: 'warning',
+        label: 'Supervisor',
+        rows: dashboard.alerts.pendingSupervisor,
+      },
+      {
+        id: 'customer',
+        intent: 'primary',
+        label: 'Pelanggan',
+        rows: dashboard.alerts.pendingCustomerConfirm,
+      },
+    ],
+    [
+      dashboard.alerts.overdue,
+      dashboard.alerts.pendingCustomerConfirm,
+      dashboard.alerts.pendingSupervisor,
+    ],
+  );
+  const [activeQueueId, setActiveQueueId] =
+    React.useState<LayananAlertQueueId>('overdue');
+  const totalAlerts = queues.reduce((sum, queue) => sum + queue.rows.length, 0);
+
+  React.useEffect(() => {
+    const activeQueue = queues.find(queue => queue.id === activeQueueId);
+    if (activeQueue && activeQueue.rows.length > 0) {
+      return;
+    }
+    const nextQueue = queues.find(queue => queue.rows.length > 0);
+    if (nextQueue && nextQueue.id !== activeQueueId) {
+      setActiveQueueId(nextQueue.id);
+    }
+  }, [activeQueueId, queues]);
+
+  const activeQueue =
+    queues.find(queue => queue.id === activeQueueId) ?? queues[0];
 
   return (
     <KolamContentFrame variant="nativeFormSection">
-      <Text style={styles.sectionTitle}>Perlu tindakan</Text>
-      {panels.length === 0 ? (
-        <Text style={styles.metaText}>
-          Tidak ada kunjungan yang menunggu tindakan.
-        </Text>
+      <View style={styles.alertHeader}>
+        <Text style={styles.sectionTitle}>Perlu tindakan</Text>
+        <KolamStatusBadge
+          intent={totalAlerts > 0 ? 'warning' : 'success'}
+          label={`${totalAlerts} antrian`}
+        />
+      </View>
+      <View style={styles.alertTabs}>
+        {queues.map(queue => (
+          <Pressable
+            accessibilityRole="button"
+            key={queue.id}
+            onPress={() => setActiveQueueId(queue.id)}
+            style={[
+              styles.alertTab,
+              activeQueueId === queue.id ? styles.alertTabActive : null,
+            ]}
+          >
+            <Text
+              style={[
+                styles.alertTabLabel,
+                activeQueueId === queue.id
+                  ? styles.alertTabLabelActive
+                  : null,
+              ]}
+            >
+              {queue.label}
+            </Text>
+            <KolamStatusBadge
+              intent={queue.intent}
+              label={String(queue.rows.length)}
+              style={styles.alertTabBadge}
+            />
+          </Pressable>
+        ))}
+      </View>
+      {activeQueue.rows.length === 0 ? (
+        <Text style={styles.alertEmptyText}>Tidak ada tindakan</Text>
       ) : (
-        panels.map(panel => (
-          <View key={panel.title} style={styles.alertBlock}>
-            <Text style={styles.alertTitle}>{panel.title}</Text>
-            {panel.rows.slice(0, 8).map(row => (
-              <Pressable
-                key={`${row.taskId}-${row.executionId}`}
-                disabled={!row.href}
-                onPress={() => {
-                  if (row.href) {
-                    onRouteChange?.(row.href);
-                  }
-                }}
-                style={styles.alertRow}
-              >
+        <View style={styles.alertQueueRows}>
+          {activeQueue.rows.slice(0, 8).map(row => (
+            <Pressable
+              key={`${row.taskId}-${row.executionId}`}
+              disabled={!row.href}
+              onPress={() => {
+                if (row.href) {
+                  onRouteChange?.(row.href);
+                }
+              }}
+              style={styles.alertRow}
+            >
+              <View style={styles.alertRowMain}>
                 <Text numberOfLines={1} style={styles.alertLabel}>
                   {row.visitTitle}
                 </Text>
-                <Text style={styles.metaText}>
-                  {formatAlertTime(row.scheduledTime)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ))
+                <KolamStatusBadge
+                  intent={activeQueue.intent}
+                  label={activeQueue.label}
+                  style={styles.alertRowBadge}
+                />
+              </View>
+              <Text numberOfLines={1} style={styles.alertTime}>
+                {formatAlertTime(row.scheduledTime)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       )}
     </KolamContentFrame>
   );
@@ -949,31 +1029,94 @@ const styles = StyleSheet.create({
     minWidth: 0,
     width: '100%',
   },
-  alertBlock: {
-    gap: 6,
-    marginTop: 8,
-  },
-  alertTitle: {
-    color: V.colors.fg,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  alertRow: {
+  alertHeader: {
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  alertTabs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  alertTab: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     flexDirection: 'row',
+    gap: 6,
+    minHeight: 30,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  alertTabActive: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.successSoft,
+  },
+  alertTabLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  alertTabLabelActive: {
+    color: V.colors.fg,
+  },
+  alertTabBadge: {
+    minHeight: 18,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  alertQueueRows: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  alertRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
     gap: 8,
     justifyContent: 'space-between',
+    minHeight: 40,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 7,
+  },
+  alertRowMain: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
   },
   alertLabel: {
     color: V.colors.fg,
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
+    minWidth: 0,
+  },
+  alertRowBadge: {
+    flexShrink: 0,
+  },
+  alertTime: {
+    color: V.colors.mutedFg,
+    flexShrink: 0,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  alertEmptyText: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    fontWeight: '600',
+    paddingVertical: 4,
   },
   weekBlock: {
     gap: 6,
