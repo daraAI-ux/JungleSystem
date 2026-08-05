@@ -79,7 +79,8 @@ export function KolamTopNavigationRightControl({
         accessibilityLabel={control.label}
         onPress={() => onCashflowNavigate?.('/media')}
         size={32}
-        radius="full">
+        radius="full"
+        variant="ghost">
         <KolamTopNavigationMediaIcon />
       </KolamIconButton>
     );

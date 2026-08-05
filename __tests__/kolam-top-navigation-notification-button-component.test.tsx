@@ -8,6 +8,7 @@ import {KolamPressable} from '../src/components/kolam-pressable';
 import {KolamTopNavigationChatButton} from '../src/components/kolam-top-navigation-chat-button';
 import {KolamTopNavigationChatIcon} from '../src/components/kolam-top-navigation-chat-icon';
 import {KolamTopNavigationDownloadIcon} from '../src/components/kolam-top-navigation-download-icon';
+import {KolamTopNavigationMediaIcon} from '../src/components/kolam-top-navigation-media-icon';
 import {KolamTopNavigationNotificationButton} from '../src/components/kolam-top-navigation-notification-button';
 import {KolamTopNavigationRightControl} from '../src/components/kolam-top-navigation-right-control';
 
@@ -173,5 +174,49 @@ describe('KolamTopNavigationDownloadIcon', () => {
     expect(button.props.variant).toBe('ghost');
     button.props.onPress();
     expect(onNavigate).toHaveBeenCalledWith('/app-downloads');
+  });
+});
+
+describe('KolamTopNavigationMediaIcon', () => {
+  it('renders the media icon as native vector artwork', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<KolamTopNavigationMediaIcon />);
+    });
+
+    const icon = renderer!.root.findByType(Svg);
+
+    expect(icon.props.height).toBe(32);
+    expect(icon.props.width).toBe(32);
+    expect(icon.props.viewBox).toBe('0 0 512 512');
+    expect(renderer!.root.findByType(Circle).props).toEqual(
+      expect.objectContaining({fill: '#F47F65', r: 256}),
+    );
+    expect(renderer!.root.findAllByType(Path)).toHaveLength(3);
+  });
+
+  it('keeps the media topbar control on the media route', async () => {
+    const onNavigate = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationRightControl
+          attentionCount={0}
+          control={{id: 'media', label: 'Media library'}}
+          displayInitials="DA"
+          onAvatarPress={jest.fn()}
+          onCashflowNavigate={onNavigate}
+          onNotificationPress={jest.fn()}
+        />,
+      );
+    });
+
+    const button = renderer!.root.findByType(KolamIconButton);
+
+    expect(button.props.variant).toBe('ghost');
+    button.props.onPress();
+    expect(onNavigate).toHaveBeenCalledWith('/media');
   });
 });
