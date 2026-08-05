@@ -361,36 +361,40 @@ function KolamLayananAlertRail({
               }}
               style={styles.alertRow}
             >
-              <View style={styles.alertRowMain}>
-                <View style={styles.alertTitleBlock}>
-                  <Text numberOfLines={1} style={styles.alertLabel}>
-                    {row.visitTitle}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.alertSubLabel}>
-                    {getAlertRowMeta(row)}
-                  </Text>
-                </View>
-                <View style={styles.alertRowMiddle}>
+              <View style={styles.alertTitleBlock}>
+                <Text numberOfLines={1} style={styles.alertLabel}>
+                  {row.visitTitle}
+                </Text>
+                <Text numberOfLines={1} style={styles.alertSubLabel}>
+                  {getAlertRowMeta(row)}
+                </Text>
+              </View>
+              <View style={styles.alertRowMiddle}>
+                {shouldShowAlertTaskKind(row) ? (
                   <KolamStatusBadge
                     intent="info"
                     label={getAlertTaskKindLabel(row.taskKind)}
                     style={styles.alertRowBadge}
                   />
-                  {row.packageTaskCode ? (
-                    <Text numberOfLines={1} style={styles.alertCode}>
-                      {row.packageTaskCode}
-                    </Text>
-                  ) : null}
-                </View>
+                ) : null}
+                {row.packageTaskCode ? (
+                  <Text numberOfLines={1} style={styles.alertCode}>
+                    {row.packageTaskCode}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={styles.alertStateBlock}>
                 <KolamStatusBadge
                   intent={activeQueue.intent}
                   label={activeQueue.label}
                   style={styles.alertRowBadge}
                 />
               </View>
-              <Text numberOfLines={1} style={styles.alertTime}>
-                {formatAlertTime(row.scheduledTime)}
-              </Text>
+              <View style={styles.alertTimeBlock}>
+                <Text numberOfLines={1} style={styles.alertTime}>
+                  {formatAlertTime(row.scheduledTime)}
+                </Text>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -415,6 +419,15 @@ function getAlertRowMeta(row: KolamLayananOpsAlert) {
     row.subscriptionId ? `Langganan ${row.subscriptionId.slice(-6)}` : null,
   ].filter(Boolean);
   return refs.join(' · ') || 'Kunjungan layanan';
+}
+
+function shouldShowAlertTaskKind(row: KolamLayananOpsAlert) {
+  const label = getAlertTaskKindLabel(row.taskKind).toLowerCase();
+  const title = row.visitTitle.toLowerCase();
+  if (label === 'maintenance') {
+    return !title.includes('maintenance') && !title.includes('maintainance');
+  }
+  return label !== 'tugas' && !title.includes(label);
 }
 
 function KolamLayananCapacityGrid({
@@ -1118,21 +1131,13 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'space-between',
+    gap: 12,
     minHeight: 48,
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
-  alertRowMain: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 10,
-    minWidth: 0,
-  },
   alertTitleBlock: {
-    flex: 1,
+    flex: 1.4,
     gap: 2,
     minWidth: 0,
   },
@@ -1148,10 +1153,11 @@ const styles = StyleSheet.create({
   },
   alertRowMiddle: {
     alignItems: 'center',
+    flex: 0.9,
     flexDirection: 'row',
-    flexShrink: 0,
     gap: 6,
-    minWidth: 150,
+    justifyContent: 'center',
+    minWidth: 0,
   },
   alertCode: {
     color: V.colors.mutedFg,
@@ -1161,12 +1167,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     maxWidth: 96,
   },
+  alertStateBlock: {
+    alignItems: 'center',
+    flex: 0.55,
+    minWidth: 0,
+  },
   alertRowBadge: {
     flexShrink: 0,
   },
+  alertTimeBlock: {
+    alignItems: 'flex-end',
+    flex: 0.6,
+    minWidth: 0,
+  },
   alertTime: {
     color: V.colors.mutedFg,
-    flexShrink: 0,
     fontSize: 12,
     fontWeight: '700',
   },
