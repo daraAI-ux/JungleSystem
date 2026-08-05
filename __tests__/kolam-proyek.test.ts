@@ -1,4 +1,5 @@
 import {
+  buildKolamProyekActivityEntries,
   buildKolamProyekDetailRoute,
   buildKolamProyekDetailRouteForItem,
   buildKolamProyekEditRoute,
@@ -34,6 +35,7 @@ import {
   getKolamProyekLifecycleIntent,
   getKolamProyekRouteRef,
   getKolamProyekSectionVisibility,
+  getKolamProyekStepperStageState,
   getKolamProyekSurfaceMode,
   hasKolamProyekPermission,
   isKolamProyekDetailRoute,
@@ -558,5 +560,49 @@ describe('kolam-proyek domain', () => {
     const commission = computeKolamProyekCommissionPreview(draft);
     expect(commission?.daAmount).toBe(50_000);
     expect(commission?.designerAmount).toBe(50_000);
+  });
+
+  it('builds tahapan stepper, activity, and linked UE for Batch 3', () => {
+    const stage = getKolamProyekStepperStageState('revision_in_progress');
+    expect(stage.isRevising).toBe(true);
+    expect(stage.effective).toBe('quotation_sent');
+    expect(getKolamProyekHappyPathNext('approved')).toContain('awaiting_dp');
+
+    const detail = normalizeKolamProyekDetail({
+      _id: 'p4',
+      lifecycleStatus: 'in_progress',
+      progressHistory: [
+        { progressPercent: 40, progressNote: 'frame', at: '2026-02-01T10:00:00.000Z' },
+      ],
+      designSubmittedAt: '2026-02-02T10:00:00.000Z',
+      dpSchedule: [
+        { name: 'DP1', amount: 100, amountReceived: 100, paidAt: '2026-01-20T00:00:00.000Z' },
+      ],
+      lifecycleHistory: [
+        { from: 'dp_paid', to: 'in_progress', note: 'Mulai', at: '2026-01-21T00:00:00.000Z' },
+      ],
+      linkedUnexpectedExpenses: [
+        {
+          _id: 'ue1',
+          code: 'UE-1',
+          amount: 250000,
+          status: 'verified',
+          shippingAmount: 15000,
+          materialAllocations: [{ customName: 'Kayu', amount: 250000 }],
+        },
+      ],
+    })!;
+
+    expect(detail.lifecycleHistory).toHaveLength(1);
+    expect(detail.linkedUnexpectedExpenses[0].code).toBe('UE-1');
+    expect(detail.linkedUnexpectedExpenses[0].allocationLabels[0]).toContain(
+      'Kayu',
+    );
+    const activity = buildKolamProyekActivityEntries(detail);
+    expect(activity.some(item => item.label.startsWith('Progress 40%'))).toBe(
+      true,
+    );
+    expect(activity.some(item => item.label === 'Desain dikirim')).toBe(true);
+    expect(activity.some(item => item.label.includes('dibayar'))).toBe(true);
   });
 });

@@ -236,6 +236,30 @@ export type KolamProyekCostBreakdown = {
   varAmount: number;
 };
 
+export type KolamProyekLifecycleHistoryItem = {
+  from: string;
+  to: string;
+  note: string;
+  at: string | null;
+};
+
+export type KolamProyekLinkedUnexpectedExpense = {
+  id: string;
+  code: string;
+  name: string;
+  amount: number;
+  status: string;
+  executedAt: string | null;
+  vendorName: string;
+  shippingAmount: number;
+  allocationLabels: string[];
+};
+
+export type KolamProyekActivityEntry = {
+  at: string;
+  label: string;
+};
+
 export type KolamProyekDetail = KolamProyekListItem & {
   progressNote: string;
   maxWorkDays: number | null;
@@ -256,6 +280,11 @@ export type KolamProyekDetail = KolamProyekListItem & {
   commissionConfig: KolamProyekCommissionConfig | null;
   commissionAccruals: KolamProyekCommissionAccrual[];
   progressHistory: KolamProyekProgressHistoryItem[];
+  lifecycleHistory: KolamProyekLifecycleHistoryItem[];
+  linkedUnexpectedExpenses: KolamProyekLinkedUnexpectedExpense[];
+  designSubmittedAt: string | null;
+  designCheckedAt: string | null;
+  designApprovedByClientAt: string | null;
   designSubmissions: KolamProyekReviewSubmission[];
   deliverySubmissions: KolamProyekReviewSubmission[];
   linkedTask: KolamProyekLinkedTask | null;
@@ -727,6 +756,131 @@ export function getKolamProyekAllowedNext(
 ): KolamProyekLifecycleStatus[] {
   const key = String(current || '').trim() as KolamProyekLifecycleStatus;
   return [...(ALLOWED_TRANSITIONS[key] || [])];
+}
+
+/** Mirror FE `HAPPY_PATH` stepper sequence (excludes cancelled/refunded). */
+export const KOLAM_PROYEK_HAPPY_PATH: KolamProyekLifecycleStatus[] = [
+  'draft',
+  'quotation_sent',
+  'approved',
+  'awaiting_dp',
+  'dp_paid',
+  'in_progress',
+  'design_review',
+  'delivered',
+  'completed',
+];
+
+/** Mirror FE `NEXT_STEP_CTA` for Tahapan hint under the stepper. */
+export const KOLAM_PROYEK_NEXT_STEP_CTA: Partial<
+  Record<KolamProyekLifecycleStatus, string>
+> = {
+  draft: 'Kirim Penawaran ke Client',
+  quotation_sent: 'Menunggu Respons Client',
+  revision_in_progress: 'Kirim Ulang Penawaran',
+  approved: 'Atur Jadwal DP',
+  awaiting_dp: 'Catat Pembayaran DP',
+  dp_paid: 'Mulai Pengerjaan',
+  in_progress: 'Submit Desain',
+  design_review: 'Approve / Minta Revisi Desain',
+  delivered: 'Tutup Proyek',
+};
+
+export function getKolamProyekStepperStageState(
+  status: string | null | undefined,
+): {
+  effective: KolamProyekLifecycleStatus;
+  currentIndex: number;
+  isTerminal: boolean;
+  isRevising: boolean;
+} {
+  const key = (String(status || 'draft').trim() ||
+    'draft') as KolamProyekLifecycleStatus;
+  const isTerminal = key === 'cancelled' || key === 'refunded';
+  const isRevising = key === 'revision_in_progress';
+  const effective: KolamProyekLifecycleStatus = isRevising
+    ? 'quotation_sent'
+    : key;
+  return {
+    effective,
+    currentIndex: KOLAM_PROYEK_HAPPY_PATH.indexOf(effective),
+    isTerminal,
+    isRevising,
+  };
+}
+
+export function formatKolamProyekLifecycleTransitionLabel(
+  to: string,
+  from?: string | null,
+) {
+  if (from === 'design_review' && to === 'in_progress') {
+    return 'Kembali ke Pengerjaan (revisi)';
+  }
+  if (from === 'revision_in_progress' && to === 'quotation_sent') {
+    return 'Kirim Ulang Penawaran';
+  }
+  const labels: Partial<Record<string, string>> = {
+    quotation_sent: 'Kirim Penawaran',
+    revision_in_progress: 'Tandai Sedang Revisi',
+    approved: 'Setujui Manual',
+    awaiting_dp: 'Kirim Tagihan DP',
+    dp_paid: 'Tandai DP Lunas (manual override)',
+    in_progress: 'Mulai Pengerjaan',
+    design_review: 'Kirim ke Review Desain',
+    delivered: 'Tandai Sudah Dikirim',
+    completed: 'Tandai Selesai',
+  };
+  return labels[to] || formatKolamProyekLifecycleLabel(to);
+}
+
+export function buildKolamProyekActivityEntries(
+  detail: Pick<
+    KolamProyekDetail,
+    | 'progressHistory'
+    | 'designSubmittedAt'
+    | 'designCheckedAt'
+    | 'designApprovedByClientAt'
+    | 'dpSchedule'
+  >,
+): KolamProyekActivityEntry[] {
+  const entries: KolamProyekActivityEntry[] = [];
+  for (const item of detail.progressHistory ?? []) {
+    if (!item.at) {
+      continue;
+    }
+    const notePart = item.progressNote ? ` — ${item.progressNote}` : '';
+    entries.push({
+      at: item.at,
+      label: `Progress ${item.progressPercent}%${notePart}`,
+    });
+  }
+  if (detail.designSubmittedAt) {
+    entries.push({at: detail.designSubmittedAt, label: 'Desain dikirim'});
+  }
+  if (detail.designCheckedAt) {
+    entries.push({
+      at: detail.designCheckedAt,
+      label: 'Desain dicek internal',
+    });
+  }
+  if (detail.designApprovedByClientAt) {
+    entries.push({
+      at: detail.designApprovedByClientAt,
+      label: 'Client setujui desain',
+    });
+  }
+  for (const row of detail.dpSchedule ?? []) {
+    const dpLabel = row.name || String(row.index + 1);
+    if (row.dueAt) {
+      entries.push({at: row.dueAt, label: `DP ${dpLabel} ditagih`});
+    }
+    if (row.paidAt) {
+      entries.push({at: row.paidAt, label: `DP ${dpLabel} dibayar`});
+    }
+  }
+  return entries.sort(
+    (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime(),
+  );
 }
 
 /** Quotation edit allowed only while draft / revision (BE DRAFT_EDITABLE_STATUSES). */
@@ -1730,6 +1884,62 @@ export function normalizeKolamProyekDetail(
     };
   });
 
+  const lifecycleHistory = (
+    Array.isArray(record.lifecycleHistory) ? record.lifecycleHistory : []
+  )
+    .map(row => {
+      const item = asRecord(row);
+      const to = getString(item, 'to');
+      if (!to) {
+        return null;
+      }
+      return {
+        from: getString(item, 'from'),
+        to,
+        note: getString(item, 'note'),
+        at: getString(item, 'at') || null,
+      };
+    })
+    .filter((item): item is KolamProyekLifecycleHistoryItem => Boolean(item));
+
+  const linkedUnexpectedExpenses = (
+    Array.isArray(record.linkedUnexpectedExpenses)
+      ? record.linkedUnexpectedExpenses
+      : []
+  ).map((row, index) => {
+    const item = asRecord(row);
+    const allocations = Array.isArray(item.materialAllocations)
+      ? item.materialAllocations
+      : [];
+    const allocationLabels = allocations.map(allocationPayload => {
+      const allocation = asRecord(allocationPayload);
+      const product = asRecord(allocation.product);
+      const species = asRecord(allocation.species);
+      const service = asRecord(allocation.service);
+      const label =
+        getString(allocation, 'customName') ||
+        getString(product, 'name') ||
+        getString(species, 'localName') ||
+        getString(species, 'commonName') ||
+        getString(service, 'name') ||
+        getString(allocation, 'itemType') ||
+        'Alokasi';
+      const amount = getNumber(allocation, 'amount') ?? 0;
+      return `${label}: ${formatRupiah(amount)}`;
+    });
+    return {
+      id: getId(item) || `ue-${index}`,
+      code: getString(item, 'code'),
+      name: getString(item, 'name'),
+      amount: getNumber(item, 'amount') ?? 0,
+      status: getString(item, 'status') || 'draft',
+      executedAt: getString(item, 'executedAt') || null,
+      vendorName: getString(item, 'vendorName'),
+      shippingAmount: getNumber(item, 'shippingAmount') ?? 0,
+      allocationLabels,
+    };
+  });
+
   return {
     ...base,
     progressPercent: effectiveProgress,
@@ -1753,6 +1963,12 @@ export function normalizeKolamProyekDetail(
     commissionConfig,
     commissionAccruals,
     progressHistory,
+    lifecycleHistory,
+    linkedUnexpectedExpenses,
+    designSubmittedAt: getString(record, 'designSubmittedAt') || null,
+    designCheckedAt: getString(record, 'designCheckedAt') || null,
+    designApprovedByClientAt:
+      getString(record, 'designApprovedByClientAt') || null,
     designSubmissions,
     deliverySubmissions,
     linkedTask,

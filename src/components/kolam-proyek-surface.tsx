@@ -9,21 +9,28 @@ import {
   View,
 } from 'react-native';
 import {
+  buildKolamProyekActivityEntries,
   computeKolamProyekCommissionPreview,
   computeKolamProyekOutstanding,
   formatKolamProyekComplaintWindowLabel,
   formatKolamProyekDpRowStatusLabel,
   formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
+  formatKolamProyekLifecycleTransitionLabel,
   formatKolamProyekReviewDecisionLabel,
   getKolamProyekDpRowOutstanding,
   getKolamProyekDpRowStatusIntent,
+  getKolamProyekHappyPathNext,
   getKolamProyekLifecycleIntent,
   getKolamProyekReviewDecisionIntent,
   getKolamProyekSectionVisibility,
+  getKolamProyekStepperStageState,
   getLatestKolamProyekReviewSubmission,
+  KOLAM_PROYEK_HAPPY_PATH,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
+  KOLAM_PROYEK_NEXT_STEP_CTA,
   resolveKolamProyekNextStepHero,
+  type KolamProyekDetail,
   type KolamProyekLifecycleStatus,
   type KolamProyekListItem,
   type KolamProyekNextStepAction,
@@ -412,6 +419,10 @@ function KolamProyekDetailRead({
   const [closeOpen, setCloseOpen] = useState(false);
   const [progressPercentText, setProgressPercentText] = useState('');
   const [progressNoteText, setProgressNoteText] = useState('');
+  const [lifecycleNote, setLifecycleNote] = useState('');
+  const [lifecycleTarget, setLifecycleTarget] = useState<
+    KolamProyekLifecycleStatus | ''
+  >('');
   const detailScrollRef = useRef<ScrollView>(null);
   const sectionOffsetsRef = useRef<Record<string, number>>({});
 
@@ -421,7 +432,10 @@ function KolamProyekDetailRead({
     }
     setProgressPercentText(String(Math.round(detail.progressPercent || 0)));
     setProgressNoteText(detail.progressNote || '');
-  }, [detail?.id, detail?.progressPercent, detail?.progressNote]);
+    const nextTargets = getKolamProyekHappyPathNext(detail.lifecycleStatus);
+    setLifecycleTarget(nextTargets[0] ?? '');
+    setLifecycleNote('');
+  }, [detail?.id, detail?.progressPercent, detail?.progressNote, detail?.lifecycleStatus]);
 
   const scrollToSection = (key: string) => {
     const y = sectionOffsetsRef.current[key];
@@ -486,6 +500,18 @@ function KolamProyekDetailRead({
   );
   const commissionPreview = computeKolamProyekCommissionPreview(detail);
   const nextStep = resolveKolamProyekNextStepHero(detail);
+  const activityEntries = buildKolamProyekActivityEntries(detail);
+  const adminLifecycleTargets = getKolamProyekHappyPathNext(
+    detail.lifecycleStatus,
+  );
+  const showDomainLifecycleInfo =
+    getKolamProyekSectionVisibility(
+      detail.lifecycleStatus,
+      'lifecycleAdmin',
+    ) === 'active' &&
+    adminLifecycleTargets.length === 0 &&
+    (detail.lifecycleStatus === 'in_progress' ||
+      detail.lifecycleStatus === 'design_review');
   const paymentHint =
     detail.paymentMode === 'staged'
       ? `DP berjenjang${
@@ -698,6 +724,20 @@ function KolamProyekDetailRead({
           </KolamDetailMetaStripItem>
         </KolamDetailMetaStrip>
 
+        <ProyekLifecycleTimeline
+          acting={controller.acting}
+          canAdminLifecycle={controller.canAdminLifecycle}
+          detail={detail}
+          lifecycleNote={lifecycleNote}
+          lifecycleTarget={lifecycleTarget}
+          onLifecycleNoteChange={setLifecycleNote}
+          onLifecycleTargetChange={setLifecycleTarget}
+          onTransition={(to, note) =>
+            controller.onAdminLifecycleTransition(to, note)
+          }
+          showDomainInfo={showDomainLifecycleInfo}
+        />
+
         <DetailSection title="Ringkasan kontrak">
           <View style={styles.metricGrid}>
             <Metric
@@ -807,6 +847,64 @@ function KolamProyekDetailRead({
                 </Text>
                 {item.note ? (
                   <Text style={styles.metaText}>{item.note}</Text>
+                ) : null}
+              </View>
+            ))
+          )}
+        </DetailSection>
+
+        <DetailSection title="Bahan Tambahan">
+          <Text style={styles.metaText}>
+            Pembelian di luar toko — dari Unexpected Expense ter-link ke proyek
+            ini.
+          </Text>
+          {detail.linkedUnexpectedExpenses.length === 0 ? (
+            <Text style={styles.metaText}>
+              Belum ada pembelian luar tercatat.
+            </Text>
+          ) : (
+            detail.linkedUnexpectedExpenses.map(expense => (
+              <View key={expense.id} style={styles.listRow}>
+                <View style={styles.dpRowHeader}>
+                  <Pressable
+                    onPress={() =>
+                      onRouteChange?.(`/unexpected-expense/${expense.id}`)
+                    }
+                  >
+                    <Text style={styles.linkText}>
+                      {expense.code
+                        ? `${expense.code} · ${formatRupiah(expense.amount)}`
+                        : formatRupiah(expense.amount)}
+                    </Text>
+                  </Pressable>
+                  <KolamStatusBadge
+                    intent={
+                      expense.status === 'verified' ? 'success' : 'warning'
+                    }
+                    label={
+                      expense.status === 'verified'
+                        ? 'Verified'
+                        : 'Belum verified'
+                    }
+                  />
+                </View>
+                {expense.executedAt ? (
+                  <Text style={styles.metaText}>
+                    {formatShortDate(expense.executedAt)}
+                  </Text>
+                ) : null}
+                {expense.allocationLabels.map((label, index) => (
+                  <Text
+                    key={`${expense.id}-alloc-${index}`}
+                    style={styles.metaText}
+                  >
+                    {label}
+                  </Text>
+                ))}
+                {expense.shippingAmount > 0 ? (
+                  <Text style={styles.metaText}>
+                    Ongkir: {formatRupiah(expense.shippingAmount)}
+                  </Text>
                 ) : null}
               </View>
             ))
@@ -1244,6 +1342,19 @@ function KolamProyekDetailRead({
               label={controller.acting ? 'Memproses…' : 'Tutup proyek'}
               onPress={() => setCloseOpen(true)}
             />
+          </DetailSection>
+        ) : null}
+
+        {activityEntries.length > 0 ? (
+          <DetailSection title="Aktivitas">
+            {activityEntries.map((entry, index) => (
+              <Text
+                key={`${entry.at}-${index}`}
+                style={styles.metaText}
+              >
+                {formatShortDateTime(entry.at)} — {entry.label}
+              </Text>
+            ))}
           </DetailSection>
         ) : null}
 
@@ -1771,6 +1882,237 @@ function ReviewRoundSubmitForm({
   );
 }
 
+function ProyekLifecycleTimeline({
+  acting,
+  canAdminLifecycle,
+  detail,
+  lifecycleNote,
+  lifecycleTarget,
+  onLifecycleNoteChange,
+  onLifecycleTargetChange,
+  onTransition,
+  showDomainInfo,
+}: {
+  acting: boolean;
+  canAdminLifecycle: boolean;
+  detail: KolamProyekDetail;
+  lifecycleNote: string;
+  lifecycleTarget: KolamProyekLifecycleStatus | '';
+  onLifecycleNoteChange: (value: string) => void;
+  onLifecycleTargetChange: (value: KolamProyekLifecycleStatus | '') => void;
+  onTransition: (
+    to: KolamProyekLifecycleStatus,
+    note: string,
+  ) => Promise<boolean>;
+  showDomainInfo: boolean;
+}) {
+  const stage = getKolamProyekStepperStageState(detail.lifecycleStatus);
+  const history = [...detail.lifecycleHistory].reverse();
+  const targets = getKolamProyekHappyPathNext(detail.lifecycleStatus);
+  const nextCta =
+    KOLAM_PROYEK_NEXT_STEP_CTA[
+      detail.lifecycleStatus as KolamProyekLifecycleStatus
+    ] || null;
+
+  return (
+    <DetailSection title="Tahapan proyek">
+      <Text style={styles.metaText}>
+        Alur status, riwayat perubahan, dan transisi admin.
+      </Text>
+
+      {stage.isTerminal ? (
+        <View style={styles.terminalBanner}>
+          <Text style={styles.primaryText}>
+            {detail.lifecycleStatus === 'cancelled'
+              ? 'Proyek dibatalkan'
+              : 'Dana dikembalikan'}
+          </Text>
+          <Text style={styles.metaText}>
+            {detail.lifecycleStatus === 'cancelled'
+              ? 'Data tersimpan untuk audit. Tidak ada aksi lanjutan.'
+              : 'Proyek tidak dilanjutkan. Riwayat tersimpan sebagai hanya baca.'}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.stepRail}>
+          {KOLAM_PROYEK_HAPPY_PATH.map((step, index) => {
+            const isDone =
+              stage.currentIndex >= 0 && index < stage.currentIndex;
+            const isCurrent =
+              stage.currentIndex >= 0 && index === stage.currentIndex;
+            return (
+              <View key={step} style={styles.stepRow}>
+                <View
+                  style={[
+                    styles.stepDot,
+                    isDone ? styles.stepDotDone : null,
+                    isCurrent ? styles.stepDotCurrent : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.stepDotText,
+                      isCurrent ? styles.stepDotTextOnPrimary : null,
+                    ]}
+                  >
+                    {isDone ? '✓' : String(index + 1)}
+                  </Text>
+                </View>
+                <View style={styles.stepLabelBlock}>
+                  <Text
+                    style={[
+                      styles.stepLabel,
+                      isCurrent || isDone ? styles.primaryText : null,
+                    ]}
+                  >
+                    {formatKolamProyekLifecycleLabel(step)}
+                  </Text>
+                  {isCurrent && stage.isRevising ? (
+                    <Text style={styles.warningText}>Client minta revisi</Text>
+                  ) : null}
+                  {isCurrent && !stage.isRevising ? (
+                    <Text style={styles.metaText}>Tahap saat ini</Text>
+                  ) : null}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {nextCta && !stage.isTerminal ? (
+        <View style={styles.hintCard}>
+          <Text style={styles.heroEyebrow}>Langkah selanjutnya</Text>
+          <Text style={styles.primaryText}>{nextCta}</Text>
+        </View>
+      ) : null}
+
+      <Text style={styles.sectionSubtitle}>Riwayat</Text>
+      {history.length === 0 ? (
+        <Text style={styles.metaText}>Belum ada perubahan status.</Text>
+      ) : (
+        history.slice(0, 20).map((entry, index) => (
+          <View
+            key={`${entry.at}-${entry.to}-${index}`}
+            style={styles.listRow}
+          >
+            <Text style={styles.metaText}>
+              {entry.at ? formatShortDateTime(entry.at) : '—'}
+            </Text>
+            <View style={styles.dpRowHeader}>
+              <KolamStatusBadge
+                intent={getKolamProyekLifecycleIntent(entry.from)}
+                label={
+                  entry.from
+                    ? formatKolamProyekLifecycleLabel(entry.from)
+                    : '—'
+                }
+              />
+              <Text style={styles.metaText}>→</Text>
+              <KolamStatusBadge
+                intent={getKolamProyekLifecycleIntent(entry.to)}
+                label={formatKolamProyekLifecycleLabel(entry.to)}
+              />
+            </View>
+            {entry.note ? (
+              <Text style={styles.metaText}>{entry.note}</Text>
+            ) : null}
+          </View>
+        ))
+      )}
+
+      {showDomainInfo ? (
+        <View style={styles.hintCard}>
+          <Text style={styles.metaText}>
+            {detail.lifecycleStatus === 'in_progress'
+              ? 'Aksi di stage ini dikelola tombol domain: pakai “Kirim Desain ke Client” di Review Desain — status otomatis pindah.'
+              : 'Menunggu client setujui / revisi / tolak dari marketplace — status otomatis pindah setelahnya.'}
+          </Text>
+        </View>
+      ) : null}
+
+      {canAdminLifecycle && targets.length === 1 ? (
+        <View style={styles.progressEditor}>
+          <KolamSettingsWebFieldLabel
+            label={`Catatan untuk "${formatKolamProyekLifecycleTransitionLabel(
+              targets[0],
+              detail.lifecycleStatus,
+            )}"`}
+            required
+          />
+          <KolamFormTextField
+            multiline
+            onChangeText={onLifecycleNoteChange}
+            placeholder="Minimal 5 karakter"
+            value={lifecycleNote}
+          />
+          <KolamButton
+            disabled={acting}
+            label={
+              acting
+                ? 'Memproses…'
+                : formatKolamProyekLifecycleTransitionLabel(
+                    targets[0],
+                    detail.lifecycleStatus,
+                  )
+            }
+            onPress={() => {
+              void onTransition(targets[0], lifecycleNote);
+            }}
+          />
+        </View>
+      ) : null}
+
+      {canAdminLifecycle && targets.length >= 2 ? (
+        <View style={styles.progressEditor}>
+          <KolamSettingsWebFieldLabel label="Pilih aksi" required />
+          <KolamDropdownSelect
+            label={
+              lifecycleTarget
+                ? formatKolamProyekLifecycleTransitionLabel(
+                    lifecycleTarget,
+                    detail.lifecycleStatus,
+                  )
+                : 'Pilih aksi'
+            }
+            onChange={value =>
+              onLifecycleTargetChange(
+                value as KolamProyekLifecycleStatus | '',
+              )
+            }
+            options={targets.map(target => ({
+              label: formatKolamProyekLifecycleTransitionLabel(
+                target,
+                detail.lifecycleStatus,
+              ),
+              value: target,
+            }))}
+            showLabelInTrigger={false}
+            value={lifecycleTarget}
+          />
+          <KolamSettingsWebFieldLabel label="Catatan" required />
+          <KolamFormTextField
+            multiline
+            onChangeText={onLifecycleNoteChange}
+            placeholder="Minimal 5 karakter"
+            value={lifecycleNote}
+          />
+          <KolamButton
+            disabled={acting || !lifecycleTarget}
+            label={acting ? 'Memproses…' : 'Lanjutkan'}
+            onPress={() => {
+              if (!lifecycleTarget) {
+                return;
+              }
+              void onTransition(lifecycleTarget, lifecycleNote);
+            }}
+          />
+        </View>
+      ) : null}
+    </DetailSection>
+  );
+}
+
 function ProyekNextStepHero({
   acting,
   config,
@@ -2065,6 +2407,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  stepRail: {
+    gap: 0,
+    marginTop: 4,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  stepDot: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  stepDotDone: {
+    backgroundColor: V.colors.primarySoft ?? V.colors.primary,
+    borderColor: V.colors.primary,
+  },
+  stepDotCurrent: {
+    backgroundColor: V.colors.primary,
+    borderColor: V.colors.primary,
+  },
+  stepDotText: {
+    color: V.colors.fg,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  stepDotTextOnPrimary: {
+    color: V.colors.primaryFg,
+  },
+  stepLabelBlock: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+    paddingBottom: 10,
+  },
+  stepLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+  },
+  hintCard: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    padding: 10,
+  },
+  terminalBanner: {
+    borderColor: V.colors.danger,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    padding: 10,
   },
   sectionSubtitle: {
     color: V.colors.fg,

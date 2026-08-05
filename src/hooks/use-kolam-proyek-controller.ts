@@ -22,9 +22,12 @@ import {
   createEmptyKolamProyekQuotationForm,
   createKolamProyekQuotationFormFromDetail,
   createKolamProyekQuotationFormItem,
+  formatKolamProyekLifecycleLabel,
   getKolamProyekCloseBlockReason,
   getKolamProyekDpRowOutstanding,
+  getKolamProyekHappyPathNext,
   getKolamProyekRouteRef,
+  getKolamProyekSectionVisibility,
   getKolamProyekSurfaceMode,
   hasKolamProyekPermission,
   isKolamProyekLinkedTaskDone,
@@ -101,6 +104,7 @@ export interface KolamProyekController {
   canUpdateProgress: boolean;
   canUploadDpProof: boolean;
   canView: boolean;
+  canAdminLifecycle: boolean;
   closeBlockReason: string | null;
   customerOptions: KolamProyekPickerOption[];
   dataSource: KolamProyekDataSource;
@@ -124,6 +128,10 @@ export interface KolamProyekController {
   total: number;
   totalPages: number;
   onAddFormItem: () => void;
+  onAdminLifecycleTransition: (
+    to: KolamProyekLifecycleStatus,
+    note: string,
+  ) => Promise<boolean>;
   onBackToList: () => void;
   onCancelProject: (reason: string) => Promise<boolean>;
   onCloseProject: () => Promise<boolean>;
@@ -256,6 +264,13 @@ export function useKolamProyekController(
       selected?.paymentMode,
     );
   const canDownloadKwitansi = canView;
+  const canAdminLifecycle =
+    canUpdate &&
+    getKolamProyekSectionVisibility(
+      selected?.lifecycleStatus,
+      'lifecycleAdmin',
+    ) === 'active' &&
+    getKolamProyekHappyPathNext(selected?.lifecycleStatus).length > 0;
   const canStartWork =
     canUpdate && canStartKolamProyekWork(selected?.lifecycleStatus);
   const canUpdateProgress =
@@ -906,6 +921,45 @@ export function useKolamProyekController(
     [selected],
   );
 
+  const onAdminLifecycleTransition = useCallback(
+    async (to: KolamProyekLifecycleStatus, note: string) => {
+      if (!selected || !canAdminLifecycle) {
+        return false;
+      }
+      const allowed = getKolamProyekHappyPathNext(selected.lifecycleStatus);
+      if (!allowed.includes(to)) {
+        setError('Transisi status tidak diizinkan dari tahap saat ini.');
+        return false;
+      }
+      const noteError = validateKolamProyekLifecycleNote(note);
+      if (noteError) {
+        setError(noteError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await transitionKolamProyekLifecycle(
+          selected.id,
+          to,
+          note.trim(),
+        );
+        setSelected(updated);
+        setStatusMessage(
+          `Status → ${formatKolamProyekLifecycleLabel(updated.lifecycleStatus)}.`,
+        );
+        return true;
+      } catch (transitionError) {
+        setError(getApiErrorMessage(transitionError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [canAdminLifecycle, selected],
+  );
+
   const onUpdateProgress = useCallback(
     async (progressPercent: number, progressNote?: string) => {
       if (!selected || !canUpdateKolamProyekProgress(selected.lifecycleStatus)) {
@@ -1119,6 +1173,7 @@ export function useKolamProyekController(
       canUpdateProgress,
       canUploadDpProof,
       canView,
+      canAdminLifecycle,
       closeBlockReason,
       customerOptions: mergedCustomerOptions,
       dataSource,
@@ -1142,6 +1197,7 @@ export function useKolamProyekController(
       total,
       totalPages,
       onAddFormItem,
+      onAdminLifecycleTransition,
       onBackToList,
       onCancelProject,
       onCloseProject,
@@ -1190,6 +1246,7 @@ export function useKolamProyekController(
       canUpdateProgress,
       canUploadDpProof,
       canView,
+      canAdminLifecycle,
       closeBlockReason,
       dataSource,
       error,
@@ -1204,6 +1261,7 @@ export function useKolamProyekController(
       mergedTermsOptions,
       mode,
       onAddFormItem,
+      onAdminLifecycleTransition,
       onBackToList,
       onCancelProject,
       onCloseProject,
