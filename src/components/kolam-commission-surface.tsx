@@ -93,10 +93,18 @@ function CommissionListBody({
       option => option.value === controller.filters.status,
     )?.label ?? 'Semua status';
 
-  const walletOptions = controller.wallets.map(wallet => ({
-    label: wallet.name,
-    value: wallet.id,
-  }));
+  const walletOptions = React.useMemo(
+    () =>
+      controller.wallets.map(wallet => ({
+        label: wallet.name,
+        value: wallet.id,
+      })),
+    [controller.wallets],
+  );
+  const walletSelectOptions = React.useMemo(
+    () => [{ label: 'Dompet', value: '' }, ...walletOptions],
+    [walletOptions],
+  );
   const filteredRecipientLabel =
     controller.recipientSummaryRows.find(
       row => row.recipientUser === controller.filters.recipientUser,
@@ -191,18 +199,16 @@ function CommissionListBody({
             {showRelease ? (
               <View style={styles.releaseRow}>
                 <KolamDropdownSelect
-                  label={
-                    walletOptions.find(
-                      option => option.value === selectedWallet,
-                    )?.label ?? 'Dompet'
-                  }
+                  label="Dompet"
                   onChange={value => controller.onWalletChange(item.id, value)}
-                  options={walletOptions}
+                  options={walletSelectOptions}
+                  showLabelInTrigger={false}
                   value={selectedWallet}
                 />
                 <KolamButton
+                  disabled={!selectedWallet || controller.releasingId !== null}
                   intent="primary"
-                  label={controller.releasingId === item.id ? '…' : 'Bayar'}
+                  label={controller.releasingId === item.id ? '...' : 'Bayar'}
                   onPress={() => {
                     void controller.onRelease(item);
                   }}
@@ -244,7 +250,7 @@ function CommissionListBody({
         </View>
       );
     },
-    [controller, walletOptions],
+    [controller, walletSelectOptions],
   );
 
   return (
@@ -384,13 +390,10 @@ function CommissionListBody({
             <Text style={styles.adminActionLabel}>Batch release</Text>
             <View style={styles.adminActionRow}>
               <KolamDropdownSelect
-                label={
-                  walletOptions.find(
-                    option => option.value === controller.batchWalletId,
-                  )?.label ?? 'Dompet'
-                }
+                label="Dompet"
                 onChange={controller.onBatchWalletChange}
-                options={walletOptions}
+                options={walletSelectOptions}
+                showLabelInTrigger={false}
                 value={controller.batchWalletId}
               />
               <KolamButton
@@ -483,7 +486,7 @@ function CommissionListBody({
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton
               intent="secondary"
-              label={controller.loading ? 'Memuat…' : 'Muat ulang'}
+              label={controller.loading ? 'Memuat...' : 'Muat ulang'}
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -549,7 +552,7 @@ function CommissionListBody({
               <View style={styles.emptyWrap}>
                 <KolamEmptyState
                   compact
-                  title={controller.loading ? 'Memuat…' : 'Tidak ada data'}
+                  title={controller.loading ? 'Memuat...' : 'Tidak ada data'}
                 />
               </View>
             }
