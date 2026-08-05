@@ -97,7 +97,9 @@ describe('KolamTopNavigationChatButton', () => {
     expect(icon.props.height).toBe(22);
     expect(icon.props.width).toBe(22);
     expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props.fill).toBe('#F47F65');
+    expect(renderer!.root.findByType(Circle).props).toEqual(
+      expect.objectContaining({fill: '#F47F65', r: 256}),
+    );
     expect(renderer!.root.findAllByType(Path)).toHaveLength(3);
   });
 });

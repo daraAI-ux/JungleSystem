@@ -13,7 +13,7 @@ export function KolamTopNavigationChatIcon({
   if (kind === 'team') {
     return (
       <Svg height={22} viewBox="0 0 512 512" width={22}>
-        <Circle cx={256} cy={256} fill="#F47F65" r={250} />
+        <Circle cx={256} cy={256} fill="#F47F65" r={256} />
         <Path
           d="M238 159H386C404 159 420 166 432 178C444 190 451 206 451 224V247C451 265 444 281 432 293C420 305 404 312 386 312H382V361L329 312H238C220 312 204 305 192 293C180 281 173 265 173 247V224C173 206 180 190 192 178C204 166 220 159 238 159Z"
           fill="#D9A1B8"
