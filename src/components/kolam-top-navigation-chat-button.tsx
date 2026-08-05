@@ -21,7 +21,8 @@ export function KolamTopNavigationChatButton({
         accessibilityLabel={accessibilityLabel}
         onPress={onPress}
         size={32}
-        radius="full">
+        radius="full"
+        variant={kind === 'team' ? 'ghost' : 'framed'}>
         <KolamTopNavigationChatIcon kind={kind} />
       </KolamIconButton>
       <KolamNotificationBadge attentionCount={unreadCount} />

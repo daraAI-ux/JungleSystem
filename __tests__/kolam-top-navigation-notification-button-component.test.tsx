@@ -81,6 +81,9 @@ describe('KolamTopNavigationChatButton', () => {
     expect(
       renderer!.root.findByType(KolamNotificationBadge).props.attentionCount,
     ).toBe(0);
+    expect(renderer!.root.findByType(KolamIconButton).props.variant).toBe(
+      'ghost',
+    );
   });
 
   it('renders the team chat icon as the native vector bubble artwork', async () => {
@@ -94,8 +97,8 @@ describe('KolamTopNavigationChatButton', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
+    expect(icon.props.height).toBe(32);
+    expect(icon.props.width).toBe(32);
     expect(icon.props.viewBox).toBe('0 0 512 512');
     expect(renderer!.root.findByType(Circle).props).toEqual(
       expect.objectContaining({fill: '#F47F65', r: 256}),
