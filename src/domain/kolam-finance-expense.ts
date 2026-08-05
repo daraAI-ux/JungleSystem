@@ -717,6 +717,105 @@ export function getKolamAssetPurchaseCreateRoute(): string {
   return `${KOLAM_ASSET_PURCHASE_ROOT}/create`;
 }
 
+export type KolamRoutineExpenseSurfaceMode =
+  | 'list'
+  | 'create'
+  | 'unsupported';
+
+export type KolamRoutineExpenseCreateResult = {
+  id: string;
+};
+
+export type KolamRoutineExpenseFormState = {
+  name: string;
+  amountText: string;
+  walletId: string;
+  executedAt: string;
+  note: string;
+};
+
+export type KolamRoutineExpenseWritePayload = {
+  name: string;
+  amount: number;
+  wallet?: string;
+  executedAt: string;
+  note?: string;
+};
+
+export function getKolamRoutineExpenseSurfaceMode(
+  route: string,
+): KolamRoutineExpenseSurfaceMode {
+  if (!isKolamRoutineExpenseRoute(route)) {
+    return 'unsupported';
+  }
+  const path = normalizeFinanceExpensePath(route);
+  if (path === KOLAM_ROUTINE_EXPENSE_ROOT) {
+    return 'list';
+  }
+  if (path === `${KOLAM_ROUTINE_EXPENSE_ROOT}/create`) {
+    return 'create';
+  }
+  return 'unsupported';
+}
+
+export function getKolamRoutineExpenseCreateRoute(): string {
+  return `${KOLAM_ROUTINE_EXPENSE_ROOT}/create`;
+}
+
+export function createEmptyKolamRoutineExpenseForm(
+  executedAt = formatFinanceExpenseIsoDate(new Date()),
+): KolamRoutineExpenseFormState {
+  return {
+    name: '',
+    amountText: '',
+    walletId: '',
+    executedAt,
+    note: '',
+  };
+}
+
+export function buildKolamRoutineExpenseCreatePayload(
+  form: KolamRoutineExpenseFormState,
+): KolamRoutineExpenseWritePayload {
+  const amount = parseAssetPurchaseMoneyText(form.amountText);
+  const note = form.note.trim();
+  return {
+    name: form.name.trim(),
+    amount,
+    ...(form.walletId.trim() ? { wallet: form.walletId.trim() } : {}),
+    executedAt: financeExpenseIsoDateToUtcIso(form.executedAt),
+    ...(note ? { note } : {}),
+  };
+}
+
+export function validateKolamRoutineExpenseForm(
+  form: KolamRoutineExpenseFormState,
+): string | null {
+  if (!form.name.trim()) {
+    return 'Masukkan nama pengeluaran';
+  }
+  if (parseAssetPurchaseMoneyText(form.amountText) <= 0) {
+    return 'Masukkan jumlah yang valid';
+  }
+  if (!form.executedAt.trim()) {
+    return 'Pilih tanggal eksekusi';
+  }
+  return null;
+}
+
+export function normalizeKolamRoutineExpenseCreateResult(
+  payload: unknown,
+): KolamRoutineExpenseCreateResult {
+  const root = asRecord(payload);
+  const record =
+    root.data && typeof root.data === 'object'
+      ? asRecord(root.data)
+      : root;
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+  };
+}
+
 export type KolamUnexpectedIncomeSurfaceMode =
   | 'list'
   | 'create'

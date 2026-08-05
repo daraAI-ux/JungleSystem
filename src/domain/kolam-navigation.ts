@@ -541,7 +541,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Routine Expenses',
+        label: 'Pengeluaran Rutin',
         route: '/routine-expenses',
         description: 'Pengeluaran rutin bulanan',
         group: 'Pengeluaran & Pemasukan',
@@ -1315,26 +1315,30 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/routine-expenses',
     labelSuffix: 'Create',
+    label: 'Pengeluaran Rutin Baru',
     route: '/routine-expenses/create',
-    description: 'Create routine expense page from live Kolam',
+    description: 'Catat pengeluaran rutin bulanan',
   },
   {
     baseRoute: '/routine-expenses',
     labelSuffix: 'Detail',
+    label: 'Detail Pengeluaran Rutin',
     route: '/routine-expenses/:id',
-    description: 'Routine expense detail page from live Kolam',
+    description: 'Detail dan informasi pengeluaran rutin',
   },
   {
     baseRoute: '/routine-expenses',
     labelSuffix: 'Edit',
+    label: 'Ubah Pengeluaran Rutin',
     route: '/routine-expenses/:id/edit',
-    description: 'Edit routine expense page from live Kolam',
+    description: 'Ubah pengeluaran rutin',
   },
   {
     baseRoute: '/routine-expenses',
     labelSuffix: 'POS Rutin',
+    label: 'POS Rutin',
     route: '/routine-expenses/pos-rutin',
-    description: 'POS routine expense page from live Kolam',
+    description: 'Bayar pengeluaran rutin dari template',
   },
   {
     baseRoute: '/unexpected-expense',

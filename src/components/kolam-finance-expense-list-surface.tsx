@@ -15,6 +15,8 @@ import {
   getKolamUnexpectedIncomeDetailRoute,
   getKolamUnexpectedIncomeEditRoute,
   getKolamUnexpectedIncomeSurfaceMode,
+  getKolamRoutineExpenseCreateRoute,
+  getKolamRoutineExpenseSurfaceMode,
   KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS,
   KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS,
   type KolamFinanceExpenseKind,
@@ -40,6 +42,7 @@ import { KolamUnexpectedExpenseDetailSurface } from './kolam-unexpected-expense-
 import { KolamUnexpectedExpenseFormSurface } from './kolam-unexpected-expense-form-surface';
 import { KolamUnexpectedIncomeDetailSurface } from './kolam-unexpected-income-detail-surface';
 import { KolamUnexpectedIncomeFormSurface } from './kolam-unexpected-income-form-surface';
+import { KolamRoutineExpenseFormSurface } from './kolam-routine-expense-form-surface';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -926,7 +929,7 @@ function FinanceExpenseListBody({
                     onRouteChange(getKolamUnexpectedExpenseCreateRoute());
                     return;
                   }
-                  onRouteChange('/routine-expenses/create');
+                  onRouteChange(getKolamRoutineExpenseCreateRoute());
                 }}
               />
             ) : null}
@@ -1263,8 +1266,31 @@ export function KolamRoutineExpenseSurface(props: {
   onRouteChange?: (route: string) => void;
   route: string;
 }) {
+  const mode = getKolamRoutineExpenseSurfaceMode(props.route);
+  if (mode === 'create') {
+    return <KolamRoutineExpenseFormSurface {...props} />;
+  }
+  if (mode === 'list') {
+    return (
+      <KolamFinanceExpenseListSurface kind="routine-expense" {...props} />
+    );
+  }
   return (
-    <KolamFinanceExpenseListSurface kind="routine-expense" {...props} />
+    <View style={styles.surface}>
+      <KolamEmptyState title="Belum tersedia" />
+      {props.onRouteChange ? (
+        <KolamButton
+          intent="secondary"
+          label="Kembali"
+          onPress={() =>
+            props.onRouteChange?.(
+              getFinanceExpenseUnsupportedBackRoute('routine-expense'),
+            )
+          }
+          style={styles.backButton}
+        />
+      ) : null}
+    </View>
   );
 }
 

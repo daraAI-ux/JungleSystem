@@ -5,11 +5,14 @@ import {
   normalizeKolamFinanceExpenseList,
   normalizeKolamUnexpectedExpenseDetail,
   normalizeKolamUnexpectedIncomeDetail,
+  normalizeKolamRoutineExpenseCreateResult,
   type KolamAssetPurchaseDetail,
   type KolamAssetPurchaseWritePayload,
   type KolamFinanceExpenseKind,
   type KolamFinanceExpenseListFilters,
   type KolamFinanceExpenseListResult,
+  type KolamRoutineExpenseCreateResult,
+  type KolamRoutineExpenseWritePayload,
   type KolamUnexpectedExpenseDetail,
   type KolamUnexpectedExpenseWritePayload,
   type KolamUnexpectedIncomeDetail,
@@ -176,6 +179,16 @@ export async function updateKolamUnexpectedExpense(
     },
   );
   return normalizeKolamUnexpectedExpenseDetail(payload);
+}
+
+export async function createKolamRoutineExpense(
+  body: KolamRoutineExpenseWritePayload,
+): Promise<KolamRoutineExpenseCreateResult> {
+  const payload = await kolamRequest<unknown>('/routine-expense', {
+    method: 'POST',
+    body,
+  });
+  return normalizeKolamRoutineExpenseCreateResult(payload);
 }
 
 export async function uploadKolamAssetPurchasePhotos(

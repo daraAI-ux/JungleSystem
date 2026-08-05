@@ -15,9 +15,11 @@ import {
   buildKolamUnexpectedIncomeHistoryItems,
   buildKolamUnexpectedExpenseCreatePayload,
   buildKolamUnexpectedExpenseHistoryItems,
+  buildKolamRoutineExpenseCreatePayload,
   createEmptyKolamAssetPurchaseForm,
   createEmptyKolamUnexpectedIncomeForm,
   createEmptyKolamUnexpectedExpenseForm,
+  createEmptyKolamRoutineExpenseForm,
   createInitialFinanceExpenseListFilters,
   createKolamAssetPurchaseFormFromDetail,
   createKolamUnexpectedIncomeFormFromDetail,
@@ -37,6 +39,8 @@ import {
   getKolamUnexpectedExpenseEditRoute,
   getKolamUnexpectedExpenseIdFromRoute,
   getKolamUnexpectedExpenseSurfaceMode,
+  getKolamRoutineExpenseCreateRoute,
+  getKolamRoutineExpenseSurfaceMode,
   isKolamAssetPurchaseRoute,
   isKolamFinanceExpenseListRoute,
   isKolamFinanceExpenseRoute,
@@ -47,9 +51,11 @@ import {
   normalizeKolamFinanceExpenseList,
   normalizeKolamUnexpectedIncomeDetail,
   normalizeKolamUnexpectedExpenseDetail,
+  normalizeKolamRoutineExpenseCreateResult,
   validateKolamAssetPurchaseForm,
   validateKolamUnexpectedIncomeForm,
   validateKolamUnexpectedExpenseForm,
+  validateKolamRoutineExpenseForm,
 } from '../src/domain/kolam-finance-expense';
 
 describe('Kolam finance expense domain', () => {
@@ -492,6 +498,45 @@ describe('Kolam finance expense domain', () => {
     expect(buildKolamUnexpectedExpenseHistoryItems(detail)[0]?.title).toBe(
       'Pengeluaran Diperbarui',
     );
+  });
+
+  it('maps routine-expense list and create surface modes', () => {
+    expect(getKolamRoutineExpenseSurfaceMode('/routine-expenses')).toBe('list');
+    expect(getKolamRoutineExpenseSurfaceMode('/routine-expenses/create')).toBe(
+      'create',
+    );
+    expect(
+      getKolamRoutineExpenseSurfaceMode('/routine-expenses/pos-rutin'),
+    ).toBe('unsupported');
+    expect(getKolamRoutineExpenseCreateRoute()).toBe(
+      '/routine-expenses/create',
+    );
+  });
+
+  it('builds routine-expense create payload and validates form', () => {
+    const form = createEmptyKolamRoutineExpenseForm('2026-08-05');
+    expect(validateKolamRoutineExpenseForm(form)).toBe(
+      'Masukkan nama pengeluaran',
+    );
+    form.name = 'Gaji Karyawan';
+    expect(validateKolamRoutineExpenseForm(form)).toBe(
+      'Masukkan jumlah yang valid',
+    );
+    form.amountText = '2500000';
+    form.walletId = 'w1';
+    form.note = 'Juli 2026';
+    expect(validateKolamRoutineExpenseForm(form)).toBeNull();
+    expect(buildKolamRoutineExpenseCreatePayload(form)).toMatchObject({
+      name: 'Gaji Karyawan',
+      amount: 2500000,
+      wallet: 'w1',
+      note: 'Juli 2026',
+    });
+    expect(
+      normalizeKolamRoutineExpenseCreateResult({
+        data: { _id: 're1', name: 'Gaji Karyawan' },
+      }),
+    ).toEqual({ id: 're1' });
   });
 });
 
