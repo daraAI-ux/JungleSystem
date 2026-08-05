@@ -1396,18 +1396,19 @@ function KolamProyekDetailRead({
                 detail={detail}
                 lifecycleNote={lifecycleNote}
                 lifecycleTarget={lifecycleTarget}
+                nextStepSlot={
+                  <ProyekNextStepHero
+                    acting={controller.acting}
+                    config={nextStep}
+                    onAction={runNextStepAction}
+                  />
+                }
                 onLifecycleNoteChange={setLifecycleNote}
                 onLifecycleTargetChange={setLifecycleTarget}
                 onTransition={(to, note) =>
                   controller.onAdminLifecycleTransition(to, note)
                 }
                 showDomainInfo={showDomainLifecycleInfo}
-              />
-
-              <ProyekNextStepHero
-                acting={controller.acting}
-                config={nextStep}
-                onAction={runNextStepAction}
               />
 
               <DetailSection title="Aktivitas">
@@ -2090,6 +2091,7 @@ function ProyekLifecycleTimeline({
   detail,
   lifecycleNote,
   lifecycleTarget,
+  nextStepSlot,
   onLifecycleNoteChange,
   onLifecycleTargetChange,
   onTransition,
@@ -2100,6 +2102,7 @@ function ProyekLifecycleTimeline({
   detail: KolamProyekDetail;
   lifecycleNote: string;
   lifecycleTarget: KolamProyekLifecycleStatus | '';
+  nextStepSlot?: React.ReactNode;
   onLifecycleNoteChange: (value: string) => void;
   onLifecycleTargetChange: (value: KolamProyekLifecycleStatus | '') => void;
   onTransition: (
@@ -2111,10 +2114,6 @@ function ProyekLifecycleTimeline({
   const stage = getKolamProyekStepperStageState(detail.lifecycleStatus);
   const history = [...detail.lifecycleHistory].reverse();
   const targets = getKolamProyekHappyPathNext(detail.lifecycleStatus);
-  const nextCta =
-    KOLAM_PROYEK_NEXT_STEP_CTA[
-      detail.lifecycleStatus as KolamProyekLifecycleStatus
-    ] || null;
 
   return (
     <DetailSection title="Tahapan proyek">
@@ -2182,12 +2181,7 @@ function ProyekLifecycleTimeline({
         </View>
       )}
 
-      {nextCta && !stage.isTerminal ? (
-        <View style={styles.hintCard}>
-          <Text style={styles.heroEyebrow}>Langkah selanjutnya</Text>
-          <Text style={styles.primaryText}>{nextCta}</Text>
-        </View>
-      ) : null}
+      {nextStepSlot}
 
       <Text style={styles.sectionSubtitle}>Riwayat</Text>
       {history.length === 0 ? (
@@ -2939,7 +2933,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   heroCard: {
-    borderColor: V.colors.border,
+    backgroundColor: V.colors.primarySoft,
+    borderColor: '#b7e4c7',
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
     gap: 10,
@@ -2957,19 +2952,19 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   heroEyebrow: {
-    color: V.colors.mutedFg,
+    color: V.colors.success,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
   heroHeading: {
-    color: V.colors.fg,
+    color: '#14532d',
     fontSize: 16,
     fontWeight: '700',
   },
   heroDescription: {
-    color: V.colors.mutedFg,
+    color: '#3f6b52',
     fontSize: 13,
     lineHeight: 18,
   },
