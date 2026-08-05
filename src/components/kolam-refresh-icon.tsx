@@ -9,32 +9,36 @@ export interface KolamRefreshIconProps {
 
 export function KolamRefreshIcon({size = 18}: KolamRefreshIconProps) {
   return (
-    <Svg height={size} viewBox="0 0 64 64" width={size}>
+    <Svg height={size} viewBox="0 0 24 24" width={size}>
       <Path
-        d="M42.5 25.25C40.35 21.55 36.35 19.05 31.75 19.05C25.28 19.05 19.9 23.98 19.22 30.28"
-        stroke={REFRESH_ICON_STROKE}
-        strokeLinecap="round"
-        strokeWidth="3.25"
-      />
-      <Path
-        d="M40.85 18.6L43.85 25.95L36.25 27.2"
+        d="M19.25 6.25v4.6h-4.6"
+        fill="none"
         stroke={REFRESH_ICON_STROKE}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="3.25"
+        strokeWidth="2.15"
       />
       <Path
-        d="M21.5 38.75C23.65 42.45 27.65 44.95 32.25 44.95C38.72 44.95 44.1 40.02 44.78 33.72"
-        stroke={REFRESH_ICON_STROKE}
-        strokeLinecap="round"
-        strokeWidth="3.25"
-      />
-      <Path
-        d="M23.15 45.4L20.15 38.05L27.75 36.8"
+        d="M4.75 17.75v-4.6h4.6"
+        fill="none"
         stroke={REFRESH_ICON_STROKE}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="3.25"
+        strokeWidth="2.15"
+      />
+      <Path
+        d="M18.42 10.85A6.8 6.8 0 0 0 6.15 8.1"
+        fill="none"
+        stroke={REFRESH_ICON_STROKE}
+        strokeLinecap="round"
+        strokeWidth="2.15"
+      />
+      <Path
+        d="M5.58 13.15A6.8 6.8 0 0 0 17.85 15.9"
+        fill="none"
+        stroke={REFRESH_ICON_STROKE}
+        strokeLinecap="round"
+        strokeWidth="2.15"
       />
     </Svg>
   );

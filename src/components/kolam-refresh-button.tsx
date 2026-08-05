@@ -28,7 +28,7 @@ export function KolamRefreshButton({
       accessibilityLabel={
         accessibilityLabel ?? (loading && loadingLabel ? loadingLabel : label)
       }
-      icon={<KolamRefreshIcon size={size === 'md' ? 20 : 18} />}
+      icon={<KolamRefreshIcon size={size === 'md' ? 17 : 16} />}
       label=""
       muted={muted || loading}
       size={size}
