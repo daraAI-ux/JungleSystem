@@ -71,6 +71,10 @@ import {
   KolamOverflowMenuButton,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamFormTextField } from './kolam-form-text-field';
 import {
   KolamListTableComposition,
@@ -80,7 +84,17 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+
+const COMPLAINT_FILTER_PANEL_WIDTH = 220;
+
+type ComplaintFilterPanel =
+  | 'source'
+  | 'status'
+  | 'decision'
+  | 'priority'
+  | 'category';
 
 function descRow(id: string, label: string, value: string) {
   return { id, label, meta: '', tone: 'default' as const, value };
@@ -214,6 +228,16 @@ function KolamComplaintList({
   controller: KolamComplaintController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<ComplaintFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
+  const toolbarRef = React.useRef<View>(null);
+  const sourceTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const decisionTriggerRef = React.useRef<View>(null);
+  const priorityTriggerRef = React.useRef<View>(null);
+  const categoryTriggerRef = React.useRef<View>(null);
   const columns = React.useMemo(
     () =>
       buildComplaintListColumns({
@@ -225,10 +249,111 @@ function KolamComplaintList({
       }),
     [controller, onRouteChange],
   );
+  const sourceOptions = React.useMemo(
+    () => [
+      {label: 'Sumber', value: 'all'},
+      ...KOLAM_COMPLAINT_SOURCE_OPTIONS.filter(
+        option => option.id !== 'all',
+      ).map(option => ({
+        label: option.label,
+        value: option.id,
+      })),
+    ],
+    [],
+  );
+  const statusOptions = React.useMemo(
+    () => [
+      {label: 'Status', value: 'all'},
+      ...KOLAM_COMPLAINT_STATUS_OPTIONS.map(option => ({
+        label: option.label,
+        value: option.id,
+      })),
+    ],
+    [],
+  );
+  const decisionOptions = React.useMemo(
+    () => [
+      {label: 'Keputusan', value: 'all'},
+      ...KOLAM_COMPLAINT_DECISION_OPTIONS.map(option => ({
+        label: option.label,
+        value: option.id,
+      })),
+    ],
+    [],
+  );
+  const priorityOptions = React.useMemo(
+    () => [
+      {label: 'Prioritas', value: 'all'},
+      ...KOLAM_COMPLAINT_PRIORITY_OPTIONS.map(option => ({
+        label: option.label,
+        value: option.id,
+      })),
+    ],
+    [],
+  );
+  const categoryOptions = React.useMemo(
+    () => [
+      {label: 'Kategori', value: 'all'},
+      ...KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS.map(option => ({
+        label: option.label,
+        value: option.id,
+      })),
+    ],
+    [],
+  );
+
+  const getFilterTriggerRef = (panel: ComplaintFilterPanel) =>
+    panel === 'source'
+      ? sourceTriggerRef
+      : panel === 'status'
+        ? statusTriggerRef
+        : panel === 'decision'
+          ? decisionTriggerRef
+          : panel === 'priority'
+            ? priorityTriggerRef
+            : categoryTriggerRef;
+
+  const toggleFilterPanel = (panel: ComplaintFilterPanel) => {
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        COMPLAINT_FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
+  };
+
+  const sourceFilterLabel =
+    sourceOptions.find(option => option.value === controller.sourceFilter)
+      ?.label ?? 'Sumber';
+  const statusFilterLabel =
+    statusOptions.find(option => option.value === controller.statusFilter)
+      ?.label ?? 'Status';
+  const decisionFilterLabel =
+    decisionOptions.find(option => option.value === controller.decisionFilter)
+      ?.label ?? 'Keputusan';
+  const priorityFilterLabel =
+    priorityOptions.find(option => option.value === controller.priorityFilter)
+      ?.label ?? 'Prioritas';
+  const categoryFilterLabel =
+    categoryOptions.find(option => option.value === controller.categoryFilter)
+      ?.label ?? 'Kategori';
 
   return (
     <View style={styles.stack}>
-      <View style={kolamTableToolbarStyles.shell}>
+      <View ref={toolbarRef} style={styles.complaintToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
         <View
           style={[
             kolamTableToolbarStyles.row,
@@ -248,123 +373,66 @@ function KolamComplaintList({
               placeholder="Cari tiket, invoice, pelanggan…"
               value={controller.search}
             />
-            <KolamDropdownSelect
-              label="Sumber"
-              onChange={value =>
-                controller.onSetSourceFilter(
-                  value as typeof controller.sourceFilter,
-                )
-              }
-              options={[
-                { label: 'Sumber', value: 'all' },
-                ...KOLAM_COMPLAINT_SOURCE_OPTIONS.filter(
-                  option => option.id !== 'all',
-                ).map(option => ({
-                  label: option.label,
-                  value: option.id,
-                })),
-              ]}
-              showLabelInTrigger={false}
-              style={styles.complaintFilterSource}
-              triggerStyle={[
-                styles.complaintFilterButton,
-                styles.complaintFilterSourceButton,
-              ]}
-              triggerTextStyle={styles.complaintFilterText}
-              value={controller.sourceFilter}
-            />
-            <KolamDropdownSelect
-              label="Status"
-              onChange={value =>
-                controller.onSetStatusFilter(
-                  value as typeof controller.statusFilter,
-                )
-              }
-              options={[
-                { label: 'Status', value: 'all' },
-                ...KOLAM_COMPLAINT_STATUS_OPTIONS.map(option => ({
-                  label: option.label,
-                  value: option.id,
-                })),
-              ]}
-              showLabelInTrigger={false}
-              style={styles.complaintFilterStatus}
-              triggerStyle={[
-                styles.complaintFilterButton,
-                styles.complaintFilterStatusButton,
-              ]}
-              triggerTextStyle={styles.complaintFilterText}
-              value={controller.statusFilter}
-            />
-            <KolamDropdownSelect
-              label="Keputusan"
-              onChange={value =>
-                controller.onSetDecisionFilter(
-                  value as typeof controller.decisionFilter,
-                )
-              }
-              options={[
-                { label: 'Keputusan', value: 'all' },
-                ...KOLAM_COMPLAINT_DECISION_OPTIONS.map(option => ({
-                  label: option.label,
-                  value: option.id,
-                })),
-              ]}
-              showLabelInTrigger={false}
-              style={styles.complaintFilterDecision}
-              triggerStyle={[
-                styles.complaintFilterButton,
-                styles.complaintFilterDecisionButton,
-              ]}
-              triggerTextStyle={styles.complaintFilterText}
-              value={controller.decisionFilter}
-            />
-            <KolamDropdownSelect
-              label="Prioritas"
-              onChange={value =>
-                controller.onSetPriorityFilter(
-                  value as typeof controller.priorityFilter,
-                )
-              }
-              options={[
-                { label: 'Prioritas', value: 'all' },
-                ...KOLAM_COMPLAINT_PRIORITY_OPTIONS.map(option => ({
-                  label: option.label,
-                  value: option.id,
-                })),
-              ]}
-              showLabelInTrigger={false}
-              style={styles.complaintFilterPriority}
-              triggerStyle={[
-                styles.complaintFilterButton,
-                styles.complaintFilterPriorityButton,
-              ]}
-              triggerTextStyle={styles.complaintFilterText}
-              value={controller.priorityFilter}
-            />
-            <KolamDropdownSelect
-              label="Kategori"
-              onChange={value =>
-                controller.onSetCategoryFilter(
-                  value as typeof controller.categoryFilter,
-                )
-              }
-              options={[
-                { label: 'Kategori', value: 'all' },
-                ...KOLAM_COMPLAINT_CATEGORY_FILTER_OPTIONS.map(option => ({
-                  label: option.label,
-                  value: option.id,
-                })),
-              ]}
-              showLabelInTrigger={false}
-              style={styles.complaintFilterCategory}
-              triggerStyle={[
-                styles.complaintFilterButton,
-                styles.complaintFilterCategoryButton,
-              ]}
-              triggerTextStyle={styles.complaintFilterText}
-              value={controller.categoryFilter}
-            />
+            <View ref={sourceTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'source' ||
+                  controller.sourceFilter !== 'all'
+                }
+                label={sourceFilterLabel}
+                onPress={() => toggleFilterPanel('source')}
+                open={activeFilterPanel === 'source'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={statusTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'status' ||
+                  controller.statusFilter !== 'all'
+                }
+                label={statusFilterLabel}
+                onPress={() => toggleFilterPanel('status')}
+                open={activeFilterPanel === 'status'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={decisionTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'decision' ||
+                  controller.decisionFilter !== 'all'
+                }
+                label={decisionFilterLabel}
+                onPress={() => toggleFilterPanel('decision')}
+                open={activeFilterPanel === 'decision'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={priorityTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'priority' ||
+                  controller.priorityFilter !== 'all'
+                }
+                label={priorityFilterLabel}
+                onPress={() => toggleFilterPanel('priority')}
+                open={activeFilterPanel === 'priority'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={categoryTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'category' ||
+                  controller.categoryFilter !== 'all'
+                }
+                label={categoryFilterLabel}
+                onPress={() => toggleFilterPanel('category')}
+                open={activeFilterPanel === 'category'}
+                variant="quiet"
+              />
+            </View>
           </View>
           <View
             style={[
@@ -401,6 +469,93 @@ function KolamComplaintList({
             />
           </View>
         </View>
+        </View>
+        {activeFilterPanel === 'source' && panelAnchor ? (
+          <ComplaintFilterPanelOverlay
+            anchor={panelAnchor}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            onSelect={value => {
+              controller.onSetSourceFilter(value as typeof controller.sourceFilter);
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            options={sourceOptions}
+            selectedValue={controller.sourceFilter}
+          />
+        ) : null}
+        {activeFilterPanel === 'status' && panelAnchor ? (
+          <ComplaintFilterPanelOverlay
+            anchor={panelAnchor}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            onSelect={value => {
+              controller.onSetStatusFilter(value as typeof controller.statusFilter);
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            options={statusOptions}
+            selectedValue={controller.statusFilter}
+          />
+        ) : null}
+        {activeFilterPanel === 'decision' && panelAnchor ? (
+          <ComplaintFilterPanelOverlay
+            anchor={panelAnchor}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            onSelect={value => {
+              controller.onSetDecisionFilter(
+                value as typeof controller.decisionFilter,
+              );
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            options={decisionOptions}
+            selectedValue={controller.decisionFilter}
+          />
+        ) : null}
+        {activeFilterPanel === 'priority' && panelAnchor ? (
+          <ComplaintFilterPanelOverlay
+            anchor={panelAnchor}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            onSelect={value => {
+              controller.onSetPriorityFilter(
+                value as typeof controller.priorityFilter,
+              );
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            options={priorityOptions}
+            selectedValue={controller.priorityFilter}
+          />
+        ) : null}
+        {activeFilterPanel === 'category' && panelAnchor ? (
+          <ComplaintFilterPanelOverlay
+            anchor={panelAnchor}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            onSelect={value => {
+              controller.onSetCategoryFilter(
+                value as typeof controller.categoryFilter,
+              );
+              setActiveFilterPanel(null);
+              setPanelAnchor(null);
+            }}
+            options={categoryOptions}
+            selectedValue={controller.categoryFilter}
+          />
+        ) : null}
       </View>
 
       <KolamListTableComposition
@@ -555,6 +710,50 @@ function KolamComplaintActionsMenu({
       accessibilityLabel={`Menu ${complaint.ticketCode}`}
       actions={[{ label: 'Lihat', onPress: onSelect }]}
     />
+  );
+}
+
+function ComplaintFilterPanelOverlay({
+  anchor,
+  onClose,
+  onSelect,
+  options,
+  selectedValue,
+}: {
+  anchor: KolamFilterPanelAnchor;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+  options: Array<{label: string; value: string}>;
+  selectedValue: string;
+}) {
+  return (
+    <View
+      style={[
+        styles.complaintFilterOverlayPanel,
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: COMPLAINT_FILTER_PANEL_WIDTH,
+        },
+      ]}>
+      <ScrollView
+        contentContainerStyle={styles.complaintFilterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.complaintFilterPanelScroll}>
+        {options.map(option => (
+          <KolamButton
+            intent={selectedValue === option.value ? 'primary' : 'plain'}
+            key={option.value || 'all'}
+            label={option.label}
+            onPress={() => onSelect(option.value)}
+            style={styles.complaintFilterPanelOption}
+          />
+        ))}
+      </ScrollView>
+      <View style={styles.complaintFilterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
+    </View>
   );
 }
 
@@ -2658,6 +2857,12 @@ const styles = StyleSheet.create({
     minHeight: 34,
     paddingHorizontal: 10,
   },
+  complaintToolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
   complaintToolbarRow: {
     flexWrap: 'nowrap',
     minWidth: 0,
@@ -2674,68 +2879,41 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 104,
   },
-  complaintFilterSource: {
-    alignSelf: 'flex-start',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 74,
-  },
-  complaintFilterStatus: {
-    alignSelf: 'flex-start',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 72,
-  },
-  complaintFilterDecision: {
-    alignSelf: 'flex-start',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 104,
-  },
-  complaintFilterPriority: {
-    alignSelf: 'flex-start',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 92,
-  },
-  complaintFilterCategory: {
-    alignSelf: 'flex-start',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 90,
-  },
-  complaintFilterButton: {
-    flexGrow: 0,
-    flexShrink: 0,
-    minHeight: 34,
-    minWidth: 0,
-    paddingHorizontal: 8,
-  },
-  complaintFilterSourceButton: {
-    minWidth: 74,
-  },
-  complaintFilterStatusButton: {
-    minWidth: 72,
-  },
-  complaintFilterDecisionButton: {
-    minWidth: 104,
-  },
-  complaintFilterPriorityButton: {
-    minWidth: 92,
-  },
-  complaintFilterCategoryButton: {
-    minWidth: 90,
-  },
-  complaintFilterText: {
-    flexShrink: 0,
-    maxWidth: 132,
-    paddingRight: 0,
-  },
   complaintToolbarActions: {
     flexGrow: 0,
     flexShrink: 0,
     flexWrap: 'nowrap',
     marginLeft: 'auto',
+  },
+  complaintFilterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 2000,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    zIndex: 200000,
+  },
+  complaintFilterPanelScroll: {
+    maxHeight: 220,
+  },
+  complaintFilterPanelContent: {
+    gap: 3,
+  },
+  complaintFilterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  complaintFilterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 6,
   },
   primaryText: {
     color: V.colors.fg,
