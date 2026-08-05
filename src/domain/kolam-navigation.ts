@@ -437,7 +437,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Surat Penawaran Baru',
         route: '/proyek/new',
-        description: 'Buat proyek dan surat penawaran baru',
+        description: 'Detil proyek & surat penawaran',
         group: 'Proyek',
         requiredAccess: ['kolam'],
       },
@@ -451,7 +451,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Proyek',
         route: '/proyek',
-        description: 'Proyek kustom — surat penawaran hingga penyelesaian',
+        description: 'Detil proyek & surat penawaran',
         group: 'Proyek',
         requiredAccess: ['kolam'],
       },
@@ -1627,13 +1627,13 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/proyek',
     labelSuffix: 'Detail',
     route: '/proyek/:id',
-    description: 'Detail proyek',
+    description: 'Detil proyek & surat penawaran',
   },
   {
     baseRoute: '/proyek',
     labelSuffix: 'Edit',
     route: '/proyek/:id/edit',
-    description: 'Edit proyek',
+    description: 'Detil proyek & surat penawaran',
   },
   {
     baseRoute: '/appointments',
@@ -1896,25 +1896,25 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/proyek',
     labelSuffix: 'New',
     route: '/proyek/new',
-    description: 'New proyek page from live Kolam',
+    description: 'Detil proyek & surat penawaran',
   },
   {
     baseRoute: '/proyek',
     labelSuffix: 'Instances',
     route: '/proyek/instances',
-    description: 'Proyek instances page from live Kolam',
+    description: 'Detil proyek & surat penawaran',
   },
   {
     baseRoute: '/proyek',
     labelSuffix: 'Detail',
     route: '/proyek/:ref',
-    description: 'Proyek detail page from live Kolam',
+    description: 'Detil proyek & surat penawaran',
   },
   {
     baseRoute: '/proyek',
     labelSuffix: 'Edit',
     route: '/proyek/:ref/edit',
-    description: 'Edit proyek page from live Kolam',
+    description: 'Detil proyek & surat penawaran',
   },
   {
     baseRoute: '/task-manager',
