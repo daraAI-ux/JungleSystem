@@ -129,7 +129,23 @@ export type KolamPayableListResult = {
   totalPages: number;
 };
 
-export type KolamPayableSurfaceMode = 'list' | 'detail';
+export type KolamPayableSurfaceMode = 'list' | 'create' | 'detail';
+
+export type KolamPayableFormState = {
+  name: string;
+  amountText: string;
+  walletId: string;
+  dueDate: string;
+  notes: string;
+};
+
+export type KolamPayableWritePayload = {
+  name: string;
+  amount: number;
+  wallet: string;
+  dueDate: string;
+  notes?: string;
+};
 
 export const KOLAM_PAYABLE_STATUS_OPTIONS: Array<{
   label: string;
@@ -184,7 +200,9 @@ export const KOLAM_PAYABLE_SORT_OPTIONS: Array<{
 
 export function isKolamPayableRoute(route: string): boolean {
   const path = normalizePayableRoutePath(route);
-  return path === KOLAM_PAYABLE_ROOT || path.startsWith(`${KOLAM_PAYABLE_ROOT}/`);
+  return (
+    path === KOLAM_PAYABLE_ROOT || path.startsWith(`${KOLAM_PAYABLE_ROOT}/`)
+  );
 }
 
 export function isKolamPayableListRoute(route: string): boolean {
@@ -205,8 +223,22 @@ export function getKolamPayableRouteId(route: string): string | null {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
-export function getKolamPayableSurfaceMode(route: string): KolamPayableSurfaceMode {
+export function getKolamPayableSurfaceMode(
+  route: string,
+): KolamPayableSurfaceMode {
+  const path = normalizePayableRoutePath(route);
+  if (path === `${KOLAM_PAYABLE_ROOT}/create`) {
+    return 'create';
+  }
   return getKolamPayableRouteId(route) ? 'detail' : 'list';
+}
+
+export function getKolamPayableCreateRoute(): string {
+  return `${KOLAM_PAYABLE_ROOT}/create`;
+}
+
+export function getKolamPayableDetailRoute(id: string): string {
+  return `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(id)}`;
 }
 
 export function createInitialPayableListFilters(): KolamPayableListFilters {
@@ -223,6 +255,57 @@ export function createInitialPayableListFilters(): KolamPayableListFilters {
     endDate: '',
     sort: 'newest',
   };
+}
+
+export function createEmptyKolamPayableForm(
+  dueDate = formatPayableIsoDate(new Date()),
+): KolamPayableFormState {
+  return {
+    name: '',
+    amountText: '',
+    walletId: '',
+    dueDate,
+    notes: '',
+  };
+}
+
+export function buildKolamPayableCreatePayload(
+  form: KolamPayableFormState,
+): KolamPayableWritePayload {
+  const notes = form.notes.trim();
+  return {
+    name: form.name.trim(),
+    amount: parseKolamPayableMoneyText(form.amountText),
+    wallet: form.walletId.trim(),
+    dueDate: payableIsoDateToUtcIso(form.dueDate),
+    ...(notes ? { notes } : {}),
+  };
+}
+
+export function validateKolamPayableForm(
+  form: KolamPayableFormState,
+): string | null {
+  if (!form.name.trim()) {
+    return 'Masukkan nama hutang';
+  }
+  if (parseKolamPayableMoneyText(form.amountText) <= 0) {
+    return 'Masukkan jumlah hutang';
+  }
+  if (!form.walletId.trim()) {
+    return 'Pilih wallet';
+  }
+  if (!form.dueDate.trim()) {
+    return 'Pilih jatuh tempo';
+  }
+  return null;
+}
+
+export function parseKolamPayableMoneyText(value: string): number {
+  const digits = String(value || '').replace(/[^\d]/g, '');
+  if (!digits) {
+    return 0;
+  }
+  return Number(digits) || 0;
 }
 
 export function hasKolamPayablePermission(
@@ -246,15 +329,12 @@ export function hasKolamPayablePermission(
     );
     const resourceMatch =
       resource === 'payable' || resource === 'wallet' || resource === '*';
-    const actionMatch =
-      actions.includes(wanted) || actions.includes('*');
+    const actionMatch = actions.includes(wanted) || actions.includes('*');
     return resourceMatch && actionMatch;
   });
 }
 
-export function formatKolamPayableStatusLabel(
-  status?: string | null,
-): string {
+export function formatKolamPayableStatusLabel(status?: string | null): string {
   switch (String(status || '').toLowerCase()) {
     case 'paid':
       return 'Lunas';
@@ -282,9 +362,7 @@ export function getKolamPayableStatusIntent(
   }
 }
 
-export function formatKolamPayableSourceLabel(
-  source?: string | null,
-): string {
+export function formatKolamPayableSourceLabel(source?: string | null): string {
   switch (String(source || '')) {
     case 'PurchaseOrder':
       return 'PO';
@@ -299,30 +377,33 @@ export function formatKolamPayableSourceLabel(
 
 export function normalizeKolamPayableList(
   payload: unknown,
-  query: Pick<KolamPayableListFilters, 'page' | 'limit'> = { page: 1, limit: 10 },
+  query: Pick<KolamPayableListFilters, 'page' | 'limit'> = {
+    page: 1,
+    limit: 10,
+  },
 ): KolamPayableListResult {
   const root = asRecord(payload);
   const dataRecord = asRecord(root.data);
   const dataRaw = Array.isArray(payload)
     ? payload
     : Array.isArray(root.data)
-      ? root.data
-      : Array.isArray(dataRecord.items)
-        ? dataRecord.items
-        : Array.isArray(dataRecord.payables)
-          ? dataRecord.payables
-          : Array.isArray(root.items)
-            ? root.items
-            : Array.isArray(root.payables)
-              ? root.payables
-              : [];
+    ? root.data
+    : Array.isArray(dataRecord.items)
+    ? dataRecord.items
+    : Array.isArray(dataRecord.payables)
+    ? dataRecord.payables
+    : Array.isArray(root.items)
+    ? root.items
+    : Array.isArray(root.payables)
+    ? root.payables
+    : [];
   const meta = Object.keys(asRecord(root.meta)).length
     ? asRecord(root.meta)
     : Object.keys(asRecord(dataRecord.meta)).length
-      ? asRecord(dataRecord.meta)
-      : Object.keys(asRecord(dataRecord.pagination)).length
-        ? asRecord(dataRecord.pagination)
-        : asRecord(root.pagination);
+    ? asRecord(dataRecord.meta)
+    : Object.keys(asRecord(dataRecord.pagination)).length
+    ? asRecord(dataRecord.pagination)
+    : asRecord(root.pagination);
   const page = toNumber(meta.page) ?? query.page ?? 1;
   const limit =
     toNumber(meta.limit) ?? toNumber(meta.pageSize) ?? query.limit ?? 10;
@@ -373,8 +454,8 @@ export function normalizeKolamPayable(payload: unknown): KolamPayable {
     walletRecord?.name && typeof walletRecord.name === 'string'
       ? walletRecord.name.trim()
       : typeof wallet === 'string'
-        ? wallet.trim()
-        : '';
+      ? wallet.trim()
+      : '';
   const amount = toNumber(record.amount) ?? 0;
   const paidAmount = toNumber(record.paidAmount) ?? 0;
   const remainingAmount =
@@ -550,11 +631,36 @@ function resolvePersonName(value: unknown): string {
 }
 
 function normalizePayableRoutePath(route: string): string {
-  let path = String(route || '').split('?')[0].replace(/\/+$/, '') || '/';
+  let path =
+    String(route || '')
+      .split('?')[0]
+      .replace(/\/+$/, '') || '/';
   if (path && !path.startsWith('/')) {
     path = `/${path}`;
   }
   return path;
+}
+
+function formatPayableIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function payableIsoDateToUtcIso(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate.trim());
+  if (!match) {
+    const fallback = new Date(isoDate);
+    if (!Number.isNaN(fallback.getTime())) {
+      return fallback.toISOString();
+    }
+    return new Date().toISOString();
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(year, month - 1, day, 12, 0, 0, 0).toISOString();
 }
 
 function isSuperAdminRole(roleKey?: string | null): boolean {

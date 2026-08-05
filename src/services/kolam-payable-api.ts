@@ -7,6 +7,7 @@ import {
   type KolamPayableListFilters,
   type KolamPayableListResult,
   type KolamPayableSummaryData,
+  type KolamPayableWritePayload,
 } from '../domain/kolam-payable';
 import { apiRequest } from '../lib/api-client';
 
@@ -43,7 +44,9 @@ export async function fetchKolamPayables(
       ...(query.status ? { status: query.status } : {}),
       ...(query.sourceModel ? { sourceModel: query.sourceModel } : {}),
       ...(query.overdue ? { overdue: 'true' } : {}),
-      ...(query.period && query.period !== 'all' ? { period: query.period } : {}),
+      ...(query.period && query.period !== 'all'
+        ? { period: query.period }
+        : {}),
       ...(query.period === 'custom' && query.startDate?.trim()
         ? { startDate: query.startDate.trim() }
         : {}),
@@ -61,10 +64,22 @@ export async function fetchKolamPayableSummary(): Promise<KolamPayableSummaryDat
   return normalizeKolamPayableSummary(payload);
 }
 
-export async function fetchKolamPayableDetail(id: string): Promise<KolamPayable> {
+export async function fetchKolamPayableDetail(
+  id: string,
+): Promise<KolamPayable> {
   const payload = await kolamRequest<unknown>(
     `/payable/${encodeURIComponent(id)}`,
   );
+  return normalizeKolamPayable(unwrapData(payload));
+}
+
+export async function createKolamPayable(
+  body: KolamPayableWritePayload,
+): Promise<KolamPayable> {
+  const payload = await kolamRequest<unknown>('/payable', {
+    method: 'POST',
+    body,
+  });
   return normalizeKolamPayable(unwrapData(payload));
 }
 

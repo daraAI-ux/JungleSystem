@@ -120,8 +120,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Download Aplikasi',
         route: '/app-downloads',
-        description:
-          'Unduh aplikasi pendukung desktop, mobile, dan installer.',
+        description: 'Unduh aplikasi pendukung desktop, mobile, dan installer.',
         group: 'Dukungan',
         requiredAccess: ['kolam'],
       },
@@ -190,7 +189,8 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Spesies',
         route: '/species',
-        description: 'Kelola data spesies untuk livestock, POS, dan marketplace',
+        description:
+          'Kelola data spesies untuk livestock, POS, dan marketplace',
         group: 'Stok Hidup',
         requiredAccess: ['kolam', 'pos'],
       },
@@ -233,7 +233,8 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Tugas Aktif',
         route: '/kontrol-layanan/active-tasks',
-        description: 'Tugas dosing dan maintenance yang berjalan atau akan datang',
+        description:
+          'Tugas dosing dan maintenance yang berjalan atau akan datang',
         group: 'Layanan',
         requiredAccess: ['kolam'],
       },
@@ -269,7 +270,8 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Bahan Kemasan',
         route: '/packing-materials',
-        description: 'Master data bahan kemasan untuk pengemasan dan pengiriman',
+        description:
+          'Master data bahan kemasan untuk pengemasan dan pengiriman',
         group: 'Stok',
         requiredAccess: ['kolam'],
       },
@@ -744,9 +746,15 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/products', { group: 'Produk', label: 'Produk' }),
       sidebarItem('/products/archive', { group: 'Produk', label: 'Arsip' }),
       sidebarItem('/raw-materials', { group: 'Produk', label: 'Bahan Baku' }),
-      sidebarItem('/packing-materials', { group: 'Produk', label: 'Bahan Kemasan' }),
+      sidebarItem('/packing-materials', {
+        group: 'Produk',
+        label: 'Bahan Kemasan',
+      }),
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
-      sidebarItem('/stock-transaction', { group: 'Stok', label: 'Transaksi Stok' }),
+      sidebarItem('/stock-transaction', {
+        group: 'Stok',
+        label: 'Transaksi Stok',
+      }),
       sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
       sidebarItem('/locations', {
         description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
@@ -754,9 +762,15 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Lokasi',
       }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
-      sidebarItem('/purchase-order', { group: 'Pengadaan', label: 'Pesanan Pembelian' }),
+      sidebarItem('/purchase-order', {
+        group: 'Pengadaan',
+        label: 'Pesanan Pembelian',
+      }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
-      sidebarItem('/product-serials', { group: 'Produksi', label: 'Serial Produk' }),
+      sidebarItem('/product-serials', {
+        group: 'Produksi',
+        label: 'Serial Produk',
+      }),
       sidebarItem('/enclosures', {
         group: 'Produksi',
         label: 'Daftar Enclosure',
@@ -815,13 +829,34 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     items: [
       sidebarItem('/finance', { label: 'Ringkasan Keuangan' }),
       sidebarItem('/wallet', { label: 'Dompet' }),
-      sidebarItem('/asset-purchase', { group: 'Pengeluaran & Pemasukan', label: 'Pembelian Aset' }),
-      sidebarItem('/commissions', { group: 'Pengeluaran & Pemasukan', label: 'Komisi' }),
-      sidebarItem('/payable', { group: 'Pengeluaran & Pemasukan', label: 'Utang' }),
-      sidebarItem('/receivable', { group: 'Pengeluaran & Pemasukan', label: 'Piutang' }),
-      sidebarItem('/routine-expenses', { group: 'Pengeluaran & Pemasukan', label: 'Pengeluaran Rutin' }),
-      sidebarItem('/unexpected-expense', { group: 'Pengeluaran & Pemasukan', label: 'Pengeluaran Tak Terduga' }),
-      sidebarItem('/unexpected-income', { group: 'Pengeluaran & Pemasukan', label: 'Pemasukan Tak Terduga' }),
+      sidebarItem('/asset-purchase', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Pembelian Aset',
+      }),
+      sidebarItem('/commissions', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Komisi',
+      }),
+      sidebarItem('/payable', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Utang',
+      }),
+      sidebarItem('/receivable', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Piutang',
+      }),
+      sidebarItem('/routine-expenses', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Pengeluaran Rutin',
+      }),
+      sidebarItem('/unexpected-expense', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Pengeluaran Tak Terduga',
+      }),
+      sidebarItem('/unexpected-income', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Pemasukan Tak Terduga',
+      }),
       sidebarItem('/finance/bonus', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Bonus Karyawan',
@@ -833,8 +868,14 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     id: 'user',
     title: 'Pengguna',
     items: [
-      sidebarItem('/customers', { group: 'Pelanggan', label: 'Daftar Pelanggan' }),
-      sidebarItem('/list-of-users', { group: 'Daftar Pengguna', label: 'Daftar Pengguna' }),
+      sidebarItem('/customers', {
+        group: 'Pelanggan',
+        label: 'Daftar Pelanggan',
+      }),
+      sidebarItem('/list-of-users', {
+        group: 'Daftar Pengguna',
+        label: 'Daftar Pengguna',
+      }),
       sidebarItem('/list-of-users/hr', {
         group: 'Daftar Pengguna',
         label: 'HR Sistem',
@@ -892,7 +933,8 @@ const dashboardRuntimeRouteContexts: KolamNavigationItem[] = [
   {
     label: 'Layanan',
     route: '/layanan',
-    description: 'Ringkasan operasional, katalog paket, dan langganan pelanggan.',
+    description:
+      'Ringkasan operasional, katalog paket, dan langganan pelanggan.',
     group: 'Layanan',
     requiredAccess: ['kolam'],
   },
@@ -1278,9 +1320,9 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/payable',
-    labelSuffix: 'Create',
+    labelSuffix: 'Baru',
     route: '/payable/create',
-    description: 'Create payable page from live Kolam',
+    description: 'Hutang baru',
   },
   {
     baseRoute: '/payable',
@@ -1542,7 +1584,8 @@ const kolamNavigationRouteVariantSpecs: Array<{
     label: 'Opname Serial',
     labelSuffix: 'Opname',
     route: '/product-serials/opname',
-    description: 'Verifikasi fisik nomor seri produk melalui pindai atau input manual',
+    description:
+      'Verifikasi fisik nomor seri produk melalui pindai atau input manual',
   },
   {
     baseRoute: '/stock-opname',
@@ -1561,7 +1604,8 @@ const kolamNavigationRouteVariantSpecs: Array<{
     label: 'Detil Transaksi Stok',
     labelSuffix: 'Detail',
     route: '/stock-transaction/:id',
-    description: 'Rincian pergerakan stok, target, dan status sinkron marketplace',
+    description:
+      'Rincian pergerakan stok, target, dan status sinkron marketplace',
   },
   {
     baseRoute: '/stock-transaction',
@@ -1753,8 +1797,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     labelSuffix: 'Sentimen',
     label: 'Analisis Sentimen',
     route: '/campaign/dara-seo/sentiment',
-    description:
-      'Analisis sentimen teks review — rule-based atau Llama (AI).',
+    description: 'Analisis sentimen teks review — rule-based atau Llama (AI).',
   },
   {
     baseRoute: '/campaign/dara-seo',
@@ -2173,7 +2216,10 @@ function getLabelAndFieldsCategoryNavigationItem(
       group: 'Label dan Field',
       label: 'Buat Kategori Baru',
       requiredAccess: ['kolam'],
-      route: normalizedRoute.replace(/^\/category/, '/label-dan-field/kategori'),
+      route: normalizedRoute.replace(
+        /^\/category/,
+        '/label-dan-field/kategori',
+      ),
     };
   }
 
@@ -2353,13 +2399,18 @@ export function getKolamNavigationSectionTitleForRoute(
   route: string,
   sections: KolamNavigationSection[] = kolamSidebarNavigationSections,
 ): string | null {
-  const path = String(route || '').split('?')[0].replace(/\/+$/, '') || '/';
-  let best: {title: string; length: number} | null = null;
+  const path =
+    String(route || '')
+      .split('?')[0]
+      .replace(/\/+$/, '') || '/';
+  let best: { title: string; length: number } | null = null;
 
   for (const section of sections) {
     for (const item of section.items) {
       const itemPath =
-        String(item.route || '').split('?')[0].replace(/\/+$/, '') || '/';
+        String(item.route || '')
+          .split('?')[0]
+          .replace(/\/+$/, '') || '/';
       const matches =
         path === itemPath ||
         (itemPath !== '/' && path.startsWith(`${itemPath}/`));
@@ -2367,7 +2418,7 @@ export function getKolamNavigationSectionTitleForRoute(
         continue;
       }
       if (!best || itemPath.length > best.length) {
-        best = {title: section.title, length: itemPath.length};
+        best = { title: section.title, length: itemPath.length };
       }
     }
   }
@@ -2404,10 +2455,7 @@ export function getKolamNavigationRouteTarget(
     return routeTarget('kolam', item);
   }
 
-  if (
-    routePath === '/pos/cashflow' ||
-    routePath.startsWith('/pos/cashflow/')
-  ) {
+  if (routePath === '/pos/cashflow' || routePath.startsWith('/pos/cashflow/')) {
     return routeTarget('cashflow', item);
   }
 

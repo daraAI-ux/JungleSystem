@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamPayableSourceLabel,
   formatKolamPayableStatusLabel,
+  getKolamPayableSurfaceMode,
   getKolamPayableStatusIntent,
   KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS,
   KOLAM_PAYABLE_PERIOD_OPTIONS,
@@ -36,6 +37,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamPayableFormSurface } from './kolam-payable-form-surface';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -54,6 +56,25 @@ const LIST_COLUMNS = [
 const FILTER_PANEL_WIDTH = 220;
 
 export function KolamPayableSurface({
+  onRouteChange,
+  route,
+}: {
+  onRouteChange?: (route: string) => void;
+  route: string;
+}) {
+  const mode = getKolamPayableSurfaceMode(route);
+  if (mode === 'create') {
+    return (
+      <KolamPayableFormSurface onRouteChange={onRouteChange} route={route} />
+    );
+  }
+
+  return (
+    <PayableListDetailSurface onRouteChange={onRouteChange} route={route} />
+  );
+}
+
+function PayableListDetailSurface({
   onRouteChange,
   route,
 }: {
