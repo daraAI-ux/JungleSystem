@@ -274,7 +274,7 @@ function buildTermsTemplateListColumns({
     },
     {
       align: 'center',
-      flex: 0.72,
+      flex: 0.76,
       id: 'category',
       label: 'Kategori',
       render: item => (
@@ -287,7 +287,7 @@ function buildTermsTemplateListColumns({
     },
     {
       align: 'center',
-      flex: 0.78,
+      flex: 0.76,
       id: 'status',
       label: 'Status',
       render: item => (
@@ -665,6 +665,7 @@ const styles = StyleSheet.create({
   },
   centerCell: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     justifyContent: 'center',
     minWidth: 0,
     width: '100%',
