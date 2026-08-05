@@ -7,11 +7,6 @@ import {
   type KolamTagUsageItem,
 } from '../domain/kolam-tag';
 import { getKolamFormSection } from '../domain/kolam-form';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamTagController,
@@ -21,25 +16,17 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamColorSwatchPicker } from './kolam-color-swatch-picker';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
-import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -108,8 +95,10 @@ function KolamTagShell({
     controller.mode === 'new'
       ? 'Tag baru'
       : controller.mode === 'edit'
-        ? `Edit · ${controller.selectedTag?.name || controller.form.name || 'Tag'}`
-        : controller.selectedTag?.name || 'Detail tag';
+      ? `Edit · ${
+          controller.selectedTag?.name || controller.form.name || 'Tag'
+        }`
+      : controller.selectedTag?.name || 'Detail tag';
 
   return (
     <View style={styles.surface}>
@@ -124,7 +113,6 @@ function KolamTagShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -170,7 +158,7 @@ function KolamTagList({
   const [sortMode, setSortMode] = React.useState<TagSortMode>('name-asc');
   const [statusFilter, setStatusFilter] =
     React.useState<TagStatusFilter>('all');
-  const [pageSize, setPageSize] = React.useState(10);
+  const pageSize = 10;
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<TagListFilterPanel | null>(null);
@@ -182,7 +170,6 @@ function KolamTagList({
   const [deleteCandidate, setDeleteCandidate] = React.useState<KolamTag | null>(
     null,
   );
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredTags = React.useMemo(
     () => filterTags(controller.tags, search, statusFilter),
     [controller.tags, search, statusFilter],
@@ -197,22 +184,22 @@ function KolamTagList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const listColumns = React.useMemo(
-    () => fitTagListColumns(tableBodyWidth),
-    [tableBodyWidth],
+  const listColumns = React.useMemo<Array<KolamListTableColumn<KolamTag>>>(
+    () => buildTagListColumns(),
+    [],
   );
   const sortFilterLabel =
     sortMode === 'name-desc'
       ? 'Nama Z-A'
       : sortMode === 'newest'
-        ? 'Terbaru'
-        : 'Nama A-Z';
+      ? 'Terbaru'
+      : 'Nama A-Z';
   const statusFilterLabel =
     statusFilter === 'active'
       ? 'Aktif'
       : statusFilter === 'inactive'
-        ? 'Nonaktif'
-        : 'Semua Status';
+      ? 'Nonaktif'
+      : 'Semua Status';
 
   const anchorFilterPanel = React.useCallback((panel: TagListFilterPanel) => {
     const trigger =
@@ -250,7 +237,7 @@ function KolamTagList({
 
   React.useEffect(() => {
     setPage(1);
-  }, [pageSize, search, sortMode, statusFilter]);
+  }, [search, sortMode, statusFilter]);
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -294,7 +281,6 @@ function KolamTagList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -377,71 +363,33 @@ function KolamTagList({
           </View>
         ) : null}
       </View>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={setPageSize}
-            page={safePage}
-            pageSize={pageSize}
-            total={sortedTags.length}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {pagedTags.length ? (
-          pagedTags.map(tag => (
-            <KolamTagRow
-              columns={listColumns}
-              key={tag.id}
-              onDelete={() => setDeleteCandidate(tag)}
-              onEdit={() => {
-                void controller.onSelectTag(tag);
-                onRouteChange?.(`${getTagRoute(tag)}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectTag(tag);
-                onRouteChange?.(getTagRoute(tag));
-              }}
-              tag={tag}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Tag belum tersedia dari cache atau backend."
-              title={controller.loading ? 'Memuat tag...' : 'Belum ada tag'}
-            />
-          </View>
+      <KolamListTableComposition
+        columns={listColumns}
+        emptyTitle={controller.loading ? 'Memuat tag...' : 'Belum ada tag'}
+        getRowKey={tag => tag.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: sortedTags.length,
+        }}
+        renderActions={tag => (
+          <KolamTagActionsMenu
+            onDelete={() => setDeleteCandidate(tag)}
+            onEdit={() => {
+              void controller.onSelectTag(tag);
+              onRouteChange?.(`${getTagRoute(tag)}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectTag(tag);
+              onRouteChange?.(getTagRoute(tag));
+            }}
+            tag={tag}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={pagedTags}
+      />
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="tag"
@@ -466,123 +414,120 @@ function KolamTagList({
   );
 }
 
-function KolamTagRow({
-  columns,
+function buildTagListColumns(): Array<KolamListTableColumn<KolamTag>> {
+  return [
+    {
+      flex: 1.2,
+      id: 'primary',
+      label: 'Tag',
+      render: tag => <KolamTagIdentityCell tag={tag} />,
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'meta',
+      label: 'Warna',
+      render: tag => <KolamTagColorCell tag={tag} />,
+    },
+    {
+      align: 'center',
+      flex: 1.25,
+      id: 'notes',
+      label: 'Catatan',
+      render: tag => (
+        <Text numberOfLines={2} style={styles.notesText}>
+          {stripHtmlForDetail(tag.description) || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'amount',
+      label: 'Dipakai',
+      render: tag => (
+        <Text numberOfLines={1} style={styles.countText}>
+          {String(tag.usageTotal)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'status',
+      label: 'Status',
+      render: tag => (
+        <KolamStatusBadge
+          intent={tag.status === 'active' ? 'success' : 'warning'}
+          label={getTagStatusLabel(tag.status)}
+          style={styles.statusBadge}
+        />
+      ),
+    },
+  ];
+}
+
+function KolamTagIdentityCell({ tag }: { tag: KolamTag }) {
+  const color = normalizeTagColor(tag.color);
+
+  return (
+    <View style={styles.tagTableIdentityCell}>
+      <View style={styles.tagIdentity}>
+        <View style={[styles.tagDot, { backgroundColor: color }]} />
+        <KolamCopyStack
+          containerStyle={styles.tagCopy}
+          items={[
+            { id: 'name', text: tag.name, style: styles.rowTitle },
+            {
+              id: 'creator',
+              text: `Pembuat: ${tag.createdBy || '-'}`,
+              style: styles.rowMeta,
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+function KolamTagColorCell({ tag }: { tag: KolamTag }) {
+  const color = normalizeTagColor(tag.color);
+
+  return (
+    <View style={[styles.colorChip, { borderColor: color }]}>
+      <View style={[styles.colorChipDot, { backgroundColor: color }]} />
+      <Text numberOfLines={1} style={styles.colorChipText}>
+        {color}
+      </Text>
+    </View>
+  );
+}
+
+function KolamTagActionsMenu({
   onDelete,
   onEdit,
   onSelect,
   tag,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
   onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
   tag: KolamTag;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const color = normalizeTagColor(tag.color);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const notesColumn = columnOf('notes');
-  const amountColumn = columnOf('amount');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <View style={styles.tagIdentity}>
-            <View style={[styles.tagDot, { backgroundColor: color }]} />
-            <KolamCopyStack
-              containerStyle={styles.tagCopy}
-              items={[
-                { id: 'name', text: tag.name, style: styles.rowTitle },
-                {
-                  id: 'creator',
-                  text: `Pembuat: ${tag.createdBy || '-'}`,
-                  style: styles.rowMeta,
-                },
-              ]}
-            />
-          </View>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          <View style={[styles.colorChip, { borderColor: color }]}>
-            <View style={[styles.colorChipDot, { backgroundColor: color }]} />
-            <Text numberOfLines={1} style={styles.colorChipText}>
-              {color}
-            </Text>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.notesText}>
-            {stripHtmlForDetail(tag.description) || '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.countText}>
-            {String(tag.usageTotal)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={tag.status === 'active' ? 'success' : 'warning'}
-            label={getTagStatusLabel(tag.status)}
-            style={styles.statusBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${tag.name}`}
-          onOpenChange={setActionMenuOpen}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+    <View style={actionMenuOpen ? styles.tagActionMenuRaised : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${tag.name}`}
+        onOpenChange={setActionMenuOpen}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -780,45 +725,6 @@ function TagHero({ tag }: { tag: KolamTag }) {
   );
 }
 
-function fitTagListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('tag');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
-}
-
 function filterTags(
   tags: KolamTag[],
   search: string,
@@ -930,24 +836,12 @@ const styles = StyleSheet.create({
   stack: {
     gap: 14,
   },
-  activeActionRow: {
-    zIndex: 1000,
-    elevation: 30,
-    overflow: 'visible',
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
-  listCell: {
+  tagTableIdentityCell: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
-    overflow: 'hidden',
-    paddingVertical: 4,
-  },
-  identityCell: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    overflow: 'visible',
+    width: '100%',
   },
   tagIdentity: {
     alignItems: 'center',
@@ -1022,21 +916,9 @@ const styles = StyleSheet.create({
   statusBadge: {
     alignSelf: 'center',
   },
-  actionsTrack: {
-    alignItems: 'center',
-  },
-  paginationRow: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  pageLabel: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
+  tagActionMenuRaised: {
+    elevation: 30,
+    zIndex: 1000,
   },
   toolbarWrap: {
     elevation: 1000,
@@ -1086,9 +968,6 @@ const styles = StyleSheet.create({
   filterMenuItemCheckSpacer: {
     height: 14,
     width: 14,
-  },
-  emptyWrap: {
-    padding: 16,
   },
   tagHero: {
     width: 168,
