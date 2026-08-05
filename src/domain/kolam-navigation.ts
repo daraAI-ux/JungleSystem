@@ -484,7 +484,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Payroll',
+        label: 'Penggajian',
         route: '/finance/payroll',
         description: 'Slip gaji bulanan, PPh 21, dan gaji bersih',
         group: 'Payroll & Tax',
@@ -1782,15 +1782,15 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/finance/payroll',
-    labelSuffix: 'Period',
+    labelSuffix: 'Periode',
     route: '/finance/payroll/:periodKey',
-    description: 'Payroll period page from live Kolam',
+    description: 'Detail periode penggajian dari Kolam live',
   },
   {
     baseRoute: '/finance/payroll',
     labelSuffix: 'Slip',
     route: '/finance/payroll/slip/:slipId',
-    description: 'Payroll slip page from live Kolam',
+    description: 'Slip gaji karyawan dari Kolam live',
   },
   {
     baseRoute: '/freyer',

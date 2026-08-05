@@ -17,6 +17,7 @@ import {
   type KolamPayrollController,
 } from '../hooks/use-kolam-payroll-controller';
 import { formatRupiah } from '../lib/money';
+import { buildKolamDaraTaxRoute } from '../domain/kolam-finance-tax';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -420,12 +421,40 @@ function PayrollDetailBody({
 
       {period ? (
         <KolamCardFrame style={styles.summaryCard}>
-          <Text style={styles.metaText}>
-            {period.slipCount} slip · THP {formatRupiah(period.totalTakeHome)}
-          </Text>
-          {period.walletName ? (
-            <Text style={styles.metaText}>Dompet: {period.walletName}</Text>
-          ) : null}
+          <View style={styles.summaryRow}>
+            <Text style={styles.metaText}>
+              {period.slipCount} slip · THP{' '}
+              <Text style={styles.summaryThp}>
+                {formatRupiah(period.totalTakeHome)}
+              </Text>
+              {period.walletName ? ` · ${period.walletName}` : ''}
+            </Text>
+            {period.taxSettlement ? (
+              onRouteChange ? (
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() =>
+                    onRouteChange(buildKolamDaraTaxRoute('pelunasan'))
+                  }
+                  style={styles.taxLink}
+                >
+                  <Text style={styles.taxLinkText}>
+                    PPh{' '}
+                    {period.taxSettlement.code.trim() ||
+                      period.taxSettlement.id.slice(0, 8) ||
+                      'Setoran'}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.taxLinkText}>
+                  PPh{' '}
+                  {period.taxSettlement.code.trim() ||
+                    period.taxSettlement.id.slice(0, 8) ||
+                    'Setoran'}
+                </Text>
+              )
+            ) : null}
+          </View>
         </KolamCardFrame>
       ) : null}
 
@@ -992,6 +1021,29 @@ const styles = StyleSheet.create({
   summaryCard: {
     gap: 4,
     padding: 12,
+  },
+  summaryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  summaryThp: {
+    color: V.colors.success,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  taxLink: {
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  taxLinkText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   slipScroll: {
     flex: 1,
