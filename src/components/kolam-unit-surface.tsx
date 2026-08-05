@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   unitTableIdentityCell: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     minWidth: 0,
     overflow: 'visible',
