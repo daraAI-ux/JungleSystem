@@ -7,11 +7,19 @@ import {KolamNotificationBellIcon} from '../src/components/kolam-notification-be
 import {KolamPressable} from '../src/components/kolam-pressable';
 import {KolamTopNavigationChatButton} from '../src/components/kolam-top-navigation-chat-button';
 import {KolamTopNavigationChatIcon} from '../src/components/kolam-top-navigation-chat-icon';
+import {KolamTopNavigationCashflowHost} from '../src/components/kolam-top-navigation-cashflow-host';
 import {KolamTopNavigationDownloadIcon} from '../src/components/kolam-top-navigation-download-icon';
 import {KolamTopNavigationMediaIcon} from '../src/components/kolam-top-navigation-media-icon';
 import {KolamTopNavigationNotificationButton} from '../src/components/kolam-top-navigation-notification-button';
 import {KolamTopNavigationRightControl} from '../src/components/kolam-top-navigation-right-control';
 import {KolamTopNavigationTaskIcon} from '../src/components/kolam-top-navigation-task-icon';
+
+const mockUseKolamAdminCashflowHeaderController = jest.fn();
+
+jest.mock('../src/hooks/use-kolam-admin-cashflow-header-controller', () => ({
+  useKolamAdminCashflowHeaderController: () =>
+    mockUseKolamAdminCashflowHeaderController(),
+}));
 
 describe('KolamTopNavigationNotificationButton', () => {
   it('renders the notification bell without a circular icon-button frame', async () => {
@@ -131,6 +139,55 @@ describe('KolamTopNavigationChatButton', () => {
       expect.objectContaining({fill: '#F47F65', r: 256}),
     );
     expect(renderer!.root.findAllByType(Path)).toHaveLength(7);
+  });
+});
+
+describe('KolamTopNavigationCashflowHost', () => {
+  beforeEach(() => {
+    mockUseKolamAdminCashflowHeaderController.mockReturnValue({
+      loading: false,
+      session: {id: 'cashflow-session-1', name: 'Sesi pagi', status: 'open'},
+      state: 'open',
+    });
+  });
+
+  it('renders the cashflow session icon as native vector artwork', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<KolamTopNavigationCashflowHost />);
+    });
+
+    const icon = renderer!.root.findByType(Svg);
+
+    expect(icon.props.height).toBe(32);
+    expect(icon.props.width).toBe(32);
+    expect(icon.props.viewBox).toBe('0 0 512 512');
+    expect(renderer!.root.findByType(Circle).props).toEqual(
+      expect.objectContaining({fill: '#F47F65', r: 256}),
+    );
+    expect(renderer!.root.findAllByType(Path)).toHaveLength(4);
+    expect(renderer!.root.findByType(KolamIconButton).props.variant).toBe(
+      'ghost',
+    );
+  });
+
+  it('keeps the cashflow session topbar control on the active session route', async () => {
+    const onNavigate = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationCashflowHost onNavigate={onNavigate} />,
+      );
+    });
+
+    const button = renderer!.root.findByType(KolamIconButton);
+
+    button.props.onPress();
+    expect(onNavigate).toHaveBeenCalledWith(
+      '/cashflow-session/cashflow-session-1',
+    );
   });
 });
 

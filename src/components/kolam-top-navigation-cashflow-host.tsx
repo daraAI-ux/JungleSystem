@@ -1,12 +1,11 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import Svg, {Circle, Path} from 'react-native-svg';
 import {
   getAdminCashflowHeaderRoute,
 } from '../services/kolam-cashflow-session-api';
 import {useKolamAdminCashflowHeaderController} from '../hooks/use-kolam-admin-cashflow-header-controller';
 import {KolamIconButton} from './kolam-icon-button';
-import {ModuleNavWalletIcon} from './kolam-module-nav-wallet-icon';
 
 /**
  * Top-nav cashflow quick access — FE parity with CashflowHeaderIcon
@@ -48,13 +47,49 @@ export function KolamTopNavigationCashflowHost({
         radius="full"
         size={32}
         variant="ghost">
-        <ModuleNavWalletIcon
-          tintStyle={{
-            backgroundColor: V.colors.mutedFg,
-          }}
-        />
+        <CashflowSessionIcon />
       </KolamIconButton>
     </View>
+  );
+}
+
+function CashflowSessionIcon() {
+  return (
+    <Svg height={32} width={32} viewBox="0 0 512 512">
+      <Circle cx={256} cy={256} r={256} fill="#F47F65" />
+      <Path
+        d="M153 184h242c21 0 38 17 38 38v96c0 21-17 38-38 38H153c-21 0-38-17-38-38v-96c0-21 17-38 38-38Z"
+        fill="#DFA7BD"
+        stroke="#050505"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={22}
+      />
+      <Path
+        d="M116 224h250c23 0 42 19 42 42v93c0 23-19 42-42 42H116c-23 0-42-19-42-42v-93c0-23 19-42 42-42Z"
+        fill="#F4B8CF"
+        stroke="#050505"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={22}
+      />
+      <Path
+        d="M223 311c0-43 25-76 58-76s58 33 58 76-25 76-58 76-58-33-58-76Z"
+        fill="#F4B8CF"
+        stroke="#050505"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={18}
+      />
+      <Path
+        d="M118 313h40M403 313h40"
+        fill="none"
+        stroke="#050505"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={18}
+      />
+    </Svg>
   );
 }
 
