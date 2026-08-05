@@ -33,8 +33,15 @@ export type KolamPayableInstallmentSummary = {
   totalCount: number;
   paidCount: number;
   pendingCount: number;
+  paidAmountTotal: number;
   remainingAmountTotal: number;
   nextDueDate: string;
+  nextInstallment: {
+    id: string;
+    installmentNumber: number;
+    dueDate: string;
+    amount: number;
+  } | null;
 };
 
 export type KolamPayable = {
@@ -335,8 +342,30 @@ function normalizePayableInstallmentSummary(
     totalCount,
     paidCount: toNumber(record.paidCount) ?? 0,
     pendingCount: toNumber(record.pendingCount) ?? 0,
+    paidAmountTotal: toNumber(record.paidAmountTotal) ?? 0,
     remainingAmountTotal: toNumber(record.remainingAmountTotal) ?? 0,
-    nextDueDate: getString(record, 'nextDueDate'),
+    nextDueDate:
+      getString(record, 'nextDueDate') ||
+      getString(asRecord(record.nextInstallment), 'dueDate'),
+    nextInstallment: normalizeNextPayableInstallment(record.nextInstallment),
+  };
+}
+
+function normalizeNextPayableInstallment(payload: unknown) {
+  const record = asRecord(payload);
+  if (!Object.keys(record).length) {
+    return null;
+  }
+  const installmentNumber = toNumber(record.installmentNumber) ?? 0;
+  const dueDate = getString(record, 'dueDate');
+  if (!installmentNumber && !dueDate) {
+    return null;
+  }
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+    installmentNumber,
+    dueDate,
+    amount: toNumber(record.amount) ?? 0,
   };
 }
 

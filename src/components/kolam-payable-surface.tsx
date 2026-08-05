@@ -8,6 +8,7 @@ import {
   KOLAM_PAYABLE_SOURCE_OPTIONS,
   KOLAM_PAYABLE_STATUS_OPTIONS,
   type KolamPayable,
+  type KolamPayableInstallmentSummary,
   type KolamPayableSourceModel,
   type KolamPayableStatus,
 } from '../domain/kolam-payable';
@@ -33,6 +34,7 @@ const LIST_COLUMNS = [
   { id: 'source', label: 'Sumber', flex: 0.7 },
   { id: 'amount', label: 'Nominal', flex: 1 },
   { id: 'due', label: 'Jatuh tempo', flex: 1 },
+  { id: 'installments', label: 'Cicilan', flex: 1.15 },
   { id: 'status', label: 'Status', flex: 0.9 },
   { id: 'action', label: '', flex: 0.8 },
 ] as const;
@@ -111,7 +113,7 @@ function PayableSummaryCards({
     },
     {
       id: 'open',
-      label: 'Utang terbuka',
+      label: 'Hutang terbuka',
       value: summary?.open.outstanding ?? 0,
       meta: `${openCount}`,
     },
@@ -279,6 +281,7 @@ function PayableList({
     ({ item }: { item: KolamPayable }) => {
       const canPayRow =
         controller.canPay && item.status === 'open' && Boolean(item.id);
+      const due = getPayableDueTone(item.status, item.dueDate);
       return (
         <Pressable
           onPress={() =>
@@ -315,7 +318,7 @@ function PayableList({
           </View>
           <View style={[styles.cell, { flex: 1 }]}>
             <Text style={styles.primaryText}>
-              {formatRupiah(item.remainingAmount || item.amount)}
+              {formatRupiah(item.amount)}
             </Text>
             {item.paidAmount > 0 && item.paidAmount < item.amount ? (
               <Text style={styles.metaText}>
@@ -324,7 +327,19 @@ function PayableList({
             ) : null}
           </View>
           <View style={[styles.cell, { flex: 1 }]}>
-            <Text style={styles.metaText}>{formatShortDate(item.dueDate)}</Text>
+            <Text style={[styles.metaText, due.textStyle]}>
+              {formatShortDate(item.dueDate)}
+            </Text>
+            {due.label ? (
+              <Text style={[styles.dueMetaText, due.textStyle]}>
+                {due.label}
+              </Text>
+            ) : null}
+          </View>
+          <View style={[styles.cell, { flex: 1.15 }]}>
+            <PayableInstallmentSummaryCell
+              summary={item.installmentSummary}
+            />
           </View>
           <View style={[styles.cell, { flex: 0.9 }]}>
             <KolamStatusBadge
@@ -496,6 +511,93 @@ function DetailField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function PayableInstallmentSummaryCell({
+  summary,
+}: {
+  summary: KolamPayableInstallmentSummary | null;
+}) {
+  const total = summary?.totalCount ?? 0;
+  if (total <= 0) {
+    return <Text style={styles.installmentTypeText}>Sekali bayar</Text>;
+  }
+
+  const paid = Math.max(0, summary?.paidCount ?? 0);
+  const segments = Math.min(total, 8);
+  const filled = Math.round((paid / Math.max(1, total)) * segments);
+  const next = summary?.nextInstallment;
+
+  return (
+    <View style={styles.installmentSummary}>
+      <Text style={styles.installmentProgressText}>
+        {paid}/{total} lunas
+      </Text>
+      <View style={styles.installmentSegments}>
+        {Array.from({ length: segments }).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.installmentSegment,
+              index < filled ? styles.installmentSegmentFilled : null,
+            ]}
+          />
+        ))}
+      </View>
+      {next ? (
+        <Text numberOfLines={1} style={styles.installmentNextText}>
+          Berikutnya: #{next.installmentNumber} - {formatShortDate(next.dueDate)}
+        </Text>
+      ) : (
+        <Text style={styles.installmentNextText}>Semua cicilan lunas</Text>
+      )}
+    </View>
+  );
+}
+
+function getPayableDueTone(status: string, dueDate: string) {
+  const days = getDaysUntilDue(dueDate);
+  if (status !== 'open' || days == null) {
+    return { label: '', textStyle: null };
+  }
+  if (days < 0) {
+    return {
+      label: `Lewat ${Math.abs(days)} hari`,
+      textStyle: styles.dueDangerText,
+    };
+  }
+  if (days === 0) {
+    return { label: 'Hari ini', textStyle: styles.dueDangerText };
+  }
+  if (days <= 7) {
+    return {
+      label: `${days} hari lagi`,
+      textStyle: styles.dueWarningText,
+    };
+  }
+  return { label: `${days} hari lagi`, textStyle: styles.dueNormalText };
+}
+
+function getDaysUntilDue(value: string): number | null {
+  if (!value) {
+    return null;
+  }
+  const due = new Date(value);
+  if (Number.isNaN(due.getTime())) {
+    return null;
+  }
+  const now = new Date();
+  const dueMs = new Date(
+    due.getFullYear(),
+    due.getMonth(),
+    due.getDate(),
+  ).getTime();
+  const nowMs = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  return Math.floor((dueMs - nowMs) / 86400000);
+}
+
 function formatShortDate(value: string): string {
   if (!value) {
     return '—';
@@ -631,6 +733,56 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  dueMetaText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  dueDangerText: {
+    color: V.colors.danger,
+  },
+  dueWarningText: {
+    color: V.colors.warning,
+  },
+  dueNormalText: {
+    color: V.colors.fg,
+  },
+  installmentSummary: {
+    gap: 4,
+    minWidth: 0,
+  },
+  installmentTypeText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  installmentProgressText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  installmentSegments: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 999,
+    flexDirection: 'row',
+    gap: 2,
+    height: 6,
+    overflow: 'hidden',
+  },
+  installmentSegment: {
+    flex: 1,
+  },
+  installmentSegmentFilled: {
+    backgroundColor: V.colors.success,
+  },
+  installmentNextText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
   },
   actionButton: {
     alignSelf: 'flex-start',
