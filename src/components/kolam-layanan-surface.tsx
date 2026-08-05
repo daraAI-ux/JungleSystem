@@ -383,6 +383,16 @@ function KolamLayananAlertRail({
                   </Text>
                 ) : null}
               </View>
+              {row.assignedToName ? (
+                <View style={styles.alertPicBlock}>
+                  <Text numberOfLines={1} style={styles.alertPicLabel}>
+                    PIC
+                  </Text>
+                  <Text numberOfLines={1} style={styles.alertPicName}>
+                    {row.assignedToName}
+                  </Text>
+                </View>
+              ) : null}
               <View style={styles.alertStateBlock}>
                 <KolamStatusBadge
                   intent={activeQueue.intent}
@@ -415,8 +425,9 @@ function getAlertTaskKindLabel(taskKind: string) {
 
 function getAlertRowMeta(row: KolamLayananOpsAlert) {
   const refs = [
-    row.pendingServiceId ? `Layanan ${row.pendingServiceId.slice(-6)}` : null,
-    row.subscriptionId ? `Langganan ${row.subscriptionId.slice(-6)}` : null,
+    row.subscriptionNumber ? `Langganan ${row.subscriptionNumber}` : null,
+    row.subscriptionId && !row.subscriptionNumber ? 'Langganan' : null,
+    row.pendingServiceId ? 'Layanan' : null,
   ].filter(Boolean);
   return refs.join(' · ') || 'Kunjungan layanan';
 }
@@ -1166,6 +1177,21 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '700',
     maxWidth: 96,
+  },
+  alertPicBlock: {
+    flex: 0.65,
+    gap: 1,
+    minWidth: 0,
+  },
+  alertPicLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  alertPicName: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
   },
   alertStateBlock: {
     alignItems: 'center',

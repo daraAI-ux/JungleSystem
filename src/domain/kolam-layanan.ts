@@ -221,6 +221,8 @@ export interface KolamLayananOpsAlert {
   taskKind: 'dosing' | 'maintenance' | string;
   pendingServiceId: string | null;
   subscriptionId: string | null;
+  subscriptionNumber: string | null;
+  assignedToName: string | null;
   visitTitle: string;
   packageTaskCode: string;
   scheduledTime: string | null;
@@ -2185,6 +2187,13 @@ function normalizeAlertRows(value: unknown): KolamLayananOpsAlert[] {
       taskKind: getString(record, 'taskKind') || 'dosing',
       pendingServiceId,
       subscriptionId: getString(record, 'subscriptionId') || null,
+      subscriptionNumber: getString(record, 'subscriptionNumber') || null,
+      assignedToName:
+        getString(record, 'assignedToName') ||
+        getString(record, 'visitAssignedToName') ||
+        getString(record, 'assignedToDisplayName') ||
+        getString(record, 'visitAssignedToDisplayName') ||
+        null,
       visitTitle: getString(record, 'visitTitle') || 'Kunjungan',
       packageTaskCode: getString(record, 'packageTaskCode'),
       scheduledTime: getString(record, 'scheduledTime') || null,
