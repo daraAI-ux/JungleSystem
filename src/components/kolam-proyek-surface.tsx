@@ -29,7 +29,6 @@ import {
   isKolamProyekImagePath,
   KOLAM_PROYEK_HAPPY_PATH,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
-  KOLAM_PROYEK_NEXT_STEP_CTA,
   resolveKolamProyekNextStepHero,
   type KolamProyekDetail,
   type KolamProyekHppMaterial,
