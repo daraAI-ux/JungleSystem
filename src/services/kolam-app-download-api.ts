@@ -8,15 +8,139 @@ import {
 } from '../domain/kolam-app-download';
 import {apiRequest, buildUrl} from '../lib/api-client';
 
-export async function getKolamAppDownloads(): Promise<KolamSupportingApp[]> {
+export type KolamAppDownloadPickedFile = {
+  uri: string;
+  name?: string;
+  mimeType?: string;
+};
+
+export type KolamCreateSupportingAppBody = {
+  name: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
+export type KolamUpdateSupportingAppBody = Partial<
+  KolamCreateSupportingAppBody
+>;
+
+export async function getKolamAppDownloads(options?: {
+  admin?: boolean;
+}): Promise<KolamSupportingApp[]> {
   const response = await apiRequest<unknown>({
     method: 'GET',
     path: '/app-downloads',
+    query: options?.admin ? {admin: 1} : undefined,
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
 
   return normalizeKolamAppDownloads(response);
+}
+
+export async function createKolamSupportingApp(
+  body: KolamCreateSupportingAppBody,
+): Promise<KolamSupportingApp> {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    path: '/app-downloads',
+    body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return requireKolamSupportingApp(response, 'Gagal membuat aplikasi.');
+}
+
+export async function updateKolamSupportingApp(
+  id: string,
+  body: KolamUpdateSupportingAppBody,
+): Promise<KolamSupportingApp> {
+  const response = await apiRequest<unknown>({
+    method: 'PUT',
+    path: `/app-downloads/${encodeURIComponent(id)}`,
+    body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return requireKolamSupportingApp(response, 'Gagal menyimpan aplikasi.');
+}
+
+export async function deleteKolamSupportingApp(id: string): Promise<void> {
+  await apiRequest<unknown>({
+    method: 'DELETE',
+    path: `/app-downloads/${encodeURIComponent(id)}`,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+}
+
+export async function uploadKolamAppDownloadVersion(
+  appId: string,
+  input: {
+    version: string;
+    releaseNotes?: string;
+    files: KolamAppDownloadPickedFile[];
+  },
+): Promise<KolamSupportingApp> {
+  const body = new FormData();
+  body.append('version', input.version);
+  if (input.releaseNotes?.trim()) {
+    body.append('releaseNotes', input.releaseNotes.trim());
+  }
+  input.files.forEach(file => {
+    body.append(
+      'files',
+      createReactNativeFilePart(file) as unknown as Blob,
+    );
+  });
+
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    path: `/app-downloads/${encodeURIComponent(appId)}/versions`,
+    body,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return requireKolamSupportingApp(response, 'Upload gagal.');
+}
+
+export async function deleteKolamAppDownloadVersion(
+  appId: string,
+  versionId: string,
+): Promise<KolamSupportingApp> {
+  const response = await apiRequest<unknown>({
+    method: 'DELETE',
+    path: `/app-downloads/${encodeURIComponent(
+      appId,
+    )}/versions/${encodeURIComponent(versionId)}`,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return requireKolamSupportingApp(response, 'Gagal menghapus versi.');
+}
+
+export async function deleteKolamAppDownloadArtifact(
+  appId: string,
+  versionId: string,
+  artifactId: string,
+): Promise<KolamSupportingApp> {
+  const response = await apiRequest<unknown>({
+    method: 'DELETE',
+    path: `/app-downloads/${encodeURIComponent(
+      appId,
+    )}/versions/${encodeURIComponent(versionId)}/artifacts/${encodeURIComponent(
+      artifactId,
+    )}`,
+    baseUrl: appConfig.kolamApiBaseUrl,
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+
+  return requireKolamSupportingApp(response, 'Gagal menghapus file.');
 }
 
 export function getKolamAppDownloadArtifactUrl({
@@ -51,6 +175,18 @@ function normalizeKolamAppDownloads(response: unknown): KolamSupportingApp[] {
   return value
     .map(normalizeKolamSupportingApp)
     .filter((app): app is KolamSupportingApp => app !== null);
+}
+
+function requireKolamSupportingApp(
+  response: unknown,
+  fallbackMessage: string,
+): KolamSupportingApp {
+  const app = normalizeKolamSupportingApp(unwrapData(response));
+  if (!app) {
+    throw new Error(fallbackMessage);
+  }
+
+  return app;
 }
 
 function normalizeKolamSupportingApp(value: unknown): KolamSupportingApp | null {
@@ -189,4 +325,38 @@ function getOptionalString(value: unknown): string | undefined {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function createReactNativeFilePart(file: KolamAppDownloadPickedFile) {
+  const normalizedUri = file.uri.startsWith('file://')
+    ? file.uri
+    : `file:///${file.uri.replace(/\\/g, '/')}`;
+  const name =
+    file.name?.trim() || normalizedUri.split('/').pop() || 'upload.bin';
+
+  return {
+    uri: normalizedUri,
+    name,
+    type: file.mimeType || inferFileMimeType(name),
+  };
+}
+
+function inferFileMimeType(fileName: string): string {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'apk':
+      return 'application/vnd.android.package-archive';
+    case 'deb':
+      return 'application/vnd.debian.binary-package';
+    case 'dmg':
+      return 'application/x-apple-diskimage';
+    case 'exe':
+      return 'application/vnd.microsoft.portable-executable';
+    case 'msi':
+      return 'application/x-msi';
+    case 'zip':
+      return 'application/zip';
+    default:
+      return 'application/octet-stream';
+  }
 }
