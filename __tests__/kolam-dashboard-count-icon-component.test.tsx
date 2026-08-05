@@ -1,5 +1,6 @@
 import React from 'react';
 import {View} from 'react-native';
+import Svg, {Path} from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamDashboardCountIcon} from '../src/components/kolam-dashboard-count-icon';
 import type {DashboardCountIconKind} from '../src/domain/dashboard-counts';
@@ -22,7 +23,28 @@ describe('KolamDashboardCountIcon', () => {
       );
     });
 
-    expect(renderer!.root.findAllByType(View).length).toBeGreaterThan(1);
+    if (kind === 'shopping-bag') {
+      expect(renderer!.root.findByType(Svg)).toBeTruthy();
+    } else {
+      expect(renderer!.root.findAllByType(View).length).toBeGreaterThan(1);
+    }
+  });
+
+  it('renders the products glyph as the native product box SVG artwork', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamDashboardCountIcon kind="shopping-bag" />,
+      );
+    });
+
+    const icon = renderer!.root.findByType(Svg);
+
+    expect(icon.props.height).toBe(46);
+    expect(icon.props.width).toBe(46);
+    expect(icon.props.viewBox).toBe('0 0 512 512');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThanOrEqual(8);
   });
 
   it('uses the dashboard count success tint', async () => {

@@ -17,7 +17,12 @@ export function KolamDashboardCountCard({
 }) {
   const content = (
     <>
-      <View style={styles.dashboardCountIcon}>
+      <View
+        style={
+          card.id === 'products'
+            ? styles.dashboardProductCountIcon
+            : styles.dashboardCountIcon
+        }>
         <KolamDashboardCountIcon kind={card.iconKind} />
       </View>
       <KolamCopyStack
@@ -67,6 +72,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: DASHBOARD_COUNT_VISUAL.iconTile.radius,
     backgroundColor: V.colors[DASHBOARD_COUNT_VISUAL.iconTile.background],
+  },
+  dashboardProductCountIcon: {
+    width: DASHBOARD_COUNT_VISUAL.iconTile.size,
+    height: DASHBOARD_COUNT_VISUAL.iconTile.size,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dashboardCountCopy: {
     flex: 1,

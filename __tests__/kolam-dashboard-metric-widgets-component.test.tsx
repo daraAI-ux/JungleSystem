@@ -174,8 +174,15 @@ describe('Kolam dashboard metric widgets', () => {
     expect(countCardFrames.length).toBeGreaterThanOrEqual(
       countVisual.gridColumns.desktop,
     );
+    expect(
+      iconTiles.some(
+        tile =>
+          StyleSheet.flatten(tile.props.style).backgroundColor ===
+          V.colors[countVisual.iconTile.background],
+      ),
+    ).toBe(true);
     expect(iconTiles[0]?.props.style).toEqual(
-      expect.objectContaining({
+      expect.not.objectContaining({
         backgroundColor: V.colors[countVisual.iconTile.background],
       }),
     );

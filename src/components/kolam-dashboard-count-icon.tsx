@@ -2,6 +2,7 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import type {DashboardCountIconKind} from '../domain/dashboard-counts';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {KolamDashboardProductCountIcon} from './kolam-dashboard-product-count-icon';
 
 export interface KolamDashboardCountIconProps {
   kind: DashboardCountIconKind;
@@ -11,12 +12,7 @@ export function KolamDashboardCountIcon({
   kind,
 }: KolamDashboardCountIconProps) {
   if (kind === 'shopping-bag') {
-    return (
-      <View style={styles.bag}>
-        <View style={styles.bagHandle} />
-        <View style={styles.bagBody} />
-      </View>
-    );
+    return <KolamDashboardProductCountIcon />;
   }
 
   if (kind === 'package') {
@@ -47,30 +43,6 @@ export function KolamDashboardCountIcon({
 }
 
 const styles = StyleSheet.create({
-  bag: {
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-  },
-  bagHandle: {
-    width: 10,
-    height: 7,
-    borderColor: V.colors.success,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderTopLeftRadius: 7,
-    borderTopRightRadius: 7,
-  },
-  bagBody: {
-    width: 18,
-    height: 14,
-    marginTop: -1,
-    borderRadius: 4,
-    borderColor: V.colors.success,
-    borderWidth: 2,
-    backgroundColor: V.colors.successSoft,
-  },
   package: {
     width: 20,
     height: 18,
