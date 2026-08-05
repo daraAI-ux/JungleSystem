@@ -735,6 +735,33 @@ function KolamProyekDetailRead({
           onAction={runNextStepAction}
         />
 
+        <View style={styles.metricGrid}>
+          <Metric
+            hint={paymentHint}
+            label="Nilai kontrak"
+            value={formatRupiah(cost.contractValue)}
+          />
+          <Metric
+            label="Pemakaian toko"
+            value={formatRupiah(cost.produkToko)}
+          />
+          <Metric
+            label="UE terverifikasi"
+            value={formatRupiah(cost.unexpectedExpenseTotal)}
+          />
+          <Metric
+            label="VAR (basis komisi)"
+            value={formatRupiah(cost.varAmount)}
+          />
+          {detail.paymentMode === 'staged' && showDp ? (
+            <Metric
+              hint={`Sisa ${formatRupiah(outstanding)}`}
+              label="DP terkumpul"
+              value={formatRupiah(receivedTotal)}
+            />
+          ) : null}
+        </View>
+
         <KolamDetailMetaStrip>
           <KolamDetailMetaStripItem label="Status">
             <KolamStatusBadge
@@ -777,32 +804,6 @@ function KolamProyekDetailRead({
               style={styles.mainScroll}
             >
         <DetailSection title="Ringkasan kontrak">
-          <View style={styles.metricGrid}>
-            <Metric
-              hint={paymentHint}
-              label="Nilai kontrak"
-              value={formatRupiah(cost.contractValue)}
-            />
-            <Metric
-              label="Pemakaian toko"
-              value={formatRupiah(cost.produkToko)}
-            />
-            <Metric
-              label="UE terverifikasi"
-              value={formatRupiah(cost.unexpectedExpenseTotal)}
-            />
-            <Metric
-              label="VAR (basis komisi)"
-              value={formatRupiah(cost.varAmount)}
-            />
-            {detail.paymentMode === 'staged' && showDp ? (
-              <Metric
-                hint={`Sisa ${formatRupiah(outstanding)}`}
-                label="DP terkumpul"
-                value={formatRupiah(receivedTotal)}
-              />
-            ) : null}
-          </View>
           <Text style={styles.metaText}>
             Klien: {detail.clientName}
             {clientContact ? ` · ${clientContact}` : ''}
