@@ -362,9 +362,26 @@ function KolamLayananAlertRail({
               style={styles.alertRow}
             >
               <View style={styles.alertRowMain}>
-                <Text numberOfLines={1} style={styles.alertLabel}>
-                  {row.visitTitle}
-                </Text>
+                <View style={styles.alertTitleBlock}>
+                  <Text numberOfLines={1} style={styles.alertLabel}>
+                    {row.visitTitle}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.alertSubLabel}>
+                    {getAlertRowMeta(row)}
+                  </Text>
+                </View>
+                <View style={styles.alertRowMiddle}>
+                  <KolamStatusBadge
+                    intent="info"
+                    label={getAlertTaskKindLabel(row.taskKind)}
+                    style={styles.alertRowBadge}
+                  />
+                  {row.packageTaskCode ? (
+                    <Text numberOfLines={1} style={styles.alertCode}>
+                      {row.packageTaskCode}
+                    </Text>
+                  ) : null}
+                </View>
                 <KolamStatusBadge
                   intent={activeQueue.intent}
                   label={activeQueue.label}
@@ -380,6 +397,24 @@ function KolamLayananAlertRail({
       )}
     </KolamContentFrame>
   );
+}
+
+function getAlertTaskKindLabel(taskKind: string) {
+  if (taskKind === 'dosing') {
+    return 'Dosing';
+  }
+  if (taskKind === 'maintenance') {
+    return 'Maintenance';
+  }
+  return taskKind || 'Tugas';
+}
+
+function getAlertRowMeta(row: KolamLayananOpsAlert) {
+  const refs = [
+    row.pendingServiceId ? `Layanan ${row.pendingServiceId.slice(-6)}` : null,
+    row.subscriptionId ? `Langganan ${row.subscriptionId.slice(-6)}` : null,
+  ].filter(Boolean);
+  return refs.join(' · ') || 'Kunjungan layanan';
 }
 
 function KolamLayananCapacityGrid({
@@ -1083,9 +1118,9 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     justifyContent: 'space-between',
-    minHeight: 40,
+    minHeight: 48,
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
@@ -1093,15 +1128,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
+    minWidth: 0,
+  },
+  alertTitleBlock: {
+    flex: 1,
+    gap: 2,
     minWidth: 0,
   },
   alertLabel: {
     color: V.colors.fg,
-    flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    minWidth: 0,
+  },
+  alertSubLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  alertRowMiddle: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    gap: 6,
+    minWidth: 150,
+  },
+  alertCode: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+    maxWidth: 96,
   },
   alertRowBadge: {
     flexShrink: 0,
