@@ -6,8 +6,11 @@ import {
   getKolamPayableSurfaceMode,
   hasKolamPayablePermission,
   type KolamPayable,
+  type KolamPayableInstallmentDueFilter,
   type KolamPayableListFilters,
+  type KolamPayablePeriodFilter,
   type KolamPayableSourceModel,
+  type KolamPayableSortOption,
   type KolamPayableStatus,
   type KolamPayableSummaryData,
   type KolamPayableSurfaceMode,
@@ -47,6 +50,12 @@ export interface KolamPayableController {
   onStatusChange: (status: '' | KolamPayableStatus) => void;
   onSourceModelChange: (sourceModel: '' | KolamPayableSourceModel) => void;
   onOverdueToggle: () => void;
+  onInstallmentDueChange: (value: KolamPayableInstallmentDueFilter) => void;
+  onPeriodChange: (period: KolamPayablePeriodFilter) => void;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+  onSortChange: (sort: KolamPayableSortOption) => void;
+  onClearFilters: () => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onRefresh: () => Promise<void>;
@@ -104,10 +113,14 @@ export function useKolamPayableController(route: string): KolamPayableController
           status: current.status,
           sourceModel: current.sourceModel,
           overdue: current.overdue,
+          period: current.period,
+          startDate: current.startDate,
+          endDate: current.endDate,
+          sort: current.sort,
         }),
         fetchKolamPayableSummary(),
       ]);
-      setItems(listResult.items);
+      setItems(applyPayableClientFilters(listResult.items, current));
       setSummary(summaryResult);
       setPagination({
         page: listResult.page,
@@ -159,6 +172,11 @@ export function useKolamPayableController(route: string): KolamPayableController
     filters.status,
     filters.sourceModel,
     filters.overdue,
+    filters.installmentDue,
+    filters.period,
+    filters.startDate,
+    filters.endDate,
+    filters.sort,
     refreshList,
   ]);
 
@@ -187,6 +205,39 @@ export function useKolamPayableController(route: string): KolamPayableController
 
   const onOverdueToggle = useCallback(() => {
     setFilters(prev => ({ ...prev, overdue: !prev.overdue, page: 1 }));
+  }, []);
+
+  const onInstallmentDueChange = useCallback(
+    (installmentDue: KolamPayableInstallmentDueFilter) => {
+      setFilters(prev => ({ ...prev, installmentDue, page: 1 }));
+    },
+    [],
+  );
+
+  const onPeriodChange = useCallback((period: KolamPayablePeriodFilter) => {
+    setFilters(prev => ({
+      ...prev,
+      period,
+      startDate: period === 'custom' ? prev.startDate : '',
+      endDate: period === 'custom' ? prev.endDate : '',
+      page: 1,
+    }));
+  }, []);
+
+  const onStartDateChange = useCallback((startDate: string) => {
+    setFilters(prev => ({ ...prev, startDate, period: 'custom', page: 1 }));
+  }, []);
+
+  const onEndDateChange = useCallback((endDate: string) => {
+    setFilters(prev => ({ ...prev, endDate, period: 'custom', page: 1 }));
+  }, []);
+
+  const onSortChange = useCallback((sort: KolamPayableSortOption) => {
+    setFilters(prev => ({ ...prev, sort, page: 1 }));
+  }, []);
+
+  const onClearFilters = useCallback(() => {
+    setFilters(createInitialPayableListFilters());
   }, []);
 
   const onPageChange = useCallback((page: number) => {
@@ -251,10 +302,94 @@ export function useKolamPayableController(route: string): KolamPayableController
     onStatusChange,
     onSourceModelChange,
     onOverdueToggle,
+    onInstallmentDueChange,
+    onPeriodChange,
+    onStartDateChange,
+    onEndDateChange,
+    onSortChange,
+    onClearFilters,
     onPageChange,
     onLimitChange,
     onRefresh: refreshList,
     onPayFull,
     clearStatusMessage,
   };
+}
+
+function applyPayableClientFilters(
+  items: KolamPayable[],
+  filters: KolamPayableListFilters,
+): KolamPayable[] {
+  let next = [...items];
+
+  if (filters.installmentDue !== 'all') {
+    const now = new Date();
+    next = next.filter(item => {
+      const dueDate = item.installmentSummary?.nextInstallment?.dueDate ?? '';
+      const days = getPayableDueDeltaDays(dueDate, now);
+      if (days == null) {
+        return false;
+      }
+      if (filters.installmentDue === 'overdue') {
+        return days < 0;
+      }
+      return days >= 0 && days <= 7;
+    });
+  }
+
+  if (filters.sort === 'next_installment_due_asc') {
+    next.sort(comparePayableByNextInstallmentDue);
+  }
+
+  return next;
+}
+
+function comparePayableByNextInstallmentDue(
+  left: KolamPayable,
+  right: KolamPayable,
+): number {
+  const leftTime = getPayableTimestamp(
+    left.installmentSummary?.nextInstallment?.dueDate,
+  );
+  const rightTime = getPayableTimestamp(
+    right.installmentSummary?.nextInstallment?.dueDate,
+  );
+  if (leftTime == null && rightTime == null) {
+    return 0;
+  }
+  if (leftTime == null) {
+    return 1;
+  }
+  if (rightTime == null) {
+    return -1;
+  }
+  return leftTime - rightTime;
+}
+
+function getPayableDueDeltaDays(value: string, now: Date): number | null {
+  const timestamp = getPayableTimestamp(value);
+  if (timestamp == null) {
+    return null;
+  }
+  const nowMs = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  return Math.floor((timestamp - nowMs) / 86400000);
+}
+
+function getPayableTimestamp(value?: string): number | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  ).getTime();
 }

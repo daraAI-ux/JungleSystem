@@ -12,6 +12,19 @@ export type KolamPayableSourceModel =
   | 'PurchaseOrder'
   | 'Loan'
   | 'FuturePayable';
+export type KolamPayableSortOption =
+  | 'newest'
+  | 'oldest'
+  | 'due_date_asc'
+  | 'due_date_desc'
+  | 'next_installment_due_asc';
+export type KolamPayableInstallmentDueFilter = 'all' | 'due_7' | 'overdue';
+export type KolamPayablePeriodFilter =
+  | 'all'
+  | 'weekly'
+  | 'monthly'
+  | 'yearly'
+  | 'custom';
 
 export type KolamPayablePermissionAction =
   | 'view'
@@ -85,6 +98,11 @@ export type KolamPayableListFilters = {
   status: '' | KolamPayableStatus;
   sourceModel: '' | KolamPayableSourceModel;
   overdue: boolean;
+  installmentDue: KolamPayableInstallmentDueFilter;
+  period: KolamPayablePeriodFilter;
+  startDate: string;
+  endDate: string;
+  sort: KolamPayableSortOption;
 };
 
 export type KolamPayableListResult = {
@@ -115,6 +133,37 @@ export const KOLAM_PAYABLE_SOURCE_OPTIONS: Array<{
   { label: 'PO', value: 'PurchaseOrder' },
   { label: 'Loan', value: 'Loan' },
   { label: 'Manual', value: 'FuturePayable' },
+];
+
+export const KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS: Array<{
+  label: string;
+  value: KolamPayableInstallmentDueFilter;
+}> = [
+  { label: 'Semua cicilan', value: 'all' },
+  { label: 'Jatuh tempo <=7 hari', value: 'due_7' },
+  { label: 'Ada cicilan terlambat', value: 'overdue' },
+];
+
+export const KOLAM_PAYABLE_PERIOD_OPTIONS: Array<{
+  label: string;
+  value: KolamPayablePeriodFilter;
+}> = [
+  { label: 'Semua periode', value: 'all' },
+  { label: 'Mingguan', value: 'weekly' },
+  { label: 'Bulanan', value: 'monthly' },
+  { label: 'Tahunan', value: 'yearly' },
+  { label: 'Kustom', value: 'custom' },
+];
+
+export const KOLAM_PAYABLE_SORT_OPTIONS: Array<{
+  label: string;
+  value: KolamPayableSortOption;
+}> = [
+  { label: 'Terbaru', value: 'newest' },
+  { label: 'Terlama', value: 'oldest' },
+  { label: 'Jatuh tempo terdekat', value: 'due_date_asc' },
+  { label: 'Jatuh tempo terjauh', value: 'due_date_desc' },
+  { label: 'Cicilan berikutnya', value: 'next_installment_due_asc' },
 ];
 
 export function isKolamPayableRoute(route: string): boolean {
@@ -152,6 +201,11 @@ export function createInitialPayableListFilters(): KolamPayableListFilters {
     status: '',
     sourceModel: '',
     overdue: false,
+    installmentDue: 'all',
+    period: 'all',
+    startDate: '',
+    endDate: '',
+    sort: 'newest',
   };
 }
 

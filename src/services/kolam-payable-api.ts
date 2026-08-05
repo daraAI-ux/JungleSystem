@@ -16,7 +16,16 @@ interface DataResponse<T> {
 
 export type KolamPayableListQuery = Pick<
   KolamPayableListFilters,
-  'page' | 'limit' | 'search' | 'status' | 'sourceModel' | 'overdue'
+  | 'page'
+  | 'limit'
+  | 'search'
+  | 'status'
+  | 'sourceModel'
+  | 'overdue'
+  | 'period'
+  | 'startDate'
+  | 'endDate'
+  | 'sort'
 >;
 
 export async function fetchKolamPayables(
@@ -24,6 +33,8 @@ export async function fetchKolamPayables(
 ): Promise<KolamPayableListResult> {
   const page = query.page ?? 1;
   const limit = query.limit ?? 10;
+  const backendSort =
+    query.sort === 'next_installment_due_asc' ? 'newest' : query.sort;
   const payload = await kolamRequest<unknown>('/payable', {
     query: {
       page,
@@ -32,6 +43,14 @@ export async function fetchKolamPayables(
       ...(query.status ? { status: query.status } : {}),
       ...(query.sourceModel ? { sourceModel: query.sourceModel } : {}),
       ...(query.overdue ? { overdue: 'true' } : {}),
+      ...(query.period && query.period !== 'all' ? { period: query.period } : {}),
+      ...(query.period === 'custom' && query.startDate?.trim()
+        ? { startDate: query.startDate.trim() }
+        : {}),
+      ...(query.period === 'custom' && query.endDate?.trim()
+        ? { endDate: query.endDate.trim() }
+        : {}),
+      ...(backendSort ? { sort: backendSort } : {}),
     },
   });
   return normalizeKolamPayableList(payload, { page, limit });

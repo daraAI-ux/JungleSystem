@@ -4,12 +4,18 @@ import {
   formatKolamPayableSourceLabel,
   formatKolamPayableStatusLabel,
   getKolamPayableStatusIntent,
+  KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS,
+  KOLAM_PAYABLE_PERIOD_OPTIONS,
   KOLAM_PAYABLE_ROOT,
   KOLAM_PAYABLE_SOURCE_OPTIONS,
+  KOLAM_PAYABLE_SORT_OPTIONS,
   KOLAM_PAYABLE_STATUS_OPTIONS,
   type KolamPayable,
+  type KolamPayableInstallmentDueFilter,
   type KolamPayableInstallmentSummary,
+  type KolamPayablePeriodFilter,
   type KolamPayableSourceModel,
+  type KolamPayableSortOption,
   type KolamPayableStatus,
 } from '../domain/kolam-payable';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -22,6 +28,7 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamDateField } from './kolam-date-field';
 import { KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -147,14 +154,56 @@ function PayableToolbar({
 }) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
+  const [installmentOpen, setInstallmentOpen] = useState(false);
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const statusLabel =
-    KOLAM_PAYABLE_STATUS_OPTIONS.find(
-      option => option.value === controller.filters.status,
-    )?.label ?? 'Status';
+    controller.filters.status === ''
+      ? 'Status'
+      : (KOLAM_PAYABLE_STATUS_OPTIONS.find(
+          option => option.value === controller.filters.status,
+        )?.label ?? 'Status');
   const sourceLabel =
-    KOLAM_PAYABLE_SOURCE_OPTIONS.find(
-      option => option.value === controller.filters.sourceModel,
-    )?.label ?? 'Sumber';
+    controller.filters.sourceModel === ''
+      ? 'Sumber'
+      : (KOLAM_PAYABLE_SOURCE_OPTIONS.find(
+          option => option.value === controller.filters.sourceModel,
+        )?.label ?? 'Sumber');
+  const installmentLabel =
+    controller.filters.installmentDue === 'all'
+      ? 'Cicilan'
+      : (KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS.find(
+          option => option.value === controller.filters.installmentDue,
+        )?.label ?? 'Cicilan');
+  const periodLabel =
+    controller.filters.period === 'all'
+      ? 'Periode'
+      : (KOLAM_PAYABLE_PERIOD_OPTIONS.find(
+          option => option.value === controller.filters.period,
+        )?.label ?? 'Periode');
+  const sortLabel =
+    controller.filters.sort === 'newest'
+      ? 'Sort'
+      : (KOLAM_PAYABLE_SORT_OPTIONS.find(
+          option => option.value === controller.filters.sort,
+        )?.label ?? 'Sort');
+  const hasFilters =
+    Boolean(controller.filters.search.trim()) ||
+    controller.filters.status !== '' ||
+    controller.filters.sourceModel !== '' ||
+    controller.filters.overdue ||
+    controller.filters.installmentDue !== 'all' ||
+    controller.filters.period !== 'all' ||
+    controller.filters.startDate !== '' ||
+    controller.filters.endDate !== '' ||
+    controller.filters.sort !== 'newest';
+  const closePanels = () => {
+    setStatusOpen(false);
+    setSourceOpen(false);
+    setInstallmentOpen(false);
+    setPeriodOpen(false);
+    setSortOpen(false);
+  };
 
   return (
     <View style={kolamTableToolbarStyles.shell}>
@@ -174,7 +223,7 @@ function PayableToolbar({
             }
             label={statusLabel}
             onPress={() => {
-              setSourceOpen(false);
+              closePanels();
               setStatusOpen(current => !current);
             }}
             style={styles.filterTrigger}
@@ -187,8 +236,34 @@ function PayableToolbar({
             }
             label={sourceLabel}
             onPress={() => {
-              setStatusOpen(false);
+              closePanels();
               setSourceOpen(current => !current);
+            }}
+            style={styles.filterTrigger}
+          />
+          <KolamButton
+            intent={
+              installmentOpen || controller.filters.installmentDue !== 'all'
+                ? 'primary'
+                : 'secondary'
+            }
+            label={installmentLabel}
+            onPress={() => {
+              closePanels();
+              setInstallmentOpen(current => !current);
+            }}
+            style={styles.filterTrigger}
+          />
+          <KolamButton
+            intent={
+              periodOpen || controller.filters.period !== 'all'
+                ? 'primary'
+                : 'secondary'
+            }
+            label={periodLabel}
+            onPress={() => {
+              closePanels();
+              setPeriodOpen(current => !current);
             }}
             style={styles.filterTrigger}
           />
@@ -198,8 +273,56 @@ function PayableToolbar({
             onPress={controller.onOverdueToggle}
             style={styles.filterTrigger}
           />
+          <KolamButton
+            intent={
+              sortOpen || controller.filters.sort !== 'newest'
+                ? 'primary'
+                : 'secondary'
+            }
+            label={sortLabel}
+            onPress={() => {
+              closePanels();
+              setSortOpen(current => !current);
+            }}
+            style={styles.filterTrigger}
+          />
+          {controller.filters.period === 'custom' ? (
+            <>
+              <KolamDateField
+                accessibilityLabel="Tanggal dari"
+                label="Dari"
+                onChange={controller.onStartDateChange}
+                placeholder="Dari"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                triggerStyle={styles.dateFieldTrigger}
+                value={controller.filters.startDate}
+              />
+              <KolamDateField
+                accessibilityLabel="Tanggal sampai"
+                label="Sampai"
+                onChange={controller.onEndDateChange}
+                placeholder="Sampai"
+                showLabelInTrigger={false}
+                style={styles.dateField}
+                triggerStyle={styles.dateFieldTrigger}
+                value={controller.filters.endDate}
+              />
+            </>
+          ) : null}
         </View>
         <View style={kolamTableToolbarStyles.actions}>
+          {hasFilters ? (
+            <KolamButton
+              intent="secondary"
+              label="Reset"
+              onPress={() => {
+                closePanels();
+                controller.onClearFilters();
+              }}
+              style={styles.filterTrigger}
+            />
+          ) : null}
           <KolamRefreshButton
             accessibilityLabel="Muat ulang"
             intent="secondary"
@@ -230,6 +353,41 @@ function PayableToolbar({
           onSelect={value => {
             controller.onSourceModelChange(value as '' | KolamPayableSourceModel);
             setSourceOpen(false);
+          }}
+        />
+      ) : null}
+
+      {installmentOpen ? (
+        <FilterPanel
+          onClose={() => setInstallmentOpen(false)}
+          options={KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS}
+          onSelect={value => {
+            controller.onInstallmentDueChange(
+              value as KolamPayableInstallmentDueFilter,
+            );
+            setInstallmentOpen(false);
+          }}
+        />
+      ) : null}
+
+      {periodOpen ? (
+        <FilterPanel
+          onClose={() => setPeriodOpen(false)}
+          options={KOLAM_PAYABLE_PERIOD_OPTIONS}
+          onSelect={value => {
+            controller.onPeriodChange(value as KolamPayablePeriodFilter);
+            setPeriodOpen(false);
+          }}
+        />
+      ) : null}
+
+      {sortOpen ? (
+        <FilterPanel
+          onClose={() => setSortOpen(false)}
+          options={KOLAM_PAYABLE_SORT_OPTIONS}
+          onSelect={value => {
+            controller.onSortChange(value as KolamPayableSortOption);
+            setSortOpen(false);
           }}
         />
       ) : null}
@@ -654,6 +812,15 @@ const styles = StyleSheet.create({
   filterTrigger: {
     flexGrow: 0,
     flexShrink: 0,
+  },
+  dateField: {
+    flexGrow: 0,
+    flexShrink: 0,
+    width: 116,
+  },
+  dateFieldTrigger: {
+    minWidth: 0,
+    paddingHorizontal: 8,
   },
   filterPanel: {
     backgroundColor: V.colors.bg,
