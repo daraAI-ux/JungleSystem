@@ -266,6 +266,8 @@ function KolamComplaintList({
               ]}
               showLabelInTrigger={false}
               style={styles.complaintFilterTrigger}
+              triggerStyle={styles.complaintFilterButton}
+              triggerTextStyle={styles.complaintFilterText}
               value={controller.sourceFilter}
             />
             <KolamDropdownSelect
@@ -284,6 +286,8 @@ function KolamComplaintList({
               ]}
               showLabelInTrigger={false}
               style={styles.complaintFilterTrigger}
+              triggerStyle={styles.complaintFilterButton}
+              triggerTextStyle={styles.complaintFilterText}
               value={controller.statusFilter}
             />
             <KolamDropdownSelect
@@ -301,7 +305,9 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
-              style={styles.complaintFilterTriggerWide}
+              style={styles.complaintFilterTrigger}
+              triggerStyle={styles.complaintFilterButton}
+              triggerTextStyle={styles.complaintFilterText}
               value={controller.decisionFilter}
             />
             <KolamDropdownSelect
@@ -320,6 +326,8 @@ function KolamComplaintList({
               ]}
               showLabelInTrigger={false}
               style={styles.complaintFilterTrigger}
+              triggerStyle={styles.complaintFilterButton}
+              triggerTextStyle={styles.complaintFilterText}
               value={controller.priorityFilter}
             />
             <KolamDropdownSelect
@@ -338,6 +346,8 @@ function KolamComplaintList({
               ]}
               showLabelInTrigger={false}
               style={styles.complaintFilterTrigger}
+              triggerStyle={styles.complaintFilterButton}
+              triggerTextStyle={styles.complaintFilterText}
               value={controller.categoryFilter}
             />
           </View>
@@ -2650,14 +2660,21 @@ const styles = StyleSheet.create({
     minWidth: 104,
   },
   complaintFilterTrigger: {
-    flexShrink: 1,
-    maxWidth: 108,
-    minWidth: 82,
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
   },
-  complaintFilterTriggerWide: {
-    flexShrink: 1,
-    maxWidth: 124,
-    minWidth: 92,
+  complaintFilterButton: {
+    flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 34,
+    minWidth: 0,
+    paddingHorizontal: 8,
+  },
+  complaintFilterText: {
+    flexShrink: 0,
+    maxWidth: 132,
+    paddingRight: 0,
   },
   complaintToolbarActions: {
     flexGrow: 0,
