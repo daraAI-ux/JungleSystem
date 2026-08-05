@@ -17,9 +17,12 @@ import {
   canSubmitKolamProyekDelivery,
   canSubmitKolamProyekDesign,
   canUpdateKolamProyekProgress,
+  computeKolamProyekCommissionPreview,
   computeKolamProyekCostBreakdown,
+  computeKolamProyekOutstanding,
   createEmptyKolamProyekQuotationForm,
   createKolamProyekQuotationFormFromDetail,
+  formatKolamProyekComplaintWindowLabel,
   formatKolamProyekDpRowStatusLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
@@ -41,6 +44,7 @@ import {
   isKolamProyekRoute,
   normalizeKolamProyekDetail,
   normalizeKolamProyekList,
+  resolveKolamProyekNextStepHero,
   validateKolamProyekDpConfirmAmount,
   validateKolamProyekLifecycleNote,
   validateKolamProyekProgressUpdate,
@@ -444,5 +448,79 @@ describe('kolam-proyek domain', () => {
     expect(canDownloadKolamProyekInvoice('in_progress')).toBe(true);
     expect(canDownloadKolamProyekInvoice('closed')).toBe(true);
     expect(canDownloadKolamProyekInvoice('cancelled')).toBe(false);
+  });
+
+  it('resolves next-step hero, outstanding, and payment proof status', () => {
+    const draft = normalizeKolamProyekDetail({
+      _id: 'p1',
+      quotationNumber: 'QUO-1',
+      lifecycleStatus: 'draft',
+      contractValue: 1_000_000,
+      dealAmount: 1_000_000,
+      paymentMode: 'staged',
+      dpSchedule: [
+        {
+          name: 'DP1',
+          amount: 400_000,
+          amountReceived: 100_000,
+          paymentProofs: [{ path: '/proofs/a.jpg', note: 'TF' }],
+        },
+      ],
+      termsTemplates: [
+        {
+          _id: 't1',
+          title: 'TOS Umum',
+          content: '<p>Syarat</p>',
+          complaintWindowDays: 14,
+        },
+      ],
+      commissionConfig: {
+        daType: 'percentage',
+        daValue: 10,
+        designerType: 'fixed',
+        designerValue: 50_000,
+      },
+      varPreview: { varAmount: 500_000 },
+    })!;
+
+    expect(computeKolamProyekOutstanding(draft)).toBe(900_000);
+    expect(formatKolamProyekDpRowStatusLabel(draft.dpSchedule[0])).toBe(
+      'Sebagian',
+    );
+    expect(formatKolamProyekComplaintWindowLabel(draft.termsTemplates)).toBe(
+      '14 hari pasca selesai',
+    );
+    expect(draft.termsTemplates[0].title).toBe('TOS Umum');
+    expect(resolveKolamProyekNextStepHero(draft).primary?.action).toBe(
+      'send_quotation',
+    );
+    expect(
+      resolveKolamProyekNextStepHero({
+        ...draft,
+        lifecycleStatus: 'dp_paid',
+      }).primary?.action,
+    ).toBe('start_work');
+
+    const waitingProof = normalizeKolamProyekDetail({
+      _id: 'p2',
+      lifecycleStatus: 'awaiting_dp',
+      contractValue: 500_000,
+      paymentMode: 'staged',
+      dpSchedule: [
+        {
+          name: 'DP1',
+          amount: 200_000,
+          amountReceived: 0,
+          paymentProofs: [{ path: '/x.png' }],
+        },
+      ],
+    })!;
+    expect(formatKolamProyekDpRowStatusLabel(waitingProof.dpSchedule[0])).toBe(
+      'Bukti Terkirim',
+    );
+
+    const commission = computeKolamProyekCommissionPreview(draft);
+    expect(commission?.daAmount).toBe(50_000);
+    expect(commission?.designerAmount).toBe(50_000);
   });
 });

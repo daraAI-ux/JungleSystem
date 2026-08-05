@@ -4,6 +4,7 @@
  */
 
 import type { KolamStatusBadgeIntent } from '../components/kolam-status-badge-types';
+import { formatRupiah } from '../lib/money';
 
 export const KOLAM_PROYEK_ROOT = '/proyek';
 export const KOLAM_PROYEK_NEW_ROUTE = `${KOLAM_PROYEK_ROOT}/new`;
@@ -96,6 +97,12 @@ export type KolamProyekHppMaterial = {
   subtotal: number;
 };
 
+export type KolamProyekDpPaymentProof = {
+  path: string;
+  note: string;
+  uploadedAt: string | null;
+};
+
 export type KolamProyekDpScheduleItem = {
   index: number;
   name: string;
@@ -104,6 +111,7 @@ export type KolamProyekDpScheduleItem = {
   paidAt: string | null;
   dueAt: string | null;
   kwitansiNumber: string | null;
+  paymentProofs: KolamProyekDpPaymentProof[];
 };
 
 export type KolamProyekCommissionConfig = {
@@ -111,6 +119,44 @@ export type KolamProyekCommissionConfig = {
   daValue: number;
   designerType: string;
   designerValue: number;
+};
+
+export type KolamProyekCommissionAccrual = {
+  id: string;
+  party: string;
+  amount: number;
+  status: string;
+};
+
+export type KolamProyekTermsTemplate = {
+  id: string;
+  title: string;
+  content: string;
+  complaintWindowDays: number | null;
+};
+
+export type KolamProyekNextStepAction =
+  | 'send_quotation'
+  | 'edit'
+  | 'resend_quotation'
+  | 'scroll_dp'
+  | 'start_work'
+  | 'scroll_design'
+  | 'scroll_delivery'
+  | 'close_project';
+
+export type KolamProyekNextStepHero = {
+  stageLabel: string;
+  badgeIntent: KolamStatusBadgeIntent;
+  heading: string;
+  description: string;
+  primary?: {
+    label: string;
+    action: KolamProyekNextStepAction;
+    disabled?: boolean;
+    disabledReason?: string;
+  };
+  secondary?: Array<{label: string; action: KolamProyekNextStepAction}>;
 };
 
 export type KolamProyekProgressHistoryItem = {
@@ -195,13 +241,16 @@ export type KolamProyekDetail = KolamProyekListItem & {
   minDpType: 'fixed' | 'percentage' | string;
   minDpValue: number;
   termsTemplateId: string | null;
+  termsTemplates: KolamProyekTermsTemplate[];
   designReferenceEmbedUrl: string;
   commissionConfig: KolamProyekCommissionConfig | null;
+  commissionAccruals: KolamProyekCommissionAccrual[];
   progressHistory: KolamProyekProgressHistoryItem[];
   designSubmissions: KolamProyekReviewSubmission[];
   deliverySubmissions: KolamProyekReviewSubmission[];
   linkedTask: KolamProyekLinkedTask | null;
   saleStatus: string | null;
+  saleFinalTotal: number | null;
   clientEmail: string | null;
   clientPhone: string | null;
   varPreview: KolamProyekVarPreview | null;
@@ -766,12 +815,256 @@ export function getKolamProyekDpRowOutstanding(row: KolamProyekDpScheduleItem) {
   );
 }
 
+export function computeKolamProyekOutstanding(
+  detail: Pick<KolamProyekDetail, 'contractValue' | 'dealAmount' | 'dpSchedule'>,
+) {
+  const contract =
+    Number(detail.contractValue) || Number(detail.dealAmount) || 0;
+  const received = (detail.dpSchedule ?? []).reduce(
+    (sum, row) => sum + (Number(row.amountReceived) || 0),
+    0,
+  );
+  return Math.max(0, contract - received);
+}
+
+export function computeKolamProyekCommissionPreview(
+  detail: Pick<
+    KolamProyekDetail,
+    'commissionConfig' | 'costBreakdown' | 'lifecycleStatus'
+  >,
+): {daAmount: number; designerAmount: number; basis: number} | null {
+  if (
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'commission') ===
+    'hidden'
+  ) {
+    return null;
+  }
+  const cfg = detail.commissionConfig;
+  if (!cfg) {
+    return null;
+  }
+  const basis = Number(detail.costBreakdown.varAmount) || 0;
+  const daAmount =
+    cfg.daType === 'fixed'
+      ? Number(cfg.daValue) || 0
+      : Math.round((basis * (Number(cfg.daValue) || 0)) / 100);
+  const designerAmount =
+    cfg.designerType === 'fixed'
+      ? Number(cfg.designerValue) || 0
+      : Math.round((basis * (Number(cfg.designerValue) || 0)) / 100);
+  return {daAmount, designerAmount, basis};
+}
+
+export function formatKolamProyekComplaintWindowLabel(
+  templates: KolamProyekTermsTemplate[],
+) {
+  const days = templates
+    .map(item => item.complaintWindowDays)
+    .filter((value): value is number => value != null && value > 0);
+  if (days.length === 0) {
+    return 'Ikut template TOS';
+  }
+  return `${Math.max(...days)} hari pasca selesai`;
+}
+
+/** Mirror FE `resolveHero` in NextStepHero / InstanceDetail. */
+export function resolveKolamProyekNextStepHero(
+  detail: KolamProyekDetail,
+): KolamProyekNextStepHero {
+  const status = detail.lifecycleStatus || 'draft';
+  const outstanding = computeKolamProyekOutstanding(detail);
+  const contract =
+    Number(detail.contractValue) || Number(detail.dealAmount) || 0;
+
+  switch (status) {
+    case 'draft':
+      return {
+        stageLabel: 'Draft',
+        badgeIntent: 'info',
+        heading: 'Lengkapi & kirim penawaran',
+        description:
+          'Pastikan item, nilai kontrak, dan T&C sudah lengkap sebelum dikirim ke client.',
+        primary: {
+          label: 'Kirim ke Client',
+          action: 'send_quotation',
+          disabled: contract <= 0,
+          disabledReason: contract <= 0 ? 'Isi nilai kontrak' : undefined,
+        },
+        secondary: [{label: 'Edit Draf', action: 'edit'}],
+      };
+    case 'quotation_sent':
+      return {
+        stageLabel: 'Penawaran terkirim',
+        badgeIntent: 'warning',
+        heading: 'Menunggu Keputusan Client',
+        description:
+          'Surat penawaran sudah terkirim. Tunggu client setujui / minta revisi / batalkan. Admin tidak perlu aksi.',
+      };
+    case 'revision_in_progress':
+      return {
+        stageLabel: 'Revisi',
+        badgeIntent: 'warning',
+        heading: 'Kirim Ulang Penawaran Setelah Revisi',
+        description:
+          'Client minta revisi. Perbarui item / harga / T&C dulu, lalu kirim ulang.',
+        primary: {
+          label: 'Kirim Ulang',
+          action: 'resend_quotation',
+        },
+        secondary: [{label: 'Edit Draf', action: 'edit'}],
+      };
+    case 'approved':
+    case 'awaiting_dp':
+      return {
+        stageLabel: status === 'approved' ? 'Disetujui' : 'Menunggu DP',
+        badgeIntent: 'info',
+        heading: 'Catat Pembayaran DP',
+        description:
+          'Client sudah setuju kontrak. Minta pembayaran atau catat bukti transfer DP.',
+        primary: {label: 'Ke Jadwal DP', action: 'scroll_dp'},
+      };
+    case 'dp_paid':
+      return {
+        stageLabel: 'DP Lunas',
+        badgeIntent: 'success',
+        heading: 'Mulai Pengerjaan',
+        description:
+          'DP sudah diterima dan dikonfirmasi. Mulai pengerjaan untuk aktifkan submit desain + input progress.',
+        primary: {label: 'Mulai Pengerjaan', action: 'start_work'},
+      };
+    case 'in_progress':
+      return {
+        stageLabel: 'Dikerjakan',
+        badgeIntent: 'info',
+        heading: 'Kirim Desain ke Client',
+        description:
+          'Unggah hasil desain untuk direview client. Revisi bisa dilakukan dari Review Desain.',
+        primary: {label: 'Ke Review Desain', action: 'scroll_design'},
+      };
+    case 'design_review':
+      return {
+        stageLabel: 'Review Desain',
+        badgeIntent: 'warning',
+        heading: 'Menunggu Keputusan Client',
+        description:
+          'Desain terkirim. Client sedang review — setujui / minta revisi / tolak. Tidak perlu aksi admin sekarang.',
+      };
+    case 'delivered': {
+      const lastDelivery = getLatestKolamProyekReviewSubmission(
+        detail.deliverySubmissions,
+      );
+      if (!lastDelivery) {
+        return {
+          stageLabel: 'Dikirim',
+          badgeIntent: 'success',
+          heading: 'Kirim Bukti Pengerjaan',
+          description:
+            'Unggah foto/video/PDF hasil pekerjaan. Client akan mereview sebelum proyek bisa diselesaikan.',
+          primary: {
+            label: 'Kirim Bukti Pengerjaan',
+            action: 'scroll_delivery',
+          },
+        };
+      }
+      if (lastDelivery.clientDecision === 'pending') {
+        return {
+          stageLabel: 'Dikirim',
+          badgeIntent: 'warning',
+          heading: 'Menunggu Keputusan Client',
+          description:
+            'Bukti Pengerjaan sudah dikirim. Tunggu client setujui / minta revisi / tolak. Tidak perlu aksi admin sekarang.',
+        };
+      }
+      if (lastDelivery.clientDecision === 'revision_requested') {
+        const revNote = lastDelivery.revisionNote
+          ? ` Catatan client: ${lastDelivery.revisionNote}`
+          : '';
+        return {
+          stageLabel: 'Dikirim',
+          badgeIntent: 'warning',
+          heading: 'Kirim Ulang Bukti Pengerjaan',
+          description: `Client minta revisi Bukti Pengerjaan.${revNote}`,
+          primary: {
+            label: 'Kirim Ulang Bukti',
+            action: 'scroll_delivery',
+          },
+        };
+      }
+      if (lastDelivery.clientDecision === 'rejected') {
+        const rejReason = lastDelivery.rejectionReason
+          ? ` Alasan: ${lastDelivery.rejectionReason}`
+          : '';
+        return {
+          stageLabel: 'Dikirim',
+          badgeIntent: 'danger',
+          heading: 'Client Tolak Bukti',
+          description: `Client menolak Bukti Pengerjaan.${rejReason}`,
+        };
+      }
+      const progressNow = Number(detail.progressPercent) || 0;
+      const progressBlocked = progressNow < 100;
+      const paymentBlocked = outstanding > 0;
+      return {
+        stageLabel: 'Dikirim',
+        badgeIntent: 'success',
+        heading: 'Selesaikan Proyek',
+        description:
+          'Bukti Pengerjaan disetujui client & pembayaran lunas. Finalisasi membuat invoice penjualan dan akru komisi.',
+        primary: {
+          label: 'Selesaikan Proyek',
+          action: 'close_project',
+          disabled: paymentBlocked || progressBlocked,
+          disabledReason: paymentBlocked
+            ? `Pembayaran belum lunas (${formatRupiah(outstanding)})`
+            : progressBlocked
+              ? `Progress masih ${progressNow}%. Update ke 100% dulu.`
+              : undefined,
+        },
+      };
+    }
+    case 'completed':
+      return {
+        stageLabel: 'Selesai',
+        badgeIntent: 'success',
+        heading: 'Arsip Proyek',
+        description:
+          'Proyek sudah selesai. Komisi terakru dan siap dirilis via menu Finance (Rilis Komisi).',
+      };
+    case 'cancelled':
+      return {
+        stageLabel: 'Dibatalkan',
+        badgeIntent: 'danger',
+        heading: 'Proyek Dibatalkan',
+        description:
+          'Proyek tidak dilanjutkan. Cek riwayat tahapan untuk alasan pembatalan.',
+      };
+    case 'refunded':
+      return {
+        stageLabel: 'Refund',
+        badgeIntent: 'warning',
+        heading: 'Proyek di-Refund',
+        description:
+          'Pembayaran dikembalikan ke client. Cek transaksi wallet untuk detail.',
+      };
+    default:
+      return {
+        stageLabel: String(status),
+        badgeIntent: 'info',
+        heading: 'Status tidak dikenal',
+        description: `Status "${status}" tidak punya mapping langkah selanjutnya.`,
+      };
+  }
+}
+
 export function formatKolamProyekDpRowStatusLabel(row: KolamProyekDpScheduleItem) {
   if (row.paidAt) {
     return 'Lunas';
   }
   if ((Number(row.amountReceived) || 0) > 0) {
     return 'Sebagian';
+  }
+  if ((row.paymentProofs?.length ?? 0) > 0) {
+    return 'Bukti Terkirim';
   }
   return 'Menunggu';
 }
@@ -784,6 +1077,9 @@ export function getKolamProyekDpRowStatusIntent(
   }
   if ((Number(row.amountReceived) || 0) > 0) {
     return 'info';
+  }
+  if ((row.paymentProofs?.length ?? 0) > 0) {
+    return 'warning';
   }
   return 'secondary';
 }
@@ -1369,18 +1665,60 @@ export function normalizeKolamProyekDetail(
       ? linkedTask.workProgressPercent
       : base.progressPercent;
 
-  const termsTemplates = Array.isArray(record.termsTemplates)
+  const termsTemplatesRaw = Array.isArray(record.termsTemplates)
     ? record.termsTemplates
     : [];
-  const firstTerms = asRecord(termsTemplates[0]);
+  const termsTemplates: KolamProyekTermsTemplate[] = termsTemplatesRaw
+    .map((row, index) => {
+      if (typeof row === 'string') {
+        return {
+          id: row,
+          title: row,
+          content: '',
+          complaintWindowDays: null,
+        };
+      }
+      const item = asRecord(row);
+      const id = getId(item);
+      if (!id && !getString(item, 'title')) {
+        return null;
+      }
+      return {
+        id: id || `terms-${index}`,
+        title: getString(item, 'title') || `Template ${index + 1}`,
+        content: getString(item, 'content'),
+        complaintWindowDays: getNumber(item, 'complaintWindowDays'),
+      };
+    })
+    .filter((item): item is KolamProyekTermsTemplate => Boolean(item));
+  const firstTerms = termsTemplates[0] ?? null;
   const termsSnapshot = asRecord(record.termsSnapshot);
   const termsTemplateId =
-    getId(firstTerms) ||
-    (typeof termsTemplates[0] === 'string' ? termsTemplates[0] : null) ||
+    firstTerms?.id ||
     getId(termsSnapshot) ||
     getString(termsSnapshot, 'source') ||
     getString(record, 'termsTemplateId') ||
     null;
+
+  const commissionAccruals = (
+    Array.isArray(record.commissionAccruals) ? record.commissionAccruals : []
+  ).map((row, index) => {
+    const item = asRecord(row);
+    return {
+      id: getId(item) || `accrual-${index}`,
+      party:
+        getString(item, 'party') ||
+        getString(item, 'role') ||
+        getString(item, 'type') ||
+        '—',
+      amount:
+        getNumber(item, 'amount') ??
+        getNumber(item, 'accruedAmount') ??
+        getNumber(item, 'value') ??
+        0,
+      status: getString(item, 'status') || 'accrued',
+    };
+  });
 
   return {
     ...base,
@@ -1400,13 +1738,16 @@ export function normalizeKolamProyekDetail(
     minDpType: getString(record, 'minDpType') || 'percentage',
     minDpValue: getNumber(record, 'minDpValue') ?? 0,
     termsTemplateId,
+    termsTemplates,
     designReferenceEmbedUrl: getString(record, 'designReferenceEmbedUrl'),
     commissionConfig,
+    commissionAccruals,
     progressHistory,
     designSubmissions,
     deliverySubmissions,
     linkedTask,
     saleStatus: getString(sale, 'status') || null,
+    saleFinalTotal: getNumber(sale, 'finalTotal'),
     clientEmail: getString(client, 'email') || null,
     clientPhone: getString(client, 'phone') || null,
     varPreview,
@@ -1473,6 +1814,16 @@ function normalizeDpScheduleItem(
   index: number,
 ): KolamProyekDpScheduleItem {
   const row = asRecord(payload);
+  const paymentProofs = (
+    Array.isArray(row.paymentProofs) ? row.paymentProofs : []
+  ).map(proofPayload => {
+    const proof = asRecord(proofPayload);
+    return {
+      path: getString(proof, 'path'),
+      note: getString(proof, 'note'),
+      uploadedAt: getString(proof, 'uploadedAt') || null,
+    };
+  });
   return {
     index,
     name: getString(row, 'name') || `DP ${index + 1}`,
@@ -1481,6 +1832,7 @@ function normalizeDpScheduleItem(
     paidAt: getString(row, 'paidAt') || null,
     dueAt: getString(row, 'dueAt') || null,
     kwitansiNumber: getString(row, 'kwitansiNumber') || null,
+    paymentProofs,
   };
 }
 

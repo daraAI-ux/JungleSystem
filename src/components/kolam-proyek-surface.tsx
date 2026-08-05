@@ -1,10 +1,20 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import {
+  computeKolamProyekCommissionPreview,
+  computeKolamProyekOutstanding,
+  formatKolamProyekComplaintWindowLabel,
   formatKolamProyekDpRowStatusLabel,
   formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
-  formatKolamProyekPaymentModeLabel,
   formatKolamProyekReviewDecisionLabel,
   getKolamProyekDpRowOutstanding,
   getKolamProyekDpRowStatusIntent,
@@ -13,8 +23,11 @@ import {
   getKolamProyekSectionVisibility,
   getLatestKolamProyekReviewSubmission,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
+  resolveKolamProyekNextStepHero,
   type KolamProyekLifecycleStatus,
   type KolamProyekListItem,
+  type KolamProyekNextStepAction,
+  type KolamProyekNextStepHero,
   type KolamProyekReviewSubmission,
   type KolamProyekSubmitRoundInput,
 } from '../domain/kolam-proyek';
@@ -24,6 +37,7 @@ import {
   type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import {
   useKolamProyekController,
@@ -55,6 +69,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamProyekQuotationForm } from './kolam-proyek-quotation-form';
 import { KolamSearchField } from './kolam-search-field';
@@ -397,6 +412,8 @@ function KolamProyekDetailRead({
   const [closeOpen, setCloseOpen] = useState(false);
   const [progressPercentText, setProgressPercentText] = useState('');
   const [progressNoteText, setProgressNoteText] = useState('');
+  const detailScrollRef = useRef<ScrollView>(null);
+  const sectionOffsetsRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!detail) {
@@ -405,6 +422,14 @@ function KolamProyekDetailRead({
     setProgressPercentText(String(Math.round(detail.progressPercent || 0)));
     setProgressNoteText(detail.progressNote || '');
   }, [detail?.id, detail?.progressPercent, detail?.progressNote]);
+
+  const scrollToSection = (key: string) => {
+    const y = sectionOffsetsRef.current[key];
+    if (y == null) {
+      return;
+    }
+    detailScrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+  };
 
   if (controller.loading && !detail) {
     return (
@@ -454,6 +479,23 @@ function KolamProyekDetailRead({
     getKolamProyekSectionVisibility(detail.lifecycleStatus, 'closeProject') ===
     'active';
   const cost = detail.costBreakdown;
+  const outstanding = computeKolamProyekOutstanding(detail);
+  const receivedTotal = Math.max(
+    0,
+    (Number(detail.contractValue) || Number(detail.dealAmount) || 0) -
+      outstanding,
+  );
+  const commissionPreview = computeKolamProyekCommissionPreview(detail);
+  const nextStep = resolveKolamProyekNextStepHero(detail);
+  const paymentHint =
+    detail.paymentMode === 'staged'
+      ? `DP berjenjang${
+          detail.dpAmount > 0 ? ` · awal ${formatRupiah(detail.dpAmount)}` : ''
+        }`
+      : 'Lunas di muka';
+  const complaintWindow = formatKolamProyekComplaintWindowLabel(
+    detail.termsTemplates,
+  );
   const clientContact = [detail.clientEmail, detail.clientPhone]
     .filter(Boolean)
     .join(' · ');
@@ -467,6 +509,42 @@ function KolamProyekDetailRead({
   const latestDelivery = getLatestKolamProyekReviewSubmission(
     detail.deliverySubmissions,
   );
+
+  const runNextStepAction = (action: KolamProyekNextStepAction) => {
+    switch (action) {
+      case 'send_quotation':
+        setSendOpen(true);
+        break;
+      case 'edit':
+        controller.onEdit();
+        break;
+      case 'resend_quotation':
+        setResendOpen(true);
+        break;
+      case 'scroll_dp':
+        scrollToSection('dp');
+        break;
+      case 'start_work':
+        setStartWorkNote('Mulai pengerjaan');
+        setStartWorkOpen(true);
+        break;
+      case 'scroll_design':
+        scrollToSection('design');
+        break;
+      case 'scroll_delivery':
+        scrollToSection('delivery');
+        break;
+      case 'close_project':
+        setCloseOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const markSection = (key: string) => (event: {nativeEvent: {layout: {y: number}}}) => {
+    sectionOffsetsRef.current[key] = event.nativeEvent.layout.y;
+  };
 
   return (
     <View style={styles.surface}>
@@ -579,38 +657,22 @@ function KolamProyekDetailRead({
         />
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.detailContent}>
+      <ScrollView
+        contentContainerStyle={styles.detailContent}
+        ref={detailScrollRef}
+      >
+        <ProyekNextStepHero
+          acting={controller.acting}
+          config={nextStep}
+          onAction={runNextStepAction}
+        />
+
         <KolamDetailMetaStrip>
           <KolamDetailMetaStripItem label="Status">
             <KolamStatusBadge
               intent={getKolamProyekLifecycleIntent(detail.lifecycleStatus)}
               label={formatKolamProyekLifecycleLabel(detail.lifecycleStatus)}
             />
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="Pelanggan">
-            <Text style={kolamDetailMetaStripStyles.stripValue}>
-              {detail.clientName}
-            </Text>
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="PIC">
-            <Text style={kolamDetailMetaStripStyles.stripValue}>
-              {detail.designerName}
-            </Text>
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="Pembayaran">
-            <Text style={kolamDetailMetaStripStyles.stripValue}>
-              {formatKolamProyekPaymentModeLabel(detail.paymentMode)}
-            </Text>
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="Nilai kontrak">
-            <Text
-              style={[
-                kolamDetailMetaStripStyles.stripValue,
-                styles.tabular,
-              ]}
-            >
-              {formatRupiah(cost.contractValue)}
-            </Text>
           </KolamDetailMetaStripItem>
           {showProgress ? (
             <KolamDetailMetaStripItem label="Progress">
@@ -624,14 +686,54 @@ function KolamProyekDetailRead({
               </Text>
             </KolamDetailMetaStripItem>
           ) : null}
+          <KolamDetailMetaStripItem label="Tunggakan">
+            <Text
+              style={[
+                kolamDetailMetaStripStyles.stripValue,
+                styles.tabular,
+                outstanding > 0 ? styles.warningText : null,
+              ]}
+            >
+              {formatRupiah(outstanding)}
+            </Text>
+          </KolamDetailMetaStripItem>
         </KolamDetailMetaStrip>
 
         <DetailSection title="Ringkasan kontrak">
+          <View style={styles.metricGrid}>
+            <Metric
+              hint={paymentHint}
+              label="Nilai kontrak"
+              value={formatRupiah(cost.contractValue)}
+            />
+            <Metric
+              label="Pemakaian toko"
+              value={formatRupiah(cost.produkToko)}
+            />
+            <Metric
+              label="UE terverifikasi"
+              value={formatRupiah(cost.unexpectedExpenseTotal)}
+            />
+            <Metric
+              label="VAR (basis komisi)"
+              value={formatRupiah(cost.varAmount)}
+            />
+            {detail.paymentMode === 'staged' && showDp ? (
+              <Metric
+                hint={`Sisa ${formatRupiah(outstanding)}`}
+                label="DP terkumpul"
+                value={formatRupiah(receivedTotal)}
+              />
+            ) : null}
+          </View>
           <Text style={styles.metaText}>
             Klien: {detail.clientName}
             {clientContact ? ` · ${clientContact}` : ''}
           </Text>
           <Text style={styles.metaText}>PIC: {detail.designerName}</Text>
+          <Text style={styles.metaText}>
+            Jendela komplain: {complaintWindow}
+          </Text>
           <Text style={styles.metaText}>
             Keputusan penawaran: {detail.quotationDecision || '—'}
           </Text>
@@ -645,16 +747,52 @@ function KolamProyekDetailRead({
               Target selesai: {formatShortDate(detail.targetCompletionDate)}
             </Text>
           ) : null}
-          <View style={styles.metricGrid}>
-            <Metric label="Nilai kontrak" value={formatRupiah(cost.contractValue)} />
-            <Metric label="Produk toko" value={formatRupiah(cost.produkToko)} />
-            <Metric
-              label="UE / bahan"
-              value={formatRupiah(cost.bahanTambahan + cost.ongkir)}
-            />
-            <Metric label="VAR" value={formatRupiah(cost.varAmount)} />
-          </View>
+          {detail.designReferenceEmbedUrl ? (
+            <Pressable
+              onPress={() => {
+                const url = getKolamFileUrl(detail.designReferenceEmbedUrl);
+                if (url) {
+                  void Linking.openURL(url);
+                }
+              }}
+            >
+              <Text style={styles.linkText}>Buka referensi desain</Text>
+            </Pressable>
+          ) : null}
+          {detail.progressNote ? (
+            <View style={styles.noteBlock}>
+              <Text style={styles.sectionSubtitle}>Deskripsi proyek</Text>
+              {containsHtmlMarkup(detail.progressNote) ? (
+                <KolamHtmlContent html={detail.progressNote} />
+              ) : (
+                <Text style={styles.metaText}>{detail.progressNote}</Text>
+              )}
+            </View>
+          ) : null}
         </DetailSection>
+
+        {detail.termsTemplates.length > 0 ? (
+          <DetailSection title="Syarat & Ketentuan">
+            {detail.termsTemplates.map(template => (
+              <View key={template.id} style={styles.listRow}>
+                <Text style={styles.primaryText}>{template.title}</Text>
+                {template.complaintWindowDays != null &&
+                template.complaintWindowDays > 0 ? (
+                  <Text style={styles.metaText}>
+                    Jendela komplain: {template.complaintWindowDays} hari
+                  </Text>
+                ) : null}
+                {template.content ? (
+                  containsHtmlMarkup(template.content) ? (
+                    <KolamHtmlContent html={template.content} />
+                  ) : (
+                    <Text style={styles.metaText}>{template.content}</Text>
+                  )
+                ) : null}
+              </View>
+            ))}
+          </DetailSection>
+        ) : null}
 
         <DetailSection title="Item penawaran">
           {detail.items.length === 0 ? (
@@ -713,73 +851,133 @@ function KolamProyekDetailRead({
                   {detail.commissionConfig.daType === 'percentage'
                     ? `${detail.commissionConfig.daValue}%`
                     : formatRupiah(detail.commissionConfig.daValue)}
+                  {commissionPreview
+                    ? ` → ${formatRupiah(commissionPreview.daAmount)}`
+                    : ''}
                 </Text>
                 <Text style={styles.metaText}>
                   PIC: {detail.commissionConfig.designerType}{' '}
                   {detail.commissionConfig.designerType === 'percentage'
                     ? `${detail.commissionConfig.designerValue}%`
                     : formatRupiah(detail.commissionConfig.designerValue)}
+                  {commissionPreview
+                    ? ` → ${formatRupiah(commissionPreview.designerAmount)}`
+                    : ''}
                 </Text>
+                {commissionPreview ? (
+                  <Text style={styles.metaText}>
+                    {detail.lifecycleStatus === 'completed'
+                      ? `Tercatat saat proyek ditutup · VAR ${formatRupiah(commissionPreview.basis)}`
+                      : `Pratinjau dari VAR ${formatRupiah(commissionPreview.basis)} — final saat proyek selesai`}
+                  </Text>
+                ) : null}
               </>
             ) : (
               <Text style={styles.metaText}>Konfigurasi komisi belum diisi.</Text>
             )}
+            {detail.commissionAccruals.length > 0 ? (
+              <View style={styles.historyBlock}>
+                {detail.commissionAccruals.map(accrual => (
+                  <Text key={accrual.id} style={styles.metaText}>
+                    Akru {accrual.party}: {formatRupiah(accrual.amount)}
+                    {accrual.status ? ` · ${accrual.status}` : ''}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
           </DetailSection>
         ) : null}
 
         {showDp ? (
-          <DetailSection title="Jadwal DP">
-            {detail.dpAmount > 0 ? (
-              <Text style={styles.metaText}>
-                DP awal: {formatRupiah(detail.dpAmount)}
+          <View onLayout={markSection('dp')}>
+            <DetailSection title="Pembayaran">
+              <Text style={styles.primaryText}>
+                {formatRupiah(receivedTotal)} /{' '}
+                {formatRupiah(cost.contractValue)}
               </Text>
-            ) : null}
-            {detail.dpSchedule.map(row => {
-              const outstanding = getKolamProyekDpRowOutstanding(row);
-              const canConfirmRow =
-                dpActionsActive && !row.paidAt && outstanding > 0;
-              return (
-                <View key={`dp-${row.index}`} style={styles.listRow}>
-                  <View style={styles.dpRowHeader}>
-                    <Text style={styles.primaryText}>
-                      {row.name} · {formatRupiah(row.amount)}
-                    </Text>
-                    <KolamStatusBadge
-                      intent={getKolamProyekDpRowStatusIntent(row)}
-                      label={formatKolamProyekDpRowStatusLabel(row)}
-                    />
-                  </View>
-                  <Text style={styles.metaText}>
-                    Diterima {formatRupiah(row.amountReceived)}
-                    {outstanding > 0 && !row.paidAt
-                      ? ` · sisa ${formatRupiah(outstanding)}`
-                      : ''}
-                    {row.paidAt
-                      ? ` · lunas ${formatShortDate(row.paidAt)}`
-                      : row.dueAt
-                        ? ` · jatuh tempo ${formatShortDate(row.dueAt)}`
-                        : ''}
-                  </Text>
-                  {row.kwitansiNumber ? (
+              <Text style={styles.metaText}>
+                Sisa {formatRupiah(outstanding)}
+              </Text>
+              {detail.dpAmount > 0 ? (
+                <Text style={styles.metaText}>
+                  DP awal: {formatRupiah(detail.dpAmount)}
+                </Text>
+              ) : null}
+              {detail.dpSchedule.map(row => {
+                const rowOutstanding = getKolamProyekDpRowOutstanding(row);
+                const canConfirmRow =
+                  dpActionsActive && !row.paidAt && rowOutstanding > 0;
+                return (
+                  <View key={`dp-${row.index}`} style={styles.listRow}>
+                    <View style={styles.dpRowHeader}>
+                      <Text style={styles.primaryText}>
+                        {row.name} · {formatRupiah(row.amount)}
+                      </Text>
+                      <KolamStatusBadge
+                        intent={getKolamProyekDpRowStatusIntent(row)}
+                        label={formatKolamProyekDpRowStatusLabel(row)}
+                      />
+                    </View>
                     <Text style={styles.metaText}>
-                      Kwitansi: {row.kwitansiNumber}
+                      Diterima {formatRupiah(row.amountReceived)}
+                      {rowOutstanding > 0 && !row.paidAt
+                        ? ` · sisa ${formatRupiah(rowOutstanding)}`
+                        : ''}
+                      {row.paidAt
+                        ? ` · lunas ${formatShortDate(row.paidAt)}`
+                        : row.dueAt
+                          ? ` · jatuh tempo ${formatShortDate(row.dueAt)}`
+                          : ''}
                     </Text>
-                  ) : null}
-                  {canConfirmRow ? (
-                    <KolamButton
-                      disabled={controller.acting}
-                      label="Konfirmasi dana masuk"
-                      onPress={() => {
-                        setConfirmDpIndex(row.index);
-                        setConfirmDpAmount(String(outstanding));
-                        setConfirmDpNote('');
-                      }}
-                    />
-                  ) : null}
-                </View>
-              );
-            })}
-          </DetailSection>
+                    {row.kwitansiNumber ? (
+                      <Text style={styles.metaText}>
+                        Kwitansi: {row.kwitansiNumber}
+                      </Text>
+                    ) : null}
+                    {row.paymentProofs.length > 0 ? (
+                      <View style={styles.historyBlock}>
+                        {row.paymentProofs.map((proof, proofIndex) => {
+                          const url = getKolamFileUrl(proof.path);
+                          return (
+                            <Pressable
+                              key={`${row.index}-proof-${proofIndex}`}
+                              disabled={!url}
+                              onPress={() => {
+                                if (url) {
+                                  void Linking.openURL(url);
+                                }
+                              }}
+                            >
+                              <Text
+                                style={url ? styles.linkText : styles.metaText}
+                              >
+                                Bukti {proofIndex + 1}
+                                {proof.uploadedAt
+                                  ? ` · ${formatShortDateTime(proof.uploadedAt)}`
+                                  : ''}
+                                {proof.note ? ` — ${proof.note}` : ''}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    ) : null}
+                    {canConfirmRow ? (
+                      <KolamButton
+                        disabled={controller.acting}
+                        label="Konfirmasi dana masuk"
+                        onPress={() => {
+                          setConfirmDpIndex(row.index);
+                          setConfirmDpAmount(String(rowOutstanding));
+                          setConfirmDpNote('');
+                        }}
+                      />
+                    ) : null}
+                  </View>
+                );
+              })}
+            </DetailSection>
+          </View>
         ) : null}
 
         {showProgress ? (
@@ -843,7 +1041,8 @@ function KolamProyekDetailRead({
         ) : null}
 
         {showDesign ? (
-          <DetailSection title="Review desain">
+          <View onLayout={markSection('design')}>
+            <DetailSection title="Review desain">
             {controller.canSubmitDesign ? (
               <ReviewRoundSubmitForm
                 acting={controller.acting}
@@ -881,11 +1080,13 @@ function KolamProyekDetailRead({
                   />
                 ))
             )}
-          </DetailSection>
+            </DetailSection>
+          </View>
         ) : null}
 
         {showDelivery ? (
-          <DetailSection title="Bukti pengerjaan">
+          <View onLayout={markSection('delivery')}>
+            <DetailSection title="Bukti pengerjaan">
             {controller.canSubmitDelivery ? (
               <ReviewRoundSubmitForm
                 acting={controller.acting}
@@ -924,7 +1125,8 @@ function KolamProyekDetailRead({
                   />
                 ))
             )}
-          </DetailSection>
+            </DetailSection>
+          </View>
         ) : null}
 
         {showClose ? (
@@ -945,6 +1147,50 @@ function KolamProyekDetailRead({
           </DetailSection>
         ) : null}
 
+        {detail.saleInvoiceCode || detail.saleId ? (
+          <DetailSection title="Invoice / PO">
+            <Text style={styles.primaryText}>
+              {detail.saleInvoiceCode || detail.saleId}
+            </Text>
+            {detail.saleStatus ? (
+              <KolamStatusBadge
+                intent={
+                  detail.saleStatus === 'paid'
+                    ? 'success'
+                    : detail.saleStatus === 'cancelled'
+                      ? 'danger'
+                      : 'secondary'
+                }
+                label={
+                  detail.saleStatus === 'paid'
+                    ? 'Lunas'
+                    : detail.saleStatus === 'partial'
+                      ? 'Sebagian'
+                      : detail.saleStatus === 'pending'
+                        ? 'Menunggu'
+                        : detail.saleStatus === 'cancelled'
+                          ? 'Dibatalkan'
+                          : detail.saleStatus === 'draft'
+                            ? 'Draf'
+                            : detail.saleStatus
+                }
+              />
+            ) : null}
+            {detail.saleFinalTotal != null ? (
+              <Text style={styles.metaText}>
+                {formatRupiah(detail.saleFinalTotal)}
+              </Text>
+            ) : null}
+            {detail.saleId ? (
+              <KolamButton
+                intent="outline"
+                label="Lihat invoice"
+                onPress={() => onRouteChange?.(`/sales/${detail.saleId}`)}
+              />
+            ) : null}
+          </DetailSection>
+        ) : null}
+
         <DetailSection title="Tautan terkait">
           {detail.linkedTask ? (
             <Pressable
@@ -960,26 +1206,7 @@ function KolamProyekDetailRead({
           ) : (
             <Text style={styles.metaText}>Belum ada tugas operasional.</Text>
           )}
-          {detail.saleId ? (
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => onRouteChange?.(`/sales/${detail.saleId}`)}
-            >
-              <Text style={styles.linkText}>
-                Penjualan: {detail.saleInvoiceCode || detail.saleId}
-                {detail.saleStatus ? ` · ${detail.saleStatus}` : ''}
-              </Text>
-            </Pressable>
-          ) : (
-            <Text style={styles.metaText}>
-              Penjualan final belum dibuat (setelah close).
-            </Text>
-          )}
         </DetailSection>
-
-        <Text style={styles.hintText}>
-          Refund / polish RBAC dilanjutkan di batch P5 bila diperlukan.
-        </Text>
       </ScrollView>
 
       <KolamConfirmDialog
@@ -1444,6 +1671,63 @@ function ReviewRoundSubmitForm({
   );
 }
 
+function ProyekNextStepHero({
+  acting,
+  config,
+  onAction,
+}: {
+  acting: boolean;
+  config: KolamProyekNextStepHero;
+  onAction: (action: KolamProyekNextStepAction) => void;
+}) {
+  return (
+    <View style={styles.heroCard}>
+      <View style={styles.heroHeader}>
+        <View style={styles.heroTitleBlock}>
+          <Text style={styles.heroEyebrow}>Langkah selanjutnya</Text>
+          <Text style={styles.heroHeading}>{config.heading}</Text>
+        </View>
+        <KolamStatusBadge
+          intent={config.badgeIntent}
+          label={config.stageLabel}
+        />
+      </View>
+      <Text style={styles.heroDescription}>{config.description}</Text>
+      {config.primary || (config.secondary && config.secondary.length > 0) ? (
+        <View style={styles.heroActions}>
+          {config.primary ? (
+            <KolamButton
+              disabled={acting || Boolean(config.primary.disabled)}
+              label={
+                acting &&
+                (config.primary.action === 'send_quotation' ||
+                  config.primary.action === 'start_work' ||
+                  config.primary.action === 'close_project' ||
+                  config.primary.action === 'resend_quotation')
+                  ? 'Memproses…'
+                  : config.primary.label
+              }
+              onPress={() => onAction(config.primary!.action)}
+            />
+          ) : null}
+          {(config.secondary ?? []).map(item => (
+            <KolamButton
+              key={item.label}
+              disabled={acting}
+              intent="outline"
+              label={item.label}
+              onPress={() => onAction(item.action)}
+            />
+          ))}
+        </View>
+      ) : null}
+      {config.primary?.disabled && config.primary.disabledReason ? (
+        <Text style={styles.metaText}>{config.primary.disabledReason}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 function ReviewSubmissionCard({
   roundNumber,
   submission,
@@ -1466,6 +1750,9 @@ function ReviewSubmissionCard({
         {submission.submittedAt
           ? formatShortDateTime(submission.submittedAt)
           : '—'}
+        {submission.decidedAt
+          ? ` · diputus ${formatShortDateTime(submission.decidedAt)}`
+          : ''}
         {submission.deadline
           ? ` · tenggat ${formatShortDate(submission.deadline)}`
           : ''}
@@ -1489,20 +1776,42 @@ function ReviewSubmissionCard({
           Alasan tolak: {submission.rejectionReason}
         </Text>
       ) : null}
-      {submission.files.map((file, index) => (
-        <Text key={`${file.path}-${index}`} style={styles.metaText}>
-          • {file.name || file.path || `File ${index + 1}`}
-        </Text>
-      ))}
+      {submission.files.map((file, index) => {
+        const url = getKolamFileUrl(file.path);
+        return (
+          <Pressable
+            key={`${file.path}-${index}`}
+            disabled={!url}
+            onPress={() => {
+              if (url) {
+                void Linking.openURL(url);
+              }
+            }}
+          >
+            <Text style={url ? styles.linkText : styles.metaText}>
+              • {file.name || file.path || `File ${index + 1}`}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  hint,
+  label,
+  value,
+}: {
+  hint?: string;
+  label: string;
+  value: string;
+}) {
   return (
     <View style={styles.metricCard}>
       <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
+      {hint ? <Text style={styles.metricHint}>{hint}</Text> : null}
     </View>
   );
 }
@@ -1617,6 +1926,59 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 28,
   },
+  heroCard: {
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+    padding: 12,
+  },
+  heroHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  heroTitleBlock: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  heroEyebrow: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  heroHeading: {
+    color: V.colors.fg,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  heroDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sectionSubtitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  noteBlock: {
+    gap: 4,
+    marginTop: 8,
+  },
+  warningText: {
+    color: V.colors.warning,
+  },
   section: {
     gap: 6,
   },
@@ -1675,6 +2037,11 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '600',
   },
+  metricHint: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    lineHeight: 15,
+  },
   historyBlock: {
     gap: 4,
     marginTop: 4,
@@ -1718,11 +2085,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textDecorationLine: 'underline',
-  },
-  hintText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    marginTop: 4,
   },
   tabular: {
     fontVariant: ['tabular-nums'],
