@@ -539,12 +539,6 @@ function KolamProyekDetailRead({
     adminLifecycleTargets.length === 0 &&
     (detail.lifecycleStatus === 'in_progress' ||
       detail.lifecycleStatus === 'design_review');
-  const paymentHint =
-    detail.paymentMode === 'staged'
-      ? `DP berjenjang${
-          detail.dpAmount > 0 ? ` · awal ${formatRupiah(detail.dpAmount)}` : ''
-        }`
-      : 'Lunas di muka';
   const complaintWindow = formatKolamProyekComplaintWindowLabel(
     detail.termsTemplates,
   );
@@ -744,9 +738,6 @@ function KolamProyekDetailRead({
               >
                 {formatRupiah(cost.contractValue)}
               </Text>
-              <Text numberOfLines={1} style={styles.metricHint}>
-                {paymentHint}
-              </Text>
             </ProyekMetaStripItem>
             <ProyekMetaStripItem label="Pemakaian toko">
               <Text
@@ -791,9 +782,6 @@ function KolamProyekDetailRead({
                   ]}
                 >
                   {formatRupiah(receivedTotal)}
-                </Text>
-                <Text numberOfLines={1} style={styles.metricHint}>
-                  Sisa {formatRupiah(outstanding)}
                 </Text>
               </ProyekMetaStripItem>
             ) : null}
