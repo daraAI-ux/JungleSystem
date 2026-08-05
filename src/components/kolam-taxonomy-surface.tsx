@@ -14,11 +14,6 @@ import {
   countActiveLocaleAuditItems,
   createTaxonomyLocaleAuditItems,
 } from '../domain/kolam-locale-audit';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamTaxonomyController,
@@ -27,30 +22,21 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -123,8 +109,12 @@ function KolamTaxonomyShell({
     controller.mode === 'new'
       ? 'Taksonomi baru'
       : controller.mode === 'edit'
-        ? `Edit · ${controller.selectedTaxonomy?.name || controller.form.name || 'Taksonomi'}`
-        : controller.selectedTaxonomy?.name || 'Detail taksonomi';
+      ? `Edit · ${
+          controller.selectedTaxonomy?.name ||
+          controller.form.name ||
+          'Taksonomi'
+        }`
+      : controller.selectedTaxonomy?.name || 'Detail taksonomi';
 
   return (
     <View style={styles.surface}>
@@ -139,7 +129,6 @@ function KolamTaxonomyShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -188,7 +177,7 @@ function KolamTaxonomyList({
   const [statusFilter, setStatusFilter] =
     React.useState<TaxonomyStatusFilter>('all');
   const [rootFilter, setRootFilter] = React.useState<TaxonomyRootFilter>('all');
-  const [pageSize, setPageSize] = React.useState(10);
+  const pageSize = 10;
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<TaxonomyListFilterPanel | null>(null);
@@ -201,7 +190,6 @@ function KolamTaxonomyList({
   const statusTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamTaxonomy | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredTaxonomies = React.useMemo(
     () =>
       filterTaxonomies(
@@ -223,27 +211,30 @@ function KolamTaxonomyList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const listColumns = React.useMemo(
-    () => fitTaxonomyListColumns(tableBodyWidth),
-    [tableBodyWidth],
+  const listColumns = React.useMemo<Array<KolamListTableColumn<KolamTaxonomy>>>(
+    () => buildTaxonomyListColumns(),
+    [],
   );
   const sortFilterLabel =
     sortMode === 'name-desc'
       ? 'Nama Z-A'
       : sortMode === 'level-asc'
-        ? 'Tingkat'
-        : sortMode === 'newest'
-          ? 'Terbaru'
-          : 'Nama A-Z';
+      ? 'Tingkat'
+      : sortMode === 'newest'
+      ? 'Terbaru'
+      : 'Nama A-Z';
   const levelFilterLabel =
-    levelFilter === 'all' ? 'Semua Tingkat' : getTaxonomyLevelLabel(levelFilter);
-  const rootFilterLabel = rootFilter === 'root' ? 'Hanya Akar' : 'Semua Hierarki';
+    levelFilter === 'all'
+      ? 'Semua Tingkat'
+      : getTaxonomyLevelLabel(levelFilter);
+  const rootFilterLabel =
+    rootFilter === 'root' ? 'Hanya Akar' : 'Semua Hierarki';
   const statusFilterLabel =
     statusFilter === 'active'
       ? 'Aktif'
       : statusFilter === 'inactive'
-        ? 'Nonaktif'
-        : 'Semua Status';
+      ? 'Nonaktif'
+      : 'Semua Status';
 
   const getFilterTriggerRef = (panel: TaxonomyListFilterPanel) => {
     switch (panel) {
@@ -294,7 +285,7 @@ function KolamTaxonomyList({
 
   React.useEffect(() => {
     setPage(1);
-  }, [levelFilter, pageSize, rootFilter, search, sortMode, statusFilter]);
+  }, [levelFilter, rootFilter, search, sortMode, statusFilter]);
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -356,7 +347,6 @@ function KolamTaxonomyList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -436,75 +426,35 @@ function KolamTaxonomyList({
           </View>
         ) : null}
       </View>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={setPageSize}
-            page={safePage}
-            pageSize={pageSize}
-            total={sortedTaxonomies.length}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        columns={listColumns}
+        emptyTitle={
+          controller.loading ? 'Memuat taksonomi...' : 'Belum ada taksonomi'
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {pagedTaxonomies.length ? (
-          pagedTaxonomies.map(taxonomy => (
-            <KolamTaxonomyRow
-              columns={listColumns}
-              key={taxonomy.id}
-              onDelete={() => setDeleteCandidate(taxonomy)}
-              onEdit={() => {
-                void controller.onSelectTaxonomy(taxonomy);
-                onRouteChange?.(`${getTaxonomyRoute(taxonomy)}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectTaxonomy(taxonomy);
-                onRouteChange?.(getTaxonomyRoute(taxonomy));
-              }}
-              taxonomy={taxonomy}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Taksonomi belum tersedia dari cache atau backend."
-              title={
-                controller.loading
-                  ? 'Memuat taksonomi...'
-                  : 'Belum ada taksonomi'
-              }
-            />
-          </View>
+        getRowKey={taxonomy => taxonomy.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: sortedTaxonomies.length,
+        }}
+        renderActions={taxonomy => (
+          <KolamTaxonomyActionsMenu
+            onDelete={() => setDeleteCandidate(taxonomy)}
+            onEdit={() => {
+              void controller.onSelectTaxonomy(taxonomy);
+              onRouteChange?.(`${getTaxonomyRoute(taxonomy)}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectTaxonomy(taxonomy);
+              onRouteChange?.(getTaxonomyRoute(taxonomy));
+            }}
+            taxonomy={taxonomy}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={pagedTaxonomies}
+      />
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="taksonomi"
@@ -529,141 +479,131 @@ function KolamTaxonomyList({
   );
 }
 
-function KolamTaxonomyRow({
-  columns,
+function buildTaxonomyListColumns(): Array<
+  KolamListTableColumn<KolamTaxonomy>
+> {
+  return [
+    {
+      flex: 1.28,
+      id: 'primary',
+      label: 'Taksonomi',
+      render: taxonomy => <KolamTaxonomyIdentityCell taxonomy={taxonomy} />,
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'meta',
+      label: 'Tingkat',
+      render: taxonomy => (
+        <KolamStatusBadge
+          intent="muted"
+          label={getTaxonomyLevelLabel(taxonomy.level)}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1,
+      id: 'notes',
+      label: 'Nama Ilmiah',
+      render: taxonomy => (
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.notesText,
+            taxonomy.scientificName ? styles.italicText : null,
+          ]}
+        >
+          {taxonomy.scientificName || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.62,
+      id: 'children',
+      label: 'Anak',
+      render: taxonomy => (
+        <Text numberOfLines={1} style={styles.countText}>
+          {String(taxonomy.children.length)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1.08,
+      id: 'marketplace',
+      label: 'Jalur',
+      render: taxonomy => (
+        <Text numberOfLines={1} style={styles.pathText}>
+          {taxonomy.path || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'status',
+      label: 'Status',
+      render: taxonomy => (
+        <KolamStatusBadge
+          intent={taxonomy.status === 'active' ? 'success' : 'warning'}
+          label={getTaxonomyStatusLabel(taxonomy.status)}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+  ];
+}
+
+function KolamTaxonomyIdentityCell({ taxonomy }: { taxonomy: KolamTaxonomy }) {
+  return (
+    <View style={styles.taxonomyTableIdentityCell}>
+      <View style={styles.identity}>
+        <View style={styles.taxonomyMark} />
+        <KolamCopyStack
+          containerStyle={styles.identityCopy}
+          items={[
+            { id: 'name', text: taxonomy.name, style: styles.rowTitle },
+            {
+              id: 'path',
+              text: taxonomy.path || taxonomy.parentName || 'Akar taksonomi',
+              style: styles.rowMeta,
+              textProps: { ellipsizeMode: 'tail', numberOfLines: 1 },
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+function KolamTaxonomyActionsMenu({
   onDelete,
   onEdit,
   onSelect,
   taxonomy,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
   onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
   taxonomy: KolamTaxonomy;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const notesColumn = columnOf('notes');
-  const childrenColumn = columnOf('children');
-  const pathColumn = columnOf('marketplace');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <View style={styles.identity}>
-            <View style={styles.taxonomyMark} />
-            <KolamCopyStack
-              containerStyle={styles.identityCopy}
-              items={[
-                { id: 'name', text: taxonomy.name, style: styles.rowTitle },
-                {
-                  id: 'path',
-                  text:
-                    taxonomy.path || taxonomy.parentName || 'Akar taksonomi',
-                  style: styles.rowMeta,
-                  textProps: { ellipsizeMode: 'tail', numberOfLines: 1 },
-                },
-              ]}
-            />
-          </View>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent="muted"
-            label={getTaxonomyLevelLabel(taxonomy.level)}
-            style={styles.centerBadge}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.notesText,
-              taxonomy.scientificName ? styles.italicText : null,
-            ]}
-          >
-            {taxonomy.scientificName || '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.countText}>
-            {String(taxonomy.children.length)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            pathColumn ? getKolamDataTableColumnStyle(pathColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.pathText}>
-            {taxonomy.path || '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={taxonomy.status === 'active' ? 'success' : 'warning'}
-            label={getTaxonomyStatusLabel(taxonomy.status)}
-            style={styles.centerBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${taxonomy.name}`}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
-          onOpenChange={setActionMenuOpen}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+    <View style={actionMenuOpen ? styles.taxonomyActionMenuRaised : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${taxonomy.name}`}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+        ]}
+        onOpenChange={setActionMenuOpen}
+      />
+    </View>
   );
 }
 
@@ -963,45 +903,6 @@ function TaxonomyHero({ taxonomy }: { taxonomy: KolamTaxonomy }) {
   );
 }
 
-function fitTaxonomyListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('taxonomy');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
-}
-
 function getPathItems(taxonomy: KolamTaxonomy) {
   const pathItems = taxonomy.fullPath.length
     ? taxonomy.fullPath
@@ -1160,28 +1061,12 @@ const styles = StyleSheet.create({
   stack: {
     gap: 14,
   },
-  emptyWrap: {
-    minHeight: 220,
-    justifyContent: 'center',
-  },
-  activeActionRow: {
-    zIndex: 1000,
-    elevation: 30,
-    overflow: 'visible',
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
-  listCell: {
+  taxonomyTableIdentityCell: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
-    overflow: 'hidden',
-    paddingVertical: 4,
-  },
-  identityCell: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    overflow: 'visible',
+    width: '100%',
   },
   identity: {
     flexDirection: 'row',
@@ -1246,21 +1131,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-  actionsTrack: {
-    alignItems: 'center',
-  },
-  paginationRow: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  pageLabel: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
+  taxonomyActionMenuRaised: {
+    elevation: 30,
+    zIndex: 1000,
   },
   toolbarWrap: {
     elevation: 1000,
