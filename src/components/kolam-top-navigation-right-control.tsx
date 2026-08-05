@@ -66,7 +66,8 @@ export function KolamTopNavigationRightControl({
         accessibilityLabel={control.label}
         onPress={() => onCashflowNavigate?.('/app-downloads')}
         size={32}
-        radius="full">
+        radius="full"
+        variant="ghost">
         <KolamTopNavigationDownloadIcon />
       </KolamIconButton>
     );

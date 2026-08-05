@@ -1,62 +1,24 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import Svg, {Circle, Path} from 'react-native-svg';
 
-export function KolamTopNavigationDownloadIcon({
-  color = V.colors.mutedFg,
-}: {
-  color?: string;
-}) {
+export function KolamTopNavigationDownloadIcon(_props: {color?: string}) {
   return (
-    <View style={styles.icon}>
-      <View style={[styles.stem, {backgroundColor: color}]} />
-      <View style={[styles.leftWing, {backgroundColor: color}]} />
-      <View style={[styles.rightWing, {backgroundColor: color}]} />
-      <View style={[styles.tray, {borderColor: color}]} />
-    </View>
+    <Svg height={32} viewBox="0 0 512 512" width={32}>
+      <Circle cx={256} cy={256} fill="#F47F65" r={256} />
+      <Path
+        d="M225 126H287C305 126 319 140 319 158V258H352C367 258 375 276 365 287L279 377C267 390 245 390 233 377L147 287C137 276 145 258 160 258H193V158C193 140 207 126 225 126Z"
+        fill="#F1B4CC"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M128 317V360C128 384 147 403 171 403H341C365 403 384 384 384 360V317H345V347C345 358 336 367 325 367H187C176 367 167 358 167 347V317H128Z"
+        fill="#F1B4CC"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+    </Svg>
   );
 }
-
-const styles = StyleSheet.create({
-  icon: {
-    height: 18,
-    width: 18,
-  },
-  stem: {
-    borderRadius: 1,
-    height: 9,
-    left: 8,
-    position: 'absolute',
-    top: 2,
-    width: 2,
-  },
-  leftWing: {
-    borderRadius: 1,
-    height: 6,
-    left: 5,
-    position: 'absolute',
-    top: 8,
-    transform: [{rotate: '-45deg'}],
-    width: 2,
-  },
-  rightWing: {
-    borderRadius: 1,
-    height: 6,
-    left: 11,
-    position: 'absolute',
-    top: 8,
-    transform: [{rotate: '45deg'}],
-    width: 2,
-  },
-  tray: {
-    borderBottomWidth: 1.6,
-    borderLeftWidth: 1.6,
-    borderRadius: 3,
-    borderRightWidth: 1.6,
-    bottom: 2,
-    height: 5,
-    left: 2,
-    position: 'absolute',
-    right: 2,
-  },
-});
