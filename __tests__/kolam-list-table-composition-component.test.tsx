@@ -1,8 +1,10 @@
 import React from 'react';
 import {StyleSheet, Text} from 'react-native';
+import {Path} from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {
   KolamListTableComposition,
+  KolamListTablePaginationFooter,
   kolamListTableCompositionStyles,
   type KolamListTableColumn,
 } from '../src/components/kolam-list-table-composition';
@@ -135,5 +137,74 @@ describe('KolamListTableComposition', () => {
     expect(renderer!.root.findByType(KolamEmptyState).props.title).toBe(
       'Memuat...',
     );
+  });
+
+  it('renders the reusable pagination footer pattern', async () => {
+    const onPageChange = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamListTablePaginationFooter
+          onPageChange={onPageChange}
+          page={3}
+          pageSize={10}
+          total={320}
+        />,
+      );
+    });
+
+    const textValues = renderer!.root
+      .findAllByType(Text)
+      .map(node => node.props.children);
+
+    const flattenedText = textValues.flat(4);
+
+    expect(textValues).toEqual(
+      expect.arrayContaining([1, 2, 3, '...', 32]),
+    );
+    expect(flattenedText).toEqual(expect.arrayContaining([21, '-', 30, 320]));
+    expect(textValues).not.toContain(4);
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
+
+    const page32 = renderer!.root
+      .findAllByProps({accessibilityLabel: 'Halaman 32'})
+      .find(node => typeof node.props.onPress === 'function');
+    page32!.props.onPress();
+    expect(onPageChange).toHaveBeenCalledWith(32);
+  });
+
+  it('uses real SVG triangle icons for pagination navigation buttons', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamListTablePaginationFooter
+          onPageChange={jest.fn()}
+          page={1}
+          pageSize={10}
+          total={25}
+        />,
+      );
+    });
+
+    const firstButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Halaman pertama',
+    });
+    const previousButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Halaman sebelumnya',
+    });
+    const nextButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Halaman berikutnya',
+    });
+    const lastButton = renderer!.root.findByProps({
+      accessibilityLabel: 'Halaman terakhir',
+    });
+
+    expect(firstButton.props.disabled).toBe(true);
+    expect(previousButton.props.disabled).toBe(true);
+    expect(nextButton.props.disabled).toBe(false);
+    expect(lastButton.props.disabled).toBe(false);
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThanOrEqual(6);
   });
 });

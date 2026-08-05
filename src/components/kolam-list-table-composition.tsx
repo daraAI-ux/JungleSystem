@@ -7,9 +7,11 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import Svg, {Path} from 'react-native-svg';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamInteractionFrame} from './kolam-interaction-frame';
 
 export type KolamListTableColumn<TRow> = {
   align?: 'left' | 'center' | 'right';
@@ -17,6 +19,14 @@ export type KolamListTableColumn<TRow> = {
   id: string;
   label: string;
   render: (row: TRow) => React.ReactNode;
+};
+
+export type KolamListTablePagination = {
+  onPageChange: (page: number) => void;
+  page: number;
+  pageSize: number;
+  siblingCount?: number;
+  total: number;
 };
 
 export function KolamListTableComposition<TRow>({
@@ -27,6 +37,7 @@ export function KolamListTableComposition<TRow>({
   getRowKey,
   loading = false,
   onBodyWidthChange,
+  pagination,
   renderActions,
   rowStyle,
   rows,
@@ -37,22 +48,28 @@ export function KolamListTableComposition<TRow>({
   columns: Array<KolamListTableColumn<TRow>>;
   emptyTitle?: string;
   fill?: boolean;
-  footer: React.ReactNode;
+  footer?: React.ReactNode;
   getRowKey: (row: TRow, index: number) => string;
   loading?: boolean;
   onBodyWidthChange?: (width: number) => void;
+  pagination?: KolamListTablePagination;
   renderActions?: (row: TRow) => React.ReactNode;
   rowStyle?: StyleProp<ViewStyle>;
   rows: TRow[];
   style?: StyleProp<ViewStyle>;
 }) {
   const shouldRenderActionsColumn = actionsColumn || Boolean(renderActions);
+  const resolvedFooter = pagination ? (
+    <KolamListTablePaginationFooter {...pagination} />
+  ) : (
+    footer ?? null
+  );
 
   return (
     <View style={styles.root}>
       <KolamCatalogListTableShell
         fill={fill}
-        footer={footer}
+        footer={resolvedFooter}
         onBodyWidthChange={onBodyWidthChange}
         style={[styles.tableFrame, style]}
       >
@@ -110,6 +127,179 @@ export function KolamListTableComposition<TRow>({
         )}
       </KolamCatalogListTableShell>
     </View>
+  );
+}
+
+export function KolamListTablePaginationFooter({
+  onPageChange,
+  page,
+  pageSize,
+  siblingCount = 1,
+  total,
+}: KolamListTablePagination) {
+  const pageCount = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const from = total ? (safePage - 1) * pageSize + 1 : 0;
+  const to = Math.min(safePage * pageSize, total);
+  const pages = getPaginationItems(safePage, pageCount, siblingCount);
+
+  return (
+    <View style={styles.paginationFooter}>
+      <Text style={styles.paginationSummary}>
+        Menampilkan <Text style={styles.paginationSummaryStrong}>{from}-{to}</Text>{' '}
+        dari <Text style={styles.paginationSummaryStrong}>{total}</Text> hasil
+      </Text>
+      <View style={styles.paginationControls}>
+        <KolamListTablePaginationIconButton
+          accessibilityLabel="Halaman pertama"
+          disabled={safePage <= 1}
+          direction="first"
+          onPress={() => onPageChange(1)}
+        />
+        <KolamListTablePaginationIconButton
+          accessibilityLabel="Halaman sebelumnya"
+          disabled={safePage <= 1}
+          direction="prev"
+          onPress={() => onPageChange(Math.max(1, safePage - 1))}
+        />
+        {pages.map((item, index) =>
+          item === 'ellipsis' ? (
+            <Text key={`ellipsis-${index}`} style={styles.paginationEllipsis}>
+              ...
+            </Text>
+          ) : (
+            <KolamInteractionFrame
+              accessibilityLabel={`Halaman ${item}`}
+              accessibilityState={{selected: item === safePage}}
+              key={item}
+              onPress={() => onPageChange(item)}
+              selected={item === safePage}
+              style={[
+                styles.paginationPageButton,
+                item === safePage ? styles.paginationPageButtonActive : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.paginationPageText,
+                  item === safePage ? styles.paginationPageTextActive : null,
+                ]}
+              >
+                {item}
+              </Text>
+            </KolamInteractionFrame>
+          ),
+        )}
+        <KolamListTablePaginationIconButton
+          accessibilityLabel="Halaman berikutnya"
+          disabled={safePage >= pageCount}
+          direction="next"
+          onPress={() => onPageChange(Math.min(pageCount, safePage + 1))}
+        />
+        <KolamListTablePaginationIconButton
+          accessibilityLabel="Halaman terakhir"
+          disabled={safePage >= pageCount}
+          direction="last"
+          onPress={() => onPageChange(pageCount)}
+        />
+      </View>
+    </View>
+  );
+}
+
+type KolamPaginationItem = number | 'ellipsis';
+
+function getPaginationItems(
+  page: number,
+  pageCount: number,
+  siblingCount: number,
+): KolamPaginationItem[] {
+  const safeSiblingCount = Math.max(0, siblingCount);
+  const visible = new Set<number>([1, pageCount]);
+
+  if (page <= safeSiblingCount + 2) {
+    for (
+      let next = 1;
+      next <= Math.min(pageCount, safeSiblingCount + 2);
+      next += 1
+    ) {
+      visible.add(next);
+    }
+  } else if (page >= pageCount - safeSiblingCount - 1) {
+    for (
+      let next = Math.max(1, pageCount - safeSiblingCount - 1);
+      next <= pageCount;
+      next += 1
+    ) {
+      visible.add(next);
+    }
+  } else {
+    for (
+      let next = Math.max(1, page - safeSiblingCount);
+      next <= Math.min(pageCount, page + safeSiblingCount);
+      next += 1
+    ) {
+      visible.add(next);
+    }
+  }
+
+  const sorted = Array.from(visible).sort((a, b) => a - b);
+  const items: KolamPaginationItem[] = [];
+  sorted.forEach((item, index) => {
+    const previous = sorted[index - 1];
+    if (previous && item - previous > 1) {
+      items.push('ellipsis');
+    }
+    items.push(item);
+  });
+
+  return items;
+}
+
+function KolamListTablePaginationIconButton({
+  accessibilityLabel,
+  direction,
+  disabled,
+  onPress,
+}: {
+  accessibilityLabel: string;
+  direction: 'first' | 'prev' | 'next' | 'last';
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  const color = disabled ? V.colors.mutedFg : V.colors.fg;
+
+  return (
+    <KolamInteractionFrame
+      accessibilityLabel={accessibilityLabel}
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.paginationIconButton, disabled ? styles.paginationIconButtonDisabled : null]}
+    >
+      <KolamListTablePaginationIcon color={color} direction={direction} />
+    </KolamInteractionFrame>
+  );
+}
+
+function KolamListTablePaginationIcon({
+  color,
+  direction,
+}: {
+  color: string;
+  direction: 'first' | 'prev' | 'next' | 'last';
+}) {
+  const isLeft = direction === 'first' || direction === 'prev';
+  const isEdge = direction === 'first' || direction === 'last';
+  const trianglePath = isLeft ? 'M13 4 L6 10 L13 16 Z' : 'M7 4 L14 10 L7 16 Z';
+  const secondTrianglePath = isLeft ? 'M17 4 L10 10 L17 16 Z' : 'M3 4 L10 10 L3 16 Z';
+  const barPath = isLeft ? 'M4 4 H5.5 V16 H4 Z' : 'M14.5 4 H16 V16 H14.5 Z';
+
+  return (
+    <Svg height={16} viewBox="0 0 20 20" width={16}>
+      {isEdge ? <Path d={barPath} fill={color} /> : null}
+      {isEdge ? <Path d={secondTrianglePath} fill={color} /> : null}
+      <Path d={trianglePath} fill={color} />
+    </Svg>
   );
 }
 
@@ -228,5 +418,74 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     paddingVertical: 24,
+  },
+  paginationFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  paginationSummary: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  paginationSummaryStrong: {
+    color: V.colors.fg,
+    fontWeight: '800',
+  },
+  paginationControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    justifyContent: 'flex-end',
+  },
+  paginationIconButton: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    minWidth: 28,
+  },
+  paginationIconButtonDisabled: {
+    opacity: 0.4,
+  },
+  paginationPageButton: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    minWidth: 28,
+    paddingHorizontal: 8,
+  },
+  paginationPageButtonActive: {
+    borderColor: V.colors.border,
+    backgroundColor: V.colors.secondary,
+  },
+  paginationPageText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  paginationPageTextActive: {
+    color: V.colors.fg,
+    fontWeight: '800',
+  },
+  paginationEllipsis: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    minWidth: 22,
+    textAlign: 'center',
   },
 });
