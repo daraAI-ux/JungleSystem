@@ -1192,7 +1192,7 @@ function buildStockTransactionListColumns(
       id: 'variant',
       label: 'Varian',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text numberOfLines={2} style={styles.cellText}>
             {item.variantLabel}
           </Text>
@@ -1205,7 +1205,7 @@ function buildStockTransactionListColumns(
       id: 'type',
       label: 'Tipe',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text style={styles.cellText}>{formatType(item.type)}</Text>
         </StockTransactionCellButton>
       ),
@@ -1216,7 +1216,7 @@ function buildStockTransactionListColumns(
       id: 'source',
       label: 'Sumber',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <KolamStockTransactionSourceIcon
             label={item.sourceLabel}
             logoUri={item.salesSource?.logoUri}
@@ -1232,7 +1232,7 @@ function buildStockTransactionListColumns(
       id: 'sync',
       label: 'Sync MP',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text numberOfLines={2} style={styles.metaText}>
             {resolveStockTxCrossSyncDisplay(item.crossSync, item.reason)
               ?.summaryLabel ||
@@ -1265,7 +1265,7 @@ function buildStockTransactionListColumns(
       id: 'qty',
       label: 'Qty',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text style={styles.numText}>{formatNumber(item.quantity)}</Text>
         </StockTransactionCellButton>
       ),
@@ -1276,7 +1276,7 @@ function buildStockTransactionListColumns(
       id: 'before',
       label: 'Sebelum',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text style={styles.numText}>{formatNumber(item.before)}</Text>
         </StockTransactionCellButton>
       ),
@@ -1287,7 +1287,7 @@ function buildStockTransactionListColumns(
       id: 'after',
       label: 'Sesudah',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text style={styles.numText}>{formatNumber(item.after)}</Text>
         </StockTransactionCellButton>
       ),
@@ -1298,7 +1298,7 @@ function buildStockTransactionListColumns(
       id: 'delta',
       label: 'Selisih',
       render: item => (
-        <StockTransactionCellButton item={item} onOpen={onOpen}>
+        <StockTransactionCellButton center item={item} onOpen={onOpen}>
           <Text
             style={[
               styles.numText,
@@ -1318,10 +1318,12 @@ function buildStockTransactionListColumns(
 }
 
 function StockTransactionCellButton({
+  center = false,
   children,
   item,
   onOpen,
 }: {
+  center?: boolean;
   children: React.ReactNode;
   item: KolamStockTransaction;
   onOpen: (item: KolamStockTransaction) => void;
@@ -1332,6 +1334,7 @@ function StockTransactionCellButton({
       onPress={() => onOpen(item)}
       style={({ pressed }) => [
         styles.stockTxCellButton,
+        center ? styles.stockTxCellButtonCenter : null,
         pressed ? styles.rowPressed : null,
       ]}
     >
@@ -1699,6 +1702,10 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     minWidth: 0,
     paddingVertical: 2,
+    width: '100%',
+  },
+  stockTxCellButtonCenter: {
+    alignItems: 'center',
   },
   primaryText: {
     color: V.colors.fg,
