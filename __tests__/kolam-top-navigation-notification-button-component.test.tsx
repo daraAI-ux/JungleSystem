@@ -1,10 +1,12 @@
 import React from 'react';
+import Svg, {Circle, Path} from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamIconButton} from '../src/components/kolam-icon-button';
 import {KolamNotificationBadge} from '../src/components/kolam-notification-badge';
 import {KolamNotificationBellIcon} from '../src/components/kolam-notification-bell-icon';
 import {KolamPressable} from '../src/components/kolam-pressable';
 import {KolamTopNavigationChatButton} from '../src/components/kolam-top-navigation-chat-button';
+import {KolamTopNavigationChatIcon} from '../src/components/kolam-top-navigation-chat-icon';
 import {KolamTopNavigationNotificationButton} from '../src/components/kolam-top-navigation-notification-button';
 
 describe('KolamTopNavigationNotificationButton', () => {
@@ -79,5 +81,23 @@ describe('KolamTopNavigationChatButton', () => {
     expect(
       renderer!.root.findByType(KolamNotificationBadge).props.attentionCount,
     ).toBe(0);
+  });
+
+  it('renders the team chat icon as the native vector bubble artwork', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationChatIcon kind="team" />,
+      );
+    });
+
+    const icon = renderer!.root.findByType(Svg);
+
+    expect(icon.props.height).toBe(22);
+    expect(icon.props.width).toBe(22);
+    expect(icon.props.viewBox).toBe('0 0 512 512');
+    expect(renderer!.root.findByType(Circle).props.fill).toBe('#F47F65');
+    expect(renderer!.root.findAllByType(Path)).toHaveLength(3);
   });
 });
