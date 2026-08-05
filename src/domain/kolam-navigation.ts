@@ -116,6 +116,14 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         group: 'Dukungan',
         requiredAccess: ['kolam'],
       },
+      {
+        label: 'Download Aplikasi',
+        route: '/app-downloads',
+        description:
+          'Unduh aplikasi pendukung desktop, mobile, dan installer.',
+        group: 'Dukungan',
+        requiredAccess: ['kolam'],
+      },
     ],
   },
   {

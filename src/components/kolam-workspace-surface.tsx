@@ -15,6 +15,7 @@ import { isKolamCustomFieldRoute } from '../domain/kolam-custom-field';
 import { isKolamEnclosureNativeRoute } from '../domain/kolam-enclosure';
 import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
 import { isKolamLocationRoute } from '../domain/kolam-location';
+import { isKolamAppDownloadRoute } from '../domain/kolam-app-download';
 import { isKolamMediaRoute } from '../domain/kolam-media';
 import { isKolamPackingMaterialRoute } from '../domain/kolam-packing-option';
 import { isKolamProductRoute } from '../domain/kolam-product';
@@ -78,6 +79,7 @@ import { KolamCustomFieldSurface } from './kolam-custom-field-surface';
 import { KolamEnclosureSurface } from './kolam-enclosure-surface';
 import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
 import { KolamLocationSurface } from './kolam-location-surface';
+import { KolamAppDownloadSurface } from './kolam-app-download-surface';
 import { KolamMediaLibrarySurface } from './kolam-media-library-surface';
 import { KolamPackingMaterialSurface } from './kolam-packing-material-surface';
 import { KolamProductSurface } from './kolam-product-surface';
@@ -233,6 +235,10 @@ export function KolamWorkspaceSurfaceComponent({
         route={activeNavigationItem?.route ?? '/media'}
       />
     );
+  }
+
+  if (activeRoutePath && isKolamAppDownloadRoute(activeRoutePath)) {
+    return <KolamAppDownloadSurface />;
   }
 
   if (activeRoutePath && isKolamAdminCashflowSessionRoute(activeRoutePath)) {
