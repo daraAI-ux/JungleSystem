@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamPayrollPeriodRoute,
+  buildKolamPayrollSlipRoute,
   buildPayrollPeriodKey,
   getKolamPayrollPeriodKey,
   getKolamPayrollSlipId,
@@ -20,6 +21,7 @@ import {
   fetchKolamPayrollSlip,
   finalizeKolamPayrollPeriod,
   generateAllKolamPayrollSlips,
+  generateKolamPayrollSlip,
   setKolamPayrollPeriodWallet,
 } from '../services/kolam-payroll-api';
 import { getKolamWalletOptionsPaginated } from '../services/kolam-wallet-option-api';
@@ -52,6 +54,11 @@ export interface KolamPayrollController {
   onCreatePeriod: () => Promise<void>;
   onSetWallet: () => Promise<void>;
   onGenerateAll: (withAi?: boolean) => Promise<void>;
+  /** FE: generate-one always sends `withAi: true`. */
+  onGenerateOne: (input: {
+    userId: string;
+    openSlip?: boolean;
+  }) => Promise<void>;
   onFinalize: () => Promise<void>;
 }
 
@@ -214,6 +221,33 @@ export function useKolamPayrollController(
     [canUpdate, periodKey, runMutation],
   );
 
+  const onGenerateOne = useCallback(
+    async (input: { userId: string; openSlip?: boolean }) => {
+      if (!canUpdate || !periodKey) {
+        return;
+      }
+      const userId = input.userId.trim();
+      if (!userId) {
+        setError('Karyawan tidak valid');
+        return;
+      }
+      await runMutation(
+        input.openSlip ? 'Slip dibuat' : 'Slip diperbarui',
+        async () => {
+          const created = await generateKolamPayrollSlip({
+            periodKey,
+            userId,
+            withAi: true,
+          });
+          if (input.openSlip && created?.id) {
+            onRouteChange?.(buildKolamPayrollSlipRoute(created.id));
+          }
+        },
+      );
+    },
+    [canUpdate, onRouteChange, periodKey, runMutation],
+  );
+
   const onFinalize = useCallback(async () => {
     if (!canUpdate || !periodKey) {
       return;
@@ -254,6 +288,7 @@ export function useKolamPayrollController(
     onCreatePeriod,
     onSetWallet,
     onGenerateAll,
+    onGenerateOne,
     onFinalize,
   };
 }
