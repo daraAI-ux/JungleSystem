@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildCommissionListRoute,
+  canReleaseCommissionRowFromNormalized,
   createInitialCommissionListFilters,
   getKolamCommissionSummaryTotals,
   getKolamCommissionSurfaceMode,
@@ -15,9 +16,12 @@ import {
 import type { KolamWalletOption } from '../domain/kolam-wallet-option';
 import { ApiError } from '../lib/api-error';
 import {
+  accrueKolamCommission,
   fetchKolamCommissionRecipientSummary,
   fetchKolamCommissionList,
+  recalculateKolamCommission,
   releaseKolamCommission,
+  releaseKolamCommissionBatch,
   uploadKolamCommissionTransferProof,
 } from '../services/kolam-commission-api';
 import { pickNativeAssetFile } from '../services/native-file-picker';
@@ -35,11 +39,15 @@ export interface KolamCommissionListController {
     total: number;
     totalPages: number;
   };
+  actionSaleId: string;
+  batchEligibleCount: number;
+  batchWalletId: string;
   wallets: KolamWalletOption[];
   walletByRow: Record<string, string>;
   loading: boolean;
   summaryLoading: boolean;
   releasingId: string | null;
+  adminAction: string | null;
   uploadingProofId: string | null;
   error: string;
   statusMessage: string;
@@ -47,6 +55,8 @@ export interface KolamCommissionListController {
   canRelease: boolean;
   onSearchChange: (value: string) => void;
   onRecipientFilterChange: (recipientUser: string) => void;
+  onActionSaleIdChange: (value: string) => void;
+  onBatchWalletChange: (walletId: string) => void;
   onStatusChange: (status: KolamCommissionStatusFilter) => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
@@ -54,6 +64,9 @@ export interface KolamCommissionListController {
   onRefresh: () => Promise<void>;
   onRelease: (row: KolamCommissionListRow) => Promise<void>;
   onUploadTransferProof: (row: KolamCommissionListRow) => Promise<void>;
+  onReleaseBatch: () => Promise<void>;
+  onAccrueSale: () => Promise<void>;
+  onRecalculateSale: () => Promise<void>;
 }
 
 export function useKolamCommissionListController(
@@ -75,11 +88,14 @@ export function useKolamCommissionListController(
     total: 0,
     totalPages: 1,
   });
+  const [actionSaleId, setActionSaleId] = useState('');
+  const [batchWalletId, setBatchWalletId] = useState('');
   const [wallets, setWallets] = useState<KolamWalletOption[]>([]);
   const [walletByRow, setWalletByRow] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [releasingId, setReleasingId] = useState<string | null>(null);
+  const [adminAction, setAdminAction] = useState<string | null>(null);
   const [uploadingProofId, setUploadingProofId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -220,6 +236,14 @@ export function useKolamCommissionListController(
     [patchFilters],
   );
 
+  const onActionSaleIdChange = useCallback((value: string) => {
+    setActionSaleId(value);
+  }, []);
+
+  const onBatchWalletChange = useCallback((walletId: string) => {
+    setBatchWalletId(walletId);
+  }, []);
+
   const onStatusChange = useCallback(
     (status: KolamCommissionStatusFilter) => {
       patchFilters({ status, page: 1 });
@@ -326,6 +350,95 @@ export function useKolamCommissionListController(
     [canRelease, refresh, refreshSummary],
   );
 
+  const refreshAll = useCallback(async () => {
+    await refresh();
+    await refreshSummary();
+  }, [refresh, refreshSummary]);
+
+  const batchEligibleRows = useMemo(
+    () =>
+      rows.filter(row =>
+        canReleaseCommissionRowFromNormalized({
+          status: row.status,
+          canRelease: row.canRelease,
+        }),
+      ),
+    [rows],
+  );
+
+  const runAdminAction = useCallback(
+    async (actionId: string, task: () => Promise<void>, success: string) => {
+      if (!canRelease) {
+        return;
+      }
+      setAdminAction(actionId);
+      setError('');
+      setStatusMessage('');
+      try {
+        await task();
+        setStatusMessage(success);
+        await refreshAll();
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+            ? err.message
+            : 'Aksi komisi gagal',
+        );
+      } finally {
+        setAdminAction(null);
+      }
+    },
+    [canRelease, refreshAll],
+  );
+
+  const onReleaseBatch = useCallback(async () => {
+    if (!batchEligibleRows.length) {
+      setError('Tidak ada baris eligible');
+      return;
+    }
+    if (!batchWalletId) {
+      setError('Pilih dompet');
+      return;
+    }
+    await runAdminAction(
+      'release-batch',
+      () =>
+        releaseKolamCommissionBatch(
+          batchEligibleRows.map(row => row.id),
+          batchWalletId,
+        ),
+      'Komisi dibayar',
+    );
+  }, [batchEligibleRows, batchWalletId, runAdminAction]);
+
+  const onAccrueSale = useCallback(async () => {
+    const saleId = actionSaleId.trim();
+    if (!saleId) {
+      setError('Sale ID wajib');
+      return;
+    }
+    await runAdminAction(
+      'accrue',
+      () => accrueKolamCommission(saleId),
+      'Komisi diakru',
+    );
+  }, [actionSaleId, runAdminAction]);
+
+  const onRecalculateSale = useCallback(async () => {
+    const saleId = actionSaleId.trim();
+    if (!saleId) {
+      setError('Sale ID wajib');
+      return;
+    }
+    await runAdminAction(
+      'recalculate',
+      () => recalculateKolamCommission(saleId, true),
+      'Komisi dihitung ulang',
+    );
+  }, [actionSaleId, runAdminAction]);
+
   const summaryTotals = useMemo(
     () => getKolamCommissionSummaryTotals(recipientSummaryRows),
     [recipientSummaryRows],
@@ -339,11 +452,15 @@ export function useKolamCommissionListController(
       recipientSummaryRows,
       summaryTotals,
       pagination,
+      actionSaleId,
+      batchEligibleCount: batchEligibleRows.length,
+      batchWalletId,
       wallets,
       walletByRow,
       loading,
       summaryLoading,
       releasingId,
+      adminAction,
       uploadingProofId,
       error,
       statusMessage,
@@ -351,6 +468,8 @@ export function useKolamCommissionListController(
       canRelease,
       onSearchChange,
       onRecipientFilterChange,
+      onActionSaleIdChange,
+      onBatchWalletChange,
       onStatusChange,
       onPageChange,
       onLimitChange,
@@ -358,6 +477,9 @@ export function useKolamCommissionListController(
       onRefresh: refresh,
       onRelease,
       onUploadTransferProof,
+      onReleaseBatch,
+      onAccrueSale,
+      onRecalculateSale,
     }),
     [
       mode,
@@ -366,11 +488,15 @@ export function useKolamCommissionListController(
       recipientSummaryRows,
       summaryTotals,
       pagination,
+      actionSaleId,
+      batchEligibleRows.length,
+      batchWalletId,
       wallets,
       walletByRow,
       loading,
       summaryLoading,
       releasingId,
+      adminAction,
       uploadingProofId,
       error,
       statusMessage,
@@ -378,6 +504,8 @@ export function useKolamCommissionListController(
       canRelease,
       onSearchChange,
       onRecipientFilterChange,
+      onActionSaleIdChange,
+      onBatchWalletChange,
       onStatusChange,
       onPageChange,
       onLimitChange,
@@ -385,6 +513,9 @@ export function useKolamCommissionListController(
       refresh,
       onRelease,
       onUploadTransferProof,
+      onReleaseBatch,
+      onAccrueSale,
+      onRecalculateSale,
     ],
   );
 }

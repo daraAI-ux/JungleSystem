@@ -51,6 +51,38 @@ export async function releaseKolamCommission(
   });
 }
 
+export async function releaseKolamCommissionBatch(
+  commissionIds: string[],
+  walletFrom: string,
+  note?: string,
+): Promise<void> {
+  await kolamRequest('/commission/release-batch', {
+    method: 'POST',
+    body: {
+      commissionIds,
+      walletFrom,
+      ...(note?.trim() ? { note: note.trim() } : {}),
+    },
+  });
+}
+
+export async function accrueKolamCommission(saleId: string): Promise<void> {
+  await kolamRequest('/commission/accrue', {
+    method: 'POST',
+    body: { saleId },
+  });
+}
+
+export async function recalculateKolamCommission(
+  saleId: string,
+  dropExisting = true,
+): Promise<void> {
+  await kolamRequest('/commission/recalculate', {
+    method: 'POST',
+    body: { saleId, dropExisting },
+  });
+}
+
 export async function uploadKolamCommissionTransferProof(
   id: string,
   localUri: string,

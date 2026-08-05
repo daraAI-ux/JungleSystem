@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KOLAM_COMMISSION_ROOT } from '../domain/kolam-commission';
 import {
   canReleaseCommissionRowFromNormalized,
@@ -378,6 +378,87 @@ function CommissionListBody({
         )}
       </KolamCardFrame>
 
+      {controller.canRelease ? (
+        <KolamCardFrame style={styles.adminActionsPanel}>
+          <View style={styles.adminActionGroup}>
+            <Text style={styles.adminActionLabel}>Batch release</Text>
+            <View style={styles.adminActionRow}>
+              <KolamDropdownSelect
+                label={
+                  walletOptions.find(
+                    option => option.value === controller.batchWalletId,
+                  )?.label ?? 'Dompet'
+                }
+                onChange={controller.onBatchWalletChange}
+                options={walletOptions}
+                value={controller.batchWalletId}
+              />
+              <KolamButton
+                disabled={
+                  controller.adminAction !== null ||
+                  controller.batchEligibleCount === 0 ||
+                  !controller.batchWalletId
+                }
+                intent="primary"
+                label={
+                  controller.adminAction === 'release-batch'
+                    ? 'Memproses...'
+                    : `Bayar semua (${controller.batchEligibleCount})`
+                }
+                onPress={() => {
+                  void controller.onReleaseBatch();
+                }}
+                style={styles.adminActionButton}
+              />
+            </View>
+          </View>
+          <View style={styles.adminActionGroup}>
+            <Text style={styles.adminActionLabel}>Sale ID</Text>
+            <View style={styles.adminActionRow}>
+              <TextInput
+                onChangeText={controller.onActionSaleIdChange}
+                placeholder="Sale ID"
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.saleIdInput}
+                value={controller.actionSaleId}
+              />
+              <KolamButton
+                disabled={
+                  controller.adminAction !== null ||
+                  !controller.actionSaleId.trim()
+                }
+                intent="secondary"
+                label={
+                  controller.adminAction === 'accrue'
+                    ? 'Memproses...'
+                    : 'Accrue'
+                }
+                onPress={() => {
+                  void controller.onAccrueSale();
+                }}
+                style={styles.adminActionButton}
+              />
+              <KolamButton
+                disabled={
+                  controller.adminAction !== null ||
+                  !controller.actionSaleId.trim()
+                }
+                intent="secondary"
+                label={
+                  controller.adminAction === 'recalculate'
+                    ? 'Memproses...'
+                    : 'Recalculate'
+                }
+                onPress={() => {
+                  void controller.onRecalculateSale();
+                }}
+                style={styles.adminActionButton}
+              />
+            </View>
+          </View>
+        </KolamCardFrame>
+      ) : null}
+
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
@@ -619,6 +700,49 @@ const styles = StyleSheet.create({
   },
   emptySummary: {
     paddingVertical: 18,
+  },
+  adminActionsPanel: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  adminActionGroup: {
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 280,
+  },
+  adminActionLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  adminActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  adminActionButton: {
+    flexGrow: 0,
+  },
+  saleIdInput: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.input,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    color: V.colors.fg,
+    flexBasis: 220,
+    flexGrow: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minHeight: V.control.inputHeight,
+    minWidth: 180,
+    paddingHorizontal: 10,
   },
   backButton: {
     alignSelf: 'flex-start',
