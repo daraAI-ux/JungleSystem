@@ -515,6 +515,18 @@ describe('kolamNavigationSections', () => {
           description: 'Buat pembelian aset',
         }),
         expect.objectContaining({
+          baseRoute: '/unexpected-expense',
+          label: 'Pengeluaran Tak Terduga Baru',
+          route: '/unexpected-expense/create',
+          description: 'Catat pengeluaran tak terduga',
+        }),
+        expect.objectContaining({
+          baseRoute: '/unexpected-income',
+          label: 'Pemasukan Tak Terduga Baru',
+          route: '/unexpected-income/create',
+          description: 'Catat pemasukan tak terduga',
+        }),
+        expect.objectContaining({
           baseRoute: '/customers',
           route: '/customers/:id/edit',
         }),
