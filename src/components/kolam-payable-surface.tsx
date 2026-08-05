@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamPayableSourceLabel,
   formatKolamPayableStatusLabel,
@@ -33,6 +33,7 @@ import { KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const LIST_COLUMNS = [
@@ -45,6 +46,8 @@ const LIST_COLUMNS = [
   { id: 'status', label: 'Status', flex: 0.9 },
   { id: 'action', label: '', flex: 0.8 },
 ] as const;
+
+const FILTER_PANEL_WIDTH = 220;
 
 export function KolamPayableSurface({
   onRouteChange,
@@ -152,11 +155,22 @@ function PayableToolbar({
 }: {
   controller: KolamPayableController;
 }) {
+  const toolbarRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const sourceTriggerRef = React.useRef<View>(null);
+  const installmentTriggerRef = React.useRef<View>(null);
+  const periodTriggerRef = React.useRef<View>(null);
+  const sortTriggerRef = React.useRef<View>(null);
   const [statusOpen, setStatusOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [installmentOpen, setInstallmentOpen] = useState(false);
   const [periodOpen, setPeriodOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [panelAnchor, setPanelAnchor] = useState<{
+    left: number;
+    top: number;
+    width: number;
+  } | null>(null);
   const statusLabel =
     controller.filters.status === ''
       ? 'Status'
@@ -203,89 +217,120 @@ function PayableToolbar({
     setInstallmentOpen(false);
     setPeriodOpen(false);
     setSortOpen(false);
+    setPanelAnchor(null);
+  };
+  const togglePanel = (
+    isOpen: boolean,
+    triggerRef: React.RefObject<View | null>,
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  ) => {
+    closePanels();
+    if (isOpen) {
+      return;
+    }
+    setOpen(true);
+    requestAnimationFrame(() => {
+      const toolbar = toolbarRef.current;
+      const trigger = triggerRef.current;
+      if (!toolbar || !trigger) {
+        setPanelAnchor({ left: 0, top: 42, width: FILTER_PANEL_WIDTH });
+        return;
+      }
+      trigger.measureLayout(
+        toolbar,
+        (left, top, width, height) => {
+          setPanelAnchor({
+            left,
+            top: top + height + 6,
+            width: Math.max(FILTER_PANEL_WIDTH, Math.round(width)),
+          });
+        },
+        () => setPanelAnchor({ left: 0, top: 42, width: FILTER_PANEL_WIDTH }),
+      );
+    });
   };
 
   return (
-    <View style={kolamTableToolbarStyles.shell}>
-      <View style={kolamTableToolbarStyles.row}>
-        <View style={kolamTableToolbarStyles.filters}>
+    <View ref={toolbarRef} style={styles.toolbarWrap}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
           <KolamFormTextField
             onChangeText={controller.onSearchChange}
             placeholder="Cari kode atau nama"
             style={kolamTableToolbarStyles.searchInput}
             value={controller.filters.search}
           />
-          <KolamButton
-            intent={
-              statusOpen || controller.filters.status
-                ? 'primary'
-                : 'secondary'
-            }
-            label={statusLabel}
-            onPress={() => {
-              closePanels();
-              setStatusOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
-          <KolamButton
-            intent={
-              sourceOpen || controller.filters.sourceModel
-                ? 'primary'
-                : 'secondary'
-            }
-            label={sourceLabel}
-            onPress={() => {
-              closePanels();
-              setSourceOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
-          <KolamButton
-            intent={
-              installmentOpen || controller.filters.installmentDue !== 'all'
-                ? 'primary'
-                : 'secondary'
-            }
-            label={installmentLabel}
-            onPress={() => {
-              closePanels();
-              setInstallmentOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
-          <KolamButton
-            intent={
-              periodOpen || controller.filters.period !== 'all'
-                ? 'primary'
-                : 'secondary'
-            }
-            label={periodLabel}
-            onPress={() => {
-              closePanels();
-              setPeriodOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
+          <View ref={statusTriggerRef} collapsable={false}>
+            <KolamTableFilterTrigger
+              active={statusOpen || Boolean(controller.filters.status)}
+              label={statusLabel}
+              onPress={() =>
+                togglePanel(statusOpen, statusTriggerRef, setStatusOpen)
+              }
+              open={statusOpen}
+              style={styles.filterTrigger}
+              variant="quiet"
+            />
+          </View>
+          <View ref={sourceTriggerRef} collapsable={false}>
+            <KolamTableFilterTrigger
+              active={sourceOpen || Boolean(controller.filters.sourceModel)}
+              label={sourceLabel}
+              onPress={() =>
+                togglePanel(sourceOpen, sourceTriggerRef, setSourceOpen)
+              }
+              open={sourceOpen}
+              style={styles.filterTrigger}
+              variant="quiet"
+            />
+          </View>
+          <View ref={installmentTriggerRef} collapsable={false}>
+            <KolamTableFilterTrigger
+              active={
+                installmentOpen || controller.filters.installmentDue !== 'all'
+              }
+              label={installmentLabel}
+              onPress={() =>
+                togglePanel(
+                  installmentOpen,
+                  installmentTriggerRef,
+                  setInstallmentOpen,
+                )
+              }
+              open={installmentOpen}
+              style={styles.filterTrigger}
+              variant="quiet"
+            />
+          </View>
+          <View ref={periodTriggerRef} collapsable={false}>
+            <KolamTableFilterTrigger
+              active={periodOpen || controller.filters.period !== 'all'}
+              label={periodLabel}
+              onPress={() =>
+                togglePanel(periodOpen, periodTriggerRef, setPeriodOpen)
+              }
+              open={periodOpen}
+              style={styles.filterTrigger}
+              variant="quiet"
+            />
+          </View>
           <KolamButton
             intent={controller.filters.overdue ? 'primary' : 'secondary'}
             label="Jatuh tempo"
             onPress={controller.onOverdueToggle}
             style={styles.filterTrigger}
           />
-          <KolamButton
-            intent={
-              sortOpen || controller.filters.sort !== 'newest'
-                ? 'primary'
-                : 'secondary'
-            }
-            label={sortLabel}
-            onPress={() => {
-              closePanels();
-              setSortOpen(current => !current);
-            }}
-            style={styles.filterTrigger}
-          />
+          <View ref={sortTriggerRef} collapsable={false}>
+            <KolamTableFilterTrigger
+              active={sortOpen || controller.filters.sort !== 'newest'}
+              label={sortLabel}
+              onPress={() => togglePanel(sortOpen, sortTriggerRef, setSortOpen)}
+              open={sortOpen}
+              style={styles.filterTrigger}
+              variant="quiet"
+            />
+          </View>
           {controller.filters.period === 'custom' ? (
             <>
               <KolamDateField
@@ -310,8 +355,8 @@ function PayableToolbar({
               />
             </>
           ) : null}
-        </View>
-        <View style={kolamTableToolbarStyles.actions}>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
           {hasFilters ? (
             <KolamButton
               intent="secondary"
@@ -332,11 +377,14 @@ function PayableToolbar({
             }}
             style={styles.filterTrigger}
           />
+          </View>
         </View>
       </View>
 
-      {statusOpen ? (
+      {statusOpen && panelAnchor ? (
         <FilterPanel
+          activeValue={controller.filters.status}
+          anchor={panelAnchor}
           onClose={() => setStatusOpen(false)}
           options={KOLAM_PAYABLE_STATUS_OPTIONS}
           onSelect={value => {
@@ -346,8 +394,10 @@ function PayableToolbar({
         />
       ) : null}
 
-      {sourceOpen ? (
+      {sourceOpen && panelAnchor ? (
         <FilterPanel
+          activeValue={controller.filters.sourceModel}
+          anchor={panelAnchor}
           onClose={() => setSourceOpen(false)}
           options={KOLAM_PAYABLE_SOURCE_OPTIONS}
           onSelect={value => {
@@ -357,8 +407,10 @@ function PayableToolbar({
         />
       ) : null}
 
-      {installmentOpen ? (
+      {installmentOpen && panelAnchor ? (
         <FilterPanel
+          activeValue={controller.filters.installmentDue}
+          anchor={panelAnchor}
           onClose={() => setInstallmentOpen(false)}
           options={KOLAM_PAYABLE_INSTALLMENT_DUE_OPTIONS}
           onSelect={value => {
@@ -370,8 +422,10 @@ function PayableToolbar({
         />
       ) : null}
 
-      {periodOpen ? (
+      {periodOpen && panelAnchor ? (
         <FilterPanel
+          activeValue={controller.filters.period}
+          anchor={panelAnchor}
           onClose={() => setPeriodOpen(false)}
           options={KOLAM_PAYABLE_PERIOD_OPTIONS}
           onSelect={value => {
@@ -381,8 +435,10 @@ function PayableToolbar({
         />
       ) : null}
 
-      {sortOpen ? (
+      {sortOpen && panelAnchor ? (
         <FilterPanel
+          activeValue={controller.filters.sort}
+          anchor={panelAnchor}
           onClose={() => setSortOpen(false)}
           options={KOLAM_PAYABLE_SORT_OPTIONS}
           onSelect={value => {
@@ -396,31 +452,43 @@ function PayableToolbar({
 }
 
 function FilterPanel<T extends string>({
+  activeValue,
+  anchor,
   options,
   onSelect,
   onClose,
 }: {
+  activeValue: T;
+  anchor: { left: number; top: number; width: number };
   options: Array<{ label: string; value: T }>;
   onSelect: (value: T) => void;
   onClose: () => void;
 }) {
   return (
-    <View style={styles.filterPanel}>
-      {options.map(option => (
-        <Pressable
-          key={option.value || 'all'}
-          onPress={() => onSelect(option.value)}
-          style={styles.filterOption}
-        >
-          <Text style={styles.filterOptionText}>{option.label}</Text>
-        </Pressable>
-      ))}
-      <KolamButton
-        intent="secondary"
-        label="Tutup"
-        onPress={onClose}
-        style={styles.filterClose}
-      />
+    <View
+      style={[
+        styles.filterOverlayPanel,
+        { left: anchor.left, top: anchor.top, width: anchor.width },
+      ]}
+    >
+      <ScrollView
+        contentContainerStyle={styles.filterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.filterPanelScroll}
+      >
+        {options.map(option => (
+          <KolamButton
+            intent={option.value === activeValue ? 'primary' : 'plain'}
+            key={option.value || 'all'}
+            label={option.label}
+            onPress={() => onSelect(option.value)}
+            style={styles.filterPanelOption}
+          />
+        ))}
+      </ScrollView>
+      <View style={styles.filterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
     </View>
   );
 }
@@ -1147,6 +1215,12 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 0,
   },
+  toolbarWrap: {
+    elevation: 1000,
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 100000,
+  },
   dateField: {
     flexGrow: 0,
     flexShrink: 0,
@@ -1156,28 +1230,31 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: 8,
   },
-  filterPanel: {
+  filterOverlayPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 2,
-    marginTop: 6,
+    elevation: 1001,
+    maxHeight: 280,
+    overflow: 'hidden',
+    position: 'absolute',
+    zIndex: 100001,
+  },
+  filterPanelScroll: {
+    maxHeight: 224,
+  },
+  filterPanelContent: {
+    gap: 4,
     padding: 6,
   },
-  filterOption: {
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  filterPanelOption: {
+    alignSelf: 'stretch',
   },
-  filterOptionText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-  },
-  filterClose: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
+  filterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    padding: 6,
   },
   listRoot: {
     flexGrow: 0,
