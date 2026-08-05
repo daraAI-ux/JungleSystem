@@ -109,14 +109,6 @@ function buildColumns(
   if (kind === 'asset-purchase') {
     base.push(
       {
-        id: 'price',
-        label: 'Harga',
-        flex: 0.9,
-        render: row => (
-          <Text style={styles.primaryText}>{formatRupiah(row.price)}</Text>
-        ),
-      },
-      {
         id: 'amount',
         label: 'Total',
         flex: 0.9,
