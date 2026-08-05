@@ -983,6 +983,7 @@ const styles = StyleSheet.create({
   picAvatarImage: {
     borderRadius: 16,
     height: 32,
+    transform: [{rotate: '90deg'}],
     width: 32,
   },
   picAvatarText: {
