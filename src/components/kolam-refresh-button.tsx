@@ -40,6 +40,8 @@ export function KolamRefreshButton({
 
 const styles = StyleSheet.create({
   iconOnlyButton: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     minWidth: 34,
     paddingHorizontal: 0,
     width: 34,
