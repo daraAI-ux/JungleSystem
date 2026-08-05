@@ -18,6 +18,7 @@ import { isKolamLocationRoute } from '../domain/kolam-location';
 import { isKolamAppDownloadRoute } from '../domain/kolam-app-download';
 import { isKolamMediaRoute } from '../domain/kolam-media';
 import { isKolamPackingMaterialRoute } from '../domain/kolam-packing-option';
+import { isKolamShippingMethodRoute } from '../domain/kolam-shipping-method';
 import { isKolamProductRoute } from '../domain/kolam-product';
 import { isKolamProductSerialRoute } from '../domain/kolam-product-serial';
 import { isKolamProductionRoute } from '../domain/kolam-production';
@@ -82,6 +83,7 @@ import { KolamLocationSurface } from './kolam-location-surface';
 import { KolamAppDownloadSurface } from './kolam-app-download-surface';
 import { KolamMediaLibrarySurface } from './kolam-media-library-surface';
 import { KolamPackingMaterialSurface } from './kolam-packing-material-surface';
+import { KolamShippingMethodSurface } from './kolam-shipping-method-surface';
 import { KolamProductSurface } from './kolam-product-surface';
 import { KolamProductSerialSurface } from './kolam-product-serial-surface';
 import { KolamProductionSurface } from './kolam-production-surface';
@@ -655,6 +657,16 @@ export function KolamWorkspaceSurfaceComponent({
             />
           );
         }
+
+        if (isKolamShippingMethodRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamShippingMethodSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
         if (isKolamUnitRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamUnitSurface
