@@ -2,9 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildBonusListRoute,
+  buildKolamBonusCreateRoute,
   createInitialBonusListFilters,
+  getKolamBonusSurfaceMode,
+  KOLAM_BONUS_ROOT,
   type KolamBonusListFilters,
   type KolamBonusListRow,
+  type KolamBonusSurfaceMode,
 } from '../domain/kolam-bonus';
 import {
   hasSettingsPermission,
@@ -31,6 +35,7 @@ export type KolamBonusCreateDraft = {
 };
 
 export interface KolamBonusListController {
+  mode: KolamBonusSurfaceMode;
   filters: KolamBonusListFilters;
   rows: KolamBonusListRow[];
   loading: boolean;
@@ -38,7 +43,6 @@ export interface KolamBonusListController {
   mutating: boolean;
   canView: boolean;
   canCreate: boolean;
-  createOpen: boolean;
   createDraft: KolamBonusCreateDraft;
   employeeOptions: KolamBonusEmployeeOption[];
   loadingEmployees: boolean;
@@ -46,7 +50,7 @@ export interface KolamBonusListController {
   onMonthChange: (month: number) => void;
   onRefresh: () => Promise<void>;
   onOpenCreate: () => void;
-  onCloseCreate: () => void;
+  onCancelCreate: () => void;
   onCreateDraftChange: (patch: Partial<KolamBonusCreateDraft>) => void;
   onCreateBonus: () => Promise<void>;
 }
@@ -60,6 +64,7 @@ export function useKolamBonusListController(
   onRouteChange?: (route: string) => void,
 ): KolamBonusListController {
   const { authUser } = useKolamAuthContext();
+  const mode = getKolamBonusSurfaceMode(route);
   const [filters, setFilters] = useState<KolamBonusListFilters>(() =>
     createInitialBonusListFilters(route),
   );
@@ -67,7 +72,6 @@ export function useKolamBonusListController(
   const [loading, setLoading] = useState(false);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState('');
-  const [createOpen, setCreateOpen] = useState(false);
   const [createDraft, setCreateDraft] =
     useState<KolamBonusCreateDraft>(emptyCreateDraft);
   const [employeeOptions, setEmployeeOptions] = useState<
@@ -90,8 +94,18 @@ export function useKolamBonusListController(
     hasSettingsPermission(permissionContext, 'salary', 'update');
 
   useEffect(() => {
-    setFilters(createInitialBonusListFilters(route));
-  }, [route]);
+    if (mode === 'list') {
+      setFilters(createInitialBonusListFilters(route));
+    }
+  }, [mode, route]);
+
+  useEffect(() => {
+    if (mode !== 'create') {
+      return;
+    }
+    setCreateDraft(emptyCreateDraft());
+    setError('');
+  }, [mode]);
 
   const syncRoute = useCallback(
     (next: KolamBonusListFilters) => {
@@ -101,6 +115,9 @@ export function useKolamBonusListController(
   );
 
   const refresh = useCallback(async () => {
+    if (mode !== 'list') {
+      return;
+    }
     if (!canView) {
       setRows([]);
       setError('Akses ditolak: butuh izin salary:view.');
@@ -123,7 +140,7 @@ export function useKolamBonusListController(
     } finally {
       setLoading(false);
     }
-  }, [canView, filters]);
+  }, [canView, filters, mode]);
 
   useEffect(() => {
     void refresh();
@@ -155,11 +172,11 @@ export function useKolamBonusListController(
   }, []);
 
   useEffect(() => {
-    if (!createOpen || !canCreate) {
+    if (mode !== 'create' || !canCreate) {
       return;
     }
     void loadEmployees();
-  }, [canCreate, createOpen, loadEmployees]);
+  }, [canCreate, loadEmployees, mode]);
 
   const onYearChange = useCallback(
     (year: number) => {
@@ -190,18 +207,17 @@ export function useKolamBonusListController(
     if (!canCreate) {
       return;
     }
-    setCreateDraft(emptyCreateDraft());
-    setError('');
-    setCreateOpen(true);
-  }, [canCreate]);
+    onRouteChange?.(buildKolamBonusCreateRoute());
+  }, [canCreate, onRouteChange]);
 
-  const onCloseCreate = useCallback(() => {
+  const onCancelCreate = useCallback(() => {
     if (mutating) {
       return;
     }
-    setCreateOpen(false);
     setCreateDraft(emptyCreateDraft());
-  }, [mutating]);
+    setError('');
+    onRouteChange?.(KOLAM_BONUS_ROOT);
+  }, [mutating, onRouteChange]);
 
   const onCreateDraftChange = useCallback(
     (patch: Partial<KolamBonusCreateDraft>) => {
@@ -229,9 +245,8 @@ export function useKolamBonusListController(
         amount,
         ...(reason ? { reason } : {}),
       });
-      setCreateOpen(false);
       setCreateDraft(emptyCreateDraft());
-      await refresh();
+      onRouteChange?.(KOLAM_BONUS_ROOT);
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -243,9 +258,10 @@ export function useKolamBonusListController(
     } finally {
       setMutating(false);
     }
-  }, [canCreate, createDraft, mutating, refresh]);
+  }, [canCreate, createDraft, mutating, onRouteChange]);
 
   return {
+    mode,
     filters,
     rows,
     loading,
@@ -253,7 +269,6 @@ export function useKolamBonusListController(
     mutating,
     canView,
     canCreate,
-    createOpen,
     createDraft,
     employeeOptions,
     loadingEmployees,
@@ -261,7 +276,7 @@ export function useKolamBonusListController(
     onMonthChange,
     onRefresh: refresh,
     onOpenCreate,
-    onCloseCreate,
+    onCancelCreate,
     onCreateDraftChange,
     onCreateBonus,
   };

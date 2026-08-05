@@ -1,8 +1,10 @@
 import {
   buildBonusListRoute,
+  buildKolamBonusCreateRoute,
   createInitialBonusListFilters,
   formatKolamBonusStatusLabel,
   getKolamBonusStatusIntent,
+  getKolamBonusSurfaceMode,
   isKolamBonusRoute,
   normalizeKolamBonusList,
   normalizeKolamBonusRow,
@@ -233,8 +235,12 @@ describe('kolam payroll domain', () => {
 describe('kolam bonus domain', () => {
   it('detects bonus list route and builds query route', () => {
     expect(isKolamBonusRoute('/finance/bonus')).toBe(true);
+    expect(isKolamBonusRoute('/finance/bonus/create')).toBe(true);
     expect(isKolamBonusRoute('/finance/bonus/extra')).toBe(false);
     expect(isKolamBonusRoute('/finance/payroll')).toBe(false);
+    expect(getKolamBonusSurfaceMode('/finance/bonus')).toBe('list');
+    expect(getKolamBonusSurfaceMode('/finance/bonus/create')).toBe('create');
+    expect(buildKolamBonusCreateRoute()).toBe('/finance/bonus/create');
 
     const filters = createInitialBonusListFilters('/finance/bonus?year=2026&month=3');
     expect(filters.year).toBe(2026);

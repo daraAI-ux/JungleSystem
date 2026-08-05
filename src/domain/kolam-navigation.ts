@@ -1787,6 +1787,12 @@ const kolamNavigationRouteVariantSpecs: Array<{
     description: 'Detail periode penggajian dari Kolam live',
   },
   {
+    baseRoute: '/finance/bonus',
+    labelSuffix: 'Tambah',
+    route: '/finance/bonus/create',
+    description: 'Tambah bonus karyawan untuk penggajian',
+  },
+  {
     baseRoute: '/finance/payroll',
     labelSuffix: 'Slip',
     route: '/finance/payroll/slip/:slipId',

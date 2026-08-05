@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { FlatList, Modal, StyleSheet, Text, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   getKolamBonusStatusIntent,
   KOLAM_BONUS_MONTH_OPTIONS,
+  KOLAM_BONUS_ROOT,
   type KolamBonusListRow,
 } from '../domain/kolam-bonus';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -13,12 +14,15 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamContentFrame } from './kolam-content-frame';
+import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
-import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRefreshButton } from './kolam-refresh-button';
+import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const BONUS_COLUMNS = [
@@ -38,6 +42,26 @@ export function KolamBonusSurface({
 }) {
   const controller = useKolamBonusListController(route, onRouteChange);
 
+  if (controller.mode === 'create') {
+    return <BonusCreatePage controller={controller} />;
+  }
+
+  if (controller.mode === 'unsupported') {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState title="Halaman tidak tersedia" />
+        {onRouteChange ? (
+          <KolamButton
+            intent="secondary"
+            label="Kembali"
+            onPress={() => onRouteChange(KOLAM_BONUS_ROOT)}
+            style={styles.backButton}
+          />
+        ) : null}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.surface}>
       {controller.error ? (
@@ -54,7 +78,6 @@ export function KolamBonusSurface({
         Tak Terduga.
       </Text>
       <BonusList controller={controller} />
-      <BonusCreateDialog controller={controller} />
     </View>
   );
 }
@@ -187,11 +210,25 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
   );
 }
 
-function BonusCreateDialog({
+function BonusCreatePage({
   controller,
 }: {
   controller: KolamBonusListController;
 }) {
+  if (!controller.canCreate) {
+    return (
+      <View style={styles.surface}>
+        <KolamEmptyState title="Akses ditolak" />
+        <KolamButton
+          intent="secondary"
+          label="Kembali"
+          onPress={controller.onCancelCreate}
+          style={styles.backButton}
+        />
+      </View>
+    );
+  }
+
   const amountValid =
     Number.isFinite(Number(controller.createDraft.amount)) &&
     Number(controller.createDraft.amount) > 0;
@@ -201,78 +238,103 @@ function BonusCreateDialog({
     !controller.mutating;
 
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={controller.onCloseCreate}
-      transparent
-      visible={controller.createOpen}
+    <ScrollView
+      contentContainerStyle={styles.createContent}
+      style={styles.surface}
     >
-      <View style={styles.dialogOverlay}>
-        <KolamModalBackdrop onPress={controller.onCloseCreate} />
-        <View accessibilityLabel="Bonus baru" style={styles.dialog}>
-          <Text style={styles.dialogTitle}>Bonus baru</Text>
-          <Text style={styles.dialogHint}>
-            Bonus dibuat belum terverifikasi — verifikasi di Pengeluaran Tak
-            Terduga.
-          </Text>
+      {controller.error ? (
+        <KolamStatusBadge
+          intent="danger"
+          label={controller.error}
+          numberOfLines={3}
+          style={styles.banner}
+        />
+      ) : null}
 
-          <KolamDropdownSelect
-            label="Karyawan"
-            onChange={value =>
-              controller.onCreateDraftChange({ userId: value })
-            }
-            options={[
-              {
-                label: controller.loadingEmployees
-                  ? 'Memuat…'
-                  : 'Pilih karyawan',
-                value: '',
-              },
-              ...controller.employeeOptions,
-            ]}
-            searchable
-            value={controller.createDraft.userId}
-          />
+      <KolamContentFrame variant="nativeFormSection">
+        <KolamCopyStack
+          containerStyle={styles.sectionCopy}
+          items={[
+            {
+              id: 'title',
+              text: 'Data bonus',
+              style: styles.sectionTitle,
+            },
+            {
+              id: 'hint',
+              text: 'Bonus dibuat belum terverifikasi — verifikasi di Pengeluaran Tak Terduga.',
+              style: styles.sectionHint,
+            },
+          ]}
+        />
+        <KolamContentFrame variant="nativeFormControls">
+          <View style={settingsWebFormStyles.settingsWebFormFields}>
+            <View style={settingsWebFormStyles.settingsWebFormField}>
+              <KolamSettingsWebFieldLabel label="Karyawan" required />
+              <KolamDropdownSelect
+                label="Karyawan"
+                onChange={value =>
+                  controller.onCreateDraftChange({ userId: value })
+                }
+                options={[
+                  {
+                    label: controller.loadingEmployees
+                      ? 'Memuat…'
+                      : 'Pilih karyawan',
+                    value: '',
+                  },
+                  ...controller.employeeOptions,
+                ]}
+                searchable
+                showLabelInTrigger={false}
+                value={controller.createDraft.userId}
+              />
+            </View>
 
-          <Text style={styles.fieldLabel}>Jumlah (Rp)</Text>
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onCreateDraftChange({ amount: value })
-            }
-            placeholder="0"
-            value={controller.createDraft.amount}
-          />
+            <View style={settingsWebFormStyles.settingsWebFormField}>
+              <KolamSettingsWebFieldLabel label="Jumlah (Rp)" required />
+              <KolamFormTextField
+                mode="numeric"
+                onChangeText={value =>
+                  controller.onCreateDraftChange({ amount: value })
+                }
+                placeholder="0"
+                value={controller.createDraft.amount}
+              />
+            </View>
 
-          <Text style={styles.fieldLabel}>Alasan</Text>
-          <KolamFormTextField
-            multiline
-            onChangeText={value =>
-              controller.onCreateDraftChange({ reason: value })
-            }
-            placeholder="Opsional"
-            value={controller.createDraft.reason}
-          />
-
-          <View style={styles.dialogActions}>
-            <KolamButton
-              disabled={controller.mutating}
-              intent="secondary"
-              label="Batal"
-              onPress={controller.onCloseCreate}
-            />
-            <KolamButton
-              disabled={!canSubmit}
-              intent="primary"
-              label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
-              onPress={() => {
-                void controller.onCreateBonus();
-              }}
-            />
+            <View style={settingsWebFormStyles.settingsWebFormField}>
+              <KolamSettingsWebFieldLabel label="Alasan" />
+              <KolamFormTextField
+                multiline
+                onChangeText={value =>
+                  controller.onCreateDraftChange({ reason: value })
+                }
+                placeholder="Opsional"
+                value={controller.createDraft.reason}
+              />
+            </View>
           </View>
-        </View>
+        </KolamContentFrame>
+      </KolamContentFrame>
+
+      <View style={styles.createActions}>
+        <KolamButton
+          disabled={controller.mutating}
+          intent="secondary"
+          label="Batal"
+          onPress={controller.onCancelCreate}
+        />
+        <KolamButton
+          disabled={!canSubmit}
+          intent="primary"
+          label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+          onPress={() => {
+            void controller.onCreateBonus();
+          }}
+        />
       </View>
-    </Modal>
+    </ScrollView>
   );
 }
 
@@ -296,6 +358,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
     minHeight: 0,
+  },
+  createContent: {
+    gap: 12,
+    paddingBottom: 24,
   },
   banner: {
     alignSelf: 'stretch',
@@ -364,44 +430,28 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  dialogOverlay: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
+  sectionCopy: {
+    gap: 4,
+    marginBottom: 8,
   },
-  dialog: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    maxWidth: '92%',
-    padding: 16,
-    width: 420,
-    zIndex: 1,
-  },
-  dialogTitle: {
+  sectionTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
-  dialogHint: {
+  sectionHint: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
   },
-  fieldLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  dialogActions: {
+  createActions: {
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'flex-end',
-    marginTop: 4,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
   },
 });

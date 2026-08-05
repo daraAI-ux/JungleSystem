@@ -5,6 +5,9 @@
 import type { KolamBadgeIntent } from './kolam-badge';
 
 export const KOLAM_BONUS_ROOT = '/finance/bonus';
+export const KOLAM_BONUS_CREATE = `${KOLAM_BONUS_ROOT}/create`;
+
+export type KolamBonusSurfaceMode = 'list' | 'create' | 'unsupported';
 
 export type KolamBonusListFilters = {
   year: number;
@@ -41,8 +44,22 @@ export const KOLAM_BONUS_MONTH_OPTIONS: Array<{ label: string; value: number }> 
 ];
 
 export function isKolamBonusRoute(route: string): boolean {
+  return getKolamBonusSurfaceMode(route) !== 'unsupported';
+}
+
+export function getKolamBonusSurfaceMode(route: string): KolamBonusSurfaceMode {
   const path = normalizeBonusPath(route);
-  return path === KOLAM_BONUS_ROOT;
+  if (path === KOLAM_BONUS_ROOT) {
+    return 'list';
+  }
+  if (path === KOLAM_BONUS_CREATE) {
+    return 'create';
+  }
+  return 'unsupported';
+}
+
+export function buildKolamBonusCreateRoute(): string {
+  return KOLAM_BONUS_CREATE;
 }
 
 export function createInitialBonusListFilters(
