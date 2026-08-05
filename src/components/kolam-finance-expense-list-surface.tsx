@@ -58,20 +58,32 @@ function buildColumns(
   onRouteChange?: (route: string) => void,
   onRequestDelete?: (row: KolamFinanceExpenseListRow) => void,
 ): ColumnDef[] {
+  const isAssetPurchase = kind === 'asset-purchase';
   const base: ColumnDef[] = [
     {
       id: 'code',
       label: 'Kode',
-      flex: 0.9,
-      render: row => (
-        <Text numberOfLines={1} style={styles.metaText}>
-          {row.code || '—'}
-        </Text>
-      ),
+      flex: isAssetPurchase ? 1.1 : 0.9,
+      render: row =>
+        isAssetPurchase ? (
+          <View style={styles.codeStatusStack}>
+            <Text numberOfLines={1} style={styles.metaText}>
+              {row.code || '—'}
+            </Text>
+            <KolamStatusBadge
+              intent={getFinanceExpenseStatusIntent(row.status)}
+              label={row.statusLabel}
+            />
+          </View>
+        ) : (
+          <Text numberOfLines={1} style={styles.metaText}>
+            {row.code || '—'}
+          </Text>
+        ),
     },
     {
       id: 'name',
-      label: kind === 'asset-purchase' ? 'Nama aset' : 'Nama',
+      label: isAssetPurchase ? 'Nama aset' : 'Nama',
       flex: 1.2,
       render: row => (
         <Text numberOfLines={2} style={styles.primaryText}>
@@ -94,19 +106,21 @@ function buildColumns(
     });
   }
 
-  base.push({
-    id: 'status',
-    label: 'Status',
-    flex: 0.9,
-    render: row => (
-      <KolamStatusBadge
-        intent={getFinanceExpenseStatusIntent(row.status)}
-        label={row.statusLabel}
-      />
-    ),
-  });
+  if (!isAssetPurchase) {
+    base.push({
+      id: 'status',
+      label: 'Status',
+      flex: 0.9,
+      render: row => (
+        <KolamStatusBadge
+          intent={getFinanceExpenseStatusIntent(row.status)}
+          label={row.statusLabel}
+        />
+      ),
+    });
+  }
 
-  if (kind === 'asset-purchase') {
+  if (isAssetPurchase) {
     base.push(
       {
         id: 'amount',
@@ -988,6 +1002,10 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  codeStatusStack: {
+    alignItems: 'flex-start',
+    gap: 4,
   },
   linkText: {
     color: V.colors.primary,
