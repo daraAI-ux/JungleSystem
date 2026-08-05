@@ -720,12 +720,6 @@ function KolamProyekDetailRead({
       ) : null}
 
       <View style={styles.detailTop}>
-        <ProyekNextStepHero
-          acting={controller.acting}
-          config={nextStep}
-          onAction={runNextStepAction}
-        />
-
         <KolamCardFrame style={styles.proyekMetaStripCard} variant="compact">
           <View style={styles.proyekMetaStripRow}>
             <ProyekMetaStripItem label="Nilai kontrak">
@@ -1408,6 +1402,12 @@ function KolamProyekDetailRead({
                   controller.onAdminLifecycleTransition(to, note)
                 }
                 showDomainInfo={showDomainLifecycleInfo}
+              />
+
+              <ProyekNextStepHero
+                acting={controller.acting}
+                config={nextStep}
+                onAction={runNextStepAction}
               />
 
               <DetailSection title="Aktivitas">
