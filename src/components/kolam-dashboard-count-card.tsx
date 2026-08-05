@@ -19,7 +19,9 @@ export function KolamDashboardCountCard({
     <>
       <View
         style={
-          card.id === 'products' || card.id === 'rawProducts'
+          card.id === 'products' ||
+          card.id === 'rawProducts' ||
+          card.id === 'species'
             ? styles.dashboardFullCountIcon
             : styles.dashboardCountIcon
         }>

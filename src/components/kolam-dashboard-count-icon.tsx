@@ -2,6 +2,7 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import type {DashboardCountIconKind} from '../domain/dashboard-counts';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {KolamDashboardLifeStockCountIcon} from './kolam-dashboard-life-stock-count-icon';
 import {KolamDashboardProductCountIcon} from './kolam-dashboard-product-count-icon';
 import {KolamDashboardRawMaterialCountIcon} from './kolam-dashboard-raw-material-count-icon';
 
@@ -21,12 +22,7 @@ export function KolamDashboardCountIcon({
   }
 
   if (kind === 'book') {
-    return (
-      <View style={styles.book}>
-        <View style={styles.bookSpine} />
-        <View style={styles.bookLine} />
-      </View>
-    );
+    return <KolamDashboardLifeStockCountIcon />;
   }
 
   return (
@@ -39,30 +35,6 @@ export function KolamDashboardCountIcon({
 }
 
 const styles = StyleSheet.create({
-  book: {
-    width: 19,
-    height: 20,
-    borderRadius: 4,
-    borderColor: V.colors.success,
-    borderWidth: 2,
-  },
-  bookSpine: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 5,
-    width: 2,
-    backgroundColor: V.colors.success,
-  },
-  bookLine: {
-    position: 'absolute',
-    right: 3,
-    top: 6,
-    width: 6,
-    height: 2,
-    borderRadius: 999,
-    backgroundColor: V.colors.success,
-  },
   service: {
     width: 20,
     height: 20,
