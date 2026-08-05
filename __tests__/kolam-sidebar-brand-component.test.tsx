@@ -1,29 +1,12 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import {KolamJungleSystemLogo} from '../src/components/kolam-jungle-system-logo';
 import {KolamSidebarBrand} from '../src/components/kolam-sidebar-brand';
 import {getSidebarBrand} from '../src/domain/app-shell';
 
-function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
-  return renderer.root
-    .findAllByType(Text)
-    .flatMap(node => flattenText(node.props.children));
-}
-
-function flattenText(value: React.ReactNode): string[] {
-  if (Array.isArray(value)) {
-    return value.flatMap(flattenText);
-  }
-
-  if (typeof value === 'string' || typeof value === 'number') {
-    return [String(value)];
-  }
-
-  return [];
-}
-
 describe('KolamSidebarBrand', () => {
-  it('renders expanded brand wordmark and hides it when collapsed', async () => {
+  it('renders the shared JungleSystem logo in expanded and collapsed states', async () => {
     const brand = getSidebarBrand();
     let expanded: ReactTestRenderer.ReactTestRenderer;
     let collapsed: ReactTestRenderer.ReactTestRenderer;
@@ -41,9 +24,26 @@ describe('KolamSidebarBrand', () => {
       );
     });
 
-    expect(renderText(expanded!)).toEqual(
-      expect.arrayContaining([brand.title, brand.subtitle]),
+    const expandedLogo = expanded!.root.findByType(KolamJungleSystemLogo);
+    const collapsedLogo = collapsed!.root.findByType(KolamJungleSystemLogo);
+
+    expect(expandedLogo.props.accessibilityLabel).toBe(brand.title);
+    expect(expandedLogo.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          height: '100%',
+          width: '100%',
+        }),
+      ]),
     );
-    expect(renderText(collapsed!)).not.toContain(brand.title);
+    expect(collapsedLogo.props.accessibilityLabel).toBe(brand.title);
+    expect(collapsedLogo.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          height: brand.collapsedSize,
+          width: brand.collapsedSize,
+        }),
+      ]),
+    );
   });
 });

@@ -217,7 +217,7 @@ test('keeps sidebar brand tied to the live Kolam logo contract', () => {
   expect(sidebarBrand.title).toBe('JungleSystem');
   expect(sidebarBrand.subtitle).toBe('Dunia Anura');
   expect(sidebarBrand.sourceComponent).toBe(
-    'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.jpg',
+    'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.svg',
   );
   expect(sidebarBrand.expandedSize).toEqual({width: 118, height: 48});
   expect(sidebarBrand.collapsedSize).toBe(32);

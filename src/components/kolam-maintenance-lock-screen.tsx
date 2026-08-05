@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -8,8 +7,7 @@ import {
   View,
 } from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-
-const JUNGLE_SYSTEM_LOGO = require('../assets/brand/jungle-system-logo-color-transparent.png');
+import {KolamJungleSystemLogo} from './kolam-jungle-system-logo';
 
 const maintenanceCards = [
   {
@@ -38,10 +36,8 @@ export function KolamMaintenanceLockScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
         <View style={styles.layout}>
-          <Image
+          <KolamJungleSystemLogo
             accessibilityLabel="Logo JungleSystem"
-            resizeMode="contain"
-            source={JUNGLE_SYSTEM_LOGO}
             style={styles.logo}
           />
 

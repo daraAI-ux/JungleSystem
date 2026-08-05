@@ -1,18 +1,16 @@
 import React from 'react';
-import {Image, StyleSheet, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import {getSidebarBrand} from '../domain/app-shell';
+import {KolamJungleSystemLogo} from './kolam-jungle-system-logo';
 
 const SIDEBAR_BRAND = getSidebarBrand();
-const JUNGLE_SYSTEM_LOGO = require('../assets/brand/jungle-system-logo-color-transparent.png');
 
 export function KolamSidebarBrand({collapsed}: {collapsed: boolean}) {
   return (
     <View style={[styles.brand, collapsed && styles.brandCollapsed]}>
       <View style={[styles.brandLogo, collapsed && styles.brandLogoCollapsed]}>
-        <Image
+        <KolamJungleSystemLogo
           accessibilityLabel={SIDEBAR_BRAND.title}
-          resizeMode="contain"
-          source={JUNGLE_SYSTEM_LOGO}
           style={[styles.brandImage, collapsed && styles.brandImageCollapsed]}
         />
       </View>

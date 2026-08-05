@@ -1,15 +1,14 @@
 import React from 'react';
-import {Image, ScrollView, StatusBar, StyleSheet, View} from 'react-native';
+import {ScrollView, StatusBar, StyleSheet, View} from 'react-native';
 import type {RuntimeDeviceIdentityStatus} from '../domain/runtime-identity';
 import {KolamAuthPanel} from './kolam-auth-panel';
+import {KolamJungleSystemLogo} from './kolam-jungle-system-logo';
 
 type AuthPanelProps = React.ComponentProps<typeof KolamAuthPanel>;
 type SyncStatusProps = {
   loading: boolean;
   message: string;
 };
-
-const JUNGLE_SYSTEM_LOGO = require('../assets/brand/jungle-system-logo-color-transparent.png');
 
 export function KolamLoginScreen({
   auth,
@@ -27,10 +26,8 @@ export function KolamLoginScreen({
         keyboardShouldPersistTaps="handled">
         <View style={styles.layout}>
           <View style={styles.brandHeader}>
-            <Image
+            <KolamJungleSystemLogo
               accessibilityLabel="Logo JungleSystem"
-              resizeMode="contain"
-              source={JUNGLE_SYSTEM_LOGO}
               style={styles.logo}
             />
           </View>

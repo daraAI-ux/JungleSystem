@@ -76,7 +76,7 @@ export const sidebarBrand: SidebarBrand = {
   subtitle: 'Dunia Anura',
   sourceRepo: 'https://github.com/daraAI-ux/JungleSystem',
   sourceComponent:
-    'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.jpg',
+    'E:\\Dunia Anura\\logo\\logo\\Logo Jungle System\\Logo\\Color\\Logo Jungle System Color.svg',
   expandedSize: {
     width: 118,
     height: 48,
