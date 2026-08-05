@@ -309,6 +309,12 @@ describe('Kolam enclosure surface', () => {
     expect(
       root.findAllByType(ScrollView).some(node => node.props.horizontal === true),
     ).toBe(true);
+    const horizontalSummary = root
+      .findAllByType(ScrollView)
+      .find(node => node.props.horizontal === true);
+    expect(horizontalSummary?.props.contentContainerStyle).toEqual(
+      expect.objectContaining({paddingRight: 8}),
+    );
     expect(root.findAllByProps({children: 'E'})).toHaveLength(0);
     expect(root.findAllByProps({children: '!'})).toHaveLength(0);
     expect(root.findAllByProps({children: '+'})).toHaveLength(0);

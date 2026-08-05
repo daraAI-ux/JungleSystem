@@ -1520,11 +1520,13 @@ function KolamEnclosureDashboardPanel({
         horizontal
         showsHorizontalScrollIndicator={false}>
         <SummaryTile
+          compact
           icon="E"
           label="Jumlah enclosure"
           value={stats.totals.enclosures}
         />
         <SummaryTile
+          compact
           hint={`${stats.totals.individuals} ekor total`}
           icon="S"
           label="Spesies di enclosure"
@@ -1532,12 +1534,14 @@ function KolamEnclosureDashboardPanel({
         />
         <SummaryTile
           accent="primary"
+          compact
           hint={`${stats.production.speciesDistinct} jenis`}
           icon="P"
           label="Indukan produksi"
           value={stats.production.totalQty}
         />
         <SummaryTile
+          compact
           hint={`${stats.saleable.speciesDistinct} jenis`}
           icon="J"
           label="Stok jual di enclosure"
@@ -1545,6 +1549,7 @@ function KolamEnclosureDashboardPanel({
         />
         <SummaryTile
           accent="warning"
+          compact
           hint={`${stats.deaths.reportedAnimals} ekor dilaporkan / ${stats.deaths.totalCases} event total`}
           icon="!"
           label="Kematian dilaporkan"
@@ -1552,6 +1557,7 @@ function KolamEnclosureDashboardPanel({
         />
         <SummaryTile
           accent="primary"
+          compact
           hint={`${stats.births.totalCases} event / alasan KELAHIRAN`}
           icon="+"
           label="Total kelahiran indukan"
@@ -2479,18 +2485,21 @@ function InlineState({message, title}: {message?: string; title: string}) {
 
 function SummaryTile({
   accent,
+  compact,
   hint,
   label,
   value,
 }: {
   accent?: 'primary' | 'warning';
+  compact?: boolean;
   hint?: string;
   icon: string;
   label: string;
   value: number;
 }) {
   return (
-    <KolamCardFrame style={styles.summaryCard}>
+    <KolamCardFrame
+      style={[styles.summaryCard, compact ? styles.summaryCardCompact : null]}>
       <View
         style={[
           styles.summaryAccent,
@@ -3348,6 +3357,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'nowrap',
     gap: 8,
+    paddingRight: 8,
   },
   dashboardContent: {
     gap: 18,
@@ -3400,6 +3410,11 @@ const styles = StyleSheet.create({
     minWidth: 180,
     overflow: 'hidden',
     padding: 0,
+  },
+  summaryCardCompact: {
+    flexBasis: 160,
+    flexGrow: 0,
+    minWidth: 160,
   },
   summaryAccent: {
     borderBottomLeftRadius: 10,
