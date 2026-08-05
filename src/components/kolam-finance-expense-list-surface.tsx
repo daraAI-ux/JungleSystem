@@ -159,50 +159,29 @@ function buildColumns(
     });
   }
 
-  base.push(
-    {
+  if (kind !== 'asset-purchase') {
+    base.push({
       id: 'wallet',
       label: 'Dompet',
       flex: 0.9,
-      render: row => {
-        if (kind === 'asset-purchase') {
-          if (row.walletId && onRouteChange) {
-            return (
-              <Pressable
-                onPress={() =>
-                  onRouteChange(`/wallet/${encodeURIComponent(row.walletId)}`)
-                }
-              >
-                <Text numberOfLines={1} style={styles.linkText}>
-                  {row.walletLabel || row.walletId}
-                </Text>
-              </Pressable>
-            );
-          }
-          return (
-            <Text numberOfLines={1} style={styles.metaText}>
-              {row.walletId ? row.walletLabel || row.walletId : 'Dompet Utama'}
-            </Text>
-          );
-        }
-        return (
-          <Text numberOfLines={1} style={styles.metaText}>
-            {row.walletLabel}
-          </Text>
-        );
-      },
-    },
-    {
-      id: 'executed',
-      label: 'Dieksekusi',
-      flex: 0.9,
       render: row => (
         <Text numberOfLines={1} style={styles.metaText}>
-          {row.executedAtLabel}
+          {row.walletLabel}
         </Text>
       ),
-    },
-  );
+    });
+  }
+
+  base.push({
+    id: 'executed',
+    label: 'Dieksekusi',
+    flex: 0.9,
+    render: row => (
+      <Text numberOfLines={1} style={styles.metaText}>
+        {row.executedAtLabel}
+      </Text>
+    ),
+  });
 
   if (kind === 'unexpected-expense' || kind === 'unexpected-income') {
     base.push({
