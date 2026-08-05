@@ -21,6 +21,7 @@ import {
   type KolamPayableInstallment,
 } from '../services/kolam-payable-installment-api';
 import {
+  fetchKolamPayableDetail,
   fetchKolamPayableSummary,
   fetchKolamPayables,
   payKolamPayableFull,
@@ -31,6 +32,7 @@ export interface KolamPayableController {
   documentId: string | null;
   filters: KolamPayableListFilters;
   items: KolamPayable[];
+  detailItem: KolamPayable | null;
   summary: KolamPayableSummaryData | null;
   pagination: {
     page: number;
@@ -41,6 +43,7 @@ export interface KolamPayableController {
   installments: KolamPayableInstallment[];
   installmentsLoading: boolean;
   loading: boolean;
+  detailLoading: boolean;
   payingId: string | null;
   error: string;
   statusMessage: string;
@@ -71,6 +74,7 @@ export function useKolamPayableController(route: string): KolamPayableController
     createInitialPayableListFilters(),
   );
   const [items, setItems] = useState<KolamPayable[]>([]);
+  const [detailItem, setDetailItem] = useState<KolamPayable | null>(null);
   const [summary, setSummary] = useState<KolamPayableSummaryData | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -83,6 +87,7 @@ export function useKolamPayableController(route: string): KolamPayableController
   );
   const [installmentsLoading, setInstallmentsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -136,7 +141,7 @@ export function useKolamPayableController(route: string): KolamPayableController
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Gagal memuat utang',
+            : 'Gagal memuat hutang',
       );
     } finally {
       setLoading(false);
@@ -156,6 +161,30 @@ export function useKolamPayableController(route: string): KolamPayableController
       setInstallments([]);
     } finally {
       setInstallmentsLoading(false);
+    }
+  }, []);
+
+  const refreshDetail = useCallback(async (payableId: string) => {
+    if (!payableId) {
+      setDetailItem(null);
+      return;
+    }
+    setDetailLoading(true);
+    setError('');
+    try {
+      const detail = await fetchKolamPayableDetail(payableId);
+      setDetailItem(detail);
+    } catch (err) {
+      setDetailItem(null);
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Gagal memuat detail hutang',
+      );
+    } finally {
+      setDetailLoading(false);
     }
   }, []);
 
@@ -183,10 +212,12 @@ export function useKolamPayableController(route: string): KolamPayableController
   useEffect(() => {
     if (!canView || mode !== 'detail' || !documentId) {
       setInstallments([]);
+      setDetailItem(null);
       return;
     }
+    void refreshDetail(documentId);
     void refreshInstallments(documentId);
-  }, [canView, documentId, mode, refreshInstallments]);
+  }, [canView, documentId, mode, refreshDetail, refreshInstallments]);
 
   const onSearchChange = useCallback((search: string) => {
     setFilters(prev => ({ ...prev, search, page: 1 }));
@@ -264,19 +295,22 @@ export function useKolamPayableController(route: string): KolamPayableController
         await payKolamPayableFull(item.id);
         setStatusMessage(`${item.code} lunas`);
         await refreshList();
+        if (mode === 'detail' && documentId === item.id) {
+          await refreshDetail(item.id);
+        }
       } catch (err) {
         setError(
           err instanceof ApiError
             ? err.message
             : err instanceof Error
               ? err.message
-              : 'Gagal melunasi utang',
+              : 'Gagal melunasi hutang',
         );
       } finally {
         setPayingId(null);
       }
     },
-    [canPay, refreshList],
+    [canPay, documentId, mode, refreshDetail, refreshList],
   );
 
   const clearStatusMessage = useCallback(() => {
@@ -288,11 +322,13 @@ export function useKolamPayableController(route: string): KolamPayableController
     documentId,
     filters,
     items,
+    detailItem,
     summary,
     pagination,
     installments,
     installmentsLoading,
     loading,
+    detailLoading,
     payingId,
     error,
     statusMessage,

@@ -57,6 +57,20 @@ export type KolamPayableInstallmentSummary = {
   } | null;
 };
 
+export type KolamPayablePaymentProof = {
+  path: string;
+  uploadedAt: string;
+};
+
+export type KolamPayablePaymentTransaction = {
+  id: string;
+  walletName: string;
+  note: string;
+  createdAt: string;
+  createdByName: string;
+  proofs: KolamPayablePaymentProof[];
+};
+
 export type KolamPayable = {
   id: string;
   code: string;
@@ -71,8 +85,10 @@ export type KolamPayable = {
   vendorName: string;
   status: KolamPayableStatus | '';
   paidAt: string;
+  paidByName: string;
   notes: string;
   installmentSummary: KolamPayableInstallmentSummary | null;
+  paymentTransaction: KolamPayablePaymentTransaction | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -374,8 +390,12 @@ export function normalizeKolamPayable(payload: unknown): KolamPayable {
     vendorName: resolvePayableVendorName(record),
     status,
     paidAt: getString(record, 'paidAt'),
+    paidByName: resolvePersonName(record.paidBy),
     notes: getString(record, 'notes'),
     installmentSummary,
+    paymentTransaction: normalizePayablePaymentTransaction(
+      record.paymentTransaction,
+    ),
     createdAt: getString(record, 'createdAt'),
     updatedAt: getString(record, 'updatedAt'),
   };
@@ -423,6 +443,41 @@ function normalizeNextPayableInstallment(payload: unknown) {
   };
 }
 
+function normalizePayablePaymentTransaction(
+  payload: unknown,
+): KolamPayablePaymentTransaction | null {
+  const record = asRecord(payload);
+  if (!Object.keys(record).length) {
+    return null;
+  }
+  const wallet = asRecord(record.wallet);
+  return {
+    id: getString(record, '_id') || getString(record, 'id'),
+    walletName: getString(wallet, 'name'),
+    note: getString(record, 'note'),
+    createdAt: getString(record, 'createdAt'),
+    createdByName: resolvePersonName(record.createdBy),
+    proofs: normalizePayablePaymentProofs(record.proofs),
+  };
+}
+
+function normalizePayablePaymentProofs(
+  payload: unknown,
+): KolamPayablePaymentProof[] {
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+  return payload
+    .map(item => {
+      const record = asRecord(item);
+      return {
+        path: getString(record, 'path'),
+        uploadedAt: getString(record, 'uploadedAt'),
+      };
+    })
+    .filter(item => item.path);
+}
+
 function resolvePayableSourceLabel(
   record: Record<string, unknown>,
   sourceModel: KolamPayableSourceModel | '',
@@ -458,6 +513,21 @@ function resolvePayableVendorName(record: Record<string, unknown>): string {
     }
   }
   return '—';
+}
+
+function resolvePersonName(value: unknown): string {
+  if (!value || typeof value === 'string') {
+    return '';
+  }
+  const record = asRecord(value);
+  const name = getString(record, 'name');
+  if (name) {
+    return name;
+  }
+  return `${getString(record, 'first_name')} ${getString(
+    record,
+    'last_name',
+  )}`.trim();
 }
 
 function normalizePayableRoutePath(route: string): string {

@@ -566,7 +566,7 @@ function PayableList({
             <View style={styles.emptyWrap}>
               <KolamEmptyState
                 compact
-                title={controller.loading ? 'Memuat…' : 'Tidak ada utang'}
+                title={controller.loading ? 'Memuat...' : 'Tidak ada hutang'}
               />
             </View>
           }
@@ -598,64 +598,183 @@ function PayableDetail({
   onRouteChange?: (route: string) => void;
 }) {
   const item = useMemo(
-    () => controller.items.find(row => row.id === controller.documentId) ?? null,
-    [controller.documentId, controller.items],
+    () =>
+      controller.detailItem ??
+      controller.items.find(row => row.id === controller.documentId) ??
+      null,
+    [controller.detailItem, controller.documentId, controller.items],
   );
+  const isLumpSum = item ? controller.installments.length === 0 : false;
+  const paidAmount = item?.paidAmount ?? 0;
+  const remaining = item ? Math.max(0, item.amount - paidAmount) : 0;
+  const progress =
+    item && item.amount > 0
+      ? Math.min(100, Math.round((paidAmount / item.amount) * 100))
+      : 0;
+  const due = item ? getPayableDueTone(item.status, item.dueDate) : null;
+  const payment = item?.paymentTransaction ?? null;
+  const hasPaymentHistory =
+    Boolean(item) &&
+    isLumpSum &&
+    (item?.status === 'paid' || Boolean(payment) || paidAmount > 0);
 
   return (
     <View style={styles.detailRoot}>
-      <KolamButton
-        intent="secondary"
-        label="Kembali"
-        onPress={() => onRouteChange?.(KOLAM_PAYABLE_ROOT)}
-        style={styles.backButton}
-      />
+      <View style={styles.detailHeader}>
+        <View style={styles.detailHeaderCopy}>
+          {item ? (
+            <View style={styles.detailTitleRow}>
+              <Text style={styles.detailTitle}>{item.code || '-'}</Text>
+              <KolamStatusBadge
+                intent={getKolamPayableStatusIntent(item.status)}
+                label={formatKolamPayableStatusLabel(item.status)}
+              />
+            </View>
+          ) : null}
+          {item ? <Text style={styles.primaryText}>{item.name || '-'}</Text> : null}
+        </View>
+        <KolamButton
+          intent="secondary"
+          label="Kembali"
+          onPress={() => onRouteChange?.(KOLAM_PAYABLE_ROOT)}
+          style={styles.backButton}
+        />
+      </View>
       {item ? (
-        <KolamCardFrame style={styles.detailCard}>
-          <Text style={styles.detailTitle}>{item.code}</Text>
-          <Text style={styles.primaryText}>{item.name}</Text>
-          <Text style={styles.metaText}>{item.vendorName}</Text>
-          <View style={styles.detailGrid}>
-            <DetailField label="Nominal" value={formatRupiah(item.amount)} />
-            <DetailField
-              label="Sisa"
-              value={formatRupiah(item.remainingAmount)}
-            />
-            <DetailField
-              label="Jatuh tempo"
-              value={formatShortDate(item.dueDate)}
-            />
-            <DetailField
-              label="Status"
-              value={formatKolamPayableStatusLabel(item.status)}
-            />
+        <>
+          <View style={styles.detailSummaryRow}>
+            <KolamCardFrame style={styles.detailSummaryCard}>
+              <View style={styles.detailGrid}>
+                <DetailField label="Vendor" value={item.vendorName} />
+                <DetailField
+                  label="Total Hutang"
+                  value={formatRupiah(item.amount)}
+                />
+                <DetailField
+                  label="Jatuh Tempo"
+                  value={formatShortDate(item.dueDate)}
+                />
+                <DetailField label="Dibayar" value={formatRupiah(paidAmount)} />
+              </View>
+            </KolamCardFrame>
+            <KolamCardFrame style={styles.progressCard}>
+              <Text style={styles.cardLabel}>Progress Pembayaran</Text>
+              <Text style={styles.progressValue}>{progress}%</Text>
+              <Text style={styles.metaText}>
+                {formatRupiah(paidAmount)} / {formatRupiah(item.amount)}
+              </Text>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {width: `${progress}%` as `${number}%`},
+                  ]}
+                />
+              </View>
+            </KolamCardFrame>
           </View>
-        </KolamCardFrame>
+
+          {isLumpSum && item.status === 'open' && due?.label ? (
+            <KolamStatusBadge
+              intent={
+                due.textStyle === styles.dueDangerText ? 'danger' : 'warning'
+              }
+              label={`${due.label} (${formatShortDate(item.dueDate)})`}
+              numberOfLines={2}
+              style={styles.dueBanner}
+            />
+          ) : null}
+
+          {isLumpSum && item.status === 'open' && remaining > 0 ? (
+            <KolamCardFrame style={styles.payFullCard}>
+              <View>
+                <Text style={styles.cardLabel}>Sisa Pembayaran</Text>
+                <Text style={styles.payFullAmount}>
+                  {formatRupiah(remaining)}
+                </Text>
+                <Text style={styles.metaText}>
+                  Wallet: {item.walletName || '-'}
+                </Text>
+              </View>
+              <KolamButton
+                disabled={controller.payingId === item.id}
+                intent="primary"
+                label={
+                  controller.payingId === item.id
+                    ? 'Memproses...'
+                    : `Bayar Penuh ${formatRupiah(remaining)}`
+                }
+                onPress={() => {
+                  void controller.onPayFull(item);
+                }}
+              />
+            </KolamCardFrame>
+          ) : null}
+
+          {hasPaymentHistory ? (
+            <KolamCardFrame style={styles.paymentHistoryCard}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionLabel}>Riwayat Pembayaran</Text>
+                <KolamStatusBadge intent="success" label="Lunas" />
+              </View>
+              <View style={styles.detailGrid}>
+                <DetailField
+                  label="Dibayar"
+                  value={formatDateTime(item.paidAt || payment?.createdAt || '')}
+                />
+                <DetailField
+                  label="Wallet"
+                  value={payment?.walletName || item.walletName || '-'}
+                />
+                <DetailField
+                  label="Oleh"
+                  value={item.paidByName || payment?.createdByName || '-'}
+                />
+                <DetailField
+                  label="Catatan transaksi"
+                  value={payment?.note || '-'}
+                />
+              </View>
+              {payment?.proofs.length ? (
+                <Text style={styles.metaText}>
+                  {payment.proofs.length} bukti pembayaran
+                </Text>
+              ) : null}
+            </KolamCardFrame>
+          ) : null}
+        </>
       ) : (
-        <KolamEmptyState compact title="Memuat detail…" />
+        <KolamEmptyState
+          compact
+          title={controller.detailLoading ? 'Memuat detail...' : 'Detail tidak ada'}
+        />
       )}
 
-      <Text style={styles.sectionLabel}>Cicilan</Text>
-      {controller.installmentsLoading ? (
-        <Text style={styles.metaText}>Memuat…</Text>
-      ) : controller.installments.length === 0 ? (
-        <Text style={styles.metaText}>Tidak ada cicilan</Text>
-      ) : (
-        controller.installments.map(installment => (
-          <View key={installment.id} style={styles.installmentRow}>
-            <Text style={styles.primaryText}>
-              #{installment.installmentNumber}
-            </Text>
-            <Text style={styles.metaText}>
-              {formatShortDate(installment.dueDate)}
-            </Text>
-            <Text style={styles.primaryText}>
-              {formatRupiah(installment.amount)}
-            </Text>
-            <Text style={styles.metaText}>{installment.status}</Text>
-          </View>
-        ))
-      )}
+      {item && !isLumpSum ? (
+        <>
+          <Text style={styles.sectionLabel}>Cicilan</Text>
+          {controller.installmentsLoading ? (
+            <Text style={styles.metaText}>Memuat...</Text>
+          ) : controller.installments.length === 0 ? (
+            <Text style={styles.metaText}>Tidak ada cicilan</Text>
+          ) : (
+            controller.installments.map(installment => (
+              <View key={installment.id} style={styles.installmentRow}>
+                <Text style={styles.primaryText}>
+                  #{installment.installmentNumber}
+                </Text>
+                <Text style={styles.metaText}>
+                  {formatShortDate(installment.dueDate)}
+                </Text>
+                <Text style={styles.primaryText}>
+                  {formatRupiah(installment.amount)}
+                </Text>
+                <Text style={styles.metaText}>{installment.status}</Text>
+              </View>
+            ))
+          )}
+        </>
+      ) : null}
     </View>
   );
 }
@@ -768,6 +887,23 @@ function formatShortDate(value: string): string {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+  });
+}
+
+function formatDateTime(value: string): string {
+  if (!value) {
+    return '-';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -968,6 +1104,23 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
   },
+  detailHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  detailHeaderCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  detailTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   backButton: {
     alignSelf: 'flex-start',
   },
@@ -986,6 +1139,66 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     marginTop: 8,
+  },
+  detailSummaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  detailSummaryCard: {
+    flex: 1,
+    minWidth: 360,
+    padding: 12,
+  },
+  progressCard: {
+    gap: 6,
+    minWidth: 220,
+    padding: 12,
+    width: 260,
+  },
+  progressValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  progressTrack: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 999,
+    height: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    backgroundColor: V.colors.primary,
+    borderRadius: 999,
+    height: 8,
+  },
+  dueBanner: {
+    alignSelf: 'stretch',
+  },
+  payFullCard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  payFullAmount: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  paymentHistoryCard: {
+    gap: 10,
+    padding: 12,
+  },
+  sectionHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   detailField: {
     minWidth: 120,

@@ -61,6 +61,13 @@ export async function fetchKolamPayableSummary(): Promise<KolamPayableSummaryDat
   return normalizeKolamPayableSummary(payload);
 }
 
+export async function fetchKolamPayableDetail(id: string): Promise<KolamPayable> {
+  const payload = await kolamRequest<unknown>(
+    `/payable/${encodeURIComponent(id)}`,
+  );
+  return normalizeKolamPayable(unwrapData(payload));
+}
+
 export async function payKolamPayableFull(id: string): Promise<KolamPayable> {
   const payload = await kolamRequest<unknown>(
     `/payable/${encodeURIComponent(id)}/pay-full`,
