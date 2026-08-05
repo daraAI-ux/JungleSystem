@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  canEditKolamProyekQuotation,
   formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
@@ -24,6 +23,7 @@ import {
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import {
   KolamDetailMetaStrip,
   KolamDetailMetaStripItem,
@@ -45,7 +45,11 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamProyekQuotationForm } from './kolam-proyek-quotation-form';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -87,25 +91,10 @@ export function KolamProyekSurface({
   }
 
   if (controller.mode === 'new' || controller.mode === 'edit') {
-    return (
-      <KolamProyekPlaceholder
-        controller={controller}
-        message={
-          controller.mode === 'new'
-            ? 'Form surat penawaran akan tersedia di batch berikutnya (P2).'
-            : 'Edit surat penawaran akan tersedia di batch berikutnya (P2).'
-        }
-        title={controller.mode === 'new' ? 'Proyek baru' : 'Edit proyek'}
-      />
-    );
+    return <KolamProyekQuotationForm controller={controller} />;
   }
 
-  return (
-    <KolamProyekDetailRead
-      controller={controller}
-      onRouteChange={onRouteChange}
-    />
-  );
+  return <KolamProyekDetailRead controller={controller} onRouteChange={onRouteChange} />;
 }
 
 function KolamProyekList({
@@ -340,6 +329,13 @@ function KolamProyekDetailRead({
   onRouteChange?: (route: string) => void;
 }) {
   const detail = controller.selected;
+  const [sendOpen, setSendOpen] = useState(false);
+  const [resendOpen, setResendOpen] = useState(false);
+  const [resendNote, setResendNote] = useState('');
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   if (controller.loading && !detail) {
     return (
@@ -359,7 +355,6 @@ function KolamProyekDetailRead({
     );
   }
 
-  const canEdit = canEditKolamProyekQuotation(detail.lifecycleStatus);
   const showHpp =
     getKolamProyekSectionVisibility(detail.lifecycleStatus, 'hppMaterials') !==
     'hidden';
@@ -407,8 +402,38 @@ function KolamProyekDetailRead({
               label="Kembali ke daftar"
               onPress={controller.onBackToList}
             />
-            {canEdit ? (
+            {controller.canEdit ? (
               <KolamButton label="Ubah" onPress={controller.onEdit} />
+            ) : null}
+            {controller.canSend ? (
+              <KolamButton
+                disabled={controller.acting || detail.contractValue <= 0}
+                label={controller.acting ? 'Mengirim…' : 'Kirim ke klien'}
+                onPress={() => setSendOpen(true)}
+              />
+            ) : null}
+            {controller.canResend ? (
+              <KolamButton
+                disabled={controller.acting}
+                label={controller.acting ? 'Mengirim…' : 'Kirim ulang'}
+                onPress={() => setResendOpen(true)}
+              />
+            ) : null}
+            {controller.canCancel ? (
+              <KolamButton
+                disabled={controller.acting}
+                intent="outline"
+                label="Batalkan"
+                onPress={() => setCancelOpen(true)}
+              />
+            ) : null}
+            {controller.canDelete ? (
+              <KolamButton
+                disabled={controller.acting}
+                intent="danger"
+                label="Hapus draft"
+                onPress={() => setDeleteOpen(true)}
+              />
             ) : null}
           </View>
         </View>
@@ -419,6 +444,14 @@ function KolamProyekDetailRead({
           intent="danger"
           label={controller.error}
           numberOfLines={3}
+          style={styles.banner}
+        />
+      ) : null}
+      {controller.statusMessage ? (
+        <KolamStatusBadge
+          intent="success"
+          label={controller.statusMessage}
+          numberOfLines={2}
           style={styles.banner}
         />
       ) : null}
@@ -662,10 +695,155 @@ function KolamProyekDetailRead({
         </DetailSection>
 
         <Text style={styles.hintText}>
-          Aksi mutasi (kirim penawaran, DP, desain, close) dilanjutkan di batch
-          P2–P4. Panel di atas mengikuti visibility lifecycle.
+          Mutasi DP / mulai kerja / desain / close dilanjutkan di batch P3–P4.
         </Text>
       </ScrollView>
+
+      <KolamConfirmDialog
+        confirmLabel="Kirim"
+        message="Surat penawaran akan dikirim ke klien. Mereka dapat setujui, minta revisi, atau batalkan."
+        onCancel={() => setSendOpen(false)}
+        onConfirm={() => {
+          void controller.onSendQuotation().then(ok => {
+            if (ok) {
+              setSendOpen(false);
+            }
+          });
+        }}
+        title="Kirim surat penawaran?"
+        visible={sendOpen}
+      />
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setResendOpen(false)}
+        transparent
+        visible={resendOpen}
+      >
+        <View style={styles.dialogOverlay}>
+          <KolamModalBackdrop onPress={() => setResendOpen(false)} />
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Kirim ulang penawaran</Text>
+            <Text style={styles.dialogMessage}>
+              Opsional: catat resolusi revisi untuk klien.
+            </Text>
+            <KolamSettingsWebFieldLabel label="Catatan resolusi" required={false} />
+            <KolamFormTextField
+              multiline
+              onChangeText={setResendNote}
+              placeholder="Opsional"
+              value={resendNote}
+            />
+            <View style={styles.dialogActions}>
+              <KolamButton
+                intent="outline"
+                label="Batal"
+                onPress={() => setResendOpen(false)}
+              />
+              <KolamButton
+                disabled={controller.acting}
+                label={controller.acting ? 'Mengirim…' : 'Kirim ulang'}
+                onPress={() => {
+                  void controller.onResendQuotation(resendNote).then(ok => {
+                    if (ok) {
+                      setResendOpen(false);
+                      setResendNote('');
+                    }
+                  });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setCancelOpen(false)}
+        transparent
+        visible={cancelOpen}
+      >
+        <View style={styles.dialogOverlay}>
+          <KolamModalBackdrop onPress={() => setCancelOpen(false)} />
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Batalkan proyek?</Text>
+            <Text style={styles.dialogMessage}>
+              Alasan pembatalan wajib diisi (minimal 3 karakter).
+            </Text>
+            <KolamSettingsWebFieldLabel label="Alasan" required />
+            <KolamFormTextField
+              multiline
+              onChangeText={setCancelReason}
+              placeholder="Alasan pembatalan"
+              value={cancelReason}
+            />
+            <View style={styles.dialogActions}>
+              <KolamButton
+                intent="outline"
+                label="Tutup"
+                onPress={() => setCancelOpen(false)}
+              />
+              <KolamButton
+                disabled={controller.acting}
+                intent="danger"
+                label={controller.acting ? 'Membatalkan…' : 'Batalkan proyek'}
+                onPress={() => {
+                  void controller.onCancelProject(cancelReason).then(ok => {
+                    if (ok) {
+                      setCancelOpen(false);
+                      setCancelReason('');
+                    }
+                  });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setDeleteOpen(false)}
+        transparent
+        visible={deleteOpen}
+      >
+        <View style={styles.dialogOverlay}>
+          <KolamModalBackdrop onPress={() => setDeleteOpen(false)} />
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Hapus draft?</Text>
+            <Text style={styles.dialogMessage}>
+              Masukkan password admin untuk menghapus draft. Tidak bisa dibatalkan.
+            </Text>
+            <KolamSettingsWebFieldLabel label="Password" required />
+            <KolamFormTextField
+              mode="password"
+              onChangeText={setDeletePassword}
+              placeholder="Password"
+              value={deletePassword}
+            />
+            <View style={styles.dialogActions}>
+              <KolamButton
+                intent="outline"
+                label="Tutup"
+                onPress={() => setDeleteOpen(false)}
+              />
+              <KolamButton
+                disabled={controller.acting}
+                intent="danger"
+                label={controller.acting ? 'Menghapus…' : 'Hapus draft'}
+                onPress={() => {
+                  void controller.onDeleteDraft(deletePassword).then(ok => {
+                    if (ok) {
+                      setDeleteOpen(false);
+                      setDeletePassword('');
+                    }
+                  });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -875,5 +1053,37 @@ const styles = StyleSheet.create({
   },
   tabular: {
     fontVariant: ['tabular-nums'],
+  },
+  dialogOverlay: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  dialogCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    maxWidth: '86%',
+    padding: 18,
+    width: 420,
+  },
+  dialogTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  dialogMessage: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
   },
 });

@@ -144,6 +144,10 @@ export type KolamProyekDetail = KolamProyekListItem & {
   hppTotal: number;
   dpSchedule: KolamProyekDpScheduleItem[];
   dpAmount: number;
+  minDpType: 'fixed' | 'percentage' | string;
+  minDpValue: number;
+  termsTemplateId: string | null;
+  designReferenceEmbedUrl: string;
   commissionConfig: KolamProyekCommissionConfig | null;
   progressHistory: KolamProyekProgressHistoryItem[];
   linkedTask: KolamProyekLinkedTask | null;
@@ -153,6 +157,36 @@ export type KolamProyekDetail = KolamProyekListItem & {
   varPreview: KolamProyekVarPreview | null;
   costBreakdown: KolamProyekCostBreakdown;
 };
+
+export type KolamProyekQuotationFormItem = {
+  key: string;
+  customName: string;
+  quantityText: string;
+  unitPriceText: string;
+  note: string;
+};
+
+export type KolamProyekQuotationFormState = {
+  clientUserId: string;
+  designerUserId: string;
+  designerName: string;
+  contractValueText: string;
+  paymentMode: KolamProyekPaymentMode;
+  minDpType: 'fixed' | 'percentage';
+  minDpValueText: string;
+  daType: 'fixed' | 'percentage';
+  daValueText: string;
+  designerType: 'fixed' | 'percentage';
+  designerValueText: string;
+  termsTemplateId: string;
+  progressNote: string;
+  designReferenceEmbedUrl: string;
+  maxWorkDaysText: string;
+  targetCompletionDate: string;
+  items: KolamProyekQuotationFormItem[];
+};
+
+export type KolamProyekQuotationPayload = Record<string, unknown>;
 
 export type KolamProyekListQuery = {
   page?: number;
@@ -592,6 +626,213 @@ export function canEditKolamProyekQuotation(status?: string | null) {
   return key === 'draft' || key === 'revision_in_progress';
 }
 
+export function canSendKolamProyekQuotation(status?: string | null) {
+  return String(status || '').trim() === 'draft';
+}
+
+export function canResendKolamProyekQuotation(status?: string | null) {
+  return String(status || '').trim() === 'revision_in_progress';
+}
+
+export function canCancelKolamProyekQuotation(status?: string | null) {
+  return (
+    getKolamProyekSectionVisibility(status, 'dangerCancel') === 'active'
+  );
+}
+
+export function canDeleteKolamProyekQuotation(status?: string | null) {
+  return getKolamProyekSectionVisibility(status, 'dangerDelete') === 'active';
+}
+
+export function createEmptyKolamProyekQuotationForm(): KolamProyekQuotationFormState {
+  return {
+    clientUserId: '',
+    designerUserId: '',
+    designerName: '',
+    contractValueText: '',
+    paymentMode: 'full',
+    minDpType: 'percentage',
+    minDpValueText: '50',
+    daType: 'percentage',
+    daValueText: '20',
+    designerType: 'percentage',
+    designerValueText: '80',
+    termsTemplateId: '',
+    progressNote: '',
+    designReferenceEmbedUrl: '',
+    maxWorkDaysText: '',
+    targetCompletionDate: '',
+    items: [],
+  };
+}
+
+export function createKolamProyekQuotationFormFromDetail(
+  detail: KolamProyekDetail,
+): KolamProyekQuotationFormState {
+  const commission = detail.commissionConfig;
+  return {
+    clientUserId: detail.clientId || '',
+    designerUserId: detail.designerId || '',
+    designerName:
+      detail.designerName === '—' ? '' : detail.designerName || '',
+    contractValueText:
+      detail.contractValue > 0 ? String(detail.contractValue) : '',
+    paymentMode: detail.paymentMode === 'staged' ? 'staged' : 'full',
+    minDpType: detail.minDpType === 'fixed' ? 'fixed' : 'percentage',
+    minDpValueText:
+      detail.minDpValue > 0
+        ? String(detail.minDpValue)
+        : detail.dpAmount > 0
+          ? String(detail.dpAmount)
+          : '50',
+    daType: commission?.daType === 'fixed' ? 'fixed' : 'percentage',
+    daValueText:
+      commission?.daValue != null ? String(commission.daValue) : '20',
+    designerType:
+      commission?.designerType === 'fixed' ? 'fixed' : 'percentage',
+    designerValueText:
+      commission?.designerValue != null
+        ? String(commission.designerValue)
+        : '80',
+    termsTemplateId: detail.termsTemplateId || '',
+    progressNote: detail.progressNote || '',
+    designReferenceEmbedUrl: detail.designReferenceEmbedUrl || '',
+    maxWorkDaysText:
+      detail.maxWorkDays != null ? String(detail.maxWorkDays) : '',
+    targetCompletionDate: detail.targetCompletionDate
+      ? detail.targetCompletionDate.slice(0, 10)
+      : '',
+    items: detail.items
+      .filter(item => item.itemType === 'custom' || !item.itemType)
+      .map((item, index) => ({
+        key: item.id || `item-${index}`,
+        customName: item.title,
+        quantityText: String(item.quantity || 1),
+        unitPriceText: String(item.unitPrice || 0),
+        note: item.note || '',
+      })),
+  };
+}
+
+export function createKolamProyekQuotationFormItem(): KolamProyekQuotationFormItem {
+  return {
+    key: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    customName: '',
+    quantityText: '1',
+    unitPriceText: '',
+    note: '',
+  };
+}
+
+export function validateKolamProyekQuotationForm(
+  form: KolamProyekQuotationFormState,
+): string | null {
+  if (!form.clientUserId.trim()) {
+    return 'Pilih pelanggan dulu.';
+  }
+  if (!form.designerUserId.trim()) {
+    return 'Designer / PIC wajib dipilih.';
+  }
+  if (form.clientUserId.trim() === form.designerUserId.trim()) {
+    return 'PIC tidak boleh sama dengan pelanggan.';
+  }
+  const contractValue = parseMoneyText(form.contractValueText);
+  if (contractValue <= 0) {
+    return 'Nilai kontrak harus lebih dari 0.';
+  }
+  if (form.paymentMode === 'staged') {
+    const minDpValue = Number(form.minDpValueText) || 0;
+    const dpNominal =
+      form.minDpType === 'percentage'
+        ? Math.round((contractValue * minDpValue) / 100)
+        : minDpValue;
+    const minRequired = Math.ceil(contractValue * 0.5);
+    if (dpNominal < minRequired) {
+      return `DP minimum 50% kontrak (${minRequired.toLocaleString('id-ID')}).`;
+    }
+  }
+  for (const item of form.items) {
+    if (!item.customName.trim()) {
+      return 'Nama item kustom wajib diisi.';
+    }
+    if ((Number(item.quantityText) || 0) <= 0) {
+      return 'Qty item harus lebih dari 0.';
+    }
+  }
+  return null;
+}
+
+export function buildKolamProyekQuotationPayload(
+  form: KolamProyekQuotationFormState,
+): KolamProyekQuotationPayload {
+  const contractValue = parseMoneyText(form.contractValueText);
+  const minDpValueRaw = Number(form.minDpValueText) || 0;
+  const dpAmount =
+    form.paymentMode === 'staged' && form.minDpType === 'percentage'
+      ? Math.round((contractValue * minDpValueRaw) / 100)
+      : minDpValueRaw;
+
+  const body: KolamProyekQuotationPayload = {
+    clientUserId: form.clientUserId.trim(),
+    contractValue,
+    designerUser: form.designerUserId.trim(),
+    progressNote: form.progressNote.trim(),
+    designReferenceEmbedUrl: form.designReferenceEmbedUrl.trim(),
+    paymentMode: form.paymentMode,
+    dpEnabled: form.paymentMode === 'staged',
+    dpAmount,
+    minDpType: form.minDpType,
+    minDpValue: minDpValueRaw,
+    commissionConfig: {
+      daType: form.daType,
+      daValue: Number(form.daValueText) || 0,
+      designerType: form.designerType,
+      designerValue: Number(form.designerValueText) || 0,
+    },
+  };
+
+  if (form.designerName.trim()) {
+    body.designerName = form.designerName.trim();
+  }
+  if (form.maxWorkDaysText.trim()) {
+    body.maxWorkDays = Math.max(0, Number(form.maxWorkDaysText) || 0);
+  } else {
+    body.maxWorkDays = null;
+  }
+  if (form.targetCompletionDate.trim()) {
+    body.targetCompletionDate = form.targetCompletionDate.trim();
+  } else {
+    body.targetCompletionDate = null;
+  }
+  if (form.termsTemplateId.trim()) {
+    body.termsTemplateId = form.termsTemplateId.trim();
+  }
+  if (form.items.length > 0) {
+    body.items = form.items.map(item => {
+      const quantity = Number(item.quantityText) || 0;
+      const unitPrice = parseMoneyText(item.unitPriceText);
+      return {
+        itemType: 'custom',
+        customName: item.customName.trim(),
+        quantity,
+        unitPrice,
+        subtotal: quantity * unitPrice,
+        note: item.note.trim() || undefined,
+      };
+    });
+  }
+
+  return body;
+}
+
+function parseMoneyText(value: string) {
+  const digits = String(value || '').replace(/[^\d.-]/g, '');
+  if (!digits) {
+    return 0;
+  }
+  return Number(digits) || 0;
+}
+
 export function formatKolamProyekPaymentModeLabel(mode?: string | null) {
   return String(mode || '').trim() === 'staged' ? 'DP berjenjang' : 'Lunas di muka';
 }
@@ -793,6 +1034,19 @@ export function normalizeKolamProyekDetail(
       ? linkedTask.workProgressPercent
       : base.progressPercent;
 
+  const termsTemplates = Array.isArray(record.termsTemplates)
+    ? record.termsTemplates
+    : [];
+  const firstTerms = asRecord(termsTemplates[0]);
+  const termsSnapshot = asRecord(record.termsSnapshot);
+  const termsTemplateId =
+    getId(firstTerms) ||
+    (typeof termsTemplates[0] === 'string' ? termsTemplates[0] : null) ||
+    getId(termsSnapshot) ||
+    getString(termsSnapshot, 'source') ||
+    getString(record, 'termsTemplateId') ||
+    null;
+
   return {
     ...base,
     progressPercent: effectiveProgress,
@@ -808,6 +1062,10 @@ export function normalizeKolamProyekDetail(
     hppTotal: getNumber(record, 'hppTotal') ?? costBreakdown.totalHpp,
     dpSchedule,
     dpAmount: getNumber(record, 'dpAmount') ?? 0,
+    minDpType: getString(record, 'minDpType') || 'percentage',
+    minDpValue: getNumber(record, 'minDpValue') ?? 0,
+    termsTemplateId,
+    designReferenceEmbedUrl: getString(record, 'designReferenceEmbedUrl'),
     commissionConfig,
     progressHistory,
     linkedTask,

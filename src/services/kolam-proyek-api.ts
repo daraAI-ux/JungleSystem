@@ -5,6 +5,7 @@ import {
   type KolamProyekDetail,
   type KolamProyekListQuery,
   type KolamProyekListResult,
+  type KolamProyekQuotationPayload,
 } from '../domain/kolam-proyek';
 import { apiRequest } from '../lib/api-client';
 
@@ -50,9 +51,7 @@ export async function getKolamProyekList(
   return normalizeKolamProyekList(payload, query);
 }
 
-export async function getKolamProyek(
-  ref: string,
-): Promise<KolamProyekDetail> {
+export async function getKolamProyek(ref: string): Promise<KolamProyekDetail> {
   const id = String(ref || '').trim();
   if (!id) {
     throw new Error('Proyek tidak ditemukan.');
@@ -67,9 +66,8 @@ export async function getKolamProyek(
   return detail;
 }
 
-/** P0 stub — used by P2 quotation create. */
 export async function createKolamProyekQuotation(
-  body: Record<string, unknown>,
+  body: KolamProyekQuotationPayload,
 ): Promise<KolamProyekDetail> {
   const payload = await kolamRequest<unknown>('/custom-project/quotations', {
     method: 'POST',
@@ -82,10 +80,9 @@ export async function createKolamProyekQuotation(
   return detail;
 }
 
-/** P0 stub — used by P2 quotation draft update. */
 export async function updateKolamProyekQuotation(
   id: string,
-  body: Record<string, unknown>,
+  body: KolamProyekQuotationPayload,
 ): Promise<KolamProyekDetail> {
   const payload = await kolamRequest<unknown>(
     `/custom-project/${encodeURIComponent(id)}/quotation`,
@@ -99,6 +96,68 @@ export async function updateKolamProyekQuotation(
     throw new Error('Gagal memperbarui surat penawaran.');
   }
   return detail;
+}
+
+export async function sendKolamProyekQuotation(
+  id: string,
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/quotation/send`,
+    { method: 'POST' },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal mengirim surat penawaran.');
+  }
+  return detail;
+}
+
+export async function resendKolamProyekQuotation(
+  id: string,
+  resolutionNote?: string,
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/quotation/resend`,
+    {
+      method: 'POST',
+      body: resolutionNote?.trim()
+        ? { resolutionNote: resolutionNote.trim() }
+        : {},
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal mengirim ulang surat penawaran.');
+  }
+  return detail;
+}
+
+export async function cancelKolamProyek(
+  id: string,
+  reason: string,
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/cancel`,
+    {
+      method: 'POST',
+      body: { reason },
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal membatalkan proyek.');
+  }
+  return detail;
+}
+
+export async function deleteKolamProyek(
+  id: string,
+  password: string,
+): Promise<void> {
+  await kolamRequest<unknown>(`/custom-project/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    body: { password },
+  });
 }
 
 function kolamRequest<T>(

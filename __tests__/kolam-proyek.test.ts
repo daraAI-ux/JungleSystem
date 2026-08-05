@@ -4,8 +4,15 @@ import {
   buildKolamProyekEditRoute,
   buildKolamProyekListRoute,
   buildKolamProyekNewRoute,
+  buildKolamProyekQuotationPayload,
+  canCancelKolamProyekQuotation,
+  canDeleteKolamProyekQuotation,
   canEditKolamProyekQuotation,
+  canResendKolamProyekQuotation,
+  canSendKolamProyekQuotation,
   computeKolamProyekCostBreakdown,
+  createEmptyKolamProyekQuotationForm,
+  createKolamProyekQuotationFormFromDetail,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
   getKolamProyekAllowedNext,
@@ -22,6 +29,7 @@ import {
   isKolamProyekRoute,
   normalizeKolamProyekDetail,
   normalizeKolamProyekList,
+  validateKolamProyekQuotationForm,
 } from '../src/domain/kolam-proyek';
 
 describe('kolam-proyek domain', () => {
@@ -186,6 +194,11 @@ describe('kolam-proyek domain', () => {
       'cancelled',
     ]);
     expect(canEditKolamProyekQuotation('quotation_sent')).toBe(false);
+    expect(canSendKolamProyekQuotation('draft')).toBe(true);
+    expect(canSendKolamProyekQuotation('revision_in_progress')).toBe(false);
+    expect(canResendKolamProyekQuotation('revision_in_progress')).toBe(true);
+    expect(canDeleteKolamProyekQuotation('draft')).toBe(true);
+    expect(canCancelKolamProyekQuotation('quotation_sent')).toBe(true);
     expect(
       computeKolamProyekCostBreakdown({
         contractValue: 1000,
@@ -197,5 +210,99 @@ describe('kolam-proyek domain', () => {
         varPreview: null,
       }).totalHpp,
     ).toBe(150);
+  });
+
+  it('validates and builds quotation payload for P2', () => {
+    const empty = createEmptyKolamProyekQuotationForm();
+    expect(validateKolamProyekQuotationForm(empty)).toBe(
+      'Pilih pelanggan dulu.',
+    );
+
+    const form = {
+      ...empty,
+      clientUserId: '507f1f77bcf86cd799439011',
+      designerUserId: '507f1f77bcf86cd799439012',
+      designerName: 'Budi',
+      contractValueText: '2000000',
+      paymentMode: 'staged' as const,
+      minDpType: 'percentage' as const,
+      minDpValueText: '40',
+    };
+    expect(validateKolamProyekQuotationForm(form)).toMatch(/DP minimum 50%/);
+
+    const ok = {
+      ...form,
+      minDpValueText: '50',
+      termsTemplateId: '507f1f77bcf86cd799439013',
+      items: [
+        {
+          key: 'i1',
+          customName: 'Custom A',
+          quantityText: '2',
+          unitPriceText: '100000',
+          note: 'note',
+        },
+      ],
+    };
+    expect(validateKolamProyekQuotationForm(ok)).toBeNull();
+
+    const payload = buildKolamProyekQuotationPayload(ok);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        clientUserId: '507f1f77bcf86cd799439011',
+        designerUser: '507f1f77bcf86cd799439012',
+        contractValue: 2000000,
+        paymentMode: 'staged',
+        dpEnabled: true,
+        dpAmount: 1000000,
+        minDpType: 'percentage',
+        minDpValue: 50,
+        termsTemplateId: '507f1f77bcf86cd799439013',
+      }),
+    );
+    expect(payload.items).toEqual([
+      expect.objectContaining({
+        itemType: 'custom',
+        customName: 'Custom A',
+        quantity: 2,
+        unitPrice: 100000,
+        subtotal: 200000,
+      }),
+    ]);
+
+    const fromDetail = createKolamProyekQuotationFormFromDetail(
+      normalizeKolamProyekDetail({
+        data: {
+          _id: '507f1f77bcf86cd799439011',
+          quotationNumber: 'QUO-1',
+          lifecycleStatus: 'draft',
+          contractValue: 1500000,
+          paymentMode: 'full',
+          clientUser: { _id: 'c1', name: 'Andi' },
+          designerUser: { _id: 'd1', name: 'Budi' },
+          designerName: 'Budi',
+          commissionConfig: {
+            daType: 'percentage',
+            daValue: 20,
+            designerType: 'percentage',
+            designerValue: 80,
+          },
+          items: [
+            {
+              _id: 'it1',
+              itemType: 'custom',
+              customName: 'X',
+              quantity: 1,
+              unitPrice: 10,
+              subtotal: 10,
+            },
+          ],
+        },
+      })!,
+    );
+    expect(fromDetail.clientUserId).toBe('c1');
+    expect(fromDetail.designerUserId).toBe('d1');
+    expect(fromDetail.contractValueText).toBe('1500000');
+    expect(fromDetail.items).toHaveLength(1);
   });
 });
