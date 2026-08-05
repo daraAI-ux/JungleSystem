@@ -124,6 +124,23 @@ describe('kolam-proyek domain', () => {
       }),
     );
 
+    const unpopulated = normalizeKolamProyekList({
+      data: [
+        {
+          _id: '507f1f77bcf86cd799439012',
+          quotationNumber: 'QUO-2',
+          lifecycleStatus: 'draft',
+          clientUser: '507f1f77bcf86cd799439099',
+        },
+      ],
+      pagination: { page: 1, limit: 50, total: 1, totalPages: 1 },
+    });
+    expect(unpopulated.items[0]?.clientId).toBe('507f1f77bcf86cd799439099');
+    expect(unpopulated.items[0]?.clientName).toBe('—');
+    expect(unpopulated.items[0]?.clientName).not.toBe(
+      '507f1f77bcf86cd799439099',
+    );
+
     const detail = normalizeKolamProyekDetail({
       data: {
         _id: '507f1f77bcf86cd799439011',

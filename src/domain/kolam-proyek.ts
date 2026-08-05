@@ -1760,10 +1760,7 @@ export function normalizeKolamProyekListItem(
     quotationNumber: getString(record, 'quotationNumber'),
     lifecycleStatus: getString(record, 'lifecycleStatus') || 'draft',
     projectStatus: getString(record, 'projectStatus') || 'waiting',
-    clientName:
-      getString(client, 'name') ||
-      (typeof record.clientUser === 'string' ? record.clientUser : '') ||
-      '—',
+    clientName: formatProyekClientDisplayName(record.clientUser),
     clientId: getId(client) || (typeof record.clientUser === 'string'
       ? record.clientUser
       : null),
@@ -1796,6 +1793,31 @@ export function normalizeKolamProyekListItem(
     updatedAt: getString(record, 'updatedAt') || null,
     raw: payload,
   };
+}
+
+/** Never surface raw ObjectId as pelanggan label. */
+function formatProyekClientDisplayName(clientUser: unknown): string {
+  if (clientUser == null || clientUser === '') {
+    return '—';
+  }
+  if (typeof clientUser === 'string' || typeof clientUser === 'number') {
+    return '—';
+  }
+  const client = asRecord(clientUser);
+  const fromNameParts = [
+    getString(client, 'first_name'),
+    getString(client, 'last_name'),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  return (
+    getString(client, 'name') ||
+    fromNameParts ||
+    getString(client, 'username') ||
+    getString(client, 'email') ||
+    '—'
+  );
 }
 
 export function normalizeKolamProyekDetail(
