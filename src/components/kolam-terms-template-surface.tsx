@@ -278,9 +278,11 @@ function buildTermsTemplateListColumns({
       id: 'category',
       label: 'Kategori',
       render: item => (
-        <Text numberOfLines={1} style={styles.cellTextCenter}>
-          {item.category || '-'}
-        </Text>
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={styles.cellTextCenter}>
+            {item.category || '-'}
+          </Text>
+        </View>
       ),
     },
     {
@@ -289,10 +291,12 @@ function buildTermsTemplateListColumns({
       id: 'status',
       label: 'Status',
       render: item => (
-        <KolamStatusBadge
-          intent={getKolamTermsTemplateStatusIntent(item.status)}
-          label={formatKolamTermsTemplateStatusLabel(item.status)}
-        />
+        <View style={styles.centerCell}>
+          <KolamStatusBadge
+            intent={getKolamTermsTemplateStatusIntent(item.status)}
+            label={formatKolamTermsTemplateStatusLabel(item.status)}
+          />
+        </View>
       ),
     },
     {
@@ -656,6 +660,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   identityCell: {
+    minWidth: 0,
+    width: '100%',
+  },
+  centerCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
     minWidth: 0,
     width: '100%',
   },
