@@ -310,6 +310,12 @@ describe('topNavUserMenuItems', () => {
           'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
       },
       {
+        id: 'app-downloads',
+        label: 'Download aplikasi',
+        sourceComponent:
+          'E:\\Projects\\da-inventory-frontend\\src\\components\\header-quick-access-icons.tsx',
+      },
+      {
         id: 'media',
         label: 'Media library',
         sourceComponent:

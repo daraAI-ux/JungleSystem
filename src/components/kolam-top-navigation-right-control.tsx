@@ -4,6 +4,7 @@ import type {KolamChatUnreadCounts} from '../hooks/use-kolam-chat-notification-h
 import {KolamTopNavigationAvatarButton} from './kolam-top-navigation-avatar-button';
 import {KolamTopNavigationCashflowHost} from './kolam-top-navigation-cashflow-host';
 import {KolamTopNavigationChatButton} from './kolam-top-navigation-chat-button';
+import {KolamTopNavigationDownloadIcon} from './kolam-top-navigation-download-icon';
 import {KolamTopNavigationMediaIcon} from './kolam-top-navigation-media-icon';
 import {KolamTopNavigationNotificationButton} from './kolam-top-navigation-notification-button';
 import {KolamTopNavigationTaskIcon} from './kolam-top-navigation-task-icon';
@@ -55,6 +56,18 @@ export function KolamTopNavigationRightControl({
         size={32}
         radius="full">
         <KolamTopNavigationTaskIcon />
+      </KolamIconButton>
+    );
+  }
+
+  if (control.id === 'app-downloads') {
+    return (
+      <KolamIconButton
+        accessibilityLabel={control.label}
+        onPress={() => onCashflowNavigate?.('/app-downloads')}
+        size={32}
+        radius="full">
+        <KolamTopNavigationDownloadIcon />
       </KolamIconButton>
     );
   }

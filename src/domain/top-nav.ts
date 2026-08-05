@@ -45,6 +45,7 @@ export interface TopNavRightControl {
     | 'cashflow'
     | 'chat-inbox'
     | 'chat-team'
+    | 'app-downloads'
     | 'media'
     | 'task-manager'
     | 'notifications'
@@ -161,6 +162,12 @@ export function getTopNavRightControls(
       label: 'Team chat',
       sourceComponent:
         'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+    },
+    {
+      id: 'app-downloads',
+      label: 'Download aplikasi',
+      sourceComponent:
+        'E:\\Projects\\da-inventory-frontend\\src\\components\\header-quick-access-icons.tsx',
     },
     ...(accessScope?.kolam === false
       ? []
