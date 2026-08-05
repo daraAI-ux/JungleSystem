@@ -10,7 +10,9 @@ import {
 } from '../domain/kolam-commission';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamCommissionListController } from '../hooks/use-kolam-commission-list-controller';
+import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
+import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -19,6 +21,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -329,14 +332,29 @@ function CommissionListBody({
               style={styles.summaryRow}
             >
               <View style={styles.summaryRecipientCell}>
-                <Text numberOfLines={1} style={styles.primaryText}>
-                  {row.displayName}
-                </Text>
-                {row.email ? (
-                  <Text numberOfLines={1} style={styles.metaText}>
-                    {row.email}
-                  </Text>
-                ) : null}
+                <View style={styles.summaryRecipientIdentity}>
+                  <View
+                    accessibilityLabel={`Penerima ${row.displayName}`}
+                    style={styles.recipientAvatar}
+                  >
+                    <KolamProfileAvatarContent
+                      imageStyle={styles.recipientAvatarImage}
+                      imageUrl={getRecipientSummaryPhotoUrl(row.profilePicture)}
+                      initials={getRecipientSummaryInitials(row.displayName)}
+                      textStyle={styles.recipientAvatarText}
+                    />
+                  </View>
+                  <View style={styles.summaryRecipientText}>
+                    <Text numberOfLines={1} style={styles.primaryText}>
+                      {row.displayName}
+                    </Text>
+                    {row.email ? (
+                      <Text numberOfLines={1} style={styles.metaText}>
+                        {row.email}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
               </View>
               <Text
                 numberOfLines={1}
@@ -577,6 +595,21 @@ function CommissionListBody({
   );
 }
 
+function getRecipientSummaryPhotoUrl(value: string) {
+  return resolveProfilePhotoUrl(value) ?? getKolamFileUrl(value);
+}
+
+function getRecipientSummaryInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || '?'
+  );
+}
+
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
@@ -675,6 +708,37 @@ const styles = StyleSheet.create({
     flex: 1.4,
     minWidth: 0,
     paddingHorizontal: 4,
+  },
+  summaryRecipientIdentity: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
+  },
+  summaryRecipientText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  recipientAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  recipientAvatarImage: {
+    height: 32,
+    width: 32,
+  },
+  recipientAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
   },
   summaryMoneyCell: {
     flex: 1,

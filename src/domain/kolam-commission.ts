@@ -84,6 +84,7 @@ export type KolamCommissionRecipientSummaryRow = {
   displayName: string;
   username: string;
   email: string;
+  profilePicture: string;
   totalAccrued: number;
   totalReleased: number;
   countAccrued: number;
@@ -396,6 +397,7 @@ function normalizeRecipientSummaryRow(
     displayName: getString(record, 'displayName') || '—',
     username: getString(record, 'username'),
     email: getString(record, 'email'),
+    profilePicture: getString(record, 'profilePicture'),
     totalAccrued: Number(record.totalAccrued || 0) || 0,
     totalReleased: Number(record.totalReleased || 0) || 0,
     countAccrued: Number(record.countAccrued || 0) || 0,
