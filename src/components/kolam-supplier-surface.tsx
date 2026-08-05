@@ -423,6 +423,7 @@ function buildSupplierListColumns({
       },
     },
     {
+      align: 'center',
       flex: 0.92,
       id: 'phone',
       label: 'Telepon',
@@ -433,6 +434,7 @@ function buildSupplierListColumns({
       ),
     },
     {
+      align: 'center',
       flex: 1.08,
       id: 'email',
       label: 'Email',
