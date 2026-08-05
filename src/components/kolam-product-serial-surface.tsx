@@ -420,6 +420,7 @@ function buildProductSerialListColumns(): Array<KolamListTableColumn<KolamProduc
       ),
     },
     {
+      align: 'center',
       flex: 1.2,
       id: 'product',
       label: 'Produk',
