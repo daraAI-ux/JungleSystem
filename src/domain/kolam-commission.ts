@@ -6,6 +6,7 @@
 import type { KolamBadgeIntent } from './kolam-badge';
 
 export const KOLAM_COMMISSION_ROOT = '/commissions';
+export const KOLAM_COMMISSION_DEFAULT_LIMIT = 10;
 
 export type KolamCommissionStatus = 'accrued' | 'released' | 'revoked';
 
@@ -143,7 +144,12 @@ export function createInitialCommissionListFilters(
     search: query.search?.trim() ?? '',
     status,
     page: Math.max(1, Number(query.page || '1') || 1),
-    limit: Math.max(1, Number(query.limit || '20') || 20),
+    limit:
+      Math.max(
+        1,
+        Number(query.limit || String(KOLAM_COMMISSION_DEFAULT_LIMIT)) ||
+          KOLAM_COMMISSION_DEFAULT_LIMIT,
+      ),
   };
 }
 
@@ -163,7 +169,7 @@ export function buildCommissionListRoute(
   if (filters.page > 1) {
     params.set('page', String(filters.page));
   }
-  if (filters.limit !== 20) {
+  if (filters.limit !== KOLAM_COMMISSION_DEFAULT_LIMIT) {
     params.set('limit', String(filters.limit));
   }
   const query = params.toString();
@@ -250,7 +256,13 @@ export function normalizeKolamCommissionList(payload: unknown): KolamCommissionL
   const paginationRecord = asRecord(record.pagination);
   const pagination: KolamCommissionPagination = {
     page: Math.max(1, Number(paginationRecord.page || 1) || 1),
-    limit: Math.max(1, Number(paginationRecord.limit || 20) || 20),
+    limit:
+      Math.max(
+        1,
+        Number(
+          paginationRecord.limit || String(KOLAM_COMMISSION_DEFAULT_LIMIT),
+        ) || KOLAM_COMMISSION_DEFAULT_LIMIT,
+      ),
     total: Math.max(0, Number(paginationRecord.total || rows.length) || 0),
     totalPages: Math.max(
       1,

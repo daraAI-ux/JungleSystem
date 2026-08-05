@@ -7,6 +7,7 @@ import {
   getKolamCommissionSummaryTotals,
   getKolamCommissionSurfaceMode,
   hasKolamCommissionPermission,
+  KOLAM_COMMISSION_DEFAULT_LIMIT,
   type KolamCommissionListFilters,
   type KolamCommissionListRow,
   type KolamCommissionRecipientSummaryRow,
@@ -84,7 +85,7 @@ export function useKolamCommissionListController(
   >([]);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: KOLAM_COMMISSION_DEFAULT_LIMIT,
     total: 0,
     totalPages: 1,
   });

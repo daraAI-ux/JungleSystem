@@ -202,6 +202,7 @@ function CommissionListBody({
                   onChange={value => controller.onWalletChange(item.id, value)}
                   options={walletSelectOptions}
                   showLabelInTrigger={false}
+                  style={styles.releaseWalletSelect}
                   value={selectedWallet}
                 />
                 <KolamButton
@@ -911,11 +912,19 @@ const styles = StyleSheet.create({
   releaseRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 6,
+    minWidth: 0,
+  },
+  releaseWalletSelect: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   releaseButton: {
     flexGrow: 0,
+    flexShrink: 0,
   },
   paginationBar: {
     alignItems: 'center',
