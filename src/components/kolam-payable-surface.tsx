@@ -41,13 +41,13 @@ import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const LIST_COLUMNS = [
   { id: 'code', label: 'Kode', flex: 0.9 },
-  { id: 'name', label: 'Nama', flex: 1.35 },
+  { id: 'name', label: 'Nama', flex: 1.2 },
   { id: 'source', label: 'Sumber', flex: 0.7 },
   { id: 'amount', label: 'Nominal', flex: 1 },
   { id: 'due', label: 'Jatuh tempo', flex: 1 },
-  { id: 'installments', label: 'Cicilan', flex: 1.25 },
-  { id: 'status', label: 'Status', flex: 0.62 },
-  { id: 'action', label: '', flex: 0.38 },
+  { id: 'installments', label: 'Cicilan', flex: 1.15 },
+  { id: 'status', label: 'Status', flex: 0.9 },
+  { id: 'action', label: '', flex: 0.8 },
 ] as const;
 
 const FILTER_PANEL_WIDTH = 220;
@@ -527,7 +527,7 @@ function PayableList({
               {item.code || '—'}
             </Text>
           </View>
-          <View style={[styles.cell, { flex: 1.35 }]}>
+          <View style={[styles.cell, { flex: 1.2 }]}>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.name || '—'}
             </Text>
@@ -567,12 +567,12 @@ function PayableList({
               </Text>
             ) : null}
           </View>
-          <View style={[styles.cell, { flex: 1.25 }]}>
+          <View style={[styles.cell, { flex: 1.15 }]}>
             <PayableInstallmentSummaryCell
               summary={item.installmentSummary}
             />
           </View>
-          <View style={[styles.cell, styles.statusCell, { flex: 0.62 }]}>
+          <View style={[styles.cell, { flex: 0.9 }]}>
             <KolamStatusBadge
               intent={getKolamPayableStatusIntent(item.status)}
               label={formatKolamPayableStatusLabel(item.status)}
@@ -583,7 +583,7 @@ function PayableList({
               styles.cell,
               styles.actionCell,
               actionMenuOpen ? styles.activeActionCell : null,
-              { flex: 0.38 },
+              { flex: 0.8 },
             ]}
           >
             <KolamOverflowMenuButton
@@ -1349,13 +1349,8 @@ const styles = StyleSheet.create({
   cell: {
     paddingHorizontal: 4,
   },
-  statusCell: {
-    alignItems: 'flex-start',
-    minWidth: 82,
-  },
   actionCell: {
     alignItems: 'flex-end',
-    minWidth: 52,
     overflow: 'visible',
     zIndex: 9000,
   },
