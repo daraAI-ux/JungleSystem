@@ -265,6 +265,7 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
+              style={styles.complaintFilterTrigger}
               value={controller.sourceFilter}
             />
             <KolamDropdownSelect
@@ -282,6 +283,7 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
+              style={styles.complaintFilterTrigger}
               value={controller.statusFilter}
             />
             <KolamDropdownSelect
@@ -299,6 +301,7 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
+              style={styles.complaintFilterTriggerWide}
               value={controller.decisionFilter}
             />
             <KolamDropdownSelect
@@ -316,6 +319,7 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
+              style={styles.complaintFilterTrigger}
               value={controller.priorityFilter}
             />
             <KolamDropdownSelect
@@ -333,6 +337,7 @@ function KolamComplaintList({
                 })),
               ]}
               showLabelInTrigger={false}
+              style={styles.complaintFilterTrigger}
               value={controller.categoryFilter}
             />
           </View>
@@ -357,6 +362,7 @@ function KolamComplaintList({
               onPress={() => {
                 void controller.onRefresh();
               }}
+              style={styles.toolbarButton}
             />
             <KolamButton
               intent="primary"
@@ -366,6 +372,7 @@ function KolamComplaintList({
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/create`);
               }}
+              style={styles.toolbarButton}
             />
           </View>
         </View>
@@ -2637,10 +2644,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   complaintSearchInput: {
-    flexBasis: 180,
+    flexBasis: 150,
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 120,
+    minWidth: 104,
+  },
+  complaintFilterTrigger: {
+    flexShrink: 1,
+    maxWidth: 108,
+    minWidth: 82,
+  },
+  complaintFilterTriggerWide: {
+    flexShrink: 1,
+    maxWidth: 124,
+    minWidth: 92,
   },
   complaintToolbarActions: {
     flexGrow: 0,
@@ -2696,7 +2713,8 @@ const styles = StyleSheet.create({
   switchInline: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
+    flexShrink: 0,
+    gap: 6,
   },
   detailRoot: {
     flexGrow: 0,
