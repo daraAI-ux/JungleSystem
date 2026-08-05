@@ -10,8 +10,6 @@ import {
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
   getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
 } from '../domain/kolam-table';
 import {
   buildKolamSupplierMonthlyTrendGraphItems,
@@ -43,21 +41,11 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
@@ -68,6 +56,10 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
@@ -130,14 +122,19 @@ function KolamSupplierList({
     React.useState<SupplierStatusFilter>('all');
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<SupplierFilterPanel>(null);
-  const [pageSize, setPageSize] = React.useState(10);
+  const [pageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamVendor | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const listColumns = React.useMemo(
-    () => fitSupplierListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () =>
+      buildSupplierListColumns({
+        onSelect: vendor => {
+          void controller.onSelectVendor(vendor);
+          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${vendor.id}`);
+        },
+      }),
+    [controller, onRouteChange],
   );
 
   const filtered = React.useMemo(
@@ -320,72 +317,35 @@ function KolamSupplierList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={setPageSize}
-            page={safePage}
-            pageSize={pageSize}
-            total={sorted.length}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={
+          controller.loading ? 'Memuat pemasok...' : 'Belum ada pemasok'
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {paged.length ? (
-          paged.map(item => (
-            <KolamSupplierRow
-              columns={listColumns}
-              key={item.id}
-              onDelete={() => setDeleteCandidate(item)}
-              onEdit={() => {
-                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectVendor(item);
-                onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}`);
-              }}
-              vendor={item}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Coba ubah pencarian atau filter status."
-              title={
-                controller.loading ? 'Memuat pemasok…' : 'Belum ada pemasok'
-              }
-            />
-          </View>
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: sorted.length,
+        }}
+        renderActions={item => (
+          <KolamSupplierActionsMenu
+            onDelete={() => setDeleteCandidate(item)}
+            onEdit={() => {
+              onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectVendor(item);
+              onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${item.id}`);
+            }}
+            vendor={item}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={paged}
+      />
 
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
@@ -409,49 +369,21 @@ function KolamSupplierList({
   );
 }
 
-function KolamSupplierRow({
-  columns,
-  onDelete,
-  onEdit,
-  onMenuOpenChange,
+function buildSupplierListColumns({
   onSelect,
-  vendor,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
-  onDelete: () => void;
-  onEdit: () => void;
-  onMenuOpenChange?: (open: boolean) => void;
-  onSelect: () => void;
-  vendor: KolamVendor;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const thumb = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const phoneColumn = columnOf('meta');
-  const emailColumn = columnOf('notes');
-  const poColumn = columnOf('children');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
+  onSelect: (vendor: KolamVendor) => void;
+}): Array<KolamListTableColumn<KolamVendor>> {
+  return [
+    {
+      flex: 1.35,
+      id: 'primary',
+      label: 'Pemasok',
+      render: vendor => {
+        const thumb = vendor.photoUrls?.[0] || vendor.photos?.[0] || '';
 
-  return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack>
-        <Pressable
-          onPress={onSelect}
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <View style={styles.identity}>
+        return (
+          <Pressable onPress={() => onSelect(vendor)} style={styles.identity}>
             {thumb ? (
               <KolamRemoteImage
                 accessibilityLabel={`Foto ${vendor.name}`}
@@ -479,79 +411,84 @@ function KolamSupplierRow({
                 {
                   id: 'meta',
                   text:
-                    [vendor.city, vendor.country].filter(Boolean).join(' · ') ||
-                    '—',
+                    [vendor.city, vendor.country].filter(Boolean).join(' - ') ||
+                    '-',
                   style: styles.rowMeta,
                   textProps: { numberOfLines: 1 },
                 },
               ]}
             />
-          </View>
-        </Pressable>
-        <View
-          style={[
-            styles.listCell,
-            phoneColumn ? getKolamDataTableColumnStyle(phoneColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {vendor.phone || '—'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            emailColumn ? getKolamDataTableColumnStyle(emailColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {vendor.email || '—'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            poColumn ? getKolamDataTableColumnStyle(poColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.numText}>
-            {String(vendor.poCount)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={getKolamVendorStatusIntent(vendor.status)}
-            label={getKolamVendorStatusLabel(vendor.status)}
-            style={styles.centerBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${vendor.name}`}
-          onOpenChange={open => {
-            setActionMenuOpen(open);
-            onMenuOpenChange?.(open);
-          }}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
+          </Pressable>
+        );
+      },
+    },
+    {
+      flex: 0.92,
+      id: 'phone',
+      label: 'Telepon',
+      render: vendor => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {vendor.phone || '-'}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.08,
+      id: 'email',
+      label: 'Email',
+      render: vendor => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {vendor.email || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'po',
+      label: 'PO',
+      render: vendor => (
+        <Text numberOfLines={1} style={styles.numText}>
+          {String(vendor.poCount)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'status',
+      label: 'Status',
+      render: vendor => (
+        <KolamStatusBadge
+          intent={getKolamVendorStatusIntent(vendor.status)}
+          label={getKolamVendorStatusLabel(vendor.status)}
+          style={styles.centerBadge}
         />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+      ),
+    },
+  ];
+}
+
+function KolamSupplierActionsMenu({
+  onDelete,
+  onEdit,
+  onSelect,
+  vendor,
+}: {
+  onDelete: () => void;
+  onEdit: () => void;
+  onSelect: () => void;
+  vendor: KolamVendor;
+}) {
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${vendor.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 
@@ -2231,45 +2168,6 @@ function sortVendors(vendors: KolamVendor[], mode: SupplierSortMode) {
     }
   });
   return next;
-}
-
-function fitSupplierListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('supplier');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
 }
 
 const styles = StyleSheet.create({

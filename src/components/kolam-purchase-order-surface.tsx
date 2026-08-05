@@ -23,8 +23,6 @@ import {
 import { KOLAM_SUPPLIER_ROOT } from '../domain/kolam-vendor';
 import {
   getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
@@ -42,31 +40,24 @@ import type {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
@@ -158,10 +149,15 @@ function KolamPurchaseOrderList({
     React.useState<POStatusFilterPanel>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamPurchaseOrder | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const listColumns = React.useMemo(
-    () => fitPurchaseOrderListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () =>
+      buildPurchaseOrderListColumns({
+        onSelect: po => {
+          void controller.onSelectPO(po);
+          onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}`);
+        },
+      }),
+    [controller, onRouteChange],
   );
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
@@ -357,74 +353,39 @@ function KolamPurchaseOrderList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    { id: 'page', text: `${safePage} / ${pageCount}`, style: styles.pageLabel },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() => controller.onPageChange(Math.min(pageCount, safePage + 1))}
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={
+          controller.loading
+            ? 'Memuat purchase order...'
+            : controller.filters.search.trim()
+              ? 'Tidak ditemukan'
+              : 'Belum ada purchase order'
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {controller.orders.length ? (
-          controller.orders.map(item => (
-            <KolamPurchaseOrderRow
-              columns={listColumns}
-              key={item.id}
-              onDelete={() => setDeleteCandidate(item)}
-              onRestore={() => {
-                void controller.onRestorePO(item);
-              }}
-              onSelect={() => {
-                void controller.onSelectPO(item);
-                onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${item.id}`);
-              }}
-              po={item}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message={
-                controller.filters.search.trim()
-                  ? `Tidak ada pesanan pembelian untuk "${controller.filters.search.trim()}". Coba kata kunci atau filter lain.`
-                  : 'Coba ubah pencarian atau filter status/pembayaran.'
-              }
-              title={
-                controller.loading
-                  ? 'Memuat purchase order…'
-                  : controller.filters.search.trim()
-                    ? 'Tidak ditemukan'
-                    : 'Belum ada purchase order'
-              }
-            />
-          </View>
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        renderActions={item => (
+          <KolamPurchaseOrderActionsMenu
+            onDelete={() => setDeleteCandidate(item)}
+            onRestore={() => {
+              void controller.onRestorePO(item);
+            }}
+            onSelect={() => {
+              void controller.onSelectPO(item);
+              onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${item.id}`);
+            }}
+            po={item}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={controller.orders}
+      />
 
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.poCode}
@@ -444,86 +405,57 @@ function KolamPurchaseOrderList({
   );
 }
 
-function KolamPurchaseOrderRow({
-  columns,
-  onDelete,
-  onMenuOpenChange,
-  onRestore,
+function buildPurchaseOrderListColumns({
   onSelect,
-  po,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
-  onDelete: () => void;
-  onMenuOpenChange?: (open: boolean) => void;
-  onRestore: () => void;
-  onSelect: () => void;
-  po: KolamPurchaseOrder;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const canDelete = po.status === 'draft' || po.status === 'cancelled';
-  const canRestore = po.status === 'cancelled';
-  const total = po.total;
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const vendorColumn = columnOf('meta');
-  const itemsColumn = columnOf('children');
-  const amountColumn = columnOf('amount');
-  const statusColumn = columnOf('status');
-  const createdColumn = columnOf('marketplace');
-  const actionsColumn = columnOf('actions');
-
-  return (
-    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <KolamDataTableMainTrack>
-        <Pressable
-          onPress={onSelect}
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
+  onSelect: (po: KolamPurchaseOrder) => void;
+}): Array<KolamListTableColumn<KolamPurchaseOrder>> {
+  return [
+    {
+      flex: 1,
+      id: 'po',
+      label: 'PO',
+      render: po => (
+        <Pressable onPress={() => onSelect(po)} style={styles.identityCell}>
           <Text numberOfLines={1} style={styles.rowTitle}>
-            {po.poCode || '—'}
+            {po.poCode || '-'}
           </Text>
         </Pressable>
-        <View
-          style={[
-            styles.listCell,
-            vendorColumn ? getKolamDataTableColumnStyle(vendorColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.cellText}>
-            {po.vendor?.name || '—'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            itemsColumn ? getKolamDataTableColumnStyle(itemsColumn) : null,
-          ]}
-        >
-          <Text style={styles.numText}>{po.items.length}</Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-          ]}
-        >
-          <Text style={styles.numText}>{formatRupiah(total)}</Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
+      ),
+    },
+    {
+      flex: 1.18,
+      id: 'vendor',
+      label: 'Pemasok',
+      render: po => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {po.vendor?.name || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.52,
+      id: 'items',
+      label: 'Item',
+      render: po => <Text style={styles.numText}>{po.items.length}</Text>,
+    },
+    {
+      align: 'right',
+      flex: 0.82,
+      id: 'amount',
+      label: 'Total',
+      render: po => (
+        <Text style={styles.numText}>{formatRupiah(po.total)}</Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'status',
+      label: 'Status',
+      render: po => (
+        <View style={styles.statusCell}>
           <KolamStatusBadge
             intent={getKolamPOStatusIntent(po.status)}
             label={getKolamPOStatusLabel(po.status)}
@@ -544,46 +476,49 @@ function KolamPurchaseOrderRow({
             textStyle={styles.badgeTextSm}
           />
         </View>
-        <View
-          style={[
-            styles.listCell,
-            createdColumn ? getKolamDataTableColumnStyle(createdColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.cellText}>
-            {formatPODateTime(po.createdAt)}
-          </Text>
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${po.poCode}`}
-          onOpenChange={open => {
-            setActionMenuOpen(open);
-            onMenuOpenChange?.(open);
-          }}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            ...(canRestore ? [{ label: 'Kembalikan ke draf', onPress: onRestore }] : []),
-            ...(canDelete
-              ? [{ label: 'Hapus', onPress: onDelete, tone: 'danger' as const }]
-              : []),
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'created',
+      label: 'Dibuat',
+      render: po => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatPODateTime(po.createdAt)}
+        </Text>
+      ),
+    },
+  ];
 }
 
-/* ──────────────────────────────────────────
-   Create / Edit form (Fase 2)
-   ──────────────────────────────────────────*/
+function KolamPurchaseOrderActionsMenu({
+  onDelete,
+  onRestore,
+  onSelect,
+  po,
+}: {
+  onDelete: () => void;
+  onRestore: () => void;
+  onSelect: () => void;
+  po: KolamPurchaseOrder;
+}) {
+  const canDelete = po.status === 'draft' || po.status === 'cancelled';
+  const canRestore = po.status === 'cancelled';
+
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${po.poCode || 'purchase order'}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        ...(canRestore ? [{ label: 'Kembalikan ke draf', onPress: onRestore }] : []),
+        ...(canDelete
+          ? [{ label: 'Hapus', onPress: onDelete, tone: 'danger' as const }]
+          : []),
+      ]}
+    />
+  );
+}
 
 function KolamPurchaseOrderForm({
   controller,
@@ -2436,45 +2371,6 @@ function formatPODateTime(value: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
-}
-
-function fitPurchaseOrderListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('purchase-order');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
   });
 }
 
