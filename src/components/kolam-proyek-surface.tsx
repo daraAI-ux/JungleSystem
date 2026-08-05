@@ -54,13 +54,10 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import {
-  KolamDetailMetaStrip,
-  KolamDetailMetaStripItem,
-  kolamDetailMetaStripStyles,
-} from './kolam-detail-meta-strip';
+import { kolamDetailMetaStripStyles } from './kolam-detail-meta-strip';
 import {
   getKolamDataTableColumnStyle,
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
@@ -735,93 +732,104 @@ function KolamProyekDetailRead({
           onAction={runNextStepAction}
         />
 
-        <KolamDetailMetaStrip>
-          <KolamDetailMetaStripItem label="Nilai kontrak">
-            <Text
-              style={[
-                kolamDetailMetaStripStyles.stripValue,
-                styles.tabular,
-              ]}
-            >
-              {formatRupiah(cost.contractValue)}
-            </Text>
-            <Text style={styles.metricHint}>{paymentHint}</Text>
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="Pemakaian toko">
-            <Text
-              style={[
-                kolamDetailMetaStripStyles.stripValue,
-                styles.tabular,
-              ]}
-            >
-              {formatRupiah(cost.produkToko)}
-            </Text>
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="UE terverifikasi">
-            <Text
-              style={[
-                kolamDetailMetaStripStyles.stripValue,
-                styles.tabular,
-              ]}
-            >
-              {formatRupiah(cost.unexpectedExpenseTotal)}
-            </Text>
-          </KolamDetailMetaStripItem>
-          <KolamDetailMetaStripItem label="VAR">
-            <Text
-              style={[
-                kolamDetailMetaStripStyles.stripValue,
-                styles.tabular,
-              ]}
-            >
-              {formatRupiah(cost.varAmount)}
-            </Text>
-          </KolamDetailMetaStripItem>
-          {detail.paymentMode === 'staged' && showDp ? (
-            <KolamDetailMetaStripItem label="DP terkumpul">
+        <KolamCardFrame style={styles.proyekMetaStripCard} variant="compact">
+          <View style={styles.proyekMetaStripRow}>
+            <ProyekMetaStripItem label="Nilai kontrak">
               <Text
+                numberOfLines={1}
                 style={[
                   kolamDetailMetaStripStyles.stripValue,
                   styles.tabular,
                 ]}
               >
-                {formatRupiah(receivedTotal)}
+                {formatRupiah(cost.contractValue)}
               </Text>
-              <Text style={styles.metricHint}>
-                Sisa {formatRupiah(outstanding)}
+              <Text numberOfLines={1} style={styles.metricHint}>
+                {paymentHint}
               </Text>
-            </KolamDetailMetaStripItem>
-          ) : null}
-          <KolamDetailMetaStripItem label="Status">
-            <KolamStatusBadge
-              intent={getKolamProyekLifecycleIntent(detail.lifecycleStatus)}
-              label={formatKolamProyekLifecycleLabel(detail.lifecycleStatus)}
-            />
-          </KolamDetailMetaStripItem>
-          {showProgress ? (
-            <KolamDetailMetaStripItem label="Progress">
+            </ProyekMetaStripItem>
+            <ProyekMetaStripItem label="Pemakaian toko">
               <Text
+                numberOfLines={1}
                 style={[
                   kolamDetailMetaStripStyles.stripValue,
                   styles.tabular,
                 ]}
               >
-                {Math.round(detail.progressPercent)}%
+                {formatRupiah(cost.produkToko)}
               </Text>
-            </KolamDetailMetaStripItem>
-          ) : null}
-          <KolamDetailMetaStripItem label="Tunggakan">
-            <Text
-              style={[
-                kolamDetailMetaStripStyles.stripValue,
-                styles.tabular,
-                outstanding > 0 ? styles.warningText : null,
-              ]}
-            >
-              {formatRupiah(outstanding)}
-            </Text>
-          </KolamDetailMetaStripItem>
-        </KolamDetailMetaStrip>
+            </ProyekMetaStripItem>
+            <ProyekMetaStripItem label="UE terverifikasi">
+              <Text
+                numberOfLines={1}
+                style={[
+                  kolamDetailMetaStripStyles.stripValue,
+                  styles.tabular,
+                ]}
+              >
+                {formatRupiah(cost.unexpectedExpenseTotal)}
+              </Text>
+            </ProyekMetaStripItem>
+            <ProyekMetaStripItem label="VAR">
+              <Text
+                numberOfLines={1}
+                style={[
+                  kolamDetailMetaStripStyles.stripValue,
+                  styles.tabular,
+                ]}
+              >
+                {formatRupiah(cost.varAmount)}
+              </Text>
+            </ProyekMetaStripItem>
+            {detail.paymentMode === 'staged' && showDp ? (
+              <ProyekMetaStripItem label="DP terkumpul">
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    kolamDetailMetaStripStyles.stripValue,
+                    styles.tabular,
+                  ]}
+                >
+                  {formatRupiah(receivedTotal)}
+                </Text>
+                <Text numberOfLines={1} style={styles.metricHint}>
+                  Sisa {formatRupiah(outstanding)}
+                </Text>
+              </ProyekMetaStripItem>
+            ) : null}
+            <ProyekMetaStripItem label="Status">
+              <KolamStatusBadge
+                intent={getKolamProyekLifecycleIntent(detail.lifecycleStatus)}
+                label={formatKolamProyekLifecycleLabel(detail.lifecycleStatus)}
+              />
+            </ProyekMetaStripItem>
+            {showProgress ? (
+              <ProyekMetaStripItem label="Progress">
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    kolamDetailMetaStripStyles.stripValue,
+                    styles.tabular,
+                  ]}
+                >
+                  {Math.round(detail.progressPercent)}%
+                </Text>
+              </ProyekMetaStripItem>
+            ) : null}
+            <ProyekMetaStripItem label="Tunggakan">
+              <Text
+                numberOfLines={1}
+                style={[
+                  kolamDetailMetaStripStyles.stripValue,
+                  styles.tabular,
+                  outstanding > 0 ? styles.warningText : null,
+                ]}
+              >
+                {formatRupiah(outstanding)}
+              </Text>
+            </ProyekMetaStripItem>
+          </View>
+        </KolamCardFrame>
       </View>
 
       <View style={styles.detailFrame}>
@@ -1892,6 +1900,23 @@ function DetailSection({
   );
 }
 
+function ProyekMetaStripItem({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.proyekMetaStripItem}>
+      <Text numberOfLines={1} style={styles.proyekMetaStripLabel}>
+        {label}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
 type PickedFile = {
   uri: string;
   name?: string;
@@ -2783,6 +2808,40 @@ const styles = StyleSheet.create({
   detailTop: {
     flexShrink: 0,
     gap: 12,
+  },
+  proyekMetaStripCard: {
+    alignSelf: 'stretch',
+    minWidth: '100%',
+    overflow: 'hidden',
+    paddingLeft: 12,
+    paddingRight: 0,
+    paddingVertical: 0,
+    width: '100%',
+  },
+  proyekMetaStripRow: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 10,
+    minHeight: 72,
+    width: '100%',
+  },
+  proyekMetaStripItem: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 4,
+    justifyContent: 'center',
+    minWidth: 0,
+    paddingVertical: 12,
+  },
+  proyekMetaStripLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   detailFrame: {
     backgroundColor: V.colors.bg,
