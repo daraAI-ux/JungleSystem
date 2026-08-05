@@ -30,8 +30,6 @@ import {
 } from '../domain/kolam-production';
 import {
   getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
 } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
@@ -44,32 +42,24 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
-import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
 import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -145,7 +135,6 @@ function KolamProductionList({
     React.useState<ProductionStatusFilterPanel>(null);
   const [deleteCandidate, setDeleteCandidate] = React.useState<KolamProduction | null>(null);
   const [restoreCandidate, setRestoreCandidate] = React.useState<KolamProduction | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
 
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
@@ -173,8 +162,14 @@ function KolamProductionList({
     : 'Status';
 
   const listColumns = React.useMemo(
-    () => fitProductionListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () =>
+      buildProductionListColumns({
+        onSelect: production => {
+          void controller.onSelectProduction(production);
+          onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${production.id}`);
+        },
+      }),
+    [controller, onRouteChange],
   );
 
   return (
@@ -296,61 +291,32 @@ function KolamProductionList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
-                />
-                <KolamCopyStack
-                  items={[{ id: 'page', text: `${safePage} / ${pageCount}`, style: styles.pageLabel }]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() => controller.onPageChange(Math.min(pageCount, safePage + 1))}
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {controller.productions.length ? (
-          controller.productions.map(item => (
-            <KolamProductionRow
-              canDelete={canDelete}
-              columns={listColumns}
-              key={item.id}
-              production={item}
-              onDelete={() => setDeleteCandidate(item)}
-              onRestore={() => setRestoreCandidate(item)}
-              onSelect={() => {
-                void controller.onSelectProduction(item);
-                onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${item.id}`);
-              }}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Coba ubah pencarian atau filter status."
-              title={controller.loading ? 'Memuat produksi…' : 'Belum ada produksi'}
-            />
-          </View>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={controller.loading ? 'Memuat produksi...' : 'Belum ada produksi'}
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        renderActions={item => (
+          <KolamProductionActionsMenu
+            canDelete={canDelete}
+            onDelete={() => setDeleteCandidate(item)}
+            onRestore={() => setRestoreCandidate(item)}
+            onSelect={() => {
+              void controller.onSelectProduction(item);
+              onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${item.id}`);
+            }}
+            production={item}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={controller.productions}
+      />
 
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.batchId}
@@ -390,45 +356,153 @@ function KolamProductionList({
   );
 }
 
-function KolamProductionRow({
-  production,
-  columns,
-  canDelete,
+function buildProductionListColumns({
   onSelect,
-  onRestore,
-  onDelete,
 }: {
-  production: KolamProduction;
-  columns: ReturnType<typeof getKolamTableColumns>;
-  canDelete: boolean;
-  onSelect: () => void;
-  onRestore: () => void;
-  onDelete: () => void;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const planned = production.plannedQuantity || production.quantity || 0;
-  const completed = production.completedQuantity || 0;
-  const linked = production.linkedPurchaseOrders ?? [];
-  const linkedTotal = linked.length;
-  const linkedDone = linked.filter(link =>
-    ['completed', 'cancelled', 'rejected'].includes(String(link.status || '')),
-  ).length;
-  const productionDateLabel = formatProductionListDate(production.productionDate);
-  const variantSku = production.variant?.sku?.trim();
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const childrenColumn = columnOf('children');
-  const amountColumn = columnOf('amount');
-  const notesColumn = columnOf('notes');
-  const statusColumn = columnOf('status');
-  const productsColumn = columnOf('products');
-  const marketplaceColumn = columnOf('marketplace');
-  const actionsColumn = columnOf('actions');
+  onSelect: (production: KolamProduction) => void;
+}): Array<KolamListTableColumn<KolamProduction>> {
+  return [
+    {
+      flex: 1.15,
+      id: 'target',
+      label: 'Target',
+      render: production => (
+        <Pressable onPress={() => onSelect(production)} style={styles.identityCell}>
+          <Text numberOfLines={2} style={styles.rowTitle}>
+            {getKolamProductionTargetLabel(production)}
+          </Text>
+          <Text numberOfLines={1} style={styles.rowMeta}>
+            {getKolamProductionTargetTypeLabel(production.targetType)}
+          </Text>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'variant',
+      label: 'Varian',
+      render: production => {
+        const variantSku = production.variant?.sku?.trim();
+        return (
+          <View style={styles.centerCell}>
+            <Text numberOfLines={2} style={[styles.cellText, styles.centerText]}>
+              {getKolamProductionVariantLabel(production.variant)}
+            </Text>
+            {variantSku ? (
+              <Text numberOfLines={1} style={[styles.rowMeta, styles.centerText]}>
+                {variantSku}
+              </Text>
+            ) : null}
+          </View>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'qty',
+      label: 'QTY',
+      render: production => {
+        const planned = production.plannedQuantity || production.quantity || 0;
+        const completed = production.completedQuantity || 0;
+        return (
+          <View style={styles.centerCell}>
+            <Text style={[styles.cellText, styles.centerText]}>
+              {completed} / {planned}
+            </Text>
+            {production.status === 'completed' && completed < planned ? (
+              <Text style={styles.warningText}>sebagian</Text>
+            ) : null}
+          </View>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.85,
+      id: 'cost',
+      label: 'Estimasi',
+      render: production => (
+        <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'batch',
+      label: 'Batch',
+      render: production => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {production.batchId || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: production => {
+        const linked = production.linkedPurchaseOrders ?? [];
+        const linkedTotal = linked.length;
+        const linkedDone = linked.filter(link =>
+          ['completed', 'cancelled', 'rejected'].includes(String(link.status || '')),
+        ).length;
+        return (
+          <View style={styles.statusCell}>
+            <KolamStatusBadge
+              intent={productionStatusIntent(production.status)}
+              label={getKolamProductionStatusLabel(production.status)}
+              style={styles.centerBadge}
+            />
+            {production.status === 'waiting_for_po' && linkedTotal > 0 ? (
+              <Text style={styles.warningText}>
+                {linkedDone}/{linkedTotal} PO
+              </Text>
+            ) : null}
+          </View>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'pic',
+      label: 'PIC',
+      render: production => (
+        <View style={[styles.picCell, styles.overflowVisible]}>
+          <KolamProductionPicAvatar production={production} />
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'date',
+      label: 'Tanggal',
+      render: production => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatProductionListDate(production.productionDate)}
+        </Text>
+      ),
+    },
+  ];
+}
 
+function KolamProductionActionsMenu({
+  canDelete,
+  onDelete,
+  onRestore,
+  onSelect,
+  production,
+}: {
+  canDelete: boolean;
+  onDelete: () => void;
+  onRestore: () => void;
+  onSelect: () => void;
+  production: KolamProduction;
+}) {
   const actions = [
     { label: 'Lihat', onPress: onSelect },
     ...(production.status === 'cancelled' ? [{ label: 'Pulihkan', onPress: onRestore }] : []),
@@ -438,132 +512,10 @@ function KolamProductionRow({
   ];
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <Pressable
-          onPress={onSelect}
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.rowTitle}>
-            {getKolamProductionTargetLabel(production)}
-          </Text>
-          <Text numberOfLines={1} style={styles.rowMeta}>
-            {getKolamProductionTargetTypeLabel(production.targetType)}
-          </Text>
-        </Pressable>
-
-        <View
-          style={[
-            styles.listCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.cellText}>
-            {getKolamProductionVariantLabel(production.variant)}
-          </Text>
-          {variantSku ? (
-            <Text numberOfLines={1} style={styles.rowMeta}>
-              {variantSku}
-            </Text>
-          ) : null}
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
-          ]}
-        >
-          <Text style={styles.cellText}>
-            {completed} / {planned}
-          </Text>
-          {production.status === 'completed' && completed < planned ? (
-            <Text style={styles.warningText}>sebagian</Text>
-          ) : null}
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-          ]}
-        >
-          <Text style={styles.numText}>{formatRupiah(production.estimatedCost || 0)}</Text>
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {production.batchId || '—'}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={productionStatusIntent(production.status)}
-            label={getKolamProductionStatusLabel(production.status)}
-            style={styles.centerBadge}
-          />
-          {production.status === 'waiting_for_po' && linkedTotal > 0 ? (
-            <Text style={styles.warningText}>
-              {linkedDone}/{linkedTotal} PO
-            </Text>
-          ) : null}
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.picCell,
-            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
-            styles.overflowVisible,
-          ]}
-        >
-          <KolamProductionPicAvatar production={production} />
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {productionDateLabel}
-          </Text>
-        </View>
-      </KolamDataTableMainTrack>
-
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${production.batchId || 'produksi'}`}
-          actions={actions}
-          onOpenChange={open => {
-            setActionMenuOpen(open);
-          }}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${production.batchId || 'produksi'}`}
+      actions={actions}
+    />
   );
 }
 
@@ -1741,45 +1693,6 @@ function resolveActiveComponents(product: KolamProductForProduction, variantId: 
   return product.components;
 }
 
-function fitProductionListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('production');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
-}
-
 const styles = StyleSheet.create({
   surface: { gap: 14 },
   detailSurface: { gap: 14 },
@@ -1937,6 +1850,15 @@ const styles = StyleSheet.create({
   rowMeta: {
     color: V.colors.mutedFg,
     fontSize: 12,
+  },
+  centerCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  centerText: {
+    textAlign: 'center',
+    width: '100%',
   },
   cellText: {
     color: V.colors.fg,

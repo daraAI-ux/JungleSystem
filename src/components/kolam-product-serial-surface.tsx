@@ -13,11 +13,6 @@ import {
   type KolamProductSerialProductType,
   type KolamProductSerialStatus,
 } from '../domain/kolam-product-serial';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
@@ -28,25 +23,16 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamSearchField } from './kolam-search-field';
-import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
 import {
   measureFilterPanelAnchor,
@@ -121,7 +107,6 @@ function KolamProductSerialList({
   const [panelAnchor, setPanelAnchor] =
     React.useState<KolamFilterPanelAnchor | null>(null);
   const [qrSerial, setQrSerial] = React.useState<KolamProductSerial | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const toolbarRef = React.useRef<View>(null);
   const typeTriggerRef = React.useRef<View>(null);
   const statusTriggerRef = React.useRef<View>(null);
@@ -147,12 +132,6 @@ function KolamProductSerialList({
   const statusFilterLabel = controller.filters.status
     ? getKolamProductSerialStatusLabel(controller.filters.status)
     : 'Status';
-  const hasActiveFilters = Boolean(
-    controller.filters.search ||
-      controller.filters.productType ||
-      controller.filters.status ||
-      controller.filters.productId,
-  );
   const filtersAppliedCount = [
     controller.filters.search,
     controller.filters.productType,
@@ -160,8 +139,8 @@ function KolamProductSerialList({
     controller.filters.productId,
   ].filter(Boolean).length;
   const listColumns = React.useMemo(
-    () => fitProductSerialListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () => buildProductSerialListColumns(),
+    [],
   );
   const filteredProductName = controller.filters.productId
     ? controller.serials[0]?.product?.name
@@ -171,12 +150,6 @@ function KolamProductSerialList({
     : controller.error
       ? 'Gagal memuat nomor seri'
       : 'Belum ada nomor seri';
-  const emptyMessage = controller.error
-    ? controller.error
-    : hasActiveFilters
-      ? 'Coba ubah pencarian atau filter.'
-      : 'Nomor seri dibuat otomatis saat produksi selesai.';
-
   const getFilterTriggerRef = (panel: ProductSerialFilterPanel) =>
     panel === 'type' ? typeTriggerRef : statusTriggerRef;
 
@@ -216,19 +189,6 @@ function KolamProductSerialList({
     }
     requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
   }, [activeFilterPanel, anchorFilterPanel]);
-
-  const renderRow = React.useCallback(
-    (item: KolamProductSerial) => (
-      <KolamProductSerialRow
-        columns={listColumns}
-        key={item.id || item.serialNumber}
-        onRouteChange={onRouteChange}
-        onViewQr={() => setQrSerial(item)}
-        serial={item}
-      />
-    ),
-    [listColumns, onRouteChange],
-  );
 
   return (
     <View style={styles.listRoot}>
@@ -418,82 +378,136 @@ function KolamProductSerialList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {controller.serials.length ? (
-          controller.serials.map(renderRow)
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState compact message={emptyMessage} title={emptyTitle} />
-          </View>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={emptyTitle}
+        getRowKey={item => item.id || item.serialNumber}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        renderActions={item => (
+          <KolamProductSerialActionsMenu
+            onRouteChange={onRouteChange}
+            onViewQr={() => setQrSerial(item)}
+            serial={item}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={controller.serials}
+      />
 
       <KolamProductSerialQrModal serial={qrSerial} onClose={() => setQrSerial(null)} />
     </View>
   );
 }
 
-function KolamProductSerialRow({
-  serial,
-  columns,
+function buildProductSerialListColumns(): Array<KolamListTableColumn<KolamProductSerial>> {
+  return [
+    {
+      flex: 1,
+      id: 'serial',
+      label: 'Serial',
+      render: serial => (
+        <View style={styles.identityCell}>
+          <Text numberOfLines={1} style={styles.rowTitleMono}>
+            {serial.serialNumber}
+          </Text>
+        </View>
+      ),
+    },
+    {
+      flex: 1.2,
+      id: 'product',
+      label: 'Produk',
+      render: serial => (
+        <View>
+          <Text numberOfLines={1} style={styles.cellText}>
+            {serial.product?.name || '-'}
+          </Text>
+          {serial.product?.sku ? (
+            <Text numberOfLines={1} style={styles.rowMetaMono}>
+              {serial.product.sku}
+            </Text>
+          ) : null}
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'type',
+      label: 'Tipe',
+      render: serial => (
+        <View style={styles.statusCell}>
+          <KolamStatusBadge
+            intent={getKolamProductSerialTypeIntent(serial.productType)}
+            label={getKolamProductSerialTypeLabel(serial.productType)}
+            style={styles.centerBadge}
+          />
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'date',
+      label: 'Produksi',
+      render: serial => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatProductSerialDate(serial.productionDate)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'status',
+      label: 'Status',
+      render: serial => (
+        <View style={styles.statusCell}>
+          <KolamStatusBadge
+            intent={getKolamProductSerialStatusIntent(serial.status)}
+            label={getKolamProductSerialStatusLabel(serial.status)}
+            style={styles.centerBadge}
+          />
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'opname',
+      label: 'Opname',
+      render: serial => (
+        <View style={styles.statusCell}>
+          {serial.opnameStatus ? (
+            <KolamStatusBadge
+              intent={getKolamProductSerialOpnameIntent(serial.opnameStatus)}
+              label={getKolamProductSerialOpnameLabel(serial.opnameStatus)}
+              style={styles.centerBadge}
+            />
+          ) : (
+            <Text style={styles.rowMeta}>-</Text>
+          )}
+        </View>
+      ),
+    },
+  ];
+}
+
+function KolamProductSerialActionsMenu({
   onRouteChange,
   onViewQr,
+  serial,
 }: {
-  serial: KolamProductSerial;
-  columns: ReturnType<typeof getKolamTableColumns>;
   onRouteChange?: (route: string) => void;
   onViewQr: () => void;
+  serial: KolamProductSerial;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const notesColumn = columnOf('notes');
-  const marketplaceColumn = columnOf('marketplace');
-  const statusColumn = columnOf('status');
-  const productsColumn = columnOf('products');
-  const actionsColumn = columnOf('actions');
-
   const actions = [
     ...(serial.qrCode ? [{ label: 'Lihat QR', onPress: onViewQr }] : []),
     ...(serial.production?.id
@@ -506,112 +520,12 @@ function KolamProductSerialRow({
       : []),
   ];
 
-  return (
-    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
-      <KolamDataTableMainTrack>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : styles.primaryCell,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.rowTitleMono}>
-            {serial.serialNumber}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {serial.product?.name || '—'}
-          </Text>
-          {serial.product?.sku ? (
-            <Text numberOfLines={1} style={styles.rowMetaMono}>
-              {serial.product.sku}
-            </Text>
-          ) : null}
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={getKolamProductSerialTypeIntent(serial.productType)}
-            label={getKolamProductSerialTypeLabel(serial.productType)}
-            style={styles.centerBadge}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            marketplaceColumn ? getKolamDataTableColumnStyle(marketplaceColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {formatProductSerialDate(serial.productionDate)}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={getKolamProductSerialStatusIntent(serial.status)}
-            label={getKolamProductSerialStatusLabel(serial.status)}
-            style={styles.centerBadge}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
-          ]}
-        >
-          {serial.opnameStatus ? (
-            <KolamStatusBadge
-              intent={getKolamProductSerialOpnameIntent(serial.opnameStatus)}
-              label={getKolamProductSerialOpnameLabel(serial.opnameStatus)}
-              style={styles.centerBadge}
-            />
-          ) : (
-            <Text style={styles.rowMeta}>—</Text>
-          )}
-        </View>
-      </KolamDataTableMainTrack>
-
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        {actions.length ? (
-          <KolamOverflowMenuButton
-            accessibilityLabel={`Menu ${serial.serialNumber}`}
-            actions={actions}
-            onOpenChange={open => setActionMenuOpen(open)}
-          />
-        ) : null}
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
+  return actions.length ? (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${serial.serialNumber}`}
+      actions={actions}
+    />
+  ) : null;
 }
 
 function KolamProductSerialQrModal({
@@ -769,45 +683,6 @@ function formatProductSerialDateTime(value?: string) {
     return value;
   }
   return date.toLocaleString('id-ID');
-}
-
-function fitProductSerialListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('product-serial');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
 }
 
 const styles = StyleSheet.create({

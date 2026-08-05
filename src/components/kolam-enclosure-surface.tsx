@@ -47,7 +47,6 @@ import type {KolamBarcodeLabelItem} from '../domain/kolam-barcode';
 import type {KolamSpecies} from '../domain/kolam-species';
 import {
   fitKolamDataTableColumns,
-  getKolamTableColumns,
   getKolamTableVisualContract,
   type KolamTableColumn,
 } from '../domain/kolam-table';
@@ -89,6 +88,10 @@ import {
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
@@ -1194,175 +1197,112 @@ function KolamEnclosureTable({
   controller: KolamEnclosureController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const listColumns = React.useMemo(
-    () => fitEnclosureListColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () =>
+      buildEnclosureListColumns({
+        onSelect: enclosure =>
+          onRouteChange?.(KOLAM_ENCLOSURE_ROOT + '/' + enclosure.id),
+      }),
+    [onRouteChange],
   );
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
 
   return (
-    <KolamCatalogListTableShell
-      footer={
-        <KolamTableFooterControls
-          onPageSizeChange={controller.onLimitChange}
-          page={safePage}
-          pageSize={controller.filters.limit}
-          total={controller.pagination.total}
-        >
-          {pageCount > 1 ? (
-            <View style={styles.paginationRow}>
-              <KolamButton
-                disabled={safePage <= 1}
-                label="Sebelumnya"
-                onPress={() =>
-                  controller.onPageChange(Math.max(1, safePage - 1))
-                }
-              />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'page',
-                    text: `${safePage} / ${pageCount}`,
-                    style: styles.pageLabel,
-                  },
-                ]}
-              />
-              <KolamButton
-                disabled={safePage >= pageCount}
-                label="Berikutnya"
-                onPress={() =>
-                  controller.onPageChange(Math.min(pageCount, safePage + 1))
-                }
-              />
-            </View>
-          ) : null}
-        </KolamTableFooterControls>
+    <KolamListTableComposition
+      actionsColumn
+      columns={listColumns}
+      emptyTitle={
+        controller.loading
+          ? 'Memuat enclosure...'
+          : controller.error
+            ? 'Gagal memuat enclosure'
+            : 'Belum ada enclosure'
       }
-      onBodyWidthChange={setTableBodyWidth}
-      style={styles.tableFrame}
-    >
-      <KolamDataTableHeader columns={listColumns} />
-      {controller.enclosures.length ? (
-        controller.enclosures.map(item => (
-          <KolamEnclosureRow
-            columns={listColumns}
-            enclosure={item}
-            key={item.id || item.code}
-            onSelect={() =>
-              onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${item.id}`)
-            }
-          />
-        ))
-      ) : (
-        <View style={styles.emptyWrap}>
-          <KolamEmptyState
-            compact
-            message={getListEmptyMessage(controller)}
-            title={
-              controller.loading
-                ? 'Memuat enclosure…'
-                : controller.error
-                  ? 'Gagal memuat enclosure'
-                  : 'Belum ada enclosure'
-            }
-          />
-        </View>
+      getRowKey={item => item.id || item.code}
+      loading={controller.loading}
+      pagination={{
+        onPageChange: controller.onPageChange,
+        page: safePage,
+        pageSize: controller.filters.limit,
+        total: controller.pagination.total,
+      }}
+      renderActions={item => (
+        <KolamEnclosureActionsMenu
+          enclosure={item}
+          onSelect={() =>
+            onRouteChange?.(KOLAM_ENCLOSURE_ROOT + '/' + item.id)
+          }
+        />
       )}
-    </KolamCatalogListTableShell>
+      rows={controller.enclosures}
+      style={styles.tableFrame}
+    />
   );
 }
 
-function KolamEnclosureRow({
-  columns,
-  enclosure,
+function buildEnclosureListColumns({
   onSelect,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
-  enclosure: KolamEnclosure;
-  onSelect: () => void;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const [speciesTooltipOpen, setSpeciesTooltipOpen] = React.useState(false);
-  const imageUri = getKolamFileUrl(enclosure.coverPhotoUrl);
-  const sizeText = formatEnclosureSize(enclosure);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const photoColumn = columnOf('meta');
-  const codeColumn = columnOf('children');
-  const primaryColumn = columnOf('primary');
-  const typeColumn = columnOf('notes');
-  const livestockColumn = columnOf('products');
-  const speciesColumn = columnOf('raws');
-  const picColumn = columnOf('marketplace');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
-  const rowElevated = actionMenuOpen || speciesTooltipOpen;
-
-  return (
-    <KolamDataTableRowFrame
-      style={rowElevated ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
-          style={[
-            styles.listCell,
-            styles.photoCell,
-            photoColumn ? getKolamDataTableColumnStyle(photoColumn) : null,
-          ]}
-        >
-          {imageUri ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${enclosure.name || enclosure.code}`}
-              resizeMode="cover"
-              scope="enclosure-list"
-              sourceUri={imageUri}
-              style={styles.photo}
-            />
-          ) : (
-            <Text style={styles.mutedText}>-</Text>
-          )}
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            codeColumn ? getKolamDataTableColumnStyle(codeColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellTextStrong}>
-            {enclosure.code || '-'}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={onSelect}
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.rowTitle}>
-            {enclosure.name || enclosure.code || '-'}
-          </Text>
-          <Text numberOfLines={1} style={styles.rowMeta}>
-            {[enclosure.location?.name, sizeText].filter(Boolean).join(' / ') ||
-              '-'}
-          </Text>
-        </Pressable>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.centerCell,
-            typeColumn ? getKolamDataTableColumnStyle(typeColumn) : null,
-          ]}
-        >
+  onSelect: (enclosure: KolamEnclosure) => void;
+}): Array<KolamListTableColumn<KolamEnclosure>> {
+  return [
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'photo',
+      label: 'Foto',
+      render: enclosure => {
+        const imageUri = getKolamFileUrl(enclosure.coverPhotoUrl);
+        return imageUri ? (
+          <KolamRemoteImage
+            accessibilityLabel={'Foto ' + (enclosure.name || enclosure.code)}
+            resizeMode="cover"
+            scope="enclosure-list"
+            sourceUri={imageUri}
+            style={styles.photo}
+          />
+        ) : (
+          <Text style={styles.mutedText}>-</Text>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'code',
+      label: 'Kode',
+      render: enclosure => (
+        <Text numberOfLines={1} style={styles.cellTextStrong}>
+          {enclosure.code || '-'}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.18,
+      id: 'name',
+      label: 'Enclosure',
+      render: enclosure => {
+        const sizeText = formatEnclosureSize(enclosure);
+        return (
+          <Pressable onPress={() => onSelect(enclosure)} style={styles.identityCell}>
+            <Text numberOfLines={1} style={styles.rowTitle}>
+              {enclosure.name || enclosure.code || '-'}
+            </Text>
+            <Text numberOfLines={1} style={styles.rowMeta}>
+              {[enclosure.location?.name, sizeText].filter(Boolean).join(' / ') || '-'}
+            </Text>
+          </Pressable>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'type',
+      label: 'Tipe',
+      render: enclosure => (
+        <View style={styles.centerCell}>
           <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
             {enclosure.type || '-'}
           </Text>
@@ -1372,57 +1312,48 @@ function KolamEnclosureRow({
             </Text>
           ) : null}
         </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.centerCell,
-            livestockColumn
-              ? getKolamDataTableColumnStyle(livestockColumn)
-              : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
-            {getLivestockPurposeLabel(enclosure.livestockPurpose)}
-          </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'livestock',
+      label: 'Ternak',
+      render: enclosure => (
+        <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
+          {getLivestockPurposeLabel(enclosure.livestockPurpose)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'species',
+      label: 'Species',
+      render: enclosure => (
+        <View style={[styles.picCell, styles.overflowVisible]}>
+          <KolamEnclosureSpeciesThumbs species={enclosure.species} />
         </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.picCell,
-            speciesColumn
-              ? getKolamDataTableColumnStyle(speciesColumn)
-              : null,
-            // Must come after column lock style — that helper defaults overflow:hidden
-            // and would clip KolamHoverTooltip the same way PIC avoids by ordering.
-            styles.overflowVisible,
-          ]}
-        >
-          <KolamEnclosureSpeciesThumbs
-            onTooltipOpenChange={setSpeciesTooltipOpen}
-            species={enclosure.species}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.picCell,
-            picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
-            styles.overflowVisible,
-          ]}
-        >
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'pic',
+      label: 'PIC',
+      render: enclosure => (
+        <View style={[styles.picCell, styles.overflowVisible]}>
           <KolamEnclosurePicAvatar enclosure={enclosure} />
         </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'status',
+      label: 'Status',
+      render: enclosure => (
+        <View style={styles.statusCell}>
           <KolamStatusBadge
             intent={getEnclosureStatusIntent(enclosure.status)}
             label={enclosure.status || 'active'}
@@ -1437,22 +1368,23 @@ function KolamEnclosureRow({
             />
           ) : null}
         </View>
-      </KolamDataTableMainTrack>
+      ),
+    },
+  ];
+}
 
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Aksi ${enclosure.name || enclosure.code}`}
-          actions={[{label: 'Lihat', onPress: onSelect}]}
-          onOpenChange={setActionMenuOpen}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+function KolamEnclosureActionsMenu({
+  enclosure,
+  onSelect,
+}: {
+  enclosure: KolamEnclosure;
+  onSelect: () => void;
+}) {
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={'Aksi ' + (enclosure.name || enclosure.code)}
+      actions={[{ label: 'Lihat', onPress: onSelect }]}
+    />
   );
 }
 
@@ -2580,33 +2512,6 @@ function SummaryTile({
       </Text>
       {hint ? <Text style={styles.summaryHint}>{hint}</Text> : null}
     </View>
-  );
-}
-
-function getListEmptyMessage(controller: KolamEnclosureController) {
-  if (controller.error) {
-    return controller.error;
-  }
-  if (controller.loading) {
-    return 'Data enclosure sedang dimuat dari Kolam.';
-  }
-  if (controller.filters.search.trim()) {
-    return `Tidak ada enclosure untuk "${controller.filters.search.trim()}".`;
-  }
-  return 'Coba ubah tab, pencarian, atau filter.';
-}
-
-function fitEnclosureListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('enclosure'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 160,
-      secondaryMinWidth: 48,
-    },
   );
 }
 
