@@ -1915,7 +1915,7 @@ export function getSettingsRoleResourceLabel(resource: string) {
     'stock-transaction': 'Stock Transaction',
     'stock-opname': 'Stock Opname',
     'custom-field': 'Custom Field',
-    shipping_method: 'Shipping Method',
+    shipping_method: 'Metode Pengiriman',
     websetting: 'Web Settings',
     'blog-topic': 'Blog Topic',
     'iucn-status': 'IUCN Status',

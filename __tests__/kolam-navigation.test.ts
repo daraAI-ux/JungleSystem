@@ -70,7 +70,7 @@ describe('kolamNavigationSections', () => {
         '/campaign/dara-seo',
         '/sales/discount-approval',
         '/vouchers',
-        '/shipping-method',
+        '/metode-pengiriman',
         '/terms-templates',
         '/proyek',
         '/appointments',
@@ -156,7 +156,7 @@ describe('kolamNavigationSections', () => {
     expect(kolamRoutes).toContain('/complaints');
     expect(kolamRoutes).toContain('/sales/discount-approval');
     expect(kolamRoutes).toContain('/vouchers');
-    expect(kolamRoutes).toContain('/shipping-method');
+    expect(kolamRoutes).toContain('/metode-pengiriman');
     expect(kolamRoutes).toContain('/custom-project');
     expect(kolamRoutes).toContain('/custom-project/instances/new');
     expect(kolamRoutes).toContain('/terms-templates');

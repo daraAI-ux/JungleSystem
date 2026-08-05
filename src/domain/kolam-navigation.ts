@@ -1,5 +1,6 @@
 import type { AccessScope } from './auth';
 import type { AppModule } from './app-shell';
+import { canonicalizeKolamShippingMethodRoute } from './kolam-shipping-method';
 
 export interface KolamNavigationItem {
   label: string;
@@ -429,9 +430,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Shipping Method',
-        route: '/shipping-method',
-        description: 'Available shipping methods',
+        label: 'Metode Pengiriman',
+        route: '/metode-pengiriman',
+        description:
+          'Kelola opsi pengiriman internal dan layanan Biteship untuk checkout',
         requiredAccess: ['kolam'],
       },
       {
@@ -781,7 +783,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Persetujuan Diskon',
       }),
       sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
-      sidebarItem('/shipping-method', {
+      sidebarItem('/metode-pengiriman', {
         group: undefined,
         label: 'Metode Pengiriman',
       }),
@@ -1206,22 +1208,22 @@ const kolamNavigationRouteVariantSpecs: Array<{
     description: 'Edit voucher page from live Kolam',
   },
   {
-    baseRoute: '/shipping-method',
-    labelSuffix: 'Create',
-    route: '/shipping-method/create',
-    description: 'Create shipping method page from live Kolam',
+    baseRoute: '/metode-pengiriman',
+    labelSuffix: 'Baru',
+    route: '/metode-pengiriman/create',
+    description: 'Buat metode pengiriman baru',
   },
   {
-    baseRoute: '/shipping-method',
+    baseRoute: '/metode-pengiriman',
     labelSuffix: 'Detail',
-    route: '/shipping-method/:id',
-    description: 'Shipping method detail page from live Kolam',
+    route: '/metode-pengiriman/:id',
+    description: 'Detail metode pengiriman',
   },
   {
-    baseRoute: '/shipping-method',
-    labelSuffix: 'Edit',
-    route: '/shipping-method/:id/edit',
-    description: 'Edit shipping method page from live Kolam',
+    baseRoute: '/metode-pengiriman',
+    labelSuffix: 'Ubah',
+    route: '/metode-pengiriman/:id/edit',
+    description: 'Ubah metode pengiriman',
   },
   {
     baseRoute: '/cashflow-session',
@@ -2031,7 +2033,9 @@ export function getKolamNavigationItemByRuntimeRoute(
     return null;
   }
 
-  const routePath = normalizedRoute.split('?')[0];
+  const routePath = canonicalizeKolamShippingMethodRoute(
+    normalizedRoute.split('?')[0],
+  );
   const labelAndFieldsBrandItem = getLabelAndFieldsBrandNavigationItem(
     routePath,
     normalizedRoute,

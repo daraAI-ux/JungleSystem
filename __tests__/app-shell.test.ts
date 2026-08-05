@@ -151,6 +151,7 @@ test('keeps sidebar metadata available for native navigation badges', () => {
       'campaign',
       'sales/discount-approval',
       'vouchers',
+      'metode-pengiriman',
       'shipping-method',
       'terms-templates',
       'enclonura-species',

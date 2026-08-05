@@ -122,14 +122,15 @@ describe('kolam-shipping-method domain', () => {
   });
 
   it('parses routes and breadcrumbs', () => {
+    expect(isKolamShippingMethodRoute('/metode-pengiriman')).toBe(true);
+    expect(isKolamShippingMethodRoute('/metode-pengiriman/create')).toBe(true);
     expect(isKolamShippingMethodRoute('/shipping-method')).toBe(true);
-    expect(isKolamShippingMethodRoute('/shipping-method/create')).toBe(true);
     expect(isKolamShippingMethodRoute('/products')).toBe(false);
-    expect(parseKolamShippingMethodRoute('/shipping-method')).toEqual({
+    expect(parseKolamShippingMethodRoute('/metode-pengiriman')).toEqual({
       mode: 'list',
       id: null,
     });
-    expect(parseKolamShippingMethodRoute('/shipping-method/create')).toEqual({
+    expect(parseKolamShippingMethodRoute('/metode-pengiriman/create')).toEqual({
       mode: 'new',
       id: null,
     });
@@ -137,7 +138,7 @@ describe('kolam-shipping-method domain', () => {
       mode: 'detail',
       id: 'abc',
     });
-    expect(parseKolamShippingMethodRoute('/shipping-method/abc/edit')).toEqual({
+    expect(parseKolamShippingMethodRoute('/metode-pengiriman/abc/edit')).toEqual({
       mode: 'edit',
       id: 'abc',
     });
@@ -146,7 +147,7 @@ describe('kolam-shipping-method domain', () => {
         id: 'abc',
         displayName: 'X',
       }),
-    ).toBe('/shipping-method/abc/edit');
+    ).toBe('/metode-pengiriman/abc/edit');
   });
 
   it('builds and validates manual save payload', () => {

@@ -135,6 +135,7 @@ export const shellModules: ShellModule[] = [
       'campaign/dara-seo',
       'sales/discount-approval',
       'vouchers',
+      'metode-pengiriman',
       'shipping-method',
       'finance',
       'wallet',

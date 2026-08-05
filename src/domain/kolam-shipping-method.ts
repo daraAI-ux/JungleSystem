@@ -79,7 +79,9 @@ export interface KolamShippingMethodInitializeDefaultsResult {
   skipped: number;
 }
 
-export const KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT = '/shipping-method';
+export const KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT = '/metode-pengiriman';
+/** Legacy FE/Kolam path kept as alias for deep links and older sessions. */
+export const KOLAM_SHIPPING_METHOD_LEGACY_ROOT = '/shipping-method';
 
 export const KOLAM_SHIPPING_METHOD_CATEGORY_OPTIONS = [
   {
@@ -119,8 +121,22 @@ export const KOLAM_SHIPPING_METHOD_INSURANCE_TYPE_OPTIONS = [
   { label: 'Persentase', value: 'percentage' as const },
 ] as const;
 
-export function isKolamShippingMethodRoute(route: string) {
+export function canonicalizeKolamShippingMethodRoute(route: string) {
   const path = String(route || '').split('?')[0];
+  if (
+    path === KOLAM_SHIPPING_METHOD_LEGACY_ROOT ||
+    path.startsWith(`${KOLAM_SHIPPING_METHOD_LEGACY_ROOT}/`)
+  ) {
+    return path.replace(
+      KOLAM_SHIPPING_METHOD_LEGACY_ROOT,
+      KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT,
+    );
+  }
+  return path;
+}
+
+export function isKolamShippingMethodRoute(route: string) {
+  const path = canonicalizeKolamShippingMethodRoute(route);
   return (
     path === KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT ||
     path === `${KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT}/create` ||
@@ -150,7 +166,7 @@ export function parseKolamShippingMethodRoute(route: string): {
   mode: 'list' | 'detail' | 'edit' | 'new';
   id: string | null;
 } {
-  const path = String(route || '').split('?')[0];
+  const path = canonicalizeKolamShippingMethodRoute(route);
   if (
     path === `${KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT}/create` ||
     path === `${KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT}/baru`
@@ -159,14 +175,18 @@ export function parseKolamShippingMethodRoute(route: string): {
   }
 
   const editMatch = path.match(
-    /^\/shipping-method\/([^/]+)\/edit\/?$/,
+    /^\/metode-pengiriman\/([^/]+)\/edit\/?$/,
   );
   if (editMatch?.[1]) {
     return { mode: 'edit', id: decodeURIComponent(editMatch[1]) };
   }
 
-  const detailMatch = path.match(/^\/shipping-method\/([^/]+)\/?$/);
-  if (detailMatch?.[1] && detailMatch[1] !== 'create' && detailMatch[1] !== 'baru') {
+  const detailMatch = path.match(/^\/metode-pengiriman\/([^/]+)\/?$/);
+  if (
+    detailMatch?.[1] &&
+    detailMatch[1] !== 'create' &&
+    detailMatch[1] !== 'baru'
+  ) {
     return { mode: 'detail', id: decodeURIComponent(detailMatch[1]) };
   }
 
