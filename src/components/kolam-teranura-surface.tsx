@@ -16,6 +16,7 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
@@ -311,8 +312,7 @@ function KolamTeranuraList({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {hasActiveFilters ? (
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   muted
                   onPress={() => {
                     closeFilterPanel();

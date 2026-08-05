@@ -54,6 +54,7 @@ import {
 } from '../services/kolam-user-api';
 import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
+import {KolamResetButton} from './kolam-reset-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -682,8 +683,7 @@ function KolamUserListSurface({
               />
             ) : null}
             {filtersAppliedCount > 0 ? (
-              <KolamButton
-                label="Reset"
+              <KolamResetButton
                 muted
                 onPress={() => {
                   setSearch('');

@@ -26,6 +26,7 @@ import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamAssetPurchaseDetailSurface } from './kolam-asset-purchase-detail-surface';
 import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -751,9 +752,8 @@ function FinanceExpenseListBody({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             {isAssetPurchase && filtersApplied ? (
-              <KolamButton
+              <KolamResetButton
                 intent="secondary"
-                label="Reset"
                 onPress={controller.onClearFilters}
               />
             ) : null}

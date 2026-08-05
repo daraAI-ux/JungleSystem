@@ -7,6 +7,7 @@ import type {
 } from '../hooks/use-kolam-dara-seo-sentiment-controller';
 import {formatKolamDaraSeoSentimentRelativeTime} from '../hooks/use-kolam-dara-seo-sentiment-controller';
 import {KolamButton} from './kolam-button';
+import {KolamResetButton} from './kolam-reset-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 
@@ -115,8 +116,7 @@ export function KolamDaraSeoSentimentBody({
                     style={styles.chip}
                   />
                 ))}
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   onPress={() => controller.onSetText('')}
                   style={styles.chip}
                 />

@@ -56,6 +56,7 @@ import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
@@ -470,8 +471,7 @@ export function KolamProductSurface({
                   }}
                 />
                 {hasActiveListFilters ? (
-                  <KolamButton
-                    label="Reset"
+                  <KolamResetButton
                     muted
                     onPress={resetListFilters}
                   />
@@ -9333,7 +9333,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 });
-
 
 
 

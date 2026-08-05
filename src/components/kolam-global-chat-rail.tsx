@@ -90,6 +90,7 @@ import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamPressable} from './kolam-pressable';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
+import {KolamResetButton} from './kolam-reset-button';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusIndicatorIcon} from './kolam-status-indicator-icon';
 import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
@@ -1584,7 +1585,7 @@ function KolamInboxFilterPanel({
       </View>
       <View style={styles.filterBottomRow}>
         {hasActiveFilter ? (
-          <KolamPressable
+          <KolamResetButton
             accessibilityLabel="Reset filter inbox chat"
             onPress={() =>
               onChange({
@@ -1595,9 +1596,8 @@ function KolamInboxFilterPanel({
                 status: 'all',
               })
             }
-            style={styles.filterResetButton}>
-            <Text style={styles.filterResetText}>Reset</Text>
-          </KolamPressable>
+            style={styles.filterResetButton}
+          />
         ) : null}
       </View>
     </View>
@@ -3769,7 +3769,7 @@ function KolamChatRailDetailPanel({
               </Text>
             </KolamPressable>
             {isMessageSearchActive ? (
-              <KolamPressable
+              <KolamResetButton
                 accessibilityLabel="Bersihkan pencarian pesan team chat"
                 disabled={detail.messageSearchLoading}
                 onPress={handleClearMessageSearch}
@@ -3777,9 +3777,8 @@ function KolamChatRailDetailPanel({
                   styles.messageSearchButton,
                   styles.messageSearchButtonGhost,
                   detail.messageSearchLoading && styles.attachButtonDisabled,
-                ]}>
-                <Text style={styles.messageSearchButtonGhostText}>Reset</Text>
-              </KolamPressable>
+                ]}
+              />
             ) : null}
           </View>
         ) : null}

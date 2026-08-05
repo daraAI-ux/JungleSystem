@@ -20,6 +20,7 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -1033,8 +1034,7 @@ function KolamStockTransactionList({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {filtersAppliedCount > 0 ? (
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   muted
                   onPress={() => {
                     setSearchInput('');

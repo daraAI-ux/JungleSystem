@@ -28,6 +28,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {KolamButton} from './kolam-button';
+import {KolamResetButton} from './kolam-reset-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamSearchField} from './kolam-search-field';
@@ -160,8 +161,7 @@ export function KolamDaraSeoApprovalsBody({
               ) : null}
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
-                label="Reset"
+              <KolamResetButton
                 muted
                 onPress={() => {
                   setActivePanel(null);

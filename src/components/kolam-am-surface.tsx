@@ -115,6 +115,7 @@ import {
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
+import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
@@ -6076,7 +6077,7 @@ function AmActivityLogPage() {
         <AmSegmentGroup active={status} items={AM_ACTIVITY_LOG_STATUSES} labels={AM_ACTIVITY_LOG_STATUS_LABELS} onSelect={handleStatusChange} />
         <AmSegmentGroup active={method} items={AM_ACTIVITY_LOG_METHODS} labels={AM_ACTIVITY_LOG_METHOD_LABELS} onSelect={handleMethodChange} />
         {hasActiveFilters ? (
-          <KolamButton label="Reset" intent="outline" size="sm" onPress={resetFilters} />
+          <KolamResetButton intent="outline" size="sm" onPress={resetFilters} />
         ) : null}
         {selectedLogIds.size ? (
           <KolamButton

@@ -41,6 +41,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -208,8 +209,7 @@ function KolamSupplierList({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {filtersAppliedCount > 0 ? (
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   muted
                   onPress={() => {
                     setSearch('');
@@ -723,8 +723,7 @@ function KolamSupplierDetail({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {analyticsFiltersApplied ? (
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   muted
                   onPress={() => {
                     setActiveAnalyticsFilter(null);

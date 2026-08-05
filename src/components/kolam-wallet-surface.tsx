@@ -46,6 +46,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
@@ -1400,10 +1401,9 @@ function WalletTransactionPanel({
                 onPress={() => setExportOpen(true)}
                 style={styles.filterTrigger}
               />,
-              <KolamButton
+              <KolamResetButton
                 key="reset"
                 intent="secondary"
-                label="Reset"
                 onPress={controller.onClearTxFilters}
                 style={styles.filterTrigger}
               />,

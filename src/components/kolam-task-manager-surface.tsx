@@ -33,6 +33,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
 import {
@@ -1098,9 +1099,8 @@ function KolamTaskToolbar({
               onPress={() => controller.onSetMineOnly(!controller.mineOnly)}
             />
           </View>
-          <KolamButton
+          <KolamResetButton
             disabled={controller.loading}
-            label="Reset"
             onPress={controller.onResetFilters}
           />
           <KolamButton

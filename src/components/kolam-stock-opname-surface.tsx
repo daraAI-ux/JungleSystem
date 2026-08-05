@@ -31,6 +31,7 @@ import {
 } from '../hooks/use-kolam-stock-opname-controller';
 import { pickNativeAssetFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -338,8 +339,7 @@ function KolamStockOpnameList({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {filtersAppliedCount > 0 ? (
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   muted
                   onPress={() => {
                     setSearchInput('');

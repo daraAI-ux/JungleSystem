@@ -64,6 +64,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamResetButton} from './kolam-reset-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
@@ -1028,8 +1029,7 @@ function KolamEnclosureList({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {filtersAppliedCount > 0 ? (
-                <KolamButton
-                  label="Reset"
+                <KolamResetButton
                   muted={!listTabActive}
                   onPress={() => {
                     setSearchInput('');

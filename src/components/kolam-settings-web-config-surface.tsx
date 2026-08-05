@@ -18,6 +18,7 @@ import type {
 } from '../domain/settings-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
+import { KolamResetButton } from './kolam-reset-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -8568,9 +8569,8 @@ function FinancialSettingsPanel({
                           loadingLabel="Menyimpan..."
                           onPress={onSavePaymentMethod}
                         />
-                        <KolamActionControlButton
+                        <KolamResetButton
                           disabled={disabled || busy}
-                          label="Reset"
                           onPress={onClearPaymentMethodDraft}
                         />
                       </View>
