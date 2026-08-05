@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { KOLAM_COMMISSION_ROOT } from '../domain/kolam-commission';
 import {
   canReleaseCommissionRowFromNormalized,
@@ -560,33 +560,32 @@ function CommissionListBody({
           }
           style={styles.tableFrame}
         >
-          <FlatList
-            contentContainerStyle={styles.listContent}
-            data={controller.rows}
-            keyExtractor={item => item.id}
-            ListEmptyComponent={
+          <View style={styles.tableBody}>
+            <View style={styles.headerRow}>
+              {COMMISSION_COLUMNS.map(column => (
+                <View
+                  key={column.id}
+                  style={[styles.cell, { flex: column.flex }]}
+                >
+                  <Text style={styles.headerCellText}>{column.label}</Text>
+                </View>
+              ))}
+            </View>
+            {controller.rows.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <KolamEmptyState
                   compact
                   title={controller.loading ? 'Memuat...' : 'Tidak ada data'}
                 />
               </View>
-            }
-            ListHeaderComponent={
-              <View style={styles.headerRow}>
-                {COMMISSION_COLUMNS.map(column => (
-                  <View
-                    key={column.id}
-                    style={[styles.cell, { flex: column.flex }]}
-                  >
-                    <Text style={styles.headerCellText}>{column.label}</Text>
-                  </View>
-                ))}
-              </View>
-            }
-            renderItem={renderRow}
-            style={styles.list}
-          />
+            ) : (
+              controller.rows.map(item => (
+                <React.Fragment key={item.id}>
+                  {renderRow({ item })}
+                </React.Fragment>
+              ))
+            )}
+          </View>
         </KolamCatalogListTableShell>
       </View>
     </View>
@@ -834,20 +833,20 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   listRoot: {
-    flex: 1,
+    flexGrow: 0,
     minHeight: 240,
   },
   tableFrame: {
-    flex: 1,
+    minHeight: 0,
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
+  tableBody: {
+    minHeight: 0,
+    width: '100%',
   },
   emptyWrap: {
+    minHeight: 200,
     paddingVertical: 24,
+    justifyContent: 'center',
   },
   headerRow: {
     alignItems: 'center',

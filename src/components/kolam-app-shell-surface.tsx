@@ -119,9 +119,6 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/list-of-users' ||
     routePath === '/payable' ||
     routePath === '/receivable' ||
-    // Expense income lists use mapped rows + shell ScrollView (FlatList+owned
-    // scroll collapses table body inside CatalogListTableShell flexGrow:0).
-    routePath === '/commissions' ||
     routePath === '/finance/payroll' ||
     routePath === '/finance/bonus' ||
     routePath === '/cashflow-session'
