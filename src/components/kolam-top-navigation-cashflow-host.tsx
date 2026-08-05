@@ -55,7 +55,7 @@ export function KolamTopNavigationCashflowHost({
 
 function CashflowSessionIcon() {
   return (
-    <Svg height={32} width={32} viewBox="0 0 512 512">
+    <Svg height={22} width={22} viewBox="0 0 512 512">
       <Circle cx={256} cy={256} r={256} fill="#F47F65" />
       <Path
         d="M153 184h242c21 0 38 17 38 38v96c0 21-17 38-38 38H153c-21 0-38-17-38-38v-96c0-21 17-38 38-38Z"
