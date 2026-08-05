@@ -1389,19 +1389,18 @@ function KolamProyekDetailRead({
               contentContainerStyle={styles.historyScroll}
               style={styles.historyScrollView}
             >
+              <ProyekNextStepHero
+                acting={controller.acting}
+                config={nextStep}
+                onAction={runNextStepAction}
+              />
+
               <ProyekLifecycleTimeline
                 acting={controller.acting}
                 canAdminLifecycle={controller.canAdminLifecycle}
                 detail={detail}
                 lifecycleNote={lifecycleNote}
                 lifecycleTarget={lifecycleTarget}
-                nextStepSlot={
-                  <ProyekNextStepHero
-                    acting={controller.acting}
-                    config={nextStep}
-                    onAction={runNextStepAction}
-                  />
-                }
                 onLifecycleNoteChange={setLifecycleNote}
                 onLifecycleTargetChange={setLifecycleTarget}
                 onTransition={(to, note) =>
@@ -2090,7 +2089,6 @@ function ProyekLifecycleTimeline({
   detail,
   lifecycleNote,
   lifecycleTarget,
-  nextStepSlot,
   onLifecycleNoteChange,
   onLifecycleTargetChange,
   onTransition,
@@ -2101,7 +2099,6 @@ function ProyekLifecycleTimeline({
   detail: KolamProyekDetail;
   lifecycleNote: string;
   lifecycleTarget: KolamProyekLifecycleStatus | '';
-  nextStepSlot?: React.ReactNode;
   onLifecycleNoteChange: (value: string) => void;
   onLifecycleTargetChange: (value: KolamProyekLifecycleStatus | '') => void;
   onTransition: (
@@ -2183,8 +2180,6 @@ function ProyekLifecycleTimeline({
           </View>
         )}
       </DetailSection>
-
-      {nextStepSlot}
 
       <DetailSection title="Riwayat tahapan">
         {history.length === 0 ? (
