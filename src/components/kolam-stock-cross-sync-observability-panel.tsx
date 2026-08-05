@@ -157,11 +157,7 @@ export function KolamStockCrossSyncObservabilityPanel({
             />
           ))}
         </View>
-      ) : (
-        <Text style={styles.muted}>
-          Tidak ada race/double-task terdeteksi pada jendela ini.
-        </Text>
-      )}
+      ) : null}
     </KolamCardFrame>
   );
 }
