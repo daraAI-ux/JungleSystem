@@ -1,6 +1,6 @@
 import React from 'react';
-import {StyleSheet, Text} from 'react-native';
-import {Path} from 'react-native-svg';
+import { StyleSheet, Text } from 'react-native';
+import { Path } from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {
   KolamListTableComposition,
@@ -8,9 +8,10 @@ import {
   kolamListTableCompositionStyles,
   type KolamListTableColumn,
 } from '../src/components/kolam-list-table-composition';
-import {KolamCatalogListTableShell} from '../src/components/kolam-catalog-list-table-shell';
-import {KolamEmptyState} from '../src/components/kolam-empty-state';
-import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
+import { KolamCatalogListTableShell } from '../src/components/kolam-catalog-list-table-shell';
+import { KolamOverflowMenuButton } from '../src/components/kolam-dropdown-select';
+import { KolamEmptyState } from '../src/components/kolam-empty-state';
+import { kolamVisualTokens as V } from '../src/domain/kolam-visual';
 
 type TestRow = {
   amount: string;
@@ -24,7 +25,9 @@ const columns: Array<KolamListTableColumn<TestRow>> = [
     id: 'name',
     label: 'Nama aset',
     render: row => (
-      <Text style={kolamListTableCompositionStyles.primaryText}>{row.name}</Text>
+      <Text style={kolamListTableCompositionStyles.primaryText}>
+        {row.name}
+      </Text>
     ),
   },
   {
@@ -48,7 +51,7 @@ describe('KolamListTableComposition', () => {
           columns={columns}
           footer={<Text>1-1 dari 1</Text>}
           getRowKey={row => row.id}
-          rows={[{amount: 'Rp1.000', id: 'row-1', name: 'Laptop'}]}
+          rows={[{ amount: 'Rp1.000', id: 'row-1', name: 'Laptop' }]}
         />,
       );
     });
@@ -87,7 +90,7 @@ describe('KolamListTableComposition', () => {
           footer={null}
           getRowKey={row => row.id}
           renderActions={() => <Text>Aksi</Text>}
-          rows={[{amount: 'Rp1.000', id: 'row-1', name: 'Laptop'}]}
+          rows={[{ amount: 'Rp1.000', id: 'row-1', name: 'Laptop' }]}
         />,
       );
     });
@@ -97,6 +100,51 @@ describe('KolamListTableComposition', () => {
       .map(node => node.props.children);
 
     expect(textValues).toContain('Aksi');
+  });
+
+  it('raises the active row layer when an overflow action menu opens', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((callback: (time: number) => void) => {
+      callback(0);
+      return 0;
+    }) as typeof requestAnimationFrame;
+
+    try {
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <KolamListTableComposition
+            columns={columns}
+            footer={null}
+            getRowKey={row => row.id}
+            renderActions={() => (
+              <KolamOverflowMenuButton
+                accessibilityLabel="Menu row"
+                actions={[{ label: 'Lihat', onPress: jest.fn() }]}
+              />
+            )}
+            rows={[{ amount: 'Rp1.000', id: 'row-1', name: 'Laptop' }]}
+          />,
+        );
+      });
+
+      const menuButton = renderer!.root
+        .findAllByProps({ accessibilityLabel: 'Menu row' })
+        .find(node => typeof node.props.onPress === 'function');
+
+      await ReactTestRenderer.act(async () => {
+        menuButton!.props.onPress();
+      });
+
+      const raisedRows = renderer!.root.findAll(node => {
+        const style = StyleSheet.flatten(node.props.style);
+        return style?.zIndex === 2000 && style?.elevation === 2000;
+      });
+
+      expect(raisedRows.length).toBeGreaterThan(0);
+    } finally {
+      globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    }
   });
 
   it('renders the compact empty state using the same table frame', async () => {
@@ -160,15 +208,13 @@ describe('KolamListTableComposition', () => {
 
     const flattenedText = textValues.flat(4);
 
-    expect(textValues).toEqual(
-      expect.arrayContaining([1, 2, 3, '...', 32]),
-    );
+    expect(textValues).toEqual(expect.arrayContaining([1, 2, 3, '...', 32]));
     expect(flattenedText).toEqual(expect.arrayContaining([21, '-', 30, 320]));
     expect(textValues).not.toContain(4);
     expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
 
     const page32 = renderer!.root
-      .findAllByProps({accessibilityLabel: 'Halaman 32'})
+      .findAllByProps({ accessibilityLabel: 'Halaman 32' })
       .find(node => typeof node.props.onPress === 'function');
     page32!.props.onPress();
     expect(onPageChange).toHaveBeenCalledWith(32);

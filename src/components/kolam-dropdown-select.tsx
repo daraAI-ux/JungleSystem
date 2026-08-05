@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import { useKolamListTableRowLayer } from './kolam-list-table-row-layer-context';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { kolamFormControlStyles } from './kolam-form-control-styles';
@@ -302,6 +303,7 @@ export function KolamOverflowMenuButton({
   const rootRef = React.useRef<View>(null);
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
+  const rowLayer = useKolamListTableRowLayer();
 
   React.useEffect(() => {
     return subscribeOpenMenu(activeId => {
@@ -315,10 +317,11 @@ export function KolamOverflowMenuButton({
         }
 
         onOpenChange?.(false);
+        rowLayer?.setMenuOpen(false);
         return false;
       });
     });
-  }, [onOpenChange]);
+  }, [onOpenChange, rowLayer]);
 
   const setMenuOpen = (next: boolean) => {
     if (next) {
@@ -327,6 +330,7 @@ export function KolamOverflowMenuButton({
       clearActiveOpenMenu(openMenuIdRef.current);
     }
     setOpen(next);
+    rowLayer?.setMenuOpen(next);
     onOpenChange?.(next);
   };
   const measureAndOpen = () => {
@@ -342,7 +346,8 @@ export function KolamOverflowMenuButton({
       const availableAbove = y;
       const availableBelow = viewport.height - (y + height);
       const shouldOpenUp =
-        availableBelow < estimatedMenuHeight + 12 && availableAbove > availableBelow;
+        availableBelow < estimatedMenuHeight + 12 &&
+        availableAbove > availableBelow;
 
       setPlacement(shouldOpenUp ? 'top' : 'bottom');
     });
@@ -370,7 +375,9 @@ export function KolamOverflowMenuButton({
         <View
           style={[
             styles.overflowMenu,
-            placement === 'top' ? styles.overflowMenuUp : styles.overflowMenuDown,
+            placement === 'top'
+              ? styles.overflowMenuUp
+              : styles.overflowMenuDown,
           ]}
         >
           {actions.map(action => (

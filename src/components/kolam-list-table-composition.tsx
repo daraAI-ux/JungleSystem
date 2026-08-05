@@ -12,6 +12,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
+import { KolamListTableRowLayerContext } from './kolam-list-table-row-layer-context';
 
 export type KolamListTableColumn<TRow> = {
   align?: 'left' | 'center' | 'right';
@@ -107,29 +108,68 @@ export function KolamListTableComposition<TRow>({
           </View>
         ) : (
           rows.map((row, index) => (
-            <View key={getRowKey(row, index)} style={[styles.row, rowStyle]}>
-              {columns.map(column => (
-                <View
-                  key={column.id}
-                  style={[
-                    styles.cell,
-                    getColumnAlignStyle(column.align),
-                    { flex: column.flex },
-                  ]}
-                >
-                  {column.render(row)}
-                </View>
-              ))}
-              {shouldRenderActionsColumn ? (
-                <View style={[styles.cell, styles.actionsCell]}>
-                  {renderActions?.(row)}
-                </View>
-              ) : null}
-            </View>
+            <KolamListTableRow
+              columns={columns}
+              getRowKey={getRowKey}
+              index={index}
+              key={getRowKey(row, index)}
+              renderActions={renderActions}
+              row={row}
+              rowStyle={rowStyle}
+              shouldRenderActionsColumn={shouldRenderActionsColumn}
+            />
           ))
         )}
       </KolamCatalogListTableShell>
     </View>
+  );
+}
+
+function KolamListTableRow<TRow>({
+  columns,
+  getRowKey,
+  index,
+  renderActions,
+  row,
+  rowStyle,
+  shouldRenderActionsColumn,
+}: {
+  columns: Array<KolamListTableColumn<TRow>>;
+  getRowKey: (row: TRow, index: number) => string;
+  index: number;
+  renderActions?: (row: TRow) => React.ReactNode;
+  row: TRow;
+  rowStyle?: StyleProp<ViewStyle>;
+  shouldRenderActionsColumn: boolean;
+}) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const layerContext = React.useMemo(() => ({ setMenuOpen }), []);
+
+  return (
+    <KolamListTableRowLayerContext.Provider value={layerContext}>
+      <View
+        key={getRowKey(row, index)}
+        style={[styles.row, menuOpen ? styles.rowRaised : null, rowStyle]}
+      >
+        {columns.map(column => (
+          <View
+            key={column.id}
+            style={[
+              styles.cell,
+              getColumnAlignStyle(column.align),
+              { flex: column.flex },
+            ]}
+          >
+            {column.render(row)}
+          </View>
+        ))}
+        {shouldRenderActionsColumn ? (
+          <View style={[styles.cell, styles.actionsCell]}>
+            {renderActions?.(row)}
+          </View>
+        ) : null}
+      </View>
+    </KolamListTableRowLayerContext.Provider>
   );
 }
 
@@ -411,6 +451,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     position: 'relative',
     zIndex: 1,
+  },
+  rowRaised: {
+    elevation: 2000,
+    zIndex: 2000,
   },
   cell: kolamListTableCompositionStyles.cell,
   cellCenter: {
