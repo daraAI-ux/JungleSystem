@@ -107,7 +107,7 @@ export const KOLAM_COMMISSION_STATUS_FILTER_OPTIONS: Array<{
   label: string;
   value: KolamCommissionStatusFilter;
 }> = [
-  { label: 'Semua status', value: 'all' },
+  { label: 'semua status', value: 'all' },
   { label: 'Terakru', value: 'accrued' },
   { label: 'Dibayar', value: 'released' },
   { label: 'Dicabut', value: 'revoked' },
