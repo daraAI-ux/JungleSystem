@@ -1,11 +1,8 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
 import Svg, {Circle, Path} from 'react-native-svg';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
 
 export function KolamTopNavigationChatIcon({
   kind,
-  color = V.colors.mutedFg,
 }: {
   kind: 'inbox' | 'team';
   color?: string;
@@ -40,48 +37,57 @@ export function KolamTopNavigationChatIcon({
   }
 
   return (
-    <View style={styles.inboxIcon}>
-      <View style={[styles.inboxFrame, {borderColor: color}]} />
-      <View style={[styles.inboxLip, {borderColor: color}]} />
-      <View style={[styles.inboxTray, {backgroundColor: color}]} />
-    </View>
+    <Svg height={32} viewBox="0 0 512 512" width={32}>
+      <Circle cx={256} cy={256} fill="#F47F65" r={256} />
+      <Path
+        d="M155 222C155 164 200 119 256 119C312 119 357 164 357 222V238H329V222C329 180 297 148 256 148C215 148 183 180 183 222V238H155V222Z"
+        fill="#D9A1B8"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M149 225H170C187 225 200 238 200 255V305C200 322 187 335 170 335H149C125 335 106 316 106 292V268C106 244 125 225 149 225Z"
+        fill="#D9A1B8"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M363 225H342C325 225 312 238 312 255V305C312 322 325 335 342 335H363C387 335 406 316 406 292V268C406 244 387 225 363 225Z"
+        fill="#D9A1B8"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M185 254C185 211 216 177 256 177C296 177 327 211 327 254V301C327 344 296 378 256 378C216 378 185 344 185 301V254Z"
+        fill="#F1B4CC"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M358 330V342C358 371 335 394 306 394H279"
+        fill="none"
+        stroke="#000000"
+        strokeLinecap="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M250 358H282C299 358 312 371 312 388C312 405 299 418 282 418H250C233 418 220 405 220 388C220 371 233 358 250 358Z"
+        fill="#D9A1B8"
+        stroke="#000000"
+        strokeLinejoin="round"
+        strokeWidth={7}
+      />
+      <Path
+        d="M222 263H222.5M290 263H290.5M238 300C248 309 264 309 274 300"
+        fill="none"
+        stroke="#000000"
+        strokeLinecap="round"
+        strokeWidth={10}
+      />
+    </Svg>
   );
 }
-
-const styles = StyleSheet.create({
-  inboxIcon: {
-    width: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inboxFrame: {
-    position: 'absolute',
-    left: 2,
-    right: 2,
-    top: 4,
-    bottom: 3,
-    borderWidth: 1.5,
-    borderRadius: 3,
-  },
-  inboxLip: {
-    position: 'absolute',
-    left: 5,
-    right: 5,
-    bottom: 6,
-    height: 4,
-    borderBottomWidth: 1.5,
-    borderLeftWidth: 1.5,
-    borderRightWidth: 1.5,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-  },
-  inboxTray: {
-    position: 'absolute',
-    left: 6,
-    right: 6,
-    bottom: 5,
-    height: 1.5,
-    borderRadius: 1,
-  },
-});

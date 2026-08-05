@@ -22,7 +22,7 @@ export function KolamTopNavigationChatButton({
         onPress={onPress}
         size={32}
         radius="full"
-        variant={kind === 'team' ? 'ghost' : 'framed'}>
+        variant="ghost">
         <KolamTopNavigationChatIcon kind={kind} />
       </KolamIconButton>
       <KolamNotificationBadge attentionCount={unreadCount} />
