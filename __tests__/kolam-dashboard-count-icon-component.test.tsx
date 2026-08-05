@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, {Path, Rect} from 'react-native-svg';
+import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamDashboardCountIcon} from '../src/components/kolam-dashboard-count-icon';
 import type {DashboardCountIconKind} from '../src/domain/dashboard-counts';
@@ -71,8 +71,9 @@ describe('KolamDashboardCountIcon', () => {
 
     expect(icon.props.height).toBe(46);
     expect(icon.props.width).toBe(46);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThanOrEqual(10);
+    expect(icon.props.viewBox).toBe('170 240 684 668');
+    expect(renderer!.root.findAllByType(Path)).toHaveLength(7);
+    expect(renderer!.root.findAllByType(Circle)).toHaveLength(6);
   });
 
   it('renders the service glyph from the provided native SVG artwork', async () => {
