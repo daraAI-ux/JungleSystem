@@ -1034,6 +1034,7 @@ export function useKolamSettingsPanelController(
   const [activityLogStatus, setActivityLogStatus] =
     useState<ActivityLogStatus>('idle');
   const [activityLogMessage, setActivityLogMessage] = useState('');
+  const [activityReloadKey, setActivityReloadKey] = useState(0);
   const [activityLogFilters, setActivityLogFilters] =
     useState<SettingsActivityLogFilterState>(emptyActivityLogFilters);
   const [webTitle, setWebTitle] = useState(
@@ -1714,8 +1715,7 @@ export function useKolamSettingsPanelController(
         }
 
         setActivityLogs(logsResult.value.data);
-        setActivityLogTotal(logsResult.value.meta.total);
-        setActivityPage(logsResult.value.meta.page);
+        setActivityLogTotal(Math.max(0, logsResult.value.meta.total));
         setActivityLogStats(
           statsResult.status === 'fulfilled' ? statsResult.value : null,
         );
@@ -1732,7 +1732,7 @@ export function useKolamSettingsPanelController(
     return () => {
       mounted = false;
     };
-  }, [activeSurfaceId, activityLogFilters, activityPage]);
+  }, [activeSurfaceId, activityLogFilters, activityPage, activityReloadKey]);
 
   const activeSurface =
     settingsSurfaceItems.find(item => item.id === activeSurfaceId) ??
@@ -1911,8 +1911,7 @@ export function useKolamSettingsPanelController(
     setSelectedActivityLogId('');
   };
   const refreshActivityLogs = () => {
-    setActivityPage(current => current);
-    setActivityLogFilters(current => ({ ...current }));
+    setActivityReloadKey(current => current + 1);
   };
   const setWebSettingDraftField = <Key extends keyof WebSettingDraft>(
     key: Key,
