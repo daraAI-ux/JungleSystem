@@ -50,6 +50,7 @@ import {
 } from './kolam-data-table-tracks';
 import {
   KolamDropdownSelect,
+  KolamOverflowMenuButton,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -298,60 +299,76 @@ function ProyekListRow({
   item: KolamProyekListItem;
   onOpen: () => void;
 }) {
+  const columnOf = (id: string) => columns.find(column => column.id === id);
+  const primaryColumn = columnOf('primary');
+  const metaColumn = columnOf('meta');
+  const statusColumn = columnOf('status');
+  const notesColumn = columnOf('notes');
+  const amountColumn = columnOf('amount');
+  const label = item.quotationNumber || item.id;
+
   return (
     <KolamDataTableRowFrame>
       <KolamDataTableMainTrack>
         <Pressable
           accessibilityRole="button"
           onPress={onOpen}
-          style={styles.rowPress}
+          style={[
+            styles.listCell,
+            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
+          ]}
         >
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.cellPrimary,
-              getKolamDataTableColumnStyle(columns, 'primary'),
-            ]}
-          >
-            {item.quotationNumber || item.id}
-          </Text>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.cellMeta,
-              getKolamDataTableColumnStyle(columns, 'meta'),
-            ]}
-          >
-            {item.clientName}
-          </Text>
-          <View style={getKolamDataTableColumnStyle(columns, 'status')}>
-            <KolamStatusBadge
-              intent={getKolamProyekLifecycleIntent(item.lifecycleStatus)}
-              label={formatKolamProyekLifecycleLabel(item.lifecycleStatus)}
-            />
-          </View>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.cellMeta,
-              getKolamDataTableColumnStyle(columns, 'notes'),
-            ]}
-          >
-            {Math.round(item.progressPercent)}%
-          </Text>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.cellAmount,
-              getKolamDataTableColumnStyle(columns, 'amount'),
-            ]}
-          >
-            {formatRupiah(item.contractValue || item.dealAmount)}
+          <Text numberOfLines={1} style={styles.cellPrimary}>
+            {label}
           </Text>
         </Pressable>
+        <View
+          style={[
+            styles.listCell,
+            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellMeta}>
+            {item.clientName || '—'}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
+          ]}
+        >
+          <KolamStatusBadge
+            intent={getKolamProyekLifecycleIntent(item.lifecycleStatus)}
+            label={formatKolamProyekLifecycleLabel(item.lifecycleStatus)}
+          />
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellMeta}>
+            {Math.round(item.progressPercent)}%
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.listCell,
+            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
+          ]}
+        >
+          <Text numberOfLines={1} style={styles.cellAmount}>
+            {formatRupiah(item.contractValue || item.dealAmount)}
+          </Text>
+        </View>
       </KolamDataTableMainTrack>
       <KolamDataTableActionsTrack width={actionsWidth}>
-        <KolamButton intent="outline" label="Buka" onPress={onOpen} size="sm" />
+        <KolamOverflowMenuButton
+          accessibilityLabel={`Menu ${label}`}
+          actions={[{ label: 'Lihat', onPress: onOpen }]}
+        />
       </KolamDataTableActionsTrack>
     </KolamDataTableRowFrame>
   );
@@ -1570,11 +1587,8 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  rowPress: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+  listCell: {
+    justifyContent: 'center',
     minWidth: 0,
   },
   cellPrimary: {
