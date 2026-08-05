@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  FlatList,
   Linking,
   Pressable,
   ScrollView,
@@ -9,7 +8,10 @@ import {
   View,
 } from 'react-native';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
-import { getCustomFieldTypeLabel, type KolamCustomField } from '../domain/kolam-custom-field';
+import {
+  getCustomFieldTypeLabel,
+  type KolamCustomField,
+} from '../domain/kolam-custom-field';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
   createEmptyKolamSpeciesVariantFormRow,
@@ -27,11 +29,6 @@ import {
   type KolamSpeciesVariantFormRow,
   type KolamSpeciesVendorPriceFormRow,
 } from '../domain/kolam-species';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { getKolamFileUrl } from '../lib/file-url';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -52,26 +49,13 @@ import {
   type KolamCommercialPolicyEditorValue,
 } from './kolam-commercial-policy-editor';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -79,6 +63,10 @@ import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {
   KolamGrocerPricingTiersEditor,
   type KolamGrocerPricingTierEditorRow,
@@ -118,7 +106,12 @@ type SpeciesPendingAction = {
   type: 'delete' | 'duplicate';
 };
 
-type SpeciesVariantEditTab = 'pricing' | 'vendor' | 'specs' | 'media' | 'advanced';
+type SpeciesVariantEditTab =
+  | 'pricing'
+  | 'vendor'
+  | 'specs'
+  | 'media'
+  | 'advanced';
 
 const SPECIES_VARIANT_EDIT_TABS: Array<{
   id: SpeciesVariantEditTab;
@@ -130,7 +123,6 @@ const SPECIES_VARIANT_EDIT_TABS: Array<{
   { id: 'media', label: 'Media' },
   { id: 'advanced', label: 'Lanjutan' },
 ];
-
 
 type SpeciesExternalLinkOption = {
   label: string;
@@ -206,7 +198,6 @@ function KolamSpeciesShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -276,10 +267,9 @@ function KolamSpeciesList({
     React.useState<SpeciesMarketplaceSyncSelection | null>(null);
   const [pendingAction, setPendingAction] =
     React.useState<SpeciesPendingAction | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-  const listColumns = React.useMemo(
-    () => fitSpeciesListColumns(tableBodyWidth),
-    [tableBodyWidth],
+  const listColumns = React.useMemo<Array<KolamListTableColumn<KolamSpecies>>>(
+    () => buildSpeciesListColumns(),
+    [],
   );
   const taxonomyFilter = controller.filters.taxonomyId || 'all';
   const categoryFilter = controller.filters.categoryId || 'all';
@@ -293,10 +283,12 @@ function KolamSpeciesList({
   const syncPriceItemCount =
     controller.pagination.total || syncPriceSpeciesIds.length;
   const activeBarcodeItems = barcodeDialogItems ?? barcodeItems;
-  const activeSyncPriceSpeciesIds = syncPriceSelection?.ids ?? syncPriceSpeciesIds;
+  const activeSyncPriceSpeciesIds =
+    syncPriceSelection?.ids ?? syncPriceSpeciesIds;
   const activeSyncPriceItemCount =
     syncPriceSelection?.itemCount ?? syncPriceItemCount;
-  const activeSyncStockSpeciesIds = syncStockSelection?.ids ?? syncPriceSpeciesIds;
+  const activeSyncStockSpeciesIds =
+    syncStockSelection?.ids ?? syncPriceSpeciesIds;
   const activeSyncStockItemCount =
     syncStockSelection?.itemCount ?? syncPriceItemCount;
   const taxonomyFilterLabel =
@@ -323,16 +315,18 @@ function KolamSpeciesList({
     }
   };
 
-  const anchorFilterPanel = React.useCallback((panel: SpeciesListFilterPanel) => {
-    const panelWidth =
-      panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
-    measureFilterPanelAnchor(
-      toolbarRef.current,
-      getFilterTriggerRef(panel).current,
-      panelWidth,
-      setPanelAnchor,
-    );
-  }, []);
+  const anchorFilterPanel = React.useCallback(
+    (panel: SpeciesListFilterPanel) => {
+      const panelWidth = panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        panelWidth,
+        setPanelAnchor,
+      );
+    },
+    [],
+  );
 
   const openFilterPanel = (panel: SpeciesListFilterPanel) => {
     setFilterPanelQuery('');
@@ -343,8 +337,7 @@ function KolamSpeciesList({
     }
     setActiveFilterPanel(null);
     setPanelAnchor(null);
-    const panelWidth =
-      panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
+    const panelWidth = panel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
     requestAnimationFrame(() => {
       measureFilterPanelAnchor(
         toolbarRef.current,
@@ -370,57 +363,13 @@ function KolamSpeciesList({
     requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
   }, [activeFilterPanel, anchorFilterPanel]);
 
-  const renderSpeciesRow = React.useCallback(
-    ({ item }: { item: KolamSpecies }) => (
-      <KolamSpeciesRow
-        columns={listColumns}
-        item={item}
-        onBarcode={() => {
-          setBarcodeDialogItems(createSpeciesBarcodeItems([item]));
-          setBarcodeDialogOpen(true);
-        }}
-        onCopySku={() => void copyTextToClipboard(item.sku)}
-        onDelete={() => setPendingAction({ species: item, type: 'delete' })}
-        onDuplicate={() =>
-          setPendingAction({ species: item, type: 'duplicate' })
-        }
-        onEdit={() => {
-          void controller.onSelectSpecies(item, 'edit');
-          onRouteChange?.(`${getSpeciesRoute(item)}/edit`);
-        }}
-        onSelect={() => {
-          void controller.onSelectSpecies(item);
-          onRouteChange?.(getSpeciesRoute(item));
-        }}
-        onTogglePin={() => void controller.onTogglePin(item)}
-        onSyncPrice={platforms => {
-          setSyncPriceSelection({
-            ids: [item.id],
-            itemCount: 1,
-            platforms,
-            title:
-              'Samakan Harga ' + getSpeciesActionName(item) + ' ke Marketplace',
-          });
-          setSyncPriceDialogOpen(true);
-        }}
-        onSyncStock={platforms => {
-          setSyncStockSelection({
-            ids: [item.id],
-            itemCount: 1,
-            platforms,
-            title:
-              'Samakan Stok ' + getSpeciesActionName(item) + ' ke Marketplace',
-          });
-          setSyncStockDialogOpen(true);
-        }}
-      />
-    ),
-    [controller, listColumns, onRouteChange],
-  );
-
   return (
     <View style={[styles.stack, styles.listStack]}>
-      <View ref={toolbarRef} collapsable={false} style={styles.speciesToolbarWrap}>
+      <View
+        ref={toolbarRef}
+        collapsable={false}
+        style={styles.speciesToolbarWrap}
+      >
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
@@ -454,7 +403,9 @@ function KolamSpeciesList({
               </View>
               <View ref={stockTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'stock' || stockFilter !== 'all'}
+                  active={
+                    activeFilterPanel === 'stock' || stockFilter !== 'all'
+                  }
                   label={stockFilterLabel}
                   onPress={() => openFilterPanel('stock')}
                   open={activeFilterPanel === 'stock'}
@@ -466,7 +417,6 @@ function KolamSpeciesList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -565,7 +515,9 @@ function KolamSpeciesList({
         source="species"
         speciesIds={activeSyncPriceSpeciesIds}
         syncKind="price"
-        title={syncPriceSelection?.title ?? 'Samakan Harga Species ke Marketplace'}
+        title={
+          syncPriceSelection?.title ?? 'Samakan Harga Species ke Marketplace'
+        }
         visible={syncPriceDialogOpen}
       />
       <KolamMarketplacePriceSyncDialog
@@ -580,7 +532,9 @@ function KolamSpeciesList({
         source="species"
         speciesIds={activeSyncStockSpeciesIds}
         syncKind="stock"
-        title={syncStockSelection?.title ?? 'Samakan Stok Species ke Marketplace'}
+        title={
+          syncStockSelection?.title ?? 'Samakan Stok Species ke Marketplace'
+        }
         visible={syncStockDialogOpen}
       />
       <KolamExportDialog
@@ -603,7 +557,11 @@ function KolamSpeciesList({
       />
       <KolamConfirmDialog
         confirmLabel="Duplikasi"
-        message={'Yakin ingin menduplikasi species ' + (pendingAction?.species.displayName ?? '') + '? Entri baru akan dibuat dengan detail yang sama.'}
+        message={
+          'Yakin ingin menduplikasi species ' +
+          (pendingAction?.species.displayName ?? '') +
+          '? Entri baru akan dibuat dengan detail yang sama.'
+        }
         onCancel={() => setPendingAction(null)}
         onConfirm={() => {
           const item = pendingAction?.species;
@@ -644,66 +602,69 @@ function KolamSpeciesList({
           style={styles.speciesSyncStatus}
         />
       ) : null}
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={controller.pagination.page}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        columns={listColumns}
+        emptyTitle={
+          controller.loading ? 'Memuat spesies...' : 'Belum ada spesies'
         }
-        onBodyWidthChange={setTableBodyWidth}
-        style={[styles.speciesTableFrame, styles.listTableFrame]}
-      >
-        <FlatList
-          data={listSpecies}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message="Data Spesies belum tersedia dari cache lokal atau backend."
-                title={
-                  controller.loading ? 'Memuat spesies...' : 'Belum ada spesies'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={<KolamDataTableHeader columns={listColumns} />}
-          renderItem={renderSpeciesRow}
-          style={styles.listFlatList}
-          contentContainerStyle={styles.listContent}
-        />
-      </KolamCatalogListTableShell>
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        renderActions={item => (
+          <KolamSpeciesActionsMenu
+            item={item}
+            onBarcode={() => {
+              setBarcodeDialogItems(createSpeciesBarcodeItems([item]));
+              setBarcodeDialogOpen(true);
+            }}
+            onCopySku={() => void copyTextToClipboard(item.sku)}
+            onDelete={() => setPendingAction({ species: item, type: 'delete' })}
+            onDuplicate={() =>
+              setPendingAction({ species: item, type: 'duplicate' })
+            }
+            onEdit={() => {
+              void controller.onSelectSpecies(item, 'edit');
+              onRouteChange?.(`${getSpeciesRoute(item)}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectSpecies(item);
+              onRouteChange?.(getSpeciesRoute(item));
+            }}
+            onSyncPrice={platforms => {
+              setSyncPriceSelection({
+                ids: [item.id],
+                itemCount: 1,
+                platforms,
+                title:
+                  'Samakan Harga ' +
+                  getSpeciesActionName(item) +
+                  ' ke Marketplace',
+              });
+              setSyncPriceDialogOpen(true);
+            }}
+            onSyncStock={platforms => {
+              setSyncStockSelection({
+                ids: [item.id],
+                itemCount: 1,
+                platforms,
+                title:
+                  'Samakan Stok ' +
+                  getSpeciesActionName(item) +
+                  ' ke Marketplace',
+              });
+              setSyncStockDialogOpen(true);
+            }}
+            onTogglePin={() => void controller.onTogglePin(item)}
+          />
+        )}
+        rows={listSpecies}
+        style={styles.speciesTableFrame}
+      />
     </View>
   );
 }
@@ -771,8 +732,7 @@ function SpeciesFilterOverlayPanel({
       : activePanel === 'category'
       ? categoryFilter
       : stockFilter;
-  const panelWidth =
-    activePanel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
+  const panelWidth = activePanel === 'stock' ? 220 : SPECIES_FILTER_PANEL_WIDTH;
 
   return (
     <View
@@ -850,7 +810,9 @@ function normalizeSpeciesFilterQuery(value: string) {
   return value.trim().toLowerCase();
 }
 
-function createSpeciesBarcodeItems(items: KolamSpecies[]): KolamBarcodeLabelItem[] {
+function createSpeciesBarcodeItems(
+  items: KolamSpecies[],
+): KolamBarcodeLabelItem[] {
   return items
     .filter(item => item.sku.trim())
     .map(item => ({
@@ -877,65 +839,140 @@ function getSpeciesStockFilterLabel(value: KolamSpeciesStockStatus) {
   }
 }
 
-function fitSpeciesListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('species');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const secondaryColumns = contentColumns.filter(
-    column => column.id !== 'primary',
-  );
-  // Nama needs more room than equal-fit (scientific + common names truncate).
-  const primaryWeight = 2.4;
-  const secondaryWeight = 1;
-  const totalWeight =
-    primaryWeight + secondaryWeight * Math.max(1, secondaryColumns.length);
-  const unit = contentBudget / totalWeight;
-  const primaryWidth = Math.max(220, Math.floor(unit * primaryWeight));
-  const secondaryWidth = Math.max(
-    72,
-    Math.floor(unit * secondaryWeight),
-  );
-  let remainder =
-    contentBudget -
-    primaryWidth -
-    secondaryWidth * secondaryColumns.length;
-  const lastSecondaryId =
-    secondaryColumns[secondaryColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    if (column.id === 'primary') {
-      return { ...column, width: primaryWidth };
-    }
-
-    const extra = column.id === lastSecondaryId ? remainder : 0;
-    if (column.id === lastSecondaryId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: secondaryWidth + extra,
-    };
-  });
+function buildSpeciesListColumns(): Array<KolamListTableColumn<KolamSpecies>> {
+  return [
+    {
+      flex: 1.7,
+      id: 'primary',
+      label: 'Species',
+      render: item => <KolamSpeciesIdentityCell item={item} />,
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'meta',
+      label: 'SKU',
+      render: item => <KolamSpeciesSkuCell item={item} />,
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'amount',
+      label: 'Harga',
+      render: item => <KolamSpeciesPriceCell item={item} />,
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'children',
+      label: 'Stok',
+      render: item => (
+        <SpeciesListStockCell
+          stock={getSpeciesListTotalStock(item)}
+          unitLabel={item.unitLabel}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1.02,
+      id: 'marketplace',
+      label: 'Sync',
+      render: item => (
+        <SpeciesMarketplaceSyncListCell sync={item.marketplaceSync} />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'notes',
+      label: 'Info',
+      render: item => (
+        <SpeciesListInfoBadges
+          hasVariants={
+            item.hasVariants ||
+            (Array.isArray(item.variants) && item.variants.length > 0)
+          }
+          sellable={item.sellable}
+        />
+      ),
+    },
+  ];
 }
 
-function KolamSpeciesRow({
-  columns,
+function KolamSpeciesIdentityCell({ item }: { item: KolamSpecies }) {
+  return (
+    <View style={styles.speciesTableIdentityCell}>
+      <View style={styles.speciesThumb}>
+        <KolamRemoteImage
+          accessibilityLabel={`Foto ${item.displayName}`}
+          resizeMode="cover"
+          revision={item.updatedAt ?? item.thumbnailUri ?? item.id}
+          scope="species"
+          sourceUri={item.thumbnailUri}
+          style={styles.speciesThumbImage}
+        />
+      </View>
+      <KolamCopyStack
+        containerStyle={styles.primaryCopy}
+        items={[
+          {
+            id: 'name',
+            text: item.scientificName || item.displayName || '-',
+            style: styles.scientificName,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+function KolamSpeciesSkuCell({ item }: { item: KolamSpecies }) {
+  if (item.sku) {
+    return (
+      <KolamBadge
+        horizontalPadding={8}
+        intent="secondary"
+        label={item.sku}
+        shape="square"
+        style={styles.skuBadge}
+      />
+    );
+  }
+
+  return (
+    <KolamCopyStack
+      items={[
+        {
+          id: 'empty-sku',
+          text: '-',
+          style: styles.rowSubtext,
+        },
+      ]}
+    />
+  );
+}
+
+function KolamSpeciesPriceCell({ item }: { item: KolamSpecies }) {
+  const priceLabel = getSpeciesListPriceLabel(item);
+
+  return (
+    <KolamCopyStack
+      items={[
+        {
+          id: 'price',
+          text: priceLabel,
+          style: priceLabel.includes('\n')
+            ? styles.rowTextCenterStack
+            : styles.rowTextCenter,
+          textProps: { numberOfLines: 2 },
+        },
+      ]}
+    />
+  );
+}
+
+function KolamSpeciesActionsMenu({
   item,
   onBarcode,
   onCopySku,
@@ -947,7 +984,6 @@ function KolamSpeciesRow({
   onSyncStock,
   onTogglePin,
 }: {
-  columns: KolamTableColumn[];
   item: KolamSpecies;
   onBarcode: () => void;
   onCopySku: () => void;
@@ -960,173 +996,47 @@ function KolamSpeciesRow({
   onTogglePin: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const variants = Array.isArray(item.variants) ? item.variants : [];
-  const hasVariantRows = item.hasVariants || variants.length > 0;
-  const totalStock = getSpeciesListTotalStock(item);
-  const priceLabel = getSpeciesListPriceLabel(item);
-  const columnOf = React.useCallback(
-    (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const amountColumn = columnOf('amount');
-  const stockColumn = columnOf('children');
-  const syncColumn = columnOf('marketplace');
-  const notesColumn = columnOf('notes');
-  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : styles.tableRow}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
-          style={[
-            styles.cell,
-            styles.primaryCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <View style={styles.speciesThumb}>
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${item.displayName}`}
-              resizeMode="cover"
-              revision={item.updatedAt ?? item.thumbnailUri ?? item.id}
-              scope="species"
-              sourceUri={item.thumbnailUri}
-              style={styles.speciesThumbImage}
-            />
-          </View>
-          <KolamCopyStack
-            containerStyle={styles.primaryCopy}
-            items={[
-              {
-                id: 'name',
-                text: item.scientificName || item.displayName || '-',
-                style: styles.scientificName,
-              },
-            ]}
-          />
-        </View>
-        <View
-          style={[
-            styles.cell,
-            styles.metaCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          {item.sku ? (
-            <KolamBadge
-              horizontalPadding={8}
-              intent="secondary"
-              label={item.sku}
-              shape="square"
-              style={styles.skuBadge}
-            />
-          ) : (
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'empty-sku',
-                  text: '-',
-                  style: styles.rowSubtext,
-                },
-              ]}
-            />
-          )}
-        </View>
-        <View
-          style={[
-            styles.cell,
-            styles.amountCell,
-            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-          ]}
-        >
-          <KolamCopyStack
-            items={[
-              {
-                id: 'price',
-                text: priceLabel,
-                style: priceLabel.includes('\n')
-                  ? styles.rowTextCenterStack
-                  : styles.rowTextCenter,
-                textProps: { numberOfLines: 2 },
-              },
-            ]}
-          />
-        </View>
-        <View
-          style={[
-            styles.cell,
-            styles.stockCell,
-            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
-          ]}
-        >
-          <SpeciesListStockCell stock={totalStock} unitLabel={item.unitLabel} />
-        </View>
-        <View
-          style={[
-            styles.cell,
-            styles.syncCell,
-            syncColumn ? getKolamDataTableColumnStyle(syncColumn) : null,
-          ]}
-        >
-          <SpeciesMarketplaceSyncListCell sync={item.marketplaceSync} />
-        </View>
-        <View
-          style={[
-            styles.cell,
-            styles.notesCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <SpeciesListInfoBadges
-            hasVariants={hasVariantRows}
-            sellable={item.sellable}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${item.displayName}`}
-          onOpenChange={setActionMenuOpen}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Sinkron ke Tokopedia', onPress: () => onSyncStock(['tokopedia']) },
-            { label: 'Sinkron ke Shopee', onPress: () => onSyncStock(['shopee']) },
-            {
-              label: 'Sinkron ke Keduanya',
-              onPress: () => onSyncStock(['tokopedia', 'shopee']),
-            },
-            {
-              label: 'Samakan harga ke Tokopedia',
-              onPress: () => onSyncPrice(['tokopedia']),
-            },
-            {
-              label: 'Samakan harga ke Shopee',
-              onPress: () => onSyncPrice(['shopee']),
-            },
-            {
-              label: 'Samakan harga ke Keduanya',
-              onPress: () => onSyncPrice(['tokopedia', 'shopee']),
-            },
-            { disabled: !item.sku, label: 'Salin SKU', onPress: onCopySku },
-            { disabled: !item.sku, label: 'Buat barcode', onPress: onBarcode },
-            { label: 'Duplikasi data', onPress: onDuplicate },
-            { label: item.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+    <View style={actionMenuOpen ? styles.speciesActionMenuRaised : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${item.displayName}`}
+        onOpenChange={setActionMenuOpen}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          {
+            label: 'Sinkron ke Tokopedia',
+            onPress: () => onSyncStock(['tokopedia']),
+          },
+          {
+            label: 'Sinkron ke Shopee',
+            onPress: () => onSyncStock(['shopee']),
+          },
+          {
+            label: 'Sinkron ke Keduanya',
+            onPress: () => onSyncStock(['tokopedia', 'shopee']),
+          },
+          {
+            label: 'Samakan harga ke Tokopedia',
+            onPress: () => onSyncPrice(['tokopedia']),
+          },
+          {
+            label: 'Samakan harga ke Shopee',
+            onPress: () => onSyncPrice(['shopee']),
+          },
+          {
+            label: 'Samakan harga ke Keduanya',
+            onPress: () => onSyncPrice(['tokopedia', 'shopee']),
+          },
+          { disabled: !item.sku, label: 'Salin SKU', onPress: onCopySku },
+          { disabled: !item.sku, label: 'Buat barcode', onPress: onBarcode },
+          { label: 'Duplikasi data', onPress: onDuplicate },
+          { label: item.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
+          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -1339,7 +1249,10 @@ function KolamSpeciesForm({
                     label="Tambah Kategori"
                     menuStyle={styles.longDropdownMenu}
                     onChange={categoryId => {
-                      if (!categoryId || form.categoryIds.includes(categoryId)) {
+                      if (
+                        !categoryId ||
+                        form.categoryIds.includes(categoryId)
+                      ) {
                         return;
                       }
 
@@ -1455,8 +1368,16 @@ function KolamSpeciesForm({
             ) : null}
 
             <SpeciesEditSection
-              description={form.sellable && !hasVariants ? "Poin anggota dan komisi transaksi spesies." : "Komisi transaksi spesies."}
-              title={form.sellable && !hasVariants ? "Komisi dan Poin Anggota" : "Komisi"}
+              description={
+                form.sellable && !hasVariants
+                  ? 'Poin anggota dan komisi transaksi spesies.'
+                  : 'Komisi transaksi spesies.'
+              }
+              title={
+                form.sellable && !hasVariants
+                  ? 'Komisi dan Poin Anggota'
+                  : 'Komisi'
+              }
             >
               <SpeciesCommercialPolicyPanel
                 disabled={controller.saving}
@@ -1477,7 +1398,11 @@ function KolamSpeciesForm({
                     memberPoints: value.memberPoints,
                   })
                 }
-                title={form.sellable && !hasVariants ? "Komisi dan Poin Anggota Spesies" : "Komisi Spesies"}
+                title={
+                  form.sellable && !hasVariants
+                    ? 'Komisi dan Poin Anggota Spesies'
+                    : 'Komisi Spesies'
+                }
                 value={{
                   commissionEnabled: form.commissionEnabled,
                   commissionType: form.commissionType,
@@ -1755,7 +1680,10 @@ function SpeciesEditSection({
   title: string;
 }) {
   return (
-    <KolamContentFrame style={styles.speciesEditSection} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={styles.speciesEditSection}
+      variant="settingsWebConfig"
+    >
       <KolamCopyStack
         containerStyle={styles.speciesEditSectionHeader}
         items={[
@@ -1822,7 +1750,10 @@ function SpeciesExternalLinksRowsEditor({
               mode="url"
               onChangeText={value => updateRow(index, { value })}
               placeholder="https://contoh.com"
-              style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.externalLinkInput]}
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                styles.externalLinkInput,
+              ]}
               value={link.value}
             />
             <KolamButton
@@ -1975,7 +1906,9 @@ function SpeciesMediaEditPanel({
                 <KolamRemoteImage
                   accessibilityLabel="Thumbnail spesies"
                   resizeMode="cover"
-                  revision={selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri}
+                  revision={
+                    selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
+                  }
                   scope="species"
                   sourceUri={selectedSpecies.thumbnailUri}
                   style={styles.existingMediaImage}
@@ -2062,7 +1995,13 @@ function SpeciesRootSalesPanel({
         <View style={styles.twoColumnGrid}>
           <View style={styles.inlineFieldGroup}>
             <KolamCopyStack
-              items={[{ id: 'label', text: 'Status Penjualan', style: styles.variantTitle }]}
+              items={[
+                {
+                  id: 'label',
+                  text: 'Status Penjualan',
+                  style: styles.variantTitle,
+                },
+              ]}
             />
             <View style={styles.segmentRow}>
               <KolamButton
@@ -2096,7 +2035,10 @@ function SpeciesRootSalesPanel({
           label="Metode pengiriman tersedia"
           menuStyle={styles.longDropdownMenu}
           onChange={methodId => {
-            if (!methodId || form.availableShippingMethodIds.includes(methodId)) {
+            if (
+              !methodId ||
+              form.availableShippingMethodIds.includes(methodId)
+            ) {
               return;
             }
             controller.onChangeForm({
@@ -2121,9 +2063,10 @@ function SpeciesRootSalesPanel({
                 label={`${method.displayName} x`}
                 onPress={() =>
                   controller.onChangeForm({
-                    availableShippingMethodIds: form.availableShippingMethodIds.filter(
-                      methodId => methodId !== method.id,
-                    ),
+                    availableShippingMethodIds:
+                      form.availableShippingMethodIds.filter(
+                        methodId => methodId !== method.id,
+                      ),
                   })
                 }
                 style={styles.selectedCategoryButton}
@@ -2168,7 +2111,9 @@ function SpeciesPriceInput({
       <KolamCopyStack
         items={[
           { id: 'label', text: label, style: styles.priceInputLabel },
-          ...(hint ? [{ id: 'hint', text: hint, style: styles.priceInputHint }] : []),
+          ...(hint
+            ? [{ id: 'hint', text: hint, style: styles.priceInputHint }]
+            : []),
         ]}
       />
       <View style={styles.priceInputRow}>
@@ -2177,13 +2122,22 @@ function SpeciesPriceInput({
           keyboardType="numeric"
           onChangeText={onChangeText}
           placeholder={placeholder ?? label}
-          style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.priceInputControl]}
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.priceInputControl,
+          ]}
           value={value}
         />
         {unitLabel ? (
           <View style={styles.priceUnitBadge}>
             <KolamCopyStack
-              items={[{ id: 'unit', text: unitLabel, style: styles.priceUnitBadgeText }]}
+              items={[
+                {
+                  id: 'unit',
+                  text: unitLabel,
+                  style: styles.priceUnitBadgeText,
+                },
+              ]}
             />
           </View>
         ) : null}
@@ -2213,7 +2167,9 @@ function SpeciesRootPricingPanel({
               disabled={controller.saving}
               hint="Harga utama yang tampil di katalog dan POS."
               label="Harga Jual"
-              onChangeText={priceToSell => controller.onChangeForm({ priceToSell })}
+              onChangeText={priceToSell =>
+                controller.onChangeForm({ priceToSell })
+              }
               unitLabel={unitLabel}
               value={form.priceToSell}
             />
@@ -2221,7 +2177,9 @@ function SpeciesRootPricingPanel({
               disabled={controller.saving}
               hint="Harga daring untuk toko daring atau kanal digital."
               label="Harga Daring"
-              onChangeText={onlinePrice => controller.onChangeForm({ onlinePrice })}
+              onChangeText={onlinePrice =>
+                controller.onChangeForm({ onlinePrice })
+              }
               unitLabel={unitLabel}
               value={form.onlinePrice}
             />
@@ -2229,7 +2187,9 @@ function SpeciesRootPricingPanel({
               disabled={controller.saving}
               hint="Harga pembanding pasar, bukan harga jual utama."
               label="Harga Pasar"
-              onChangeText={marketPrice => controller.onChangeForm({ marketPrice })}
+              onChangeText={marketPrice =>
+                controller.onChangeForm({ marketPrice })
+              }
               unitLabel={unitLabel}
               value={form.marketPrice}
             />
@@ -2255,7 +2215,9 @@ function SpeciesRootPricingPanel({
               disabled={controller.saving}
               hint="Jumlah minimum per transaksi."
               label="Minimum Pesanan"
-              onChangeText={minimumOrderQty => controller.onChangeForm({ minimumOrderQty })}
+              onChangeText={minimumOrderQty =>
+                controller.onChangeForm({ minimumOrderQty })
+              }
               value={form.minimumOrderQty}
             />
           </View>
@@ -2310,7 +2272,10 @@ function SpeciesRootVendorPricesEditor({
   const form = controller.form;
   const vendorOptions = [
     { label: 'Pilih pemasok', value: '' },
-    ...controller.vendors.map(vendor => ({ label: vendor.name, value: vendor.id })),
+    ...controller.vendors.map(vendor => ({
+      label: vendor.name,
+      value: vendor.id,
+    })),
   ];
 
   return (
@@ -2384,7 +2349,8 @@ function SpeciesRootVendorPriceRow({
       ),
     });
   };
-  const totalCost = parseCurrencyInput(row.price) + parseCurrencyInput(row.shippingCost);
+  const totalCost =
+    parseCurrencyInput(row.price) + parseCurrencyInput(row.shippingCost);
 
   return (
     <View style={styles.vendorPriceRow}>
@@ -2482,7 +2448,9 @@ function SpeciesRootLogisticsPanel({
             <KolamFormTextField
               editable={!controller.saving}
               keyboardType="numeric"
-              onChangeText={weightValue => controller.onChangeForm({ weightValue })}
+              onChangeText={weightValue =>
+                controller.onChangeForm({ weightValue })
+              }
               placeholder="Berat"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.weightValue}
@@ -2490,7 +2458,9 @@ function SpeciesRootLogisticsPanel({
             <KolamDropdownSelect
               label="Satuan berat"
               menuStyle={styles.longDropdownMenu}
-              onChange={weightUnitId => controller.onChangeForm({ weightUnitId })}
+              onChange={weightUnitId =>
+                controller.onChangeForm({ weightUnitId })
+              }
               options={unitOptions}
               searchable
               searchPlaceholder="Cari satuan..."
@@ -2604,7 +2574,11 @@ function getActiveSpeciesCustomFields(fields: KolamCustomField[]) {
   return fields
     .filter(field => field.status === 'active')
     .slice()
-    .sort((left, right) => left.order - right.order || left.fieldLabel.localeCompare(right.fieldLabel));
+    .sort(
+      (left, right) =>
+        left.order - right.order ||
+        left.fieldLabel.localeCompare(right.fieldLabel),
+    );
 }
 
 type SpeciesCustomFieldPatch = {
@@ -2661,7 +2635,9 @@ function SpeciesCustomFieldRowsEditor({
     () => new Set(selectedKeys),
     [selectedKeys],
   );
-  const selectedFields = fields.filter(field => selectedKeySet.has(field.fieldKey));
+  const selectedFields = fields.filter(field =>
+    selectedKeySet.has(field.fieldKey),
+  );
   const setFieldSelected = (field: KolamCustomField, nextSelected: boolean) => {
     const nextKeys = nextSelected
       ? Array.from(new Set([...selectedKeys, field.fieldKey]))
@@ -2824,13 +2800,28 @@ function SpeciesCustomFieldRowsEditorRow({
           disabled={disabled || !row}
           intent="secondary"
           label="Kosongkan"
-          onPress={() => updateSpeciesCustomFieldRows(rows, onChange, field, null)}
+          onPress={() =>
+            updateSpeciesCustomFieldRows(rows, onChange, field, null)
+          }
         />
       </View>
-      {renderSpeciesCustomFieldRowsInput(disabled, rows, onChange, field, raw, units)}
+      {renderSpeciesCustomFieldRowsInput(
+        disabled,
+        rows,
+        onChange,
+        field,
+        raw,
+        units,
+      )}
       {field.description ? (
         <KolamCopyStack
-          items={[{ id: 'description', text: field.description, style: styles.fieldHint }]}
+          items={[
+            {
+              id: 'description',
+              text: field.description,
+              style: styles.fieldHint,
+            },
+          ]}
         />
       ) : null}
     </View>
@@ -2847,7 +2838,14 @@ function renderSpeciesCustomFieldRowsInput(
 ) {
   const update = (patch: SpeciesCustomFieldPatch) =>
     updateSpeciesCustomFieldRows(rows, onChange, field, patch);
-  const unitSelector = renderSpeciesCustomFieldUnitSelector(disabled, rows, onChange, field, raw, units);
+  const unitSelector = renderSpeciesCustomFieldUnitSelector(
+    disabled,
+    rows,
+    onChange,
+    field,
+    raw,
+    units,
+  );
 
   if (field.fieldType === 'boolean') {
     return (
@@ -2927,7 +2925,10 @@ function renderSpeciesCustomFieldRowsInput(
       multiline
       onChangeText={value => update({ value })}
       placeholder="Masukkan nilai"
-      style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.customFieldTextArea]}
+      style={[
+        settingsWebFormStyles.settingsWebFormFieldValue,
+        styles.customFieldTextArea,
+      ]}
       value={getCustomFieldStringValue(raw)}
     />
   );
@@ -2941,7 +2942,10 @@ function renderSpeciesCustomFieldUnitSelector(
   raw: Record<string, unknown>,
   units: SpeciesCustomFieldUnitOption[],
 ) {
-  if (!field.requiresUnit || (field.fieldType !== 'number' && field.fieldType !== 'range')) {
+  if (
+    !field.requiresUnit ||
+    (field.fieldType !== 'number' && field.fieldType !== 'range')
+  ) {
     return null;
   }
 
@@ -3018,7 +3022,10 @@ function updateSpeciesCustomFieldRows(
   onChange([...nextRows, nextRow]);
 }
 
-function getSelectedCustomFieldKeys(rows: KolamSpeciesCustomFieldValue[], fields: KolamCustomField[]) {
+function getSelectedCustomFieldKeys(
+  rows: KolamSpeciesCustomFieldValue[],
+  fields: KolamCustomField[],
+) {
   return Array.from(
     new Set(
       rows
@@ -3028,14 +3035,20 @@ function getSelectedCustomFieldKeys(rows: KolamSpeciesCustomFieldValue[], fields
   );
 }
 
-function getCustomFieldRowKey(row: KolamSpeciesCustomFieldValue, fields: KolamCustomField[]) {
+function getCustomFieldRowKey(
+  row: KolamSpeciesCustomFieldValue,
+  fields: KolamCustomField[],
+) {
   const raw = getCustomFieldValueRecord(row);
   const rawKey = getStringFromRecord(raw, 'fieldKey');
   if (rawKey) {
     return rawKey;
   }
   const fieldRecord = getPlainRecord(raw.field);
-  const fieldId = row.fieldId || getStringFromRecord(fieldRecord, '_id') || getStringFromRecord(fieldRecord, 'id');
+  const fieldId =
+    row.fieldId ||
+    getStringFromRecord(fieldRecord, '_id') ||
+    getStringFromRecord(fieldRecord, 'id');
   return fields.find(field => field.id === fieldId)?.fieldKey || '';
 }
 
@@ -3056,8 +3069,10 @@ function createNextCustomFieldValueRaw(
   }
 
   if (field.fieldType === 'range') {
-    const minValue = patch.minValue ?? getCustomFieldNumberText(currentRaw.minValue);
-    const maxValue = patch.maxValue ?? getCustomFieldNumberText(currentRaw.maxValue);
+    const minValue =
+      patch.minValue ?? getCustomFieldNumberText(currentRaw.minValue);
+    const maxValue =
+      patch.maxValue ?? getCustomFieldNumberText(currentRaw.maxValue);
     setOptionalNumberValue(nextRaw, 'minValue', minValue);
     setOptionalNumberValue(nextRaw, 'maxValue', maxValue);
     delete nextRaw.value;
@@ -3115,7 +3130,9 @@ function customFieldRowMatchesField(
 ) {
   const raw = getCustomFieldValueRecord(row);
   const fieldRecord = getPlainRecord(raw.field);
-  const rawFieldId = getStringFromRecord(fieldRecord, '_id') || getStringFromRecord(fieldRecord, 'id');
+  const rawFieldId =
+    getStringFromRecord(fieldRecord, '_id') ||
+    getStringFromRecord(fieldRecord, 'id');
   return (
     row.fieldId === field.id ||
     row.fieldId === field.fieldKey ||
@@ -3129,7 +3146,9 @@ function getCustomFieldValueRecord(row?: KolamSpeciesCustomFieldValue) {
 }
 
 function getPlainRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  return value && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function getStringFromRecord(record: Record<string, unknown>, key: string) {
@@ -3212,20 +3231,29 @@ function SpeciesSeoEditPanel({
             items={[
               {
                 id: 'summary',
-                text: score == null ? 'Skor SEO belum tersedia.' : `Skor SEO terakhir: ${score}/100`,
+                text:
+                  score == null
+                    ? 'Skor SEO belum tersedia.'
+                    : `Skor SEO terakhir: ${score}/100`,
                 style: styles.fieldHint,
               },
             ]}
           />
           {controller.selectedSpecies?.seo.lastAuditedAt ? (
-            <KolamBadge label={`Audit: ${formatRelativeTime(controller.selectedSpecies.seo.lastAuditedAt)}`} />
+            <KolamBadge
+              label={`Audit: ${formatRelativeTime(
+                controller.selectedSpecies.seo.lastAuditedAt,
+              )}`}
+            />
           ) : null}
         </View>
         <View style={styles.twoColumnGrid}>
           <View style={styles.inlineFieldGroup}>
             <KolamFormTextField
               editable={!controller.saving}
-              onChangeText={seoMetaTitle => controller.onChangeForm({ seoMetaTitle })}
+              onChangeText={seoMetaTitle =>
+                controller.onChangeForm({ seoMetaTitle })
+              }
               placeholder="Judul SEO"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={controller.form.seoMetaTitle}
@@ -3234,7 +3262,9 @@ function SpeciesSeoEditPanel({
           <View style={styles.inlineFieldGroup}>
             <KolamFormTextField
               editable={!controller.saving}
-              onChangeText={seoKeywords => controller.onChangeForm({ seoKeywords })}
+              onChangeText={seoKeywords =>
+                controller.onChangeForm({ seoKeywords })
+              }
               placeholder="Kata kunci, pisahkan dengan koma"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={controller.form.seoKeywords}
@@ -3244,9 +3274,14 @@ function SpeciesSeoEditPanel({
         <KolamFormTextField
           editable={!controller.saving}
           multiline
-          onChangeText={seoMetaDescription => controller.onChangeForm({ seoMetaDescription })}
+          onChangeText={seoMetaDescription =>
+            controller.onChangeForm({ seoMetaDescription })
+          }
           placeholder="Deskripsi SEO"
-          style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.customFieldTextArea]}
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldValue,
+            styles.customFieldTextArea,
+          ]}
           value={controller.form.seoMetaDescription}
         />
       </View>
@@ -3260,11 +3295,16 @@ function SpeciesAttachedItemsEditPanel({
   controller: KolamSpeciesController;
 }) {
   const [showForm, setShowForm] = React.useState(false);
-  const [itemType, setItemType] = React.useState<'product' | 'species'>('product');
+  const [itemType, setItemType] = React.useState<'product' | 'species'>(
+    'product',
+  );
   const [relationType, setRelationType] = React.useState('feeding');
   const [targetId, setTargetId] = React.useState('');
   const [note, setNote] = React.useState('');
-  const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; label: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<{
+    id: string;
+    label: string;
+  } | null>(null);
   const attachedItems = controller.selectedSpecies?.attachedItems ?? [];
   const relationOptions = [
     { label: 'Pakan', value: 'feeding' },
@@ -3285,7 +3325,9 @@ function SpeciesAttachedItemsEditPanel({
     const ok = await controller.onAddAttachedItem({
       itemType,
       type: relationType,
-      ...(itemType === 'product' ? { product: targetId } : { species: targetId }),
+      ...(itemType === 'product'
+        ? { product: targetId }
+        : { species: targetId }),
       ...(note.trim() ? { note: note.trim() } : {}),
     });
     if (ok) {
@@ -3319,10 +3361,19 @@ function SpeciesAttachedItemsEditPanel({
           <View key={item.id} style={styles.attachedItemRow}>
             <KolamCopyStack
               items={[
-                { id: 'name', text: item.targetName, style: styles.variantTitle },
+                {
+                  id: 'name',
+                  text: item.targetName,
+                  style: styles.variantTitle,
+                },
                 {
                   id: 'meta',
-                  text: [item.typeLabel, item.itemType === 'species' ? 'Spesies' : 'Produk', item.targetSku ? `SKU: ${item.targetSku}` : '', item.note]
+                  text: [
+                    item.typeLabel,
+                    item.itemType === 'species' ? 'Spesies' : 'Produk',
+                    item.targetSku ? `SKU: ${item.targetSku}` : '',
+                    item.note,
+                  ]
                     .filter(Boolean)
                     .join(' - '),
                   style: styles.fieldHint,
@@ -3333,7 +3384,9 @@ function SpeciesAttachedItemsEditPanel({
               disabled={controller.saving}
               intent="danger"
               label="Hapus"
-              onPress={() => setDeleteTarget({ id: item.id, label: item.targetName })}
+              onPress={() =>
+                setDeleteTarget({ id: item.id, label: item.targetName })
+              }
             />
           </View>
         ))}
@@ -3363,9 +3416,14 @@ function SpeciesAttachedItemsEditPanel({
               label={itemType === 'product' ? 'Pilih Produk' : 'Pilih Spesies'}
               menuStyle={styles.longDropdownMenu}
               onChange={setTargetId}
-              options={[{ label: 'Belum dipilih', value: '' }, ...targetOptions]}
+              options={[
+                { label: 'Belum dipilih', value: '' },
+                ...targetOptions,
+              ]}
               searchable
-              searchPlaceholder={itemType === 'product' ? 'Cari produk...' : 'Cari spesies...'}
+              searchPlaceholder={
+                itemType === 'product' ? 'Cari produk...' : 'Cari spesies...'
+              }
               value={targetId}
             />
             <KolamFormTextField
@@ -3376,7 +3434,11 @@ function SpeciesAttachedItemsEditPanel({
               value={note}
             />
             <View style={styles.formActions}>
-              <KolamButton intent="secondary" label="Batal" onPress={resetForm} />
+              <KolamButton
+                intent="secondary"
+                label="Batal"
+                onPress={resetForm}
+              />
               <KolamButton
                 disabled={controller.saving || !targetId}
                 intent="primary"
@@ -3393,7 +3455,9 @@ function SpeciesAttachedItemsEditPanel({
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
-            void controller.onRemoveAttachedItem(deleteTarget.id).then(() => setDeleteTarget(null));
+            void controller
+              .onRemoveAttachedItem(deleteTarget.id)
+              .then(() => setDeleteTarget(null));
           }
         }}
         visible={Boolean(deleteTarget)}
@@ -3415,22 +3479,39 @@ function SpeciesTermsTemplatesSummaryPanel({
             <View key={template.id} style={styles.attachedItemRow}>
               <KolamCopyStack
                 items={[
-                  { id: 'title', text: template.title, style: styles.variantTitle },
+                  {
+                    id: 'title',
+                    text: template.title,
+                    style: styles.variantTitle,
+                  },
                   {
                     id: 'meta',
-                    text: [template.category, template.sourceLabel, `Versi ${template.version}`]
+                    text: [
+                      template.category,
+                      template.sourceLabel,
+                      `Versi ${template.version}`,
+                    ]
                       .filter(Boolean)
                       .join(' - '),
                     style: styles.fieldHint,
                   },
                 ]}
               />
-              <KolamStatusBadge intent="success" label={template.status || 'Aktif'} />
+              <KolamStatusBadge
+                intent="success"
+                label={template.status || 'Aktif'}
+              />
             </View>
           ))
         ) : (
           <KolamCopyStack
-            items={[{ id: 'empty', text: 'Belum ada TOS aktif untuk spesies ini.', style: styles.fieldHint }]}
+            items={[
+              {
+                id: 'empty',
+                text: 'Belum ada TOS aktif untuk spesies ini.',
+                style: styles.fieldHint,
+              },
+            ]}
           />
         )}
       </View>
@@ -3447,7 +3528,10 @@ function getAttachedItemTargetOptions(
     return controller.species
       .filter(item => item.id !== selectedId)
       .map(item => ({
-        label: [item.displayName || item.scientificName, item.sku ? `(${item.sku})` : '']
+        label: [
+          item.displayName || item.scientificName,
+          item.sku ? `(${item.sku})` : '',
+        ]
           .filter(Boolean)
           .join(' '),
         value: item.id,
@@ -3455,7 +3539,9 @@ function getAttachedItemTargetOptions(
   }
 
   return controller.productOptions.map(item => ({
-    label: [item.name, item.sku ? `(${item.sku})` : ''].filter(Boolean).join(' '),
+    label: [item.name, item.sku ? `(${item.sku})` : '']
+      .filter(Boolean)
+      .join(' '),
     value: item.id,
   }));
 }
@@ -3485,9 +3571,9 @@ function SpeciesVariantEditorPanel({
   onDeleteVariant: (target: { id: string; label: string }) => void;
 }) {
   const form = controller.form;
-  const [expandedVariantId, setExpandedVariantId] = React.useState<string | null>(
-    form.variants[0]?.id ?? null,
-  );
+  const [expandedVariantId, setExpandedVariantId] = React.useState<
+    string | null
+  >(form.variants[0]?.id ?? null);
 
   React.useEffect(() => {
     if (!form.variants.length) {
@@ -3495,7 +3581,10 @@ function SpeciesVariantEditorPanel({
       return;
     }
 
-    if (expandedVariantId && !form.variants.some(variant => variant.id === expandedVariantId)) {
+    if (
+      expandedVariantId &&
+      !form.variants.some(variant => variant.id === expandedVariantId)
+    ) {
       setExpandedVariantId(null);
     }
   }, [expandedVariantId, form.variants]);
@@ -3584,7 +3673,13 @@ function SpeciesVariantFieldPanel({
         items={[
           { id: 'title', text: title, style: styles.variantFieldPanelTitle },
           ...(description
-            ? [{ id: 'description', text: description, style: styles.fieldHint }]
+            ? [
+                {
+                  id: 'description',
+                  text: description,
+                  style: styles.fieldHint,
+                },
+              ]
             : []),
         ]}
       />
@@ -3639,9 +3734,13 @@ function SpeciesVariantFormCard({
     `Varian ${index + 1}`;
   const [activeTab, setActiveTab] =
     React.useState<SpeciesVariantEditTab>('pricing');
-  const livePhotos = Array.isArray(liveVariant?.photoUris) ? liveVariant.photoUris.length : 0;
+  const livePhotos = Array.isArray(liveVariant?.photoUris)
+    ? liveVariant.photoUris.length
+    : 0;
   const mediaCount = livePhotos;
-  const vendorCount = Array.isArray(variant.vendorPrices) ? variant.vendorPrices.length : 0;
+  const vendorCount = Array.isArray(variant.vendorPrices)
+    ? variant.vendorPrices.length
+    : 0;
   const stockValue = Number(liveVariant?.stock ?? 0);
   const priceValue = Number(variant.priceToSell || 0);
   const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : 'Rp 0';
@@ -3671,7 +3770,11 @@ function SpeciesVariantFormCard({
             ]}
           />
           <View style={styles.variantHeaderMetaRow}>
-            <KolamStatusBadge intent="primary" label={skuLabel} style={styles.variantMetaBadge} />
+            <KolamStatusBadge
+              intent="primary"
+              label={skuLabel}
+              style={styles.variantMetaBadge}
+            />
             <KolamStatusBadge
               intent={stockValue > 0 ? 'success' : 'danger'}
               label={`Stok ${formatNumber(stockValue)}`}
@@ -3687,7 +3790,11 @@ function SpeciesVariantFormCard({
               label={`Media ${mediaCount}`}
               style={styles.variantMetaBadge}
             />
-            <KolamStatusBadge intent="success" label={priceLabel} style={styles.variantMetaBadge} />
+            <KolamStatusBadge
+              intent="success"
+              label={priceLabel}
+              style={styles.variantMetaBadge}
+            />
           </View>
         </Pressable>
         <KolamButton
@@ -3703,332 +3810,397 @@ function SpeciesVariantFormCard({
 
       {expanded ? (
         <>
-      <View style={styles.variantTabRow}>
-        {SPECIES_VARIANT_EDIT_TABS.map(tab => (
-          <KolamButton
-            intent={activeTab === tab.id ? 'primary' : 'outline'}
-            key={tab.id}
-            label={tab.label}
-            onPress={() => setActiveTab(tab.id)}
-            style={styles.variantTabButton}
-          />
-        ))}
-      </View>
+          <View style={styles.variantTabRow}>
+            {SPECIES_VARIANT_EDIT_TABS.map(tab => (
+              <KolamButton
+                intent={activeTab === tab.id ? 'primary' : 'outline'}
+                key={tab.id}
+                label={tab.label}
+                onPress={() => setActiveTab(tab.id)}
+                style={styles.variantTabButton}
+              />
+            ))}
+          </View>
 
-      {activeTab === 'pricing' ? (
-        <View style={styles.variantTabContent}>
-          <View style={styles.variantPricingGrid}>
-            <VariantCompactField label="SKU">
-              <KolamFormTextField
-                editable={!controller.saving}
-                onChangeText={sku =>
-                  updateSpeciesVariantRow(controller, variant.id, { sku })
-                }
-                placeholder="SKU"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={variant.sku}
-              />
-            </VariantCompactField>
-            <VariantCompactField label="HPP Pemasok">
-              <KolamFormTextField
-                editable={false}
-                placeholder="HPP"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={formatCurrency(displayCost)}
-              />
-            </VariantCompactField>
-            <VariantCompactField label="Harga Jual">
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={priceToSell =>
-                  updateSpeciesVariantRow(controller, variant.id, { priceToSell })
-                }
-                placeholder="Harga jual"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={variant.priceToSell}
-              />
-            </VariantCompactField>
-            <VariantCompactField label="Harga Pasar">
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={marketPrice =>
-                  updateSpeciesVariantRow(controller, variant.id, { marketPrice })
-                }
-                placeholder="Harga pasar"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={variant.marketPrice}
-              />
-            </VariantCompactField>
-            <VariantCompactField label="Harga Daring">
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={onlinePrice =>
-                  updateSpeciesVariantRow(controller, variant.id, { onlinePrice })
-                }
-                placeholder="Harga daring"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={variant.onlinePrice}
-              />
-            </VariantCompactField>
-            <VariantCompactField label="Harga Minimum">
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={minimumPriceToSales =>
+          {activeTab === 'pricing' ? (
+            <View style={styles.variantTabContent}>
+              <View style={styles.variantPricingGrid}>
+                <VariantCompactField label="SKU">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    onChangeText={sku =>
+                      updateSpeciesVariantRow(controller, variant.id, { sku })
+                    }
+                    placeholder="SKU"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={variant.sku}
+                  />
+                </VariantCompactField>
+                <VariantCompactField label="HPP Pemasok">
+                  <KolamFormTextField
+                    editable={false}
+                    placeholder="HPP"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={formatCurrency(displayCost)}
+                  />
+                </VariantCompactField>
+                <VariantCompactField label="Harga Jual">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    keyboardType="numeric"
+                    onChangeText={priceToSell =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        priceToSell,
+                      })
+                    }
+                    placeholder="Harga jual"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={variant.priceToSell}
+                  />
+                </VariantCompactField>
+                <VariantCompactField label="Harga Pasar">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    keyboardType="numeric"
+                    onChangeText={marketPrice =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        marketPrice,
+                      })
+                    }
+                    placeholder="Harga pasar"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={variant.marketPrice}
+                  />
+                </VariantCompactField>
+                <VariantCompactField label="Harga Daring">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    keyboardType="numeric"
+                    onChangeText={onlinePrice =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        onlinePrice,
+                      })
+                    }
+                    placeholder="Harga daring"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={variant.onlinePrice}
+                  />
+                </VariantCompactField>
+                <VariantCompactField label="Harga Minimum">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    keyboardType="numeric"
+                    onChangeText={minimumPriceToSales =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        minimumPriceToSales,
+                      })
+                    }
+                    placeholder="Harga minimum"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={variant.minimumPriceToSales}
+                  />
+                </VariantCompactField>
+                <VariantCompactField label="Minimum Pesanan">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    keyboardType="numeric"
+                    onChangeText={minimumOrderQty =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        minimumOrderQty,
+                      })
+                    }
+                    placeholder="Minimum"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={variant.minimumOrderQty}
+                  />
+                </VariantCompactField>
+              </View>
+              <SpeciesGrocerPricingPanel
+                disabled={controller.saving}
+                hint="Harga per unit berdasarkan jumlah pembelian untuk varian ini."
+                onChange={grocerPricingTiers =>
                   updateSpeciesVariantRow(controller, variant.id, {
-                    minimumPriceToSales,
+                    grocerPricingTiers,
                   })
                 }
-                placeholder="Harga minimum"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={variant.minimumPriceToSales}
+                rows={variant.grocerPricingTiers}
+                title="Harga Bertingkat / Grosir Varian"
               />
-            </VariantCompactField>
-            <VariantCompactField label="Minimum Pesanan">
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={minimumOrderQty =>
-                  updateSpeciesVariantRow(controller, variant.id, { minimumOrderQty })
-                }
-                placeholder="Minimum"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={variant.minimumOrderQty}
-              />
-            </VariantCompactField>
-          </View>
-          <SpeciesGrocerPricingPanel
-            disabled={controller.saving}
-            hint="Harga per unit berdasarkan jumlah pembelian untuk varian ini."
-            onChange={grocerPricingTiers =>
-              updateSpeciesVariantRow(controller, variant.id, {
-                grocerPricingTiers,
-              })
-            }
-            rows={variant.grocerPricingTiers}
-            title="Harga Bertingkat / Grosir Varian"
-          />
-        </View>
-      ) : null}
+            </View>
+          ) : null}
 
-      {activeTab === 'vendor' ? (
-        <View style={styles.variantTabContent}>
-          <SpeciesVariantVendorPricesEditor
-            controller={controller}
-            variant={variant}
-          />
-        </View>
-      ) : null}
-
-      {activeTab === 'specs' ? (
-        <View style={styles.variantTabContent}>
-          <View style={styles.variantSpecsGrid}>
-            <View style={styles.variantSpecsGroup}>
-              <KolamCopyStack
-                items={[{ id: 'label', text: 'Berat', style: styles.variantSpecsLabel }]}
+          {activeTab === 'vendor' ? (
+            <View style={styles.variantTabContent}>
+              <SpeciesVariantVendorPricesEditor
+                controller={controller}
+                variant={variant}
               />
-              <View style={styles.variantSpecsTwoGrid}>
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  keyboardType="numeric"
-                  onChangeText={weightValue =>
-                    updateSpeciesVariantRow(controller, variant.id, { weightValue })
-                  }
-                  placeholder="Nilai"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={variant.weightValue}
-                />
-                <KolamDropdownSelect
-                  label="Satuan"
-                  menuStyle={styles.longDropdownMenu}
-                  onChange={weightUnitId =>
-                    updateSpeciesVariantRow(controller, variant.id, { weightUnitId })
-                  }
-                  options={weightUnitOptions.length > 1 ? weightUnitOptions : unitOptions}
-                  searchable
-                  searchPlaceholder="Cari satuan..."
-                  showLabelInTrigger={false}
-                  value={variant.weightUnitId}
-                />
+            </View>
+          ) : null}
+
+          {activeTab === 'specs' ? (
+            <View style={styles.variantTabContent}>
+              <View style={styles.variantSpecsGrid}>
+                <View style={styles.variantSpecsGroup}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'label',
+                        text: 'Berat',
+                        style: styles.variantSpecsLabel,
+                      },
+                    ]}
+                  />
+                  <View style={styles.variantSpecsTwoGrid}>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={weightValue =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          weightValue,
+                        })
+                      }
+                      placeholder="Nilai"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.weightValue}
+                    />
+                    <KolamDropdownSelect
+                      label="Satuan"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={weightUnitId =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          weightUnitId,
+                        })
+                      }
+                      options={
+                        weightUnitOptions.length > 1
+                          ? weightUnitOptions
+                          : unitOptions
+                      }
+                      searchable
+                      searchPlaceholder="Cari satuan..."
+                      showLabelInTrigger={false}
+                      value={variant.weightUnitId}
+                    />
+                  </View>
+                </View>
+                <View style={styles.variantSpecsGroup}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'label',
+                        text: 'Dimensi (P x L x T)',
+                        style: styles.variantSpecsLabel,
+                      },
+                    ]}
+                  />
+                  <View style={styles.variantSpecsFourGrid}>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={dimensionLength =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          dimensionLength,
+                        })
+                      }
+                      placeholder="P"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.dimensionLength}
+                    />
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={dimensionWidth =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          dimensionWidth,
+                        })
+                      }
+                      placeholder="L"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.dimensionWidth}
+                    />
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={dimensionHeight =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          dimensionHeight,
+                        })
+                      }
+                      placeholder="T"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={variant.dimensionHeight}
+                    />
+                    <KolamDropdownSelect
+                      label="Satuan"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={dimensionUnitId =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          dimensionUnitId,
+                        })
+                      }
+                      options={
+                        dimensionUnitOptions.length > 1
+                          ? dimensionUnitOptions
+                          : unitOptions
+                      }
+                      searchable
+                      searchPlaceholder="Cari satuan..."
+                      showLabelInTrigger={false}
+                      value={variant.dimensionUnitId}
+                    />
+                  </View>
+                </View>
               </View>
             </View>
-            <View style={styles.variantSpecsGroup}>
-              <KolamCopyStack
-                items={[{ id: 'label', text: 'Dimensi (P x L x T)', style: styles.variantSpecsLabel }]}
+          ) : null}
+          {activeTab === 'media' ? (
+            <View style={styles.variantTabContent}>
+              <SpeciesVariantMediaPanel
+                controller={controller}
+                onDelete={onDeleteMedia}
+                showVariantSelector={false}
+                variantId={variant.id}
               />
-              <View style={styles.variantSpecsFourGrid}>
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  keyboardType="numeric"
-                  onChangeText={dimensionLength =>
-                    updateSpeciesVariantRow(controller, variant.id, {
-                      dimensionLength,
-                    })
-                  }
-                  placeholder="P"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={variant.dimensionLength}
+            </View>
+          ) : null}
+          {activeTab === 'advanced' ? (
+            <View style={styles.variantTabContent}>
+              <View style={styles.variantMemberPointsRow}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'title',
+                      text: 'Poin Anggota',
+                      style: styles.variantAdvancedTitle,
+                    },
+                    {
+                      id: 'hint',
+                      text: 'Poin yang didapat pelanggan per unit pembelian.',
+                      style: styles.variantCompactHint,
+                    },
+                  ]}
                 />
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  keyboardType="numeric"
-                  onChangeText={dimensionWidth =>
-                    updateSpeciesVariantRow(controller, variant.id, {
-                      dimensionWidth,
-                    })
-                  }
-                  placeholder="L"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={variant.dimensionWidth}
-                />
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  keyboardType="numeric"
-                  onChangeText={dimensionHeight =>
-                    updateSpeciesVariantRow(controller, variant.id, {
-                      dimensionHeight,
-                    })
-                  }
-                  placeholder="T"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={variant.dimensionHeight}
-                />
-                <KolamDropdownSelect
-                  label="Satuan"
-                  menuStyle={styles.longDropdownMenu}
-                  onChange={dimensionUnitId =>
-                    updateSpeciesVariantRow(controller, variant.id, {
-                      dimensionUnitId,
-                    })
-                  }
-                  options={dimensionUnitOptions.length > 1 ? dimensionUnitOptions : unitOptions}
-                  searchable
-                  searchPlaceholder="Cari satuan..."
-                  showLabelInTrigger={false}
-                  value={variant.dimensionUnitId}
-                />
+                <View style={styles.variantAdvancedActions}>
+                  <KolamButton
+                    disabled={controller.saving}
+                    intent={variant.memberPointsEnabled ? 'primary' : 'outline'}
+                    label="Aktif"
+                    onPress={() =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        memberPointsEnabled: true,
+                      })
+                    }
+                  />
+                  <KolamButton
+                    disabled={controller.saving}
+                    intent={
+                      !variant.memberPointsEnabled ? 'primary' : 'outline'
+                    }
+                    label="Nonaktif"
+                    onPress={() =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        memberPoints: '0',
+                        memberPointsEnabled: false,
+                      })
+                    }
+                  />
+                  {variant.memberPointsEnabled ? (
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={memberPoints =>
+                        updateSpeciesVariantRow(controller, variant.id, {
+                          memberPoints,
+                        })
+                      }
+                      placeholder="Poin"
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        styles.memberPointsInput,
+                      ]}
+                      value={variant.memberPoints}
+                    />
+                  ) : null}
+                </View>
+              </View>
+
+              <View style={styles.variantAdvancedGrid}>
+                <View style={styles.variantAdvancedCard}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Bahan Penyusun',
+                        style: styles.variantAdvancedTitle,
+                      },
+                    ]}
+                  />
+                  <KolamComponentOverridesEditor
+                    disabled={controller.saving}
+                    onChange={componentOverrides =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        componentOverrides,
+                      })
+                    }
+                    products={controller.rawMaterialProducts}
+                    rows={variant.componentOverrides}
+                  />
+                </View>
+
+                <View style={styles.variantAdvancedCard}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Tautan Eksternal',
+                        style: styles.variantAdvancedTitle,
+                      },
+                    ]}
+                  />
+                  <SpeciesExternalLinksRowsEditor
+                    disabled={controller.saving}
+                    emptyText="Belum ada tautan eksternal."
+                    links={variant.externalLinks}
+                    onChange={externalLinks =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        externalLinks,
+                      })
+                    }
+                  />
+                </View>
+
+                <View style={styles.variantAdvancedCard}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Field Kustom',
+                        style: styles.variantAdvancedTitle,
+                      },
+                    ]}
+                  />
+                  <SpeciesCustomFieldRowsEditor
+                    disabled={controller.saving}
+                    emptyText="Belum ada field kustom aktif untuk varian."
+                    fields={activeCustomFields}
+                    onChange={customFieldValues =>
+                      updateSpeciesVariantRow(controller, variant.id, {
+                        customFieldValues,
+                      })
+                    }
+                    rows={variant.customFieldValues}
+                    summaryText={
+                      activeCustomFields.length
+                        ? `${activeCustomFields.length} field aktif tersedia.`
+                        : 'Belum ada field kustom aktif.'
+                    }
+                    units={controller.units}
+                  />
+                </View>
               </View>
             </View>
-          </View>
-        </View>
-      ) : null}
-      {activeTab === 'media' ? (
-        <View style={styles.variantTabContent}>
-          <SpeciesVariantMediaPanel
-            controller={controller}
-            onDelete={onDeleteMedia}
-            showVariantSelector={false}
-            variantId={variant.id}
-          />
-        </View>
-      ) : null}
-      {activeTab === 'advanced' ? (
-        <View style={styles.variantTabContent}>
-          <View style={styles.variantMemberPointsRow}>
-            <KolamCopyStack
-              items={[
-                { id: 'title', text: 'Poin Anggota', style: styles.variantAdvancedTitle },
-                {
-                  id: 'hint',
-                  text: 'Poin yang didapat pelanggan per unit pembelian.',
-                  style: styles.variantCompactHint,
-                },
-              ]}
-            />
-            <View style={styles.variantAdvancedActions}>
-              <KolamButton
-                disabled={controller.saving}
-                intent={variant.memberPointsEnabled ? 'primary' : 'outline'}
-                label="Aktif"
-                onPress={() =>
-                  updateSpeciesVariantRow(controller, variant.id, {
-                    memberPointsEnabled: true,
-                  })
-                }
-              />
-              <KolamButton
-                disabled={controller.saving}
-                intent={!variant.memberPointsEnabled ? 'primary' : 'outline'}
-                label="Nonaktif"
-                onPress={() =>
-                  updateSpeciesVariantRow(controller, variant.id, {
-                    memberPoints: '0',
-                    memberPointsEnabled: false,
-                  })
-                }
-              />
-              {variant.memberPointsEnabled ? (
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  keyboardType="numeric"
-                  onChangeText={memberPoints =>
-                    updateSpeciesVariantRow(controller, variant.id, { memberPoints })
-                  }
-                  placeholder="Poin"
-                  style={[settingsWebFormStyles.settingsWebFormFieldValue, styles.memberPointsInput]}
-                  value={variant.memberPoints}
-                />
-              ) : null}
-            </View>
-          </View>
-
-          <View style={styles.variantAdvancedGrid}>
-            <View style={styles.variantAdvancedCard}>
-              <KolamCopyStack
-                items={[{ id: 'title', text: 'Bahan Penyusun', style: styles.variantAdvancedTitle }]}
-              />
-              <KolamComponentOverridesEditor
-                disabled={controller.saving}
-                onChange={componentOverrides =>
-                  updateSpeciesVariantRow(controller, variant.id, {
-                    componentOverrides,
-                  })
-                }
-                products={controller.rawMaterialProducts}
-                rows={variant.componentOverrides}
-              />
-            </View>
-
-            <View style={styles.variantAdvancedCard}>
-              <KolamCopyStack
-                items={[{ id: 'title', text: 'Tautan Eksternal', style: styles.variantAdvancedTitle }]}
-              />
-              <SpeciesExternalLinksRowsEditor
-                disabled={controller.saving}
-                emptyText="Belum ada tautan eksternal."
-                links={variant.externalLinks}
-                onChange={externalLinks =>
-                  updateSpeciesVariantRow(controller, variant.id, { externalLinks })
-                }
-              />
-            </View>
-
-            <View style={styles.variantAdvancedCard}>
-              <KolamCopyStack
-                items={[{ id: 'title', text: 'Field Kustom', style: styles.variantAdvancedTitle }]}
-              />
-              <SpeciesCustomFieldRowsEditor
-                disabled={controller.saving}
-                emptyText="Belum ada field kustom aktif untuk varian."
-                fields={activeCustomFields}
-                onChange={customFieldValues =>
-                  updateSpeciesVariantRow(controller, variant.id, { customFieldValues })
-                }
-                rows={variant.customFieldValues}
-                summaryText={
-                  activeCustomFields.length
-                    ? `${activeCustomFields.length} field aktif tersedia.`
-                    : 'Belum ada field kustom aktif.'
-                }
-                units={controller.units}
-              />
-            </View>
-          </View>
-        </View>
-      ) : null}
+          ) : null}
         </>
       ) : null}
     </View>
@@ -4155,7 +4327,9 @@ function SpeciesVariantAdvancedPanel({
               : 'Belum ada field kustom aktif untuk varian.'
           }
           onChange={customFieldValues =>
-            updateSpeciesVariantRow(controller, variant.id, { customFieldValues })
+            updateSpeciesVariantRow(controller, variant.id, {
+              customFieldValues,
+            })
           }
         />
       </SpeciesVariantFieldPanel>
@@ -4617,32 +4791,38 @@ function SpeciesVariantMediaPanel({
   const item = selectedItem ? normalizeSpeciesDetailItem(selectedItem) : null;
   const form = controller.form;
   const activeVariantId = variantId ?? form.selectedVariantId;
-  const formVariant = form.variants.find(variant => variant.id === activeVariantId);
+  const formVariant = form.variants.find(
+    variant => variant.id === activeVariantId,
+  );
   const itemVariants = item?.variants ?? [];
   const variantOptions = itemVariants.length
     ? itemVariants.map(variant => ({
-        label: variant.sku ? `${variant.label} (${variant.sku})` : variant.label,
+        label: variant.sku
+          ? `${variant.label} (${variant.sku})`
+          : variant.label,
         value: variant.id,
       }))
     : form.variants.map((variant, index) => ({
         label:
-          [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') ||
-          `Varian ${index + 1}`,
+          [variant.tier1Value, variant.tier2Value]
+            .filter(Boolean)
+            .join(' / ') || `Varian ${index + 1}`,
         value: variant.id,
       }));
-  const selectedVariant = itemVariants.find(
-    variant => variant.id === activeVariantId,
-  ) ?? (formVariant
-    ? {
-        id: formVariant.id,
-        label:
-          [formVariant.tier1Value, formVariant.tier2Value].filter(Boolean).join(' / ') ||
-          'Varian',
-        photoUris: [],
-        sku: formVariant.sku,
-        videoUris: [],
-      }
-    : null);
+  const selectedVariant =
+    itemVariants.find(variant => variant.id === activeVariantId) ??
+    (formVariant
+      ? {
+          id: formVariant.id,
+          label:
+            [formVariant.tier1Value, formVariant.tier2Value]
+              .filter(Boolean)
+              .join(' / ') || 'Varian',
+          photoUris: [],
+          sku: formVariant.sku,
+          videoUris: [],
+        }
+      : null);
 
   if (!variantOptions.length) {
     return (
@@ -4669,10 +4849,7 @@ function SpeciesVariantMediaPanel({
           onChange={selectedVariantId =>
             controller.onChangeForm({ selectedVariantId })
           }
-          options={[
-            { label: 'Pilih varian', value: '' },
-            ...variantOptions,
-          ]}
+          options={[{ label: 'Pilih varian', value: '' }, ...variantOptions]}
           searchable
           searchPlaceholder="Cari varian..."
           showLabelInTrigger={false}
@@ -4900,7 +5077,9 @@ function VariantCompactField({
             text: label,
             style: settingsWebFormStyles.settingsWebFormFieldLabel,
           },
-          ...(hint ? [{ id: 'hint', text: hint, style: styles.variantCompactHint }] : []),
+          ...(hint
+            ? [{ id: 'hint', text: hint, style: styles.variantCompactHint }]
+            : []),
         ]}
       />
       {children}
@@ -4955,7 +5134,9 @@ function KolamSpeciesDetail({
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>SPESIES</Text>
-          <Text style={styles.title}>{item.scientificName || item.displayName}</Text>
+          <Text style={styles.title}>
+            {item.scientificName || item.displayName}
+          </Text>
           {item.commonName || item.localName ? (
             <View style={styles.nameLine}>
               {item.commonName ? (
@@ -4972,7 +5153,9 @@ function KolamSpeciesDetail({
           <Text style={styles.description}>
             {[
               item.createdAt ? `Dibuat ${formatShortDate(item.createdAt)}` : '',
-              item.updatedAt ? `Diperbarui ${formatShortDate(item.updatedAt)}` : '',
+              item.updatedAt
+                ? `Diperbarui ${formatShortDate(item.updatedAt)}`
+                : '',
             ]
               .filter(Boolean)
               .join(' | ')}
@@ -5464,11 +5647,15 @@ function createSpeciesOverviewExternalLinks(item: KolamSpecies): Array<{
           value: webstoreUrl,
         }
       : undefined,
-  ].filter((link): link is {
-    label: string;
-    name: KolamSpeciesLinkName;
-    value: string;
-  } => Boolean(link));
+  ].filter(
+    (
+      link,
+    ): link is {
+      label: string;
+      name: KolamSpeciesLinkName;
+      value: string;
+    } => Boolean(link),
+  );
 
   return links.map(link => ({
     ...link,
@@ -5606,24 +5793,26 @@ function createCustomFieldItems(item: KolamSpecies) {
 function createCustomFieldIconAdapter(
   field: KolamSpeciesCustomFieldValue,
 ): KolamCustomField {
-  const raw = field.raw && typeof field.raw === 'object'
-    ? (field.raw as Record<string, unknown>)
-    : {};
-  const rawField = raw.field && typeof raw.field === 'object'
-    ? (raw.field as Record<string, unknown>)
-    : raw;
+  const raw =
+    field.raw && typeof field.raw === 'object'
+      ? (field.raw as Record<string, unknown>)
+      : {};
+  const rawField =
+    raw.field && typeof raw.field === 'object'
+      ? (raw.field as Record<string, unknown>)
+      : raw;
 
   return {
     createdAt: '',
     defaultValue: null,
     description: '',
-    fieldKey: getCustomFieldAdapterString(rawField, 'fieldKey') || field.fieldId,
+    fieldKey:
+      getCustomFieldAdapterString(rawField, 'fieldKey') || field.fieldId,
     fieldLabel: field.fieldLabel || 'Field kustom',
     fieldType: 'string',
     hasMinMax: false,
     iconUrl:
-      getKolamFileUrl(getCustomFieldAdapterString(rawField, 'icon')) ??
-      null,
+      getKolamFileUrl(getCustomFieldAdapterString(rawField, 'icon')) ?? null,
     id: field.fieldId || field.fieldLabel || 'custom-field',
     maxAllowed: null,
     minAllowed: null,
@@ -6158,19 +6347,55 @@ function isSpeciesWeightUnit(unit: { initial?: string; name: string }) {
   const name = unit.name.toLowerCase().trim();
   const allowedInitials = ['kg', 'g', 'gr', 'gram', 'kilogram'];
   const allowedNames = ['kilogram', 'gram', 'kilogramme', 'gramme'];
-  return allowedInitials.some(item => initial === item) || allowedNames.some(item => name.includes(item));
+  return (
+    allowedInitials.some(item => initial === item) ||
+    allowedNames.some(item => name.includes(item))
+  );
 }
 
 function isSpeciesDimensionUnit(unit: { initial?: string; name: string }) {
   const initial = (unit.initial || '').toLowerCase().trim();
   const name = unit.name.toLowerCase().trim();
-  const allowedInitials = ['cm', 'centimeter', 'centimetre', 'm', 'meter', 'metre', 'mm', 'millimeter', 'millimetre', 'in', 'inch', 'inches'];
-  const allowedNames = ['centimeter', 'centimetre', 'meter', 'metre', 'millimeter', 'millimetre', 'inch', 'inches'];
-  const excludedNames = ['kilogram', 'kilobyte', 'kilowatt', 'kilovolt', 'kilojoule', 'kilometer', 'kilometre'];
+  const allowedInitials = [
+    'cm',
+    'centimeter',
+    'centimetre',
+    'm',
+    'meter',
+    'metre',
+    'mm',
+    'millimeter',
+    'millimetre',
+    'in',
+    'inch',
+    'inches',
+  ];
+  const allowedNames = [
+    'centimeter',
+    'centimetre',
+    'meter',
+    'metre',
+    'millimeter',
+    'millimetre',
+    'inch',
+    'inches',
+  ];
+  const excludedNames = [
+    'kilogram',
+    'kilobyte',
+    'kilowatt',
+    'kilovolt',
+    'kilojoule',
+    'kilometer',
+    'kilometre',
+  ];
   if (allowedInitials.some(item => initial === item)) {
     return true;
   }
-  return allowedNames.some(item => name.includes(item)) && !excludedNames.some(item => name.includes(item));
+  return (
+    allowedNames.some(item => name.includes(item)) &&
+    !excludedNames.some(item => name.includes(item))
+  );
 }
 function getCheapestSpeciesVendorCost(rows: KolamSpeciesVendorPriceFormRow[]) {
   const totals = rows
@@ -6485,15 +6710,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-  listTableFrame: {
-    minHeight: 0,
-  },
-  listFlatList: {
-    flexGrow: 0,
-  },
-  listContent: {
-    flexGrow: 0,
-  },
   speciesEditSection: {
     gap: 0,
     padding: 0,
@@ -6627,62 +6843,12 @@ const styles = StyleSheet.create({
   emptyWrap: {
     padding: 24,
   },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-  },
-  pageLabel: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '800',
-    lineHeight: 20,
-  },
-  tableRow: {
-    alignItems: 'stretch',
-  },
-  activeActionRow: {
-    alignItems: 'stretch',
-    zIndex: 1000,
-    elevation: 30,
-    overflow: 'visible',
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
-  actionsTrack: {
-    alignItems: 'center',
-  },
-  cell: {
+  speciesTableIdentityCell: {
     alignItems: 'center',
     flexDirection: 'row',
     minWidth: 0,
-    overflow: 'hidden',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  primaryCell: {
-    alignItems: 'center',
-  },
-  metaCell: {
-    justifyContent: 'center',
-  },
-  amountCell: {
-    justifyContent: 'center',
-  },
-  stockCell: {
-    justifyContent: 'center',
-  },
-  syncCell: {
-    justifyContent: 'center',
-  },
-  notesCell: {
-    justifyContent: 'center',
-  },
-  statusCell: {
-    justifyContent: 'flex-end',
-    width: 116,
+    overflow: 'visible',
+    width: '100%',
   },
   speciesThumb: {
     backgroundColor: V.colors.secondary,
@@ -6783,6 +6949,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 14,
   },
+  speciesActionMenuRaised: {
+    elevation: 30,
+    zIndex: 1000,
+  },
   rowSubtextRight: {
     color: V.colors.mutedFg,
     fontSize: 12,
@@ -6851,7 +7021,8 @@ const styles = StyleSheet.create({
   },
   variantMetaBadge: {
     minHeight: 24,
-  },  variantHeaderActions: {
+  },
+  variantHeaderActions: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -6861,7 +7032,8 @@ const styles = StyleSheet.create({
   variantHeaderButton: {
     minHeight: 34,
     paddingHorizontal: 12,
-  },  variantFormCard: {
+  },
+  variantFormCard: {
     backgroundColor: V.colors.mutedSoft,
     borderColor: V.colors.border,
     borderRadius: 8,
@@ -6972,7 +7144,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     lineHeight: 13,
-  },  variantFieldPanel: {
+  },
+  variantFieldPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
@@ -7210,7 +7383,8 @@ const styles = StyleSheet.create({
     minHeight: 42,
     paddingHorizontal: 12,
     paddingVertical: 8,
-  },  customFieldEditorRow: {
+  },
+  customFieldEditorRow: {
     backgroundColor: V.colors.secondary,
     borderColor: V.colors.border,
     borderRadius: 6,
@@ -7255,69 +7429,3 @@ const styles = StyleSheet.create({
     width: 36,
   },
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
