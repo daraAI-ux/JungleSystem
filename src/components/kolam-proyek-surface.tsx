@@ -2841,6 +2841,23 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 28,
   },
+  summaryBodyStack: {
+    gap: 8,
+  },
+  summaryFieldStack: {
+    gap: 2,
+  },
+  summaryFieldPrimary: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  summaryFieldSecondary: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   detailTop: {
     flexShrink: 0,
     gap: 12,
