@@ -302,17 +302,36 @@ export function normalizeKolamPayableList(
   query: Pick<KolamPayableListFilters, 'page' | 'limit'> = { page: 1, limit: 10 },
 ): KolamPayableListResult {
   const root = asRecord(payload);
+  const dataRecord = asRecord(root.data);
   const dataRaw = Array.isArray(payload)
     ? payload
     : Array.isArray(root.data)
       ? root.data
-      : [];
-  const meta = asRecord(root.meta);
+      : Array.isArray(dataRecord.items)
+        ? dataRecord.items
+        : Array.isArray(dataRecord.payables)
+          ? dataRecord.payables
+          : Array.isArray(root.items)
+            ? root.items
+            : Array.isArray(root.payables)
+              ? root.payables
+              : [];
+  const meta = Object.keys(asRecord(root.meta)).length
+    ? asRecord(root.meta)
+    : Object.keys(asRecord(dataRecord.meta)).length
+      ? asRecord(dataRecord.meta)
+      : Object.keys(asRecord(dataRecord.pagination)).length
+        ? asRecord(dataRecord.pagination)
+        : asRecord(root.pagination);
   const page = toNumber(meta.page) ?? query.page ?? 1;
-  const limit = toNumber(meta.limit) ?? query.limit ?? 10;
-  const total = toNumber(meta.total) ?? dataRaw.length;
+  const limit =
+    toNumber(meta.limit) ?? toNumber(meta.pageSize) ?? query.limit ?? 10;
+  const total =
+    toNumber(meta.total) ?? toNumber(meta.totalItems) ?? dataRaw.length;
   const totalPages =
-    toNumber(meta.totalPages) ?? Math.max(1, Math.ceil(total / Math.max(1, limit)));
+    toNumber(meta.totalPages) ??
+    toNumber(meta.pages) ??
+    Math.max(1, Math.ceil(total / Math.max(1, limit)));
 
   return {
     items: dataRaw.map(normalizeKolamPayable).filter(item => item.id),
