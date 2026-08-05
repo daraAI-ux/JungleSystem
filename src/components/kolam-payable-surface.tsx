@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamPayableSourceLabel,
   formatKolamPayableStatusLabel,
@@ -436,7 +436,7 @@ function PayableList({
   const pageCount = Math.max(1, controller.pagination.totalPages);
 
   const renderRow = React.useCallback(
-    ({ item }: { item: KolamPayable }) => {
+    (item: KolamPayable) => {
       const canPayRow =
         controller.canPay && item.status === 'open' && Boolean(item.id);
       const due = getPayableDueTone(item.status, item.dueDate);
@@ -558,33 +558,30 @@ function PayableList({
         }
         style={styles.tableFrame}
       >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.items}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
+        <View style={styles.headerRow}>
+          {LIST_COLUMNS.map(column => (
+            <View
+              key={column.id}
+              style={[styles.cell, { flex: column.flex }]}
+            >
+              <Text style={styles.headerCellText}>{column.label}</Text>
+            </View>
+          ))}
+        </View>
+        {controller.items.length ? (
+          controller.items.map(item => (
+            <React.Fragment key={item.id}>{renderRow(item)}</React.Fragment>
+          ))
+        ) : (
+          <View style={styles.listContent}>
             <View style={styles.emptyWrap}>
               <KolamEmptyState
                 compact
                 title={controller.loading ? 'Memuat...' : 'Tidak ada hutang'}
               />
             </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {LIST_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.list}
-        />
+          </View>
+        )}
       </KolamCatalogListTableShell>
     </View>
   );
