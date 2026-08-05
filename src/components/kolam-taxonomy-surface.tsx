@@ -25,6 +25,7 @@ import {
   type KolamTaxonomyController,
 } from '../hooks/use-kolam-taxonomy-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
@@ -135,9 +136,10 @@ function KolamTaxonomyShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -351,9 +353,10 @@ function KolamTaxonomyList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label="Refresh"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

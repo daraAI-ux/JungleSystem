@@ -9,6 +9,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamNotification} from '../services/kolam-notifications-api';
 import {useKolamNotificationCenterController} from '../hooks/use-kolam-notification-center-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamPanelFrame} from './kolam-panel-frame';
@@ -63,8 +64,9 @@ function KolamNotificationListSurface({
           </Text>
         </View>
         <View style={styles.actions}>
-          <KolamButton
-            label="Refresh"
+          <KolamRefreshButton
+  accessibilityLabel="Refresh"
+
             intent="outline"
             onPress={() => {
               void controller.refresh();

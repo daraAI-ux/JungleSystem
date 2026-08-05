@@ -28,6 +28,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
@@ -168,9 +169,10 @@ export function KolamDaraSeoApprovalsBody({
                   controller.onResetFilters();
                 }}
               />
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label={controller.loading ? 'Memuat…' : 'Refresh'}
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

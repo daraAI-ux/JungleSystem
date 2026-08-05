@@ -14,6 +14,7 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import {
@@ -498,9 +499,10 @@ function CommissionListBody({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               intent="secondary"
-              label={controller.loading ? 'Memuat...' : 'Muat ulang'}
+
               onPress={() => {
                 void controller.onRefresh();
               }}

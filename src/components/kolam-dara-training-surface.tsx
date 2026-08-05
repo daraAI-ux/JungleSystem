@@ -12,6 +12,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamDaraTrainingController} from '../hooks/use-kolam-dara-training-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDaraTrainingFineTuneBody} from './kolam-dara-training-fine-tune-body';
 import {KolamDaraTrainingFulfillmentBody} from './kolam-dara-training-fulfillment-body';
 import {KolamDaraTrainingPhrasesBody} from './kolam-dara-training-phrases-body';
@@ -89,9 +90,10 @@ export function KolamDaraTrainingSurface({
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters} />
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label={controller.loading ? 'Memuat…' : 'Muat ulang'}
+
                 onPress={() => {
                   void onToolbarRefresh();
                 }}

@@ -34,6 +34,7 @@ import {
 } from '../hooks/use-kolam-admin-cashflow-session-detail-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamControlTabList } from './kolam-control-tab-list';
@@ -335,9 +336,10 @@ function DetailHeader({
         </View>
         <View style={styles.headerActions}>
           <KolamButton label="Daftar" muted onPress={onBack} />
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Muat ulang"
             disabled={controller.loading || controller.acting}
-            label="Muat ulang"
+
             onPress={() => {
               void controller.onRefresh();
             }}

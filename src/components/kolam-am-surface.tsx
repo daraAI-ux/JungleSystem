@@ -115,6 +115,7 @@ import {
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -503,7 +504,7 @@ function AmDashboardPage({
       <View style={styles.emptyPanel}>
         <View style={styles.actionRow}>
           <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-          <KolamButton label="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
+          <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
         </View>
         <Text style={styles.panelTitle}>{isLoading ? 'Memuat dashboard AM' : 'Menunggu data AM'}</Text>
         <AmInlineError error={error} title="AM dashboard belum bisa dibaca" />
@@ -515,9 +516,10 @@ function AmDashboardPage({
     <View style={[styles.pageStack, styles.dashboardPageStack]}>
       <View style={styles.actionRow}>
         <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={isLoading}
-          label={isLoading ? 'Refreshing...' : 'Refresh'}
+
           intent="outline"
           size="sm"
           onPress={fetchDashboard}
@@ -908,7 +910,7 @@ function AmTasksPage({
         <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
         <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={handleTypeChange} />
         <AmSegmentGroup active={status} items={TASK_FILTER_STATUSES} labels={TASK_STATUS_FILTER_LABELS} onSelect={handleStatusChange} />
-        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTasks} />
+        <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" size="sm" muted={isLoading} onPress={fetchTasks} />
       </View>
       {error ? (
         <View style={styles.errorPanel}>
@@ -1082,7 +1084,7 @@ function AmTaskDetailPage({
             size="sm"
             onPress={onBack}
           />
-          <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" size="sm" muted={isLoading} onPress={fetchTask} />
+          <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" size="sm" muted={isLoading} onPress={fetchTask} />
         </View>
       </View>
       <View style={styles.cardGrid}>
@@ -1504,9 +1506,10 @@ function AmServicesPage() {
           items={['all', 'active', 'inactive', 'blocked']}
           onSelect={handleServiceStatusChange}
         />
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={isLoading}
-          label={isLoading ? 'Memuat' : 'Refresh'}
+
           intent="outline"
           muted={isLoading}
           size="sm"
@@ -2189,9 +2192,10 @@ function AmHardwarePage({
         <AmMetricCard label="Rack" value={String(racks.length)} meta={`${boxes.length} box`} />
         <AmMetricCard label="Device" value={String(devices.length)} meta={`${connectedDevices} connected`} />
         <AmMetricCard label="ADB Attention" value={String(unauthorizedDevices)} meta="unauthorized device" />
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={isLoading}
-          label={isLoading ? 'Memuat' : 'Refresh'}
+
           intent="outline"
           muted={isLoading}
           size="sm"
@@ -3064,11 +3068,11 @@ function AmTokopediaSessionPanel({
             return job.message;
           })}
         />
-        <KolamButton
+        <KolamRefreshButton
           accessibilityLabel={`AM Tokopedia Refresh ${account._id}`}
           disabled={isLoading}
           intent="outline"
-          label={isLoading ? 'Memuat' : 'Refresh'}
+
           muted={isLoading}
           size="sm"
           onPress={() => loadSession()}
@@ -3705,9 +3709,10 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               onPress={() => resetDeviceServiceForm(true)}
             />
           ) : null}
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Refresh"
             disabled={isLoading}
-            label={isLoading ? 'Memuat' : 'Refresh'}
+
             intent="outline"
             size="sm"
             onPress={fetchDeviceServices}
@@ -4196,9 +4201,10 @@ function AmTransfersPage({
           size="sm"
           onPress={() => setShowTransferForm(current => !current)}
         />
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={isLoading}
-          label={isLoading ? 'Memuat' : 'Refresh'}
+
           intent="outline"
           muted={isLoading}
           size="sm"
@@ -4786,7 +4792,7 @@ function AmMutasiPage({
           labels={deviceLabels}
           onSelect={handleMutasiDeviceChange}
         />
-        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchMutasi} />
+        <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" muted={isLoading} size="sm" onPress={fetchMutasi} />
       </View>
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
       <View style={styles.tablePanel}>
@@ -5265,7 +5271,7 @@ function AmWebhooksPage() {
       <View style={styles.filterBar}>
         <AmMetricCard label="Endpoints" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
         <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
-        <KolamButton disabled={isLoading || isWebhookActionLocked} label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
+        <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading || isWebhookActionLocked} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
         <KolamButton disabled={isWebhookActionLocked} label={isTestingPing ? 'Testing...' : 'Test Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
         <KolamButton
           accessibilityLabel="AM Webhook Register"
@@ -5678,7 +5684,7 @@ function AmUsersPage() {
             }}
           />
         ) : null}
-        <KolamButton disabled={isLoading} label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
+        <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>
       <AmInlineError title="Users AM belum bisa dibaca" error={error} />
       {actionMessage ? (
@@ -6099,7 +6105,7 @@ function AmActivityLogPage() {
             onPress={() => setShowDeleteFilterConfirm(true)}
           />
         ) : null}
-        <KolamButton label={isLoading ? 'Memuat' : 'Refresh'} intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
+        <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
       </View>
       {deleteMessage ? (
         <View style={styles.successPanel}>

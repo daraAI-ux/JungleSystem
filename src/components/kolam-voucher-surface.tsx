@@ -26,6 +26,7 @@ import {
   type KolamVoucherController,
 } from '../hooks/use-kolam-voucher-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import {
@@ -212,8 +213,9 @@ function KolamVoucherList({
                 }}
               />
             ) : null}
-            <KolamButton
-              label="Muat ulang"
+            <KolamRefreshButton
+  accessibilityLabel="Muat ulang"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

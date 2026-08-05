@@ -33,6 +33,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
@@ -269,9 +270,10 @@ function KolamTaskManagerDetail({
                 onPress={() => controller.onRequestDeleteTask(task)}
               />
             ) : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -1103,9 +1105,10 @@ function KolamTaskToolbar({
             disabled={controller.loading}
             onPress={controller.onResetFilters}
           />
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Refresh"
             disabled={controller.loading}
-            label="Refresh"
+
             onPress={() => {
               void controller.onRefresh();
             }}
@@ -1406,9 +1409,10 @@ function KolamTaskRecurringPanel({
                 />
               </View>
             ) : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -2188,9 +2192,10 @@ function KolamTaskCategorySettingsPanel({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -2473,9 +2478,10 @@ function KolamTaskTypeSettingsPanel({
             <Text numberOfLines={1} style={styles.detailContext}>Tipe Task</Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

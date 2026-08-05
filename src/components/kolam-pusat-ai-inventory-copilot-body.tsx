@@ -19,6 +19,7 @@ import {
 import {getKolamFileUrl} from '../lib/file-url';
 import type {KolamPusatAiInventoryCopilotController} from '../hooks/use-kolam-pusat-ai-inventory-copilot-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSwitch} from './kolam-switch';
@@ -48,10 +49,11 @@ export function KolamPusatAiInventoryCopilotBody({
             </Text>
           </View>
           <View style={styles.shellActions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={loading}
               intent="outline"
-              label={loading ? 'Memuat…' : 'Refresh'}
+
               onPress={() => {
                 void controller.onRefresh();
               }}

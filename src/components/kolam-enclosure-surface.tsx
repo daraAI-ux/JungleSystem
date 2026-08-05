@@ -64,6 +64,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
@@ -261,9 +262,10 @@ function KolamEnclosureEditSurface({
             label="Batal"
             onPress={() => onRouteChange?.(detailRoute)}
           />
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Muat ulang"
             disabled={controller.loading}
-            label="Muat ulang"
+
             onPress={() => void controller.onRefresh()}
           />
         </View>
@@ -1040,9 +1042,10 @@ function KolamEnclosureList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label="Refresh"
+
                 onPress={() => void controller.onRefresh()}
                 style={styles.toolbarButton}
               />

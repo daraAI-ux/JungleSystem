@@ -21,6 +21,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraMarketIntelApprovalsController} from '../hooks/use-kolam-dara-market-intel-approvals-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
@@ -136,9 +137,10 @@ export function KolamDaraMarketIntelApprovalsBody({
                 }}
               />
             ) : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label={controller.loading ? 'Memuat…' : 'Refresh'}
+
               onPress={() => {
                 void controller.onRefresh();
               }}

@@ -31,6 +31,7 @@ import {
   type KolamAppDownloadPickedFile,
 } from '../services/kolam-app-download-api';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -222,9 +223,10 @@ export function KolamAppDownloadSurface() {
               />
             </View>
           ) : null}
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Refresh"
             disabled={loading}
-            label="Refresh"
+
             onPress={() => {
               refreshApps().catch(() => undefined);
             }}

@@ -31,6 +31,7 @@ import {
 } from '../hooks/use-kolam-stock-opname-controller';
 import { pickNativeAssetFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -349,9 +350,10 @@ function KolamStockOpnameList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label="Muat ulang"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

@@ -24,6 +24,7 @@ import {
 } from '../hooks/use-kolam-finance-summary-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
@@ -251,9 +252,10 @@ function FinanceSummaryToolbar({
               }}
               style={styles.actionButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               intent="secondary"
-              label={controller.loading ? 'Memuat…' : 'Muat ulang'}
+
               onPress={() => {
                 closeFilterPanel();
                 void controller.onRefresh();

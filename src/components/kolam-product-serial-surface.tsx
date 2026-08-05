@@ -26,6 +26,7 @@ import {
   type KolamProductSerialOpnameSessionItem,
 } from '../hooks/use-kolam-product-serial-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -293,9 +294,10 @@ function KolamProductSerialList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label="Muat ulang"
+
                 onPress={() => void controller.onRefresh()}
                 style={styles.toolbarButton}
               />

@@ -26,6 +26,7 @@ import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamAssetPurchaseDetailSurface } from './kolam-asset-purchase-detail-surface';
 import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
@@ -764,9 +765,10 @@ function FinanceExpenseListBody({
                 onPress={() => setExportOpen(true)}
               />
             ) : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               intent="secondary"
-              label={controller.loading ? 'Memuat…' : 'Muat ulang'}
+
               onPress={() => {
                 void controller.onRefresh();
               }}

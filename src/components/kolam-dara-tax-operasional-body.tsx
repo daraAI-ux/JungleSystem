@@ -16,6 +16,7 @@ import {
   fetchKolamDaraTaxSalesMissingFaktur,
 } from '../services/kolam-dara-tax-api';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
@@ -261,9 +262,10 @@ export function KolamDaraTaxOperasionalBody({
               <Text style={styles.sectionTitle}>
                 Faktur pajak belum tercatat
               </Text>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={fakturLoading}
-                label="Refresh"
+
                 onPress={() => {
                   void loadMissing();
                 }}

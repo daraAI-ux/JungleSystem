@@ -19,6 +19,7 @@ import {
   type KolamIucnStatusController,
 } from '../hooks/use-kolam-iucn-status-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -120,9 +121,10 @@ function KolamIucnShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -315,9 +317,10 @@ function KolamIucnList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label="Refresh"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

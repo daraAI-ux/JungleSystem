@@ -8,6 +8,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraMarketIntelDashboardController} from '../hooks/use-kolam-dara-market-intel-dashboard-controller';
 import type {KolamDaraMarketIntelJobsProgressController} from '../hooks/use-kolam-dara-market-intel-jobs-progress';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -143,9 +144,10 @@ export function KolamDaraMarketIntelDashboardBody({
                 />
               </>
             ) : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={loading}
-              label={loading ? 'Memuat…' : 'Refresh'}
+
               onPress={() => {
                 void controller.onRefresh();
               }}

@@ -26,6 +26,7 @@ import {
   type KolamPackingMaterialController,
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -156,9 +157,10 @@ function KolamPackingMaterialShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -392,9 +394,10 @@ function KolamPackingMaterialList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label="Refresh"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

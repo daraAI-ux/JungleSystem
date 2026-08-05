@@ -7,6 +7,7 @@ import {
 import { KOLAM_STOCK_TRANSACTION_ROOT } from '../domain/kolam-stock-transaction';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamStatusBadge } from './kolam-status-badge';
 
@@ -43,9 +44,10 @@ export function KolamStockCrossSyncObservabilityPanel({
         <Text style={styles.muted}>
           {errorMessage || 'Gagal memuat laporan'}
         </Text>
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={fetching}
-          label={fetching ? 'Memuat…' : 'Refresh'}
+
           onPress={() => {
             void onRefresh();
           }}
@@ -77,9 +79,10 @@ export function KolamStockCrossSyncObservabilityPanel({
             />
           </View>
         </View>
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={fetching}
-          label={fetching ? 'Memuat…' : 'Refresh'}
+
           onPress={() => {
             void onRefresh();
           }}

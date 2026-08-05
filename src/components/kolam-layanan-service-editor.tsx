@@ -28,6 +28,7 @@ import type { KolamLayananController } from '../hooks/use-kolam-layanan-controll
 import { spawnKolamLayananServiceTask } from '../services/kolam-layanan-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDescriptionList } from './kolam-description-list';
@@ -133,9 +134,10 @@ export function KolamLayananServiceEditor({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading || controller.saving}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

@@ -61,6 +61,7 @@ import {useKolamPusatAiInventoryCopilotController} from '../hooks/use-kolam-pusa
 import {useKolamPusatAiPoCopilotController} from '../hooks/use-kolam-pusat-ai-po-copilot-controller';
 import {useKolamPusatAiTransaksiCopilotController} from '../hooks/use-kolam-pusat-ai-transaksi-copilot-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamPusatAiInventoryCopilotBody} from './kolam-pusat-ai-inventory-copilot-body';
@@ -205,10 +206,11 @@ function KolamPusatAiLogDaraBody({
             {`${log.lookbackHours} jam terakhir`}
           </Text>
         </View>
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={loading}
           intent="outline"
-          label="Refresh"
+
           onPress={() => {
             void controller.onRefresh();
           }}
@@ -282,10 +284,11 @@ function KolamPusatAiOwnerCopilotBody({
             </Text>
           </View>
           <View style={styles.copilotActions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={loading}
               intent="outline"
-              label={loading ? 'Memuat…' : 'Refresh'}
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -644,11 +647,10 @@ function KolamPusatAiRingkasanBody({
                   />
                 ))
               : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={loading || prosesController.loading}
-              label={
-                loading || prosesController.loading ? 'Memuat…' : 'Refresh'
-              }
+
               onPress={() => {
                 void controller.onRefresh();
                 void prosesController.onRefresh();

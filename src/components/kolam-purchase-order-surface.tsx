@@ -40,6 +40,7 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -256,9 +257,10 @@ function KolamPurchaseOrderList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label="Muat ulang"
+
                 onPress={() => void controller.onRefresh()}
                 style={styles.toolbarButton}
               />
@@ -1204,9 +1206,10 @@ function KolamPurchaseOrderDetail({
               }}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               disabled={controller.loading || controller.mutating}
-              label="Muat ulang"
+
               onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />

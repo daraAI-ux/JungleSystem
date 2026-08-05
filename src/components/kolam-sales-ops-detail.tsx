@@ -66,6 +66,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import {
   KolamDetailMetaStrip,
@@ -202,9 +203,10 @@ export function KolamSalesOpsDetail({
               onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading || controller.mutating}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

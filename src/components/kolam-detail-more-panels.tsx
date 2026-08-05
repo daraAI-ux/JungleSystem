@@ -6,6 +6,7 @@ import {
   type KolamSpeciesTermsTemplate,
 } from '../services/kolam-species-api';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamPricingMetric, KolamPricingMetricsGrid } from './kolam-pricing-metric-grid';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -77,7 +78,7 @@ export function KolamDetailTermsTemplatesPanel({
           <Text style={styles.sectionTitle}>Syarat & Ketentuan</Text>
           <Text style={styles.sectionDescription}>{sectionDescription}</Text>
         </View>
-        <KolamButton disabled={loadingTerms} label={loadingTerms ? 'Memuat...' : 'Segarkan'} onPress={loadTerms} />
+        <KolamRefreshButton accessibilityLabel="Segarkan" disabled={loadingTerms} onPress={loadTerms} />
       </View>
       {termsError ? <Text style={styles.emptyText}>{termsError}</Text> : null}
       {summary ? (

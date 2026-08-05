@@ -63,6 +63,7 @@ import {
   type KolamComplaintController,
 } from '../hooks/use-kolam-complaint-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -193,9 +194,10 @@ function KolamComplaintShell({
               }}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -375,9 +377,10 @@ function KolamComplaintList({
                 }
               />
             </View>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

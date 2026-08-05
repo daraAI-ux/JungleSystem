@@ -3,6 +3,7 @@ import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoRankingsController} from '../hooks/use-kolam-dara-seo-rankings-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -75,9 +76,10 @@ export function KolamDaraSeoRankingsBody({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label="Muat ulang"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

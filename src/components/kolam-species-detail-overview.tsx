@@ -39,6 +39,7 @@ import {
   type KolamLabelFieldMetric,
 } from './kolam-label-field-detail-overview';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -1810,7 +1811,7 @@ function StatisticsPanel({ species }: { species: KolamSpecies }) {
           <Text style={styles.sectionTitle}>Statistik</Text>
           <Text style={styles.sectionDescription}>Penjualan, pembelian, dan performa lifestock.</Text>
         </View>
-        <KolamButton disabled={loading} label={loading ? 'Memuat...' : 'Segarkan'} onPress={loadStatistics} />
+        <KolamRefreshButton accessibilityLabel="Segarkan" disabled={loading} onPress={loadStatistics} />
       </View>
       <View style={styles.periodFilterRow}>
         {STATISTICS_PERIOD_OPTIONS.map(option => (
@@ -2178,7 +2179,7 @@ function LocationPanel({ species }: { species: KolamSpecies }) {
             <Text style={styles.sectionTitle}>Posisi & Lokasi</Text>
             <Text style={styles.sectionDescription}>Ringkasan alokasi posisi vs stok total livestock.</Text>
           </View>
-          <KolamButton disabled={loading} label={loading ? 'Memuat...' : 'Segarkan'} onPress={loadLocation} />
+          <KolamRefreshButton accessibilityLabel="Segarkan" disabled={loading} onPress={loadLocation} />
         </View>
         {error ? <Text style={styles.emptyText}>{error}</Text> : null}
         {allocation ? (

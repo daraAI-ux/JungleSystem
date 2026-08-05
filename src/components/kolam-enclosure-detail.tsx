@@ -46,6 +46,7 @@ import type {KolamEnclosureController} from '../hooks/use-kolam-enclosure-contro
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
@@ -135,9 +136,10 @@ export function KolamEnclosureDetailSurface({
             label="Daftar"
             onPress={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)}
           />
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Muat ulang"
             disabled={controller.loading}
-            label="Muat ulang"
+
             onPress={() => void controller.onRefresh()}
           />
         </View>
@@ -184,9 +186,10 @@ export function KolamEnclosureDetailSurface({
               }
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               disabled={controller.loading || controller.operationLoading}
-              label="Muat ulang"
+
               onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />
@@ -824,9 +827,10 @@ function KolamEnclosureDetailTasksTab({
             </View>
           ))
         )}
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Muat ulang tugas"
           disabled={controller.enclosureTasksLoading}
-          label="Muat ulang tugas"
+
           onPress={() => void controller.onRefreshTasks()}
           style={styles.toolbarButton}
         />
@@ -1067,9 +1071,10 @@ function KolamEnclosureDetailStatisticsTab({
                 }
                 style={styles.detailInlineButton}
               />
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh stok"
                 disabled={controller.enclosureStockTransactionsLoading}
-                label="Refresh stok"
+
                 onPress={() => void controller.onRefreshStockTransactions()}
                 style={styles.toolbarButton}
               />
@@ -1602,9 +1607,10 @@ function EnclosureCommentsOperation({
               }
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               disabled={controller.operationLoading}
-              label="Muat ulang"
+
               onPress={() => void controller.onRefreshComments()}
               style={styles.toolbarButton}
             />

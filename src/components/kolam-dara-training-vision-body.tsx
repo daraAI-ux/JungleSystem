@@ -63,6 +63,7 @@ import {
   trainKolamDaraTrainingVisionYoloProducts,
 } from '../services/kolam-dara-training-vision-api';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamRemoteImage} from './kolam-remote-image';
@@ -1295,10 +1296,11 @@ export function KolamDaraTrainingVisionBody({
                 ]}
                 value={String(baselineDays)}
               />
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={loading}
                 intent="secondary"
-                label="Refresh"
+
                 onPress={() => {
                   void load();
                 }}

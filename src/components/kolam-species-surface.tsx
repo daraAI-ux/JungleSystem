@@ -43,6 +43,7 @@ import {
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamComponentOverridesEditor } from './kolam-component-overrides-editor';
@@ -202,9 +203,10 @@ function KolamSpeciesShell({
       {controller.mode !== 'list' ? (
         <View style={styles.header}>
           <View style={styles.headerActions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
               disabled={controller.loading}
-              label="Refresh"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -461,9 +463,10 @@ function KolamSpeciesList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label="Refresh"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

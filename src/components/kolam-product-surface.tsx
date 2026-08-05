@@ -56,6 +56,7 @@ import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
@@ -463,9 +464,10 @@ export function KolamProductSurface({
                 ) : null}
               </View>
               <View style={kolamTableToolbarStyles.actions}>
-                <KolamButton
+                <KolamRefreshButton
+                  accessibilityLabel="Refresh"
                   disabled={controller.loading}
-                  label="Refresh"
+
                   onPress={() => {
                     void controller.onRefresh();
                   }}

@@ -41,6 +41,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -221,9 +222,10 @@ function KolamSupplierList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label="Muat ulang"
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -732,9 +734,10 @@ function KolamSupplierDetail({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={controller.loading}
-                label="Refresh"
+
                 onPress={() => {
                   void controller.onSelectVendor(vendor);
                 }}

@@ -1,7 +1,6 @@
-﻿import React from 'react';
-import {KolamActionControlButton} from './kolam-action-control-button';
+import React from 'react';
 import {filterBarStyles as styles} from './kolam-filter-bar-styles';
-import {KolamRefreshIcon} from './kolam-refresh-icon';
+import {KolamRefreshButton} from './kolam-refresh-button';
 
 export function KolamFilterRefreshButton({
   onRefresh,
@@ -11,13 +10,13 @@ export function KolamFilterRefreshButton({
   refreshLabel: string;
 }) {
   return (
-    <KolamActionControlButton
+    <KolamRefreshButton
+      accessibilityLabel={refreshLabel}
       label={refreshLabel}
       intent="outline"
       size="sm"
       style={styles.refreshButton}
       onPress={onRefresh}
-      icon={<KolamRefreshIcon />}
     />
   );
 }

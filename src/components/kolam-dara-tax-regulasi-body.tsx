@@ -44,6 +44,7 @@ import {
   runKolamDaraTaxSnapshotBackfill,
 } from '../services/kolam-dara-tax-api';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamStatusBadge} from './kolam-status-badge';
 import type {KolamStatusBadgeIntent} from './kolam-status-badge-types';
@@ -528,9 +529,10 @@ export function KolamDaraTaxRegulasiBody({
               ) : null}
             </View>
             <View style={styles.rowActions}>
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 intent="outline"
-                label="Muat ulang"
+
                 onPress={() => {
                   void loadKitab();
                 }}

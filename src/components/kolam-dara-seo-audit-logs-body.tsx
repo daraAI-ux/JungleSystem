@@ -3,6 +3,7 @@ import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoAuditLogsController} from '../hooks/use-kolam-dara-seo-audit-logs-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
 
@@ -19,9 +20,10 @@ export function KolamDaraSeoAuditLogsBody({
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
       <View style={styles.toolbar}>
-        <KolamButton
+        <KolamRefreshButton
+          accessibilityLabel="Refresh"
           disabled={controller.loading}
-          label={controller.loading ? 'Memuat…' : 'Refresh'}
+
           onPress={() => {
             void controller.onRefresh();
           }}

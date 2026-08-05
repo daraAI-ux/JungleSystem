@@ -25,6 +25,7 @@ import {
   type KolamTermsTemplateController,
 } from '../hooks/use-kolam-terms-template-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -209,8 +210,9 @@ function KolamTermsTemplateList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Muat ulang"
+            <KolamRefreshButton
+  accessibilityLabel="Muat ulang"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

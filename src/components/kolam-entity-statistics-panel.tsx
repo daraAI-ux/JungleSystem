@@ -8,6 +8,7 @@ import {
 } from '../services/kolam-entity-statistics-api';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 
 export function KolamEntityStatisticsPanel({
@@ -51,7 +52,7 @@ export function KolamEntityStatisticsPanel({
           <Text style={styles.sectionTitle}>Statistik</Text>
           <Text style={styles.sectionDescription}>{description}</Text>
         </View>
-        <KolamButton disabled={loading} label={loading ? 'Memuat...' : 'Segarkan'} onPress={loadStatistics} />
+        <KolamRefreshButton accessibilityLabel="Segarkan" disabled={loading} onPress={loadStatistics} />
       </View>
       <View style={styles.periodFilterRow}>
         {STATISTICS_PERIOD_OPTIONS.map(option => (

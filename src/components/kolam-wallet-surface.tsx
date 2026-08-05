@@ -46,6 +46,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -682,10 +683,11 @@ function WalletListPanel({
             controller={controller}
             onRouteChange={onRouteChange}
             trailing={[
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 key="reload-wallets"
                 intent="secondary"
-                label={controller.loadingWallets ? 'Memuat…' : 'Muat ulang'}
+
                 onPress={() => {
                   void controller.onRefreshWallets();
                 }}
@@ -1407,12 +1409,11 @@ function WalletTransactionPanel({
                 onPress={controller.onClearTxFilters}
                 style={styles.filterTrigger}
               />,
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 key="reload-tx"
                 intent="secondary"
-                label={
-                  controller.loadingTransactions ? 'Memuat…' : 'Muat ulang'
-                }
+
                 onPress={() => {
                   void controller.onRefreshTransactions();
                 }}

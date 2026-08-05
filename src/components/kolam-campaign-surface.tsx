@@ -27,6 +27,7 @@ import {
   type KolamCampaignController,
 } from '../hooks/use-kolam-campaign-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCampaignDetail } from './kolam-campaign-detail';
 import { KolamCampaignForm } from './kolam-campaign-form';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
@@ -220,8 +221,9 @@ function KolamCampaignList({
                 }}
               />
             ) : null}
-            <KolamButton
-              label="Muat ulang"
+            <KolamRefreshButton
+  accessibilityLabel="Muat ulang"
+
               onPress={() => {
                 void controller.onRefresh();
               }}

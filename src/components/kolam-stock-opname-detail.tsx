@@ -34,6 +34,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -253,9 +254,10 @@ export function KolamStockOpnameDetail({
             muted
             onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
           />
-          <KolamButton
+          <KolamRefreshButton
+            accessibilityLabel="Muat ulang"
             disabled={controller.loading || controller.acting}
-            label="Muat ulang"
+
             onPress={() => {
               void controller.onRefresh();
             }}

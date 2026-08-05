@@ -43,6 +43,7 @@ import {useKolamDaraSeoSentimentController} from '../hooks/use-kolam-dara-seo-se
 import {useKolamDaraSeoSocialController} from '../hooks/use-kolam-dara-seo-social-controller';
 import {useKolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-website-controller';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
 import {KolamDaraSeoAuditLogsBody} from './kolam-dara-seo-audit-logs-body';
 import {KolamDaraSeoCircularKpi} from './kolam-dara-seo-circular-kpi';
@@ -419,9 +420,10 @@ function KolamDaraSeoDashboardBody({
                 }`}
                 onPress={() => onRouteChange?.('/campaign/dara-seo/approvals')}
               />
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
                 disabled={loading}
-                label={loading ? 'Memuat…' : 'Refresh'}
+
                 onPress={() => {
                   void controller.onRefresh();
                 }}

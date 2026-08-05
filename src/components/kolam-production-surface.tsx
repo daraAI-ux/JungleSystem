@@ -42,6 +42,7 @@ import {
   type KolamProductionController,
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -228,9 +229,10 @@ function KolamProductionList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamButton
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-                label="Muat ulang"
+
                 onPress={() => void controller.onRefresh()}
                 style={styles.toolbarButton}
               />
@@ -994,9 +996,10 @@ function KolamProductionDetail({
               }}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               disabled={controller.loading || controller.mutating}
-              label="Muat ulang"
+
               onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />
@@ -1372,7 +1375,7 @@ function KolamProductionWaitingForPOCard({
         </Text>
       ) : null}
       <View style={styles.formActions}>
-        <KolamButton label="Muat ulang" onPress={onRefresh} />
+        <KolamRefreshButton accessibilityLabel="Muat ulang" onPress={onRefresh} />
         <KolamButton intent="danger" label="Batalkan Produksi" onPress={onCancel} />
       </View>
     </KolamContentFrame>

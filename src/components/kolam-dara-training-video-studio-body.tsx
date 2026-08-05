@@ -37,6 +37,7 @@ import {
   type NativeImagePickerResult,
 } from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {openKolamMediaPreview} from './kolam-media-preview-dialog';
@@ -642,10 +643,11 @@ export function KolamDaraTrainingVideoStudioBody({
 
               {activeJob ? (
                 <View style={styles.rowActions}>
-                  <KolamButton
+                  <KolamRefreshButton
+                    accessibilityLabel="Refresh"
                     disabled={busy}
                     intent="secondary"
-                    label="Refresh"
+
                     onPress={() => {
                       void refreshJob(activeJob);
                     }}
@@ -704,10 +706,11 @@ export function KolamDaraTrainingVideoStudioBody({
             <View style={styles.historyPanel}>
               <View style={styles.panelHead}>
                 <Text style={styles.panelTitle}>Histori job</Text>
-                <KolamButton
+                <KolamRefreshButton
+                  accessibilityLabel="Refresh"
                   disabled={busy}
                   intent="plain"
-                  label="Refresh"
+
                   onPress={() => {
                     void loadAll();
                   }}

@@ -18,6 +18,7 @@ import type {
 } from '../domain/settings-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -4141,8 +4142,9 @@ export function KolamSettingsWebConfigSurface({
               />
             </View>
             <View style={styles.notificationSoundActions}>
-              <KolamActionControlButton
-                label="Refresh"
+              <KolamRefreshButton
+  accessibilityLabel="Refresh"
+
                 loading={regionSyncStatus === 'loading'}
                 loadingLabel="Refreshing..."
                 onPress={onRefreshRegionSync}
@@ -6514,9 +6516,10 @@ function KpiSettingsPanel({
           ]}
         />
         <View style={styles.notificationSoundActions}>
-          <KolamActionControlButton
+          <KolamRefreshButton
+            accessibilityLabel="Muat ulang preview"
             disabled={disabled || busy}
-            label="Muat ulang preview"
+
             loading={status === 'loading'}
             loadingLabel="Memuat..."
             onPress={onRefreshPreview}

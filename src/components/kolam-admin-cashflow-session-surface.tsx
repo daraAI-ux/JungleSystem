@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-admin-cashflow-session-controller';
 import { KolamAdminCashflowSessionDetail } from './kolam-admin-cashflow-session-detail';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -213,9 +214,10 @@ function AdminCashflowList({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               disabled={controller.loading}
-              label="Muat ulang"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
