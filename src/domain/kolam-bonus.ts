@@ -77,40 +77,43 @@ export function buildBonusListRoute(filters: KolamBonusListFilters): string {
   return query ? `${KOLAM_BONUS_ROOT}?${query}` : KOLAM_BONUS_ROOT;
 }
 
+export type KolamBonusCreateBody = {
+  userId: string;
+  amount: number;
+  reason?: string;
+};
+
+/** FE finance list: verified vs everything else (Belum Terverifikasi). */
 export function formatKolamBonusStatusLabel(status?: string | null): string {
   const raw = String(status || '').trim();
   if (!raw) {
     return '—';
   }
-  switch (raw.toLowerCase()) {
-    case 'verified':
-      return 'Terverifikasi';
-    case 'pending':
-      return 'Menunggu';
-    case 'rejected':
-      return 'Ditolak';
-    default:
-      return raw;
+  if (raw.toLowerCase() === 'verified') {
+    return 'Terverifikasi';
   }
+  return 'Belum Terverifikasi';
 }
 
 export function getKolamBonusStatusIntent(status?: string | null): KolamBadgeIntent {
-  switch (String(status || '').toLowerCase()) {
-    case 'verified':
-      return 'success';
-    case 'rejected':
-      return 'danger';
-    case 'pending':
-      return 'warning';
-    default:
-      return 'secondary';
+  if (String(status || '').trim().toLowerCase() === 'verified') {
+    return 'success';
   }
+  if (!String(status || '').trim()) {
+    return 'secondary';
+  }
+  return 'warning';
 }
 
 export function normalizeKolamBonusList(payload: unknown): KolamBonusListRow[] {
   const root = unwrapData(payload);
   const rows = Array.isArray(root) ? root : [];
   return rows.map(normalizeBonusRow).filter(row => row.id);
+}
+
+export function normalizeKolamBonusRow(payload: unknown): KolamBonusListRow | null {
+  const row = normalizeBonusRow(unwrapData(payload));
+  return row.id ? row : null;
 }
 
 function normalizeBonusRow(payload: unknown): KolamBonusListRow {

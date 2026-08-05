@@ -1,8 +1,11 @@
 import {
   buildBonusListRoute,
   createInitialBonusListFilters,
+  formatKolamBonusStatusLabel,
+  getKolamBonusStatusIntent,
   isKolamBonusRoute,
   normalizeKolamBonusList,
+  normalizeKolamBonusRow,
 } from '../src/domain/kolam-bonus';
 import {
   buildKolamDaraTaxRoute,
@@ -239,7 +242,7 @@ describe('kolam bonus domain', () => {
     expect(buildBonusListRoute(filters)).toBe('/finance/bonus?year=2026&month=3');
   });
 
-  it('normalizes bonus list rows', () => {
+  it('normalizes bonus list rows with FE binary status labels', () => {
     const rows = normalizeKolamBonusList({
       data: [
         {
@@ -247,13 +250,37 @@ describe('kolam bonus domain', () => {
           code: 'BNS-1',
           name: 'Bonus',
           amount: 100000,
-          status: 'pending',
+          status: 'unverified',
           employeeUser: { first_name: 'C', last_name: 'D' },
         },
       ],
     });
     expect(rows[0]?.employeeLabel).toBe('C D');
-    expect(rows[0]?.statusLabel).toBe('Menunggu');
+    expect(rows[0]?.statusLabel).toBe('Belum Terverifikasi');
+    expect(formatKolamBonusStatusLabel('verified')).toBe('Terverifikasi');
+    expect(formatKolamBonusStatusLabel('unverified')).toBe(
+      'Belum Terverifikasi',
+    );
+    expect(getKolamBonusStatusIntent('verified')).toBe('success');
+    expect(getKolamBonusStatusIntent('unverified')).toBe('warning');
+  });
+
+  it('normalizes a single create response row', () => {
+    const row = normalizeKolamBonusRow({
+      message: 'Bonus created',
+      data: {
+        _id: 'b2',
+        code: 'UEXP-1',
+        name: 'Bonus C D',
+        amount: 50000,
+        status: 'unverified',
+        reason: 'Kinerja',
+        executedAt: '2026-08-01T00:00:00.000Z',
+      },
+    });
+    expect(row?.id).toBe('b2');
+    expect(row?.amount).toBe(50000);
+    expect(row?.statusLabel).toBe('Belum Terverifikasi');
   });
 });
 

@@ -1,6 +1,8 @@
 import { appConfig } from '../config/app';
 import {
   normalizeKolamBonusList,
+  normalizeKolamBonusRow,
+  type KolamBonusCreateBody,
   type KolamBonusListFilters,
   type KolamBonusListRow,
 } from '../domain/kolam-bonus';
@@ -21,6 +23,20 @@ export async function fetchKolamBonusList(
   }
   const payload = await kolamRequest<unknown>('/salary/bonus', { query });
   return normalizeKolamBonusList(payload);
+}
+
+export async function createKolamBonus(
+  body: KolamBonusCreateBody,
+): Promise<KolamBonusListRow | null> {
+  const payload = await kolamRequest<unknown>('/salary/bonus', {
+    method: 'POST',
+    body: {
+      userId: body.userId,
+      amount: body.amount,
+      ...(body.reason?.trim() ? { reason: body.reason.trim() } : {}),
+    },
+  });
+  return normalizeKolamBonusRow(payload);
 }
 
 function kolamRequest<T>(
