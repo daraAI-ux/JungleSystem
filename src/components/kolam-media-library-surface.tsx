@@ -511,6 +511,8 @@ function KolamMediaOrphanCleanupDialog({
   const unsafeCount = checkResult?.unsafe.length ?? 0;
   const busy = cleanupPhase === 'checking' || cleanupPhase === 'deleting';
   const ignoreBackdropPress = React.useCallback(() => undefined, []);
+  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const cardWidth = Math.max(360, Math.min(windowWidth - 48, 640));
 
   return (
     <Modal
@@ -518,9 +520,15 @@ function KolamMediaOrphanCleanupDialog({
       onRequestClose={onClose}
       transparent
       visible={visible}>
-      <View style={styles.cleanupModalRoot}>
+      <View
+        style={[
+          styles.cleanupModalRoot,
+          {height: windowHeight, width: windowWidth},
+        ]}>
         <KolamModalBackdrop onPress={busy ? ignoreBackdropPress : onClose} />
-        <View accessibilityLabel="Cleanup orphan" style={styles.cleanupModalCard}>
+        <View
+          accessibilityLabel="Cleanup orphan"
+          style={[styles.cleanupModalCard, {width: cardWidth}]}>
           <View style={styles.cleanupModalHeader}>
             <Text style={styles.cleanupTitle}>Hapus orphan</Text>
             <Text style={styles.cleanupText}>
@@ -874,7 +882,6 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     maxWidth: 640,
     padding: 16,
-    width: '100%',
     zIndex: 2,
   },
   cleanupModalFooter: {
