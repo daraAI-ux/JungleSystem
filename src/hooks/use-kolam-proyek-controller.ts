@@ -14,6 +14,7 @@ import {
   canDownloadKolamProyekInvoice,
   canEditKolamProyekMaterials,
   canEditKolamProyekQuotation,
+  canRefundKolamProyek,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
   canStartKolamProyekWork,
@@ -27,6 +28,7 @@ import {
   getKolamProyekCloseBlockReason,
   getKolamProyekDpRowOutstanding,
   getKolamProyekHappyPathNext,
+  getKolamProyekAllowedNext,
   getKolamProyekRouteRef,
   getKolamProyekSectionVisibility,
   getKolamProyekSurfaceMode,
@@ -107,6 +109,7 @@ export interface KolamProyekController {
   canUpdateProgress: boolean;
   canUploadDpProof: boolean;
   canEditHpp: boolean;
+  canRefund: boolean;
   canView: boolean;
   canAdminLifecycle: boolean;
   closeBlockReason: string | null;
@@ -156,6 +159,7 @@ export interface KolamProyekController {
     patch: Partial<KolamProyekQuotationFormState['items'][number]>,
   ) => void;
   onRefresh: () => Promise<void>;
+  onRefundProject: (note: string) => Promise<boolean>;
   onRemoveFormItem: (key: string) => void;
   onResendQuotation: (resolutionNote?: string) => Promise<boolean>;
   onReverseDpConfirmation: (
@@ -247,6 +251,8 @@ export function useKolamProyekController(
     canUpdate && canResendKolamProyekQuotation(selected?.lifecycleStatus);
   const canCancel =
     canUpdate && canCancelKolamProyekQuotation(selected?.lifecycleStatus);
+  const canRefund =
+    canUpdate && canRefundKolamProyek(selected?.lifecycleStatus);
   const canDelete =
     canDeletePerm &&
     canDeleteKolamProyekQuotation(selected?.lifecycleStatus);
@@ -972,6 +978,43 @@ export function useKolamProyekController(
     [canAdminLifecycle, selected],
   );
 
+  const onRefundProject = useCallback(
+    async (note: string) => {
+      if (!selected || !canRefund) {
+        return false;
+      }
+      const allowed = getKolamProyekAllowedNext(selected.lifecycleStatus);
+      if (!allowed.includes('refunded')) {
+        setError('Refund tidak diizinkan dari tahap saat ini.');
+        return false;
+      }
+      const noteError = validateKolamProyekLifecycleNote(note);
+      if (noteError) {
+        setError(noteError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await transitionKolamProyekLifecycle(
+          selected.id,
+          'refunded',
+          note.trim(),
+        );
+        setSelected(updated);
+        setStatusMessage('Proyek ditandai refund.');
+        return true;
+      } catch (refundError) {
+        setError(getApiErrorMessage(refundError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [canRefund, selected],
+  );
+
   const onSaveHppMaterials = useCallback(
     async (lines: KolamProyekHppMaterial[]) => {
       if (!selected || !canEditHpp) {
@@ -1212,6 +1255,7 @@ export function useKolamProyekController(
       canUpdateProgress,
       canUploadDpProof,
       canEditHpp,
+      canRefund,
       canView,
       canAdminLifecycle,
       closeBlockReason,
@@ -1251,6 +1295,7 @@ export function useKolamProyekController(
       onOpenItem,
       onPatchFormItem,
       onRefresh,
+      onRefundProject,
       onRemoveFormItem,
       onResendQuotation,
       onReverseDpConfirmation,
@@ -1287,6 +1332,7 @@ export function useKolamProyekController(
       canUpdateProgress,
       canUploadDpProof,
       canEditHpp,
+      canRefund,
       canView,
       canAdminLifecycle,
       closeBlockReason,
@@ -1317,6 +1363,7 @@ export function useKolamProyekController(
       onOpenItem,
       onPatchFormItem,
       onRefresh,
+      onRefundProject,
       onRemoveFormItem,
       onResendQuotation,
       onReverseDpConfirmation,

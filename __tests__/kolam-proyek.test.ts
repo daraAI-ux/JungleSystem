@@ -14,6 +14,7 @@ import {
   canDownloadKolamProyekInvoice,
   canEditKolamProyekMaterials,
   canEditKolamProyekQuotation,
+  canRefundKolamProyek,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
   canStartKolamProyekWork,
@@ -704,5 +705,20 @@ describe('kolam-proyek domain', () => {
       label: 'Lihat Komplain',
       action: 'open_complaint',
     });
+  });
+
+  it('Batch 5: refund gate and lifecycle exception targets', () => {
+    expect(canRefundKolamProyek('dp_paid')).toBe(true);
+    expect(canRefundKolamProyek('in_progress')).toBe(true);
+    expect(canRefundKolamProyek('delivered')).toBe(true);
+    expect(canRefundKolamProyek('design_review')).toBe(false);
+    expect(canRefundKolamProyek('awaiting_dp')).toBe(false);
+    expect(canRefundKolamProyek('completed')).toBe(false);
+    expect(getKolamProyekHappyPathNext('dp_paid')).toEqual(['in_progress']);
+    expect(getKolamProyekAllowedNext('dp_paid')).toEqual([
+      'in_progress',
+      'refunded',
+    ]);
+    expect(getKolamProyekHappyPathNext('delivered')).toEqual(['completed']);
   });
 });

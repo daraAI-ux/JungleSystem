@@ -941,6 +941,14 @@ export function canCancelKolamProyekQuotation(status?: string | null) {
   );
 }
 
+/** Mirror FE DangerZone intent: lifecycle → refunded (BE-supported; not wallet Fase 3). */
+export function canRefundKolamProyek(status?: string | null) {
+  return (
+    getKolamProyekSectionVisibility(status, 'dangerRefund') === 'active' &&
+    getKolamProyekAllowedNext(status).includes('refunded')
+  );
+}
+
 export function canDeleteKolamProyekQuotation(status?: string | null) {
   return getKolamProyekSectionVisibility(status, 'dangerDelete') === 'active';
 }

@@ -78,6 +78,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { openKolamImagePreview } from './kolam-image-preview-dialog';
@@ -165,6 +166,7 @@ function KolamProyekList({
 }) {
   const [searchInput, setSearchInput] = useState(controller.search);
   const [tableBodyWidth, setTableBodyWidth] = useState(0);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const columns = useMemo(
     () => fitProyekListColumns(tableBodyWidth),
     [tableBodyWidth],
@@ -236,6 +238,11 @@ function KolamProyekList({
               onPress={() => {
                 void controller.onRefresh();
               }}
+            />
+            <KolamButton
+              intent="outline"
+              label="Export XLSX"
+              onPress={() => setExportDialogOpen(true)}
             />
             {controller.canCreate ? (
               <KolamButton
@@ -310,6 +317,22 @@ function KolamProyekList({
           />
         ))}
       </KolamCatalogListTableShell>
+
+      <KolamExportDialog
+        catalogEndpoint="/custom-project/export/fields"
+        defaultPresetKey="default"
+        description="Pilih field yang ingin di-export ke XLSX. Filter pencarian dan status list saat ini akan diterapkan."
+        downloadEndpoint="/custom-project/export.xlsx"
+        downloadParams={{
+          search: controller.search.trim() || undefined,
+          lifecycle: controller.lifecycleFilter || undefined,
+        }}
+        filenameHint="custom_project"
+        onOpenChange={setExportDialogOpen}
+        storageKey="export.custom-project.v1"
+        title="Export Proyek"
+        visible={exportDialogOpen}
+      />
     </View>
   );
 }
@@ -415,6 +438,8 @@ function KolamProyekDetailRead({
   const [cancelReason, setCancelReason] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundNote, setRefundNote] = useState('');
   const [startWorkOpen, setStartWorkOpen] = useState(false);
   const [startWorkNote, setStartWorkNote] = useState('Mulai pengerjaan');
   const [confirmDpIndex, setConfirmDpIndex] = useState<number | null>(null);
@@ -660,6 +685,17 @@ function KolamProyekDetailRead({
                 intent="outline"
                 label="Batalkan"
                 onPress={() => setCancelOpen(true)}
+              />
+            ) : null}
+            {controller.canRefund ? (
+              <KolamButton
+                disabled={controller.acting}
+                intent="danger"
+                label="Refund"
+                onPress={() => {
+                  setRefundNote('');
+                  setRefundOpen(true);
+                }}
               />
             ) : null}
             {controller.canDelete ? (
@@ -1409,6 +1445,48 @@ function KolamProyekDetailRead({
             <Text style={styles.metaText}>Belum ada tugas operasional.</Text>
           )}
         </DetailSection>
+
+        {controller.canRefund ||
+        controller.canCancel ||
+        controller.canDelete ||
+        detail.lifecycleStatus === 'refunded' ? (
+          <DetailSection title="Zona berbahaya">
+            <Text style={styles.metaText}>
+              {detail.lifecycleStatus === 'refunded'
+                ? 'Proyek sudah di-refund. Status terminal — tidak ada aksi lanjutan.'
+                : 'Refund memakai transisi lifecycle ke status refunded (catatan audit min. 5 karakter). Alur wallet Fase 3 belum tersedia di BE/plugin.'}
+            </Text>
+            <View style={styles.dpActionRow}>
+              {controller.canRefund ? (
+                <KolamButton
+                  disabled={controller.acting}
+                  intent="danger"
+                  label="Tandai refund"
+                  onPress={() => {
+                    setRefundNote('');
+                    setRefundOpen(true);
+                  }}
+                />
+              ) : null}
+              {controller.canCancel ? (
+                <KolamButton
+                  disabled={controller.acting}
+                  intent="outline"
+                  label="Batalkan proyek"
+                  onPress={() => setCancelOpen(true)}
+                />
+              ) : null}
+              {controller.canDelete ? (
+                <KolamButton
+                  disabled={controller.acting}
+                  intent="danger"
+                  label="Hapus draft"
+                  onPress={() => setDeleteOpen(true)}
+                />
+              ) : null}
+            </View>
+          </DetailSection>
+        ) : null}
       </ScrollView>
 
       <KolamConfirmDialog
@@ -1629,6 +1707,51 @@ function KolamProyekDetailRead({
                     if (ok) {
                       setCancelOpen(false);
                       setCancelReason('');
+                    }
+                  });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setRefundOpen(false)}
+        transparent
+        visible={refundOpen}
+      >
+        <View style={styles.dialogOverlay}>
+          <KolamModalBackdrop onPress={() => setRefundOpen(false)} />
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Tandai proyek refund?</Text>
+            <Text style={styles.dialogMessage}>
+              Status akan menjadi refunded lewat lifecycle admin. Catatan audit
+              wajib (minimal 5 karakter). Ini bukan alur wallet/kwitansi Fase 3.
+            </Text>
+            <KolamSettingsWebFieldLabel label="Catatan refund" required />
+            <KolamFormTextField
+              multiline
+              onChangeText={setRefundNote}
+              placeholder="Alasan / catatan refund"
+              value={refundNote}
+            />
+            <View style={styles.dialogActions}>
+              <KolamButton
+                intent="outline"
+                label="Tutup"
+                onPress={() => setRefundOpen(false)}
+              />
+              <KolamButton
+                disabled={controller.acting}
+                intent="danger"
+                label={controller.acting ? 'Memproses…' : 'Tandai refund'}
+                onPress={() => {
+                  void controller.onRefundProject(refundNote).then(ok => {
+                    if (ok) {
+                      setRefundOpen(false);
+                      setRefundNote('');
                     }
                   });
                 }}
