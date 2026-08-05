@@ -46,7 +46,6 @@ import {
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   getKolamDataTableColumnStyle,
 } from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import {
   KolamDataTableActionsTrack,
@@ -105,6 +104,17 @@ const PAYABLE_TABLE_COLUMNS: KolamTableColumn[] = [
     width: 64,
   },
 ];
+
+const LIST_COLUMNS = [
+  { id: 'code', label: 'Kode', flex: 0.9 },
+  { id: 'name', label: 'Nama', flex: 1.35 },
+  { id: 'source', label: 'Sumber', flex: 0.7 },
+  { id: 'amount', label: 'Nominal', flex: 1 },
+  { id: 'due', label: 'Jatuh tempo', flex: 1 },
+  { id: 'installments', label: 'Cicilan', flex: 1.25 },
+  { id: 'status', label: 'Status', flex: 0.62 },
+  { id: 'action', label: '', flex: 0.38 },
+] as const;
 
 const FILTER_PANEL_WIDTH = 220;
 
@@ -799,7 +809,16 @@ function PayableList({
         onBodyWidthChange={setTableBodyWidth}
         style={styles.tableFrame}
       >
-        <KolamDataTableHeader columns={tableColumns} />
+        <View style={styles.headerRow}>
+          {LIST_COLUMNS.map(column => (
+            <View
+              key={column.id}
+              style={[styles.headerCell, { flex: column.flex }]}
+            >
+              <Text style={styles.headerCellText}>{column.label}</Text>
+            </View>
+          ))}
+        </View>
         {controller.items.length ? (
           controller.items.map(item => (
             <React.Fragment key={item.id}>{renderRow(item)}</React.Fragment>
@@ -1452,6 +1471,25 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     paddingVertical: 24,
+  },
+  headerRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    minHeight: 36,
+    paddingHorizontal: 8,
+  },
+  headerCell: {
+    paddingHorizontal: 4,
+  },
+  headerCellText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   activeActionRow: {
     elevation: 30,
