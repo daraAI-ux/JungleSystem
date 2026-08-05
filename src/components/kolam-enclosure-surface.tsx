@@ -2477,7 +2477,6 @@ function InlineState({message, title}: {message?: string; title: string}) {
 function SummaryTile({
   accent,
   hint,
-  icon,
   label,
   value,
 }: {
@@ -2488,30 +2487,29 @@ function SummaryTile({
   value: number;
 }) {
   return (
-    <View
-      style={[
-        styles.summaryTile,
-        accent === 'primary' ? styles.summaryTilePrimary : null,
-        accent === 'warning' ? styles.summaryTileWarning : null,
-      ]}
-    >
-      <View style={styles.summaryTileHeader}>
-        <View
-          style={[
-            styles.summaryIcon,
-            accent === 'primary' ? styles.summaryIconPrimary : null,
-            accent === 'warning' ? styles.summaryIconWarning : null,
-          ]}
-        >
-          <Text style={styles.summaryIconText}>{icon}</Text>
-        </View>
-        <Text style={styles.summaryValue}>{value}</Text>
+    <KolamCardFrame style={styles.summaryCard}>
+      <View
+        style={[
+          styles.summaryAccent,
+          accent === 'primary'
+            ? styles.summaryAccentPrimary
+            : accent === 'warning'
+              ? styles.summaryAccentWarning
+              : styles.summaryAccentDefault,
+        ]}
+      />
+      <View style={styles.summaryBody}>
+        <Text style={styles.summaryLabel}>{label}</Text>
+        <Text numberOfLines={1} style={styles.summaryValue}>
+          {String(value)}
+        </Text>
+        {hint ? (
+          <Text numberOfLines={2} style={styles.summaryHint}>
+            {hint}
+          </Text>
+        ) : null}
       </View>
-      <Text numberOfLines={2} style={styles.summaryLabel}>
-        {label}
-      </Text>
-      {hint ? <Text style={styles.summaryHint}>{hint}</Text> : null}
-    </View>
+    </KolamCardFrame>
   );
 }
 
@@ -3341,7 +3339,7 @@ const styles = StyleSheet.create({
   summaryGridHero: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   dashboardContent: {
     gap: 18,
@@ -3388,71 +3386,57 @@ const styles = StyleSheet.create({
   sectionAction: {
     flexShrink: 0,
   },
-  summaryTile: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+  summaryCard: {
+    flexBasis: 200,
     flexGrow: 1,
-    minWidth: 142,
-    padding: 12,
+    minWidth: 180,
+    overflow: 'hidden',
+    padding: 0,
   },
-  summaryTilePrimary: {
-    backgroundColor: V.colors.primarySoft,
-    borderColor: V.colors.primary,
+  summaryAccent: {
+    borderBottomLeftRadius: 10,
+    borderTopLeftRadius: 10,
+    bottom: 10,
+    left: 0,
+    position: 'absolute',
+    top: 10,
+    width: 3,
   },
-  summaryTileWarning: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
+  summaryAccentDefault: {
+    backgroundColor: V.colors.success,
   },
-  summaryTileHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'space-between',
-    marginBottom: 8,
+  summaryAccentPrimary: {
+    backgroundColor: V.colors.primary,
   },
-  summaryIcon: {
-    alignItems: 'center',
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 16,
-    borderWidth: 1,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
+  summaryAccentWarning: {
+    backgroundColor: V.colors.warning,
   },
-  summaryIconPrimary: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.primary,
-  },
-  summaryIconWarning: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.warning,
-  },
-  summaryIconText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '900',
+  summaryBody: {
+    gap: 2,
+    paddingHorizontal: 14,
+    paddingLeft: 16,
+    paddingVertical: 12,
   },
   summaryValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 4,
   },
   summaryLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   summaryHint: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 2,
   },
   dashboardTableBlock: {
     gap: 8,

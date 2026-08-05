@@ -305,9 +305,9 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Stok jual di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Kematian dilaporkan'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Total kelahiran indukan'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'E'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: '!'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: '+'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'E'})).toHaveLength(0);
+    expect(root.findAllByProps({children: '!'})).toHaveLength(0);
+    expect(root.findAllByProps({children: '+'})).toHaveLength(0);
     expect(root.findAllByProps({children: 'Statistik kandang produksi (tidak dijual)'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Pergerakan stok'}).length).toBe(0);
     expect(root.findAllByProps({children: 'Kasus dilaporkan'}).length).toBe(0);
