@@ -18,7 +18,6 @@ import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -27,16 +26,12 @@ import {
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   KOLAM_DATA_TABLE_COLUMN_GAP,
 } from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import {
   KolamDataTableActionsTrack,
   KolamDataTableMainTrack,
 } from './kolam-data-table-tracks';
-import {
-  KolamOverflowMenuButton,
-  KolamTableFooterControls,
-} from './kolam-dropdown-select';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -47,6 +42,10 @@ import {
 } from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 
 type TeranuraFilterPanel = 'category' | 'brand' | 'sellable';
 const TERANURA_FILTER_PANEL_WIDTH = 320;
@@ -86,7 +85,9 @@ function KolamTeranuraShell({
   if (controller.mode === 'list') {
     return (
       <View style={styles.surface}>
-        {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
+        {controller.error ? (
+          <Text style={styles.error}>{controller.error}</Text>
+        ) : null}
         {children}
       </View>
     );
@@ -108,7 +109,6 @@ function KolamTeranuraShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -127,7 +127,9 @@ function KolamTeranuraShell({
           </View>
         </View>
       </View>
-      {controller.error ? <Text style={styles.error}>{controller.error}</Text> : null}
+      {controller.error ? (
+        <Text style={styles.error}>{controller.error}</Text>
+      ) : null}
       {children}
     </View>
   );
@@ -145,15 +147,11 @@ function KolamTeranuraList({
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
   const [panelAnchor, setPanelAnchor] =
     React.useState<KolamFilterPanelAnchor | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const toolbarRef = React.useRef<View>(null);
   const categoryTriggerRef = React.useRef<View>(null);
   const brandTriggerRef = React.useRef<View>(null);
   const sellableTriggerRef = React.useRef<View>(null);
-  const listColumns = React.useMemo(
-    () => fitTeranuraListColumns(tableBodyWidth),
-    [tableBodyWidth],
-  );
+  const listColumns = React.useMemo(() => buildTeranuraListColumns(), []);
   const categoryOptions = React.useMemo(
     () => [
       { label: 'Semua kategori', value: 'all' },
@@ -270,7 +268,10 @@ function KolamTeranuraList({
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View
-              style={[kolamTableToolbarStyles.filters, styles.listToolbarFilters]}
+              style={[
+                kolamTableToolbarStyles.filters,
+                styles.listToolbarFilters,
+              ]}
             >
               <KolamSearchField
                 containerStyle={[
@@ -283,7 +284,10 @@ function KolamTeranuraList({
               />
               <View ref={categoryTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'category' || selectedCategory !== 'all'}
+                  active={
+                    activeFilterPanel === 'category' ||
+                    selectedCategory !== 'all'
+                  }
                   label={categoryFilterLabel}
                   onPress={() => openFilterPanel('category')}
                   open={activeFilterPanel === 'category'}
@@ -292,7 +296,9 @@ function KolamTeranuraList({
               </View>
               <View ref={brandTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
-                  active={activeFilterPanel === 'brand' || selectedBrand !== 'all'}
+                  active={
+                    activeFilterPanel === 'brand' || selectedBrand !== 'all'
+                  }
                   label={brandFilterLabel}
                   onPress={() => openFilterPanel('brand')}
                   open={activeFilterPanel === 'brand'}
@@ -330,7 +336,6 @@ function KolamTeranuraList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -377,72 +382,39 @@ function KolamTeranuraList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => controller.onPageChange(safePage - 1)}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() => controller.onPageChange(safePage + 1)}
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={
+          controller.loading ? 'Memuat Teranura...' : 'Belum ada Teranura'
         }
-        onBodyWidthChange={setTableBodyWidth}
-        style={styles.tableFrame}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {controller.items.length ? (
-          controller.items.map(item => (
-            <TeranuraRow
-              columns={listColumns}
-              item={item}
-              key={item.id}
-              onEdit={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
-              onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Teranura belum tersedia dari backend."
-              title={
-                controller.loading
-                  ? 'Memuat Teranura...'
-                  : 'Belum ada Teranura'
-              }
-            />
-          </View>
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: page => controller.onPageChange(page),
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total || controller.items.length,
+        }}
+        renderActions={item => (
+          <TeranuraActionsMenu
+            item={item}
+            onEdit={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
+            onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={controller.items}
+        style={styles.tableFrame}
+      />
     </View>
   );
 }
 
-function KolamTeranuraDetail({ controller }: { controller: KolamTeranuraController }) {
+function KolamTeranuraDetail({
+  controller,
+}: {
+  controller: KolamTeranuraController;
+}) {
   const item = controller.selectedItem;
   const loading = controller.loading;
   const [activeTab, setActiveTab] = React.useState('catalog');
@@ -486,7 +458,9 @@ function KolamTeranuraDetail({ controller }: { controller: KolamTeranuraControll
             <Text style={styles.eyebrow}>TERANURA</Text>
             <Text style={styles.detailTitle}>Detail Teranura</Text>
             <Text style={styles.description}>
-              {loading ? 'Memuat detail Teranura...' : 'Detail Teranura tidak ditemukan.'}
+              {loading
+                ? 'Memuat detail Teranura...'
+                : 'Detail Teranura tidak ditemukan.'}
             </Text>
           </View>
         </View>
@@ -507,11 +481,17 @@ function KolamTeranuraDetail({ controller }: { controller: KolamTeranuraControll
           </View>
           <Text style={styles.detailTitle}>{item.name}</Text>
           <Text style={styles.description}>
-            Dibuat {formatDateTime(item.createdAt)} | Diperbarui {formatDateTime(item.updatedAt)}
+            Dibuat {formatDateTime(item.createdAt)} | Diperbarui{' '}
+            {formatDateTime(item.updatedAt)}
           </Text>
         </View>
         <View style={styles.detailHeaderActions}>
-          <KolamButton disabled intent="danger" label="Hapus" onPress={() => undefined} />
+          <KolamButton
+            disabled
+            intent="danger"
+            label="Hapus"
+            onPress={() => undefined}
+          />
         </View>
       </View>
       {tabPanel}
@@ -519,6 +499,160 @@ function KolamTeranuraDetail({ controller }: { controller: KolamTeranuraControll
   );
 }
 
+function buildTeranuraListColumns(): Array<
+  KolamListTableColumn<KolamTeranura>
+> {
+  return [
+    {
+      flex: 2,
+      id: 'primary',
+      label: 'Teranura',
+      render: item => <TeranuraIdentityCell item={item} />,
+    },
+    {
+      flex: 0.9,
+      id: 'sku',
+      label: 'SKU',
+      render: item => (
+        <Text numberOfLines={1} selectable style={styles.cellText}>
+          {item.sku || item.productCode || '-'}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.05,
+      id: 'brand',
+      label: 'Merek',
+      render: item => <TeranuraBrandCell item={item} />,
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'variant',
+      label: 'Tipe',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {item.variants.length ? 'Produk varian' : 'Produk standar'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'price',
+      label: 'Harga',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {item.priceToSell > 0 ? formatRupiah(item.priceToSell) : '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'stock',
+      label: 'Stok',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatNumber(item.stock)}
+          {item.unitLabel ? ` ${item.unitLabel}` : ''}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <KolamBadge
+          intent={item.sellable ? 'success' : 'secondary'}
+          label={item.sellable ? 'Dapat dijual' : 'Tidak dijual'}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+  ];
+}
+
+function TeranuraIdentityCell({ item }: { item: KolamTeranura }) {
+  return (
+    <View style={styles.primaryCell}>
+      <View style={styles.photoBox}>
+        <KolamRemoteImage
+          accessibilityLabel={item.name}
+          scope="teranura"
+          sourceUri={item.photoUrl}
+          style={styles.photo}
+        />
+      </View>
+      <View style={styles.primaryTextWrap}>
+        <View style={styles.nameRow}>
+          <Text numberOfLines={2} style={styles.nameText}>
+            {item.name}
+          </Text>
+          {item.deviceLine === 'freyer' ? (
+            <KolamBadge intent="info" label="Freyer" />
+          ) : null}
+        </View>
+        <Text numberOfLines={1} style={styles.metaText}>
+          {item.category?.name ?? 'Tanpa kategori'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function TeranuraBrandCell({ item }: { item: KolamTeranura }) {
+  return (
+    <View style={styles.brandCell}>
+      {item.brand?.logoUrl ? (
+        <KolamRemoteImage
+          accessibilityLabel={item.brand.name}
+          scope="brand"
+          sourceUri={item.brand.logoUrl}
+          style={styles.brandLogo}
+        />
+      ) : null}
+      <Text numberOfLines={1} style={styles.cellText}>
+        {item.brand?.name ?? '-'}
+      </Text>
+    </View>
+  );
+}
+
+function TeranuraActionsMenu({
+  item,
+  onEdit,
+  onSelect,
+}: {
+  item: KolamTeranura;
+  onEdit: () => void;
+  onSelect: () => void;
+}) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+
+  return (
+    <View style={actionMenuOpen ? styles.activeActionRow : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${item.name}`}
+        onOpenChange={setActionMenuOpen}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          {
+            disabled: true,
+            label: 'Hapus',
+            onPress: () => undefined,
+            tone: 'danger',
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TeranuraRow({
   columns,
   item,
@@ -531,7 +665,9 @@ function TeranuraRow({
   onSelect: () => void;
 }) {
   const code = item.sku || item.productCode || '-';
-  const variantLabel = item.variants.length ? 'Produk varian' : 'Produk standar';
+  const variantLabel = item.variants.length
+    ? 'Produk varian'
+    : 'Produk standar';
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const columnOf = React.useCallback(
     (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
@@ -547,7 +683,9 @@ function TeranuraRow({
   const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame style={actionMenuOpen ? styles.activeActionRow : undefined}>
+    <KolamDataTableRowFrame
+      style={actionMenuOpen ? styles.activeActionRow : undefined}
+    >
       <KolamDataTableMainTrack>
         <View
           style={[
@@ -567,7 +705,9 @@ function TeranuraRow({
             </View>
             <View style={styles.primaryTextWrap}>
               <View style={styles.nameRow}>
-                <Text numberOfLines={2} style={styles.nameText}>{item.name}</Text>
+                <Text numberOfLines={2} style={styles.nameText}>
+                  {item.name}
+                </Text>
                 {item.deviceLine === 'freyer' ? (
                   <KolamBadge intent="info" label="Freyer" />
                 ) : null}
@@ -635,7 +775,8 @@ function TeranuraRow({
           ]}
         >
           <Text numberOfLines={1} style={styles.cellText}>
-            {formatNumber(item.stock)}{item.unitLabel ? ` ${item.unitLabel}` : ''}
+            {formatNumber(item.stock)}
+            {item.unitLabel ? ` ${item.unitLabel}` : ''}
           </Text>
         </View>
         <View
@@ -664,7 +805,12 @@ function TeranuraRow({
           actions={[
             { label: 'Lihat', onPress: onSelect },
             { label: 'Rubah', onPress: onEdit },
-            { disabled: true, label: 'Hapus', onPress: () => undefined, tone: 'danger' },
+            {
+              disabled: true,
+              label: 'Hapus',
+              onPress: () => undefined,
+              tone: 'danger',
+            },
           ]}
         />
       </KolamDataTableActionsTrack>
@@ -672,6 +818,7 @@ function TeranuraRow({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function fitTeranuraListColumns(containerWidth: number): KolamTableColumn[] {
   return fitKolamDataTableColumns(
     getKolamTableColumns('teranura'),
@@ -824,7 +971,9 @@ function normalizeTeranuraFilterQuery(value: string) {
 }
 
 function formatNumber(value: number) {
-  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(
+    value,
+  );
 }
 
 function formatDateTime(value: string | null | undefined) {

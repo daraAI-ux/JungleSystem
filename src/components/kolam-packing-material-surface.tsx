@@ -27,7 +27,6 @@ import {
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -36,7 +35,6 @@ import {
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   KOLAM_DATA_TABLE_COLUMN_GAP,
 } from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import {
   KolamDataTableActionsTrack,
@@ -50,7 +48,6 @@ import {
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -66,7 +63,11 @@ import {
   type KolamVendorPriceCardItem,
 } from './kolam-pricing-detail-widgets';
 import { appConfig } from '../config/app';
-import { getKolamPackingMaterialUsedIn, uploadKolamPackingMaterialAsset, deleteKolamPackingMaterialAsset } from '../services/kolam-packing-option-api';
+import {
+  getKolamPackingMaterialUsedIn,
+  uploadKolamPackingMaterialAsset,
+  deleteKolamPackingMaterialAsset,
+} from '../services/kolam-packing-option-api';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { KolamSearchField } from './kolam-search-field';
@@ -79,6 +80,10 @@ import {
 } from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 
 type PackingSortMode = 'newest' | 'name-asc' | 'name-desc' | 'stock-desc';
 type PackingStatusFilter = 'all' | 'active' | 'inactive';
@@ -99,7 +104,8 @@ export function KolamPackingMaterialSurface({
   return (
     <KolamPackingMaterialShell
       controller={controller}
-      onRouteChange={onRouteChange}>
+      onRouteChange={onRouteChange}
+    >
       {controller.mode === 'list' ? (
         <KolamPackingMaterialList
           controller={controller}
@@ -144,8 +150,12 @@ function KolamPackingMaterialShell({
     controller.mode === 'new'
       ? 'Bahan kemasan baru'
       : controller.mode === 'edit'
-        ? `Edit · ${controller.selectedMaterial?.name || controller.form.name || 'Bahan kemasan'}`
-        : controller.selectedMaterial?.name || 'Detail bahan kemasan';
+      ? `Edit · ${
+          controller.selectedMaterial?.name ||
+          controller.form.name ||
+          'Bahan kemasan'
+        }`
+      : controller.selectedMaterial?.name || 'Detail bahan kemasan';
 
   return (
     <View style={styles.surface}>
@@ -160,7 +170,6 @@ function KolamPackingMaterialShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -208,7 +217,7 @@ function KolamPackingMaterialList({
     React.useState<PackingCategoryFilter>('all');
   const [statusFilter, setStatusFilter] =
     React.useState<PackingStatusFilter>('all');
-  const [pageSize, setPageSize] = React.useState(10);
+  const [pageSize, _setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<PackingListFilterPanel | null>(null);
@@ -220,7 +229,6 @@ function KolamPackingMaterialList({
   const statusTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamPackingMaterial | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredMaterials = React.useMemo(
     () =>
       filterPackings(
@@ -241,11 +249,10 @@ function KolamPackingMaterialList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const listColumns = React.useMemo(
-    () => fitPackingListColumns(tableBodyWidth),
-    [tableBodyWidth],
-  );
-  const sortFilterOptions = React.useMemo<Array<{ label: string; value: PackingSortMode }>>(
+  const listColumns = React.useMemo(() => buildPackingListColumns(), []);
+  const sortFilterOptions = React.useMemo<
+    Array<{ label: string; value: PackingSortMode }>
+  >(
     () => [
       { label: 'Terbaru', value: 'newest' },
       { label: 'Nama A-Z', value: 'name-asc' },
@@ -254,14 +261,15 @@ function KolamPackingMaterialList({
     ],
     [],
   );
-  const categoryFilterOptions = React.useMemo<Array<{ label: string; value: PackingCategoryFilter }>>(
-    () => [
-      { label: 'Semua', value: 'all' },
-      ...KOLAM_PACKING_CATEGORY_OPTIONS,
-    ],
+  const categoryFilterOptions = React.useMemo<
+    Array<{ label: string; value: PackingCategoryFilter }>
+  >(
+    () => [{ label: 'Semua', value: 'all' }, ...KOLAM_PACKING_CATEGORY_OPTIONS],
     [],
   );
-  const statusFilterOptions = React.useMemo<Array<{ label: string; value: PackingStatusFilter }>>(
+  const statusFilterOptions = React.useMemo<
+    Array<{ label: string; value: PackingStatusFilter }>
+  >(
     () => [
       { label: 'Semua Status', value: 'all' },
       { label: 'Aktif', value: 'active' },
@@ -294,14 +302,17 @@ function KolamPackingMaterialList({
     }
   };
 
-  const anchorFilterPanel = React.useCallback((panel: PackingListFilterPanel) => {
-    measureFilterPanelAnchor(
-      toolbarRef.current,
-      getFilterTriggerRef(panel).current,
-      PACKING_FILTER_PANEL_WIDTH,
-      setPanelAnchor,
-    );
-  }, []);
+  const anchorFilterPanel = React.useCallback(
+    (panel: PackingListFilterPanel) => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        PACKING_FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
+    },
+    [],
+  );
 
   const openFilterPanel = (panel: PackingListFilterPanel) => {
     if (activeFilterPanel === panel) {
@@ -339,14 +350,14 @@ function KolamPackingMaterialList({
     activeFilterPanel === 'sort'
       ? sortFilterOptions
       : activeFilterPanel === 'category'
-        ? categoryFilterOptions
-        : statusFilterOptions;
+      ? categoryFilterOptions
+      : statusFilterOptions;
   const activeFilterValue =
     activeFilterPanel === 'sort'
       ? sortMode
       : activeFilterPanel === 'category'
-        ? categoryFilter
-        : statusFilter;
+      ? categoryFilter
+      : statusFilter;
 
   return (
     <View style={styles.stack}>
@@ -354,7 +365,10 @@ function KolamPackingMaterialList({
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View
-              style={[kolamTableToolbarStyles.filters, styles.listToolbarFilters]}
+              style={[
+                kolamTableToolbarStyles.filters,
+                styles.listToolbarFilters,
+              ]}
             >
               <KolamSearchField
                 containerStyle={[
@@ -397,7 +411,6 @@ function KolamPackingMaterialList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -468,73 +481,38 @@ function KolamPackingMaterialList({
           </View>
         ) : null}
       </View>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={setPageSize}
-            page={safePage}
-            pageSize={pageSize}
-            total={sortedMaterials.length}>
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={
+          controller.loading
+            ? 'Memuat bahan kemasan...'
+            : 'Belum ada bahan kemasan'
         }
-        onBodyWidthChange={setTableBodyWidth}>
-        <KolamDataTableHeader columns={listColumns} />
-        {pagedMaterials.length ? (
-          pagedMaterials.map(item => (
-            <KolamPackingMaterialRow
-              columns={listColumns}
-              item={item}
-              key={item.id}
-              onDelete={() => setDeleteCandidate(item)}
-              onEdit={() => {
-                void controller.onSelectMaterial(item);
-                onRouteChange?.(`${getPackingRoute(item)}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectMaterial(item);
-                onRouteChange?.(getPackingRoute(item));
-              }}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data bahan kemasan belum tersedia dari cache atau backend."
-              title={
-                controller.loading
-                  ? 'Memuat bahan kemasan...'
-                  : 'Belum ada bahan kemasan'
-              }
-            />
-          </View>
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: sortedMaterials.length,
+        }}
+        renderActions={item => (
+          <KolamPackingMaterialActionsMenu
+            item={item}
+            onDelete={() => setDeleteCandidate(item)}
+            onEdit={() => {
+              void controller.onSelectMaterial(item);
+              onRouteChange?.(`${getPackingRoute(item)}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectMaterial(item);
+              onRouteChange?.(getPackingRoute(item));
+            }}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={pagedMaterials}
+      />
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="bahan kemasan"
@@ -558,6 +536,181 @@ function KolamPackingMaterialList({
   );
 }
 
+function buildPackingListColumns(): Array<
+  KolamListTableColumn<KolamPackingMaterial>
+> {
+  return [
+    {
+      align: 'center',
+      flex: 0.55,
+      id: 'photo',
+      label: 'Foto',
+      render: item => <PackingMaterialPhotoCell item={item} />,
+    },
+    {
+      flex: 1.45,
+      id: 'primary',
+      label: 'Bahan Kemasan',
+      render: item => <PackingMaterialIdentityCell item={item} />,
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'category',
+      label: 'Kategori',
+      render: item => (
+        <KolamStatusBadge
+          intent={getCategoryIntent(item.category)}
+          label={getPackingCategoryLabel(item.category)}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'dimension',
+      label: 'Dimensi',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatPackingDimension(item)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'weight',
+      label: 'Berat',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatPackingWeight(item)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'hpp',
+      label: 'HPP',
+      render: item => {
+        const effectiveHpp = getPackingEffectiveHpp(item);
+        return (
+          <Text numberOfLines={1} style={styles.cellText}>
+            {effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
+          </Text>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.65,
+      id: 'stock',
+      label: 'Stok',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {String(item.stock)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <KolamStatusBadge
+          intent={item.status === 'active' ? 'success' : 'warning'}
+          label={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+  ];
+}
+
+function PackingMaterialPhotoCell({ item }: { item: KolamPackingMaterial }) {
+  const photoUri = getKolamFileUrl(item.photos[0]);
+
+  return photoUri ? (
+    <KolamRemoteImage
+      accessibilityLabel={`Foto ${item.name}`}
+      previewItems={item.photos.map((photo, index) => ({
+        id: `${item.id}-${index}`,
+        title: `${item.name} ${index + 1}`,
+        uri: getKolamFileUrl(photo) ?? '',
+      }))}
+      resizeMode="cover"
+      scope="packing-material"
+      sourceUri={photoUri}
+      style={styles.photoThumb}
+    />
+  ) : (
+    <View style={styles.photoPlaceholder}>
+      <Text style={styles.photoPlaceholderText}>-</Text>
+    </View>
+  );
+}
+
+function PackingMaterialIdentityCell({ item }: { item: KolamPackingMaterial }) {
+  const description = item.description.trim();
+
+  return (
+    <View style={styles.identityCell}>
+      <KolamCopyStack
+        containerStyle={styles.nameCopy}
+        items={[
+          {
+            id: 'name',
+            text: item.name,
+            style: styles.rowTitle,
+            textProps: { numberOfLines: 1 },
+          },
+          ...(description
+            ? [
+                {
+                  id: 'description',
+                  text: description,
+                  style: styles.rowMeta,
+                  textProps: { numberOfLines: 1 },
+                },
+              ]
+            : []),
+        ]}
+      />
+    </View>
+  );
+}
+
+function KolamPackingMaterialActionsMenu({
+  item,
+  onDelete,
+  onEdit,
+  onSelect,
+}: {
+  item: KolamPackingMaterial;
+  onDelete: () => void;
+  onEdit: () => void;
+  onSelect: () => void;
+}) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+
+  return (
+    <View style={actionMenuOpen ? styles.activeActionRow : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${item.name}`}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          { label: 'Nonaktifkan', onPress: onDelete, tone: 'danger' },
+        ]}
+        onOpenChange={setActionMenuOpen}
+      />
+    </View>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function KolamPackingMaterialRow({
   columns,
   item,
@@ -652,7 +805,9 @@ function KolamPackingMaterialRow({
         <View
           style={[
             styles.listCell,
-            categoryColumn ? getKolamDataTableColumnStyle(categoryColumn) : null,
+            categoryColumn
+              ? getKolamDataTableColumnStyle(categoryColumn)
+              : null,
           ]}
         >
           <KolamStatusBadge
@@ -664,7 +819,9 @@ function KolamPackingMaterialRow({
         <View
           style={[
             styles.listCell,
-            dimensionColumn ? getKolamDataTableColumnStyle(dimensionColumn) : null,
+            dimensionColumn
+              ? getKolamDataTableColumnStyle(dimensionColumn)
+              : null,
           ]}
         >
           <Text numberOfLines={1} style={styles.cellText}>
@@ -744,7 +901,9 @@ function KolamPackingMaterialDetail({
 }) {
   const item = controller.selectedMaterial;
   const editable = controller.isEditable;
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'assets'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'assets'>(
+    'overview',
+  );
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamPackingMaterial | null>(null);
 
@@ -793,10 +952,7 @@ function KolamPackingMaterialDetail({
         selectedId={activeTab}
       />
       {activeTab === 'overview' ? (
-        <PackingOverviewPanel
-          item={item}
-          onRouteChange={onRouteChange}
-        />
+        <PackingOverviewPanel item={item} onRouteChange={onRouteChange} />
       ) : (
         <KolamPackingMaterialAssetsPanel controller={controller} item={item} />
       )}
@@ -836,10 +992,7 @@ function PackingOverviewPanel({
     () => createPackingVendorPriceItems(item),
     [item],
   );
-  const mediaItems = React.useMemo(
-    () => createPackingMediaItems(item),
-    [item],
-  );
+  const mediaItems = React.useMemo(() => createPackingMediaItems(item), [item]);
 
   return (
     <View style={styles.detailSectionStack}>
@@ -919,7 +1072,11 @@ function PackingOverviewPanel({
                 <PriceTile
                   label="HPP dari vendor"
                   value={effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
-                  note={cheapestSupplier ? `Termurah: ${cheapestSupplier.vendorName}` : undefined}
+                  note={
+                    cheapestSupplier
+                      ? `Termurah: ${cheapestSupplier.vendorName}`
+                      : undefined
+                  }
                 />
                 <PriceTile
                   label="Supplier"
@@ -939,14 +1096,13 @@ function PackingOverviewPanel({
         description="Referensi harga pokok dari supplier. Baris termurah ditandai Terbaik."
         emptyText="Belum ada harga vendor aktif."
         formatCurrency={formatRupiah}
-        onOpenVendor={onRouteChange ? openPackingSupplierDetail(onRouteChange) : undefined}
+        onOpenVendor={
+          onRouteChange ? openPackingSupplierDetail(onRouteChange) : undefined
+        }
         prices={vendorPrices}
         title="Harga Vendor"
       />
-      <PackingUsageCard
-        item={item}
-        onRouteChange={onRouteChange}
-      />
+      <PackingUsageCard item={item} onRouteChange={onRouteChange} />
     </View>
   );
 }
@@ -974,7 +1130,11 @@ function PackingUsageCard({
       })
       .catch(err => {
         if (active) {
-          setError(err instanceof Error ? err.message : 'Gagal memuat pemakaian kemasan.');
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Gagal memuat pemakaian kemasan.',
+          );
         }
       })
       .finally(() => {
@@ -1009,15 +1169,20 @@ function PackingUsageCard({
         <View style={styles.simpleTable}>
           <View style={[styles.simpleTableRow, styles.simpleTableHeader]}>
             <Text style={[styles.simpleTableHead, styles.typeCell]}>Tipe</Text>
-            <Text style={[styles.simpleTableHead, styles.usageNameCell]}>Nama</Text>
+            <Text style={[styles.simpleTableHead, styles.usageNameCell]}>
+              Nama
+            </Text>
             <Text style={[styles.simpleTableHead, styles.codeCell]}>Kode</Text>
-            <Text style={[styles.simpleTableHead, styles.variantCell]}>Varian</Text>
+            <Text style={[styles.simpleTableHead, styles.variantCell]}>
+              Varian
+            </Text>
             <Text style={[styles.simpleTableHead, styles.qtyCell]}>Qty</Text>
           </View>
           {rows.map(row => (
             <View
               key={`${row.entityType}-${row.entityId}-${row.variantLabel}-${row.quantity}`}
-              style={styles.simpleTableRow}>
+              style={styles.simpleTableRow}
+            >
               <View style={styles.typeCell}>
                 <KolamStatusBadge
                   intent={getUsageIntent(row)}
@@ -1027,7 +1192,8 @@ function PackingUsageCard({
               <View style={styles.usageNameCell}>
                 <Text
                   onPress={() => onRouteChange?.(getUsageRoute(row))}
-                  style={styles.tableLink}>
+                  style={styles.tableLink}
+                >
                   {row.name}
                 </Text>
               </View>
@@ -1059,21 +1225,34 @@ function KolamPackingMaterialAssetsPanel({
   controller: KolamPackingMaterialController;
   item: KolamPackingMaterial;
 }) {
-  const uploadAsset = React.useCallback(async (title: string, localUri: string) => {
-    const updated = await uploadKolamPackingMaterialAsset(item.id, title, localUri);
-    await controller.onSelectMaterial(updated);
-    return updated.assets;
-  }, [controller, item.id]);
+  const uploadAsset = React.useCallback(
+    async (title: string, localUri: string) => {
+      const updated = await uploadKolamPackingMaterialAsset(
+        item.id,
+        title,
+        localUri,
+      );
+      await controller.onSelectMaterial(updated);
+      return updated.assets;
+    },
+    [controller, item.id],
+  );
 
-  const deleteAsset = React.useCallback(async (assetId: string) => {
-    const updated = await deleteKolamPackingMaterialAsset(item.id, assetId);
-    await controller.onSelectMaterial(updated);
-    return updated.assets;
-  }, [controller, item.id]);
+  const deleteAsset = React.useCallback(
+    async (assetId: string) => {
+      const updated = await deleteKolamPackingMaterialAsset(item.id, assetId);
+      await controller.onSelectMaterial(updated);
+      return updated.assets;
+    },
+    [controller, item.id],
+  );
 
-  const downloadAsset = React.useCallback((asset: KolamEntityDetailAsset) => {
-    openPackingAssetDownload(item.id, asset.id);
-  }, [item.id]);
+  const downloadAsset = React.useCallback(
+    (asset: KolamEntityDetailAsset) => {
+      openPackingAssetDownload(item.id, asset.id);
+    },
+    [item.id],
+  );
 
   return (
     <KolamEntityDetailAssetsPanel
@@ -1103,7 +1282,9 @@ function KolamPackingMaterialForm({
   );
 
   return (
-    <KolamNativeFormSection section={getKolamFormSection('packing-material-detail')}>
+    <KolamNativeFormSection
+      section={getKolamFormSection('packing-material-detail')}
+    >
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
           <FieldShell label="Nama" required>
@@ -1210,7 +1391,11 @@ function KolamPackingMaterialForm({
                   options={createUnitOptions(weightUnits)}
                   searchable
                   searchPlaceholder="Cari satuan..."
-                  value={form.weightUnit || createUnitOptions(weightUnits)[0]?.value || ''}
+                  value={
+                    form.weightUnit ||
+                    createUnitOptions(weightUnits)[0]?.value ||
+                    ''
+                  }
                 />
               </FieldShell>
             </View>
@@ -1269,7 +1454,11 @@ function KolamPackingMaterialForm({
               options={createUnitOptions(dimensionUnits)}
               searchable
               searchPlaceholder="Cari satuan..."
-              value={form.dimensionUnit || createUnitOptions(dimensionUnits)[0]?.value || ''}
+              value={
+                form.dimensionUnit ||
+                createUnitOptions(dimensionUnits)[0]?.value ||
+                ''
+              }
             />
           </FieldShell>
           <FormDivider title="Harga Supplier" />
@@ -1358,7 +1547,9 @@ function VendorPriceEditor({
                     editable={!controller.saving}
                     mode="numeric"
                     onChangeText={shippingCost =>
-                      updateVendorLine(controller, form, index, { shippingCost })
+                      updateVendorLine(controller, form, index, {
+                        shippingCost,
+                      })
                     }
                     placeholder="0"
                     style={settingsWebFormStyles.settingsWebFormFieldValue}
@@ -1385,7 +1576,9 @@ function VendorPriceEditor({
                 label="Hapus Supplier"
                 onPress={() =>
                   controller.onChangeForm({
-                    vendorPrices: lines.filter((_, lineIndex) => lineIndex !== index),
+                    vendorPrices: lines.filter(
+                      (_, lineIndex) => lineIndex !== index,
+                    ),
                   })
                 }
               />
@@ -1463,7 +1656,11 @@ function PackingHero({ item }: { item: KolamPackingMaterial }) {
           <KolamCopyStack
             items={[
               { id: 'name', text: item.name, style: styles.heroName },
-              { id: 'meta', text: getPackingCategoryLabel(item.category), style: styles.heroMeta },
+              {
+                id: 'meta',
+                text: getPackingCategoryLabel(item.category),
+                style: styles.heroMeta,
+              },
             ]}
           />
         </View>
@@ -1521,7 +1718,9 @@ function getCheapestSupplier(item: KolamPackingMaterial) {
     )[0];
 }
 
-function createPackingMediaItems(item: KolamPackingMaterial): KolamDetailMediaItem[] {
+function createPackingMediaItems(
+  item: KolamPackingMaterial,
+): KolamDetailMediaItem[] {
   return item.photos
     .map((photo, index) => {
       const uri = getKolamFileUrl(photo) ?? '';
@@ -1542,9 +1741,13 @@ function createPackingMediaItems(item: KolamPackingMaterial): KolamDetailMediaIt
     .filter(Boolean) as KolamDetailMediaItem[];
 }
 
-function createPackingVendorPriceItems(item: KolamPackingMaterial): KolamVendorPriceCardItem[] {
+function createPackingVendorPriceItems(
+  item: KolamPackingMaterial,
+): KolamVendorPriceCardItem[] {
   return item.vendorPrices
-    .filter(price => price.vendorName || price.price > 0 || price.shippingCost > 0)
+    .filter(
+      price => price.vendorName || price.price > 0 || price.shippingCost > 0,
+    )
     .map((price, index) => ({
       id: price.id || `packing-vendor-${index}`,
       link: price.link,
@@ -1594,7 +1797,9 @@ function getUsageRoute(row: KolamPackingCatalogUsageRow) {
 function openPackingAssetDownload(packingId: string, assetId: string) {
   const base = appConfig.kolamApiBaseUrl.replace(/\/$/, '');
   void Linking.openURL(
-    `${base}/packing/${encodeURIComponent(packingId)}/assets/${encodeURIComponent(assetId)}/download`,
+    `${base}/packing/${encodeURIComponent(
+      packingId,
+    )}/assets/${encodeURIComponent(assetId)}/download`,
   );
 }
 
@@ -1658,7 +1863,10 @@ function filterPackings(
   });
 }
 
-function sortPackings(items: KolamPackingMaterial[], sortMode: PackingSortMode) {
+function sortPackings(
+  items: KolamPackingMaterial[],
+  sortMode: PackingSortMode,
+) {
   return [...items].sort((left, right) => {
     if (sortMode === 'stock-desc') {
       return right.stock - left.stock || left.name.localeCompare(right.name);
@@ -1685,6 +1893,7 @@ function getPackingRoute(item: KolamPackingMaterial) {
   return `/packing-materials/${encodeURIComponent(item.name || item.id)}`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function fitPackingListColumns(containerWidth: number): KolamTableColumn[] {
   // Prefer shared fitter so floors cannot exceed body budget (weighted Math.max
   // floors previously overflowed MainTrack → cells piled onto neighbors).
