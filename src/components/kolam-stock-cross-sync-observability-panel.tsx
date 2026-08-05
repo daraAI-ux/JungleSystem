@@ -47,7 +47,6 @@ export function KolamStockCrossSyncObservabilityPanel({
         <KolamRefreshButton
           accessibilityLabel="Refresh"
           disabled={fetching}
-
           onPress={() => {
             void onRefresh();
           }}
@@ -73,16 +72,13 @@ export function KolamStockCrossSyncObservabilityPanel({
             <Text style={styles.title}>Observability sync AM</Text>
             <KolamStatusBadge
               intent={report.healthy ? 'success' : 'warning'}
-              label={
-                report.healthy ? 'Sehat' : `${report.alertCount} alert`
-              }
+              label={report.healthy ? 'Sehat' : `${report.alertCount} alert`}
             />
           </View>
         </View>
         <KolamRefreshButton
           accessibilityLabel="Refresh"
           disabled={fetching}
-
           onPress={() => {
             void onRefresh();
           }}
@@ -111,8 +107,12 @@ export function KolamStockCrossSyncObservabilityPanel({
         <View style={styles.alerts}>
           {doubles.map(row => (
             <AlertRow
-              key={`d-${row.sku}-${row.platform}-${row.distinctTaskIds.join(',')}`}
-              body={`${row.sku} → ${row.platform}: ${row.distinctTaskIds.join(', ')}`}
+              key={`d-${row.sku}-${row.platform}-${row.distinctTaskIds.join(
+                ',',
+              )}`}
+              body={`${row.sku} → ${row.platform}: ${row.distinctTaskIds.join(
+                ', ',
+              )}`}
               intent="danger"
               label="Double task"
               onRouteChange={onRouteChange}
@@ -122,7 +122,9 @@ export function KolamStockCrossSyncObservabilityPanel({
           {races.map(row => (
             <AlertRow
               key={`r-${row.sku}-${row.platform}-${row.targetStocks.join('/')}`}
-              body={`${row.sku} → ${row.platform}: targetStock ${row.targetStocks.join(' / ')}`}
+              body={`${row.sku} → ${
+                row.platform
+              }: targetStock ${row.targetStocks.join(' / ')}`}
               intent="warning"
               label="Race stock"
               onRouteChange={onRouteChange}
@@ -132,7 +134,11 @@ export function KolamStockCrossSyncObservabilityPanel({
           {stuck.map(row => (
             <AlertRow
               key={`s-${row.stockTxId || row.taskId}-${row.platform}`}
-              body={`${row.sku || '?'} → ${row.platform} · ${formatCrossSyncObservabilityAge(row.ageMs)} · task ${row.taskId || '—'}`}
+              body={`${row.sku || '?'} → ${
+                row.platform
+              } · ${formatCrossSyncObservabilityAge(row.ageMs)} · task ${
+                row.taskId || '—'
+              }`}
               intent="warning"
               label="Stuck pending"
               onRouteChange={onRouteChange}
@@ -142,7 +148,9 @@ export function KolamStockCrossSyncObservabilityPanel({
           {orphans.map(row => (
             <AlertRow
               key={`o-${row.taskId}`}
-              body={`task ${row.taskId} (${row.platform || '?'}) — tidak ada pending di Kolam`}
+              body={`task ${row.taskId} (${
+                row.platform || '?'
+              }) — tidak ada pending di Kolam`}
               intent="warning"
               label="Orphan AM"
               onRouteChange={onRouteChange}
@@ -190,69 +198,77 @@ function AlertRow({
 
 const styles = StyleSheet.create({
   frame: {
-    gap: 10,
+    backgroundColor: V.colors.primarySoft,
+    borderColor: '#b7e4c7',
+    gap: 6,
+    padding: 10,
   },
   header: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
   headerCopy: {
     flex: 1,
     minWidth: 220,
-    gap: 4,
+    gap: 2,
   },
   titleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   title: {
-    color: V.colors.fg,
-    fontSize: 14,
+    color: '#14532d',
+    fontSize: 13,
     fontWeight: '700',
+    lineHeight: 17,
   },
   muted: {
     color: V.colors.mutedFg,
     fontSize: 12,
-    lineHeight: 17,
+    lineHeight: 15,
   },
   countsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    columnGap: 10,
+    rowGap: 3,
   },
   countText: {
     color: V.colors.mutedFg,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 14,
   },
   dangerText: {
     color: V.colors.danger,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 14,
   },
   alerts: {
-    gap: 8,
+    gap: 5,
   },
   alertRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    backgroundColor: V.colors.bg,
+    borderColor: '#b7e4c7',
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.72)',
   },
   alertBody: {
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 160,
     color: V.colors.fg,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 14,
   },
 });
