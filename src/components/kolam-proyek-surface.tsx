@@ -735,34 +735,63 @@ function KolamProyekDetailRead({
           onAction={runNextStepAction}
         />
 
-        <View style={styles.metricGrid}>
-          <Metric
-            hint={paymentHint}
-            label="Nilai kontrak"
-            value={formatRupiah(cost.contractValue)}
-          />
-          <Metric
-            label="Pemakaian toko"
-            value={formatRupiah(cost.produkToko)}
-          />
-          <Metric
-            label="UE terverifikasi"
-            value={formatRupiah(cost.unexpectedExpenseTotal)}
-          />
-          <Metric
-            label="VAR (basis komisi)"
-            value={formatRupiah(cost.varAmount)}
-          />
-          {detail.paymentMode === 'staged' && showDp ? (
-            <Metric
-              hint={`Sisa ${formatRupiah(outstanding)}`}
-              label="DP terkumpul"
-              value={formatRupiah(receivedTotal)}
-            />
-          ) : null}
-        </View>
-
         <KolamDetailMetaStrip>
+          <KolamDetailMetaStripItem label="Nilai kontrak">
+            <Text
+              style={[
+                kolamDetailMetaStripStyles.stripValue,
+                styles.tabular,
+              ]}
+            >
+              {formatRupiah(cost.contractValue)}
+            </Text>
+            <Text style={styles.metricHint}>{paymentHint}</Text>
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="Pemakaian toko">
+            <Text
+              style={[
+                kolamDetailMetaStripStyles.stripValue,
+                styles.tabular,
+              ]}
+            >
+              {formatRupiah(cost.produkToko)}
+            </Text>
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="UE terverifikasi">
+            <Text
+              style={[
+                kolamDetailMetaStripStyles.stripValue,
+                styles.tabular,
+              ]}
+            >
+              {formatRupiah(cost.unexpectedExpenseTotal)}
+            </Text>
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="VAR">
+            <Text
+              style={[
+                kolamDetailMetaStripStyles.stripValue,
+                styles.tabular,
+              ]}
+            >
+              {formatRupiah(cost.varAmount)}
+            </Text>
+          </KolamDetailMetaStripItem>
+          {detail.paymentMode === 'staged' && showDp ? (
+            <KolamDetailMetaStripItem label="DP terkumpul">
+              <Text
+                style={[
+                  kolamDetailMetaStripStyles.stripValue,
+                  styles.tabular,
+                ]}
+              >
+                {formatRupiah(receivedTotal)}
+              </Text>
+              <Text style={styles.metricHint}>
+                Sisa {formatRupiah(outstanding)}
+              </Text>
+            </KolamDetailMetaStripItem>
+          ) : null}
           <KolamDetailMetaStripItem label="Status">
             <KolamStatusBadge
               intent={getKolamProyekLifecycleIntent(detail.lifecycleStatus)}
