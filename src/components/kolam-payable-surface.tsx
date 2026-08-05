@@ -29,7 +29,10 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
-import { KolamTableFooterControls } from './kolam-dropdown-select';
+import {
+  KolamOverflowMenuButton,
+  KolamTableFooterControls,
+} from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -574,16 +577,19 @@ function PayableList({
             />
           </View>
           <View style={[styles.cell, { flex: 0.8 }]}>
-            {canPayRow ? (
-              <KolamButton
-                intent="primary"
-                label={controller.payingId === item.id ? '…' : 'Lunasi'}
-                onPress={() => {
-                  void controller.onPayFull(item);
-                }}
-                style={styles.actionButton}
-              />
-            ) : null}
+            <KolamPayableRowActions
+              canPay={canPayRow}
+              item={item}
+              onOpenDetail={() =>
+                onRouteChange?.(
+                  `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
+                )
+              }
+              onPayFull={() => {
+                void controller.onPayFull(item);
+              }}
+              paying={controller.payingId === item.id}
+            />
           </View>
         </Pressable>
       );
@@ -652,6 +658,50 @@ function PayableList({
         )}
       </KolamCatalogListTableShell>
     </View>
+  );
+}
+
+function KolamPayableRowActions({
+  canPay,
+  item,
+  onOpenDetail,
+  onPayFull,
+  paying,
+}: {
+  canPay: boolean;
+  item: KolamPayable;
+  onOpenDetail: () => void;
+  onPayFull: () => void;
+  paying: boolean;
+}) {
+  const actions: React.ComponentProps<typeof KolamOverflowMenuButton>['actions'] = [
+    {
+      label: 'Lihat detail',
+      onPress: onOpenDetail,
+    },
+  ];
+
+  if (item.status === 'open') {
+    actions.push({
+      disabled: !canPay || paying,
+      label: paying ? 'Memproses...' : 'Lunasi dari Wallet',
+      onPress: canPay && !paying ? onPayFull : () => undefined,
+    });
+  }
+
+  if (item.status === 'paid') {
+    actions.push({
+      disabled: true,
+      label: 'Sudah lunas',
+      onPress: () => undefined,
+    });
+  }
+
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${item.code || item.name || 'hutang'}`}
+      actions={actions}
+    />
   );
 }
 
