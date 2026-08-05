@@ -204,6 +204,8 @@ function KolamShippingMethodShell({
   controller: KolamShippingMethodController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
   if (controller.mode === 'list') {
     return (
       <View style={styles.surface}>
@@ -224,7 +226,7 @@ function KolamShippingMethodShell({
     controller.mode === 'new'
       ? 'Metode pengiriman baru'
       : controller.mode === 'edit'
-        ? `Edit · ${controller.selectedMethod?.displayName || controller.form.displayName || 'Metode pengiriman'}`
+        ? `Ubah · ${controller.selectedMethod?.displayName || controller.form.displayName || 'Metode pengiriman'}`
         : controller.selectedMethod?.displayName || 'Detail metode pengiriman';
 
   return (
@@ -252,16 +254,26 @@ function KolamShippingMethodShell({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
-                intent="primary"
-                label="Edit"
-                onPress={() => {
-                  controller.onEdit();
-                  if (controller.selectedMethod) {
-                    onRouteChange?.(controller.getEditRoute(controller.selectedMethod));
-                  }
-                }}
-              />
+              <>
+                <KolamButton
+                  intent="primary"
+                  label="Ubah"
+                  onPress={() => {
+                    controller.onEdit();
+                    if (controller.selectedMethod) {
+                      onRouteChange?.(
+                        controller.getEditRoute(controller.selectedMethod),
+                      );
+                    }
+                  }}
+                />
+                <KolamButton
+                  disabled={controller.saving || !controller.selectedMethod}
+                  intent="danger"
+                  label="Hapus"
+                  onPress={() => setDeleteOpen(true)}
+                />
+              </>
             ) : null}
           </View>
         </View>
@@ -275,6 +287,28 @@ function KolamShippingMethodShell({
         />
       ) : null}
       {children}
+      <KolamDeleteConfirmDialog
+        itemLabel={
+          controller.selectedMethod?.displayName ||
+          controller.selectedMethod?.name ||
+          ''
+        }
+        itemType="metode pengiriman"
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={() => {
+          const method = controller.selectedMethod;
+          if (!method) {
+            return;
+          }
+          void controller.onDeleteMethod(method).then(ok => {
+            if (ok) {
+              setDeleteOpen(false);
+              onRouteChange?.(controller.getListRoute());
+            }
+          });
+        }}
+        visible={deleteOpen}
+      />
     </View>
   );
 }
@@ -730,13 +764,11 @@ function KolamShippingMethodCatalogTable({
 
 function KolamShippingMethodDetail({
   controller,
-  onRouteChange,
 }: {
   controller: KolamShippingMethodController;
   onRouteChange?: (route: string) => void;
 }) {
   const method = controller.selectedMethod;
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
 
   if (!method) {
     return (
@@ -909,29 +941,6 @@ function KolamShippingMethodDetail({
           ]}
         />
       </ShippingMethodFormSection>
-
-      <View style={styles.detailActions}>
-        <KolamButton
-          intent="danger"
-          label="Hapus"
-          onPress={() => setDeleteOpen(true)}
-        />
-      </View>
-
-      <KolamDeleteConfirmDialog
-        itemLabel={method.displayName}
-        itemType="metode pengiriman"
-        onCancel={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          void controller.onDeleteMethod(method).then(ok => {
-            if (ok) {
-              setDeleteOpen(false);
-              onRouteChange?.(controller.getListRoute());
-            }
-          });
-        }}
-        visible={deleteOpen}
-      />
     </ScrollView>
   );
 }
