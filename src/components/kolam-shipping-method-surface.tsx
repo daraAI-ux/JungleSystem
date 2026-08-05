@@ -18,7 +18,11 @@ import {
   KOLAM_SHIPPING_METHOD_RATE_SOURCE_OPTIONS,
   type KolamShippingMethod,
 } from '../domain/kolam-shipping-method';
-import { type KolamTableColumn } from '../domain/kolam-table';
+import {
+  fitKolamDataTableColumns,
+  getKolamTableVisualContract,
+  type KolamTableColumn,
+} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import { pickNativeImageFile } from '../services/native-file-picker';
@@ -108,14 +112,14 @@ function ShippingMethodFormSection({
   );
 }
 
-const METHOD_LIST_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Nama', align: 'left', width: 240 },
-  { id: 'meta', label: 'Sumber', align: 'left', width: 120 },
-  { id: 'children', label: 'Kurir / Layanan', align: 'left', width: 180 },
-  { id: 'marketplace', label: 'Harga', align: 'left', width: 140 },
-  { id: 'notes', label: 'Perkiraan hari', align: 'left', width: 120 },
-  { id: 'status', label: 'Status', align: 'left', width: 130 },
-  { id: 'webstore', label: 'Webstore', align: 'left', width: 130 },
+const METHOD_LIST_COLUMNS_BASE: KolamTableColumn[] = [
+  { id: 'primary', label: 'Nama', align: 'left', width: 200 },
+  { id: 'meta', label: 'Sumber', align: 'left', width: 100 },
+  { id: 'children', label: 'Kurir / Layanan', align: 'left', width: 140 },
+  { id: 'marketplace', label: 'Harga', align: 'left', width: 120 },
+  { id: 'notes', label: 'Perkiraan hari', align: 'left', width: 100 },
+  { id: 'status', label: 'Status', align: 'left', width: 120 },
+  { id: 'products', label: 'Webstore', align: 'left', width: 120 },
   {
     id: 'actions',
     label: '',
@@ -124,13 +128,35 @@ const METHOD_LIST_COLUMNS: KolamTableColumn[] = [
   },
 ];
 
-const CATALOG_LIST_COLUMNS: KolamTableColumn[] = [
+const CATALOG_LIST_COLUMNS_BASE: KolamTableColumn[] = [
   { id: 'primary', label: 'Kurir', align: 'left', width: 140 },
   { id: 'meta', label: 'Layanan', align: 'left', width: 160 },
   { id: 'children', label: 'Kategori', align: 'left', width: 100 },
-  { id: 'status', label: 'Status', align: 'left', width: 130 },
-  { id: 'notes', label: 'Disinkronkan', align: 'left', width: 180 },
+  { id: 'status', label: 'Status', align: 'left', width: 120 },
+  { id: 'notes', label: 'Disinkronkan', align: 'left', width: 160 },
 ];
+
+function fitShippingMethodListColumns(containerWidth: number): KolamTableColumn[] {
+  return fitKolamDataTableColumns(METHOD_LIST_COLUMNS_BASE, containerWidth, {
+    actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+    paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+    primaryMinWidth: 140,
+    secondaryMinWidth: 72,
+  });
+}
+
+function fitShippingCatalogListColumns(
+  containerWidth: number,
+): KolamTableColumn[] {
+  return fitKolamDataTableColumns(CATALOG_LIST_COLUMNS_BASE, containerWidth, {
+    actionsMinWidth: 0,
+    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
+    paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
+    primaryMinWidth: 100,
+    secondaryMinWidth: 72,
+  });
+}
 
 function descRow(id: string, label: string, value: string) {
   return { id, label, meta: '', tone: 'default' as const, value };
@@ -412,6 +438,13 @@ function KolamShippingMethodMethodsTable({
   onRouteChange?: (route: string) => void;
 }) {
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
+  const columns = React.useMemo(
+    () => fitShippingMethodListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const col = (id: KolamTableColumn['id']) =>
+    columns.find(column => column.id === id) ??
+    METHOD_LIST_COLUMNS_BASE.find(column => column.id === id)!;
 
   return (
     <KolamCatalogListTableShell
@@ -447,23 +480,19 @@ function KolamShippingMethodMethodsTable({
         </KolamTableFooterControls>
       }
       onBodyWidthChange={setTableBodyWidth}>
-      <KolamDataTableHeader columns={METHOD_LIST_COLUMNS} />
+      <KolamDataTableHeader columns={columns} />
       {!controller.loading && controller.methods.length === 0 ? (
-        <KolamEmptyState
-          message="Belum ada metode pengiriman."
-          title="Kosong"
-        />
+        <View style={styles.emptyWrap}>
+          <KolamEmptyState
+            message="Belum ada metode pengiriman. Gunakan Baru atau Inisialisasi Default."
+            title="Kosong"
+          />
+        </View>
       ) : null}
       {controller.methods.map(method => (
           <KolamDataTableRowFrame key={method.id}>
-            <KolamDataTableMainTrack
-              columnGap={KOLAM_DATA_TABLE_COLUMN_GAP}
-              style={styles.tableMainTrack}>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[0],
-                  tableBodyWidth,
-                )}>
+            <KolamDataTableMainTrack>
+              <View style={getKolamDataTableColumnStyle(col('primary'))}>
                 <Pressable
                   onPress={() => {
                     void controller.onSelectMethod(method);
@@ -492,11 +521,7 @@ function KolamShippingMethodMethodsTable({
                   </View>
                 </Pressable>
               </View>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[1],
-                  tableBodyWidth,
-                )}>
+              <View style={getKolamDataTableColumnStyle(col('meta'))}>
                 <View style={styles.stackGap}>
                   <KolamStatusBadge
                     intent={
@@ -509,11 +534,7 @@ function KolamShippingMethodMethodsTable({
                   </Text>
                 </View>
               </View>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[2],
-                  tableBodyWidth,
-                )}>
+              <View style={getKolamDataTableColumnStyle(col('children'))}>
                 <View style={styles.stackGap}>
                   <Text numberOfLines={1} style={styles.primaryText}>
                     {getMethodCourierLabel(method)}
@@ -523,11 +544,7 @@ function KolamShippingMethodMethodsTable({
                   </Text>
                 </View>
               </View>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[3],
-                  tableBodyWidth,
-                )}>
+              <View style={getKolamDataTableColumnStyle(col('marketplace'))}>
                 {isKolamShippingMethodBiteship(method) ? (
                   <View style={styles.stackGap}>
                     <KolamStatusBadge intent="success" label="Tarif langsung" />
@@ -546,20 +563,12 @@ function KolamShippingMethodMethodsTable({
                   </View>
                 )}
               </View>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[4],
-                  tableBodyWidth,
-                )}>
+              <View style={getKolamDataTableColumnStyle(col('notes'))}>
                 <Text style={styles.primaryText}>
                   {formatKolamShippingMethodEstimatedDaysLabel(method)}
                 </Text>
               </View>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[5],
-                  tableBodyWidth,
-                )}>
+              <View style={getKolamDataTableColumnStyle(col('status'))}>
                 <View style={styles.switchBadgeRow}>
                   <KolamSwitch
                     active={method.isActive}
@@ -576,11 +585,7 @@ function KolamShippingMethodMethodsTable({
                   />
                 </View>
               </View>
-              <View
-                style={getKolamDataTableColumnStyle(
-                  METHOD_LIST_COLUMNS[6],
-                  tableBodyWidth,
-                )}>
+              <View style={getKolamDataTableColumnStyle(col('products'))}>
                 <View style={styles.switchBadgeRow}>
                   <KolamSwitch
                     active={method.isAvailableOnWebstore}
@@ -641,6 +646,13 @@ function KolamShippingMethodCatalogTable({
 }) {
   const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const stats = controller.catalogStats;
+  const columns = React.useMemo(
+    () => fitShippingCatalogListColumns(tableBodyWidth),
+    [tableBodyWidth],
+  );
+  const col = (id: KolamTableColumn['id']) =>
+    columns.find(column => column.id === id) ??
+    CATALOG_LIST_COLUMNS_BASE.find(column => column.id === id)!;
 
   return (
     <View style={styles.catalogRoot}>
@@ -661,48 +673,32 @@ function KolamShippingMethodCatalogTable({
           />
         }
         onBodyWidthChange={setTableBodyWidth}>
-        <KolamDataTableHeader columns={CATALOG_LIST_COLUMNS} />
+        <KolamDataTableHeader columns={columns} />
         {!controller.catalogLoading && controller.catalogItems.length === 0 ? (
-          <KolamEmptyState
-            message="Belum ada data katalog kurir."
-            title="Kosong"
-          />
+          <View style={styles.emptyWrap}>
+            <KolamEmptyState
+              message="Belum ada data katalog kurir. Jalankan Sync Katalog Biteship."
+              title="Kosong"
+            />
+          </View>
         ) : null}
         {controller.catalogItems.map(item => (
             <KolamDataTableRowFrame key={item.id}>
-              <KolamDataTableMainTrack
-                columnGap={KOLAM_DATA_TABLE_COLUMN_GAP}
-                style={styles.tableMainTrack}>
-                <View
-                  style={getKolamDataTableColumnStyle(
-                    CATALOG_LIST_COLUMNS[0],
-                    tableBodyWidth,
-                  )}>
+              <KolamDataTableMainTrack>
+                <View style={getKolamDataTableColumnStyle(col('primary'))}>
                   <Text style={styles.primaryText}>{item.courierName}</Text>
                   <Text style={styles.metaText}>{item.courierCode}</Text>
                 </View>
-                <View
-                  style={getKolamDataTableColumnStyle(
-                    CATALOG_LIST_COLUMNS[1],
-                    tableBodyWidth,
-                  )}>
+                <View style={getKolamDataTableColumnStyle(col('meta'))}>
                   <Text style={styles.primaryText}>{item.serviceName}</Text>
                   <Text style={styles.metaText}>{item.serviceCode}</Text>
                 </View>
-                <View
-                  style={getKolamDataTableColumnStyle(
-                    CATALOG_LIST_COLUMNS[2],
-                    tableBodyWidth,
-                  )}>
+                <View style={getKolamDataTableColumnStyle(col('children'))}>
                   <Text style={styles.primaryText}>
                     {formatKolamShippingMethodCategoryLabel(item.category)}
                   </Text>
                 </View>
-                <View
-                  style={getKolamDataTableColumnStyle(
-                    CATALOG_LIST_COLUMNS[3],
-                    tableBodyWidth,
-                  )}>
+                <View style={getKolamDataTableColumnStyle(col('status'))}>
                   <View style={styles.switchBadgeRow}>
                     <KolamSwitch
                       active={item.isActive}
@@ -719,11 +715,7 @@ function KolamShippingMethodCatalogTable({
                     />
                   </View>
                 </View>
-                <View
-                  style={getKolamDataTableColumnStyle(
-                    CATALOG_LIST_COLUMNS[4],
-                    tableBodyWidth,
-                  )}>
+                <View style={getKolamDataTableColumnStyle(col('notes'))}>
                   <Text style={styles.metaText}>
                     {formatCatalogSyncedAt(item.syncedAt)}
                   </Text>
@@ -1475,8 +1467,9 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
   },
-  tableMainTrack: {
-    flex: 1,
+  emptyWrap: {
+    paddingHorizontal: 12,
+    paddingVertical: 24,
   },
   nameCell: {
     alignItems: 'center',
