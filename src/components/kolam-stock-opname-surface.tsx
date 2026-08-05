@@ -518,6 +518,7 @@ function buildStockOpnameListColumns(): Array<
       ),
     },
     {
+      align: 'center',
       flex: 1,
       id: 'created',
       label: 'Dibuat',
@@ -528,10 +529,15 @@ function buildStockOpnameListColumns(): Array<
       ),
     },
     {
+      align: 'center',
       flex: 1,
       id: 'pic',
       label: 'Pemilik',
-      render: item => <StockOpnamePicAvatar item={item} />,
+      render: item => (
+        <View style={styles.ownerCell}>
+          <StockOpnamePicAvatar item={item} />
+        </View>
+      ),
     },
   ];
 }
@@ -1009,6 +1015,10 @@ const styles = StyleSheet.create({
   },
   picCell: {
     alignItems: 'center',
+  },
+  ownerCell: {
+    alignItems: 'center',
+    width: '100%',
   },
   picTooltip: {
     alignSelf: 'center',
