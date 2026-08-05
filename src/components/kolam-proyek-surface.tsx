@@ -2888,6 +2888,14 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingTop: 2,
   },
+  /** Viewport ~5 timeline rows; scroll for the rest (sales/Layanan pattern). */
+  historyListScrollView: {
+    maxHeight: 240,
+  },
+  historyListScroll: {
+    paddingBottom: 4,
+    paddingTop: 2,
+  },
   historyTimeline: {
     borderLeftColor: V.colors.border,
     borderLeftWidth: 2,
