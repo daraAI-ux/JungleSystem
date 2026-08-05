@@ -3,6 +3,7 @@ import {StyleSheet, View} from 'react-native';
 import type {DashboardCountIconKind} from '../domain/dashboard-counts';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamDashboardProductCountIcon} from './kolam-dashboard-product-count-icon';
+import {KolamDashboardRawMaterialCountIcon} from './kolam-dashboard-raw-material-count-icon';
 
 export interface KolamDashboardCountIconProps {
   kind: DashboardCountIconKind;
@@ -16,12 +17,7 @@ export function KolamDashboardCountIcon({
   }
 
   if (kind === 'package') {
-    return (
-      <View style={styles.package}>
-        <View style={styles.packageTop} />
-        <View style={styles.packageSeam} />
-      </View>
-    );
+    return <KolamDashboardRawMaterialCountIcon />;
   }
 
   if (kind === 'book') {
@@ -43,29 +39,6 @@ export function KolamDashboardCountIcon({
 }
 
 const styles = StyleSheet.create({
-  package: {
-    width: 20,
-    height: 18,
-    borderRadius: 4,
-    borderColor: V.colors.success,
-    borderWidth: 2,
-  },
-  packageTop: {
-    position: 'absolute',
-    top: 5,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: V.colors.success,
-  },
-  packageSeam: {
-    position: 'absolute',
-    top: 0,
-    bottom: 5,
-    left: 8,
-    width: 2,
-    backgroundColor: V.colors.success,
-  },
   book: {
     width: 19,
     height: 20,

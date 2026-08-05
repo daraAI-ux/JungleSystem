@@ -23,7 +23,7 @@ describe('KolamDashboardCountIcon', () => {
       );
     });
 
-    if (kind === 'shopping-bag') {
+    if (kind === 'shopping-bag' || kind === 'package') {
       expect(renderer!.root.findByType(Svg)).toBeTruthy();
     } else {
       expect(renderer!.root.findAllByType(View).length).toBeGreaterThan(1);
@@ -36,6 +36,23 @@ describe('KolamDashboardCountIcon', () => {
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
         <KolamDashboardCountIcon kind="shopping-bag" />,
+      );
+    });
+
+    const icon = renderer!.root.findByType(Svg);
+
+    expect(icon.props.height).toBe(46);
+    expect(icon.props.width).toBe(46);
+    expect(icon.props.viewBox).toBe('0 0 512 512');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('renders the raw materials glyph as the native material bag SVG artwork', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamDashboardCountIcon kind="package" />,
       );
     });
 

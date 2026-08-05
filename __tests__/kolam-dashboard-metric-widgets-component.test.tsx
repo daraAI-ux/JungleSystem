@@ -186,6 +186,11 @@ describe('Kolam dashboard metric widgets', () => {
         backgroundColor: V.colors[countVisual.iconTile.background],
       }),
     );
+    expect(iconTiles[1]?.props.style).toEqual(
+      expect.not.objectContaining({
+        backgroundColor: V.colors[countVisual.iconTile.background],
+      }),
+    );
 
     const trendNode = renderer!.root
       .findAllByType(Text)
