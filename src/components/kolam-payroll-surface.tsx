@@ -170,62 +170,61 @@ function PayrollListBody({
     <View style={styles.listBody}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
+          <View
+            style={[kolamTableToolbarStyles.filters, styles.filtersAlignEnd]}
+          >
             <KolamFormTextField
               onChangeText={controller.onSearchChange}
               placeholder="Cari periode"
               style={styles.searchInput}
               value={controller.search}
             />
+            {controller.canCreate ? (
+              <>
+                <KolamDropdownSelect
+                  label="Tahun"
+                  onChange={value =>
+                    controller.onCreateYearChange(
+                      Number(value) || new Date().getFullYear(),
+                    )
+                  }
+                  options={yearOptions}
+                  value={String(controller.createYear)}
+                />
+                <KolamDropdownSelect
+                  label="Bulan"
+                  onChange={value =>
+                    controller.onCreateMonthChange(Number(value) || 1)
+                  }
+                  options={monthOptions}
+                  value={String(controller.createMonth)}
+                />
+              </>
+            ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamRefreshButton
               accessibilityLabel="Muat ulang"
               intent="secondary"
-
               onPress={() => {
                 void controller.onRefresh();
               }}
               style={styles.toolbarButton}
             />
+            {controller.canCreate ? (
+              <KolamButton
+                disabled={controller.mutating}
+                intent="primary"
+                label={controller.mutating ? 'Membuat…' : 'Buat periode'}
+                onPress={() => {
+                  void controller.onCreatePeriod();
+                }}
+                style={styles.createToolbarButton}
+              />
+            ) : null}
           </View>
         </View>
       </View>
-
-      {controller.canCreate ? (
-        <KolamCardFrame style={styles.createCard}>
-          <Text style={styles.sectionTitle}>Buat periode</Text>
-          <View style={styles.createRow}>
-            <KolamDropdownSelect
-              label="Tahun"
-              onChange={value =>
-                controller.onCreateYearChange(
-                  Number(value) || new Date().getFullYear(),
-                )
-              }
-              options={yearOptions}
-              value={String(controller.createYear)}
-            />
-            <KolamDropdownSelect
-              label="Bulan"
-              onChange={value =>
-                controller.onCreateMonthChange(Number(value) || 1)
-              }
-              options={monthOptions}
-              value={String(controller.createMonth)}
-            />
-            <KolamButton
-              disabled={controller.mutating}
-              intent="primary"
-              label={controller.mutating ? 'Membuat…' : 'Buat periode'}
-              onPress={() => {
-                void controller.onCreatePeriod();
-              }}
-              style={styles.createButton}
-            />
-          </View>
-        </KolamCardFrame>
-      ) : null}
 
       <KolamCatalogListTableShell fill footer={null} style={styles.tableFrame}>
         <FlatList
@@ -885,26 +884,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     minWidth: 160,
   },
+  filtersAlignEnd: {
+    alignItems: 'flex-end',
+  },
   toolbarButton: {
     minWidth: 96,
   },
-  createCard: {
-    gap: 8,
-    padding: 12,
-  },
-  sectionTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  createRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  createButton: {
+  createToolbarButton: {
     minWidth: 120,
   },
   listBody: {
