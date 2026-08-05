@@ -19,6 +19,7 @@ import {
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -147,14 +148,12 @@ export function KolamLayananSubscriptionDetail({
               }
             />
             {subscription?.saleId ? (
-              <KolamButton
+              <KolamPdfDownloadButton
                 disabled={controller.downloadingInvoice}
                 intent="outline"
-                label={
-                  controller.downloadingInvoice
-                    ? 'Mengunduh…'
-                    : 'Unduh faktur'
-                }
+                label="Unduh faktur"
+                loading={controller.downloadingInvoice}
+                loadingLabel="Mengunduh…"
                 onPress={() => {
                   void controller.onDownloadInvoice();
                 }}
