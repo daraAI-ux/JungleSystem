@@ -577,18 +577,43 @@ function PayableList({
             />
           </View>
           <View style={[styles.cell, { flex: 0.8 }]}>
-            <KolamPayableRowActions
-              canPay={canPayRow}
-              item={item}
-              onOpenDetail={() =>
-                onRouteChange?.(
-                  `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
-                )
-              }
-              onPayFull={() => {
-                void controller.onPayFull(item);
-              }}
-              paying={controller.payingId === item.id}
+            <KolamOverflowMenuButton
+              accessibilityLabel={`Menu ${item.code || item.name || 'hutang'}`}
+              actions={[
+                {
+                  label: 'Lihat detail',
+                  onPress: () =>
+                    onRouteChange?.(
+                      `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
+                    ),
+                },
+                ...(item.status === 'open'
+                  ? [
+                      {
+                        disabled: !canPayRow || controller.payingId === item.id,
+                        label:
+                          controller.payingId === item.id
+                            ? 'Memproses...'
+                            : 'Lunasi dari Wallet',
+                        onPress: () => {
+                          if (!canPayRow || controller.payingId === item.id) {
+                            return;
+                          }
+                          void controller.onPayFull(item);
+                        },
+                      },
+                    ]
+                  : []),
+                ...(item.status === 'paid'
+                  ? [
+                      {
+                        disabled: true,
+                        label: 'Sudah lunas',
+                        onPress: () => undefined,
+                      },
+                    ]
+                  : []),
+              ]}
             />
           </View>
         </Pressable>
@@ -658,50 +683,6 @@ function PayableList({
         )}
       </KolamCatalogListTableShell>
     </View>
-  );
-}
-
-function KolamPayableRowActions({
-  canPay,
-  item,
-  onOpenDetail,
-  onPayFull,
-  paying,
-}: {
-  canPay: boolean;
-  item: KolamPayable;
-  onOpenDetail: () => void;
-  onPayFull: () => void;
-  paying: boolean;
-}) {
-  const actions: React.ComponentProps<typeof KolamOverflowMenuButton>['actions'] = [
-    {
-      label: 'Lihat detail',
-      onPress: onOpenDetail,
-    },
-  ];
-
-  if (item.status === 'open') {
-    actions.push({
-      disabled: !canPay || paying,
-      label: paying ? 'Memproses...' : 'Lunasi dari Wallet',
-      onPress: canPay && !paying ? onPayFull : () => undefined,
-    });
-  }
-
-  if (item.status === 'paid') {
-    actions.push({
-      disabled: true,
-      label: 'Sudah lunas',
-      onPress: () => undefined,
-    });
-  }
-
-  return (
-    <KolamOverflowMenuButton
-      accessibilityLabel={`Menu ${item.code || item.name || 'hutang'}`}
-      actions={actions}
-    />
   );
 }
 
