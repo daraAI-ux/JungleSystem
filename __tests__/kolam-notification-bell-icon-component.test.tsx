@@ -1,26 +1,29 @@
 import React from 'react';
-import {View} from 'react-native';
+import {Image} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamNotificationBellIcon} from '../src/components/kolam-notification-bell-icon';
 import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 
 describe('KolamNotificationBellIcon', () => {
-  it('renders the shared notification bell with muted tint by default', async () => {
+  it('renders the shared notification bell image asset', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(<KolamNotificationBellIcon />);
     });
 
-    const rendered = JSON.stringify(
-      renderer!.root.findAllByType(View).map(node => node.props.style),
-    );
+    const icon = renderer!.root.findByType(Image);
 
-    expect(renderer!.root.findAllByType(View)).toHaveLength(4);
-    expect(rendered).toContain(V.colors.mutedFg);
+    expect(icon.props.resizeMode).toBe('contain');
+    expect(icon.props.style).toEqual(
+      expect.objectContaining({
+        height: 22,
+        width: 22,
+      }),
+    );
   });
 
-  it('supports a custom notification bell tint', async () => {
+  it('keeps the legacy color prop non-visual for callers', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -29,10 +32,6 @@ describe('KolamNotificationBellIcon', () => {
       );
     });
 
-    const rendered = JSON.stringify(
-      renderer!.root.findAllByType(View).map(node => node.props.style),
-    );
-
-    expect(rendered).toContain(V.colors.info);
+    expect(renderer!.root.findByType(Image)).toBeTruthy();
   });
 });
