@@ -1,10 +1,9 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
 import type {DashboardCountIconKind} from '../domain/dashboard-counts';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamDashboardLifeStockCountIcon} from './kolam-dashboard-life-stock-count-icon';
 import {KolamDashboardProductCountIcon} from './kolam-dashboard-product-count-icon';
 import {KolamDashboardRawMaterialCountIcon} from './kolam-dashboard-raw-material-count-icon';
+import {KolamDashboardServiceCountIcon} from './kolam-dashboard-service-count-icon';
 
 export interface KolamDashboardCountIconProps {
   kind: DashboardCountIconKind;
@@ -25,41 +24,5 @@ export function KolamDashboardCountIcon({
     return <KolamDashboardLifeStockCountIcon />;
   }
 
-  return (
-    <View style={styles.service}>
-      <View style={styles.serviceDot} />
-      <View style={styles.serviceLineHorizontal} />
-      <View style={styles.serviceLineVertical} />
-    </View>
-  );
+  return <KolamDashboardServiceCountIcon />;
 }
-
-const styles = StyleSheet.create({
-  service: {
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderColor: V.colors.success,
-    borderWidth: 2,
-  },
-  serviceLineHorizontal: {
-    position: 'absolute',
-    width: 12,
-    height: 2,
-    borderRadius: 999,
-    backgroundColor: V.colors.success,
-  },
-  serviceLineVertical: {
-    position: 'absolute',
-    width: 2,
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: V.colors.success,
-  },
-});

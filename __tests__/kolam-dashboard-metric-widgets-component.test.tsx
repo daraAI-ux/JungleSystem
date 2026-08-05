@@ -180,22 +180,7 @@ describe('Kolam dashboard metric widgets', () => {
           StyleSheet.flatten(tile.props.style).backgroundColor ===
           V.colors[countVisual.iconTile.background],
       ),
-    ).toBe(true);
-    expect(iconTiles[0]?.props.style).toEqual(
-      expect.not.objectContaining({
-        backgroundColor: V.colors[countVisual.iconTile.background],
-      }),
-    );
-    expect(iconTiles[1]?.props.style).toEqual(
-      expect.not.objectContaining({
-        backgroundColor: V.colors[countVisual.iconTile.background],
-      }),
-    );
-    expect(iconTiles[2]?.props.style).toEqual(
-      expect.not.objectContaining({
-        backgroundColor: V.colors[countVisual.iconTile.background],
-      }),
-    );
+    ).toBe(false);
 
     const trendNode = renderer!.root
       .findAllByType(Text)
