@@ -53,6 +53,7 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -230,9 +231,10 @@ function KolamProyekList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               intent="outline"
-              label="Muat ulang"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -611,9 +613,10 @@ function KolamProyekDetailRead({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
               intent="outline"
-              label="Muat ulang"
+
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -2517,75 +2520,128 @@ function ProyekHppMaterialsSection({
   };
 
   return (
-    <DetailSection title="HPP / produk toko">
+    <KolamCardFrame style={styles.hppCard} variant="compact">
+      <View style={styles.hppHeader}>
+        <View style={styles.hppHeaderCopy}>
+          <Text style={styles.hppTitle}>HPP / produk toko</Text>
+          <Text style={styles.hppDescription}>
+            Harga dari katalog. Stok disesuaikan saat proyek dalam proses.
+          </Text>
+        </View>
+        {canEdit ? (
+          <KolamButton
+            disabled={acting}
+            intent="outline"
+            label={acting ? 'Menyimpan…' : 'Simpan Produk Toko'}
+            onPress={() => {
+              void onSave(draft);
+            }}
+          />
+        ) : null}
+      </View>
+
       {draft.length === 0 && detail.hppManual <= 0 ? (
         <Text style={styles.metaText}>Belum ada baris HPP.</Text>
       ) : (
         <>
-          {draft.map(line => {
-            const locked = Boolean(line.stockAppliedAt);
-            const editableLine = canEdit && !locked;
-            return (
-              <View key={line.id} style={styles.listRow}>
-                <View style={styles.dpRowHeader}>
-                  <Text style={styles.primaryText}>{line.label}</Text>
-                  {locked ? (
-                    <Text style={styles.metaText}>Stok sudah diterapkan</Text>
-                  ) : null}
-                </View>
-                {editableLine ? (
-                  <View style={styles.hppEditRow}>
-                    <View style={styles.hppField}>
-                      <KolamSettingsWebFieldLabel label="Qty" required />
-                      <KolamFormTextField
-                        mode="numeric"
-                        onChangeText={text => {
-                          const quantity =
-                            Number(String(text).replace(/[^\d.-]/g, '')) || 0;
-                          patchLine(line.id, { quantity });
-                        }}
-                        value={String(line.quantity ?? 0)}
-                      />
-                    </View>
-                    <View style={styles.hppField}>
-                      <KolamSettingsWebFieldLabel label="Biaya/unit" required />
-                      <KolamFormTextField
-                        mode="numeric"
-                        onChangeText={text => {
-                          const unitCost =
-                            Number(String(text).replace(/[^\d.-]/g, '')) || 0;
-                          patchLine(line.id, { unitCost });
-                        }}
-                        value={String(line.unitCost ?? 0)}
-                      />
-                    </View>
-                    <KolamButton
-                      disabled={acting}
-                      intent="outline"
-                      label="Hapus"
-                      onPress={() => {
-                        setDraft(current =>
-                          current.filter(item => item.id !== line.id),
-                        );
-                      }}
-                    />
-                  </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.hppTable}>
+              <View style={[styles.hppTableRow, styles.hppTableHead]}>
+                <Text style={[styles.hppTh, styles.hppColProduct]}>Produk</Text>
+                <Text style={[styles.hppTh, styles.hppColQty]}>Qty</Text>
+                <Text style={[styles.hppTh, styles.hppColCost]}>Biaya/unit</Text>
+                <Text style={[styles.hppTh, styles.hppColSub]}>Subtotal</Text>
+                {canEdit ? (
+                  <Text style={[styles.hppTh, styles.hppColAction]}>Aksi</Text>
                 ) : null}
-                <Text style={styles.metaText}>
-                  {line.quantity} × {formatRupiah(line.unitCost)} ={' '}
-                  {formatRupiah(
-                    (Number(line.quantity) || 0) * (Number(line.unitCost) || 0),
-                  )}
-                </Text>
               </View>
-            );
-          })}
+              {draft.map(line => {
+                const locked = Boolean(line.stockAppliedAt);
+                const editableLine = canEdit && !locked;
+                const subtotal =
+                  (Number(line.quantity) || 0) * (Number(line.unitCost) || 0);
+                return (
+                  <View key={line.id} style={styles.hppTableRow}>
+                    <View style={styles.hppColProduct}>
+                      <Text style={styles.hppProductName} numberOfLines={2}>
+                        {line.label}
+                      </Text>
+                      {locked ? (
+                        <Text style={styles.hppLockedHint}>
+                          Stok sudah diterapkan
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.hppColQty}>
+                      {editableLine ? (
+                        <KolamFormTextField
+                          mode="numeric"
+                          onChangeText={text => {
+                            const quantity =
+                              Number(String(text).replace(/[^\d.-]/g, '')) ||
+                              0;
+                            patchLine(line.id, { quantity });
+                          }}
+                          value={String(line.quantity ?? 0)}
+                        />
+                      ) : (
+                        <Text style={[styles.hppTd, styles.tabular]}>
+                          {line.quantity}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.hppColCost}>
+                      {editableLine ? (
+                        <KolamFormTextField
+                          mode="numeric"
+                          onChangeText={text => {
+                            const unitCost =
+                              Number(String(text).replace(/[^\d.-]/g, '')) ||
+                              0;
+                            patchLine(line.id, { unitCost });
+                          }}
+                          value={String(line.unitCost ?? 0)}
+                        />
+                      ) : (
+                        <Text style={[styles.hppTd, styles.tabular]}>
+                          {formatRupiah(line.unitCost)}
+                        </Text>
+                      )}
+                    </View>
+                    <Text
+                      style={[styles.hppTd, styles.hppColSub, styles.tabular]}
+                    >
+                      {formatRupiah(subtotal)}
+                    </Text>
+                    {canEdit ? (
+                      <View style={styles.hppColAction}>
+                        {editableLine ? (
+                          <KolamButton
+                            disabled={acting}
+                            intent="outline"
+                            label="Hapus"
+                            onPress={() => {
+                              setDraft(current =>
+                                current.filter(item => item.id !== line.id),
+                              );
+                            }}
+                          />
+                        ) : (
+                          <Text style={styles.metaText}>—</Text>
+                        )}
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
           {detail.hppManual > 0 ? (
             <Text style={styles.metaText}>
               HPP manual: {formatRupiah(detail.hppManual)}
             </Text>
           ) : null}
-          <Text style={styles.primaryText}>
+          <Text style={styles.hppTotal}>
             Total HPP:{' '}
             {formatRupiah(
               canEdit
@@ -2595,19 +2651,7 @@ function ProyekHppMaterialsSection({
           </Text>
         </>
       )}
-      {canEdit ? (
-        <View style={styles.dpActionRow}>
-          <KolamButton
-            disabled={acting}
-            intent="outline"
-            label={acting ? 'Menyimpan…' : 'Simpan Produk Toko'}
-            onPress={() => {
-              void onSave(draft);
-            }}
-          />
-        </View>
-      ) : null}
-    </DetailSection>
+    </KolamCardFrame>
   );
 }
 
@@ -3301,17 +3345,102 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 6,
   },
-  hppEditRow: {
-    alignItems: 'flex-end',
+  hppCard: {
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  hppHeader: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
+    gap: 10,
+    justifyContent: 'space-between',
   },
-  hppField: {
-    flexGrow: 1,
+  hppHeaderCopy: {
+    flex: 1,
     gap: 4,
-    minWidth: 120,
+    minWidth: 180,
+  },
+  hppTitle: {
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  hppDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  hppTable: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    minWidth: 640,
+    overflow: 'hidden',
+  },
+  hppTableHead: {
+    backgroundColor: V.colors.mutedSoft,
+  },
+  hppTableRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  hppTh: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.45,
+    textTransform: 'uppercase',
+  },
+  hppTd: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  hppProductName: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  hppLockedHint: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  hppColProduct: {
+    minWidth: 180,
+    width: 220,
+  },
+  hppColQty: {
+    minWidth: 72,
+    width: 88,
+  },
+  hppColCost: {
+    minWidth: 110,
+    width: 130,
+  },
+  hppColSub: {
+    minWidth: 110,
+    textAlign: 'right',
+    width: 120,
+  },
+  hppColAction: {
+    minWidth: 88,
+    width: 96,
+  },
+  hppTotal: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
   },
   dpConfirmRow: {
     alignItems: 'flex-start',
