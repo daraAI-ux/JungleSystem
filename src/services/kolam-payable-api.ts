@@ -76,6 +76,25 @@ export async function payKolamPayableFull(id: string): Promise<KolamPayable> {
   return normalizeKolamPayable(unwrapData(payload));
 }
 
+export async function uploadKolamPayableProof(
+  id: string,
+  localUri: string,
+): Promise<KolamPayable> {
+  const body = new FormData();
+  body.append(
+    'proofs',
+    createReactNativeFilePart(localUri, 'payable-proof.jpg') as unknown as Blob,
+  );
+  const payload = await kolamRequest<unknown>(
+    `/payable/${encodeURIComponent(id)}/proofs`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+  return normalizeKolamPayable(unwrapData(payload));
+}
+
 function unwrapData(payload: unknown): unknown {
   const record =
     payload && typeof payload === 'object' && !Array.isArray(payload)
@@ -103,4 +122,34 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   }) as Promise<T>;
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+  const extension = name.split('.').pop()?.toLowerCase();
+  let type = 'image/jpeg';
+  switch (extension) {
+    case 'png':
+      type = 'image/png';
+      break;
+    case 'webp':
+      type = 'image/webp';
+      break;
+    case 'gif':
+      type = 'image/gif';
+      break;
+    case 'pdf':
+      type = 'application/pdf';
+      break;
+    default:
+      break;
+  }
+  return {
+    uri: normalizedUri,
+    name,
+    type,
+  };
 }

@@ -25,7 +25,9 @@ import {
   fetchKolamPayableSummary,
   fetchKolamPayables,
   payKolamPayableFull,
+  uploadKolamPayableProof,
 } from '../services/kolam-payable-api';
+import { pickNativeAssetFile } from '../services/native-file-picker';
 
 export interface KolamPayableController {
   mode: KolamPayableSurfaceMode;
@@ -45,6 +47,7 @@ export interface KolamPayableController {
   loading: boolean;
   detailLoading: boolean;
   payingId: string | null;
+  uploadingProof: boolean;
   error: string;
   statusMessage: string;
   canView: boolean;
@@ -63,6 +66,7 @@ export interface KolamPayableController {
   onLimitChange: (limit: number) => void;
   onRefresh: () => Promise<void>;
   onPayFull: (item: KolamPayable) => Promise<void>;
+  onUploadPayableProof: (item: KolamPayable) => Promise<void>;
   clearStatusMessage: () => void;
 }
 
@@ -89,6 +93,7 @@ export function useKolamPayableController(route: string): KolamPayableController
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const filtersRef = useRef(filters);
@@ -313,6 +318,50 @@ export function useKolamPayableController(route: string): KolamPayableController
     [canPay, documentId, mode, refreshDetail, refreshList],
   );
 
+  const onUploadPayableProof = useCallback(
+    async (item: KolamPayable) => {
+      if (!item.id || !canPay) {
+        return;
+      }
+      setError('');
+      setStatusMessage('');
+      let picked;
+      try {
+        picked = await pickNativeAssetFile();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Gagal pilih bukti');
+        return;
+      }
+      if (picked.cancelled) {
+        return;
+      }
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (!localUri.trim()) {
+        setError('File bukti wajib');
+        return;
+      }
+      setUploadingProof(true);
+      try {
+        const updated = await uploadKolamPayableProof(item.id, localUri);
+        setDetailItem(updated);
+        setStatusMessage('Bukti pembayaran diunggah');
+        await refreshList();
+        await refreshDetail(item.id);
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+            ? err.message
+            : 'Gagal upload bukti',
+        );
+      } finally {
+        setUploadingProof(false);
+      }
+    },
+    [canPay, refreshDetail, refreshList],
+  );
+
   const clearStatusMessage = useCallback(() => {
     setStatusMessage('');
   }, []);
@@ -330,6 +379,7 @@ export function useKolamPayableController(route: string): KolamPayableController
     loading,
     detailLoading,
     payingId,
+    uploadingProof,
     error,
     statusMessage,
     canView,
@@ -348,6 +398,7 @@ export function useKolamPayableController(route: string): KolamPayableController
     onLimitChange,
     onRefresh: refreshList,
     onPayFull,
+    onUploadPayableProof,
     clearStatusMessage,
   };
 }

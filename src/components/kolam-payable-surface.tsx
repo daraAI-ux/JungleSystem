@@ -736,10 +736,36 @@ function PayableDetail({
                 />
               </View>
               {payment?.proofs.length ? (
-                <Text style={styles.metaText}>
-                  {payment.proofs.length} bukti pembayaran
-                </Text>
+                <View style={styles.proofList}>
+                  {payment.proofs.map((proof, index) => (
+                    <View key={`${proof.path}-${index}`} style={styles.proofItem}>
+                      <Text style={styles.proofName} numberOfLines={1}>
+                        Bukti {index + 1}
+                      </Text>
+                      <Text style={styles.metaText} numberOfLines={1}>
+                        {proof.uploadedAt
+                          ? formatDateTime(proof.uploadedAt)
+                          : proof.path}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               ) : null}
+              <KolamButton
+                disabled={controller.uploadingProof}
+                intent="secondary"
+                label={
+                  controller.uploadingProof
+                    ? 'Mengunggah...'
+                    : payment?.proofs.length
+                    ? 'Tambah Bukti'
+                    : 'Upload Bukti'
+                }
+                onPress={() => {
+                  void controller.onUploadPayableProof(item);
+                }}
+                style={styles.uploadProofButton}
+              />
             </KolamCardFrame>
           ) : null}
         </>
@@ -1193,6 +1219,27 @@ const styles = StyleSheet.create({
   paymentHistoryCard: {
     gap: 10,
     padding: 12,
+  },
+  proofList: {
+    gap: 6,
+  },
+  proofItem: {
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  proofName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  uploadProofButton: {
+    alignSelf: 'flex-start',
   },
   sectionHeaderRow: {
     alignItems: 'center',
