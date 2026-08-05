@@ -56,6 +56,7 @@ import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { kolamDetailMetaStripStyles } from './kolam-detail-meta-strip';
 import {
   getKolamDataTableColumnStyle,
@@ -821,51 +822,93 @@ function KolamProyekDetailRead({
               ref={detailScrollRef}
               style={styles.mainScroll}
             >
-        <DetailSection title="Ringkasan kontrak">
-          <Text style={styles.metaText}>
-            Klien: {detail.clientName}
-            {clientContact ? ` · ${clientContact}` : ''}
-          </Text>
-          <Text style={styles.metaText}>PIC: {detail.designerName}</Text>
-          <Text style={styles.metaText}>
-            Jendela komplain: {complaintWindow}
-          </Text>
-          <Text style={styles.metaText}>
-            Keputusan penawaran: {detail.quotationDecision || '—'}
-          </Text>
-          {detail.maxWorkDays != null ? (
-            <Text style={styles.metaText}>
-              Lama pengerjaan: {detail.maxWorkDays} hari
-            </Text>
-          ) : null}
-          {detail.targetCompletionDate ? (
-            <Text style={styles.metaText}>
-              Target selesai: {formatShortDate(detail.targetCompletionDate)}
-            </Text>
-          ) : null}
-          {detail.designReferenceEmbedUrl ? (
-            <Pressable
-              onPress={() => {
-                const url = getKolamFileUrl(detail.designReferenceEmbedUrl);
-                if (url) {
-                  void Linking.openURL(url);
-                }
-              }}
-            >
-              <Text style={styles.linkText}>Buka referensi desain</Text>
-            </Pressable>
-          ) : null}
-          {detail.progressNote ? (
-            <View style={styles.noteBlock}>
-              <Text style={styles.sectionSubtitle}>Deskripsi proyek</Text>
-              {containsHtmlMarkup(detail.progressNote) ? (
-                <KolamHtmlContent html={detail.progressNote} />
-              ) : (
-                <Text style={styles.metaText}>{detail.progressNote}</Text>
-              )}
-            </View>
-          ) : null}
-        </DetailSection>
+        <KolamDetailSummaryCard
+          body={
+            detail.progressNote || detail.designReferenceEmbedUrl ? (
+              <View style={styles.summaryBodyStack}>
+                {detail.progressNote ? (
+                  containsHtmlMarkup(detail.progressNote) ? (
+                    <KolamHtmlContent html={detail.progressNote} />
+                  ) : (
+                    <Text style={styles.metaText}>{detail.progressNote}</Text>
+                  )
+                ) : null}
+                {detail.designReferenceEmbedUrl ? (
+                  <Pressable
+                    onPress={() => {
+                      const url = getKolamFileUrl(
+                        detail.designReferenceEmbedUrl,
+                      );
+                      if (url) {
+                        void Linking.openURL(url);
+                      }
+                    }}
+                  >
+                    <Text style={styles.linkText}>Buka referensi desain</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : undefined
+          }
+          bodyTitle={
+            detail.progressNote || detail.designReferenceEmbedUrl
+              ? 'Deskripsi proyek'
+              : undefined
+          }
+          description="Identitas kontrak dan keputusan penawaran."
+          fields={[
+            {
+              id: 'client',
+              label: 'Klien',
+              value: (
+                <View style={styles.summaryFieldStack}>
+                  <Text style={styles.summaryFieldPrimary}>
+                    {detail.clientName || '—'}
+                  </Text>
+                  {clientContact ? (
+                    <Text style={styles.summaryFieldSecondary}>
+                      {clientContact}
+                    </Text>
+                  ) : null}
+                </View>
+              ),
+            },
+            {
+              id: 'pic',
+              label: 'PIC',
+              value: detail.designerName || '—',
+            },
+            {
+              id: 'complaint',
+              label: 'Jendela komplain',
+              value: complaintWindow,
+            },
+            {
+              id: 'decision',
+              label: 'Keputusan penawaran',
+              value: detail.quotationDecision || '—',
+            },
+            ...(detail.maxWorkDays != null
+              ? [
+                  {
+                    id: 'maxWorkDays',
+                    label: 'Lama pengerjaan',
+                    value: `${detail.maxWorkDays} hari`,
+                  },
+                ]
+              : []),
+            ...(detail.targetCompletionDate
+              ? [
+                  {
+                    id: 'target',
+                    label: 'Target selesai',
+                    value: formatShortDate(detail.targetCompletionDate),
+                  },
+                ]
+              : []),
+          ]}
+          title="Ringkasan kontrak"
+        />
 
         {detail.termsTemplates.length > 0 ? (
           <DetailSection title="Syarat & Ketentuan">
