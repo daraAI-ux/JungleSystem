@@ -7,11 +7,11 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import Svg, {Path} from 'react-native-svg';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
-import {KolamEmptyState} from './kolam-empty-state';
-import {KolamInteractionFrame} from './kolam-interaction-frame';
+import Svg, { Path } from 'react-native-svg';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 export type KolamListTableColumn<TRow> = {
   align?: 'left' | 'center' | 'right';
@@ -66,7 +66,7 @@ export function KolamListTableComposition<TRow>({
   );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, fill ? styles.rootFill : null]}>
       <KolamCatalogListTableShell
         fill={fill}
         footer={resolvedFooter}
@@ -80,12 +80,15 @@ export function KolamListTableComposition<TRow>({
               style={[
                 styles.cell,
                 getColumnAlignStyle(column.align),
-                {flex: column.flex},
+                { flex: column.flex },
               ]}
             >
               <Text
                 numberOfLines={1}
-                style={[styles.headerCellText, getHeaderAlignStyle(column.align)]}
+                style={[
+                  styles.headerCellText,
+                  getHeaderAlignStyle(column.align),
+                ]}
               >
                 {column.label}
               </Text>
@@ -111,7 +114,7 @@ export function KolamListTableComposition<TRow>({
                   style={[
                     styles.cell,
                     getColumnAlignStyle(column.align),
-                    {flex: column.flex},
+                    { flex: column.flex },
                   ]}
                 >
                   {column.render(row)}
@@ -146,7 +149,10 @@ export function KolamListTablePaginationFooter({
   return (
     <View style={styles.paginationFooter}>
       <Text style={styles.paginationSummary}>
-        Menampilkan <Text style={styles.paginationSummaryStrong}>{from}-{to}</Text>{' '}
+        Menampilkan{' '}
+        <Text style={styles.paginationSummaryStrong}>
+          {from}-{to}
+        </Text>{' '}
         dari <Text style={styles.paginationSummaryStrong}>{total}</Text> hasil
       </Text>
       <View style={styles.paginationControls}>
@@ -170,7 +176,7 @@ export function KolamListTablePaginationFooter({
           ) : (
             <KolamInteractionFrame
               accessibilityLabel={`Halaman ${item}`}
-              accessibilityState={{selected: item === safePage}}
+              accessibilityState={{ selected: item === safePage }}
               key={item}
               onPress={() => onPageChange(item)}
               selected={item === safePage}
@@ -274,7 +280,10 @@ function KolamListTablePaginationIconButton({
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.paginationIconButton, disabled ? styles.paginationIconButtonDisabled : null]}
+      style={[
+        styles.paginationIconButton,
+        disabled ? styles.paginationIconButtonDisabled : null,
+      ]}
     >
       <KolamListTablePaginationIcon color={color} direction={direction} />
     </KolamInteractionFrame>
@@ -291,7 +300,9 @@ function KolamListTablePaginationIcon({
   const isLeft = direction === 'first' || direction === 'prev';
   const isEdge = direction === 'first' || direction === 'last';
   const trianglePath = isLeft ? 'M13 4 L6 10 L13 16 Z' : 'M7 4 L14 10 L7 16 Z';
-  const secondTrianglePath = isLeft ? 'M17 4 L10 10 L17 16 Z' : 'M3 4 L10 10 L3 16 Z';
+  const secondTrianglePath = isLeft
+    ? 'M17 4 L10 10 L17 16 Z'
+    : 'M3 4 L10 10 L3 16 Z';
   const barPath = isLeft ? 'M4 4 H5.5 V16 H4 Z' : 'M14.5 4 H16 V16 H14.5 Z';
 
   return (
@@ -335,7 +346,7 @@ export const kolamListTableCompositionStyles = StyleSheet.create({
   cell: {
     minWidth: 0,
     overflow: 'visible',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
   },
   primaryText: {
     color: V.colors.fg,
@@ -357,7 +368,15 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 1,
   },
+  rootFill: {
+    flex: 1,
+    minHeight: 0,
+  },
   tableFrame: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
     overflow: 'visible',
     position: 'relative',
     width: '100%',
@@ -365,13 +384,13 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
+    backgroundColor: V.colors.muted,
     borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     flexDirection: 'row',
-    minHeight: 36,
+    minHeight: 42,
     overflow: 'visible',
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     zIndex: 0,
   },
   headerCellText: {
@@ -386,10 +405,10 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    minHeight: 44,
+    minHeight: V.layout.tableRowMinHeight,
     overflow: 'visible',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     position: 'relative',
     zIndex: 1,
   },
@@ -408,11 +427,11 @@ const styles = StyleSheet.create({
   },
   actionsCell: {
     alignItems: 'flex-end',
-    flex: 0.45,
+    flex: 0.36,
     flexGrow: 0,
     flexShrink: 0,
     justifyContent: 'center',
-    minWidth: 48,
+    minWidth: 52,
     overflow: 'visible',
     zIndex: 2,
   },
@@ -425,6 +444,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
+    minHeight: 36,
     width: '100%',
   },
   paginationSummary: {
