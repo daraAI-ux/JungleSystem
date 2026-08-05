@@ -11,11 +11,6 @@ import {
   type KolamBrandStatus,
 } from '../domain/kolam-brand';
 import { getKolamFormSection } from '../domain/kolam-form';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamBrandController,
@@ -24,25 +19,11 @@ import {
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
-import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFlagIcon } from './kolam-flag-icon';
@@ -56,6 +37,10 @@ import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -118,8 +103,10 @@ function KolamModuleShell({
     controller.mode === 'new'
       ? 'Merek baru'
       : controller.mode === 'edit'
-        ? `Edit · ${controller.selectedBrand?.name || controller.form.name || 'Merek'}`
-        : controller.selectedBrand?.name || 'Detail merek';
+      ? `Edit · ${
+          controller.selectedBrand?.name || controller.form.name || 'Merek'
+        }`
+      : controller.selectedBrand?.name || 'Detail merek';
 
   return (
     <View style={styles.surface}>
@@ -134,7 +121,6 @@ function KolamModuleShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -179,7 +165,7 @@ function KolamBrandList({
   const [sortMode, setSortMode] = React.useState<BrandSortMode>('name-asc');
   const [assetMode, setAssetMode] = React.useState<BrandAssetMode>('none');
   const [search, setSearch] = React.useState('');
-  const [pageSize, setPageSize] = React.useState(10);
+  const pageSize = 10;
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<BrandListFilterPanel | null>(null);
@@ -190,7 +176,6 @@ function KolamBrandList({
   const assetTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamBrand | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredBrands = React.useMemo(
     () => filterBrands(controller.brands, search),
     [controller.brands, search],
@@ -205,17 +190,17 @@ function KolamBrandList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const listColumns = React.useMemo(
-    () => fitBrandListColumns(tableBodyWidth),
-    [tableBodyWidth],
+  const listColumns = React.useMemo<Array<KolamListTableColumn<KolamBrand>>>(
+    () => buildBrandListColumns(),
+    [],
   );
   const sortFilterLabel = sortMode === 'name-desc' ? 'Nama Z-A' : 'Nama A-Z';
   const assetFilterLabel =
     assetMode === 'products-desc'
       ? 'Produk'
       : assetMode === 'raws-desc'
-        ? 'Bahan'
-        : 'Aset terbanyak';
+      ? 'Bahan'
+      : 'Aset terbanyak';
 
   const anchorFilterPanel = React.useCallback((panel: BrandListFilterPanel) => {
     const trigger =
@@ -253,7 +238,7 @@ function KolamBrandList({
 
   React.useEffect(() => {
     setPage(1);
-  }, [assetMode, pageSize, search, sortMode]);
+  }, [assetMode, search, sortMode]);
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -297,7 +282,6 @@ function KolamBrandList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -379,71 +363,33 @@ function KolamBrandList({
           </View>
         ) : null}
       </View>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={setPageSize}
-            page={safePage}
-            pageSize={pageSize}
-            total={sortedBrands.length}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {pagedBrands.length ? (
-          pagedBrands.map(brand => (
-            <KolamBrandRow
-              brand={brand}
-              columns={listColumns}
-              key={brand.id}
-              onEdit={() => {
-                void controller.onSelectBrand(brand);
-                onRouteChange?.(`${getBrandRoute(brand)}/edit`);
-              }}
-              onDelete={() => setDeleteCandidate(brand)}
-              onSelect={() => {
-                void controller.onSelectBrand(brand);
-                onRouteChange?.(getBrandRoute(brand));
-              }}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Merek belum tersedia dari cache atau backend."
-              title={controller.loading ? 'Memuat merek...' : 'Belum ada merek'}
-            />
-          </View>
+      <KolamListTableComposition
+        columns={listColumns}
+        emptyTitle={controller.loading ? 'Memuat merek...' : 'Belum ada merek'}
+        getRowKey={brand => brand.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: sortedBrands.length,
+        }}
+        renderActions={brand => (
+          <KolamBrandActionsMenu
+            brand={brand}
+            onDelete={() => setDeleteCandidate(brand)}
+            onEdit={() => {
+              void controller.onSelectBrand(brand);
+              onRouteChange?.(`${getBrandRoute(brand)}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectBrand(brand);
+              onRouteChange?.(getBrandRoute(brand));
+            }}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={pagedBrands}
+      />
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="merek"
@@ -468,145 +414,144 @@ function KolamBrandList({
   );
 }
 
-function KolamBrandRow({
+function buildBrandListColumns(): Array<KolamListTableColumn<KolamBrand>> {
+  return [
+    {
+      flex: 1.1,
+      id: 'primary',
+      label: 'Merek',
+      render: brand => <KolamBrandLogoCell brand={brand} />,
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'meta',
+      label: 'Negara',
+      render: brand => <KolamBrandCountryCell brand={brand} />,
+    },
+    {
+      align: 'center',
+      flex: 0.75,
+      id: 'products',
+      label: 'Produk',
+      render: brand => (
+        <Text numberOfLines={1} style={styles.countText}>
+          {String(brand.productCount ?? 0)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.75,
+      id: 'raws',
+      label: 'Bahan',
+      render: brand => (
+        <Text numberOfLines={1} style={styles.countText}>
+          {String(brand.rawMaterialCount ?? 0)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1.35,
+      id: 'notes',
+      label: 'Catatan',
+      render: brand => (
+        <Text numberOfLines={2} style={styles.notesText}>
+          {brand.notes || brand.description || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: brand => (
+        <KolamStatusBadge
+          intent={getBrandStatusIntent(brand.status)}
+          label={getBrandStatusLabel(brand.status)}
+          style={styles.statusBadge}
+        />
+      ),
+    },
+  ];
+}
+
+function KolamBrandLogoCell({ brand }: { brand: KolamBrand }) {
+  const [nameTooltipOpen, setNameTooltipOpen] = React.useState(false);
+
+  return (
+    <View
+      style={[
+        styles.brandTableCell,
+        nameTooltipOpen ? styles.brandTableCellRaised : null,
+      ]}
+    >
+      <KolamHoverTooltip
+        align="center"
+        label={brand.name}
+        onOpenChange={setNameTooltipOpen}
+        placement="bottom"
+      >
+        <View style={styles.brandIdentity}>
+          <KolamBrandLogo brand={brand} />
+        </View>
+      </KolamHoverTooltip>
+    </View>
+  );
+}
+
+function KolamBrandCountryCell({ brand }: { brand: KolamBrand }) {
+  const flag = getKolamBrandFlagByCountry(brand.originCountry);
+  const [countryTooltipOpen, setCountryTooltipOpen] = React.useState(false);
+
+  return (
+    <View
+      style={[
+        styles.brandTableCell,
+        countryTooltipOpen ? styles.brandTableCellRaised : null,
+      ]}
+    >
+      <KolamHoverTooltip
+        align="center"
+        label={flag.country}
+        onOpenChange={setCountryTooltipOpen}
+        placement="bottom"
+      >
+        <View style={styles.countryRow}>
+          <KolamFlagIcon option={flag} />
+        </View>
+      </KolamHoverTooltip>
+    </View>
+  );
+}
+
+function KolamBrandActionsMenu({
   brand,
-  columns,
   onDelete,
   onEdit,
   onSelect,
 }: {
   brand: KolamBrand;
-  columns: ReturnType<typeof getKolamTableColumns>;
   onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
 }) {
-  const flag = getKolamBrandFlagByCountry(brand.originCountry);
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const [nameTooltipOpen, setNameTooltipOpen] = React.useState(false);
-  const [countryTooltipOpen, setCountryTooltipOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const productsColumn = columnOf('products');
-  const rawsColumn = columnOf('raws');
-  const notesColumn = columnOf('notes');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
-  const raiseRow = actionMenuOpen || nameTooltipOpen || countryTooltipOpen;
 
   return (
-    <KolamDataTableRowFrame
-      style={raiseRow ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
-          style={[
-            styles.listCell,
-            styles.logoCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-            styles.overflowVisible,
-          ]}
-        >
-          <KolamHoverTooltip
-            align="center"
-            label={brand.name}
-            onOpenChange={setNameTooltipOpen}
-            placement="bottom"
-          >
-            <View style={styles.brandIdentity}>
-              <KolamBrandLogo brand={brand} />
-            </View>
-          </KolamHoverTooltip>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.countryFlagCell,
-            styles.logoCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-            styles.overflowVisible,
-          ]}
-        >
-          <KolamHoverTooltip
-            align="center"
-            label={flag.country}
-            onOpenChange={setCountryTooltipOpen}
-            placement="bottom"
-          >
-            <View style={styles.countryRow}>
-              <KolamFlagIcon option={flag} />
-            </View>
-          </KolamHoverTooltip>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.countCell,
-            productsColumn ? getKolamDataTableColumnStyle(productsColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.countText}>
-            {String(brand.productCount ?? 0)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.countCell,
-            rawsColumn ? getKolamDataTableColumnStyle(rawsColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.countText}>
-            {String(brand.rawMaterialCount ?? 0)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.notesCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.notesText}>
-            {brand.notes || brand.description || '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={getBrandStatusIntent(brand.status)}
-            label={getBrandStatusLabel(brand.status)}
-            style={styles.statusBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${brand.name}`}
-          onOpenChange={setActionMenuOpen}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+    <View style={actionMenuOpen ? styles.brandActionMenuRaised : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${brand.name}`}
+        onOpenChange={setActionMenuOpen}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -876,45 +821,6 @@ function FieldShell({
   );
 }
 
-function fitBrandListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('brand');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
-}
-
 function filterBrands(brands: KolamBrand[], search: string) {
   const query = search.trim().toLowerCase();
   if (!query) {
@@ -1046,26 +952,16 @@ const styles = StyleSheet.create({
   stack: {
     gap: 14,
   },
-  activeActionRow: {
-    zIndex: 1000,
-    elevation: 30,
-    overflow: 'visible',
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
-  listCell: {
+  brandTableCell: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
-    overflow: 'hidden',
-    paddingVertical: 4,
-  },
-  logoCell: {
-    zIndex: 2,
-  },
-  overflowVisible: {
     overflow: 'visible',
+    width: '100%',
+  },
+  brandTableCellRaised: {
+    elevation: 30,
+    zIndex: 1000,
   },
   brandIdentity: {
     alignItems: 'center',
@@ -1075,9 +971,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     width: '100%',
   },
-  countryFlagCell: {
-    alignItems: 'center',
-  },
   countryRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -1085,9 +978,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     maxWidth: '100%',
     minWidth: 0,
-  },
-  countCell: {
-    alignItems: 'center',
   },
   countText: {
     color: V.colors.fg,
@@ -1097,10 +987,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-  notesCell: {
-    alignItems: 'center',
-    minWidth: 0,
-  },
   notesText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -1109,28 +995,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-  statusCell: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   statusBadge: {
     alignSelf: 'center',
   },
-  actionsTrack: {
-    alignItems: 'center',
-  },
-  paginationRow: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  pageLabel: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
+  brandActionMenuRaised: {
+    elevation: 30,
+    zIndex: 1000,
   },
   toolbarWrap: {
     elevation: 1000,
@@ -1180,9 +1050,6 @@ const styles = StyleSheet.create({
   filterMenuItemCheckSpacer: {
     height: 14,
     width: 14,
-  },
-  emptyWrap: {
-    padding: 16,
   },
   fieldWide: {
     flexBasis: '100%',
