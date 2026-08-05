@@ -107,6 +107,42 @@ export type KolamProyekProgressHistoryItem = {
   at: string | null;
 };
 
+export type KolamProyekReviewDecision =
+  | 'pending'
+  | 'approved'
+  | 'revision_requested'
+  | 'rejected'
+  | string;
+
+export type KolamProyekReviewFile = {
+  path: string;
+  name: string;
+  mimeType: string;
+  fileSize: number;
+};
+
+export type KolamProyekReviewSubmission = {
+  id: string;
+  submittedAt: string | null;
+  note: string;
+  roundTitle: string;
+  deadline: string | null;
+  resolutionNote: string;
+  files: KolamProyekReviewFile[];
+  clientDecision: KolamProyekReviewDecision;
+  decidedAt: string | null;
+  revisionNote: string;
+  rejectionReason: string;
+};
+
+export type KolamProyekSubmitRoundInput = {
+  files: Array<{ uri: string; name?: string; mimeType?: string }>;
+  note?: string;
+  roundTitle?: string;
+  deadline?: string;
+  resolutionNote?: string;
+};
+
 export type KolamProyekLinkedTask = {
   id: string;
   title: string;
@@ -150,6 +186,8 @@ export type KolamProyekDetail = KolamProyekListItem & {
   designReferenceEmbedUrl: string;
   commissionConfig: KolamProyekCommissionConfig | null;
   progressHistory: KolamProyekProgressHistoryItem[];
+  designSubmissions: KolamProyekReviewSubmission[];
+  deliverySubmissions: KolamProyekReviewSubmission[];
   linkedTask: KolamProyekLinkedTask | null;
   saleStatus: string | null;
   clientEmail: string | null;
@@ -709,6 +747,168 @@ export function validateKolamProyekDpConfirmAmount(
   return null;
 }
 
+export function getLatestKolamProyekReviewSubmission(
+  submissions: KolamProyekReviewSubmission[],
+) {
+  if (!submissions.length) {
+    return null;
+  }
+  return submissions[submissions.length - 1] ?? null;
+}
+
+export function isKolamProyekLinkedTaskDone(
+  task: KolamProyekLinkedTask | null | undefined,
+) {
+  return String(task?.status || '')
+    .trim()
+    .toLowerCase() === 'done';
+}
+
+export function canUpdateKolamProyekProgress(status?: string | null) {
+  return (
+    getKolamProyekSectionVisibility(status, 'progressUpdate') === 'active'
+  );
+}
+
+export function canSubmitKolamProyekDesign(
+  detail: Pick<
+    KolamProyekDetail,
+    'lifecycleStatus' | 'designSubmissions'
+  > | null,
+) {
+  if (!detail || detail.lifecycleStatus !== 'in_progress') {
+    return false;
+  }
+  const latest = getLatestKolamProyekReviewSubmission(detail.designSubmissions);
+  return latest?.clientDecision !== 'pending';
+}
+
+export function canSubmitKolamProyekDelivery(
+  detail: Pick<
+    KolamProyekDetail,
+    'lifecycleStatus' | 'deliverySubmissions'
+  > | null,
+) {
+  if (!detail || detail.lifecycleStatus !== 'delivered') {
+    return false;
+  }
+  const latest = getLatestKolamProyekReviewSubmission(
+    detail.deliverySubmissions,
+  );
+  if (!latest) {
+    return true;
+  }
+  if (latest.clientDecision === 'pending') {
+    return false;
+  }
+  if (latest.clientDecision === 'approved') {
+    return false;
+  }
+  return true;
+}
+
+export function getKolamProyekCloseBlockReason(
+  detail: KolamProyekDetail | null,
+): string | null {
+  if (!detail || detail.lifecycleStatus !== 'delivered') {
+    return null;
+  }
+  const latest = getLatestKolamProyekReviewSubmission(
+    detail.deliverySubmissions,
+  );
+  if (!latest) {
+    return 'Bukti pengerjaan belum dikirim.';
+  }
+  if (latest.clientDecision !== 'approved') {
+    if (latest.clientDecision === 'pending') {
+      return 'Menunggu approve bukti pengerjaan dari klien.';
+    }
+    if (latest.clientDecision === 'revision_requested') {
+      return 'Klien minta revisi bukti pengerjaan.';
+    }
+    if (latest.clientDecision === 'rejected') {
+      return 'Klien menolak bukti pengerjaan.';
+    }
+    return 'Bukti pengerjaan belum disetujui klien.';
+  }
+  if ((Number(detail.progressPercent) || 0) < 100) {
+    return `Progress masih ${Math.round(detail.progressPercent)}%. Update ke 100% dulu.`;
+  }
+  return null;
+}
+
+export function canCloseKolamProyek(detail: KolamProyekDetail | null) {
+  if (!detail) {
+    return false;
+  }
+  if (
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'closeProject') !==
+    'active'
+  ) {
+    return false;
+  }
+  return getKolamProyekCloseBlockReason(detail) == null;
+}
+
+export function validateKolamProyekProgressUpdate(
+  nextPercent: number,
+  currentPercent: number,
+) {
+  if (!Number.isFinite(nextPercent) || nextPercent < 0 || nextPercent > 100) {
+    return 'Progress harus antara 0–100.';
+  }
+  if (nextPercent < currentPercent) {
+    return `Progress hanya boleh naik atau tetap (saat ini ${Math.round(currentPercent)}%).`;
+  }
+  return null;
+}
+
+export function validateKolamProyekSubmitRound(
+  input: KolamProyekSubmitRoundInput,
+) {
+  if (!input.files.length) {
+    return 'Pilih minimal 1 file.';
+  }
+  if (input.files.length > 10) {
+    return 'Maksimal 10 file per kiriman.';
+  }
+  return null;
+}
+
+export function formatKolamProyekReviewDecisionLabel(
+  decision?: string | null,
+) {
+  switch (String(decision || '').trim()) {
+    case 'approved':
+      return 'Disetujui klien';
+    case 'revision_requested':
+      return 'Diminta revisi';
+    case 'rejected':
+      return 'Ditolak klien';
+    case 'pending':
+      return 'Menunggu review';
+    default:
+      return decision || '—';
+  }
+}
+
+export function getKolamProyekReviewDecisionIntent(
+  decision?: string | null,
+): KolamStatusBadgeIntent {
+  switch (String(decision || '').trim()) {
+    case 'approved':
+      return 'success';
+    case 'revision_requested':
+      return 'warning';
+    case 'rejected':
+      return 'danger';
+    case 'pending':
+      return 'info';
+    default:
+      return 'secondary';
+  }
+}
+
 export function createEmptyKolamProyekQuotationForm(): KolamProyekQuotationFormState {
   return {
     clientUserId: '',
@@ -1044,6 +1244,15 @@ export function normalizeKolamProyekDetail(
       return bTime - aTime;
     });
 
+  const designSubmissions = (
+    Array.isArray(record.designSubmissions) ? record.designSubmissions : []
+  ).map((row, index) => normalizeReviewSubmission(row, index));
+  const deliverySubmissions = (
+    Array.isArray(record.deliverySubmissions)
+      ? record.deliverySubmissions
+      : []
+  ).map((row, index) => normalizeReviewSubmission(row, index));
+
   const commissionRecord = asRecord(record.commissionConfig);
   const commissionConfig =
     Object.keys(commissionRecord).length > 0
@@ -1133,6 +1342,8 @@ export function normalizeKolamProyekDetail(
     designReferenceEmbedUrl: getString(record, 'designReferenceEmbedUrl'),
     commissionConfig,
     progressHistory,
+    designSubmissions,
+    deliverySubmissions,
     linkedTask,
     saleStatus: getString(sale, 'status') || null,
     clientEmail: getString(client, 'email') || null,
@@ -1224,6 +1435,40 @@ function normalizeProgressHistoryItem(
     progressPercent,
     progressNote: getString(row, 'progressNote'),
     at: getString(row, 'at') || null,
+  };
+}
+
+function normalizeReviewSubmission(
+  payload: unknown,
+  index: number,
+): KolamProyekReviewSubmission {
+  const row = asRecord(payload);
+  const files = (Array.isArray(row.files) ? row.files : []).map(
+    (filePayload, fileIndex) => {
+      const file = asRecord(filePayload);
+      return {
+        path: getString(file, 'path'),
+        name:
+          getString(file, 'name') ||
+          getString(file, 'originalFilename') ||
+          `File ${fileIndex + 1}`,
+        mimeType: getString(file, 'mimeType'),
+        fileSize: getNumber(file, 'fileSize') ?? 0,
+      };
+    },
+  );
+  return {
+    id: getId(row) || `submission-${index}`,
+    submittedAt: getString(row, 'submittedAt') || null,
+    note: getString(row, 'note'),
+    roundTitle: getString(row, 'roundTitle') || `Ronde ${index + 1}`,
+    deadline: getString(row, 'deadline') || null,
+    resolutionNote: getString(row, 'resolutionNote'),
+    files,
+    clientDecision: getString(row, 'clientDecision') || 'pending',
+    decidedAt: getString(row, 'decidedAt') || null,
+    revisionNote: getString(row, 'revisionNote'),
+    rejectionReason: getString(row, 'rejectionReason'),
   };
 }
 

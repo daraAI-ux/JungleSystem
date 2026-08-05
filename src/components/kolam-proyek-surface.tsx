@@ -5,13 +5,18 @@ import {
   formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
+  formatKolamProyekReviewDecisionLabel,
   getKolamProyekDpRowOutstanding,
   getKolamProyekDpRowStatusIntent,
   getKolamProyekLifecycleIntent,
+  getKolamProyekReviewDecisionIntent,
   getKolamProyekSectionVisibility,
+  getLatestKolamProyekReviewSubmission,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
   type KolamProyekLifecycleStatus,
   type KolamProyekListItem,
+  type KolamProyekReviewSubmission,
+  type KolamProyekSubmitRoundInput,
 } from '../domain/kolam-proyek';
 import {
   fitKolamDataTableColumns,
@@ -55,6 +60,10 @@ import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {
+  pickNativeAssetFile,
+  pickNativeImageFile,
+} from '../services/native-file-picker';
 
 const LIST_COLUMNS_BASE: KolamTableColumn[] = [
   { id: 'primary', label: 'Penawaran', align: 'left', width: 160 },
@@ -344,6 +353,17 @@ function KolamProyekDetailRead({
   const [confirmDpIndex, setConfirmDpIndex] = useState<number | null>(null);
   const [confirmDpAmount, setConfirmDpAmount] = useState('');
   const [confirmDpNote, setConfirmDpNote] = useState('');
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [progressPercentText, setProgressPercentText] = useState('');
+  const [progressNoteText, setProgressNoteText] = useState('');
+
+  useEffect(() => {
+    if (!detail) {
+      return;
+    }
+    setProgressPercentText(String(Math.round(detail.progressPercent || 0)));
+    setProgressNoteText(detail.progressNote || '');
+  }, [detail?.id, detail?.progressPercent, detail?.progressNote]);
 
   if (controller.loading && !detail) {
     return (
@@ -383,6 +403,15 @@ function KolamProyekDetailRead({
       detail.lifecycleStatus,
       'progressUpdate',
     ) !== 'hidden';
+  const showDesign =
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'designReview') !==
+      'hidden' || detail.designSubmissions.length > 0;
+  const showDelivery =
+    detail.lifecycleStatus === 'delivered' ||
+    detail.deliverySubmissions.length > 0;
+  const showClose =
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'closeProject') ===
+    'active';
   const cost = detail.costBreakdown;
   const clientContact = [detail.clientEmail, detail.clientPhone]
     .filter(Boolean)
@@ -391,6 +420,12 @@ function KolamProyekDetailRead({
     confirmDpIndex == null
       ? null
       : detail.dpSchedule.find(row => row.index === confirmDpIndex) ?? null;
+  const latestDesign = getLatestKolamProyekReviewSubmission(
+    detail.designSubmissions,
+  );
+  const latestDelivery = getLatestKolamProyekReviewSubmission(
+    detail.deliverySubmissions,
+  );
 
   return (
     <View style={styles.surface}>
@@ -445,6 +480,13 @@ function KolamProyekDetailRead({
                   setStartWorkNote('Mulai pengerjaan');
                   setStartWorkOpen(true);
                 }}
+              />
+            ) : null}
+            {showClose ? (
+              <KolamButton
+                disabled={controller.acting || !controller.canClose}
+                label="Tutup proyek"
+                onPress={() => setCloseOpen(true)}
               />
             ) : null}
             {controller.canCancel ? (
@@ -696,6 +738,40 @@ function KolamProyekDetailRead({
             {detail.progressNote ? (
               <Text style={styles.metaText}>{detail.progressNote}</Text>
             ) : null}
+            {controller.canUpdateProgress ? (
+              <View style={styles.progressEditor}>
+                <View style={styles.row2}>
+                  <View style={styles.col}>
+                    <KolamSettingsWebFieldLabel label="Progress %" required />
+                    <KolamFormTextField
+                      mode="numeric"
+                      onChangeText={setProgressPercentText}
+                      placeholder="0–100"
+                      value={progressPercentText}
+                    />
+                  </View>
+                  <View style={styles.col}>
+                    <KolamSettingsWebFieldLabel label="Catatan" required={false} />
+                    <KolamFormTextField
+                      onChangeText={setProgressNoteText}
+                      placeholder="Opsional"
+                      value={progressNoteText}
+                    />
+                  </View>
+                </View>
+                <KolamButton
+                  disabled={controller.acting}
+                  label={controller.acting ? 'Menyimpan…' : 'Simpan progress'}
+                  onPress={() => {
+                    const next =
+                      Number(
+                        String(progressPercentText).replace(/[^\d.-]/g, ''),
+                      ) || 0;
+                    void controller.onUpdateProgress(next, progressNoteText);
+                  }}
+                />
+              </View>
+            ) : null}
             {detail.progressHistory.length > 0 ? (
               <View style={styles.historyBlock}>
                 {detail.progressHistory.slice(0, 12).map((entry, index) => (
@@ -710,6 +786,109 @@ function KolamProyekDetailRead({
                 ))}
               </View>
             ) : null}
+          </DetailSection>
+        ) : null}
+
+        {showDesign ? (
+          <DetailSection title="Review desain">
+            {controller.canSubmitDesign ? (
+              <ReviewRoundSubmitForm
+                acting={controller.acting}
+                defaultRoundTitle={`Ronde ${detail.designSubmissions.length + 1}`}
+                linkedTaskId={detail.linkedTask?.id || null}
+                linkedTaskReady={controller.linkedTaskDone}
+                onRouteChange={onRouteChange}
+                onSubmit={input => controller.onSubmitDesign(input)}
+                showResolutionNote={detail.designSubmissions.some(
+                  item =>
+                    item.clientDecision === 'revision_requested' ||
+                    item.clientDecision === 'rejected',
+                )}
+                submitLabel="Kirim desain ke klien"
+                taskGateMessage="Task proyek harus selesai (PIC Done) sebelum desain dikirim."
+              />
+            ) : null}
+            {detail.lifecycleStatus === 'design_review' &&
+            latestDesign?.clientDecision === 'pending' ? (
+              <Text style={styles.metaText}>
+                Menunggu keputusan klien untuk “{latestDesign.roundTitle}”.
+              </Text>
+            ) : null}
+            {detail.designSubmissions.length === 0 ? (
+              <Text style={styles.metaText}>Belum ada kiriman desain.</Text>
+            ) : (
+              detail.designSubmissions
+                .slice()
+                .reverse()
+                .map((submission, index) => (
+                  <ReviewSubmissionCard
+                    key={submission.id}
+                    roundNumber={detail.designSubmissions.length - index}
+                    submission={submission}
+                  />
+                ))
+            )}
+          </DetailSection>
+        ) : null}
+
+        {showDelivery ? (
+          <DetailSection title="Bukti pengerjaan">
+            {controller.canSubmitDelivery ? (
+              <ReviewRoundSubmitForm
+                acting={controller.acting}
+                defaultRoundTitle={`Bukti ${detail.deliverySubmissions.length + 1}`}
+                linkedTaskId={null}
+                linkedTaskReady
+                onRouteChange={onRouteChange}
+                onSubmit={input => controller.onSubmitDelivery(input)}
+                showResolutionNote={detail.deliverySubmissions.some(
+                  item =>
+                    item.clientDecision === 'revision_requested' ||
+                    item.clientDecision === 'rejected',
+                )}
+                submitLabel="Kirim bukti pengerjaan"
+                taskGateMessage=""
+              />
+            ) : null}
+            {latestDelivery?.clientDecision === 'pending' ? (
+              <Text style={styles.metaText}>
+                Menunggu approve bukti “{latestDelivery.roundTitle}” dari klien.
+              </Text>
+            ) : null}
+            {detail.deliverySubmissions.length === 0 ? (
+              <Text style={styles.metaText}>
+                Belum ada bukti pengerjaan. Kirim foto/video/PDF hasil kerja.
+              </Text>
+            ) : (
+              detail.deliverySubmissions
+                .slice()
+                .reverse()
+                .map((submission, index) => (
+                  <ReviewSubmissionCard
+                    key={submission.id}
+                    roundNumber={detail.deliverySubmissions.length - index}
+                    submission={submission}
+                  />
+                ))
+            )}
+          </DetailSection>
+        ) : null}
+
+        {showClose ? (
+          <DetailSection title="Tutup proyek">
+            {controller.closeBlockReason ? (
+              <Text style={styles.metaText}>{controller.closeBlockReason}</Text>
+            ) : (
+              <Text style={styles.metaText}>
+                Syarat terpenuhi (bukti approved + progress 100%). Siap
+                finalisasi.
+              </Text>
+            )}
+            <KolamButton
+              disabled={controller.acting || !controller.canClose}
+              label={controller.acting ? 'Memproses…' : 'Tutup proyek'}
+              onPress={() => setCloseOpen(true)}
+            />
           </DetailSection>
         ) : null}
 
@@ -746,9 +925,24 @@ function KolamProyekDetailRead({
         </DetailSection>
 
         <Text style={styles.hintText}>
-          Mutasi desain / delivery / close dilanjutkan di batch P4.
+          Refund / polish RBAC dilanjutkan di batch P5 bila diperlukan.
         </Text>
       </ScrollView>
+
+      <KolamConfirmDialog
+        confirmLabel="Tutup proyek"
+        message="Proyek akan diselesaikan (delivered → completed). Pastikan bukti sudah approve dan progress 100%."
+        onCancel={() => setCloseOpen(false)}
+        onConfirm={() => {
+          void controller.onCloseProject().then(ok => {
+            if (ok) {
+              setCloseOpen(false);
+            }
+          });
+        }}
+        title="Tutup proyek?"
+        visible={closeOpen}
+      />
 
       <KolamConfirmDialog
         confirmLabel="Kirim"
@@ -1024,6 +1218,233 @@ function DetailSection({
   );
 }
 
+type PickedFile = {
+  uri: string;
+  name?: string;
+  mimeType?: string;
+};
+
+function ReviewRoundSubmitForm({
+  acting,
+  defaultRoundTitle,
+  linkedTaskId,
+  linkedTaskReady,
+  onRouteChange,
+  onSubmit,
+  showResolutionNote,
+  submitLabel,
+  taskGateMessage,
+}: {
+  acting: boolean;
+  defaultRoundTitle: string;
+  linkedTaskId: string | null;
+  linkedTaskReady: boolean;
+  onRouteChange?: (route: string) => void;
+  onSubmit: (input: KolamProyekSubmitRoundInput) => Promise<boolean>;
+  showResolutionNote: boolean;
+  submitLabel: string;
+  taskGateMessage: string;
+}) {
+  const [files, setFiles] = useState<PickedFile[]>([]);
+  const [roundTitle, setRoundTitle] = useState(defaultRoundTitle);
+  const [deadline, setDeadline] = useState('');
+  const [note, setNote] = useState('');
+  const [resolutionNote, setResolutionNote] = useState('');
+
+  useEffect(() => {
+    setRoundTitle(defaultRoundTitle);
+  }, [defaultRoundTitle]);
+
+  const pickFile = async (kind: 'image' | 'asset') => {
+    try {
+      const picked =
+        kind === 'image'
+          ? await pickNativeImageFile()
+          : await pickNativeAssetFile();
+      if (picked.cancelled || !(picked.uri || picked.path)) {
+        return;
+      }
+      const uri = picked.uri || picked.path || '';
+      setFiles(prev =>
+        [
+          ...prev,
+          {
+            uri,
+            name: picked.name || undefined,
+            mimeType: picked.mimeType || undefined,
+          },
+        ].slice(0, 10),
+      );
+    } catch {
+      // Native picker errors are surfaced by the bridge; keep local silent.
+    }
+  };
+
+  return (
+    <View style={styles.submitCard}>
+      {!linkedTaskReady && taskGateMessage ? (
+        <View style={styles.gateBox}>
+          <Text style={styles.metaText}>{taskGateMessage}</Text>
+          {linkedTaskId ? (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() =>
+                onRouteChange?.(`/task-manager/${linkedTaskId}`)
+              }
+            >
+              <Text style={styles.linkText}>Buka task</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      <KolamSettingsWebFieldLabel label="Judul ronde" required={false} />
+      <KolamFormTextField
+        onChangeText={setRoundTitle}
+        placeholder="Ronde 1"
+        value={roundTitle}
+      />
+      <KolamSettingsWebFieldLabel label="Tenggat (YYYY-MM-DD)" required={false} />
+      <KolamFormTextField
+        onChangeText={setDeadline}
+        placeholder="Opsional"
+        value={deadline}
+      />
+      <KolamSettingsWebFieldLabel label="Catatan" required={false} />
+      <KolamFormTextField
+        multiline
+        onChangeText={setNote}
+        placeholder="Opsional"
+        value={note}
+      />
+      {showResolutionNote ? (
+        <>
+          <KolamSettingsWebFieldLabel
+            label="Catatan resolusi revisi"
+            required={false}
+          />
+          <KolamFormTextField
+            multiline
+            onChangeText={setResolutionNote}
+            placeholder="Opsional"
+            value={resolutionNote}
+          />
+        </>
+      ) : null}
+      <View style={styles.dialogActions}>
+        <KolamButton
+          intent="outline"
+          label="Pilih gambar"
+          onPress={() => {
+            void pickFile('image');
+          }}
+        />
+        <KolamButton
+          intent="outline"
+          label="Pilih file"
+          onPress={() => {
+            void pickFile('asset');
+          }}
+        />
+      </View>
+      {files.length > 0 ? (
+        <View style={styles.fileList}>
+          {files.map((file, index) => (
+            <View key={`${file.uri}-${index}`} style={styles.fileRow}>
+              <Text numberOfLines={1} style={styles.metaText}>
+                {file.name || file.uri.split(/[/\\]/).pop() || `File ${index + 1}`}
+              </Text>
+              <KolamButton
+                intent="outline"
+                label="Hapus"
+                onPress={() =>
+                  setFiles(prev => prev.filter((_, i) => i !== index))
+                }
+                size="sm"
+              />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.metaText}>Belum ada file (maks. 10).</Text>
+      )}
+      <KolamButton
+        disabled={acting || !linkedTaskReady}
+        label={acting ? 'Mengirim…' : submitLabel}
+        onPress={() => {
+          void onSubmit({
+            files,
+            note,
+            roundTitle,
+            deadline,
+            resolutionNote,
+          }).then(ok => {
+            if (ok) {
+              setFiles([]);
+              setNote('');
+              setResolutionNote('');
+              setDeadline('');
+            }
+          });
+        }}
+      />
+    </View>
+  );
+}
+
+function ReviewSubmissionCard({
+  roundNumber,
+  submission,
+}: {
+  roundNumber: number;
+  submission: KolamProyekReviewSubmission;
+}) {
+  return (
+    <View style={styles.listRow}>
+      <View style={styles.dpRowHeader}>
+        <Text style={styles.primaryText}>
+          {submission.roundTitle || `Ronde ${roundNumber}`}
+        </Text>
+        <KolamStatusBadge
+          intent={getKolamProyekReviewDecisionIntent(submission.clientDecision)}
+          label={formatKolamProyekReviewDecisionLabel(submission.clientDecision)}
+        />
+      </View>
+      <Text style={styles.metaText}>
+        {submission.submittedAt
+          ? formatShortDateTime(submission.submittedAt)
+          : '—'}
+        {submission.deadline
+          ? ` · tenggat ${formatShortDate(submission.deadline)}`
+          : ''}
+        {` · ${submission.files.length} file`}
+      </Text>
+      {submission.note ? (
+        <Text style={styles.metaText}>{submission.note}</Text>
+      ) : null}
+      {submission.resolutionNote ? (
+        <Text style={styles.metaText}>
+          Resolusi: {submission.resolutionNote}
+        </Text>
+      ) : null}
+      {submission.revisionNote ? (
+        <Text style={styles.metaText}>
+          Revisi klien: {submission.revisionNote}
+        </Text>
+      ) : null}
+      {submission.rejectionReason ? (
+        <Text style={styles.metaText}>
+          Alasan tolak: {submission.rejectionReason}
+        </Text>
+      ) : null}
+      {submission.files.map((file, index) => (
+        <Text key={`${file.path}-${index}`} style={styles.metaText}>
+          • {file.name || file.path || `File ${index + 1}`}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.metricCard}>
@@ -1207,6 +1628,40 @@ const styles = StyleSheet.create({
   historyBlock: {
     gap: 4,
     marginTop: 4,
+  },
+  progressEditor: {
+    gap: 10,
+    marginTop: 8,
+  },
+  row2: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  col: {
+    flex: 1,
+    gap: 6,
+    minWidth: 160,
+  },
+  submitCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    marginBottom: 8,
+    padding: 12,
+  },
+  gateBox: {
+    gap: 6,
+  },
+  fileList: {
+    gap: 6,
+  },
+  fileRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   linkText: {
     color: V.colors.primary,

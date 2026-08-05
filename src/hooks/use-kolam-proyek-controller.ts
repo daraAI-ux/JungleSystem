@@ -7,32 +7,42 @@ import {
   buildKolamProyekNewRoute,
   buildKolamProyekQuotationPayload,
   canCancelKolamProyekQuotation,
+  canCloseKolamProyek,
   canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
   canStartKolamProyekWork,
+  canSubmitKolamProyekDelivery,
+  canSubmitKolamProyekDesign,
+  canUpdateKolamProyekProgress,
   createEmptyKolamProyekQuotationForm,
   createKolamProyekQuotationFormFromDetail,
   createKolamProyekQuotationFormItem,
+  getKolamProyekCloseBlockReason,
   getKolamProyekDpRowOutstanding,
   getKolamProyekRouteRef,
   getKolamProyekSurfaceMode,
+  isKolamProyekLinkedTaskDone,
   isKolamProyekRoute,
   validateKolamProyekDpConfirmAmount,
   validateKolamProyekLifecycleNote,
+  validateKolamProyekProgressUpdate,
   validateKolamProyekQuotationForm,
+  validateKolamProyekSubmitRound,
   type KolamProyekDetail,
   type KolamProyekLifecycleStatus,
   type KolamProyekListItem,
   type KolamProyekQuotationFormState,
+  type KolamProyekSubmitRoundInput,
   type KolamProyekSurfaceMode,
 } from '../domain/kolam-proyek';
 import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import { getKolamCustomerList } from '../services/kolam-customer-api';
 import {
   cancelKolamProyek,
+  closeKolamProyek,
   confirmKolamProyekDpReceived,
   createKolamProyekQuotation,
   deleteKolamProyek,
@@ -40,7 +50,10 @@ import {
   getKolamProyekList,
   resendKolamProyekQuotation,
   sendKolamProyekQuotation,
+  submitKolamProyekDelivery,
+  submitKolamProyekDesign,
   transitionKolamProyekLifecycle,
+  updateKolamProyekProgress,
   updateKolamProyekQuotation,
 } from '../services/kolam-proyek-api';
 import { getKolamTermsTemplates } from '../services/kolam-terms-template-api';
@@ -59,18 +72,24 @@ export type KolamProyekPickerOption = {
 export interface KolamProyekController {
   acting: boolean;
   canCancel: boolean;
+  canClose: boolean;
   canConfirmDp: boolean;
   canDelete: boolean;
   canEdit: boolean;
   canResend: boolean;
   canSend: boolean;
   canStartWork: boolean;
+  canSubmitDelivery: boolean;
+  canSubmitDesign: boolean;
+  canUpdateProgress: boolean;
+  closeBlockReason: string | null;
   customerOptions: KolamProyekPickerOption[];
   dataSource: KolamProyekDataSource;
   error: string | null;
   form: KolamProyekQuotationFormState;
   items: KolamProyekListItem[];
   lifecycleFilter: '' | KolamProyekLifecycleStatus;
+  linkedTaskDone: boolean;
   loading: boolean;
   loadingOptions: boolean;
   mode: KolamProyekSurfaceMode;
@@ -87,6 +106,7 @@ export interface KolamProyekController {
   onAddFormItem: () => void;
   onBackToList: () => void;
   onCancelProject: (reason: string) => Promise<boolean>;
+  onCloseProject: () => Promise<boolean>;
   onConfirmDpReceived: (
     index: number,
     amount: number,
@@ -111,6 +131,12 @@ export interface KolamProyekController {
   onSetPage: (page: number) => void;
   onSetPageSize: (pageSize: number) => void;
   onStartWork: (note: string) => Promise<boolean>;
+  onSubmitDelivery: (input: KolamProyekSubmitRoundInput) => Promise<boolean>;
+  onSubmitDesign: (input: KolamProyekSubmitRoundInput) => Promise<boolean>;
+  onUpdateProgress: (
+    progressPercent: number,
+    progressNote?: string,
+  ) => Promise<boolean>;
 }
 
 export function useKolamProyekController(
@@ -160,6 +186,14 @@ export function useKolamProyekController(
     selected?.paymentMode,
   );
   const canStartWork = canStartKolamProyekWork(selected?.lifecycleStatus);
+  const canUpdateProgress = canUpdateKolamProyekProgress(
+    selected?.lifecycleStatus,
+  );
+  const canSubmitDesign = canSubmitKolamProyekDesign(selected);
+  const canSubmitDelivery = canSubmitKolamProyekDelivery(selected);
+  const canClose = canCloseKolamProyek(selected);
+  const closeBlockReason = getKolamProyekCloseBlockReason(selected);
+  const linkedTaskDone = isKolamProyekLinkedTaskDone(selected?.linkedTask);
 
   const refreshList = useCallback(async () => {
     if (!isKolamProyekRoute(route)) {
@@ -648,6 +682,126 @@ export function useKolamProyekController(
     [selected],
   );
 
+  const onUpdateProgress = useCallback(
+    async (progressPercent: number, progressNote?: string) => {
+      if (!selected || !canUpdateKolamProyekProgress(selected.lifecycleStatus)) {
+        return false;
+      }
+      const validationError = validateKolamProyekProgressUpdate(
+        progressPercent,
+        selected.progressPercent,
+      );
+      if (validationError) {
+        setError(validationError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await updateKolamProyekProgress(selected.id, {
+          progressPercent,
+          progressNote,
+        });
+        setSelected(updated);
+        setStatusMessage('Progress disimpan.');
+        return true;
+      } catch (progressError) {
+        setError(getApiErrorMessage(progressError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [selected],
+  );
+
+  const onSubmitDesign = useCallback(
+    async (input: KolamProyekSubmitRoundInput) => {
+      if (!selected || !canSubmitKolamProyekDesign(selected)) {
+        return false;
+      }
+      if (!isKolamProyekLinkedTaskDone(selected.linkedTask)) {
+        setError(
+          'Task proyek harus selesai (status Done) sebelum kirim desain.',
+        );
+        return false;
+      }
+      const validationError = validateKolamProyekSubmitRound(input);
+      if (validationError) {
+        setError(validationError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await submitKolamProyekDesign(selected.id, input);
+        setSelected(updated);
+        setStatusMessage('Desain terkirim — menunggu review klien.');
+        return true;
+      } catch (submitError) {
+        setError(getApiErrorMessage(submitError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [selected],
+  );
+
+  const onSubmitDelivery = useCallback(
+    async (input: KolamProyekSubmitRoundInput) => {
+      if (!selected || !canSubmitKolamProyekDelivery(selected)) {
+        return false;
+      }
+      const validationError = validateKolamProyekSubmitRound(input);
+      if (validationError) {
+        setError(validationError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await submitKolamProyekDelivery(selected.id, input);
+        setSelected(updated);
+        setStatusMessage('Bukti pengerjaan terkirim — menunggu review klien.');
+        return true;
+      } catch (submitError) {
+        setError(getApiErrorMessage(submitError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [selected],
+  );
+
+  const onCloseProject = useCallback(async () => {
+    if (!selected || !canCloseKolamProyek(selected)) {
+      const reason = getKolamProyekCloseBlockReason(selected);
+      if (reason) {
+        setError(reason);
+      }
+      return false;
+    }
+    setActing(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const updated = await closeKolamProyek(selected.id);
+      setSelected(updated);
+      setStatusMessage('Proyek ditutup / selesai.');
+      return true;
+    } catch (closeError) {
+      setError(getApiErrorMessage(closeError));
+      return false;
+    } finally {
+      setActing(false);
+    }
+  }, [selected]);
+
   const mergedCustomerOptions = useMemo(() => {
     if (!selected?.clientId) {
       return customerOptions;
@@ -698,18 +852,24 @@ export function useKolamProyekController(
     () => ({
       acting,
       canCancel,
+      canClose,
       canConfirmDp,
       canDelete,
       canEdit,
       canResend,
       canSend,
       canStartWork,
+      canSubmitDelivery,
+      canSubmitDesign,
+      canUpdateProgress,
+      closeBlockReason,
       customerOptions: mergedCustomerOptions,
       dataSource,
       error,
       form,
       items,
       lifecycleFilter,
+      linkedTaskDone,
       loading,
       loadingOptions,
       mode,
@@ -726,6 +886,7 @@ export function useKolamProyekController(
       onAddFormItem,
       onBackToList,
       onCancelProject,
+      onCloseProject,
       onConfirmDpReceived,
       onCreateNew,
       onDeleteDraft,
@@ -743,21 +904,30 @@ export function useKolamProyekController(
       onSetPage,
       onSetPageSize,
       onStartWork,
+      onSubmitDelivery,
+      onSubmitDesign,
+      onUpdateProgress,
     }),
     [
       acting,
       canCancel,
+      canClose,
       canConfirmDp,
       canDelete,
       canEdit,
       canResend,
       canSend,
       canStartWork,
+      canSubmitDelivery,
+      canSubmitDesign,
+      canUpdateProgress,
+      closeBlockReason,
       dataSource,
       error,
       form,
       items,
       lifecycleFilter,
+      linkedTaskDone,
       loading,
       loadingOptions,
       mergedCustomerOptions,
@@ -767,6 +937,7 @@ export function useKolamProyekController(
       onAddFormItem,
       onBackToList,
       onCancelProject,
+      onCloseProject,
       onConfirmDpReceived,
       onCreateNew,
       onDeleteDraft,
@@ -784,6 +955,9 @@ export function useKolamProyekController(
       onSetPage,
       onSetPageSize,
       onStartWork,
+      onSubmitDelivery,
+      onSubmitDesign,
+      onUpdateProgress,
       page,
       pageSize,
       saving,

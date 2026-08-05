@@ -6,19 +6,25 @@ import {
   buildKolamProyekNewRoute,
   buildKolamProyekQuotationPayload,
   canCancelKolamProyekQuotation,
+  canCloseKolamProyek,
   canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
   canStartKolamProyekWork,
+  canSubmitKolamProyekDelivery,
+  canSubmitKolamProyekDesign,
+  canUpdateKolamProyekProgress,
   computeKolamProyekCostBreakdown,
   createEmptyKolamProyekQuotationForm,
   createKolamProyekQuotationFormFromDetail,
   formatKolamProyekDpRowStatusLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
+  formatKolamProyekReviewDecisionLabel,
   getKolamProyekAllowedNext,
+  getKolamProyekCloseBlockReason,
   getKolamProyekDpRowOutstanding,
   getKolamProyekHappyPathNext,
   getKolamProyekLifecycleIntent,
@@ -35,7 +41,9 @@ import {
   normalizeKolamProyekList,
   validateKolamProyekDpConfirmAmount,
   validateKolamProyekLifecycleNote,
+  validateKolamProyekProgressUpdate,
   validateKolamProyekQuotationForm,
+  validateKolamProyekSubmitRound,
 } from '../src/domain/kolam-proyek';
 
 describe('kolam-proyek domain', () => {
@@ -337,5 +345,58 @@ describe('kolam-proyek domain', () => {
       /melebihi sisa/,
     );
     expect(validateKolamProyekDpConfirmAmount(750000, 750000)).toBeNull();
+  });
+
+  it('gates design/delivery/close and normalizes submissions for P4', () => {
+    const detail = normalizeKolamProyekDetail({
+      data: {
+        _id: '507f1f77bcf86cd799439011',
+        quotationNumber: 'QUO-1',
+        lifecycleStatus: 'in_progress',
+        progressPercent: 40,
+        contractValue: 1000000,
+        paymentMode: 'staged',
+        linkedTask: { _id: 't1', title: 'Task', status: 'done' },
+        designSubmissions: [
+          {
+            _id: 'd1',
+            roundTitle: 'Ronde 1',
+            clientDecision: 'pending',
+            files: [{ path: '/a.png', name: 'a.png' }],
+          },
+        ],
+        deliverySubmissions: [],
+      },
+    })!;
+
+    expect(detail.designSubmissions).toHaveLength(1);
+    expect(detail.designSubmissions[0].roundTitle).toBe('Ronde 1');
+    expect(canSubmitKolamProyekDesign(detail)).toBe(false);
+    expect(canUpdateKolamProyekProgress('in_progress')).toBe(true);
+    expect(validateKolamProyekProgressUpdate(30, 40)).toMatch(/hanya boleh naik/);
+    expect(validateKolamProyekSubmitRound({ files: [] })).toMatch(/minimal 1/);
+
+    const delivered = normalizeKolamProyekDetail({
+      data: {
+        _id: '507f1f77bcf86cd799439011',
+        lifecycleStatus: 'delivered',
+        progressPercent: 100,
+        contractValue: 1000000,
+        deliverySubmissions: [
+          {
+            _id: 'del1',
+            roundTitle: 'Bukti 1',
+            clientDecision: 'approved',
+            files: [{ path: '/b.pdf', name: 'b.pdf' }],
+          },
+        ],
+      },
+    })!;
+    expect(canSubmitKolamProyekDelivery(delivered)).toBe(false);
+    expect(canCloseKolamProyek(delivered)).toBe(true);
+    expect(getKolamProyekCloseBlockReason(delivered)).toBeNull();
+    expect(
+      formatKolamProyekReviewDecisionLabel('revision_requested'),
+    ).toBe('Diminta revisi');
   });
 });

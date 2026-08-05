@@ -7,6 +7,7 @@ import {
   type KolamProyekListQuery,
   type KolamProyekListResult,
   type KolamProyekQuotationPayload,
+  type KolamProyekSubmitRoundInput,
 } from '../domain/kolam-proyek';
 import { apiRequest } from '../lib/api-client';
 
@@ -200,6 +201,143 @@ export async function transitionKolamProyekLifecycle(
     throw new Error('Gagal mengubah status proyek.');
   }
   return detail;
+}
+
+export async function updateKolamProyekProgress(
+  id: string,
+  body: { progressPercent: number; progressNote?: string },
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/progress`,
+    {
+      method: 'PUT',
+      body: {
+        progressPercent: body.progressPercent,
+        ...(body.progressNote != null
+          ? { progressNote: body.progressNote }
+          : {}),
+      },
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal memperbarui progress.');
+  }
+  return detail;
+}
+
+export async function submitKolamProyekDesign(
+  id: string,
+  input: KolamProyekSubmitRoundInput,
+): Promise<KolamProyekDetail> {
+  return submitKolamProyekRound(
+    `/custom-project/${encodeURIComponent(id)}/design/submit`,
+    input,
+    'Gagal mengirim desain.',
+  );
+}
+
+export async function submitKolamProyekDelivery(
+  id: string,
+  input: KolamProyekSubmitRoundInput,
+): Promise<KolamProyekDetail> {
+  return submitKolamProyekRound(
+    `/custom-project/${encodeURIComponent(id)}/delivery/submit`,
+    input,
+    'Gagal mengirim bukti pengerjaan.',
+  );
+}
+
+export async function closeKolamProyek(id: string): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/close-project`,
+    {
+      method: 'POST',
+      body: {},
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal menutup proyek.');
+  }
+  return detail;
+}
+
+async function submitKolamProyekRound(
+  path: string,
+  input: KolamProyekSubmitRoundInput,
+  fallbackError: string,
+): Promise<KolamProyekDetail> {
+  const body = new FormData();
+  for (const file of input.files) {
+    body.append(
+      'files',
+      createReactNativeFilePart(
+        file.uri,
+        file.name || 'upload.bin',
+        file.mimeType,
+      ) as unknown as Blob,
+    );
+  }
+  if (input.note?.trim()) {
+    body.append('note', input.note.trim());
+  }
+  if (input.roundTitle?.trim()) {
+    body.append('roundTitle', input.roundTitle.trim());
+  }
+  if (input.deadline?.trim()) {
+    body.append('deadline', input.deadline.trim());
+  }
+  if (input.resolutionNote?.trim()) {
+    body.append('resolutionNote', input.resolutionNote.trim());
+  }
+
+  const payload = await kolamRequest<unknown>(path, {
+    method: 'POST',
+    body,
+  });
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error(fallbackError);
+  }
+  return detail;
+}
+
+function createReactNativeFilePart(
+  localUri: string,
+  fallbackName: string,
+  mimeType?: string,
+) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = fallbackName || normalizedUri.split('/').pop() || 'upload.bin';
+  return {
+    uri: normalizedUri,
+    name,
+    type: mimeType || inferFileMimeType(name),
+  };
+}
+
+function inferFileMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'pdf':
+      return 'application/pdf';
+    case 'mp4':
+      return 'video/mp4';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
+  }
 }
 
 function kolamRequest<T>(
