@@ -1,4 +1,5 @@
 import React from 'react';
+import {ScrollView} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import type {KolamEnclosure} from '../src/domain/kolam-enclosure';
 import {
@@ -305,6 +306,9 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Stok jual di enclosure'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Kematian dilaporkan'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Total kelahiran indukan'}).length).toBeGreaterThan(0);
+    expect(
+      root.findAllByType(ScrollView).some(node => node.props.horizontal === true),
+    ).toBe(true);
     expect(root.findAllByProps({children: 'E'})).toHaveLength(0);
     expect(root.findAllByProps({children: '!'})).toHaveLength(0);
     expect(root.findAllByProps({children: '+'})).toHaveLength(0);

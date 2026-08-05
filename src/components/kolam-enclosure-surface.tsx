@@ -1515,7 +1515,10 @@ function KolamEnclosureDashboardPanel({
   const stats = controller.dashboardStats;
   return (
     <ScrollView contentContainerStyle={styles.dashboardContent}>
-      <View style={styles.summaryGridHero}>
+      <ScrollView
+        contentContainerStyle={styles.summaryGridHeroRow}
+        horizontal
+        showsHorizontalScrollIndicator={false}>
         <SummaryTile
           icon="E"
           label="Jumlah enclosure"
@@ -1554,7 +1557,7 @@ function KolamEnclosureDashboardPanel({
           label="Total kelahiran indukan"
           value={stats.births.totalAnimals}
         />
-      </View>
+      </ScrollView>
 
       <DashboardProductionStatsCard
         rows={stats.production.rows}
@@ -3339,6 +3342,11 @@ const styles = StyleSheet.create({
   summaryGridHero: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
+  },
+  summaryGridHeroRow: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
     gap: 8,
   },
   dashboardContent: {
