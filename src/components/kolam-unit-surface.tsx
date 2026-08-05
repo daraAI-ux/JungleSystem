@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   getUnitTypeLabel,
   type KolamUnit,
@@ -7,11 +7,6 @@ import {
   type KolamUnitType,
 } from '../domain/kolam-unit';
 import { getKolamFormSection } from '../domain/kolam-form';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamUnitController,
@@ -19,26 +14,18 @@ import {
 } from '../hooks/use-kolam-unit-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
-import { KolamOverflowMenuButton, KolamTableFooterControls } from './kolam-dropdown-select';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -107,8 +94,10 @@ function KolamUnitShell({
     controller.mode === 'new'
       ? 'Satuan baru'
       : controller.mode === 'edit'
-        ? `Edit · ${controller.selectedUnit?.name || controller.form.name || 'Satuan'}`
-        : controller.selectedUnit?.name || 'Detail satuan';
+      ? `Edit · ${
+          controller.selectedUnit?.name || controller.form.name || 'Satuan'
+        }`
+      : controller.selectedUnit?.name || 'Detail satuan';
 
   return (
     <View style={styles.surface}>
@@ -123,7 +112,6 @@ function KolamUnitShell({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -170,7 +158,7 @@ function KolamUnitList({
   const [statusFilter, setStatusFilter] =
     React.useState<UnitStatusFilter>('all');
   const [typeFilter, setTypeFilter] = React.useState<UnitTypeFilter>('all');
-  const [pageSize, setPageSize] = React.useState(10);
+  const pageSize = 10;
   const [page, setPage] = React.useState(1);
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<UnitListFilterPanel | null>(null);
@@ -182,7 +170,6 @@ function KolamUnitList({
   const typeTriggerRef = React.useRef<View>(null);
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamUnit | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const filteredUnits = React.useMemo(
     () => filterUnits(controller.units, search, statusFilter, typeFilter),
     [controller.units, search, statusFilter, typeFilter],
@@ -197,24 +184,24 @@ function KolamUnitList({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const listColumns = React.useMemo(
-    () => fitUnitListColumns(tableBodyWidth),
-    [tableBodyWidth],
+  const listColumns = React.useMemo<Array<KolamListTableColumn<KolamUnit>>>(
+    () => buildUnitListColumns(),
+    [],
   );
   const sortFilterLabel =
     sortMode === 'name-desc'
       ? 'Nama Z-A'
       : sortMode === 'initial-asc'
-        ? 'Inisial A-Z'
-        : sortMode === 'newest'
-          ? 'Terbaru'
-          : 'Nama A-Z';
+      ? 'Inisial A-Z'
+      : sortMode === 'newest'
+      ? 'Terbaru'
+      : 'Nama A-Z';
   const statusFilterLabel =
     statusFilter === 'active'
       ? 'Aktif'
       : statusFilter === 'inactive'
-        ? 'Nonaktif'
-        : 'Semua Status';
+      ? 'Nonaktif'
+      : 'Semua Status';
   const typeFilterLabel = getUnitTypeFilterLabel(typeFilter);
 
   const getFilterTriggerRef = (panel: UnitListFilterPanel) => {
@@ -229,17 +216,14 @@ function KolamUnitList({
     }
   };
 
-  const anchorFilterPanel = React.useCallback(
-    (panel: UnitListFilterPanel) => {
-      measureFilterPanelAnchor(
-        toolbarRef.current,
-        getFilterTriggerRef(panel).current,
-        UNIT_FILTER_PANEL_WIDTH,
-        setPanelAnchor,
-      );
-    },
-    [],
-  );
+  const anchorFilterPanel = React.useCallback((panel: UnitListFilterPanel) => {
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      UNIT_FILTER_PANEL_WIDTH,
+      setPanelAnchor,
+    );
+  }, []);
 
   const openFilterPanel = (panel: UnitListFilterPanel) => {
     if (activeFilterPanel === panel) {
@@ -264,7 +248,7 @@ function KolamUnitList({
 
   React.useEffect(() => {
     setPage(1);
-  }, [pageSize, search, sortMode, statusFilter, typeFilter]);
+  }, [search, sortMode, statusFilter, typeFilter]);
 
   React.useEffect(() => {
     if (!activeFilterPanel) {
@@ -317,7 +301,6 @@ function KolamUnitList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -394,73 +377,35 @@ function KolamUnitList({
           </View>
         ) : null}
       </View>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={setPageSize}
-            page={safePage}
-            pageSize={pageSize}
-            total={sortedUnits.length}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        columns={listColumns}
+        emptyTitle={
+          controller.loading ? 'Memuat satuan...' : 'Belum ada satuan'
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {pagedUnits.length ? (
-          pagedUnits.map(unit => (
-            <KolamUnitRow
-              columns={listColumns}
-              key={unit.id}
-              onDelete={() => setDeleteCandidate(unit)}
-              onEdit={() => {
-                void controller.onSelectUnit(unit);
-                onRouteChange?.(`${getUnitRoute(unit)}/edit`);
-              }}
-              onSelect={() => {
-                void controller.onSelectUnit(unit);
-                onRouteChange?.(getUnitRoute(unit));
-              }}
-              unit={unit}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Data Satuan belum tersedia dari cache atau backend."
-              title={
-                controller.loading ? 'Memuat satuan...' : 'Belum ada satuan'
-              }
-            />
-          </View>
+        getRowKey={unit => unit.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: sortedUnits.length,
+        }}
+        renderActions={unit => (
+          <KolamUnitActionsMenu
+            onDelete={() => setDeleteCandidate(unit)}
+            onEdit={() => {
+              void controller.onSelectUnit(unit);
+              onRouteChange?.(`${getUnitRoute(unit)}/edit`);
+            }}
+            onSelect={() => {
+              void controller.onSelectUnit(unit);
+              onRouteChange?.(getUnitRoute(unit));
+            }}
+            unit={unit}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rows={pagedUnits}
+      />
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="satuan"
@@ -485,124 +430,111 @@ function KolamUnitList({
   );
 }
 
-function KolamUnitRow({
-  columns,
+function buildUnitListColumns(): Array<KolamListTableColumn<KolamUnit>> {
+  return [
+    {
+      flex: 1.3,
+      id: 'primary',
+      label: 'Satuan',
+      render: unit => <KolamUnitIdentityCell unit={unit} />,
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'meta',
+      label: 'Inisial',
+      render: unit => (
+        <View style={styles.initialChip}>
+          <Text numberOfLines={1} style={styles.initialText}>
+            {unit.initial || '-'}
+          </Text>
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.88,
+      id: 'notes',
+      label: 'Tipe',
+      render: unit => (
+        <KolamStatusBadge
+          intent={getUnitTypeIntent(unit.type)}
+          label={getUnitTypeLabel(unit.type)}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'children',
+      label: 'Dasar',
+      render: unit => (
+        <KolamStatusBadge
+          intent={unit.isBase ? 'success' : 'muted'}
+          label={unit.isBase ? 'Ya' : 'Tidak'}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'status',
+      label: 'Status',
+      render: unit => (
+        <KolamStatusBadge
+          intent={unit.status === 'active' ? 'success' : 'warning'}
+          label={getUnitStatusLabel(unit.status)}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+  ];
+}
+
+function KolamUnitIdentityCell({ unit }: { unit: KolamUnit }) {
+  return (
+    <View style={styles.unitTableIdentityCell}>
+      <KolamCopyStack
+        items={[
+          { id: 'name', text: unit.name || '-', style: styles.rowTitle },
+          {
+            id: 'category',
+            text: unit.category || 'Satuan pengukuran',
+            style: styles.rowMeta,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+function KolamUnitActionsMenu({
   onDelete,
   onEdit,
   onSelect,
   unit,
 }: {
-  columns: ReturnType<typeof getKolamTableColumns>;
   onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
   unit: KolamUnit;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const metaColumn = columnOf('meta');
-  const notesColumn = columnOf('notes');
-  const childrenColumn = columnOf('children');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
 
   return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onSelect}
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <KolamCopyStack
-            items={[
-              { id: 'name', text: unit.name || '-', style: styles.rowTitle },
-              {
-                id: 'category',
-                text: unit.category || 'Satuan pengukuran',
-                style: styles.rowMeta,
-              },
-            ]}
-          />
-        </Pressable>
-        <View
-          style={[
-            styles.listCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          <View style={styles.initialChip}>
-            <Text numberOfLines={1} style={styles.initialText}>
-              {unit.initial || '-'}
-            </Text>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={getUnitTypeIntent(unit.type)}
-            label={getUnitTypeLabel(unit.type)}
-            style={styles.centerBadge}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            childrenColumn ? getKolamDataTableColumnStyle(childrenColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={unit.isBase ? 'success' : 'muted'}
-            label={unit.isBase ? 'Ya' : 'Tidak'}
-            style={styles.centerBadge}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={unit.status === 'active' ? 'success' : 'warning'}
-            label={getUnitStatusLabel(unit.status)}
-            style={styles.centerBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${unit.name}`}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-          ]}
-          onOpenChange={setActionMenuOpen}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+    <View style={actionMenuOpen ? styles.unitActionMenuRaised : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${unit.name}`}
+        actions={[
+          { label: 'Lihat', onPress: onSelect },
+          { label: 'Rubah', onPress: onEdit },
+          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+        ]}
+        onOpenChange={setActionMenuOpen}
+      />
+    </View>
   );
 }
 
@@ -758,45 +690,6 @@ function UnitHero({ unit }: { unit: KolamUnit }) {
       />
     </View>
   );
-}
-
-function fitUnitListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('unit');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
 }
 
 function getUnitTypeFilterLabel(typeFilter: UnitTypeFilter) {
@@ -987,28 +880,12 @@ const styles = StyleSheet.create({
     gap: 14,
     minHeight: 0,
   },
-  emptyWrap: {
-    minHeight: 220,
-    justifyContent: 'center',
-  },
-  activeActionRow: {
-    zIndex: 1000,
-    elevation: 30,
-    overflow: 'visible',
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
-  listCell: {
+  unitTableIdentityCell: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
-    overflow: 'hidden',
-    paddingVertical: 4,
-  },
-  identityCell: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    overflow: 'visible',
+    width: '100%',
   },
   rowTitle: {
     color: V.colors.fg,
@@ -1044,21 +921,9 @@ const styles = StyleSheet.create({
   centerBadge: {
     alignSelf: 'center',
   },
-  actionsTrack: {
-    alignItems: 'center',
-  },
-  paginationRow: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  pageLabel: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
+  unitActionMenuRaised: {
+    elevation: 30,
+    zIndex: 1000,
   },
   toolbarWrap: {
     elevation: 1000,
