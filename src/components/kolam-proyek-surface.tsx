@@ -1389,18 +1389,19 @@ function KolamProyekDetailRead({
               contentContainerStyle={styles.historyScroll}
               style={styles.historyScrollView}
             >
-              <ProyekNextStepHero
-                acting={controller.acting}
-                config={nextStep}
-                onAction={runNextStepAction}
-              />
-
               <ProyekLifecycleTimeline
                 acting={controller.acting}
                 canAdminLifecycle={controller.canAdminLifecycle}
                 detail={detail}
                 lifecycleNote={lifecycleNote}
                 lifecycleTarget={lifecycleTarget}
+                nextStepSlot={
+                  <ProyekNextStepHero
+                    acting={controller.acting}
+                    config={nextStep}
+                    onAction={runNextStepAction}
+                  />
+                }
                 onLifecycleNoteChange={setLifecycleNote}
                 onLifecycleTargetChange={setLifecycleTarget}
                 onTransition={(to, note) =>
@@ -2089,6 +2090,7 @@ function ProyekLifecycleTimeline({
   detail,
   lifecycleNote,
   lifecycleTarget,
+  nextStepSlot,
   onLifecycleNoteChange,
   onLifecycleTargetChange,
   onTransition,
@@ -2099,6 +2101,7 @@ function ProyekLifecycleTimeline({
   detail: KolamProyekDetail;
   lifecycleNote: string;
   lifecycleTarget: KolamProyekLifecycleStatus | '';
+  nextStepSlot?: React.ReactNode;
   onLifecycleNoteChange: (value: string) => void;
   onLifecycleTargetChange: (value: KolamProyekLifecycleStatus | '') => void;
   onTransition: (
@@ -2112,216 +2115,223 @@ function ProyekLifecycleTimeline({
   const targets = getKolamProyekHappyPathNext(detail.lifecycleStatus);
 
   return (
-    <DetailSection title="Tahapan proyek">
-      <Text style={styles.metaText}>
-        Alur status, riwayat perubahan, dan transisi admin.
-      </Text>
+    <>
+      <DetailSection title="Tahapan proyek">
+        <Text style={styles.metaText}>
+          Alur status, riwayat perubahan, dan transisi admin.
+        </Text>
 
-      {stage.isTerminal ? (
-        <View style={styles.terminalBanner}>
-          <Text style={styles.primaryText}>
-            {detail.lifecycleStatus === 'cancelled'
-              ? 'Proyek dibatalkan'
-              : 'Dana dikembalikan'}
-          </Text>
-          <Text style={styles.metaText}>
-            {detail.lifecycleStatus === 'cancelled'
-              ? 'Data tersimpan untuk audit. Tidak ada aksi lanjutan.'
-              : 'Proyek tidak dilanjutkan. Riwayat tersimpan sebagai hanya baca.'}
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.stepRail}>
-          {KOLAM_PROYEK_HAPPY_PATH.map((step, index) => {
-            const isDone =
-              stage.currentIndex >= 0 && index < stage.currentIndex;
-            const isCurrent =
-              stage.currentIndex >= 0 && index === stage.currentIndex;
-            return (
-              <View key={step} style={styles.stepRow}>
-                <View
-                  style={[
-                    styles.stepDot,
-                    isDone ? styles.stepDotDone : null,
-                    isCurrent ? styles.stepDotCurrent : null,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepDotText,
-                      isCurrent ? styles.stepDotTextOnPrimary : null,
-                    ]}
-                  >
-                    {isDone ? '✓' : String(index + 1)}
-                  </Text>
-                </View>
-                <View style={styles.stepLabelBlock}>
-                  <Text
-                    style={[
-                      styles.stepLabel,
-                      isCurrent || isDone ? styles.primaryText : null,
-                    ]}
-                  >
-                    {formatKolamProyekLifecycleLabel(step)}
-                  </Text>
-                  {isCurrent && stage.isRevising ? (
-                    <Text style={styles.warningText}>Client minta revisi</Text>
-                  ) : null}
-                  {isCurrent && !stage.isRevising ? (
-                    <Text style={styles.metaText}>Tahap saat ini</Text>
-                  ) : null}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      <Text style={styles.sectionSubtitle}>Riwayat</Text>
-      {history.length === 0 ? (
-        <Text style={styles.metaText}>Belum ada perubahan status.</Text>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.historyListScroll}
-          nestedScrollEnabled
-          style={styles.historyListScrollView}
-        >
-          <View style={styles.historyTimeline}>
-            {history.map((entry, index) => (
-              <View
-                key={`${entry.at}-${entry.to}-${index}`}
-                style={styles.historyTimelineItem}
-              >
-                <View
-                  style={[
-                    styles.historyTimelineDot,
-                    entry.to === 'completed' || entry.to === 'dp_paid'
-                      ? styles.historyTimelineDotSuccess
-                      : entry.to === 'cancelled' || entry.to === 'refunded'
-                        ? styles.historyTimelineDotDanger
-                        : entry.to === 'revision_in_progress'
-                          ? styles.historyTimelineDotWarning
-                          : styles.historyTimelineDotPrimary,
-                  ]}
-                />
-                <View style={styles.historyTimelineBody}>
-                  <View style={styles.dpRowHeader}>
-                    <KolamStatusBadge
-                      intent={getKolamProyekLifecycleIntent(entry.from)}
-                      label={
-                        entry.from
-                          ? formatKolamProyekLifecycleLabel(entry.from)
-                          : '—'
-                      }
-                    />
-                    <Text style={styles.metaText}>→</Text>
-                    <KolamStatusBadge
-                      intent={getKolamProyekLifecycleIntent(entry.to)}
-                      label={formatKolamProyekLifecycleLabel(entry.to)}
-                    />
-                  </View>
-                  <Text style={styles.metaText}>
-                    {entry.at ? formatShortDateTime(entry.at) : '—'}
-                  </Text>
-                  {entry.note ? (
-                    <Text style={styles.metaText}>{entry.note}</Text>
-                  ) : null}
-                </View>
-              </View>
-            ))}
+        {stage.isTerminal ? (
+          <View style={styles.terminalBanner}>
+            <Text style={styles.primaryText}>
+              {detail.lifecycleStatus === 'cancelled'
+                ? 'Proyek dibatalkan'
+                : 'Dana dikembalikan'}
+            </Text>
+            <Text style={styles.metaText}>
+              {detail.lifecycleStatus === 'cancelled'
+                ? 'Data tersimpan untuk audit. Tidak ada aksi lanjutan.'
+                : 'Proyek tidak dilanjutkan. Riwayat tersimpan sebagai hanya baca.'}
+            </Text>
           </View>
-        </ScrollView>
-      )}
+        ) : (
+          <View style={styles.stepRail}>
+            {KOLAM_PROYEK_HAPPY_PATH.map((step, index) => {
+              const isDone =
+                stage.currentIndex >= 0 && index < stage.currentIndex;
+              const isCurrent =
+                stage.currentIndex >= 0 && index === stage.currentIndex;
+              return (
+                <View key={step} style={styles.stepRow}>
+                  <View
+                    style={[
+                      styles.stepDot,
+                      isDone ? styles.stepDotDone : null,
+                      isCurrent ? styles.stepDotCurrent : null,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.stepDotText,
+                        isCurrent ? styles.stepDotTextOnPrimary : null,
+                      ]}
+                    >
+                      {isDone ? '✓' : String(index + 1)}
+                    </Text>
+                  </View>
+                  <View style={styles.stepLabelBlock}>
+                    <Text
+                      style={[
+                        styles.stepLabel,
+                        isCurrent || isDone ? styles.primaryText : null,
+                      ]}
+                    >
+                      {formatKolamProyekLifecycleLabel(step)}
+                    </Text>
+                    {isCurrent && stage.isRevising ? (
+                      <Text style={styles.warningText}>
+                        Client minta revisi
+                      </Text>
+                    ) : null}
+                    {isCurrent && !stage.isRevising ? (
+                      <Text style={styles.metaText}>Tahap saat ini</Text>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </DetailSection>
 
-      {showDomainInfo ? (
-        <View style={styles.hintCard}>
-          <Text style={styles.metaText}>
-            {detail.lifecycleStatus === 'in_progress'
-              ? 'Aksi di stage ini dikelola tombol domain: pakai “Kirim Desain ke Client” di Review Desain — status otomatis pindah.'
-              : 'Menunggu client setujui / revisi / tolak dari marketplace — status otomatis pindah setelahnya.'}
-          </Text>
-        </View>
-      ) : null}
+      {nextStepSlot}
 
-      {canAdminLifecycle && targets.length === 1 ? (
-        <View style={styles.progressEditor}>
-          <KolamSettingsWebFieldLabel
-            label={`Catatan untuk "${formatKolamProyekLifecycleTransitionLabel(
-              targets[0],
-              detail.lifecycleStatus,
-            )}"`}
-            required
-          />
-          <KolamFormTextField
-            multiline
-            onChangeText={onLifecycleNoteChange}
-            placeholder="Minimal 5 karakter"
-            value={lifecycleNote}
-          />
-          <KolamButton
-            disabled={acting}
-            label={
-              acting
-                ? 'Memproses…'
-                : formatKolamProyekLifecycleTransitionLabel(
-                    targets[0],
-                    detail.lifecycleStatus,
-                  )
-            }
-            onPress={() => {
-              void onTransition(targets[0], lifecycleNote);
-            }}
-          />
-        </View>
-      ) : null}
+      <DetailSection title="Riwayat tahapan">
+        {history.length === 0 ? (
+          <Text style={styles.metaText}>Belum ada perubahan status.</Text>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.historyListScroll}
+            nestedScrollEnabled
+            style={styles.historyListScrollView}
+          >
+            <View style={styles.historyTimeline}>
+              {history.map((entry, index) => (
+                <View
+                  key={`${entry.at}-${entry.to}-${index}`}
+                  style={styles.historyTimelineItem}
+                >
+                  <View
+                    style={[
+                      styles.historyTimelineDot,
+                      entry.to === 'completed' || entry.to === 'dp_paid'
+                        ? styles.historyTimelineDotSuccess
+                        : entry.to === 'cancelled' || entry.to === 'refunded'
+                          ? styles.historyTimelineDotDanger
+                          : entry.to === 'revision_in_progress'
+                            ? styles.historyTimelineDotWarning
+                            : styles.historyTimelineDotPrimary,
+                    ]}
+                  />
+                  <View style={styles.historyTimelineBody}>
+                    <View style={styles.dpRowHeader}>
+                      <KolamStatusBadge
+                        intent={getKolamProyekLifecycleIntent(entry.from)}
+                        label={
+                          entry.from
+                            ? formatKolamProyekLifecycleLabel(entry.from)
+                            : '—'
+                        }
+                      />
+                      <Text style={styles.metaText}>→</Text>
+                      <KolamStatusBadge
+                        intent={getKolamProyekLifecycleIntent(entry.to)}
+                        label={formatKolamProyekLifecycleLabel(entry.to)}
+                      />
+                    </View>
+                    <Text style={styles.metaText}>
+                      {entry.at ? formatShortDateTime(entry.at) : '—'}
+                    </Text>
+                    {entry.note ? (
+                      <Text style={styles.metaText}>{entry.note}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        )}
 
-      {canAdminLifecycle && targets.length >= 2 ? (
-        <View style={styles.progressEditor}>
-          <KolamSettingsWebFieldLabel label="Pilih aksi" required />
-          <KolamDropdownSelect
-            label={
-              lifecycleTarget
-                ? formatKolamProyekLifecycleTransitionLabel(
-                    lifecycleTarget,
-                    detail.lifecycleStatus,
-                  )
-                : 'Pilih aksi'
-            }
-            onChange={value =>
-              onLifecycleTargetChange(
-                value as KolamProyekLifecycleStatus | '',
-              )
-            }
-            options={targets.map(target => ({
-              label: formatKolamProyekLifecycleTransitionLabel(
-                target,
+        {showDomainInfo ? (
+          <View style={styles.hintCard}>
+            <Text style={styles.metaText}>
+              {detail.lifecycleStatus === 'in_progress'
+                ? 'Aksi di stage ini dikelola tombol domain: pakai “Kirim Desain ke Client” di Review Desain — status otomatis pindah.'
+                : 'Menunggu client setujui / revisi / tolak dari marketplace — status otomatis pindah setelahnya.'}
+            </Text>
+          </View>
+        ) : null}
+
+        {canAdminLifecycle && targets.length === 1 ? (
+          <View style={styles.progressEditor}>
+            <KolamSettingsWebFieldLabel
+              label={`Catatan untuk "${formatKolamProyekLifecycleTransitionLabel(
+                targets[0],
                 detail.lifecycleStatus,
-              ),
-              value: target,
-            }))}
-            showLabelInTrigger={false}
-            value={lifecycleTarget}
-          />
-          <KolamSettingsWebFieldLabel label="Catatan" required />
-          <KolamFormTextField
-            multiline
-            onChangeText={onLifecycleNoteChange}
-            placeholder="Minimal 5 karakter"
-            value={lifecycleNote}
-          />
-          <KolamButton
-            disabled={acting || !lifecycleTarget}
-            label={acting ? 'Memproses…' : 'Lanjutkan'}
-            onPress={() => {
-              if (!lifecycleTarget) {
-                return;
+              )}"`}
+              required
+            />
+            <KolamFormTextField
+              multiline
+              onChangeText={onLifecycleNoteChange}
+              placeholder="Minimal 5 karakter"
+              value={lifecycleNote}
+            />
+            <KolamButton
+              disabled={acting}
+              label={
+                acting
+                  ? 'Memproses…'
+                  : formatKolamProyekLifecycleTransitionLabel(
+                      targets[0],
+                      detail.lifecycleStatus,
+                    )
               }
-              void onTransition(lifecycleTarget, lifecycleNote);
-            }}
-          />
-        </View>
-      ) : null}
-    </DetailSection>
+              onPress={() => {
+                void onTransition(targets[0], lifecycleNote);
+              }}
+            />
+          </View>
+        ) : null}
+
+        {canAdminLifecycle && targets.length >= 2 ? (
+          <View style={styles.progressEditor}>
+            <KolamSettingsWebFieldLabel label="Pilih aksi" required />
+            <KolamDropdownSelect
+              label={
+                lifecycleTarget
+                  ? formatKolamProyekLifecycleTransitionLabel(
+                      lifecycleTarget,
+                      detail.lifecycleStatus,
+                    )
+                  : 'Pilih aksi'
+              }
+              onChange={value =>
+                onLifecycleTargetChange(
+                  value as KolamProyekLifecycleStatus | '',
+                )
+              }
+              options={targets.map(target => ({
+                label: formatKolamProyekLifecycleTransitionLabel(
+                  target,
+                  detail.lifecycleStatus,
+                ),
+                value: target,
+              }))}
+              showLabelInTrigger={false}
+              value={lifecycleTarget}
+            />
+            <KolamSettingsWebFieldLabel label="Catatan" required />
+            <KolamFormTextField
+              multiline
+              onChangeText={onLifecycleNoteChange}
+              placeholder="Minimal 5 karakter"
+              value={lifecycleNote}
+            />
+            <KolamButton
+              disabled={acting || !lifecycleTarget}
+              label={acting ? 'Memproses…' : 'Lanjutkan'}
+              onPress={() => {
+                if (!lifecycleTarget) {
+                  return;
+                }
+                void onTransition(lifecycleTarget, lifecycleNote);
+              }}
+            />
+          </View>
+        ) : null}
+      </DetailSection>
+    </>
   );
 }
 
