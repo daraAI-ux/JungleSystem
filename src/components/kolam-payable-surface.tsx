@@ -669,30 +669,30 @@ function PayableList({
         }
         style={styles.tableFrame}
       >
-        <View style={styles.headerRow}>
-          {LIST_COLUMNS.map(column => (
-            <View
-              key={column.id}
-              style={[styles.cell, { flex: column.flex }]}
-            >
-              <Text style={styles.headerCellText}>{column.label}</Text>
-            </View>
-          ))}
-        </View>
-        {controller.items.length ? (
-          controller.items.map(item => (
-            <React.Fragment key={item.id}>{renderRow(item)}</React.Fragment>
-          ))
-        ) : (
-          <View style={styles.listContent}>
+        <View style={styles.tableBody}>
+          <View style={styles.headerRow}>
+            {LIST_COLUMNS.map(column => (
+              <View
+                key={column.id}
+                style={[styles.cell, { flex: column.flex }]}
+              >
+                <Text style={styles.headerCellText}>{column.label}</Text>
+              </View>
+            ))}
+          </View>
+          {controller.items.length ? (
+            controller.items.map(item => (
+              <React.Fragment key={item.id}>{renderRow(item)}</React.Fragment>
+            ))
+          ) : (
             <View style={styles.emptyWrap}>
               <KolamEmptyState
                 compact
                 title={controller.loading ? 'Memuat...' : 'Tidak ada hutang'}
               />
             </View>
-          </View>
-        )}
+          )}
+        </View>
       </KolamCatalogListTableShell>
     </View>
   );
@@ -1301,19 +1301,18 @@ const styles = StyleSheet.create({
   },
   listRoot: {
     flexGrow: 0,
-    gap: 8,
     minHeight: 240,
   },
   tableFrame: {
     minHeight: 0,
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
+  tableBody: {
+    minHeight: 0,
+    width: '100%',
   },
   emptyWrap: {
+    justifyContent: 'center',
+    minHeight: 200,
     paddingVertical: 24,
   },
   headerRow: {
