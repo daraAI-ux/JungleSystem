@@ -3,6 +3,7 @@ import {ScrollView} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import type {KolamEnclosure} from '../src/domain/kolam-enclosure';
 import {
+  getEnclosureDashboardSummaryCardWidth,
   KolamEnclosureSurface,
 } from '../src/components/kolam-enclosure-surface';
 import {
@@ -313,7 +314,11 @@ describe('Kolam enclosure surface', () => {
       .findAllByType(ScrollView)
       .find(node => node.props.horizontal === true);
     expect(horizontalSummary?.props.contentContainerStyle).toEqual(
-      expect.objectContaining({paddingRight: 8}),
+      expect.objectContaining({
+        flexDirection: 'row',
+        flexWrap: 'nowrap',
+        gap: 8,
+      }),
     );
     expect(root.findAllByProps({children: 'E'})).toHaveLength(0);
     expect(root.findAllByProps({children: '!'})).toHaveLength(0);
@@ -321,6 +326,13 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Statistik kandang produksi (tidak dijual)'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Pergerakan stok'}).length).toBe(0);
     expect(root.findAllByProps({children: 'Kasus dilaporkan'}).length).toBe(0);
+  });
+
+  it('computes dashboard summary cards to fill the row without shrinking below minimum', () => {
+    expect(getEnclosureDashboardSummaryCardWidth(0)).toBe(154);
+    expect(getEnclosureDashboardSummaryCardWidth(700)).toBe(154);
+    expect(getEnclosureDashboardSummaryCardWidth(1000)).toBe(160);
+    expect(getEnclosureDashboardSummaryCardWidth(1200)).toBe(193);
   });
 
   it('renders death history on its own tab beside statistik', async () => {

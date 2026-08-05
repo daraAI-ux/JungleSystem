@@ -140,6 +140,9 @@ const DASHBOARD_SPECIES_PAGE_SIZE = 12;
 const DASHBOARD_PRODUCTION_STATS_PAGE_SIZE = 10;
 const DASHBOARD_DEATH_PAGE_SIZE = 10;
 const PRODUCTION_DIAGRAM_TOP_N = 6;
+const ENCLOSURE_DASHBOARD_SUMMARY_CARD_COUNT = 6;
+const ENCLOSURE_DASHBOARD_SUMMARY_CARD_GAP = 8;
+const ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH = 154;
 
 const DASHBOARD_DEATH_COLUMNS: KolamTableColumn[] = [
   {id: 'meta', label: 'Waktu', align: 'left', width: 142},
@@ -1505,6 +1508,11 @@ function KolamEnclosureDashboardPanel({
   controller: KolamEnclosureController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [summaryRowWidth, setSummaryRowWidth] = React.useState(0);
+  const summaryCardWidth = getEnclosureDashboardSummaryCardWidth(
+    summaryRowWidth,
+  );
+
   if (controller.loading && controller.dataSource === 'idle') {
     return <InlineState title="Memuat dashboard..." />;
   }
@@ -1515,55 +1523,65 @@ function KolamEnclosureDashboardPanel({
   const stats = controller.dashboardStats;
   return (
     <ScrollView contentContainerStyle={styles.dashboardContent}>
-      <ScrollView
-        contentContainerStyle={styles.summaryGridHeroRow}
-        horizontal
-        showsHorizontalScrollIndicator={false}>
-        <SummaryTile
-          compact
-          icon="E"
-          label="Jumlah enclosure"
-          value={stats.totals.enclosures}
-        />
-        <SummaryTile
-          compact
-          hint={`${stats.totals.individuals} ekor total`}
-          icon="S"
-          label="Spesies di enclosure"
-          value={stats.totals.speciesDistinct}
-        />
-        <SummaryTile
-          accent="primary"
-          compact
-          hint={`${stats.production.speciesDistinct} jenis`}
-          icon="P"
-          label="Indukan produksi"
-          value={stats.production.totalQty}
-        />
-        <SummaryTile
-          compact
-          hint={`${stats.saleable.speciesDistinct} jenis`}
-          icon="J"
-          label="Stok jual di enclosure"
-          value={stats.saleable.totalQty}
-        />
-        <SummaryTile
-          accent="warning"
-          compact
-          hint={`${stats.deaths.reportedAnimals} ekor dilaporkan / ${stats.deaths.totalCases} event total`}
-          icon="!"
-          label="Kematian dilaporkan"
-          value={stats.deaths.reportedCases}
-        />
-        <SummaryTile
-          accent="primary"
-          compact
-          hint={`${stats.births.totalCases} event / alasan KELAHIRAN`}
-          icon="+"
-          label="Total kelahiran indukan"
-          value={stats.births.totalAnimals}
-        />
-      </ScrollView>
+      <View
+        onLayout={event => setSummaryRowWidth(event.nativeEvent.layout.width)}
+        style={styles.summaryGridHeroMeasure}>
+        <ScrollView
+          contentContainerStyle={styles.summaryGridHeroRow}
+          horizontal
+          showsHorizontalScrollIndicator={false}>
+          <SummaryTile
+            compact
+            icon="E"
+            label="Jumlah enclosure"
+            value={stats.totals.enclosures}
+            width={summaryCardWidth}
+          />
+          <SummaryTile
+            compact
+            hint={`${stats.totals.individuals} ekor total`}
+            icon="S"
+            label="Spesies di enclosure"
+            value={stats.totals.speciesDistinct}
+            width={summaryCardWidth}
+          />
+          <SummaryTile
+            accent="primary"
+            compact
+            hint={`${stats.production.speciesDistinct} jenis`}
+            icon="P"
+            label="Indukan produksi"
+            value={stats.production.totalQty}
+            width={summaryCardWidth}
+          />
+          <SummaryTile
+            compact
+            hint={`${stats.saleable.speciesDistinct} jenis`}
+            icon="J"
+            label="Stok jual di enclosure"
+            value={stats.saleable.totalQty}
+            width={summaryCardWidth}
+          />
+          <SummaryTile
+            accent="warning"
+            compact
+            hint={`${stats.deaths.reportedAnimals} ekor dilaporkan / ${stats.deaths.totalCases} event total`}
+            icon="!"
+            label="Kematian dilaporkan"
+            value={stats.deaths.reportedCases}
+            width={summaryCardWidth}
+          />
+          <SummaryTile
+            accent="primary"
+            compact
+            hint={`${stats.births.totalCases} event / alasan KELAHIRAN`}
+            icon="+"
+            label="Total kelahiran indukan"
+            value={stats.births.totalAnimals}
+            width={summaryCardWidth}
+          />
+        </ScrollView>
+      </View>
 
       <DashboardProductionStatsCard
         rows={stats.production.rows}
@@ -2489,6 +2507,7 @@ function SummaryTile({
   hint,
   label,
   value,
+  width,
 }: {
   accent?: 'primary' | 'warning';
   compact?: boolean;
@@ -2496,10 +2515,15 @@ function SummaryTile({
   icon: string;
   label: string;
   value: number;
+  width?: number;
 }) {
   return (
     <KolamCardFrame
-      style={[styles.summaryCard, compact ? styles.summaryCardCompact : null]}>
+      style={[
+        styles.summaryCard,
+        compact ? styles.summaryCardCompact : null,
+        width ? {width, minWidth: width, maxWidth: width} : null,
+      ]}>
       <View
         style={[
           styles.summaryAccent,
@@ -2522,6 +2546,23 @@ function SummaryTile({
         ) : null}
       </View>
     </KolamCardFrame>
+  );
+}
+
+export function getEnclosureDashboardSummaryCardWidth(containerWidth: number) {
+  if (!containerWidth) {
+    return ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH;
+  }
+
+  const totalGap =
+    ENCLOSURE_DASHBOARD_SUMMARY_CARD_GAP *
+    (ENCLOSURE_DASHBOARD_SUMMARY_CARD_COUNT - 1);
+  const width =
+    (containerWidth - totalGap) / ENCLOSURE_DASHBOARD_SUMMARY_CARD_COUNT;
+
+  return Math.max(
+    ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH,
+    Math.floor(width),
   );
 }
 
@@ -3357,7 +3398,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'nowrap',
     gap: 8,
-    paddingRight: 8,
+  },
+  summaryGridHeroMeasure: {
+    alignSelf: 'stretch',
+    minWidth: 0,
   },
   dashboardContent: {
     gap: 18,
@@ -3412,9 +3456,9 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   summaryCardCompact: {
-    flexBasis: 160,
+    flexBasis: ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH,
     flexGrow: 0,
-    minWidth: 160,
+    minWidth: ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH,
   },
   summaryAccent: {
     borderBottomLeftRadius: 10,
