@@ -23,6 +23,35 @@ export interface KolamDropdownOption<TValue extends string = string> {
   value: TValue;
 }
 
+type KolamOpenMenuListener = (activeId: string | null) => void;
+
+const openMenuListeners = new Set<KolamOpenMenuListener>();
+let openMenuId: string | null = null;
+let openMenuSequence = 0;
+
+function getNextOpenMenuId() {
+  openMenuSequence += 1;
+  return `kolam-open-menu-${openMenuSequence}`;
+}
+
+function subscribeOpenMenu(listener: KolamOpenMenuListener) {
+  openMenuListeners.add(listener);
+  return () => {
+    openMenuListeners.delete(listener);
+  };
+}
+
+function setActiveOpenMenu(id: string | null) {
+  openMenuId = id;
+  openMenuListeners.forEach(listener => listener(openMenuId));
+}
+
+function clearActiveOpenMenu(id: string) {
+  if (openMenuId === id) {
+    openMenuId = null;
+  }
+}
+
 export function KolamDropdownSelect<TValue extends string = string>({
   accessibilityLabel,
   label,
@@ -56,6 +85,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const inlineMenu = menuPlacement === 'inline';
   const selected = options.find(option => option.value === value) ?? options[0];
   const selectedLabel = selected?.label ?? '-';
@@ -75,9 +105,34 @@ export function KolamDropdownSelect<TValue extends string = string>({
       ),
     );
   }, [options, query]);
+  React.useEffect(() => {
+    if (inlineMenu) {
+      return undefined;
+    }
+
+    return subscribeOpenMenu(activeId => {
+      if (activeId === openMenuIdRef.current) {
+        return;
+      }
+
+      setOpen(current => {
+        if (!current) {
+          return current;
+        }
+
+        setQuery('');
+        onOpenChange?.(false);
+        return false;
+      });
+    });
+  }, [inlineMenu, onOpenChange]);
+
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
+    if (!inlineMenu) {
+      clearActiveOpenMenu(openMenuIdRef.current);
+    }
     onOpenChange?.(false);
   };
   const toggleOpen = () => {
@@ -85,6 +140,11 @@ export function KolamDropdownSelect<TValue extends string = string>({
       const next = !current;
       if (!next) {
         setQuery('');
+        if (!inlineMenu) {
+          clearActiveOpenMenu(openMenuIdRef.current);
+        }
+      } else if (!inlineMenu) {
+        setActiveOpenMenu(openMenuIdRef.current);
       }
       onOpenChange?.(next);
       return next;
@@ -240,15 +300,40 @@ export function KolamOverflowMenuButton({
   const [open, setOpen] = React.useState(false);
   const [placement, setPlacement] = React.useState<'bottom' | 'top'>('bottom');
   const rootRef = React.useRef<View>(null);
+  const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
+
+  React.useEffect(() => {
+    return subscribeOpenMenu(activeId => {
+      if (activeId === openMenuIdRef.current) {
+        return;
+      }
+
+      setOpen(current => {
+        if (!current) {
+          return current;
+        }
+
+        onOpenChange?.(false);
+        return false;
+      });
+    });
+  }, [onOpenChange]);
+
   const setMenuOpen = (next: boolean) => {
+    if (next) {
+      setActiveOpenMenu(openMenuIdRef.current);
+    } else {
+      clearActiveOpenMenu(openMenuIdRef.current);
+    }
     setOpen(next);
     onOpenChange?.(next);
   };
   const measureAndOpen = () => {
+    setMenuOpen(true);
+
     const root = rootRef.current;
-    if (!root) {
-      setMenuOpen(true);
+    if (!root || typeof root.measureInWindow !== 'function') {
       return;
     }
 
@@ -260,7 +345,6 @@ export function KolamOverflowMenuButton({
         availableBelow < estimatedMenuHeight + 12 && availableAbove > availableBelow;
 
       setPlacement(shouldOpenUp ? 'top' : 'bottom');
-      setMenuOpen(true);
     });
   };
   const toggleMenu = () => {
