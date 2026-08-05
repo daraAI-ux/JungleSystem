@@ -530,6 +530,12 @@ function KolamProyekDetailRead({
   const commissionPreview = computeKolamProyekCommissionPreview(detail);
   const nextStep = resolveKolamProyekNextStepHero(detail);
   const activityEntries = buildKolamProyekActivityEntries(detail);
+  const progressNow = Math.round(
+    detail.linkedTask?.workProgressPercent != null
+      ? detail.linkedTask.workProgressPercent
+      : detail.progressPercent || 0,
+  );
+  const progressBarWidth = `${Math.min(100, Math.max(0, progressNow))}%`;
   const adminLifecycleTargets = getKolamProyekHappyPathNext(
     detail.lifecycleStatus,
   );
@@ -1194,63 +1200,96 @@ function KolamProyekDetailRead({
         ) : null}
 
         {showProgress ? (
-          <DetailSection title="Progress">
-            <Text style={styles.primaryText}>
-              {Math.round(detail.progressPercent)}%
-              {detail.linkedTask ? ` · dari tugas` : ''}
+          <KolamCardFrame style={styles.progressCard} variant="compact">
+            <Text style={styles.progressTitle}>Perbarui progress</Text>
+            <Text style={styles.progressCurrent}>
+              Saat ini: {progressNow}%
+              {detail.linkedTask ? ' · dari tugas' : ''}
             </Text>
-            {detail.progressNote ? (
-              <Text style={styles.metaText}>{detail.progressNote}</Text>
-            ) : null}
+            <View
+              accessibilityRole="progressbar"
+              accessibilityValue={{
+                min: 0,
+                max: 100,
+                now: Math.min(100, Math.max(0, progressNow)),
+              }}
+              style={styles.progressTrack}
+            >
+              <View
+                style={[styles.progressFill, { width: progressBarWidth }]}
+              />
+            </View>
+
             {controller.canUpdateProgress ? (
               <View style={styles.progressEditor}>
-                <View style={styles.row2}>
-                  <View style={styles.col}>
+                <View style={styles.progressInputRow}>
+                  <View style={styles.progressPercentField}>
                     <KolamSettingsWebFieldLabel label="Progress %" required />
                     <KolamFormTextField
                       mode="numeric"
                       onChangeText={setProgressPercentText}
-                      placeholder="0–100"
+                      placeholder={`${Math.round(detail.progressPercent || 0)}–100`}
                       value={progressPercentText}
                     />
                   </View>
-                  <View style={styles.col}>
-                    <KolamSettingsWebFieldLabel label="Catatan" required={false} />
+                  <View style={styles.progressNoteField}>
+                    <KolamSettingsWebFieldLabel
+                      label="Catatan"
+                      required={false}
+                    />
                     <KolamFormTextField
                       onChangeText={setProgressNoteText}
-                      placeholder="Opsional"
+                      placeholder="Catatan"
                       value={progressNoteText}
                     />
                   </View>
+                  <KolamButton
+                    disabled={controller.acting}
+                    label={controller.acting ? 'Menyimpan…' : 'Simpan'}
+                    onPress={() => {
+                      const next =
+                        Number(
+                          String(progressPercentText).replace(/[^\d.-]/g, ''),
+                        ) || 0;
+                      void controller.onUpdateProgress(
+                        next,
+                        progressNoteText,
+                      );
+                    }}
+                  />
                 </View>
-                <KolamButton
-                  disabled={controller.acting}
-                  label={controller.acting ? 'Menyimpan…' : 'Simpan progress'}
-                  onPress={() => {
-                    const next =
-                      Number(
-                        String(progressPercentText).replace(/[^\d.-]/g, ''),
-                      ) || 0;
-                    void controller.onUpdateProgress(next, progressNoteText);
-                  }}
-                />
               </View>
             ) : null}
+
             {detail.progressHistory.length > 0 ? (
-              <View style={styles.historyBlock}>
-                {detail.progressHistory.slice(0, 12).map((entry, index) => (
-                  <Text
+              <ScrollView
+                contentContainerStyle={styles.progressHistoryScroll}
+                nestedScrollEnabled
+                style={styles.progressHistoryScrollView}
+              >
+                {[...detail.progressHistory].reverse().map((entry, index) => (
+                  <View
                     key={`${entry.at}-${entry.progressPercent}-${index}`}
-                    style={styles.metaText}
+                    style={styles.progressHistoryRow}
                   >
-                    {entry.progressPercent}%
-                    {entry.at ? ` · ${formatShortDateTime(entry.at)}` : ''}
-                    {entry.progressNote ? ` — ${entry.progressNote}` : ''}
-                  </Text>
+                    <Text style={styles.progressHistoryPercent}>
+                      {entry.progressPercent}%
+                    </Text>
+                    {entry.progressNote ? (
+                      <Text style={styles.progressHistoryNote}>
+                        {entry.progressNote}
+                      </Text>
+                    ) : null}
+                    {entry.at ? (
+                      <Text style={styles.progressHistoryAt}>
+                        {formatShortDateTime(entry.at)}
+                      </Text>
+                    ) : null}
+                  </View>
                 ))}
-              </View>
+              </ScrollView>
             ) : null}
-          </DetailSection>
+          </KolamCardFrame>
         ) : null}
 
         {showDesign ? (
@@ -3450,7 +3489,77 @@ const styles = StyleSheet.create({
   },
   progressEditor: {
     gap: 10,
-    marginTop: 8,
+    marginTop: 4,
+  },
+  progressCard: {
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  progressTitle: {
+    color: V.colors.fg,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  progressCurrent: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  progressTrack: {
+    backgroundColor: V.colors.border,
+    borderRadius: 999,
+    height: 8,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressFill: {
+    backgroundColor: V.colors.primary,
+    borderRadius: 999,
+    height: '100%',
+  },
+  progressInputRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  progressPercentField: {
+    gap: 4,
+    minWidth: 96,
+    width: 110,
+  },
+  progressNoteField: {
+    flexGrow: 1,
+    gap: 4,
+    minWidth: 160,
+  },
+  progressHistoryScrollView: {
+    maxHeight: 128,
+  },
+  progressHistoryScroll: {
+    gap: 6,
+    paddingTop: 4,
+  },
+  progressHistoryRow: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  progressHistoryPercent: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  progressHistoryNote: {
+    color: V.colors.mutedFg,
+    flexShrink: 1,
+    fontSize: 13,
+  },
+  progressHistoryAt: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
   },
   row2: {
     flexDirection: 'row',
