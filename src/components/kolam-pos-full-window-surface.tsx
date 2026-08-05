@@ -2288,7 +2288,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   posSidebar: {
+    alignSelf: 'stretch',
     width: V.layout.sidebarWidth,
+    height: '100%',
     paddingHorizontal: 12,
     paddingVertical: 14,
     backgroundColor: V.colors.sidebar,
