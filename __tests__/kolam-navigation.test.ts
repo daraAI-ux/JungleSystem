@@ -383,6 +383,14 @@ describe('kolamNavigationSections', () => {
     expect(
       getKolamNavigationRouteTarget(byRoute('/storage-management')).moduleId,
     ).toBe('kolam');
+    expect(
+      getKolamNavigationRouteTarget({
+        description: 'Log aktivitas sistem.',
+        label: 'Activity Log',
+        requiredAccess: ['kolam'],
+        route: '/settings/activity-log',
+      }).moduleId,
+    ).toBe('settings');
   });
 
   it('finds live menu items by route for native route surfaces', () => {

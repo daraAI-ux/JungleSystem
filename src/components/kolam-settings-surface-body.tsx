@@ -364,5 +364,25 @@ export function KolamSettingsSurfaceBody({
     );
   }
 
+  if (controller.activeSettingsTabId === 'activity-log') {
+    return (
+      <KolamSettingsActivityLogSurface
+        columns={controller.activityColumns}
+        filterControls={controller.activityFilterControls}
+        filterValues={controller.activityLogFilters}
+        onFilterChange={controller.setActivityLogFilter}
+        onPageChange={controller.changeActivityPage}
+        onRefresh={controller.refreshActivityLogs}
+        onSelectActivityLog={controller.setSelectedActivityLogId}
+        pagination={controller.activityPagination}
+        rows={controller.activityRows}
+        selectedActivityLog={controller.selectedActivityLog}
+        selectedActivityLogFields={controller.selectedActivityLogFields}
+        selectedActivityLogId={controller.selectedActivityLogId}
+        statsCards={controller.activityStatsCards}
+      />
+    );
+  }
+
   return <KolamSettingsDetailRowsSurface rows={controller.detailRows} />;
 }

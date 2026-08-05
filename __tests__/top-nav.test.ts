@@ -186,7 +186,7 @@ describe('topNavUserMenuItems', () => {
       expect(breadcrumbs[2]).toEqual(
         expect.objectContaining({
           id: `settings-tab:${tab.id}`,
-          routeHint: '/pengaturan',
+          routeHint: tab.route,
           current: true,
         }),
       );
@@ -308,6 +308,12 @@ describe('topNavUserMenuItems', () => {
         label: 'Team chat',
         sourceComponent:
           'E:\\Projects\\DA-Chat-Plugin\\src\\components\\chat-header-quick-access-icons.tsx',
+      },
+      {
+        id: 'activity-log',
+        label: 'Activity log',
+        sourceComponent:
+          'E:\\Projects\\da-inventory-frontend\\src\\components\\header-quick-access-icons.tsx',
       },
       {
         id: 'app-downloads',

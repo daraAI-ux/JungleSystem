@@ -714,6 +714,16 @@ function getManualNavigationItem(route: string): KolamNavigationItem | null {
     };
   }
 
+  if (routePath === '/settings/activity-log') {
+    return {
+      description: 'Log aktivitas sistem.',
+      group: 'Settings',
+      label: 'Activity Log',
+      requiredAccess: ['kolam'],
+      route: '/settings/activity-log',
+    };
+  }
+
   if (routePath === '/pengaturan') {
     return getSettingsNavigationItem();
   }

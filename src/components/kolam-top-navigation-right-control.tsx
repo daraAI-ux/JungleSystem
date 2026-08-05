@@ -2,6 +2,7 @@ import React from 'react';
 import type {TopNavRightControl} from '../domain/top-nav';
 import type {KolamChatUnreadCounts} from '../hooks/use-kolam-chat-notification-host';
 import {KolamTopNavigationAvatarButton} from './kolam-top-navigation-avatar-button';
+import {KolamTopNavigationActivityLogIcon} from './kolam-top-navigation-activity-log-icon';
 import {KolamTopNavigationCashflowHost} from './kolam-top-navigation-cashflow-host';
 import {KolamTopNavigationChatButton} from './kolam-top-navigation-chat-button';
 import {KolamTopNavigationDownloadIcon} from './kolam-top-navigation-download-icon';
@@ -56,6 +57,18 @@ export function KolamTopNavigationRightControl({
         size={32}
         radius="full">
         <KolamTopNavigationTaskIcon />
+      </KolamIconButton>
+    );
+  }
+
+  if (control.id === 'activity-log') {
+    return (
+      <KolamIconButton
+        accessibilityLabel={control.label}
+        onPress={() => onCashflowNavigate?.('/settings/activity-log')}
+        size={32}
+        radius="full">
+        <KolamTopNavigationActivityLogIcon />
       </KolamIconButton>
     );
   }

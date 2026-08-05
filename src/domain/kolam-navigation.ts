@@ -2409,7 +2409,7 @@ export function getKolamNavigationRouteTarget(
     return routeTarget('kolam', item);
   }
 
-  if (routePath === '/pengaturan') {
+  if (routePath === '/pengaturan' || routePath === '/settings/activity-log') {
     return routeTarget('settings', item);
   }
 

@@ -29,6 +29,7 @@ export type SettingsTabId =
   | 'sync'
   | 'konten'
   | 'kpi'
+  | 'activity-log'
   | 'plugin';
 
 export type SettingsTabPermission =
@@ -36,6 +37,7 @@ export type SettingsTabPermission =
   | 'websetting:update'
   | 'role:view'
   | 'wallet:view|tax:view'
+  | 'activity-log:view'
   | 'admin:websetting:view'
   | 'admin:websetting:view:user'
   | 'super-admin';
@@ -44,12 +46,14 @@ export interface SettingsTabItem {
   id: SettingsTabId;
   label: string;
   breadcrumbLabel: string;
-  route: '/pengaturan';
+  route: '/pengaturan' | '/settings/activity-log';
   description: string;
   permission: SettingsTabPermission;
   status: SettingsSurfaceItem['status'];
   surfaceId: SettingsSurfaceItem['id'];
-  sourceComponent: 'settings/system/page.tsx';
+  sourceComponent:
+    | 'settings/system/page.tsx'
+    | 'settings/activity-log/activity-log-list.tsx';
 }
 
 export interface SettingsVisibilityPermission {
@@ -511,6 +515,17 @@ export const settingsTabItems: SettingsTabItem[] = [
     surfaceId: 'web-settings',
     sourceComponent: 'settings/system/page.tsx',
   },
+  {
+    id: 'activity-log',
+    label: 'Activity Log',
+    breadcrumbLabel: 'Activity Log',
+    route: '/settings/activity-log',
+    description: 'Log aktivitas sistem.',
+    permission: 'activity-log:view',
+    status: 'native-summary',
+    surfaceId: 'activity-log',
+    sourceComponent: 'settings/activity-log/activity-log-list.tsx',
+  },
 ];
 
 export const DEFAULT_SETTINGS_TAB_ID: SettingsTabId = 'umum';
@@ -548,6 +563,10 @@ export function isSettingsTabVisible(
 
   if (item.id === 'finansial') {
     return hasAnySettingsFinancialPermission(context);
+  }
+
+  if (item.id === 'activity-log') {
+    return hasSettingsPermission(context, 'activity-log', 'view');
   }
 
   return hasSettingsPermission(context, 'websetting', 'view');
@@ -644,7 +663,7 @@ export const settingsSurfaceItems: SettingsSurfaceItem[] = [
   {
     id: 'activity-log',
     title: 'Activity Log',
-    route: '/pengaturan',
+    route: '/settings/activity-log',
     description: 'Audit trail for user activity, navigation, and API changes.',
     status: 'native-summary',
     badge: 'Audit',
