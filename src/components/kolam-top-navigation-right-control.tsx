@@ -54,7 +54,8 @@ export function KolamTopNavigationRightControl({
         accessibilityLabel={control.label}
         onPress={() => onCashflowNavigate?.('/task-manager')}
         size={32}
-        radius="full">
+        radius="full"
+        variant="ghost">
         <KolamTopNavigationTaskIcon />
       </KolamIconButton>
     );

@@ -11,6 +11,7 @@ import {KolamTopNavigationDownloadIcon} from '../src/components/kolam-top-naviga
 import {KolamTopNavigationMediaIcon} from '../src/components/kolam-top-navigation-media-icon';
 import {KolamTopNavigationNotificationButton} from '../src/components/kolam-top-navigation-notification-button';
 import {KolamTopNavigationRightControl} from '../src/components/kolam-top-navigation-right-control';
+import {KolamTopNavigationTaskIcon} from '../src/components/kolam-top-navigation-task-icon';
 
 describe('KolamTopNavigationNotificationButton', () => {
   it('renders the notification bell without a circular icon-button frame', async () => {
@@ -218,5 +219,49 @@ describe('KolamTopNavigationMediaIcon', () => {
     expect(button.props.variant).toBe('ghost');
     button.props.onPress();
     expect(onNavigate).toHaveBeenCalledWith('/media');
+  });
+});
+
+describe('KolamTopNavigationTaskIcon', () => {
+  it('renders the task icon as native vector artwork', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<KolamTopNavigationTaskIcon />);
+    });
+
+    const icon = renderer!.root.findByType(Svg);
+
+    expect(icon.props.height).toBe(32);
+    expect(icon.props.width).toBe(32);
+    expect(icon.props.viewBox).toBe('0 0 512 512');
+    expect(renderer!.root.findByType(Circle).props).toEqual(
+      expect.objectContaining({fill: '#F47F65', r: 256}),
+    );
+    expect(renderer!.root.findAllByType(Path)).toHaveLength(4);
+  });
+
+  it('keeps the task topbar control on the task manager route', async () => {
+    const onNavigate = jest.fn();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamTopNavigationRightControl
+          attentionCount={0}
+          control={{id: 'task-manager', label: 'Task Manager'}}
+          displayInitials="DA"
+          onAvatarPress={jest.fn()}
+          onCashflowNavigate={onNavigate}
+          onNotificationPress={jest.fn()}
+        />,
+      );
+    });
+
+    const button = renderer!.root.findByType(KolamIconButton);
+
+    expect(button.props.variant).toBe('ghost');
+    button.props.onPress();
+    expect(onNavigate).toHaveBeenCalledWith('/task-manager');
   });
 });
