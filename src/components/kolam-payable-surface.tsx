@@ -1180,12 +1180,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listRoot: {
-    flex: 1,
+    flexGrow: 0,
     gap: 8,
     minHeight: 240,
   },
   tableFrame: {
-    flex: 1,
+    minHeight: 0,
   },
   list: {
     flex: 1,
