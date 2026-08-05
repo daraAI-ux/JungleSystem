@@ -424,6 +424,7 @@ function buildPurchaseOrderListColumns({
       ),
     },
     {
+      align: 'center',
       flex: 1.18,
       id: 'vendor',
       label: 'Pemasok',
@@ -441,7 +442,7 @@ function buildPurchaseOrderListColumns({
       render: po => <Text style={styles.numText}>{po.items.length}</Text>,
     },
     {
-      align: 'right',
+      align: 'center',
       flex: 0.82,
       id: 'amount',
       label: 'Total',
