@@ -205,6 +205,10 @@ export function getDashboardGreeting(
 }
 
 export function getDashboardSubtitle(moduleLabel: string): string {
+  if (moduleLabel === 'Beranda') {
+    return 'Ringkasan terkini';
+  }
+
   if (moduleLabel === 'Kolam') {
     return 'Ringkasan performa toko hari ini: penjualan, stok, dan pesanan tertunda.';
   }

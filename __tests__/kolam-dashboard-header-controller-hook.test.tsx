@@ -85,6 +85,7 @@ describe('Kolam dashboard header controller hook', () => {
     expect(controller.displayInitials).toBe('OO');
     expect(controller.dashboardHeader.eyebrow).toBe('Beranda');
     expect(controller.dashboardHeader.title).toContain('Offline Operator');
+    expect(controller.dashboardHeader.subtitle).toBe('Ringkasan terkini');
     expect(controller.dashboardHeader.actions).toEqual([]);
     expect(selectedModule).toBeNull();
   });
