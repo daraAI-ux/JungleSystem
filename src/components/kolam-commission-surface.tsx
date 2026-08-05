@@ -223,7 +223,21 @@ function CommissionListBody({
                   <Text numberOfLines={1} style={styles.linkText}>
                     Bukti transfer
                   </Text>
-                ) : null}
+                ) : (
+                  <KolamButton
+                    disabled={controller.uploadingProofId === item.id}
+                    intent="secondary"
+                    label={
+                      controller.uploadingProofId === item.id
+                        ? 'Mengunggah...'
+                        : 'Upload bukti'
+                    }
+                    onPress={() => {
+                      void controller.onUploadTransferProof(item);
+                    }}
+                    style={styles.uploadProofButton}
+                  />
+                )}
               </View>
             ) : null}
           </View>
@@ -696,6 +710,9 @@ const styles = StyleSheet.create({
   },
   paymentBadge: {
     alignSelf: 'flex-start',
+  },
+  uploadProofButton: {
+    flexGrow: 0,
   },
   linkText: {
     color: V.colors.primary,

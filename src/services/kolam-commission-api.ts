@@ -51,6 +51,25 @@ export async function releaseKolamCommission(
   });
 }
 
+export async function uploadKolamCommissionTransferProof(
+  id: string,
+  localUri: string,
+): Promise<void> {
+  const body = new FormData();
+  body.append(
+    'proof',
+    createReactNativeFilePart(
+      localUri,
+      'commission-transfer-proof.jpg',
+    ) as unknown as Blob,
+  );
+
+  await kolamRequest(`/commission/${encodeURIComponent(id)}/transfer-proof`, {
+    method: 'POST',
+    body,
+  });
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
@@ -67,4 +86,34 @@ function kolamRequest<T>(
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });
+}
+
+function createReactNativeFilePart(localUri: string, fallbackName: string) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+  const extension = name.split('.').pop()?.toLowerCase();
+  let type = 'image/jpeg';
+  switch (extension) {
+    case 'png':
+      type = 'image/png';
+      break;
+    case 'webp':
+      type = 'image/webp';
+      break;
+    case 'gif':
+      type = 'image/gif';
+      break;
+    case 'pdf':
+      type = 'application/pdf';
+      break;
+    default:
+      break;
+  }
+  return {
+    uri: normalizedUri,
+    name,
+    type,
+  };
 }

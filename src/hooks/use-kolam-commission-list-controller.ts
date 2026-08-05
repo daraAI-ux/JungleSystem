@@ -18,7 +18,9 @@ import {
   fetchKolamCommissionRecipientSummary,
   fetchKolamCommissionList,
   releaseKolamCommission,
+  uploadKolamCommissionTransferProof,
 } from '../services/kolam-commission-api';
+import { pickNativeAssetFile } from '../services/native-file-picker';
 import { getKolamWalletOptionsPaginated } from '../services/kolam-wallet-option-api';
 
 export interface KolamCommissionListController {
@@ -38,6 +40,7 @@ export interface KolamCommissionListController {
   loading: boolean;
   summaryLoading: boolean;
   releasingId: string | null;
+  uploadingProofId: string | null;
   error: string;
   statusMessage: string;
   canView: boolean;
@@ -50,6 +53,7 @@ export interface KolamCommissionListController {
   onWalletChange: (rowId: string, walletId: string) => void;
   onRefresh: () => Promise<void>;
   onRelease: (row: KolamCommissionListRow) => Promise<void>;
+  onUploadTransferProof: (row: KolamCommissionListRow) => Promise<void>;
 }
 
 export function useKolamCommissionListController(
@@ -76,6 +80,7 @@ export function useKolamCommissionListController(
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [releasingId, setReleasingId] = useState<string | null>(null);
+  const [uploadingProofId, setUploadingProofId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const filtersRef = useRef(filters);
@@ -119,8 +124,8 @@ export function useKolamCommissionListController(
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal memuat komisi',
+          ? err.message
+          : 'Gagal memuat komisi',
       );
     } finally {
       setLoading(false);
@@ -266,14 +271,59 @@ export function useKolamCommissionListController(
           err instanceof ApiError
             ? err.message
             : err instanceof Error
-              ? err.message
-              : 'Gagal bayar komisi',
+            ? err.message
+            : 'Gagal bayar komisi',
         );
       } finally {
         setReleasingId(null);
       }
     },
     [canRelease, refresh, refreshSummary, walletByRow],
+  );
+
+  const onUploadTransferProof = useCallback(
+    async (row: KolamCommissionListRow) => {
+      if (!canRelease || !row.id || row.status !== 'released') {
+        return;
+      }
+      setError('');
+      setStatusMessage('');
+      let picked;
+      try {
+        picked = await pickNativeAssetFile();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Gagal pilih bukti transfer',
+        );
+        return;
+      }
+      if (picked.cancelled) {
+        return;
+      }
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (!localUri.trim()) {
+        setError('File bukti wajib');
+        return;
+      }
+      setUploadingProofId(row.id);
+      try {
+        await uploadKolamCommissionTransferProof(row.id, localUri);
+        setStatusMessage('Bukti transfer diunggah');
+        await refresh();
+        await refreshSummary();
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+            ? err.message
+            : 'Gagal upload bukti',
+        );
+      } finally {
+        setUploadingProofId(null);
+      }
+    },
+    [canRelease, refresh, refreshSummary],
   );
 
   const summaryTotals = useMemo(
@@ -294,6 +344,7 @@ export function useKolamCommissionListController(
       loading,
       summaryLoading,
       releasingId,
+      uploadingProofId,
       error,
       statusMessage,
       canView,
@@ -306,6 +357,7 @@ export function useKolamCommissionListController(
       onWalletChange,
       onRefresh: refresh,
       onRelease,
+      onUploadTransferProof,
     }),
     [
       mode,
@@ -319,6 +371,7 @@ export function useKolamCommissionListController(
       loading,
       summaryLoading,
       releasingId,
+      uploadingProofId,
       error,
       statusMessage,
       canView,
@@ -331,6 +384,7 @@ export function useKolamCommissionListController(
       onWalletChange,
       refresh,
       onRelease,
+      onUploadTransferProof,
     ],
   );
 }
