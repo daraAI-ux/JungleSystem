@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { KolamStockTransaction } from '../domain/kolam-stock-transaction';
 import {
   KOLAM_STOCK_TRANSACTION_ROOT,
@@ -23,15 +23,11 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDescriptionList } from './kolam-description-list';
-import {
-  KolamDropdownSelect,
-  KolamTableFooterControls,
-} from './kolam-dropdown-select';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -42,21 +38,12 @@ import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-sourc
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 
 type StockTxFilterPanel = 'target' | 'status';
-
-const LIST_COLUMNS = [
-  { id: 'target', label: 'Target', flex: 1.4 },
-  { id: 'variant', label: 'Varian', flex: 0.9 },
-  { id: 'type', label: 'Tipe', flex: 0.6 },
-  { id: 'source', label: 'Sumber', flex: 0.75 },
-  { id: 'sync', label: 'Sync MP', flex: 0.8 },
-  { id: 'status', label: 'Status', flex: 1 },
-  { id: 'qty', label: 'Qty', flex: 0.5 },
-  { id: 'before', label: 'Sebelum', flex: 0.6 },
-  { id: 'after', label: 'Sesudah', flex: 0.6 },
-  { id: 'delta', label: 'Selisih', flex: 0.6 },
-] as const;
 
 export function KolamStockTransactionSurface({
   onRouteChange,
@@ -247,10 +234,7 @@ function KolamStockTransactionOpname({
               onChange={value =>
                 controller.onChangeOpnameForm({ targetId: value })
               }
-              options={[
-                { label: 'Pilih item…', value: '' },
-                ...targetOptions,
-              ]}
+              options={[{ label: 'Pilih item…', value: '' }, ...targetOptions]}
               searchable
               searchPlaceholder="Cari item…"
               value={form.targetId || ''}
@@ -276,7 +260,8 @@ function KolamStockTransactionOpname({
         </View>
         {hasVariants ? (
           <Text style={styles.metaText}>
-            Item ini punya varian — pilih varian. Stok utama tidak bisa disesuaikan langsung.
+            Item ini punya varian — pilih varian. Stok utama tidak bisa
+            disesuaikan langsung.
           </Text>
         ) : null}
       </KolamContentFrame>
@@ -364,7 +349,10 @@ function KolamStockTransactionOpname({
       </KolamContentFrame>
 
       {walletModalOpen ? (
-        <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <KolamContentFrame
+          style={styles.detailCard}
+          variant="settingsWebConfig"
+        >
           <Text style={styles.sectionTitle}>Konfirmasi dompet</Text>
           <Text style={styles.metaText}>
             Penurunan stok berdampak sekitar{' '}
@@ -525,9 +513,9 @@ function KolamStockTransactionDetail({
     {
       id: 'stock',
       label: 'Perubahan stok',
-      value: `${formatNumber(tx.before)} → ${formatNumber(tx.after)} (${formatSigned(
-        tx.delta,
-      )})`,
+      value: `${formatNumber(tx.before)} → ${formatNumber(
+        tx.after,
+      )} (${formatSigned(tx.delta)})`,
       meta: tx.computed?.isEnclosureOnly
         ? `Stok jual global: ${formatNumber(tx.globalBefore)} → ${formatNumber(
             tx.globalAfter,
@@ -558,9 +546,7 @@ function KolamStockTransactionDetail({
       value: tx.statusLabel,
       meta: tx.verificationHint || '',
       tone:
-        tx.status === 'verified' || tx.financeCancelled
-          ? 'success'
-          : 'warning',
+        tx.status === 'verified' || tx.financeCancelled ? 'success' : 'warning',
     });
 
     if (tx.financeCancelled) {
@@ -576,7 +562,9 @@ function KolamStockTransactionDetail({
         id: 'wallet-debit',
         label: 'Debit dompet',
         value: tx.walletTransaction.walletName || 'Dompet',
-        meta: `${formatCurrency(tx.walletTransaction.amount)} · ${tx.financeStatusLabel}`,
+        meta: `${formatCurrency(tx.walletTransaction.amount)} · ${
+          tx.financeStatusLabel
+        }`,
         tone:
           tx.walletTransaction.confirmStatus === 'confirmed'
             ? 'success'
@@ -630,7 +618,6 @@ function KolamStockTransactionDetail({
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={controller.loading || controller.mutating}
-
               onPress={() => {
                 void controller.onRefresh();
               }}
@@ -691,10 +678,15 @@ function KolamStockTransactionDetail({
           return null;
         }
         return (
-          <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+          <KolamContentFrame
+            style={styles.detailCard}
+            variant="settingsWebConfig"
+          >
             <Text style={styles.sectionTitle}>Sinkron ke marketplace</Text>
             <View style={styles.crossSyncBox}>
-              <Text style={styles.cellText}>{crossSyncDisplay.summaryLabel}</Text>
+              <Text style={styles.cellText}>
+                {crossSyncDisplay.summaryLabel}
+              </Text>
               {crossSyncDisplay.originPlatform ? (
                 <Text style={styles.metaText}>
                   Asal: {crossSyncOriginLabel(crossSyncDisplay.originPlatform)}
@@ -741,7 +733,10 @@ function KolamStockTransactionDetail({
                       return null;
                     }
                     return (
-                      <View key={target.platform} style={styles.crossSyncExtraRow}>
+                      <View
+                        key={target.platform}
+                        style={styles.crossSyncExtraRow}
+                      >
                         <Text style={styles.metaText}>
                           {crossSyncPlatformLabel(target.platform)}
                           {target.taskId ? ` · Task ${target.taskId}` : ''}
@@ -760,7 +755,10 @@ function KolamStockTransactionDetail({
       })()}
 
       {photoItems.length ? (
-        <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <KolamContentFrame
+          style={styles.detailCard}
+          variant="settingsWebConfig"
+        >
           <Text style={styles.sectionTitle}>Foto bukti</Text>
           <Text style={styles.metaText}>
             {photoItems.length} foto terlampir
@@ -807,12 +805,21 @@ function KolamStockTransactionList({
   controller: KolamStockTransactionController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [searchInput, setSearchInput] = React.useState(controller.filters.search);
+  const [searchInput, setSearchInput] = React.useState(
+    controller.filters.search,
+  );
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<StockTxFilterPanel | null>(null);
   const [filterQuery, setFilterQuery] = React.useState('');
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
+  const listColumns = React.useMemo(
+    () =>
+      buildStockTransactionListColumns(item =>
+        onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/${item.id}`),
+      ),
+    [onRouteChange],
+  );
   const filtersAppliedCount = [
     controller.filters.search,
     controller.filters.status,
@@ -835,6 +842,7 @@ function KolamStockTransactionList({
     }, 300);
     return () => clearTimeout(handle);
   }, [
+    controller,
     controller.filters.search,
     controller.onSearchChange,
     searchInput,
@@ -890,6 +898,7 @@ function KolamStockTransactionList({
     setActiveFilterPanel(current => (current === panel ? null : panel));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderRow = React.useCallback(
     ({ item }: { item: KolamStockTransaction }) => (
       <Pressable
@@ -1049,7 +1058,6 @@ function KolamStockTransactionList({
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -1135,80 +1143,199 @@ function KolamStockTransactionList({
           </KolamContentFrame>
         ) : null}
 
-        <KolamCatalogListTableShell
-          footer={
-            <KolamTableFooterControls
-              onPageSizeChange={controller.onLimitChange}
-              page={controller.pagination.page}
-              pageSize={controller.pagination.limit}
-              total={controller.pagination.total}
-            >
-              {pageCount > 1 ? (
-                <View style={styles.paginationBar}>
-                  <KolamButton
-                    disabled={safePage <= 1}
-                    label="Sebelumnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.max(1, safePage - 1))
-                    }
-                  />
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: 'page',
-                        text: `${safePage} / ${pageCount}`,
-                        style: styles.pageLabel,
-                      },
-                    ]}
-                  />
-                  <KolamButton
-                    disabled={safePage >= pageCount}
-                    label="Berikutnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.min(pageCount, safePage + 1))
-                    }
-                  />
-                </View>
-              ) : null}
-            </KolamTableFooterControls>
+        <KolamListTableComposition
+          columns={listColumns}
+          emptyTitle={
+            controller.loading
+              ? 'Memuat transaksi stok...'
+              : 'Belum ada transaksi'
           }
+          getRowKey={item => item.id}
+          loading={controller.loading}
+          pagination={{
+            onPageChange: page => controller.onPageChange(page),
+            page: safePage,
+            pageSize: controller.pagination.limit,
+            total:
+              controller.pagination.total || controller.transactions.length,
+          }}
+          rows={controller.transactions}
           style={styles.tableFrame}
-        >
-          <FlatList
-            data={controller.transactions}
-            keyExtractor={item => item.id}
-            ListEmptyComponent={
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  message="Sesuaikan filter atau muat ulang dari server."
-                  title={
-                    controller.loading
-                      ? 'Memuat transaksi stok…'
-                      : 'Belum ada transaksi'
-                  }
-                />
-              </View>
-            }
-            ListHeaderComponent={
-              <View style={styles.headerRow}>
-                {LIST_COLUMNS.map(column => (
-                  <View
-                    key={column.id}
-                    style={[styles.cell, { flex: column.flex }]}
-                  >
-                    <Text style={styles.headerCellText}>{column.label}</Text>
-                  </View>
-                ))}
-              </View>
-            }
-            renderItem={renderRow}
-            style={styles.listFlatList}
-            contentContainerStyle={styles.listContent}
-          />
-        </KolamCatalogListTableShell>
+        />
       </View>
     </View>
+  );
+}
+
+function buildStockTransactionListColumns(
+  onOpen: (item: KolamStockTransaction) => void,
+): Array<KolamListTableColumn<KolamStockTransaction>> {
+  return [
+    {
+      flex: 1.4,
+      id: 'target',
+      label: 'Target',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text numberOfLines={2} style={styles.primaryText}>
+            {item.target?.label || '-'}
+          </Text>
+          <Text numberOfLines={1} style={styles.metaText}>
+            {item.target?.sku || '-'}
+          </Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'variant',
+      label: 'Varian',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text numberOfLines={2} style={styles.cellText}>
+            {item.variantLabel}
+          </Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.6,
+      id: 'type',
+      label: 'Tipe',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text style={styles.cellText}>{formatType(item.type)}</Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.75,
+      id: 'source',
+      label: 'Sumber',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <KolamStockTransactionSourceIcon
+            label={item.sourceLabel}
+            logoUri={item.salesSource?.logoUri}
+            salesSourceName={item.salesSource?.name}
+            source={item.source}
+          />
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'sync',
+      label: 'Sync MP',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text numberOfLines={2} style={styles.metaText}>
+            {resolveStockTxCrossSyncDisplay(item.crossSync, item.reason)
+              ?.summaryLabel ||
+              crossSyncSummaryLabel(item.crossSync?.summary) ||
+              '-'}
+          </Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      flex: 1,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text numberOfLines={1} style={styles.cellText}>
+            {item.statusLabel}
+          </Text>
+          {item.financeNote ? (
+            <Text numberOfLines={2} style={styles.metaText}>
+              {item.financeNote}
+            </Text>
+          ) : null}
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.5,
+      id: 'qty',
+      label: 'Qty',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text style={styles.numText}>{formatNumber(item.quantity)}</Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.6,
+      id: 'before',
+      label: 'Sebelum',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text style={styles.numText}>{formatNumber(item.before)}</Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.6,
+      id: 'after',
+      label: 'Sesudah',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text style={styles.numText}>{formatNumber(item.after)}</Text>
+        </StockTransactionCellButton>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.6,
+      id: 'delta',
+      label: 'Selisih',
+      render: item => (
+        <StockTransactionCellButton item={item} onOpen={onOpen}>
+          <Text
+            style={[
+              styles.numText,
+              item.delta > 0
+                ? styles.deltaPositive
+                : item.delta < 0
+                ? styles.deltaNegative
+                : null,
+            ]}
+          >
+            {formatSigned(item.delta)}
+          </Text>
+        </StockTransactionCellButton>
+      ),
+    },
+  ];
+}
+
+function StockTransactionCellButton({
+  children,
+  item,
+  onOpen,
+}: {
+  children: React.ReactNode;
+  item: KolamStockTransaction;
+  onOpen: (item: KolamStockTransaction) => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => onOpen(item)}
+      style={({ pressed }) => [
+        styles.stockTxCellButton,
+        pressed ? styles.rowPressed : null,
+      ]}
+    >
+      {children}
+    </Pressable>
   );
 }
 
@@ -1240,7 +1367,9 @@ function StockTxFilterOverlayPanel({
     <View
       style={[
         styles.filterOverlayPanel,
-        panel === 'target' ? styles.filterPanelTarget : styles.filterPanelStatus,
+        panel === 'target'
+          ? styles.filterPanelTarget
+          : styles.filterPanelStatus,
       ]}
     >
       {panel === 'target' ? (
@@ -1564,6 +1693,11 @@ const styles = StyleSheet.create({
   },
   cell: {
     minWidth: 0,
+  },
+  stockTxCellButton: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    paddingVertical: 2,
   },
   primaryText: {
     color: V.colors.fg,

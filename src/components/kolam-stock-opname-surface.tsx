@@ -35,25 +35,18 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
-import { KolamCopyStack } from './kolam-copy-stack';
 import {
   getKolamDataTableColumnStyle,
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   KOLAM_DATA_TABLE_COLUMN_GAP,
 } from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import {
   KolamDataTableActionsTrack,
   KolamDataTableMainTrack,
 } from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
-import {
-  KolamOverflowMenuButton,
-  KolamTableFooterControls,
-} from './kolam-dropdown-select';
-import { KolamEmptyState } from './kolam-empty-state';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
@@ -63,6 +56,10 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockOpnameDetail } from './kolam-stock-opname-detail';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 
 const IMPORT_TARGET_OPTIONS: Array<{
   label: string;
@@ -204,9 +201,7 @@ function KolamStockOpnameCreateForm({
             disabled={controller.creating}
             intent="primary"
             label={
-              controller.creating
-                ? 'Membuat…'
-                : 'Buat draf & lanjut isi barang'
+              controller.creating ? 'Membuat…' : 'Buat draf & lanjut isi barang'
             }
             onPress={() => {
               void controller.onCreate(note).then(doc => {
@@ -231,13 +226,13 @@ function KolamStockOpnameList({
   controller: KolamStockOpnameController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [searchInput, setSearchInput] = React.useState(controller.filters.search);
+  const [searchInput, setSearchInput] = React.useState(
+    controller.filters.search,
+  );
   const [statusPanelOpen, setStatusPanelOpen] = React.useState(false);
   const [importOpen, setImportOpen] = React.useState(false);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-  const [deleteTarget, setDeleteTarget] = React.useState<KolamStockOpname | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] =
+    React.useState<KolamStockOpname | null>(null);
   const { authUser } = useKolamAuthContext();
   const canCreate = hasKolamStockOpnamePermission(
     authUser?.permissions,
@@ -257,10 +252,7 @@ function KolamStockOpnameList({
     controller.filters.startDate,
     controller.filters.endDate,
   ].filter(Boolean).length;
-  const listColumns = React.useMemo(
-    () => fitStockOpnameListColumns(tableBodyWidth),
-    [tableBodyWidth],
-  );
+  const listColumns = React.useMemo(() => buildStockOpnameListColumns(), []);
 
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
@@ -274,6 +266,7 @@ function KolamStockOpnameList({
     }, 300);
     return () => clearTimeout(handle);
   }, [
+    controller,
     controller.filters.search,
     controller.onChangeFilters,
     searchInput,
@@ -353,7 +346,6 @@ function KolamStockOpnameList({
               <KolamRefreshButton
                 accessibilityLabel="Muat ulang"
                 disabled={controller.loading}
-
                 onPress={() => {
                   void controller.onRefresh();
                 }}
@@ -432,75 +424,35 @@ function KolamStockOpnameList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={controller.pagination.page}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount || controller.loading}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={listColumns}
+        emptyTitle={
+          controller.loading
+            ? 'Memuat dokumen stock opname...'
+            : 'Belum ada dokumen'
         }
-        onBodyWidthChange={setTableBodyWidth}
-        style={styles.tableFrame}
-      >
-        <KolamDataTableHeader columns={listColumns} />
-        {controller.items.length ? (
-          controller.items.map(item => (
-            <StockOpnameListRow
-              canDelete={canDelete}
-              columns={listColumns}
-              item={item}
-              key={item.id}
-              onDelete={() => setDeleteTarget(item)}
-              onOpen={() =>
-                onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
-              }
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message="Buat draf baru atau impor Excel, atau sesuaikan filter."
-              title={
-                controller.loading
-                  ? 'Memuat dokumen stock opname…'
-                  : 'Belum ada dokumen'
-              }
-            />
-          </View>
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: page => controller.onPageChange(page),
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total || controller.items.length,
+        }}
+        renderActions={item => (
+          <StockOpnameActionsMenu
+            canDelete={canDelete}
+            item={item}
+            onDelete={() => setDeleteTarget(item)}
+            onOpen={() =>
+              onRouteChange?.(`${KOLAM_STOCK_OPNAME_ROOT}/${item.id}`)
+            }
+          />
         )}
-      </KolamCatalogListTableShell>
-
+        rows={controller.items}
+        style={styles.tableFrame}
+      />
       <KolamConfirmDialog
         confirmLabel={controller.deleting ? 'Menghapus…' : 'Hapus'}
         destructive
@@ -538,6 +490,91 @@ function KolamStockOpnameList({
   );
 }
 
+function buildStockOpnameListColumns(): Array<
+  KolamListTableColumn<KolamStockOpname>
+> {
+  return [
+    {
+      flex: 1.5,
+      id: 'primary',
+      label: 'Dokumen',
+      render: item => (
+        <Text numberOfLines={2} style={styles.primaryText}>
+          {item.documentNumber || item.id}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <KolamStatusBadge
+          intent={statusIntent(item.status)}
+          label={item.statusLabel}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      flex: 1,
+      id: 'created',
+      label: 'Dibuat',
+      render: item => (
+        <Text numberOfLines={2} style={styles.secondaryText}>
+          {formatDateTime(item.createdAt)}
+        </Text>
+      ),
+    },
+    {
+      flex: 1,
+      id: 'pic',
+      label: 'Pemilik',
+      render: item => <StockOpnamePicAvatar item={item} />,
+    },
+  ];
+}
+
+function StockOpnameActionsMenu({
+  canDelete,
+  item,
+  onDelete,
+  onOpen,
+}: {
+  canDelete: boolean;
+  item: KolamStockOpname;
+  onDelete: () => void;
+  onOpen: () => void;
+}) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+
+  return (
+    <View style={actionMenuOpen ? styles.activeActionRow : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Aksi ${item.documentNumber}`}
+        actions={[
+          {
+            label: 'Lihat',
+            onPress: onOpen,
+          },
+          ...(item.status === 'cancelled' && canDelete
+            ? [
+                {
+                  label: 'Hapus',
+                  tone: 'danger' as const,
+                  onPress: onDelete,
+                },
+              ]
+            : []),
+        ]}
+        onOpenChange={setActionMenuOpen}
+      />
+    </View>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StockOpnameListRow({
   canDelete,
   columns,
@@ -652,9 +689,7 @@ function StockOpnameListRow({
 
 function StockOpnamePicAvatar({ item }: { item: KolamStockOpname }) {
   const name =
-    stockOpnameUserDisplayName(item.owner) ||
-    item.owner?.email ||
-    'Tanpa PIC';
+    stockOpnameUserDisplayName(item.owner) || item.owner?.email || 'Tanpa PIC';
   const photoUri = getKolamFileUrl(item.owner?.photo);
   const initials =
     name
@@ -778,9 +813,7 @@ function StockOpnameImportDialog({
                   })
                   .catch(err => {
                     setPickError(
-                      err instanceof Error
-                        ? err.message
-                        : 'Gagal memilih file',
+                      err instanceof Error ? err.message : 'Gagal memilih file',
                     );
                   });
               }}
@@ -791,10 +824,7 @@ function StockOpnameImportDialog({
           ) : null}
 
           <View style={styles.importActions}>
-            <KolamButton
-              label="Batal"
-              onPress={() => onOpenChange(false)}
-            />
+            <KolamButton label="Batal" onPress={() => onOpenChange(false)} />
             <KolamButton
               disabled={!fileUri || importing}
               intent="primary"
@@ -814,6 +844,7 @@ function StockOpnameImportDialog({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function fitStockOpnameListColumns(containerWidth: number): KolamTableColumn[] {
   const base = getKolamTableColumns('stock-opname');
   if (containerWidth <= 0) {
