@@ -91,11 +91,6 @@ function CommissionListBody({
     return () => clearTimeout(handle);
   }, [controller, searchInput]);
 
-  const statusLabel =
-    KOLAM_COMMISSION_STATUS_FILTER_OPTIONS.find(
-      option => option.value === controller.filters.status,
-    )?.label ?? 'Semua status';
-
   const walletOptions = React.useMemo(
     () =>
       controller.wallets.map(wallet => ({
@@ -490,7 +485,7 @@ function CommissionListBody({
               value={searchInput}
             />
             <KolamDropdownSelect
-              label={statusLabel}
+              label="Status"
               onChange={value =>
                 controller.onStatusChange(value as KolamCommissionStatusFilter)
               }
@@ -498,6 +493,7 @@ function CommissionListBody({
                 label: option.label,
                 value: option.value,
               }))}
+              showLabelInTrigger={false}
               value={controller.filters.status}
             />
           </View>
