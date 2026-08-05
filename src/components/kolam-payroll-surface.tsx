@@ -24,6 +24,7 @@ import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamPayrollSlipPrintDialog } from './kolam-payroll-slip-print-dialog';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -591,6 +592,7 @@ function PayrollSlipBody({
   controller: KolamPayrollController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [printOpen, setPrintOpen] = useState(false);
   const slip = controller.slip;
 
   if (!slip && !controller.loading) {
@@ -636,6 +638,12 @@ function PayrollSlipBody({
           </Text>
           <Text style={styles.metaText}>{slip.slipCode || '—'}</Text>
         </View>
+        <KolamButton
+          intent="secondary"
+          label="Cetak"
+          onPress={() => setPrintOpen(true)}
+          style={styles.printButton}
+        />
         <KolamButton
           disabled={controller.mutating}
           intent="secondary"
@@ -765,6 +773,12 @@ function PayrollSlipBody({
           </View>
         </KolamCardFrame>
       </ScrollView>
+
+      <KolamPayrollSlipPrintDialog
+        onOpenChange={setPrintOpen}
+        slip={slip}
+        visible={printOpen}
+      />
     </>
   );
 }
@@ -830,6 +844,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
     minHeight: 0,
+    position: 'relative',
   },
   banner: {
     alignSelf: 'stretch',
@@ -958,6 +973,9 @@ const styles = StyleSheet.create({
   },
   aiButton: {
     minWidth: 148,
+  },
+  printButton: {
+    minWidth: 88,
   },
   slipTitleBlock: {
     flex: 1,
