@@ -22,6 +22,7 @@ import {
 } from '../hooks/use-kolam-finance-expense-list-controller';
 import { formatRupiah } from '../lib/money';
 import { getKolamFileUrl } from '../lib/file-url';
+import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamAssetPurchaseDetailSurface } from './kolam-asset-purchase-detail-surface';
 import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
@@ -362,7 +363,9 @@ function AssetPurchasePicAvatar({
     row.createdByLabel && row.createdByLabel !== '—'
       ? row.createdByLabel
       : 'Tanpa PIC';
-  const photoUri = getKolamFileUrl(row.createdByPhoto);
+  const photoUri =
+    resolveProfilePhotoUrl(row.createdByPhoto) ??
+    getKolamFileUrl(row.createdByPhoto);
   const initials =
     name
       .split(/\s+/)
@@ -983,7 +986,6 @@ const styles = StyleSheet.create({
   picAvatarImage: {
     borderRadius: 16,
     height: 32,
-    transform: [{rotate: '90deg'}],
     width: 32,
   },
   picAvatarText: {
