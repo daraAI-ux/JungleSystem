@@ -83,6 +83,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { openKolamImagePreview } from './kolam-image-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamProyekQuotationForm } from './kolam-proyek-quotation-form';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -632,12 +633,12 @@ function KolamProyekDetailRead({
               onPress={controller.onBackToList}
             />
             {controller.canDownloadInvoice ? (
-              <KolamButton
+              <KolamPdfDownloadButton
                 disabled={controller.acting}
                 intent="outline"
-                label={
-                  controller.acting ? 'Mengunduh…' : 'Unduh invoice'
-                }
+                label="Unduh invoice"
+                loading={controller.acting}
+                loadingLabel="Mengunduh…"
                 onPress={() => {
                   void controller.onDownloadInvoice();
                 }}
@@ -1056,14 +1057,12 @@ function KolamProyekDetailRead({
                           Kwitansi: {row.kwitansiNumber}
                         </Text>
                         {controller.canDownloadKwitansi && row.paidAt ? (
-                          <KolamButton
+                          <KolamPdfDownloadButton
                             disabled={controller.acting}
                             intent="outline"
-                            label={
-                              controller.acting
-                                ? 'Mengunduh…'
-                                : 'Buka kwitansi'
-                            }
+                            label="Buka kwitansi"
+                            loading={controller.acting}
+                            loadingLabel="Mengunduh…"
                             onPress={() => {
                               void controller.onDownloadKwitansi(row.index);
                             }}
@@ -1389,14 +1388,29 @@ function KolamProyekDetailRead({
                 {activityEntries.length === 0 ? (
                   <Text style={styles.metaText}>Belum ada aktivitas.</Text>
                 ) : (
-                  activityEntries.map((entry, index) => (
-                    <Text
-                      key={`${entry.at}-${index}`}
-                      style={styles.metaText}
-                    >
-                      {formatShortDateTime(entry.at)} — {entry.label}
-                    </Text>
-                  ))
+                  <View style={styles.historyTimeline}>
+                    {[...activityEntries].reverse().map((entry, index) => (
+                      <View
+                        key={`${entry.at}-${index}`}
+                        style={styles.historyTimelineItem}
+                      >
+                        <View
+                          style={[
+                            styles.historyTimelineDot,
+                            styles.historyTimelineDotPrimary,
+                          ]}
+                        />
+                        <View style={styles.historyTimelineBody}>
+                          <Text style={styles.historyTimelineTitle}>
+                            {entry.label}
+                          </Text>
+                          <Text style={styles.metaText}>
+                            {formatShortDateTime(entry.at)}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
                 )}
               </DetailSection>
 
@@ -2130,34 +2144,50 @@ function ProyekLifecycleTimeline({
       {history.length === 0 ? (
         <Text style={styles.metaText}>Belum ada perubahan status.</Text>
       ) : (
-        history.slice(0, 20).map((entry, index) => (
-          <View
-            key={`${entry.at}-${entry.to}-${index}`}
-            style={styles.listRow}
-          >
-            <Text style={styles.metaText}>
-              {entry.at ? formatShortDateTime(entry.at) : '—'}
-            </Text>
-            <View style={styles.dpRowHeader}>
-              <KolamStatusBadge
-                intent={getKolamProyekLifecycleIntent(entry.from)}
-                label={
-                  entry.from
-                    ? formatKolamProyekLifecycleLabel(entry.from)
-                    : '—'
-                }
+        <View style={styles.historyTimeline}>
+          {history.slice(0, 20).map((entry, index) => (
+            <View
+              key={`${entry.at}-${entry.to}-${index}`}
+              style={styles.historyTimelineItem}
+            >
+              <View
+                style={[
+                  styles.historyTimelineDot,
+                  entry.to === 'completed' || entry.to === 'dp_paid'
+                    ? styles.historyTimelineDotSuccess
+                    : entry.to === 'cancelled' || entry.to === 'refunded'
+                      ? styles.historyTimelineDotDanger
+                      : entry.to === 'revision_in_progress'
+                        ? styles.historyTimelineDotWarning
+                        : styles.historyTimelineDotPrimary,
+                ]}
               />
-              <Text style={styles.metaText}>→</Text>
-              <KolamStatusBadge
-                intent={getKolamProyekLifecycleIntent(entry.to)}
-                label={formatKolamProyekLifecycleLabel(entry.to)}
-              />
+              <View style={styles.historyTimelineBody}>
+                <View style={styles.dpRowHeader}>
+                  <KolamStatusBadge
+                    intent={getKolamProyekLifecycleIntent(entry.from)}
+                    label={
+                      entry.from
+                        ? formatKolamProyekLifecycleLabel(entry.from)
+                        : '—'
+                    }
+                  />
+                  <Text style={styles.metaText}>→</Text>
+                  <KolamStatusBadge
+                    intent={getKolamProyekLifecycleIntent(entry.to)}
+                    label={formatKolamProyekLifecycleLabel(entry.to)}
+                  />
+                </View>
+                <Text style={styles.metaText}>
+                  {entry.at ? formatShortDateTime(entry.at) : '—'}
+                </Text>
+                {entry.note ? (
+                  <Text style={styles.metaText}>{entry.note}</Text>
+                ) : null}
+              </View>
             </View>
-            {entry.note ? (
-              <Text style={styles.metaText}>{entry.note}</Text>
-            ) : null}
-          </View>
-        ))
+          ))}
+        </View>
       )}
 
       {showDomainInfo ? (
@@ -2768,6 +2798,48 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 16,
     paddingTop: 2,
+  },
+  historyTimeline: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 2,
+    gap: 14,
+    paddingLeft: 12,
+  },
+  historyTimelineItem: {
+    paddingLeft: 4,
+    position: 'relative',
+  },
+  historyTimelineDot: {
+    borderColor: V.colors.bg,
+    borderRadius: 6,
+    borderWidth: 2,
+    height: 10,
+    left: -18,
+    position: 'absolute',
+    top: 4,
+    width: 10,
+  },
+  historyTimelineDotPrimary: {
+    backgroundColor: V.colors.primary,
+  },
+  historyTimelineDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  historyTimelineDotDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  historyTimelineDotWarning: {
+    backgroundColor: V.colors.warning,
+  },
+  historyTimelineBody: {
+    gap: 2,
+    minWidth: 0,
+  },
+  historyTimelineTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   heroCard: {
     borderColor: V.colors.border,

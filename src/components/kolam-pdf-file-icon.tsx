@@ -1,0 +1,39 @@
+import React from 'react';
+import Svg, { Path, Rect } from 'react-native-svg';
+
+export interface KolamPdfFileIconProps {
+  size?: number;
+}
+
+export function KolamPdfFileIcon({ size = 18 }: KolamPdfFileIconProps) {
+  return (
+    <Svg height={size} viewBox="0 0 64 64" width={size}>
+      <Path
+        d="M16 6H39L52 19V56C52 58.2091 50.2091 60 48 60H16C13.7909 60 12 58.2091 12 56V10C12 7.79086 13.7909 6 16 6Z"
+        fill="#FFF1F0"
+        stroke="#D92D20"
+        strokeWidth={3}
+      />
+      <Path d="M39 6V18C39 18.5523 39.4477 19 40 19H52" fill="#FFFFFF" />
+      <Path
+        d="M39 6V18C39 18.5523 39.4477 19 40 19H52"
+        stroke="#D92D20"
+        strokeLinejoin="round"
+        strokeWidth={3}
+      />
+      <Rect fill="#D92D20" height={16} rx={3} width={32} x={16} y={34} />
+      <Path
+        d="M21 46V38H24.4C26.24 38 27.44 39.04 27.44 40.68C27.44 42.32 26.24 43.36 24.4 43.36H22.64V46H21ZM22.64 42H24.28C25.24 42 25.8 41.52 25.8 40.68C25.8 39.84 25.24 39.36 24.28 39.36H22.64V42Z"
+        fill="#FFFFFF"
+      />
+      <Path
+        d="M29.08 46V38H32.2C34.76 38 36.48 39.6 36.48 42C36.48 44.4 34.76 46 32.2 46H29.08ZM30.72 44.56H32.12C33.76 44.56 34.8 43.56 34.8 42C34.8 40.44 33.76 39.44 32.12 39.44H30.72V44.56Z"
+        fill="#FFFFFF"
+      />
+      <Path
+        d="M38.16 46V38H43.72V39.4H39.8V41.56H43.28V42.96H39.8V46H38.16Z"
+        fill="#FFFFFF"
+      />
+    </Svg>
+  );
+}

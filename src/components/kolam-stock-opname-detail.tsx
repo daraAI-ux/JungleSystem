@@ -41,6 +41,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 
 /**
@@ -352,7 +353,7 @@ export function KolamStockOpnameDetail({
               void controller.onExportXlsx();
             }}
           />
-          <KolamButton
+          <KolamPdfDownloadButton
             disabled={controller.acting}
             label="Ekspor PDF"
             onPress={() => {

@@ -65,6 +65,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -1220,9 +1221,11 @@ function KolamPurchaseOrderDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamButton
+            <KolamPdfDownloadButton
               disabled={controller.exporting}
-              label={controller.exporting ? 'Mengekspor…' : 'PDF'}
+              label="PDF"
+              loading={controller.exporting}
+              loadingLabel="Mengekspor…"
               onPress={() => void controller.onExportPdf()}
               style={styles.toolbarButton}
             />

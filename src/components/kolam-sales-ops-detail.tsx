@@ -77,6 +77,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDescriptionList } from './kolam-description-list';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -229,25 +230,23 @@ export function KolamSalesOpsDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamButton
+            <KolamPdfDownloadButton
               disabled={controller.downloadingInvoice || controller.mutating}
               intent="primary"
-              label={
-                controller.downloadingInvoice
-                  ? 'Mengunduh…'
-                  : 'Unduh invoice PDF'
-              }
+              label="Unduh invoice PDF"
+              loading={controller.downloadingInvoice}
+              loadingLabel="Mengunduh…"
               onPress={() => {
                 void controller.onDownloadInvoice();
               }}
               style={styles.toolbarButton}
             />
             {showResi ? (
-              <KolamButton
+              <KolamPdfDownloadButton
                 disabled={controller.downloadingInvoice || controller.mutating}
-                label={
-                  controller.downloadingInvoice ? 'Mengunduh…' : 'Unduh resi'
-                }
+                label="Unduh resi"
+                loading={controller.downloadingInvoice}
+                loadingLabel="Mengunduh…"
                 onPress={() => {
                   void controller.onDownloadResi();
                 }}

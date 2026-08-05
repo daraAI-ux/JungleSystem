@@ -68,6 +68,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
@@ -1009,15 +1010,19 @@ function KolamProductionDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamButton
+            <KolamPdfDownloadButton
               disabled={controller.exporting}
-              label={controller.exporting ? 'Mengekspor…' : 'PDF Perintah'}
+              label="PDF Perintah"
+              loading={controller.exporting}
+              loadingLabel="Mengekspor…"
               onPress={() => void controller.onExportPdf()}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamPdfDownloadButton
               disabled={controller.exporting}
-              label={controller.exporting ? 'Mengekspor…' : 'PDF Detail'}
+              label="PDF Detail"
+              loading={controller.exporting}
+              loadingLabel="Mengekspor…"
               onPress={() => void controller.onExportDetailPdf()}
               style={styles.toolbarButton}
             />
