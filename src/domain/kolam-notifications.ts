@@ -146,7 +146,7 @@ export function getKolamNotificationLink(
     return `/sales/${id}`;
   }
   if (type === 'CustomProject' && id) {
-    return `/custom-project/instances/${id}`;
+    return `/proyek/${id}`;
   }
   if (type === 'TaskManager' && id) {
     return `/task-manager/${id}`;

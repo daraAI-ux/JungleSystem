@@ -457,7 +457,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Proyek',
         route: '/proyek',
-        description: 'Legacy project routes still present in live Kolam',
+        description: 'Proyek kustom — surat penawaran hingga penyelesaian',
         group: 'Custom Project',
         requiredAccess: ['kolam'],
       },

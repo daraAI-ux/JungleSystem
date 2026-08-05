@@ -820,7 +820,9 @@ function getTaskRelatedLinks(task: KolamTaskManagerTask) {
   if (task.projectId) {
     links.push({
       label: `Project ${task.project?.quotationNumber || task.projectId}`,
-      route: `/custom-project/instances/${task.projectId}`,
+      route: `/proyek/${encodeURIComponent(
+        task.project?.quotationNumber || task.projectId,
+      )}`,
     });
   }
   if (task.saleId) {
