@@ -393,7 +393,7 @@ function normalizeRecipientSummaryRow(
 ): KolamCommissionRecipientSummaryRow {
   const record = asRecord(value);
   return {
-    recipientUser: getString(record, 'recipientUser'),
+    recipientUser: getObjectIdString(record.recipientUser),
     displayName: getString(record, 'displayName') || '—',
     username: getString(record, 'username'),
     email: getString(record, 'email'),
@@ -564,4 +564,21 @@ function getString(record: Record<string, unknown>, key: string): string {
     return '';
   }
   return String(value).trim();
+}
+
+function getObjectIdString(value: unknown): string {
+  if (!value) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  const record = asRecord(value);
+  return (
+    getString(record, '_id') ||
+    getString(record, 'id') ||
+    getString(record, '$oid')
+  );
 }
