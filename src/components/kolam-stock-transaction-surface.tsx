@@ -1187,6 +1187,7 @@ function buildStockTransactionListColumns(
       ),
     },
     {
+      align: 'center',
       flex: 0.9,
       id: 'variant',
       label: 'Varian',
