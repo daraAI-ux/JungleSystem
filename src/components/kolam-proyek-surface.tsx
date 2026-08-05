@@ -933,7 +933,7 @@ function KolamProyekDetailRead({
           </DetailSection>
         ) : null}
 
-        <ProyekBahanTambahanTable
+        <ProyekBahanTambahanSection
           expenses={detail.linkedUnexpectedExpenses}
           onOpenExpense={id => onRouteChange?.(`/unexpected-expense/${id}`)}
           onCreateExpense={() =>
@@ -1853,7 +1853,7 @@ function KolamProyekDetailRead({
   );
 }
 
-function ProyekBahanTambahanTable({
+function ProyekBahanTambahanSection({
   expenses,
   onCreateExpense,
   onOpenExpense,
@@ -1882,25 +1882,13 @@ function ProyekBahanTambahanTable({
       {expenses.length === 0 ? (
         <Text style={styles.metaText}>Belum ada pembelian luar tercatat.</Text>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator>
-          <View style={styles.bahanTable}>
-            <View style={[styles.bahanTableRow, styles.bahanTableHead]}>
-              <Text style={[styles.bahanTh, styles.bahanColCode]}>Kode</Text>
-              <Text style={[styles.bahanTh, styles.bahanColAmount]}>Jumlah</Text>
-              <Text style={[styles.bahanTh, styles.bahanColStatus]}>
-                Status
-              </Text>
-              <Text style={[styles.bahanTh, styles.bahanColDate]}>Tanggal</Text>
-              <Text style={[styles.bahanTh, styles.bahanColAlloc]}>
-                Alokasi
-              </Text>
-              <Text style={[styles.bahanTh, styles.bahanColShip]}>Ongkir</Text>
-            </View>
-            {expenses.map(expense => {
-              const verified = expense.status === 'verified';
-              return (
-                <View key={expense.id} style={styles.bahanTableRow}>
-                  <View style={styles.bahanColCode}>
+        <View style={styles.bahanList}>
+          {expenses.map(expense => {
+            const verified = expense.status === 'verified';
+            return (
+              <View key={expense.id} style={styles.bahanItemCard}>
+                <View style={styles.bahanItemTop}>
+                  <View style={styles.bahanItemTitleBlock}>
                     <Pressable onPress={() => onOpenExpense(expense.id)}>
                       <Text style={styles.linkText} numberOfLines={1}>
                         {expense.code || expense.id}
@@ -1912,50 +1900,54 @@ function ProyekBahanTambahanTable({
                       </Text>
                     ) : null}
                   </View>
-                  <Text
-                    style={[
-                      styles.bahanTd,
-                      styles.bahanColAmount,
-                      styles.tabular,
-                    ]}
-                  >
-                    {formatRupiah(expense.amount)}
-                  </Text>
-                  <View style={styles.bahanColStatus}>
-                    <KolamStatusBadge
-                      intent={verified ? 'success' : 'warning'}
-                      label={verified ? 'Verified' : 'Belum verified'}
-                    />
-                  </View>
-                  <Text style={[styles.bahanTd, styles.bahanColDate]}>
-                    {expense.executedAt
-                      ? formatShortDate(expense.executedAt)
-                      : '—'}
-                  </Text>
-                  <Text
-                    style={[styles.bahanTd, styles.bahanColAlloc]}
-                    numberOfLines={2}
-                  >
-                    {expense.allocationLabels.length > 0
-                      ? expense.allocationLabels.join(' · ')
-                      : '—'}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.bahanTd,
-                      styles.bahanColShip,
-                      styles.tabular,
-                    ]}
-                  >
-                    {expense.shippingAmount > 0
-                      ? formatRupiah(expense.shippingAmount)
-                      : '—'}
-                  </Text>
+                  <KolamStatusBadge
+                    intent={verified ? 'success' : 'warning'}
+                    label={verified ? 'Verified' : 'Belum verified'}
+                  />
                 </View>
-              );
-            })}
-          </View>
-        </ScrollView>
+
+                <View style={styles.bahanItemMetaRow}>
+                  <View style={styles.bahanItemMeta}>
+                    <Text style={styles.bahanMetaLabel}>Jumlah</Text>
+                    <Text style={[styles.bahanMetaValue, styles.tabular]}>
+                      {formatRupiah(expense.amount)}
+                    </Text>
+                  </View>
+                  <View style={styles.bahanItemMeta}>
+                    <Text style={styles.bahanMetaLabel}>Tanggal</Text>
+                    <Text style={styles.bahanMetaValue}>
+                      {expense.executedAt
+                        ? formatShortDate(expense.executedAt)
+                        : '—'}
+                    </Text>
+                  </View>
+                  <View style={styles.bahanItemMeta}>
+                    <Text style={styles.bahanMetaLabel}>Ongkir</Text>
+                    <Text style={[styles.bahanMetaValue, styles.tabular]}>
+                      {expense.shippingAmount > 0
+                        ? formatRupiah(expense.shippingAmount)
+                        : '—'}
+                    </Text>
+                  </View>
+                </View>
+
+                {expense.allocationLabels.length > 0 ? (
+                  <View style={styles.bahanAllocBlock}>
+                    <Text style={styles.bahanMetaLabel}>Alokasi</Text>
+                    {expense.allocationLabels.map((label, index) => (
+                      <Text
+                        key={`${expense.id}-alloc-${index}`}
+                        style={styles.bahanAllocLine}
+                      >
+                        {label}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
       )}
     </KolamCardFrame>
   );
@@ -2926,67 +2918,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
-  bahanTable: {
+  bahanList: {
+    gap: 10,
+  },
+  bahanItemCard: {
+    backgroundColor: V.colors.mutedSoft,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    minWidth: 720,
-    overflow: 'hidden',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
-  bahanTableHead: {
-    backgroundColor: V.colors.mutedSoft,
-  },
-  bahanTableRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  bahanItemTop: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    justifyContent: 'space-between',
   },
-  bahanTh: {
-    color: V.colors.mutedFg,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.45,
-    textTransform: 'uppercase',
-  },
-  bahanTd: {
-    color: V.colors.fg,
-    fontSize: 12,
-    lineHeight: 17,
+  bahanItemTitleBlock: {
+    flex: 1,
+    gap: 2,
+    minWidth: 140,
   },
   bahanSubMeta: {
     color: V.colors.mutedFg,
     fontSize: 11,
     marginTop: 2,
   },
-  bahanColCode: {
-    minWidth: 110,
-    width: 120,
+  bahanItemMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  bahanColAmount: {
-    minWidth: 100,
-    textAlign: 'right',
-    width: 110,
-  },
-  bahanColStatus: {
-    minWidth: 110,
-    width: 120,
-  },
-  bahanColDate: {
-    minWidth: 90,
-    width: 100,
-  },
-  bahanColAlloc: {
+  bahanItemMeta: {
     flexGrow: 1,
-    minWidth: 160,
+    gap: 2,
+    minWidth: 96,
   },
-  bahanColShip: {
-    minWidth: 90,
-    textAlign: 'right',
-    width: 100,
+  bahanMetaLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.45,
+    textTransform: 'uppercase',
+  },
+  bahanMetaValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  bahanAllocBlock: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingTop: 8,
+  },
+  bahanAllocLine: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
   },
   detailTop: {
     flexShrink: 0,
