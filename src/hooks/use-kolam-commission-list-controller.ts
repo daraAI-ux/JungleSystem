@@ -231,11 +231,7 @@ export function useKolamCommissionListController(
 
   const onRecipientFilterChange = useCallback(
     (recipientUser: string) => {
-      patchFilters(
-        recipientUser
-          ? { recipientUser, search: '', status: 'all', page: 1 }
-          : { recipientUser: '', page: 1 },
-      );
+      patchFilters({ recipientUser, page: 1 });
     },
     [patchFilters],
   );
