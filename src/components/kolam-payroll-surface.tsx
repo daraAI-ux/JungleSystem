@@ -167,7 +167,7 @@ function PayrollListBody({
   );
 
   return (
-    <>
+    <View style={styles.listBody}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
@@ -227,7 +227,7 @@ function PayrollListBody({
         </KolamCardFrame>
       ) : null}
 
-      <KolamCatalogListTableShell footer={null} style={styles.tableFrame}>
+      <KolamCatalogListTableShell fill footer={null} style={styles.tableFrame}>
         <FlatList
           data={controller.filteredPeriods}
           keyExtractor={item => item.id || item.periodKey}
@@ -252,9 +252,10 @@ function PayrollListBody({
             </View>
           }
           renderItem={renderRow}
+          style={styles.list}
         />
       </KolamCatalogListTableShell>
-    </>
+    </View>
   );
 }
 
@@ -554,7 +555,7 @@ function PayrollDetailBody({
       </View>
 
       {listTab === 'slips' ? (
-        <KolamCatalogListTableShell footer={null} style={styles.tableFrame}>
+        <KolamCatalogListTableShell footer={null} style={styles.detailTableFrame}>
           <FlatList
             data={filteredSlips}
             keyExtractor={item => item.id}
@@ -579,10 +580,11 @@ function PayrollDetailBody({
               </View>
             }
             renderItem={renderSlipRow}
+            scrollEnabled={false}
           />
         </KolamCatalogListTableShell>
       ) : (
-        <KolamCatalogListTableShell footer={null} style={styles.tableFrame}>
+        <KolamCatalogListTableShell footer={null} style={styles.detailTableFrame}>
           <FlatList
             data={filteredPending}
             keyExtractor={item => item.userId}
@@ -607,6 +609,7 @@ function PayrollDetailBody({
               </View>
             }
             renderItem={renderPendingRow}
+            scrollEnabled={false}
           />
         </KolamCatalogListTableShell>
       )}
@@ -904,8 +907,21 @@ const styles = StyleSheet.create({
   createButton: {
     minWidth: 120,
   },
+  listBody: {
+    flex: 1,
+    gap: 10,
+    minHeight: 0,
+  },
   tableFrame: {
     flex: 1,
+    minHeight: 0,
+  },
+  list: {
+    flex: 1,
+  },
+  detailTableFrame: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   emptyWrap: {
     paddingVertical: 24,

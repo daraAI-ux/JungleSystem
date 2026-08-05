@@ -16,15 +16,21 @@ import type {KolamContentFrameVariant} from './kolam-content-frame-types';
  *
  * `onBodyWidthChange` supports fit-to-width column layout (FE-like smart tables
  * without horizontal scroll): parent measures available width, then allocates columns.
+ *
+ * Use `fill` when the body hosts a FlatList on an owned-scroll list page
+ * (`isCatalogTableListRoute`) so the list gets a bounded height instead of collapsing.
  */
 export function KolamCatalogListTableShell({
   children,
+  fill = false,
   footer,
   onBodyWidthChange,
   style,
   variant = 'settingsWebConfig',
 }: {
   children: React.ReactNode;
+  /** Stretch shell/body to parent so nested FlatList can scroll. */
+  fill?: boolean;
   footer: React.ReactNode;
   onBodyWidthChange?: (width: number) => void;
   style?: StyleProp<ViewStyle>;
@@ -41,8 +47,14 @@ export function KolamCatalogListTableShell({
   );
 
   return (
-    <KolamContentFrame style={[styles.shell, style]} variant={variant}>
-      <View onLayout={handleBodyLayout} style={styles.body}>
+    <KolamContentFrame
+      style={[styles.shell, fill ? styles.shellFill : null, style]}
+      variant={variant}
+    >
+      <View
+        onLayout={handleBodyLayout}
+        style={[styles.body, fill ? styles.bodyFill : null]}
+      >
         {children}
       </View>
       <View style={styles.footer}>{footer}</View>
@@ -59,12 +71,22 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     width: '100%',
   },
+  shellFill: {
+    flex: 1,
+    flexGrow: 1,
+    minHeight: 0,
+  },
   body: {
     flexGrow: 0,
     flexShrink: 1,
     minHeight: 0,
     overflow: 'visible',
     width: '100%',
+  },
+  bodyFill: {
+    flex: 1,
+    flexGrow: 1,
+    minHeight: 0,
   },
   footer: {
     borderTopColor: V.colors.border,

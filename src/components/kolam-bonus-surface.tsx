@@ -136,7 +136,7 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
   );
 
   return (
-    <KolamCatalogListTableShell footer={null} style={styles.tableFrame}>
+    <KolamCatalogListTableShell fill footer={null} style={styles.tableFrame}>
       <FlatList
         data={controller.rows}
         keyExtractor={item => item.id}
@@ -161,6 +161,7 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
           </View>
         }
         renderItem={renderRow}
+        style={styles.list}
       />
     </KolamCatalogListTableShell>
   );
@@ -182,6 +183,10 @@ const styles = StyleSheet.create({
     minWidth: 96,
   },
   tableFrame: {
+    flex: 1,
+    minHeight: 0,
+  },
+  list: {
     flex: 1,
   },
   emptyWrap: {
