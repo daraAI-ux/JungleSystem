@@ -424,16 +424,9 @@ function buildProductSerialListColumns(): Array<KolamListTableColumn<KolamProduc
       id: 'product',
       label: 'Produk',
       render: serial => (
-        <View>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {serial.product?.name || '-'}
-          </Text>
-          {serial.product?.sku ? (
-            <Text numberOfLines={1} style={styles.rowMetaMono}>
-              {serial.product.sku}
-            </Text>
-          ) : null}
-        </View>
+        <Text numberOfLines={1} style={styles.cellText}>
+          {serial.product?.name || '-'}
+        </Text>
       ),
     },
     {
