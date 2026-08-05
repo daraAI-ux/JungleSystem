@@ -505,11 +505,13 @@ function PayableList({
 }) {
   const safePage = Math.max(1, controller.pagination.page);
   const pageCount = Math.max(1, controller.pagination.totalPages);
+  const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
 
   const renderRow = React.useCallback(
     (item: KolamPayable) => {
       const canPayRow =
         controller.canPay && item.status === 'open' && Boolean(item.id);
+      const actionMenuOpen = actionMenuOpenId === item.id;
       const due = getPayableDueTone(item.status, item.dueDate);
       return (
         <Pressable
@@ -518,7 +520,7 @@ function PayableList({
               `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
             )
           }
-          style={styles.row}
+          style={[styles.row, actionMenuOpen ? styles.activeActionRow : null]}
         >
           <View style={[styles.cell, { flex: 0.9 }]}>
             <Text numberOfLines={1} style={styles.primaryText}>
@@ -576,9 +578,19 @@ function PayableList({
               label={formatKolamPayableStatusLabel(item.status)}
             />
           </View>
-          <View style={[styles.cell, { flex: 0.8 }]}>
+          <View
+            style={[
+              styles.cell,
+              styles.actionCell,
+              actionMenuOpen ? styles.activeActionCell : null,
+              { flex: 0.8 },
+            ]}
+          >
             <KolamOverflowMenuButton
               accessibilityLabel={`Menu ${item.code || item.name || 'hutang'}`}
+              onOpenChange={open =>
+                setActionMenuOpenId(open ? item.id : null)
+              }
               actions={[
                 {
                   label: 'Lihat detail',
@@ -619,7 +631,7 @@ function PayableList({
         </Pressable>
       );
     },
-    [controller, onRouteChange],
+    [actionMenuOpenId, controller, onRouteChange],
   );
 
   return (
@@ -1329,8 +1341,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
+  activeActionRow: {
+    elevation: 30,
+    overflow: 'visible',
+    zIndex: 1000,
+  },
   cell: {
     paddingHorizontal: 4,
+  },
+  actionCell: {
+    alignItems: 'flex-end',
+    overflow: 'visible',
+    zIndex: 9000,
+  },
+  activeActionCell: {
+    elevation: 1000,
+    zIndex: 100000,
   },
   primaryText: {
     color: V.colors.fg,
