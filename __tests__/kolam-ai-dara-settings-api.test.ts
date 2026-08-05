@@ -2,6 +2,7 @@ import {appConfig} from '../src/config/app';
 import {
   createKolamDaraKnowledge,
   uploadKolamKatakTerbangWorkerPhoto,
+  uploadKolamRajaAnemonWorkerPhoto,
 } from '../src/services/kolam-ai-dara-settings-api';
 
 const fetchMock = jest.fn();
@@ -61,5 +62,29 @@ describe('kolam AI/DARA settings api', () => {
         body: expect.any(FormData),
       }),
     );
+  });
+
+  it('uploads worker SVG avatars with SVG mime type', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        rajaAnemonWorkerPhotoUrl: '/media/dara/raja-anemon.svg',
+      }),
+    );
+
+    await uploadKolamRajaAnemonWorkerPhoto(
+      'C:\\Users\\user\\Pictures\\raja-anemon.svg',
+    );
+
+    expect(appendSpy).toHaveBeenCalledWith(
+      'image',
+      expect.objectContaining({
+        name: 'raja-anemon.svg',
+        type: 'image/svg+xml',
+        uri: 'file:///C:/Users/user/Pictures/raja-anemon.svg',
+      }),
+    );
+    appendSpy.mockRestore();
   });
 });

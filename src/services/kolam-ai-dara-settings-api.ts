@@ -93,6 +93,8 @@ function inferImageMimeType(fileName: string) {
       return 'image/webp';
     case 'gif':
       return 'image/gif';
+    case 'svg':
+      return 'image/svg+xml';
     case 'heic':
       return 'image/heic';
     case 'heif':
