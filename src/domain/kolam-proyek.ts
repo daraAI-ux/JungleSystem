@@ -65,12 +65,93 @@ export type KolamProyekListItem = {
   raw: unknown;
 };
 
+export type KolamProyekQuotationItem = {
+  id: string;
+  itemType: string;
+  title: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  shippingCost: number;
+  note: string;
+};
+
+export type KolamProyekHppMaterial = {
+  id: string;
+  label: string;
+  quantity: number;
+  unitCost: number;
+  subtotal: number;
+};
+
+export type KolamProyekDpScheduleItem = {
+  index: number;
+  name: string;
+  amount: number;
+  amountReceived: number;
+  paidAt: string | null;
+  dueAt: string | null;
+  kwitansiNumber: string | null;
+};
+
+export type KolamProyekCommissionConfig = {
+  daType: string;
+  daValue: number;
+  designerType: string;
+  designerValue: number;
+};
+
+export type KolamProyekProgressHistoryItem = {
+  progressPercent: number;
+  progressNote: string;
+  at: string | null;
+};
+
+export type KolamProyekLinkedTask = {
+  id: string;
+  title: string;
+  status: string;
+  workProgressPercent: number | null;
+};
+
+export type KolamProyekVarPreview = {
+  contractValue: number;
+  unexpectedExpenseTotal: number;
+  materialsUsageTotal: number;
+  varAmount: number;
+};
+
+export type KolamProyekCostBreakdown = {
+  contractValue: number;
+  produkToko: number;
+  bahanTambahan: number;
+  ongkir: number;
+  manualHpp: number;
+  totalHpp: number;
+  unexpectedExpenseTotal: number;
+  varAmount: number;
+};
+
 export type KolamProyekDetail = KolamProyekListItem & {
   progressNote: string;
   maxWorkDays: number | null;
   targetCompletionDate: string | null;
   quotationDecision: string;
   itemCount: number;
+  items: KolamProyekQuotationItem[];
+  hppMaterials: KolamProyekHppMaterial[];
+  hppManual: number;
+  hppTotal: number;
+  dpSchedule: KolamProyekDpScheduleItem[];
+  dpAmount: number;
+  commissionConfig: KolamProyekCommissionConfig | null;
+  progressHistory: KolamProyekProgressHistoryItem[];
+  linkedTask: KolamProyekLinkedTask | null;
+  saleStatus: string | null;
+  clientEmail: string | null;
+  clientPhone: string | null;
+  varPreview: KolamProyekVarPreview | null;
+  costBreakdown: KolamProyekCostBreakdown;
 };
 
 export type KolamProyekListQuery = {
@@ -505,6 +586,72 @@ export function getKolamProyekAllowedNext(
   return [...(ALLOWED_TRANSITIONS[key] || [])];
 }
 
+/** Quotation edit allowed only while draft / revision (BE DRAFT_EDITABLE_STATUSES). */
+export function canEditKolamProyekQuotation(status?: string | null) {
+  const key = String(status || '').trim();
+  return key === 'draft' || key === 'revision_in_progress';
+}
+
+export function formatKolamProyekPaymentModeLabel(mode?: string | null) {
+  return String(mode || '').trim() === 'staged' ? 'DP berjenjang' : 'Lunas di muka';
+}
+
+export function formatKolamProyekItemTypeLabel(itemType?: string | null) {
+  switch (String(itemType || '').trim()) {
+    case 'product':
+      return 'Produk';
+    case 'species':
+      return 'Species';
+    case 'service':
+      return 'Layanan';
+    case 'custom':
+      return 'Kustom';
+    default:
+      return itemType || '—';
+  }
+}
+
+export function computeKolamProyekCostBreakdown(input: {
+  contractValue: number;
+  hppMaterials: KolamProyekHppMaterial[];
+  hppManual: number;
+  items: KolamProyekQuotationItem[];
+  varPreview: KolamProyekVarPreview | null;
+}): KolamProyekCostBreakdown {
+  const contractValue = Number(input.contractValue) || 0;
+  const produkToko = input.hppMaterials.reduce(
+    (sum, line) => sum + (Number(line.subtotal) || 0),
+    0,
+  );
+  const unexpectedExpenseTotal = input.varPreview?.unexpectedExpenseTotal ?? 0;
+  const hasUe = input.varPreview != null;
+  const bahanTambahan = hasUe
+    ? unexpectedExpenseTotal
+    : input.items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
+  const ongkir = hasUe
+    ? 0
+    : input.items.reduce(
+        (sum, item) => sum + (Number(item.shippingCost) || 0),
+        0,
+      );
+  const manualHpp = Number(input.hppManual) || 0;
+  const totalHpp = produkToko + bahanTambahan + ongkir + manualHpp;
+  const varAmount =
+    input.varPreview?.varAmount ??
+    Math.max(0, contractValue - produkToko - bahanTambahan);
+
+  return {
+    contractValue,
+    produkToko,
+    bahanTambahan,
+    ongkir,
+    manualHpp,
+    totalHpp,
+    unexpectedExpenseTotal,
+    varAmount,
+  };
+}
+
 export function normalizeKolamProyekListItem(
   payload: unknown,
 ): KolamProyekListItem | null {
@@ -569,14 +716,191 @@ export function normalizeKolamProyekDetail(
     return null;
   }
   const record = asRecord(unwrapData(payload));
-  const items = Array.isArray(record.items) ? record.items : [];
+  const client = asRecord(record.clientUser);
+  const rawItems = Array.isArray(record.items) ? record.items : [];
+  const items = rawItems.map((row, index) =>
+    normalizeQuotationItem(row, index),
+  );
+  const hppMaterials = (
+    Array.isArray(record.hppFromMaterials) ? record.hppFromMaterials : []
+  ).map((row, index) => normalizeHppMaterial(row, index));
+  const dpSchedule = (
+    Array.isArray(record.dpSchedule) ? record.dpSchedule : []
+  ).map((row, index) => normalizeDpScheduleItem(row, index));
+  const progressHistory = (
+    Array.isArray(record.progressHistory) ? record.progressHistory : []
+  )
+    .map(normalizeProgressHistoryItem)
+    .filter((item): item is KolamProyekProgressHistoryItem => Boolean(item))
+    .sort((a, b) => {
+      const aTime = a.at ? new Date(a.at).getTime() : 0;
+      const bTime = b.at ? new Date(b.at).getTime() : 0;
+      return bTime - aTime;
+    });
+
+  const commissionRecord = asRecord(record.commissionConfig);
+  const commissionConfig =
+    Object.keys(commissionRecord).length > 0
+      ? {
+          daType: getString(commissionRecord, 'daType') || 'percentage',
+          daValue: getNumber(commissionRecord, 'daValue') ?? 0,
+          designerType:
+            getString(commissionRecord, 'designerType') || 'percentage',
+          designerValue: getNumber(commissionRecord, 'designerValue') ?? 0,
+        }
+      : null;
+
+  const linkedTaskRecord = asRecord(record.linkedTask);
+  const linkedTaskId =
+    getId(linkedTaskRecord) ||
+    (typeof record.linkedTask === 'string' ? record.linkedTask : null);
+  const linkedTask: KolamProyekLinkedTask | null = linkedTaskId
+    ? {
+        id: linkedTaskId,
+        title: getString(linkedTaskRecord, 'title') || 'Tugas proyek',
+        status: getString(linkedTaskRecord, 'status') || '—',
+        workProgressPercent: getNumber(
+          linkedTaskRecord,
+          'workProgressPercent',
+        ),
+      }
+    : null;
+
+  const sale = asRecord(record.sale);
+  const varRecord = asRecord(record.varPreview);
+  const varPreview =
+    Object.keys(varRecord).length > 0
+      ? {
+          contractValue: getNumber(varRecord, 'contractValue') ?? 0,
+          unexpectedExpenseTotal:
+            getNumber(varRecord, 'unexpectedExpenseTotal') ?? 0,
+          materialsUsageTotal: getNumber(varRecord, 'materialsUsageTotal') ?? 0,
+          varAmount: getNumber(varRecord, 'varAmount') ?? 0,
+        }
+      : null;
+
+  const hppManual = getNumber(record, 'hppManual') ?? 0;
+  const costBreakdown = computeKolamProyekCostBreakdown({
+    contractValue: base.contractValue || base.dealAmount,
+    hppMaterials,
+    hppManual,
+    items,
+    varPreview,
+  });
+
+  const effectiveProgress =
+    linkedTask?.workProgressPercent != null
+      ? linkedTask.workProgressPercent
+      : base.progressPercent;
+
   return {
     ...base,
+    progressPercent: effectiveProgress,
+    linkedTaskId: linkedTask?.id || base.linkedTaskId,
     progressNote: getString(record, 'progressNote'),
     maxWorkDays: getNumber(record, 'maxWorkDays'),
     targetCompletionDate: getString(record, 'targetCompletionDate') || null,
     quotationDecision: getString(record, 'quotationDecision') || 'pending',
     itemCount: items.length,
+    items,
+    hppMaterials,
+    hppManual,
+    hppTotal: getNumber(record, 'hppTotal') ?? costBreakdown.totalHpp,
+    dpSchedule,
+    dpAmount: getNumber(record, 'dpAmount') ?? 0,
+    commissionConfig,
+    progressHistory,
+    linkedTask,
+    saleStatus: getString(sale, 'status') || null,
+    clientEmail: getString(client, 'email') || null,
+    clientPhone: getString(client, 'phone') || null,
+    varPreview,
+    costBreakdown,
+  };
+}
+
+function normalizeQuotationItem(
+  payload: unknown,
+  index: number,
+): KolamProyekQuotationItem {
+  const row = asRecord(payload);
+  const product = asRecord(row.product);
+  const species = asRecord(row.species);
+  const service = asRecord(row.service);
+  const title =
+    getString(row, 'customName') ||
+    getString(product, 'name') ||
+    getString(species, 'localName') ||
+    getString(species, 'commonName') ||
+    getString(species, 'name') ||
+    getString(service, 'name') ||
+    getString(row, 'variantLabel') ||
+    `Item ${index + 1}`;
+  const quantity = getNumber(row, 'quantity') ?? 0;
+  const unitPrice = getNumber(row, 'unitPrice') ?? 0;
+  return {
+    id: getId(row) || `item-${index}`,
+    itemType: getString(row, 'itemType') || 'custom',
+    title,
+    quantity,
+    unitPrice,
+    subtotal: getNumber(row, 'subtotal') ?? quantity * unitPrice,
+    shippingCost: getNumber(row, 'shippingCost') ?? 0,
+    note: getString(row, 'note'),
+  };
+}
+
+function normalizeHppMaterial(
+  payload: unknown,
+  index: number,
+): KolamProyekHppMaterial {
+  const row = asRecord(payload);
+  const product = asRecord(row.product);
+  const species = asRecord(row.species);
+  const quantity = getNumber(row, 'quantity') ?? 0;
+  const unitCost = getNumber(row, 'unitCost') ?? 0;
+  return {
+    id: getId(row) || `hpp-${index}`,
+    label:
+      getString(product, 'name') ||
+      getString(species, 'localName') ||
+      getString(species, 'commonName') ||
+      getString(species, 'name') ||
+      `Bahan ${index + 1}`,
+    quantity,
+    unitCost,
+    subtotal: getNumber(row, 'subtotal') ?? quantity * unitCost,
+  };
+}
+
+function normalizeDpScheduleItem(
+  payload: unknown,
+  index: number,
+): KolamProyekDpScheduleItem {
+  const row = asRecord(payload);
+  return {
+    index,
+    name: getString(row, 'name') || `DP ${index + 1}`,
+    amount: getNumber(row, 'amount') ?? 0,
+    amountReceived: getNumber(row, 'amountReceived') ?? 0,
+    paidAt: getString(row, 'paidAt') || null,
+    dueAt: getString(row, 'dueAt') || null,
+    kwitansiNumber: getString(row, 'kwitansiNumber') || null,
+  };
+}
+
+function normalizeProgressHistoryItem(
+  payload: unknown,
+): KolamProyekProgressHistoryItem | null {
+  const row = asRecord(payload);
+  const progressPercent = getNumber(row, 'progressPercent');
+  if (progressPercent == null) {
+    return null;
+  }
+  return {
+    progressPercent,
+    progressNote: getString(row, 'progressNote'),
+    at: getString(row, 'at') || null,
   };
 }
 

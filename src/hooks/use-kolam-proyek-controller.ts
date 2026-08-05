@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   buildKolamProyekDetailRouteForItem,
+  buildKolamProyekEditRoute,
   buildKolamProyekListRoute,
   buildKolamProyekNewRoute,
+  canEditKolamProyekQuotation,
   getKolamProyekRouteRef,
   getKolamProyekSurfaceMode,
   isKolamProyekRoute,
@@ -28,14 +30,17 @@ export interface KolamProyekController {
   mode: KolamProyekSurfaceMode;
   page: number;
   pageSize: number;
+  search: string;
   selected: KolamProyekDetail | null;
   statusMessage: string | null;
   total: number;
   totalPages: number;
   onBackToList: () => void;
   onCreateNew: () => void;
+  onEdit: () => void;
   onOpenItem: (item: KolamProyekListItem) => void;
   onRefresh: () => Promise<void>;
+  onSearchChange: (value: string) => void;
   onSetLifecycleFilter: (status: '' | KolamProyekLifecycleStatus) => void;
   onSetPage: (page: number) => void;
   onSetPageSize: (pageSize: number) => void;
@@ -56,6 +61,7 @@ export function useKolamProyekController(
   const [dataSource, setDataSource] = useState<KolamProyekDataSource>('idle');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const [search, setSearch] = useState('');
   const [lifecycleFilter, setLifecycleFilter] = useState<
     '' | KolamProyekLifecycleStatus
   >('');
@@ -74,9 +80,23 @@ export function useKolamProyekController(
         limit: pageSize,
         lifecycleStatus: lifecycleFilter || undefined,
       });
-      setItems(live.items);
-      setTotal(live.total);
-      setTotalPages(live.totalPages);
+      const needle = search.trim().toLowerCase();
+      const filtered = needle
+        ? live.items.filter(item => {
+            const haystack = [
+              item.quotationNumber,
+              item.clientName,
+              item.designerName,
+              item.id,
+            ]
+              .join(' ')
+              .toLowerCase();
+            return haystack.includes(needle);
+          })
+        : live.items;
+      setItems(filtered);
+      setTotal(needle ? filtered.length : live.total);
+      setTotalPages(needle ? 1 : live.totalPages);
       setDataSource('live');
     } catch (loadError) {
       setError(getApiErrorMessage(loadError));
@@ -84,7 +104,7 @@ export function useKolamProyekController(
     } finally {
       setLoading(false);
     }
-  }, [lifecycleFilter, page, pageSize, route]);
+  }, [lifecycleFilter, page, pageSize, route, search]);
 
   const refreshDetail = useCallback(async () => {
     if (!routeRef) {
@@ -137,6 +157,19 @@ export function useKolamProyekController(
     onRouteChange?.(buildKolamProyekNewRoute());
   }, [onRouteChange]);
 
+  const onEdit = useCallback(() => {
+    if (!selected || !canEditKolamProyekQuotation(selected.lifecycleStatus)) {
+      return;
+    }
+    setStatusMessage(null);
+    onRouteChange?.(
+      buildKolamProyekEditRoute(
+        selected.quotationNumber || selected.id,
+        selected.id,
+      ),
+    );
+  }, [onRouteChange, selected]);
+
   const onOpenItem = useCallback(
     (item: KolamProyekListItem) => {
       setStatusMessage(null);
@@ -144,6 +177,11 @@ export function useKolamProyekController(
     },
     [onRouteChange],
   );
+
+  const onSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
 
   const onSetLifecycleFilter = useCallback(
     (status: '' | KolamProyekLifecycleStatus) => {
@@ -172,14 +210,17 @@ export function useKolamProyekController(
       mode,
       page,
       pageSize,
+      search,
       selected,
       statusMessage,
       total,
       totalPages,
       onBackToList,
       onCreateNew,
+      onEdit,
       onOpenItem,
       onRefresh,
+      onSearchChange,
       onSetLifecycleFilter,
       onSetPage,
       onSetPageSize,
@@ -193,13 +234,16 @@ export function useKolamProyekController(
       mode,
       onBackToList,
       onCreateNew,
+      onEdit,
       onOpenItem,
       onRefresh,
+      onSearchChange,
       onSetLifecycleFilter,
       onSetPage,
       onSetPageSize,
       page,
       pageSize,
+      search,
       selected,
       statusMessage,
       total,

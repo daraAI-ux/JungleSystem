@@ -1,7 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  canEditKolamProyekQuotation,
+  formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
+  formatKolamProyekPaymentModeLabel,
   getKolamProyekLifecycleIntent,
   getKolamProyekSectionVisibility,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
@@ -22,6 +25,11 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import {
+  KolamDetailMetaStrip,
+  KolamDetailMetaStripItem,
+  kolamDetailMetaStripStyles,
+} from './kolam-detail-meta-strip';
+import {
   getKolamDataTableColumnStyle,
   KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   KOLAM_DATA_TABLE_COLUMN_GAP,
@@ -37,6 +45,7 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -91,7 +100,12 @@ export function KolamProyekSurface({
     );
   }
 
-  return <KolamProyekDetailSummary controller={controller} />;
+  return (
+    <KolamProyekDetailRead
+      controller={controller}
+      onRouteChange={onRouteChange}
+    />
+  );
 }
 
 function KolamProyekList({
@@ -99,6 +113,7 @@ function KolamProyekList({
 }: {
   controller: KolamProyekController;
 }) {
+  const [searchInput, setSearchInput] = useState(controller.search);
   const [tableBodyWidth, setTableBodyWidth] = useState(0);
   const columns = useMemo(
     () => fitProyekListColumns(tableBodyWidth),
@@ -109,6 +124,19 @@ function KolamProyekList({
       KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
     KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
   );
+
+  useEffect(() => {
+    setSearchInput(controller.search);
+  }, [controller.search]);
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if (searchInput !== controller.search) {
+        controller.onSearchChange(searchInput);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [controller, searchInput]);
 
   const filterLabel =
     KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS.find(
@@ -129,6 +157,12 @@ function KolamProyekList({
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
+            <KolamSearchField
+              containerStyle={kolamTableToolbarStyles.searchInput}
+              onChangeText={setSearchInput}
+              placeholder="Cari QUO / pelanggan"
+              value={searchInput}
+            />
             <KolamDropdownSelect
               label={filterLabel}
               onChange={value =>
@@ -298,10 +332,12 @@ function ProyekListRow({
   );
 }
 
-function KolamProyekDetailSummary({
+function KolamProyekDetailRead({
   controller,
+  onRouteChange,
 }: {
   controller: KolamProyekController;
+  onRouteChange?: (route: string) => void;
 }) {
   const detail = controller.selected;
 
@@ -323,9 +359,27 @@ function KolamProyekDetailSummary({
     );
   }
 
-  const quotationVisible =
-    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'quotationActions') !==
+  const canEdit = canEditKolamProyekQuotation(detail.lifecycleStatus);
+  const showHpp =
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'hppMaterials') !==
     'hidden';
+  const showCommission =
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'commission') !==
+    'hidden';
+  const showDp =
+    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'dpSchedule') !==
+      'hidden' &&
+    detail.paymentMode === 'staged' &&
+    detail.dpSchedule.length > 0;
+  const showProgress =
+    getKolamProyekSectionVisibility(
+      detail.lifecycleStatus,
+      'progressUpdate',
+    ) !== 'hidden';
+  const cost = detail.costBreakdown;
+  const clientContact = [detail.clientEmail, detail.clientPhone]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <View style={styles.surface}>
@@ -353,6 +407,9 @@ function KolamProyekDetailSummary({
               label="Kembali ke daftar"
               onPress={controller.onBackToList}
             />
+            {canEdit ? (
+              <KolamButton label="Ubah" onPress={controller.onEdit} />
+            ) : null}
           </View>
         </View>
       </View>
@@ -367,33 +424,272 @@ function KolamProyekDetailSummary({
       ) : null}
 
       <ScrollView contentContainerStyle={styles.detailContent}>
-        <Text style={styles.sectionTitle}>Ringkasan</Text>
-        <Text style={styles.metaText}>Pelanggan: {detail.clientName}</Text>
-        <Text style={styles.metaText}>PIC: {detail.designerName}</Text>
-        <Text style={styles.metaText}>
-          Progress: {Math.round(detail.progressPercent)}%
-        </Text>
-        <Text style={styles.metaText}>
-          Nilai kontrak: {formatRupiah(detail.contractValue || detail.dealAmount)}
-        </Text>
-        <Text style={styles.metaText}>Item penawaran: {detail.itemCount}</Text>
-        {detail.saleInvoiceCode ? (
+        <KolamDetailMetaStrip>
+          <KolamDetailMetaStripItem label="Status">
+            <KolamStatusBadge
+              intent={getKolamProyekLifecycleIntent(detail.lifecycleStatus)}
+              label={formatKolamProyekLifecycleLabel(detail.lifecycleStatus)}
+            />
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="Pelanggan">
+            <Text style={kolamDetailMetaStripStyles.stripValue}>
+              {detail.clientName}
+            </Text>
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="PIC">
+            <Text style={kolamDetailMetaStripStyles.stripValue}>
+              {detail.designerName}
+            </Text>
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="Pembayaran">
+            <Text style={kolamDetailMetaStripStyles.stripValue}>
+              {formatKolamProyekPaymentModeLabel(detail.paymentMode)}
+            </Text>
+          </KolamDetailMetaStripItem>
+          <KolamDetailMetaStripItem label="Nilai kontrak">
+            <Text
+              style={[
+                kolamDetailMetaStripStyles.stripValue,
+                styles.tabular,
+              ]}
+            >
+              {formatRupiah(cost.contractValue)}
+            </Text>
+          </KolamDetailMetaStripItem>
+          {showProgress ? (
+            <KolamDetailMetaStripItem label="Progress">
+              <Text
+                style={[
+                  kolamDetailMetaStripStyles.stripValue,
+                  styles.tabular,
+                ]}
+              >
+                {Math.round(detail.progressPercent)}%
+              </Text>
+            </KolamDetailMetaStripItem>
+          ) : null}
+        </KolamDetailMetaStrip>
+
+        <DetailSection title="Ringkasan kontrak">
           <Text style={styles.metaText}>
-            Penjualan: {detail.saleInvoiceCode}
+            Klien: {detail.clientName}
+            {clientContact ? ` · ${clientContact}` : ''}
           </Text>
-        ) : null}
-        {detail.linkedTaskId ? (
+          <Text style={styles.metaText}>PIC: {detail.designerName}</Text>
           <Text style={styles.metaText}>
-            Tugas: {detail.linkedTaskId}
+            Keputusan penawaran: {detail.quotationDecision || '—'}
           </Text>
+          {detail.maxWorkDays != null ? (
+            <Text style={styles.metaText}>
+              Lama pengerjaan: {detail.maxWorkDays} hari
+            </Text>
+          ) : null}
+          {detail.targetCompletionDate ? (
+            <Text style={styles.metaText}>
+              Target selesai: {formatShortDate(detail.targetCompletionDate)}
+            </Text>
+          ) : null}
+          <View style={styles.metricGrid}>
+            <Metric label="Nilai kontrak" value={formatRupiah(cost.contractValue)} />
+            <Metric label="Produk toko" value={formatRupiah(cost.produkToko)} />
+            <Metric
+              label="UE / bahan"
+              value={formatRupiah(cost.bahanTambahan + cost.ongkir)}
+            />
+            <Metric label="VAR" value={formatRupiah(cost.varAmount)} />
+          </View>
+        </DetailSection>
+
+        <DetailSection title="Item penawaran">
+          {detail.items.length === 0 ? (
+            <Text style={styles.metaText}>Belum ada item.</Text>
+          ) : (
+            detail.items.map(item => (
+              <View key={item.id} style={styles.listRow}>
+                <Text style={styles.primaryText}>{item.title}</Text>
+                <Text style={styles.metaText}>
+                  {formatKolamProyekItemTypeLabel(item.itemType)} ·{' '}
+                  {item.quantity} × {formatRupiah(item.unitPrice)} ={' '}
+                  {formatRupiah(item.subtotal)}
+                </Text>
+                {item.note ? (
+                  <Text style={styles.metaText}>{item.note}</Text>
+                ) : null}
+              </View>
+            ))
+          )}
+        </DetailSection>
+
+        {showHpp ? (
+          <DetailSection title="HPP / produk toko">
+            {detail.hppMaterials.length === 0 && detail.hppManual <= 0 ? (
+              <Text style={styles.metaText}>Belum ada baris HPP.</Text>
+            ) : (
+              <>
+                {detail.hppMaterials.map(line => (
+                  <View key={line.id} style={styles.listRow}>
+                    <Text style={styles.primaryText}>{line.label}</Text>
+                    <Text style={styles.metaText}>
+                      {line.quantity} × {formatRupiah(line.unitCost)} ={' '}
+                      {formatRupiah(line.subtotal)}
+                    </Text>
+                  </View>
+                ))}
+                {detail.hppManual > 0 ? (
+                  <Text style={styles.metaText}>
+                    HPP manual: {formatRupiah(detail.hppManual)}
+                  </Text>
+                ) : null}
+                <Text style={styles.primaryText}>
+                  Total HPP: {formatRupiah(detail.hppTotal || cost.totalHpp)}
+                </Text>
+              </>
+            )}
+          </DetailSection>
         ) : null}
-        {quotationVisible ? (
-          <Text style={styles.hintText}>
-            Panel aksi penawaran, DP, desain, dan close akan dilanjutkan di
-            batch P1–P4.
-          </Text>
+
+        {showCommission ? (
+          <DetailSection title="Komisi">
+            {detail.commissionConfig ? (
+              <>
+                <Text style={styles.metaText}>
+                  Dunia Anura: {detail.commissionConfig.daType}{' '}
+                  {detail.commissionConfig.daType === 'percentage'
+                    ? `${detail.commissionConfig.daValue}%`
+                    : formatRupiah(detail.commissionConfig.daValue)}
+                </Text>
+                <Text style={styles.metaText}>
+                  PIC: {detail.commissionConfig.designerType}{' '}
+                  {detail.commissionConfig.designerType === 'percentage'
+                    ? `${detail.commissionConfig.designerValue}%`
+                    : formatRupiah(detail.commissionConfig.designerValue)}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.metaText}>Konfigurasi komisi belum diisi.</Text>
+            )}
+          </DetailSection>
         ) : null}
+
+        {showDp ? (
+          <DetailSection title="Jadwal DP">
+            {detail.dpAmount > 0 ? (
+              <Text style={styles.metaText}>
+                DP awal: {formatRupiah(detail.dpAmount)}
+              </Text>
+            ) : null}
+            {detail.dpSchedule.map(row => (
+              <View key={`dp-${row.index}`} style={styles.listRow}>
+                <Text style={styles.primaryText}>
+                  {row.name} · {formatRupiah(row.amount)}
+                </Text>
+                <Text style={styles.metaText}>
+                  {row.paidAt
+                    ? `Lunas ${formatShortDate(row.paidAt)}`
+                    : row.dueAt
+                      ? `Jatuh tempo ${formatShortDate(row.dueAt)}`
+                      : 'Belum dibayar'}
+                  {row.amountReceived > 0
+                    ? ` · diterima ${formatRupiah(row.amountReceived)}`
+                    : ''}
+                </Text>
+                {row.kwitansiNumber ? (
+                  <Text style={styles.metaText}>
+                    Kwitansi: {row.kwitansiNumber}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </DetailSection>
+        ) : null}
+
+        {showProgress ? (
+          <DetailSection title="Progress">
+            <Text style={styles.primaryText}>
+              {Math.round(detail.progressPercent)}%
+              {detail.linkedTask ? ` · dari tugas` : ''}
+            </Text>
+            {detail.progressNote ? (
+              <Text style={styles.metaText}>{detail.progressNote}</Text>
+            ) : null}
+            {detail.progressHistory.length > 0 ? (
+              <View style={styles.historyBlock}>
+                {detail.progressHistory.slice(0, 12).map((entry, index) => (
+                  <Text
+                    key={`${entry.at}-${entry.progressPercent}-${index}`}
+                    style={styles.metaText}
+                  >
+                    {entry.progressPercent}%
+                    {entry.at ? ` · ${formatShortDateTime(entry.at)}` : ''}
+                    {entry.progressNote ? ` — ${entry.progressNote}` : ''}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+          </DetailSection>
+        ) : null}
+
+        <DetailSection title="Tautan terkait">
+          {detail.linkedTask ? (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() =>
+                onRouteChange?.(`/task-manager/${detail.linkedTask!.id}`)
+              }
+            >
+              <Text style={styles.linkText}>
+                Tugas: {detail.linkedTask.title} · {detail.linkedTask.status}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.metaText}>Belum ada tugas operasional.</Text>
+          )}
+          {detail.saleId ? (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => onRouteChange?.(`/sales/${detail.saleId}`)}
+            >
+              <Text style={styles.linkText}>
+                Penjualan: {detail.saleInvoiceCode || detail.saleId}
+                {detail.saleStatus ? ` · ${detail.saleStatus}` : ''}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.metaText}>
+              Penjualan final belum dibuat (setelah close).
+            </Text>
+          )}
+        </DetailSection>
+
+        <Text style={styles.hintText}>
+          Aksi mutasi (kirim penawaran, DP, desain, close) dilanjutkan di batch
+          P2–P4. Panel di atas mengikuti visibility lifecycle.
+        </Text>
       </ScrollView>
+    </View>
+  );
+}
+
+function DetailSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
     </View>
   );
 }
@@ -428,6 +724,32 @@ function KolamProyekPlaceholder({
   );
 }
 
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatShortDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
@@ -454,8 +776,8 @@ const styles = StyleSheet.create({
   },
   rowPress: {
     alignItems: 'center',
-    flexDirection: 'row',
     flex: 1,
+    flexDirection: 'row',
     gap: KOLAM_DATA_TABLE_COLUMN_GAP,
     minWidth: 0,
   },
@@ -482,23 +804,76 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   detailContent: {
-    gap: 8,
-    paddingBottom: 24,
+    gap: 14,
+    paddingBottom: 28,
+  },
+  section: {
+    gap: 6,
   },
   sectionTitle: {
     color: V.colors.fg,
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  primaryText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
   },
   metaText: {
     color: V.colors.mutedFg,
     fontSize: 13,
     lineHeight: 18,
   },
+  listRow: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 2,
+    paddingVertical: 8,
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  metricCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 2,
+    minWidth: 140,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  metricLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  metricValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
+  historyBlock: {
+    gap: 4,
+    marginTop: 4,
+  },
+  linkText: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   hintText: {
     color: V.colors.mutedFg,
     fontSize: 12,
-    marginTop: 12,
+    marginTop: 4,
+  },
+  tabular: {
+    fontVariant: ['tabular-nums'],
   },
 });
