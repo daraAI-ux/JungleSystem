@@ -43,7 +43,8 @@ export function KolamStockTransactionSourceIcon({
   salesSourceName?: string | null;
   source: string;
 }) {
-  const stockLabel = label || stockTransactionSourceLabel(source) || source || '—';
+  const stockLabel =
+    label || stockTransactionSourceLabel(source) || source || '—';
   const tooltip = salesSourceName
     ? `${salesSourceName} · ${stockLabel}`
     : stockLabel;
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
   },
   logo: {
     width: 28,
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
   },
   shortLabel: {
     fontSize: 11,
