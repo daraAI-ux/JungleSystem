@@ -13,7 +13,15 @@ export interface KolamPayableInstallment {
   amount: number;
   dueDate: string;
   status: KolamPayableInstallmentStatus;
+  paidAmount: number;
   paidAt: string;
+  paidByName: string;
+  walletName: string;
+  walletNote: string;
+  proofs: Array<{
+    path: string;
+    uploadedAt: string;
+  }>;
 }
 
 interface DataResponse<T> {
@@ -37,10 +45,9 @@ export async function payKolamPayableInstallment(
   installmentId: string,
   proofUris: string[],
 ): Promise<KolamPayableInstallment[]> {
+  const cleanedProofUris = proofUris.map(uri => uri.trim()).filter(Boolean);
   const body = new FormData();
-  proofUris
-    .map(uri => uri.trim())
-    .filter(Boolean)
+  cleanedProofUris
     .slice(0, 5)
     .forEach((localUri, index) => {
       body.append(
@@ -58,6 +65,29 @@ export async function payKolamPayableInstallment(
     )}/pay`,
     {
       method: 'PUT',
+      body: cleanedProofUris.length ? body : undefined,
+    },
+  );
+  return normalizeKolamPayableInstallmentList(response);
+}
+
+export async function uploadKolamPayableInstallmentProof(
+  payableId: string,
+  installmentId: string,
+  localUri: string,
+): Promise<KolamPayableInstallment[]> {
+  const body = new FormData();
+  body.append(
+    'proofs',
+    createReactNativeFilePart(localUri, 'installment-proof.jpg') as unknown as Blob,
+  );
+
+  const response = await kolamRequest<unknown>(
+    `/payable/${encodeURIComponent(payableId)}/installments/${encodeURIComponent(
+      installmentId,
+    )}/proofs`,
+    {
+      method: 'POST',
       body,
     },
   );
@@ -68,14 +98,17 @@ export function normalizeKolamPayableInstallmentList(
   payload: unknown,
 ): KolamPayableInstallment[] {
   const root = asRecord(payload);
+  const data = root.data;
   const list: unknown[] = Array.isArray(payload)
     ? payload
-    : Array.isArray(root.data)
-    ? root.data
+    : Array.isArray(data)
+    ? data
     : Array.isArray(root.installments)
     ? root.installments
-    : Array.isArray(asRecord(root.data).installments)
-    ? (asRecord(root.data).installments as unknown[])
+    : Array.isArray(asRecord(data).installments)
+    ? (asRecord(data).installments as unknown[])
+    : data && typeof data === 'object'
+    ? [data]
     : [];
 
   return list.map(normalizeKolamPayableInstallment);
@@ -83,13 +116,21 @@ export function normalizeKolamPayableInstallmentList(
 
 function normalizeKolamPayableInstallment(value: unknown): KolamPayableInstallment {
   const record = asRecord(value);
+  const walletTransaction = asRecord(record.walletTransaction);
+  const wallet = asRecord(walletTransaction.wallet);
   return {
     id: getString(record, '_id') || getString(record, 'id'),
     installmentNumber: getNumber(record, 'installmentNumber'),
     amount: getNumber(record, 'amount'),
     dueDate: getString(record, 'dueDate'),
     status: getString(record, 'status') || 'pending',
+    paidAmount:
+      getNumber(record, 'paidAmount') || getNumber(walletTransaction, 'amount'),
     paidAt: getString(record, 'paidAt'),
+    paidByName: getUserName(record.paidBy),
+    walletName: getString(wallet, 'name'),
+    walletNote: getString(walletTransaction, 'note'),
+    proofs: normalizeProofs(walletTransaction.proofs),
   };
 }
 
@@ -127,6 +168,8 @@ function createReactNativeFilePart(localUri: string, fallbackName: string) {
 function inferImageMimeType(fileName: string) {
   const extension = fileName.split('.').pop()?.toLowerCase();
   switch (extension) {
+    case 'pdf':
+      return 'application/pdf';
     case 'png':
       return 'image/png';
     case 'webp':
@@ -138,6 +181,40 @@ function inferImageMimeType(fileName: string) {
     default:
       return 'image/jpeg';
   }
+}
+
+function normalizeProofs(value: unknown): Array<{ path: string; uploadedAt: string }> {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map(item => {
+      const record = asRecord(item);
+      const path = getString(record, 'path');
+      if (!path) {
+        return null;
+      }
+      return {
+        path,
+        uploadedAt: getString(record, 'uploadedAt'),
+      };
+    })
+    .filter((item): item is { path: string; uploadedAt: string } => Boolean(item));
+}
+
+function getUserName(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  const record = asRecord(value);
+  const directName = getString(record, 'name');
+  if (directName) {
+    return directName;
+  }
+  const firstName = getString(record, 'first_name');
+  const lastName = getString(record, 'last_name');
+  const fullName = `${firstName} ${lastName}`.trim();
+  return fullName || getString(record, 'email');
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

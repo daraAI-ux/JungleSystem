@@ -18,6 +18,8 @@ import {
 import { ApiError } from '../lib/api-error';
 import {
   getKolamPayableInstallments,
+  payKolamPayableInstallment,
+  uploadKolamPayableInstallmentProof,
   type KolamPayableInstallment,
 } from '../services/kolam-payable-installment-api';
 import {
@@ -47,7 +49,9 @@ export interface KolamPayableController {
   loading: boolean;
   detailLoading: boolean;
   payingId: string | null;
+  payingInstallmentId: string | null;
   uploadingProof: boolean;
+  uploadingInstallmentProofId: string | null;
   error: string;
   statusMessage: string;
   canView: boolean;
@@ -66,7 +70,16 @@ export interface KolamPayableController {
   onLimitChange: (limit: number) => void;
   onRefresh: () => Promise<void>;
   onPayFull: (item: KolamPayable) => Promise<void>;
+  onPayInstallment: (
+    item: KolamPayable,
+    installment: KolamPayableInstallment,
+    withProof?: boolean,
+  ) => Promise<void>;
   onUploadPayableProof: (item: KolamPayable) => Promise<void>;
+  onUploadInstallmentProof: (
+    item: KolamPayable,
+    installment: KolamPayableInstallment,
+  ) => Promise<void>;
   clearStatusMessage: () => void;
 }
 
@@ -93,7 +106,12 @@ export function useKolamPayableController(route: string): KolamPayableController
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [payingInstallmentId, setPayingInstallmentId] = useState<string | null>(
+    null,
+  );
   const [uploadingProof, setUploadingProof] = useState(false);
+  const [uploadingInstallmentProofId, setUploadingInstallmentProofId] =
+    useState<string | null>(null);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const filtersRef = useRef(filters);
@@ -362,6 +380,131 @@ export function useKolamPayableController(route: string): KolamPayableController
     [canPay, refreshDetail, refreshList],
   );
 
+  const onPayInstallment = useCallback(
+    async (
+      item: KolamPayable,
+      installment: KolamPayableInstallment,
+      withProof = false,
+    ) => {
+      if (!item.id || !installment.id || !canPay || installment.status !== 'pending') {
+        return;
+      }
+      const nextPending = installments.find(row => row.status === 'pending');
+      if (nextPending && nextPending.id !== installment.id) {
+        setError('Bayar cicilan sebelumnya dulu');
+        return;
+      }
+      setError('');
+      setStatusMessage('');
+      let proofUri = '';
+      if (withProof) {
+        try {
+          const picked = await pickNativeAssetFile();
+          if (picked.cancelled) {
+            return;
+          }
+          proofUri = picked.uri ?? picked.path ?? '';
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Gagal pilih bukti');
+          return;
+        }
+        if (!proofUri.trim()) {
+          setError('File bukti wajib');
+          return;
+        }
+      }
+      setPayingInstallmentId(installment.id);
+      try {
+        const updated = await payKolamPayableInstallment(
+          item.id,
+          installment.id,
+          proofUri ? [proofUri] : [],
+        );
+        if (updated.length) {
+          setInstallments(prev =>
+            prev.map(row =>
+              row.id === installment.id
+                ? updated.find(next => next.id === row.id) ?? row
+                : row,
+            ),
+          );
+        }
+        setStatusMessage(`Cicilan #${installment.installmentNumber} lunas`);
+        await refreshList();
+        await refreshDetail(item.id);
+        await refreshInstallments(item.id);
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+            ? err.message
+            : 'Gagal bayar cicilan',
+        );
+      } finally {
+        setPayingInstallmentId(null);
+      }
+    },
+    [canPay, installments, refreshDetail, refreshInstallments, refreshList],
+  );
+
+  const onUploadInstallmentProof = useCallback(
+    async (item: KolamPayable, installment: KolamPayableInstallment) => {
+      if (!item.id || !installment.id || !canPay || installment.status !== 'paid') {
+        return;
+      }
+      setError('');
+      setStatusMessage('');
+      let picked;
+      try {
+        picked = await pickNativeAssetFile();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Gagal pilih bukti');
+        return;
+      }
+      if (picked.cancelled) {
+        return;
+      }
+      const localUri = picked.uri ?? picked.path ?? '';
+      if (!localUri.trim()) {
+        setError('File bukti wajib');
+        return;
+      }
+      setUploadingInstallmentProofId(installment.id);
+      try {
+        const updated = await uploadKolamPayableInstallmentProof(
+          item.id,
+          installment.id,
+          localUri,
+        );
+        if (updated.length) {
+          setInstallments(prev =>
+            prev.map(row =>
+              row.id === installment.id
+                ? updated.find(next => next.id === row.id) ?? row
+                : row,
+            ),
+          );
+        }
+        setStatusMessage('Bukti cicilan diunggah');
+        await refreshList();
+        await refreshDetail(item.id);
+        await refreshInstallments(item.id);
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : err instanceof Error
+            ? err.message
+            : 'Gagal upload bukti',
+        );
+      } finally {
+        setUploadingInstallmentProofId(null);
+      }
+    },
+    [canPay, refreshDetail, refreshInstallments, refreshList],
+  );
+
   const clearStatusMessage = useCallback(() => {
     setStatusMessage('');
   }, []);
@@ -379,7 +522,9 @@ export function useKolamPayableController(route: string): KolamPayableController
     loading,
     detailLoading,
     payingId,
+    payingInstallmentId,
     uploadingProof,
+    uploadingInstallmentProofId,
     error,
     statusMessage,
     canView,
@@ -398,7 +543,9 @@ export function useKolamPayableController(route: string): KolamPayableController
     onLimitChange,
     onRefresh: refreshList,
     onPayFull,
+    onPayInstallment,
     onUploadPayableProof,
+    onUploadInstallmentProof,
     clearStatusMessage,
   };
 }

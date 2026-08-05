@@ -613,6 +613,13 @@ function PayableDetail({
       : 0;
   const due = item ? getPayableDueTone(item.status, item.dueDate) : null;
   const payment = item?.paymentTransaction ?? null;
+  const firstPendingInstallmentId =
+    controller.installments.find(installment => installment.status === 'pending')
+      ?.id ?? '';
+  const overdueInstallments = controller.installments.filter(installment => {
+    const days = getDaysUntilDue(installment.dueDate);
+    return installment.status === 'pending' && days != null && days < 0;
+  }).length;
   const hasPaymentHistory =
     Boolean(item) &&
     isLumpSum &&
@@ -778,26 +785,38 @@ function PayableDetail({
 
       {item && !isLumpSum ? (
         <>
-          <Text style={styles.sectionLabel}>Cicilan</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>Cicilan</Text>
+            {overdueInstallments > 0 ? (
+              <KolamStatusBadge
+                intent="danger"
+                label={`${overdueInstallments} lewat jatuh tempo`}
+              />
+            ) : null}
+          </View>
           {controller.installmentsLoading ? (
             <Text style={styles.metaText}>Memuat...</Text>
           ) : controller.installments.length === 0 ? (
             <Text style={styles.metaText}>Tidak ada cicilan</Text>
           ) : (
-            controller.installments.map(installment => (
-              <View key={installment.id} style={styles.installmentRow}>
-                <Text style={styles.primaryText}>
-                  #{installment.installmentNumber}
-                </Text>
-                <Text style={styles.metaText}>
-                  {formatShortDate(installment.dueDate)}
-                </Text>
-                <Text style={styles.primaryText}>
-                  {formatRupiah(installment.amount)}
-                </Text>
-                <Text style={styles.metaText}>{installment.status}</Text>
-              </View>
-            ))
+            <View style={styles.installmentCards}>
+              {controller.installments.map(installment => (
+                <InstallmentDetailCard
+                  key={installment.id}
+                  canPay={controller.canPay}
+                  installment={installment}
+                  isFirstPending={
+                    !firstPendingInstallmentId ||
+                    firstPendingInstallmentId === installment.id
+                  }
+                  item={item}
+                  onPay={controller.onPayInstallment}
+                  onUploadProof={controller.onUploadInstallmentProof}
+                  payingId={controller.payingInstallmentId}
+                  uploadingProofId={controller.uploadingInstallmentProofId}
+                />
+              ))}
+            </View>
           )}
         </>
       ) : null}
@@ -811,6 +830,136 @@ function DetailField({ label, value }: { label: string; value: string }) {
       <Text style={styles.cardLabel}>{label}</Text>
       <Text style={styles.primaryText}>{value}</Text>
     </View>
+  );
+}
+
+function InstallmentDetailCard({
+  canPay,
+  installment,
+  isFirstPending,
+  item,
+  onPay,
+  onUploadProof,
+  payingId,
+  uploadingProofId,
+}: {
+  canPay: boolean;
+  installment: KolamPayableController['installments'][number];
+  isFirstPending: boolean;
+  item: KolamPayable;
+  onPay: KolamPayableController['onPayInstallment'];
+  onUploadProof: KolamPayableController['onUploadInstallmentProof'];
+  payingId: string | null;
+  uploadingProofId: string | null;
+}) {
+  const due = getPayableDueTone(
+    installment.status === 'pending' ? 'open' : installment.status,
+    installment.dueDate,
+  );
+  const isPending = installment.status === 'pending';
+  const isPaid = installment.status === 'paid';
+  const isPaying = payingId === installment.id;
+  const isUploading = uploadingProofId === installment.id;
+  const paidAt = installment.paidAt || '';
+  const paidAmount = installment.paidAmount || (isPaid ? installment.amount : 0);
+
+  return (
+    <KolamCardFrame style={styles.installmentCard}>
+      <View style={styles.installmentCardHeader}>
+        <View style={styles.installmentTitleBlock}>
+          <Text style={styles.installmentTitle}>
+            Cicilan #{installment.installmentNumber}
+          </Text>
+          <Text style={styles.metaText}>
+            Jatuh tempo {formatShortDate(installment.dueDate)}
+          </Text>
+        </View>
+        <View style={styles.installmentBadgeRow}>
+          {due.label && isPending ? (
+            <KolamStatusBadge
+              intent={due.textStyle === styles.dueDangerText ? 'danger' : 'warning'}
+              label={due.label}
+            />
+          ) : null}
+          <KolamStatusBadge
+            intent={getInstallmentStatusIntent(installment.status)}
+            label={formatInstallmentStatusLabel(installment.status)}
+          />
+        </View>
+      </View>
+
+      <View style={styles.installmentMetaGrid}>
+        <DetailField label="Jumlah" value={formatRupiah(installment.amount)} />
+        <DetailField label="Dibayar" value={formatRupiah(paidAmount)} />
+        <DetailField
+          label="Tanggal bayar"
+          value={paidAt ? formatDateTime(paidAt) : '-'}
+        />
+        <DetailField label="Wallet" value={installment.walletName || '-'} />
+        <DetailField label="Oleh" value={installment.paidByName || '-'} />
+        <DetailField label="Catatan" value={installment.walletNote || '-'} />
+      </View>
+
+      {installment.proofs.length ? (
+        <View style={styles.proofList}>
+          {installment.proofs.map((proof, index) => (
+            <View key={`${proof.path}-${index}`} style={styles.proofItem}>
+              <Text style={styles.proofName} numberOfLines={1}>
+                Bukti {index + 1}
+              </Text>
+              <Text style={styles.metaText} numberOfLines={1}>
+                {proof.uploadedAt ? formatDateTime(proof.uploadedAt) : proof.path}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {isPending && !isFirstPending ? (
+        <Text style={styles.installmentBlockedText}>
+          Bayar cicilan sebelumnya dulu
+        </Text>
+      ) : null}
+
+      <View style={styles.installmentActions}>
+        {isPending ? (
+          <>
+            <KolamButton
+              disabled={!canPay || !isFirstPending || isPaying}
+              intent="primary"
+              label={isPaying ? 'Memproses...' : 'Bayar'}
+              onPress={() => {
+                void onPay(item, installment);
+              }}
+            />
+            <KolamButton
+              disabled={!canPay || !isFirstPending || isPaying}
+              intent="secondary"
+              label={isPaying ? 'Memproses...' : 'Bayar + Bukti'}
+              onPress={() => {
+                void onPay(item, installment, true);
+              }}
+            />
+          </>
+        ) : null}
+        {isPaid ? (
+          <KolamButton
+            disabled={!canPay || isUploading}
+            intent="secondary"
+            label={
+              isUploading
+                ? 'Mengunggah...'
+                : installment.proofs.length
+                ? 'Tambah Bukti'
+                : 'Upload Bukti'
+            }
+            onPress={() => {
+              void onUploadProof(item, installment);
+            }}
+          />
+        ) : null}
+      </View>
+    </KolamCardFrame>
   );
 }
 
@@ -877,6 +1026,32 @@ function getPayableDueTone(status: string, dueDate: string) {
     };
   }
   return { label: `${days} hari lagi`, textStyle: styles.dueNormalText };
+}
+
+function formatInstallmentStatusLabel(status: string): string {
+  switch (status) {
+    case 'paid':
+      return 'Lunas';
+    case 'canceled':
+    case 'cancelled':
+      return 'Dibatalkan';
+    case 'pending':
+      return 'Menunggu';
+    default:
+      return status || '-';
+  }
+}
+
+function getInstallmentStatusIntent(status: string) {
+  switch (status) {
+    case 'paid':
+      return 'success';
+    case 'canceled':
+    case 'cancelled':
+      return 'danger';
+    default:
+      return 'warning';
+  }
 }
 
 function getDaysUntilDue(value: string): number | null {
@@ -1256,12 +1431,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  installmentRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  installmentCards: {
+    gap: 8,
+  },
+  installmentCard: {
+    gap: 10,
+    padding: 12,
+  },
+  installmentCardHeader: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  installmentTitleBlock: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
+  },
+  installmentTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  installmentBadgeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
+  },
+  installmentMetaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
-    paddingVertical: 8,
+  },
+  installmentBlockedText: {
+    color: V.colors.warning,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  installmentActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
 });
