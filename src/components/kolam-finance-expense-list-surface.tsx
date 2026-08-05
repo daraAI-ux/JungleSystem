@@ -114,16 +114,6 @@ function buildColumns(
         ),
       },
       {
-        id: 'shipping',
-        label: 'Pengiriman',
-        flex: 0.8,
-        render: row => (
-          <Text style={styles.metaText}>
-            {row.shippingCost > 0 ? formatRupiah(row.shippingCost) : 'Gratis'}
-          </Text>
-        ),
-      },
-      {
         id: 'amount',
         label: 'Total',
         flex: 0.9,
