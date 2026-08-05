@@ -95,6 +95,10 @@ export type KolamProyekHppMaterial = {
   quantity: number;
   unitCost: number;
   subtotal: number;
+  productId: string | null;
+  speciesId: string | null;
+  variantId: string | null;
+  stockAppliedAt: string | null;
 };
 
 export type KolamProyekDpPaymentProof = {
@@ -153,7 +157,8 @@ export type KolamProyekNextStepAction =
   | 'start_work'
   | 'scroll_design'
   | 'scroll_delivery'
-  | 'close_project';
+  | 'close_project'
+  | 'open_complaint';
 
 export type KolamProyekNextStepHero = {
   stageLabel: string;
@@ -197,6 +202,7 @@ export type KolamProyekReviewSubmission = {
   deadline: string | null;
   resolutionNote: string;
   files: KolamProyekReviewFile[];
+  clientAttachments: KolamProyekReviewFile[];
   clientDecision: KolamProyekReviewDecision;
   decidedAt: string | null;
   revisionNote: string;
@@ -294,6 +300,9 @@ export type KolamProyekDetail = KolamProyekListItem & {
   clientPhone: string | null;
   varPreview: KolamProyekVarPreview | null;
   costBreakdown: KolamProyekCostBreakdown;
+  hasOpenComplaint: boolean;
+  complaintId: string | null;
+  complaintStatus: string | null;
 };
 
 export type KolamProyekQuotationFormItem = {
@@ -883,6 +892,35 @@ export function buildKolamProyekActivityEntries(
   );
 }
 
+/** Mirror FE `canEditProjectMaterials` — locked after delivered/terminal. */
+export function canEditKolamProyekMaterials(status?: string | null) {
+  const key = String(status || '').trim();
+  return !['delivered', 'completed', 'cancelled', 'refunded'].includes(key);
+}
+
+export function buildKolamProyekHppPayload(
+  lines: KolamProyekHppMaterial[],
+): Array<Record<string, unknown>> {
+  return lines
+    .filter(
+      line =>
+        (line.productId || line.speciesId) && (Number(line.quantity) || 0) > 0,
+    )
+    .map(line => ({
+      product: line.productId || null,
+      species: line.speciesId || null,
+      variant: line.variantId || null,
+      quantity: Number(line.quantity) || 0,
+      unitCost: Number(line.unitCost) || 0,
+      subtotal:
+        (Number(line.quantity) || 0) * (Number(line.unitCost) || 0),
+    }));
+}
+
+export function isKolamProyekImagePath(path?: string | null) {
+  return /\.(jpe?g|png|gif|webp|svg|avif)$/i.test(String(path || ''));
+}
+
 /** Quotation edit allowed only while draft / revision (BE DRAFT_EDITABLE_STATUSES). */
 export function canEditKolamProyekQuotation(status?: string | null) {
   const key = String(status || '').trim();
@@ -1186,7 +1224,23 @@ export function resolveKolamProyekNextStepHero(
         },
       };
     }
-    case 'completed':
+    case 'completed': {
+      if (detail.hasOpenComplaint) {
+        return {
+          stageLabel: 'Komplain Dibuka',
+          badgeIntent: 'danger',
+          heading: 'Komplain Dibuka Client',
+          description: detail.complaintStatus
+            ? `Client membuka komplain (status: ${detail.complaintStatus}). Buka halaman komplain untuk review.`
+            : 'Client membuka komplain. Buka halaman komplain untuk review dan set keputusan.',
+          primary: detail.complaintId
+            ? {
+                label: 'Lihat Komplain',
+                action: 'open_complaint',
+              }
+            : undefined,
+        };
+      }
       return {
         stageLabel: 'Selesai',
         badgeIntent: 'success',
@@ -1194,6 +1248,7 @@ export function resolveKolamProyekNextStepHero(
         description:
           'Proyek sudah selesai. Komisi terakru dan siap dirilis via menu Finance (Rilis Komisi).',
       };
+    }
     case 'cancelled':
       return {
         stageLabel: 'Dibatalkan',
@@ -1978,6 +2033,17 @@ export function normalizeKolamProyekDetail(
     clientPhone: getString(client, 'phone') || null,
     varPreview,
     costBreakdown,
+    hasOpenComplaint:
+      record.hasOpenComplaint === true ||
+      String(record.hasOpenComplaint || '').toLowerCase() === 'true',
+    complaintId:
+      getId(asRecord(record.complaint)) ||
+      getString(record, 'complaintId') ||
+      null,
+    complaintStatus:
+      getString(asRecord(record.complaint), 'status') ||
+      getString(record, 'complaintStatus') ||
+      null,
   };
 }
 
@@ -2032,6 +2098,18 @@ function normalizeHppMaterial(
     quantity,
     unitCost,
     subtotal: getNumber(row, 'subtotal') ?? quantity * unitCost,
+    productId:
+      getId(product) ||
+      (typeof row.product === 'string' ? row.product : null),
+    speciesId:
+      getId(species) ||
+      (typeof row.species === 'string' ? row.species : null),
+    variantId:
+      getId(asRecord(row.variant)) ||
+      (typeof row.variant === 'string' ? row.variant : null) ||
+      getString(row, 'variant') ||
+      null,
+    stockAppliedAt: getString(row, 'stockAppliedAt') || null,
   };
 }
 
@@ -2091,24 +2169,34 @@ function normalizeProgressHistoryItem(
   };
 }
 
+function normalizeReviewFile(
+  filePayload: unknown,
+  fileIndex: number,
+): KolamProyekReviewFile {
+  const file = asRecord(filePayload);
+  return {
+    path: getString(file, 'path'),
+    name:
+      getString(file, 'name') ||
+      getString(file, 'originalFilename') ||
+      `File ${fileIndex + 1}`,
+    mimeType: getString(file, 'mimeType'),
+    fileSize: getNumber(file, 'fileSize') ?? 0,
+  };
+}
+
 function normalizeReviewSubmission(
   payload: unknown,
   index: number,
 ): KolamProyekReviewSubmission {
   const row = asRecord(payload);
   const files = (Array.isArray(row.files) ? row.files : []).map(
-    (filePayload, fileIndex) => {
-      const file = asRecord(filePayload);
-      return {
-        path: getString(file, 'path'),
-        name:
-          getString(file, 'name') ||
-          getString(file, 'originalFilename') ||
-          `File ${fileIndex + 1}`,
-        mimeType: getString(file, 'mimeType'),
-        fileSize: getNumber(file, 'fileSize') ?? 0,
-      };
-    },
+    (filePayload, fileIndex) => normalizeReviewFile(filePayload, fileIndex),
+  );
+  const clientAttachments = (
+    Array.isArray(row.clientAttachments) ? row.clientAttachments : []
+  ).map((filePayload, fileIndex) =>
+    normalizeReviewFile(filePayload, fileIndex),
   );
   return {
     id: getId(row) || `submission-${index}`,
@@ -2118,6 +2206,7 @@ function normalizeReviewSubmission(
     deadline: getString(row, 'deadline') || null,
     resolutionNote: getString(row, 'resolutionNote'),
     files,
+    clientAttachments,
     clientDecision: getString(row, 'clientDecision') || 'pending',
     decidedAt: getString(row, 'decidedAt') || null,
     revisionNote: getString(row, 'revisionNote'),

@@ -3,6 +3,7 @@ import {
   buildKolamProyekDetailRoute,
   buildKolamProyekDetailRouteForItem,
   buildKolamProyekEditRoute,
+  buildKolamProyekHppPayload,
   buildKolamProyekListRoute,
   buildKolamProyekNewRoute,
   buildKolamProyekQuotationPayload,
@@ -11,6 +12,7 @@ import {
   canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
   canDownloadKolamProyekInvoice,
+  canEditKolamProyekMaterials,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
@@ -38,6 +40,7 @@ import {
   getKolamProyekStepperStageState,
   getKolamProyekSurfaceMode,
   hasKolamProyekPermission,
+  isKolamProyekImagePath,
   isKolamProyekDetailRoute,
   isKolamProyekEditRoute,
   isKolamProyekListRoute,
@@ -604,5 +607,102 @@ describe('kolam-proyek domain', () => {
     );
     expect(activity.some(item => item.label === 'Desain dikirim')).toBe(true);
     expect(activity.some(item => item.label.includes('dibayar'))).toBe(true);
+  });
+
+  it('Batch 4: HPP payload, review attachments, and complaint hero', () => {
+    expect(canEditKolamProyekMaterials('in_progress')).toBe(true);
+    expect(canEditKolamProyekMaterials('delivered')).toBe(false);
+    expect(isKolamProyekImagePath('/uploads/design.png')).toBe(true);
+    expect(isKolamProyekImagePath('/uploads/brief.pdf')).toBe(false);
+
+    const payload = buildKolamProyekHppPayload([
+      {
+        id: 'h1',
+        label: 'Kayu',
+        quantity: 2,
+        unitCost: 50_000,
+        subtotal: 100_000,
+        productId: 'prod-1',
+        speciesId: null,
+        variantId: 'var-1',
+        stockAppliedAt: null,
+      },
+      {
+        id: 'h2',
+        label: 'Skip empty',
+        quantity: 0,
+        unitCost: 10,
+        subtotal: 0,
+        productId: 'prod-2',
+        speciesId: null,
+        variantId: null,
+        stockAppliedAt: null,
+      },
+      {
+        id: 'h3',
+        label: 'No catalog ref',
+        quantity: 1,
+        unitCost: 10,
+        subtotal: 10,
+        productId: null,
+        speciesId: null,
+        variantId: null,
+        stockAppliedAt: null,
+      },
+    ]);
+    expect(payload).toEqual([
+      {
+        product: 'prod-1',
+        species: null,
+        variant: 'var-1',
+        quantity: 2,
+        unitCost: 50_000,
+        subtotal: 100_000,
+      },
+    ]);
+
+    const detail = normalizeKolamProyekDetail({
+      _id: 'p-complaint',
+      lifecycleStatus: 'completed',
+      hasOpenComplaint: true,
+      complaintId: 'cmp-1',
+      complaintStatus: 'open',
+      hppFromMaterials: [
+        {
+          product: { _id: 'prod-9', name: 'Cat' },
+          quantity: 3,
+          unitCost: 25_000,
+          variant: 'var-9',
+        },
+      ],
+      designSubmissions: [
+        {
+          _id: 'ds1',
+          roundTitle: 'Desain 1',
+          files: [{ path: '/a.jpg', originalFilename: 'a.jpg', mimeType: 'image/jpeg' }],
+          clientAttachments: [
+            {
+              path: '/ref.pdf',
+              originalFilename: 'ref.pdf',
+              mimeType: 'application/pdf',
+            },
+          ],
+          clientDecision: 'approved',
+        },
+      ],
+    })!;
+
+    expect(detail.hppMaterials[0].productId).toBe('prod-9');
+    expect(detail.hppMaterials[0].variantId).toBe('var-9');
+    expect(detail.designSubmissions[0].clientAttachments).toHaveLength(1);
+    expect(detail.designSubmissions[0].clientAttachments[0].name).toBe(
+      'ref.pdf',
+    );
+    expect(detail.hasOpenComplaint).toBe(true);
+    expect(detail.complaintId).toBe('cmp-1');
+    expect(resolveKolamProyekNextStepHero(detail).primary).toEqual({
+      label: 'Lihat Komplain',
+      action: 'open_complaint',
+    });
   });
 });

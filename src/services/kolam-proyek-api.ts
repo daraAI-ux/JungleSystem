@@ -1,9 +1,11 @@
 import { appConfig } from '../config/app';
 import { getRuntimeClientHeaders } from '../domain/runtime-client-contract';
 import {
+  buildKolamProyekHppPayload,
   normalizeKolamProyekDetail,
   normalizeKolamProyekList,
   type KolamProyekDetail,
+  type KolamProyekHppMaterial,
   type KolamProyekLifecycleStatus,
   type KolamProyekListQuery,
   type KolamProyekListResult,
@@ -105,6 +107,39 @@ export async function updateKolamProyekQuotation(
     throw new Error('Gagal memperbarui surat penawaran.');
   }
   return detail;
+}
+
+export async function updateKolamProyek(
+  id: string,
+  body: Record<string, unknown>,
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      body,
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal memperbarui proyek.');
+  }
+  return detail;
+}
+
+export async function updateKolamProyekHppMaterials(
+  id: string,
+  lifecycleStatus: string | null | undefined,
+  lines: KolamProyekHppMaterial[],
+): Promise<KolamProyekDetail> {
+  const body = {
+    hppFromMaterials: buildKolamProyekHppPayload(lines),
+  };
+  const status = String(lifecycleStatus || '').trim();
+  if (status === 'draft' || status === 'revision_in_progress') {
+    return updateKolamProyekQuotation(id, body);
+  }
+  return updateKolamProyek(id, body);
 }
 
 export async function sendKolamProyekQuotation(

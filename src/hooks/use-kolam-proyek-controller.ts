@@ -12,6 +12,7 @@ import {
   canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
   canDownloadKolamProyekInvoice,
+  canEditKolamProyekMaterials,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
@@ -38,6 +39,7 @@ import {
   validateKolamProyekQuotationForm,
   validateKolamProyekSubmitRound,
   type KolamProyekDetail,
+  type KolamProyekHppMaterial,
   type KolamProyekLifecycleStatus,
   type KolamProyekListItem,
   type KolamProyekQuotationFormState,
@@ -67,6 +69,7 @@ import {
   submitKolamProyekDelivery,
   submitKolamProyekDesign,
   transitionKolamProyekLifecycle,
+  updateKolamProyekHppMaterials,
   updateKolamProyekProgress,
   updateKolamProyekQuotation,
   uploadKolamProyekDpProofs,
@@ -103,6 +106,7 @@ export interface KolamProyekController {
   canUpdate: boolean;
   canUpdateProgress: boolean;
   canUploadDpProof: boolean;
+  canEditHpp: boolean;
   canView: boolean;
   canAdminLifecycle: boolean;
   closeBlockReason: string | null;
@@ -172,6 +176,7 @@ export interface KolamProyekController {
     progressPercent: number,
     progressNote?: string,
   ) => Promise<boolean>;
+  onSaveHppMaterials: (lines: KolamProyekHppMaterial[]) => Promise<boolean>;
   onUploadDpProofs: (
     index: number,
     files: Array<{ uri: string; name?: string; mimeType?: string }>,
@@ -271,6 +276,13 @@ export function useKolamProyekController(
       'lifecycleAdmin',
     ) === 'active' &&
     getKolamProyekHappyPathNext(selected?.lifecycleStatus).length > 0;
+  const canEditHpp =
+    canUpdate &&
+    canEditKolamProyekMaterials(selected?.lifecycleStatus) &&
+    getKolamProyekSectionVisibility(
+      selected?.lifecycleStatus,
+      'hppMaterials',
+    ) !== 'hidden';
   const canStartWork =
     canUpdate && canStartKolamProyekWork(selected?.lifecycleStatus);
   const canUpdateProgress =
@@ -960,6 +972,33 @@ export function useKolamProyekController(
     [canAdminLifecycle, selected],
   );
 
+  const onSaveHppMaterials = useCallback(
+    async (lines: KolamProyekHppMaterial[]) => {
+      if (!selected || !canEditHpp) {
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await updateKolamProyekHppMaterials(
+          selected.id,
+          selected.lifecycleStatus,
+          lines,
+        );
+        setSelected(updated);
+        setStatusMessage('Produk Toko disimpan.');
+        return true;
+      } catch (saveError) {
+        setError(getApiErrorMessage(saveError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [canEditHpp, selected],
+  );
+
   const onUpdateProgress = useCallback(
     async (progressPercent: number, progressNote?: string) => {
       if (!selected || !canUpdateKolamProyekProgress(selected.lifecycleStatus)) {
@@ -1172,6 +1211,7 @@ export function useKolamProyekController(
       canUpdate,
       canUpdateProgress,
       canUploadDpProof,
+      canEditHpp,
       canView,
       canAdminLifecycle,
       closeBlockReason,
@@ -1214,6 +1254,7 @@ export function useKolamProyekController(
       onRemoveFormItem,
       onResendQuotation,
       onReverseDpConfirmation,
+      onSaveHppMaterials,
       onSaveQuotation,
       onSearchChange,
       onSendQuotation,
@@ -1245,6 +1286,7 @@ export function useKolamProyekController(
       canUpdate,
       canUpdateProgress,
       canUploadDpProof,
+      canEditHpp,
       canView,
       canAdminLifecycle,
       closeBlockReason,
@@ -1278,6 +1320,7 @@ export function useKolamProyekController(
       onRemoveFormItem,
       onResendQuotation,
       onReverseDpConfirmation,
+      onSaveHppMaterials,
       onSaveQuotation,
       onSearchChange,
       onSendQuotation,

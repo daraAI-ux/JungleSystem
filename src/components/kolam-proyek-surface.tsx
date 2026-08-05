@@ -26,15 +26,18 @@ import {
   getKolamProyekSectionVisibility,
   getKolamProyekStepperStageState,
   getLatestKolamProyekReviewSubmission,
+  isKolamProyekImagePath,
   KOLAM_PROYEK_HAPPY_PATH,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
   KOLAM_PROYEK_NEXT_STEP_CTA,
   resolveKolamProyekNextStepHero,
   type KolamProyekDetail,
+  type KolamProyekHppMaterial,
   type KolamProyekLifecycleStatus,
   type KolamProyekListItem,
   type KolamProyekNextStepAction,
   type KolamProyekNextStepHero,
+  type KolamProyekReviewFile,
   type KolamProyekReviewSubmission,
   type KolamProyekSubmitRoundInput,
 } from '../domain/kolam-proyek';
@@ -77,6 +80,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
+import { openKolamImagePreview } from './kolam-image-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamProyekQuotationForm } from './kolam-proyek-quotation-form';
 import { KolamSearchField } from './kolam-search-field';
@@ -562,6 +566,11 @@ function KolamProyekDetailRead({
       case 'close_project':
         setCloseOpen(true);
         break;
+      case 'open_complaint':
+        if (detail.complaintId) {
+          onRouteChange?.(`/complaints/${detail.complaintId}`);
+        }
+        break;
       default:
         break;
     }
@@ -912,31 +921,13 @@ function KolamProyekDetailRead({
         </DetailSection>
 
         {showHpp ? (
-          <DetailSection title="HPP / produk toko">
-            {detail.hppMaterials.length === 0 && detail.hppManual <= 0 ? (
-              <Text style={styles.metaText}>Belum ada baris HPP.</Text>
-            ) : (
-              <>
-                {detail.hppMaterials.map(line => (
-                  <View key={line.id} style={styles.listRow}>
-                    <Text style={styles.primaryText}>{line.label}</Text>
-                    <Text style={styles.metaText}>
-                      {line.quantity} × {formatRupiah(line.unitCost)} ={' '}
-                      {formatRupiah(line.subtotal)}
-                    </Text>
-                  </View>
-                ))}
-                {detail.hppManual > 0 ? (
-                  <Text style={styles.metaText}>
-                    HPP manual: {formatRupiah(detail.hppManual)}
-                  </Text>
-                ) : null}
-                <Text style={styles.primaryText}>
-                  Total HPP: {formatRupiah(detail.hppTotal || cost.totalHpp)}
-                </Text>
-              </>
-            )}
-          </DetailSection>
+          <ProyekHppMaterialsSection
+            acting={controller.acting}
+            canEdit={controller.canEditHpp}
+            detail={detail}
+            onSave={controller.onSaveHppMaterials}
+            totalHppFallback={cost.totalHpp}
+          />
         ) : null}
 
         {showCommission ? (
@@ -2170,6 +2161,195 @@ function ProyekNextStepHero({
   );
 }
 
+function ProyekHppMaterialsSection({
+  acting,
+  canEdit,
+  detail,
+  onSave,
+  totalHppFallback,
+}: {
+  acting: boolean;
+  canEdit: boolean;
+  detail: KolamProyekDetail;
+  onSave: (lines: KolamProyekHppMaterial[]) => Promise<boolean>;
+  totalHppFallback: number;
+}) {
+  const materialsSyncKey = detail.hppMaterials
+    .map(
+      line =>
+        `${line.id}:${line.quantity}:${line.unitCost}:${line.stockAppliedAt || ''}`,
+    )
+    .join('|');
+  const [draft, setDraft] = useState(detail.hppMaterials);
+
+  useEffect(() => {
+    setDraft(detail.hppMaterials);
+  }, [detail.id, materialsSyncKey]);
+
+  const draftTotal = draft.reduce(
+    (sum, line) =>
+      sum + (Number(line.quantity) || 0) * (Number(line.unitCost) || 0),
+    0,
+  );
+
+  const patchLine = (
+    lineId: string,
+    patch: Partial<Pick<KolamProyekHppMaterial, 'quantity' | 'unitCost'>>,
+  ) => {
+    setDraft(current =>
+      current.map(line => {
+        if (line.id !== lineId) {
+          return line;
+        }
+        const quantity =
+          patch.quantity != null ? patch.quantity : line.quantity;
+        const unitCost =
+          patch.unitCost != null ? patch.unitCost : line.unitCost;
+        return {
+          ...line,
+          quantity,
+          unitCost,
+          subtotal: quantity * unitCost,
+        };
+      }),
+    );
+  };
+
+  return (
+    <DetailSection title="HPP / produk toko">
+      {draft.length === 0 && detail.hppManual <= 0 ? (
+        <Text style={styles.metaText}>Belum ada baris HPP.</Text>
+      ) : (
+        <>
+          {draft.map(line => {
+            const locked = Boolean(line.stockAppliedAt);
+            const editableLine = canEdit && !locked;
+            return (
+              <View key={line.id} style={styles.listRow}>
+                <View style={styles.dpRowHeader}>
+                  <Text style={styles.primaryText}>{line.label}</Text>
+                  {locked ? (
+                    <Text style={styles.metaText}>Stok sudah diterapkan</Text>
+                  ) : null}
+                </View>
+                {editableLine ? (
+                  <View style={styles.hppEditRow}>
+                    <View style={styles.hppField}>
+                      <KolamSettingsWebFieldLabel label="Qty" required />
+                      <KolamFormTextField
+                        mode="numeric"
+                        onChangeText={text => {
+                          const quantity =
+                            Number(String(text).replace(/[^\d.-]/g, '')) || 0;
+                          patchLine(line.id, { quantity });
+                        }}
+                        value={String(line.quantity ?? 0)}
+                      />
+                    </View>
+                    <View style={styles.hppField}>
+                      <KolamSettingsWebFieldLabel label="Biaya/unit" required />
+                      <KolamFormTextField
+                        mode="numeric"
+                        onChangeText={text => {
+                          const unitCost =
+                            Number(String(text).replace(/[^\d.-]/g, '')) || 0;
+                          patchLine(line.id, { unitCost });
+                        }}
+                        value={String(line.unitCost ?? 0)}
+                      />
+                    </View>
+                    <KolamButton
+                      disabled={acting}
+                      intent="outline"
+                      label="Hapus"
+                      onPress={() => {
+                        setDraft(current =>
+                          current.filter(item => item.id !== line.id),
+                        );
+                      }}
+                    />
+                  </View>
+                ) : null}
+                <Text style={styles.metaText}>
+                  {line.quantity} × {formatRupiah(line.unitCost)} ={' '}
+                  {formatRupiah(
+                    (Number(line.quantity) || 0) * (Number(line.unitCost) || 0),
+                  )}
+                </Text>
+              </View>
+            );
+          })}
+          {detail.hppManual > 0 ? (
+            <Text style={styles.metaText}>
+              HPP manual: {formatRupiah(detail.hppManual)}
+            </Text>
+          ) : null}
+          <Text style={styles.primaryText}>
+            Total HPP:{' '}
+            {formatRupiah(
+              canEdit
+                ? draftTotal + (Number(detail.hppManual) || 0)
+                : detail.hppTotal || totalHppFallback,
+            )}
+          </Text>
+        </>
+      )}
+      {canEdit ? (
+        <View style={styles.dpActionRow}>
+          <KolamButton
+            disabled={acting}
+            intent="outline"
+            label={acting ? 'Menyimpan…' : 'Simpan Produk Toko'}
+            onPress={() => {
+              void onSave(draft);
+            }}
+          />
+        </View>
+      ) : null}
+    </DetailSection>
+  );
+}
+
+function isProyekReviewImageFile(file: KolamProyekReviewFile) {
+  return (
+    isKolamProyekImagePath(file.path) ||
+    isKolamProyekImagePath(file.name) ||
+    /^image\//i.test(String(file.mimeType || ''))
+  );
+}
+
+function openProyekReviewFile(
+  file: KolamProyekReviewFile,
+  gallery: KolamProyekReviewFile[],
+) {
+  const url = getKolamFileUrl(file.path);
+  if (!url) {
+    return;
+  }
+  if (isProyekReviewImageFile(file)) {
+    const imageFiles = gallery.filter(isProyekReviewImageFile);
+    const items = imageFiles
+      .map(item => {
+        const itemUrl = getKolamFileUrl(item.path);
+        if (!itemUrl) {
+          return null;
+        }
+        return {
+          title: item.name || item.path || 'Pratinjau',
+          uri: itemUrl,
+        };
+      })
+      .filter((item): item is { title: string; uri: string } => Boolean(item));
+    openKolamImagePreview({
+      items,
+      title: file.name || file.path || 'Pratinjau',
+      uri: url,
+    });
+    return;
+  }
+  void Linking.openURL(url);
+}
+
 function ReviewSubmissionCard({
   roundNumber,
   submission,
@@ -2177,6 +2357,7 @@ function ReviewSubmissionCard({
   roundNumber: number;
   submission: KolamProyekReviewSubmission;
 }) {
+  const gallery = [...submission.files, ...submission.clientAttachments];
   return (
     <View style={styles.listRow}>
       <View style={styles.dpRowHeader}>
@@ -2199,6 +2380,9 @@ function ReviewSubmissionCard({
           ? ` · tenggat ${formatShortDate(submission.deadline)}`
           : ''}
         {` · ${submission.files.length} file`}
+        {submission.clientAttachments.length > 0
+          ? ` · ${submission.clientAttachments.length} referensi klien`
+          : ''}
       </Text>
       {submission.note ? (
         <Text style={styles.metaText}>{submission.note}</Text>
@@ -2218,20 +2402,40 @@ function ReviewSubmissionCard({
           Alasan tolak: {submission.rejectionReason}
         </Text>
       ) : null}
+      {submission.files.length > 0 ? (
+        <Text style={styles.metaText}>
+          File desain ({submission.files.length})
+        </Text>
+      ) : null}
       {submission.files.map((file, index) => {
         const url = getKolamFileUrl(file.path);
         return (
           <Pressable
             key={`${file.path}-${index}`}
             disabled={!url}
-            onPress={() => {
-              if (url) {
-                void Linking.openURL(url);
-              }
-            }}
+            onPress={() => openProyekReviewFile(file, gallery)}
           >
             <Text style={url ? styles.linkText : styles.metaText}>
               • {file.name || file.path || `File ${index + 1}`}
+            </Text>
+          </Pressable>
+        );
+      })}
+      {submission.clientAttachments.length > 0 ? (
+        <Text style={styles.metaText}>
+          Referensi dari client ({submission.clientAttachments.length})
+        </Text>
+      ) : null}
+      {submission.clientAttachments.map((file, index) => {
+        const url = getKolamFileUrl(file.path);
+        return (
+          <Pressable
+            key={`client-${file.path}-${index}`}
+            disabled={!url}
+            onPress={() => openProyekReviewFile(file, gallery)}
+          >
+            <Text style={url ? styles.linkText : styles.metaText}>
+              • {file.name || file.path || `Referensi ${index + 1}`}
             </Text>
           </Pressable>
         );
@@ -2553,6 +2757,18 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginTop: 6,
+  },
+  hppEditRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  hppField: {
+    flexGrow: 1,
+    gap: 4,
+    minWidth: 120,
   },
   dpConfirmRow: {
     alignItems: 'flex-start',
