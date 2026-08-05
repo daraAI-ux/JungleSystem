@@ -727,10 +727,7 @@ function KolamProyekDetailRead({
         />
       ) : null}
 
-      <ScrollView
-        contentContainerStyle={styles.detailContent}
-        ref={detailScrollRef}
-      >
+      <View style={styles.detailTop}>
         <ProyekNextStepHero
           acting={controller.acting}
           config={nextStep}
@@ -768,21 +765,16 @@ function KolamProyekDetailRead({
             </Text>
           </KolamDetailMetaStripItem>
         </KolamDetailMetaStrip>
+      </View>
 
-        <ProyekLifecycleTimeline
-          acting={controller.acting}
-          canAdminLifecycle={controller.canAdminLifecycle}
-          detail={detail}
-          lifecycleNote={lifecycleNote}
-          lifecycleTarget={lifecycleTarget}
-          onLifecycleNoteChange={setLifecycleNote}
-          onLifecycleTargetChange={setLifecycleTarget}
-          onTransition={(to, note) =>
-            controller.onAdminLifecycleTransition(to, note)
-          }
-          showDomainInfo={showDomainLifecycleInfo}
-        />
-
+      <View style={styles.detailFrame}>
+        <View style={styles.bodyRow}>
+          <View style={styles.mainPane}>
+            <ScrollView
+              contentContainerStyle={styles.detailContent}
+              ref={detailScrollRef}
+              style={styles.mainScroll}
+            >
         <DetailSection title="Ringkasan kontrak">
           <View style={styles.metricGrid}>
             <Metric
@@ -1371,123 +1363,156 @@ function KolamProyekDetailRead({
             />
           </DetailSection>
         ) : null}
+            </ScrollView>
+          </View>
 
-        {activityEntries.length > 0 ? (
-          <DetailSection title="Aktivitas">
-            {activityEntries.map((entry, index) => (
-              <Text
-                key={`${entry.at}-${index}`}
-                style={styles.metaText}
-              >
-                {formatShortDateTime(entry.at)} — {entry.label}
-              </Text>
-            ))}
-          </DetailSection>
-        ) : null}
-
-        {detail.saleInvoiceCode || detail.saleId ? (
-          <DetailSection title="Invoice / PO">
-            <Text style={styles.primaryText}>
-              {detail.saleInvoiceCode || detail.saleId}
-            </Text>
-            {detail.saleStatus ? (
-              <KolamStatusBadge
-                intent={
-                  detail.saleStatus === 'paid'
-                    ? 'success'
-                    : detail.saleStatus === 'cancelled'
-                      ? 'danger'
-                      : 'secondary'
-                }
-                label={
-                  detail.saleStatus === 'paid'
-                    ? 'Lunas'
-                    : detail.saleStatus === 'partial'
-                      ? 'Sebagian'
-                      : detail.saleStatus === 'pending'
-                        ? 'Menunggu'
-                        : detail.saleStatus === 'cancelled'
-                          ? 'Dibatalkan'
-                          : detail.saleStatus === 'draft'
-                            ? 'Draf'
-                            : detail.saleStatus
-                }
-              />
-            ) : null}
-            {detail.saleFinalTotal != null ? (
-              <Text style={styles.metaText}>
-                {formatRupiah(detail.saleFinalTotal)}
-              </Text>
-            ) : null}
-            {detail.saleId ? (
-              <KolamButton
-                intent="outline"
-                label="Lihat invoice"
-                onPress={() => onRouteChange?.(`/sales/${detail.saleId}`)}
-              />
-            ) : null}
-          </DetailSection>
-        ) : null}
-
-        <DetailSection title="Tautan terkait">
-          {detail.linkedTask ? (
-            <Pressable
-              accessibilityRole="link"
-              onPress={() =>
-                onRouteChange?.(`/task-manager/${detail.linkedTask!.id}`)
-              }
+          <View style={styles.historyPane}>
+            <ScrollView
+              contentContainerStyle={styles.historyScroll}
+              style={styles.historyScrollView}
             >
-              <Text style={styles.linkText}>
-                Tugas: {detail.linkedTask.title} · {detail.linkedTask.status}
-              </Text>
-            </Pressable>
-          ) : (
-            <Text style={styles.metaText}>Belum ada tugas operasional.</Text>
-          )}
-        </DetailSection>
+              <ProyekLifecycleTimeline
+                acting={controller.acting}
+                canAdminLifecycle={controller.canAdminLifecycle}
+                detail={detail}
+                lifecycleNote={lifecycleNote}
+                lifecycleTarget={lifecycleTarget}
+                onLifecycleNoteChange={setLifecycleNote}
+                onLifecycleTargetChange={setLifecycleTarget}
+                onTransition={(to, note) =>
+                  controller.onAdminLifecycleTransition(to, note)
+                }
+                showDomainInfo={showDomainLifecycleInfo}
+              />
 
-        {controller.canRefund ||
-        controller.canCancel ||
-        controller.canDelete ||
-        detail.lifecycleStatus === 'refunded' ? (
-          <DetailSection title="Zona berbahaya">
-            <Text style={styles.metaText}>
-              {detail.lifecycleStatus === 'refunded'
-                ? 'Proyek sudah di-refund. Status terminal — tidak ada aksi lanjutan.'
-                : 'Refund memakai transisi lifecycle ke status refunded (catatan audit min. 5 karakter). Alur wallet Fase 3 belum tersedia di BE/plugin.'}
-            </Text>
-            <View style={styles.dpActionRow}>
-              {controller.canRefund ? (
-                <KolamButton
-                  disabled={controller.acting}
-                  intent="danger"
-                  label="Tandai refund"
-                  onPress={() => {
-                    setRefundNote('');
-                    setRefundOpen(true);
-                  }}
-                />
+              <DetailSection title="Aktivitas">
+                {activityEntries.length === 0 ? (
+                  <Text style={styles.metaText}>Belum ada aktivitas.</Text>
+                ) : (
+                  activityEntries.map((entry, index) => (
+                    <Text
+                      key={`${entry.at}-${index}`}
+                      style={styles.metaText}
+                    >
+                      {formatShortDateTime(entry.at)} — {entry.label}
+                    </Text>
+                  ))
+                )}
+              </DetailSection>
+
+              {detail.saleInvoiceCode || detail.saleId ? (
+                <DetailSection title="Invoice / PO">
+                  <Text style={styles.primaryText}>
+                    {detail.saleInvoiceCode || detail.saleId}
+                  </Text>
+                  {detail.saleStatus ? (
+                    <KolamStatusBadge
+                      intent={
+                        detail.saleStatus === 'paid'
+                          ? 'success'
+                          : detail.saleStatus === 'cancelled'
+                            ? 'danger'
+                            : 'secondary'
+                      }
+                      label={
+                        detail.saleStatus === 'paid'
+                          ? 'Lunas'
+                          : detail.saleStatus === 'partial'
+                            ? 'Sebagian'
+                            : detail.saleStatus === 'pending'
+                              ? 'Menunggu'
+                              : detail.saleStatus === 'cancelled'
+                                ? 'Dibatalkan'
+                                : detail.saleStatus === 'draft'
+                                  ? 'Draf'
+                                  : detail.saleStatus
+                      }
+                    />
+                  ) : null}
+                  {detail.saleFinalTotal != null ? (
+                    <Text style={styles.metaText}>
+                      {formatRupiah(detail.saleFinalTotal)}
+                    </Text>
+                  ) : null}
+                  {detail.saleId ? (
+                    <KolamButton
+                      intent="outline"
+                      label="Lihat invoice"
+                      onPress={() =>
+                        onRouteChange?.(`/sales/${detail.saleId}`)
+                      }
+                    />
+                  ) : null}
+                </DetailSection>
               ) : null}
-              {controller.canCancel ? (
-                <KolamButton
-                  disabled={controller.acting}
-                  intent="outline"
-                  label="Batalkan proyek"
-                  onPress={() => setCancelOpen(true)}
-                />
+
+              <DetailSection title="Tautan terkait">
+                {detail.linkedTask ? (
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() =>
+                      onRouteChange?.(
+                        `/task-manager/${detail.linkedTask!.id}`,
+                      )
+                    }
+                  >
+                    <Text style={styles.linkText}>
+                      Tugas: {detail.linkedTask.title} ·{' '}
+                      {detail.linkedTask.status}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Text style={styles.metaText}>
+                    Belum ada tugas operasional.
+                  </Text>
+                )}
+              </DetailSection>
+
+              {controller.canRefund ||
+              controller.canCancel ||
+              controller.canDelete ||
+              detail.lifecycleStatus === 'refunded' ? (
+                <DetailSection title="Zona berbahaya">
+                  <Text style={styles.metaText}>
+                    {detail.lifecycleStatus === 'refunded'
+                      ? 'Proyek sudah di-refund. Status terminal — tidak ada aksi lanjutan.'
+                      : 'Refund memakai transisi lifecycle ke status refunded (catatan audit min. 5 karakter). Alur wallet Fase 3 belum tersedia di BE/plugin.'}
+                  </Text>
+                  <View style={styles.dpActionRow}>
+                    {controller.canRefund ? (
+                      <KolamButton
+                        disabled={controller.acting}
+                        intent="danger"
+                        label="Tandai refund"
+                        onPress={() => {
+                          setRefundNote('');
+                          setRefundOpen(true);
+                        }}
+                      />
+                    ) : null}
+                    {controller.canCancel ? (
+                      <KolamButton
+                        disabled={controller.acting}
+                        intent="outline"
+                        label="Batalkan proyek"
+                        onPress={() => setCancelOpen(true)}
+                      />
+                    ) : null}
+                    {controller.canDelete ? (
+                      <KolamButton
+                        disabled={controller.acting}
+                        intent="danger"
+                        label="Hapus draft"
+                        onPress={() => setDeleteOpen(true)}
+                      />
+                    ) : null}
+                  </View>
+                </DetailSection>
               ) : null}
-              {controller.canDelete ? (
-                <KolamButton
-                  disabled={controller.acting}
-                  intent="danger"
-                  label="Hapus draft"
-                  onPress={() => setDeleteOpen(true)}
-                />
-              ) : null}
-            </View>
-          </DetailSection>
-        ) : null}
-      </ScrollView>
+            </ScrollView>
+          </View>
+        </View>
+      </View>
 
       <KolamConfirmDialog
         confirmLabel="Tutup proyek"
@@ -2694,6 +2719,55 @@ const styles = StyleSheet.create({
   detailContent: {
     gap: 14,
     paddingBottom: 28,
+  },
+  detailTop: {
+    flexShrink: 0,
+    gap: 12,
+  },
+  detailFrame: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  bodyRow: {
+    alignItems: 'stretch',
+    flex: 1,
+    flexDirection: 'row',
+    minHeight: 0,
+  },
+  mainPane: {
+    flex: 3,
+    minHeight: 0,
+    minWidth: 0,
+    paddingRight: 16,
+  },
+  mainScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  historyPane: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    flex: 1,
+    maxWidth: 360,
+    minHeight: 0,
+    minWidth: 260,
+    paddingLeft: 16,
+  },
+  historyScrollView: {
+    flex: 1,
+    minHeight: 0,
+  },
+  historyScroll: {
+    gap: 14,
+    paddingBottom: 16,
+    paddingTop: 2,
   },
   heroCard: {
     borderColor: V.colors.border,
