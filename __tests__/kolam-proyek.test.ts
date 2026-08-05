@@ -519,6 +519,42 @@ describe('kolam-proyek domain', () => {
       'Bukti Terkirim',
     );
 
+    const withConfirmations = normalizeKolamProyekDetail({
+      _id: 'p3',
+      lifecycleStatus: 'awaiting_dp',
+      contractValue: 500_000,
+      paymentMode: 'staged',
+      dpSchedule: [
+        {
+          name: 'DP1',
+          amount: 200_000,
+          amountReceived: 100_000,
+          paymentConfirmations: [
+            {
+              amount: 100_000,
+              confirmedAt: '2026-01-01T00:00:00.000Z',
+              note: 'TF',
+            },
+            {
+              amount: 50_000,
+              confirmedAt: '2026-01-02T00:00:00.000Z',
+              reversedAt: '2026-01-03T00:00:00.000Z',
+              reversalReason: 'salah',
+            },
+          ],
+        },
+      ],
+    })!;
+    expect(withConfirmations.dpSchedule[0].paymentConfirmations).toHaveLength(
+      2,
+    );
+    expect(withConfirmations.dpSchedule[0].paymentConfirmations[0].amount).toBe(
+      100_000,
+    );
+    expect(
+      withConfirmations.dpSchedule[0].paymentConfirmations[1].reversedAt,
+    ).toBeTruthy();
+
     const commission = computeKolamProyekCommissionPreview(draft);
     expect(commission?.daAmount).toBe(50_000);
     expect(commission?.designerAmount).toBe(50_000);

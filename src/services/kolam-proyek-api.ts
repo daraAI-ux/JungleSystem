@@ -191,6 +191,80 @@ export async function confirmKolamProyekDpReceived(
   return detail;
 }
 
+export async function uploadKolamProyekDpProofs(
+  id: string,
+  index: number,
+  files: Array<{ uri: string; name?: string; mimeType?: string }>,
+  note?: string,
+): Promise<KolamProyekDetail> {
+  if (!files.length) {
+    throw new Error('Pilih minimal satu file bukti.');
+  }
+  const body = new FormData();
+  for (const file of files) {
+    body.append(
+      'proofs',
+      createReactNativeFilePart(
+        file.uri,
+        file.name || 'bukti.bin',
+        file.mimeType,
+      ) as unknown as Blob,
+    );
+  }
+  if (note?.trim()) {
+    body.append('note', note.trim());
+  }
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/dp-schedule/${index}/proofs`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal mengunggah bukti pembayaran DP.');
+  }
+  return detail;
+}
+
+export async function reverseKolamProyekDpConfirmation(
+  id: string,
+  index: number,
+  confirmationIndex: number,
+  reason?: string,
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/dp-schedule/${index}/reverse-confirmation`,
+    {
+      method: 'POST',
+      body: {
+        confirmationIndex,
+        ...(reason?.trim() ? { reason: reason.trim() } : {}),
+      },
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal membatalkan konfirmasi pembayaran DP.');
+  }
+  return detail;
+}
+
+export async function downloadKolamProyekKwitansi(
+  id: string,
+  index: number,
+  kwitansiNumber?: string | null,
+): Promise<{ path?: string; name: string }> {
+  const base = appConfig.kolamApiBaseUrl.replace(/\/+$/, '');
+  const url = `${base}/custom-project/${encodeURIComponent(id)}/dp-schedule/${index}/kwitansi`;
+  const safe = String(kwitansiNumber || `dp-${index + 1}`).replace(
+    /[^\w.-]+/g,
+    '_',
+  );
+  return downloadKolamProyekBinary(url, `Kwitansi-${safe}.pdf`);
+}
+
 export async function transitionKolamProyekLifecycle(
   id: string,
   to: KolamProyekLifecycleStatus,

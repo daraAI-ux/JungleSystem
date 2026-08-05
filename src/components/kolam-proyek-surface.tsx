@@ -463,7 +463,6 @@ function KolamProyekDetailRead({
     dpVisibility !== 'hidden' &&
     detail.paymentMode === 'staged' &&
     detail.dpSchedule.length > 0;
-  const dpActionsActive = controller.canConfirmDp;
   const showProgress =
     getKolamProyekSectionVisibility(
       detail.lifecycleStatus,
@@ -905,8 +904,13 @@ function KolamProyekDetailRead({
               ) : null}
               {detail.dpSchedule.map(row => {
                 const rowOutstanding = getKolamProyekDpRowOutstanding(row);
+                const rowActive = !row.paidAt;
+                const canUploadRow =
+                  controller.canUploadDpProof && rowActive;
                 const canConfirmRow =
-                  dpActionsActive && !row.paidAt && rowOutstanding > 0;
+                  controller.canConfirmDp &&
+                  rowActive &&
+                  rowOutstanding > 0;
                 return (
                   <View key={`dp-${row.index}`} style={styles.listRow}>
                     <View style={styles.dpRowHeader}>
@@ -930,12 +934,32 @@ function KolamProyekDetailRead({
                           : ''}
                     </Text>
                     {row.kwitansiNumber ? (
-                      <Text style={styles.metaText}>
-                        Kwitansi: {row.kwitansiNumber}
-                      </Text>
+                      <View style={styles.dpActionRow}>
+                        <Text style={styles.metaText}>
+                          Kwitansi: {row.kwitansiNumber}
+                        </Text>
+                        {controller.canDownloadKwitansi && row.paidAt ? (
+                          <KolamButton
+                            disabled={controller.acting}
+                            intent="outline"
+                            label={
+                              controller.acting
+                                ? 'Mengunduh…'
+                                : 'Buka kwitansi'
+                            }
+                            onPress={() => {
+                              void controller.onDownloadKwitansi(row.index);
+                            }}
+                            size="sm"
+                          />
+                        ) : null}
+                      </View>
                     ) : null}
                     {row.paymentProofs.length > 0 ? (
                       <View style={styles.historyBlock}>
+                        <Text style={styles.metaText}>
+                          {row.paymentProofs.length} bukti pembayaran
+                        </Text>
                         {row.paymentProofs.map((proof, proofIndex) => {
                           const url = getKolamFileUrl(proof.path);
                           return (
@@ -962,16 +986,92 @@ function KolamProyekDetailRead({
                         })}
                       </View>
                     ) : null}
-                    {canConfirmRow ? (
-                      <KolamButton
-                        disabled={controller.acting}
-                        label="Konfirmasi dana masuk"
-                        onPress={() => {
-                          setConfirmDpIndex(row.index);
-                          setConfirmDpAmount(String(rowOutstanding));
-                          setConfirmDpNote('');
-                        }}
-                      />
+                    {row.paymentConfirmations.length > 0 ? (
+                      <View style={styles.historyBlock}>
+                        <Text style={styles.metaText}>Riwayat konfirmasi:</Text>
+                        {row.paymentConfirmations.map(conf => (
+                          <View
+                            key={`${row.index}-conf-${conf.index}`}
+                            style={styles.dpConfirmRow}
+                          >
+                            <KolamStatusBadge
+                              intent={conf.reversedAt ? 'secondary' : 'success'}
+                              label={
+                                conf.reversedAt ? 'Dibatalkan' : 'Dikonfirmasi'
+                              }
+                            />
+                            <Text style={styles.metaText}>
+                              {formatRupiah(conf.amount)}
+                              {conf.confirmedAt
+                                ? ` · ${formatShortDateTime(conf.confirmedAt)}`
+                                : ''}
+                              {conf.note ? ` · ${conf.note}` : ''}
+                              {conf.reversedAt && conf.reversalReason
+                                ? ` — ${conf.reversalReason}`
+                                : ''}
+                            </Text>
+                            {controller.canReverseDp && !conf.reversedAt ? (
+                              <KolamButton
+                                disabled={controller.acting}
+                                intent="outline"
+                                label="Batalkan"
+                                onPress={() => {
+                                  void controller.onReverseDpConfirmation(
+                                    row.index,
+                                    conf.index,
+                                  );
+                                }}
+                                size="sm"
+                              />
+                            ) : null}
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                    {canUploadRow || canConfirmRow ? (
+                      <View style={styles.dpActionRow}>
+                        {canUploadRow ? (
+                          <KolamButton
+                            disabled={controller.acting}
+                            intent="outline"
+                            label={
+                              controller.acting
+                                ? 'Mengunggah…'
+                                : 'Upload bukti'
+                            }
+                            onPress={() => {
+                              void (async () => {
+                                const picked = await pickNativeAssetFile().catch(
+                                  () => null,
+                                );
+                                if (!picked || picked.cancelled || !picked.uri) {
+                                  return;
+                                }
+                                await controller.onUploadDpProofs(row.index, [
+                                  {
+                                    uri: picked.uri,
+                                    name: picked.name,
+                                    mimeType: picked.mimeType,
+                                  },
+                                ]);
+                              })();
+                            }}
+                            size="sm"
+                          />
+                        ) : null}
+                        {canConfirmRow ? (
+                          <KolamButton
+                            disabled={controller.acting}
+                            label="Konfirmasi dana masuk"
+                            onPress={() => {
+                              setConfirmDpIndex(row.index);
+                              setConfirmDpAmount(String(rowOutstanding));
+                              setConfirmDpNote('');
+                            }}
+                            size="sm"
+                          />
+                        ) : null}
+                      </View>
                     ) : null}
                   </View>
                 );
@@ -2045,6 +2145,19 @@ const styles = StyleSheet.create({
   historyBlock: {
     gap: 4,
     marginTop: 4,
+  },
+  dpActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  dpConfirmRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   progressEditor: {
     gap: 10,

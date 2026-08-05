@@ -103,6 +103,15 @@ export type KolamProyekDpPaymentProof = {
   uploadedAt: string | null;
 };
 
+export type KolamProyekDpPaymentConfirmation = {
+  index: number;
+  amount: number;
+  confirmedAt: string | null;
+  note: string;
+  reversedAt: string | null;
+  reversalReason: string;
+};
+
 export type KolamProyekDpScheduleItem = {
   index: number;
   name: string;
@@ -112,6 +121,7 @@ export type KolamProyekDpScheduleItem = {
   dueAt: string | null;
   kwitansiNumber: string | null;
   paymentProofs: KolamProyekDpPaymentProof[];
+  paymentConfirmations: KolamProyekDpPaymentConfirmation[];
 };
 
 export type KolamProyekCommissionConfig = {
@@ -1824,6 +1834,19 @@ function normalizeDpScheduleItem(
       uploadedAt: getString(proof, 'uploadedAt') || null,
     };
   });
+  const paymentConfirmations = (
+    Array.isArray(row.paymentConfirmations) ? row.paymentConfirmations : []
+  ).map((confPayload, confIndex) => {
+    const conf = asRecord(confPayload);
+    return {
+      index: confIndex,
+      amount: getNumber(conf, 'amount') ?? 0,
+      confirmedAt: getString(conf, 'confirmedAt') || null,
+      note: getString(conf, 'note'),
+      reversedAt: getString(conf, 'reversedAt') || null,
+      reversalReason: getString(conf, 'reversalReason'),
+    };
+  });
   return {
     index,
     name: getString(row, 'name') || `DP ${index + 1}`,
@@ -1833,6 +1856,7 @@ function normalizeDpScheduleItem(
     dueAt: getString(row, 'dueAt') || null,
     kwitansiNumber: getString(row, 'kwitansiNumber') || null,
     paymentProofs,
+    paymentConfirmations,
   };
 }
 

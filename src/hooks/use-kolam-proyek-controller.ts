@@ -55,15 +55,18 @@ import {
   createKolamProyekQuotation,
   deleteKolamProyek,
   downloadKolamProyekInvoice,
+  downloadKolamProyekKwitansi,
   getKolamProyek,
   getKolamProyekList,
   resendKolamProyekQuotation,
+  reverseKolamProyekDpConfirmation,
   sendKolamProyekQuotation,
   submitKolamProyekDelivery,
   submitKolamProyekDesign,
   transitionKolamProyekLifecycle,
   updateKolamProyekProgress,
   updateKolamProyekQuotation,
+  uploadKolamProyekDpProofs,
 } from '../services/kolam-proyek-api';
 import { getKolamTermsTemplates } from '../services/kolam-terms-template-api';
 import { getKolamUserList } from '../services/kolam-user-api';
@@ -86,14 +89,17 @@ export interface KolamProyekController {
   canCreate: boolean;
   canDelete: boolean;
   canDownloadInvoice: boolean;
+  canDownloadKwitansi: boolean;
   canEdit: boolean;
   canResend: boolean;
+  canReverseDp: boolean;
   canSend: boolean;
   canStartWork: boolean;
   canSubmitDelivery: boolean;
   canSubmitDesign: boolean;
   canUpdate: boolean;
   canUpdateProgress: boolean;
+  canUploadDpProof: boolean;
   canView: boolean;
   closeBlockReason: string | null;
   customerOptions: KolamProyekPickerOption[];
@@ -129,6 +135,7 @@ export interface KolamProyekController {
   onCreateNew: () => void;
   onDeleteDraft: (password: string) => Promise<boolean>;
   onDownloadInvoice: () => Promise<boolean>;
+  onDownloadKwitansi: (index: number) => Promise<boolean>;
   onEdit: () => void;
   onFormChange: (patch: Partial<KolamProyekQuotationFormState>) => void;
   onOpenItem: (item: KolamProyekListItem) => void;
@@ -139,6 +146,11 @@ export interface KolamProyekController {
   onRefresh: () => Promise<void>;
   onRemoveFormItem: (key: string) => void;
   onResendQuotation: (resolutionNote?: string) => Promise<boolean>;
+  onReverseDpConfirmation: (
+    index: number,
+    confirmationIndex: number,
+    reason?: string,
+  ) => Promise<boolean>;
   onSaveQuotation: () => Promise<string | null>;
   onSearchChange: (value: string) => void;
   onSendQuotation: () => Promise<boolean>;
@@ -151,6 +163,11 @@ export interface KolamProyekController {
   onUpdateProgress: (
     progressPercent: number,
     progressNote?: string,
+  ) => Promise<boolean>;
+  onUploadDpProofs: (
+    index: number,
+    files: Array<{ uri: string; name?: string; mimeType?: string }>,
+    note?: string,
   ) => Promise<boolean>;
 }
 
@@ -226,6 +243,19 @@ export function useKolamProyekController(
       selected?.lifecycleStatus,
       selected?.paymentMode,
     );
+  const canUploadDpProof =
+    canUpdate &&
+    canConfirmKolamProyekDp(
+      selected?.lifecycleStatus,
+      selected?.paymentMode,
+    );
+  const canReverseDp =
+    canUpdateStatus &&
+    canConfirmKolamProyekDp(
+      selected?.lifecycleStatus,
+      selected?.paymentMode,
+    );
+  const canDownloadKwitansi = canView;
   const canStartWork =
     canUpdate && canStartKolamProyekWork(selected?.lifecycleStatus);
   const canUpdateProgress =
@@ -699,13 +729,7 @@ export function useKolamProyekController(
 
   const onConfirmDpReceived = useCallback(
     async (index: number, amount: number, note?: string) => {
-      if (
-        !selected ||
-        !canConfirmKolamProyekDp(
-          selected.lifecycleStatus,
-          selected.paymentMode,
-        )
-      ) {
+      if (!selected || !canConfirmDp) {
         return false;
       }
       const row = selected.dpSchedule.find(item => item.index === index);
@@ -741,7 +765,113 @@ export function useKolamProyekController(
         setActing(false);
       }
     },
-    [selected],
+    [canConfirmDp, selected],
+  );
+
+  const onUploadDpProofs = useCallback(
+    async (
+      index: number,
+      files: Array<{ uri: string; name?: string; mimeType?: string }>,
+      note?: string,
+    ) => {
+      if (!selected || !canUploadDpProof) {
+        return false;
+      }
+      const row = selected.dpSchedule.find(item => item.index === index);
+      if (!row || row.paidAt) {
+        setError('Baris DP tidak tersedia untuk unggah bukti.');
+        return false;
+      }
+      if (!files.length) {
+        setError('Pilih minimal satu file bukti.');
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await uploadKolamProyekDpProofs(
+          selected.id,
+          index,
+          files,
+          note,
+        );
+        setSelected(updated);
+        setStatusMessage(
+          `${files.length} bukti pembayaran diunggah. Menunggu konfirmasi finance.`,
+        );
+        return true;
+      } catch (uploadError) {
+        setError(getApiErrorMessage(uploadError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [canUploadDpProof, selected],
+  );
+
+  const onReverseDpConfirmation = useCallback(
+    async (index: number, confirmationIndex: number, reason?: string) => {
+      if (!selected || !canReverseDp) {
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await reverseKolamProyekDpConfirmation(
+          selected.id,
+          index,
+          confirmationIndex,
+          reason,
+        );
+        setSelected(updated);
+        setStatusMessage('Konfirmasi pembayaran dibatalkan.');
+        return true;
+      } catch (reverseError) {
+        setError(getApiErrorMessage(reverseError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [canReverseDp, selected],
+  );
+
+  const onDownloadKwitansi = useCallback(
+    async (index: number) => {
+      if (!selected || !canDownloadKwitansi) {
+        return false;
+      }
+      const row = selected.dpSchedule.find(item => item.index === index);
+      if (!row?.paidAt || !row.kwitansiNumber) {
+        setError('Kwitansi belum tersedia untuk baris DP ini.');
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const result = await downloadKolamProyekKwitansi(
+          selected.id,
+          index,
+          row.kwitansiNumber,
+        );
+        setStatusMessage(
+          result.path
+            ? `Kwitansi disimpan: ${result.name}`
+            : `Kwitansi diunduh: ${result.name}`,
+        );
+        return true;
+      } catch (downloadError) {
+        setError(getApiErrorMessage(downloadError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [canDownloadKwitansi, selected],
   );
 
   const onStartWork = useCallback(
@@ -977,14 +1107,17 @@ export function useKolamProyekController(
       canCreate,
       canDelete,
       canDownloadInvoice,
+      canDownloadKwitansi,
       canEdit,
       canResend,
+      canReverseDp,
       canSend,
       canStartWork,
       canSubmitDelivery,
       canSubmitDesign,
       canUpdate,
       canUpdateProgress,
+      canUploadDpProof,
       canView,
       closeBlockReason,
       customerOptions: mergedCustomerOptions,
@@ -1016,6 +1149,7 @@ export function useKolamProyekController(
       onCreateNew,
       onDeleteDraft,
       onDownloadInvoice,
+      onDownloadKwitansi,
       onEdit,
       onFormChange,
       onOpenItem,
@@ -1023,6 +1157,7 @@ export function useKolamProyekController(
       onRefresh,
       onRemoveFormItem,
       onResendQuotation,
+      onReverseDpConfirmation,
       onSaveQuotation,
       onSearchChange,
       onSendQuotation,
@@ -1033,6 +1168,7 @@ export function useKolamProyekController(
       onSubmitDelivery,
       onSubmitDesign,
       onUpdateProgress,
+      onUploadDpProofs,
     }),
     [
       acting,
@@ -1042,14 +1178,17 @@ export function useKolamProyekController(
       canCreate,
       canDelete,
       canDownloadInvoice,
+      canDownloadKwitansi,
       canEdit,
       canResend,
+      canReverseDp,
       canSend,
       canStartWork,
       canSubmitDelivery,
       canSubmitDesign,
       canUpdate,
       canUpdateProgress,
+      canUploadDpProof,
       canView,
       closeBlockReason,
       dataSource,
@@ -1072,6 +1211,7 @@ export function useKolamProyekController(
       onCreateNew,
       onDeleteDraft,
       onDownloadInvoice,
+      onDownloadKwitansi,
       onEdit,
       onFormChange,
       onOpenItem,
@@ -1079,6 +1219,7 @@ export function useKolamProyekController(
       onRefresh,
       onRemoveFormItem,
       onResendQuotation,
+      onReverseDpConfirmation,
       onSaveQuotation,
       onSearchChange,
       onSendQuotation,
@@ -1089,6 +1230,7 @@ export function useKolamProyekController(
       onSubmitDelivery,
       onSubmitDesign,
       onUpdateProgress,
+      onUploadDpProofs,
       page,
       pageSize,
       pluginEnabled,
