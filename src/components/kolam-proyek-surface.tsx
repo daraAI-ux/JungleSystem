@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  formatKolamProyekDpRowStatusLabel,
   formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
+  getKolamProyekDpRowOutstanding,
+  getKolamProyekDpRowStatusIntent,
   getKolamProyekLifecycleIntent,
   getKolamProyekSectionVisibility,
   KOLAM_PROYEK_LIFECYCLE_FILTER_OPTIONS,
@@ -336,6 +339,11 @@ function KolamProyekDetailRead({
   const [cancelReason, setCancelReason] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [startWorkOpen, setStartWorkOpen] = useState(false);
+  const [startWorkNote, setStartWorkNote] = useState('Mulai pengerjaan');
+  const [confirmDpIndex, setConfirmDpIndex] = useState<number | null>(null);
+  const [confirmDpAmount, setConfirmDpAmount] = useState('');
+  const [confirmDpNote, setConfirmDpNote] = useState('');
 
   if (controller.loading && !detail) {
     return (
@@ -361,11 +369,15 @@ function KolamProyekDetailRead({
   const showCommission =
     getKolamProyekSectionVisibility(detail.lifecycleStatus, 'commission') !==
     'hidden';
+  const dpVisibility = getKolamProyekSectionVisibility(
+    detail.lifecycleStatus,
+    'dpSchedule',
+  );
   const showDp =
-    getKolamProyekSectionVisibility(detail.lifecycleStatus, 'dpSchedule') !==
-      'hidden' &&
+    dpVisibility !== 'hidden' &&
     detail.paymentMode === 'staged' &&
     detail.dpSchedule.length > 0;
+  const dpActionsActive = controller.canConfirmDp;
   const showProgress =
     getKolamProyekSectionVisibility(
       detail.lifecycleStatus,
@@ -375,6 +387,10 @@ function KolamProyekDetailRead({
   const clientContact = [detail.clientEmail, detail.clientPhone]
     .filter(Boolean)
     .join(' · ');
+  const confirmDpRow =
+    confirmDpIndex == null
+      ? null
+      : detail.dpSchedule.find(row => row.index === confirmDpIndex) ?? null;
 
   return (
     <View style={styles.surface}>
@@ -417,6 +433,18 @@ function KolamProyekDetailRead({
                 disabled={controller.acting}
                 label={controller.acting ? 'Mengirim…' : 'Kirim ulang'}
                 onPress={() => setResendOpen(true)}
+              />
+            ) : null}
+            {controller.canStartWork ? (
+              <KolamButton
+                disabled={controller.acting}
+                label={
+                  controller.acting ? 'Memulai…' : 'Mulai pengerjaan'
+                }
+                onPress={() => {
+                  setStartWorkNote('Mulai pengerjaan');
+                  setStartWorkOpen(true);
+                }}
               />
             ) : null}
             {controller.canCancel ? (
@@ -611,28 +639,51 @@ function KolamProyekDetailRead({
                 DP awal: {formatRupiah(detail.dpAmount)}
               </Text>
             ) : null}
-            {detail.dpSchedule.map(row => (
-              <View key={`dp-${row.index}`} style={styles.listRow}>
-                <Text style={styles.primaryText}>
-                  {row.name} · {formatRupiah(row.amount)}
-                </Text>
-                <Text style={styles.metaText}>
-                  {row.paidAt
-                    ? `Lunas ${formatShortDate(row.paidAt)}`
-                    : row.dueAt
-                      ? `Jatuh tempo ${formatShortDate(row.dueAt)}`
-                      : 'Belum dibayar'}
-                  {row.amountReceived > 0
-                    ? ` · diterima ${formatRupiah(row.amountReceived)}`
-                    : ''}
-                </Text>
-                {row.kwitansiNumber ? (
+            {detail.dpSchedule.map(row => {
+              const outstanding = getKolamProyekDpRowOutstanding(row);
+              const canConfirmRow =
+                dpActionsActive && !row.paidAt && outstanding > 0;
+              return (
+                <View key={`dp-${row.index}`} style={styles.listRow}>
+                  <View style={styles.dpRowHeader}>
+                    <Text style={styles.primaryText}>
+                      {row.name} · {formatRupiah(row.amount)}
+                    </Text>
+                    <KolamStatusBadge
+                      intent={getKolamProyekDpRowStatusIntent(row)}
+                      label={formatKolamProyekDpRowStatusLabel(row)}
+                    />
+                  </View>
                   <Text style={styles.metaText}>
-                    Kwitansi: {row.kwitansiNumber}
+                    Diterima {formatRupiah(row.amountReceived)}
+                    {outstanding > 0 && !row.paidAt
+                      ? ` · sisa ${formatRupiah(outstanding)}`
+                      : ''}
+                    {row.paidAt
+                      ? ` · lunas ${formatShortDate(row.paidAt)}`
+                      : row.dueAt
+                        ? ` · jatuh tempo ${formatShortDate(row.dueAt)}`
+                        : ''}
                   </Text>
-                ) : null}
-              </View>
-            ))}
+                  {row.kwitansiNumber ? (
+                    <Text style={styles.metaText}>
+                      Kwitansi: {row.kwitansiNumber}
+                    </Text>
+                  ) : null}
+                  {canConfirmRow ? (
+                    <KolamButton
+                      disabled={controller.acting}
+                      label="Konfirmasi dana masuk"
+                      onPress={() => {
+                        setConfirmDpIndex(row.index);
+                        setConfirmDpAmount(String(outstanding));
+                        setConfirmDpNote('');
+                      }}
+                    />
+                  ) : null}
+                </View>
+              );
+            })}
           </DetailSection>
         ) : null}
 
@@ -695,7 +746,7 @@ function KolamProyekDetailRead({
         </DetailSection>
 
         <Text style={styles.hintText}>
-          Mutasi DP / mulai kerja / desain / close dilanjutkan di batch P3–P4.
+          Mutasi desain / delivery / close dilanjutkan di batch P4.
         </Text>
       </ScrollView>
 
@@ -713,6 +764,116 @@ function KolamProyekDetailRead({
         title="Kirim surat penawaran?"
         visible={sendOpen}
       />
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setConfirmDpIndex(null)}
+        transparent
+        visible={confirmDpIndex != null}
+      >
+        <View style={styles.dialogOverlay}>
+          <KolamModalBackdrop onPress={() => setConfirmDpIndex(null)} />
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Konfirmasi dana masuk</Text>
+            <Text style={styles.dialogMessage}>
+              {confirmDpRow
+                ? `${confirmDpRow.name} · sisa ${formatRupiah(
+                    getKolamProyekDpRowOutstanding(confirmDpRow),
+                  )}`
+                : 'Konfirmasi pembayaran baris DP.'}
+            </Text>
+            <KolamSettingsWebFieldLabel label="Jumlah diterima (Rp)" required />
+            <KolamFormTextField
+              mode="numeric"
+              onChangeText={setConfirmDpAmount}
+              placeholder="0"
+              value={confirmDpAmount}
+            />
+            <KolamSettingsWebFieldLabel label="Catatan" required={false} />
+            <KolamFormTextField
+              multiline
+              onChangeText={setConfirmDpNote}
+              placeholder="Opsional"
+              value={confirmDpNote}
+            />
+            <View style={styles.dialogActions}>
+              <KolamButton
+                intent="outline"
+                label="Tutup"
+                onPress={() => setConfirmDpIndex(null)}
+              />
+              <KolamButton
+                disabled={controller.acting || confirmDpIndex == null}
+                label={controller.acting ? 'Menyimpan…' : 'Konfirmasi'}
+                onPress={() => {
+                  if (confirmDpIndex == null) {
+                    return;
+                  }
+                  const amount =
+                    Number(String(confirmDpAmount).replace(/[^\d.-]/g, '')) ||
+                    0;
+                  void controller
+                    .onConfirmDpReceived(
+                      confirmDpIndex,
+                      amount,
+                      confirmDpNote,
+                    )
+                    .then(ok => {
+                      if (ok) {
+                        setConfirmDpIndex(null);
+                        setConfirmDpAmount('');
+                        setConfirmDpNote('');
+                      }
+                    });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setStartWorkOpen(false)}
+        transparent
+        visible={startWorkOpen}
+      >
+        <View style={styles.dialogOverlay}>
+          <KolamModalBackdrop onPress={() => setStartWorkOpen(false)} />
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Mulai pengerjaan?</Text>
+            <Text style={styles.dialogMessage}>
+              Status menjadi dikerjakan. Task PIC dibuat dan HPP stok dapat
+              dipotong di backend.
+            </Text>
+            <KolamSettingsWebFieldLabel label="Catatan" required />
+            <KolamFormTextField
+              multiline
+              onChangeText={setStartWorkNote}
+              placeholder="Min. 5 karakter"
+              value={startWorkNote}
+            />
+            <View style={styles.dialogActions}>
+              <KolamButton
+                intent="outline"
+                label="Batal"
+                onPress={() => setStartWorkOpen(false)}
+              />
+              <KolamButton
+                disabled={controller.acting}
+                label={controller.acting ? 'Memulai…' : 'Mulai pengerjaan'}
+                onPress={() => {
+                  void controller.onStartWork(startWorkNote).then(ok => {
+                    if (ok) {
+                      setStartWorkOpen(false);
+                    }
+                  });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         animationType="fade"
@@ -1009,6 +1170,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 2,
     paddingVertical: 8,
+  },
+  dpRowHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
   },
   metricGrid: {
     flexDirection: 'row',

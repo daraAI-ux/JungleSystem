@@ -6,16 +6,20 @@ import {
   buildKolamProyekNewRoute,
   buildKolamProyekQuotationPayload,
   canCancelKolamProyekQuotation,
+  canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
+  canStartKolamProyekWork,
   computeKolamProyekCostBreakdown,
   createEmptyKolamProyekQuotationForm,
   createKolamProyekQuotationFormFromDetail,
+  formatKolamProyekDpRowStatusLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekPaymentModeLabel,
   getKolamProyekAllowedNext,
+  getKolamProyekDpRowOutstanding,
   getKolamProyekHappyPathNext,
   getKolamProyekLifecycleIntent,
   getKolamProyekRouteRef,
@@ -29,6 +33,8 @@ import {
   isKolamProyekRoute,
   normalizeKolamProyekDetail,
   normalizeKolamProyekList,
+  validateKolamProyekDpConfirmAmount,
+  validateKolamProyekLifecycleNote,
   validateKolamProyekQuotationForm,
 } from '../src/domain/kolam-proyek';
 
@@ -304,5 +310,32 @@ describe('kolam-proyek domain', () => {
     expect(fromDetail.designerUserId).toBe('d1');
     expect(fromDetail.contractValueText).toBe('1500000');
     expect(fromDetail.items).toHaveLength(1);
+  });
+
+  it('gates DP confirm and start-work for P3', () => {
+    expect(canConfirmKolamProyekDp('awaiting_dp', 'staged')).toBe(true);
+    expect(canConfirmKolamProyekDp('awaiting_dp', 'full')).toBe(false);
+    expect(canConfirmKolamProyekDp('dp_paid', 'staged')).toBe(false);
+    expect(canStartKolamProyekWork('dp_paid')).toBe(true);
+    expect(canStartKolamProyekWork('awaiting_dp')).toBe(false);
+    expect(validateKolamProyekLifecycleNote('abc')).toMatch(/minimal 5/);
+    expect(validateKolamProyekLifecycleNote('Mulai kerja')).toBeNull();
+
+    const row = {
+      index: 0,
+      name: 'DP 1',
+      amount: 1000000,
+      amountReceived: 250000,
+      paidAt: null,
+      dueAt: null,
+      kwitansiNumber: null,
+    };
+    expect(getKolamProyekDpRowOutstanding(row)).toBe(750000);
+    expect(formatKolamProyekDpRowStatusLabel(row)).toBe('Sebagian');
+    expect(validateKolamProyekDpConfirmAmount(0, 750000)).toMatch(/lebih dari 0/);
+    expect(validateKolamProyekDpConfirmAmount(800000, 750000)).toMatch(
+      /melebihi sisa/,
+    );
+    expect(validateKolamProyekDpConfirmAmount(750000, 750000)).toBeNull();
   });
 });

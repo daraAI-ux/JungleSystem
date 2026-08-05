@@ -7,16 +7,21 @@ import {
   buildKolamProyekNewRoute,
   buildKolamProyekQuotationPayload,
   canCancelKolamProyekQuotation,
+  canConfirmKolamProyekDp,
   canDeleteKolamProyekQuotation,
   canEditKolamProyekQuotation,
   canResendKolamProyekQuotation,
   canSendKolamProyekQuotation,
+  canStartKolamProyekWork,
   createEmptyKolamProyekQuotationForm,
   createKolamProyekQuotationFormFromDetail,
   createKolamProyekQuotationFormItem,
+  getKolamProyekDpRowOutstanding,
   getKolamProyekRouteRef,
   getKolamProyekSurfaceMode,
   isKolamProyekRoute,
+  validateKolamProyekDpConfirmAmount,
+  validateKolamProyekLifecycleNote,
   validateKolamProyekQuotationForm,
   type KolamProyekDetail,
   type KolamProyekLifecycleStatus,
@@ -28,12 +33,14 @@ import { getErrorMessage as getApiErrorMessage } from '../lib/api-error';
 import { getKolamCustomerList } from '../services/kolam-customer-api';
 import {
   cancelKolamProyek,
+  confirmKolamProyekDpReceived,
   createKolamProyekQuotation,
   deleteKolamProyek,
   getKolamProyek,
   getKolamProyekList,
   resendKolamProyekQuotation,
   sendKolamProyekQuotation,
+  transitionKolamProyekLifecycle,
   updateKolamProyekQuotation,
 } from '../services/kolam-proyek-api';
 import { getKolamTermsTemplates } from '../services/kolam-terms-template-api';
@@ -52,10 +59,12 @@ export type KolamProyekPickerOption = {
 export interface KolamProyekController {
   acting: boolean;
   canCancel: boolean;
+  canConfirmDp: boolean;
   canDelete: boolean;
   canEdit: boolean;
   canResend: boolean;
   canSend: boolean;
+  canStartWork: boolean;
   customerOptions: KolamProyekPickerOption[];
   dataSource: KolamProyekDataSource;
   error: string | null;
@@ -78,6 +87,11 @@ export interface KolamProyekController {
   onAddFormItem: () => void;
   onBackToList: () => void;
   onCancelProject: (reason: string) => Promise<boolean>;
+  onConfirmDpReceived: (
+    index: number,
+    amount: number,
+    note?: string,
+  ) => Promise<boolean>;
   onCreateNew: () => void;
   onDeleteDraft: (password: string) => Promise<boolean>;
   onEdit: () => void;
@@ -96,6 +110,7 @@ export interface KolamProyekController {
   onSetLifecycleFilter: (status: '' | KolamProyekLifecycleStatus) => void;
   onSetPage: (page: number) => void;
   onSetPageSize: (pageSize: number) => void;
+  onStartWork: (note: string) => Promise<boolean>;
 }
 
 export function useKolamProyekController(
@@ -140,6 +155,11 @@ export function useKolamProyekController(
   const canResend = canResendKolamProyekQuotation(selected?.lifecycleStatus);
   const canCancel = canCancelKolamProyekQuotation(selected?.lifecycleStatus);
   const canDelete = canDeleteKolamProyekQuotation(selected?.lifecycleStatus);
+  const canConfirmDp = canConfirmKolamProyekDp(
+    selected?.lifecycleStatus,
+    selected?.paymentMode,
+  );
+  const canStartWork = canStartKolamProyekWork(selected?.lifecycleStatus);
 
   const refreshList = useCallback(async () => {
     if (!isKolamProyekRoute(route)) {
@@ -549,6 +569,85 @@ export function useKolamProyekController(
     [onRouteChange, selected],
   );
 
+  const onConfirmDpReceived = useCallback(
+    async (index: number, amount: number, note?: string) => {
+      if (
+        !selected ||
+        !canConfirmKolamProyekDp(
+          selected.lifecycleStatus,
+          selected.paymentMode,
+        )
+      ) {
+        return false;
+      }
+      const row = selected.dpSchedule.find(item => item.index === index);
+      if (!row || row.paidAt) {
+        setError('Baris DP tidak tersedia untuk dikonfirmasi.');
+        return false;
+      }
+      const outstanding = getKolamProyekDpRowOutstanding(row);
+      const amountError = validateKolamProyekDpConfirmAmount(amount, outstanding);
+      if (amountError) {
+        setError(amountError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await confirmKolamProyekDpReceived(selected.id, index, {
+          amount,
+          note,
+        });
+        setSelected(updated);
+        setStatusMessage(
+          updated.lifecycleStatus === 'dp_paid'
+            ? 'Dana DP dikonfirmasi. Proyek siap dimulai.'
+            : 'Dana DP dikonfirmasi.',
+        );
+        return true;
+      } catch (confirmError) {
+        setError(getApiErrorMessage(confirmError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [selected],
+  );
+
+  const onStartWork = useCallback(
+    async (note: string) => {
+      if (!selected || !canStartKolamProyekWork(selected.lifecycleStatus)) {
+        return false;
+      }
+      const noteError = validateKolamProyekLifecycleNote(note);
+      if (noteError) {
+        setError(noteError);
+        return false;
+      }
+      setActing(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const updated = await transitionKolamProyekLifecycle(
+          selected.id,
+          'in_progress',
+          note.trim(),
+        );
+        setSelected(updated);
+        setStatusMessage('Pengerjaan dimulai.');
+        return true;
+      } catch (startError) {
+        setError(getApiErrorMessage(startError));
+        return false;
+      } finally {
+        setActing(false);
+      }
+    },
+    [selected],
+  );
+
   const mergedCustomerOptions = useMemo(() => {
     if (!selected?.clientId) {
       return customerOptions;
@@ -599,10 +698,12 @@ export function useKolamProyekController(
     () => ({
       acting,
       canCancel,
+      canConfirmDp,
       canDelete,
       canEdit,
       canResend,
       canSend,
+      canStartWork,
       customerOptions: mergedCustomerOptions,
       dataSource,
       error,
@@ -625,6 +726,7 @@ export function useKolamProyekController(
       onAddFormItem,
       onBackToList,
       onCancelProject,
+      onConfirmDpReceived,
       onCreateNew,
       onDeleteDraft,
       onEdit,
@@ -640,14 +742,17 @@ export function useKolamProyekController(
       onSetLifecycleFilter,
       onSetPage,
       onSetPageSize,
+      onStartWork,
     }),
     [
       acting,
       canCancel,
+      canConfirmDp,
       canDelete,
       canEdit,
       canResend,
       canSend,
+      canStartWork,
       dataSource,
       error,
       form,
@@ -662,6 +767,7 @@ export function useKolamProyekController(
       onAddFormItem,
       onBackToList,
       onCancelProject,
+      onConfirmDpReceived,
       onCreateNew,
       onDeleteDraft,
       onEdit,
@@ -677,6 +783,7 @@ export function useKolamProyekController(
       onSetLifecycleFilter,
       onSetPage,
       onSetPageSize,
+      onStartWork,
       page,
       pageSize,
       saving,

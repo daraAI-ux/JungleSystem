@@ -3,6 +3,7 @@ import {
   normalizeKolamProyekDetail,
   normalizeKolamProyekList,
   type KolamProyekDetail,
+  type KolamProyekLifecycleStatus,
   type KolamProyekListQuery,
   type KolamProyekListResult,
   type KolamProyekQuotationPayload,
@@ -158,6 +159,47 @@ export async function deleteKolamProyek(
     method: 'DELETE',
     body: { password },
   });
+}
+
+export async function confirmKolamProyekDpReceived(
+  id: string,
+  index: number,
+  body: { amount: number; note?: string },
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/dp-schedule/${index}/confirm-received`,
+    {
+      method: 'POST',
+      body: {
+        amount: body.amount,
+        ...(body.note?.trim() ? { note: body.note.trim() } : {}),
+      },
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal mengonfirmasi pembayaran DP.');
+  }
+  return detail;
+}
+
+export async function transitionKolamProyekLifecycle(
+  id: string,
+  to: KolamProyekLifecycleStatus,
+  note: string,
+): Promise<KolamProyekDetail> {
+  const payload = await kolamRequest<unknown>(
+    `/custom-project/${encodeURIComponent(id)}/lifecycle`,
+    {
+      method: 'PATCH',
+      body: { to, note },
+    },
+  );
+  const detail = normalizeKolamProyekDetail(payload);
+  if (!detail) {
+    throw new Error('Gagal mengubah status proyek.');
+  }
+  return detail;
 }
 
 function kolamRequest<T>(

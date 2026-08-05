@@ -644,6 +644,71 @@ export function canDeleteKolamProyekQuotation(status?: string | null) {
   return getKolamProyekSectionVisibility(status, 'dangerDelete') === 'active';
 }
 
+/** Finance confirm DP rows while schedule section is active (approved / awaiting_dp). */
+export function canConfirmKolamProyekDp(
+  status?: string | null,
+  paymentMode?: string | null,
+) {
+  return (
+    String(paymentMode || '').trim() === 'staged' &&
+    getKolamProyekSectionVisibility(status, 'dpSchedule') === 'active'
+  );
+}
+
+/** Start work only from dp_paid (BE PATCH lifecycle → in_progress). */
+export function canStartKolamProyekWork(status?: string | null) {
+  return String(status || '').trim() === 'dp_paid';
+}
+
+export function getKolamProyekDpRowOutstanding(row: KolamProyekDpScheduleItem) {
+  return Math.max(
+    0,
+    (Number(row.amount) || 0) - (Number(row.amountReceived) || 0),
+  );
+}
+
+export function formatKolamProyekDpRowStatusLabel(row: KolamProyekDpScheduleItem) {
+  if (row.paidAt) {
+    return 'Lunas';
+  }
+  if ((Number(row.amountReceived) || 0) > 0) {
+    return 'Sebagian';
+  }
+  return 'Menunggu';
+}
+
+export function getKolamProyekDpRowStatusIntent(
+  row: KolamProyekDpScheduleItem,
+): KolamStatusBadgeIntent {
+  if (row.paidAt) {
+    return 'success';
+  }
+  if ((Number(row.amountReceived) || 0) > 0) {
+    return 'info';
+  }
+  return 'secondary';
+}
+
+export function validateKolamProyekLifecycleNote(note: string) {
+  if (String(note || '').trim().length < 5) {
+    return 'Catatan minimal 5 karakter.';
+  }
+  return null;
+}
+
+export function validateKolamProyekDpConfirmAmount(
+  amount: number,
+  outstanding: number,
+) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 'Jumlah harus lebih dari 0.';
+  }
+  if (amount > outstanding + 0.0001) {
+    return 'Jumlah melebihi sisa tagihan baris ini.';
+  }
+  return null;
+}
+
 export function createEmptyKolamProyekQuotationForm(): KolamProyekQuotationFormState {
   return {
     clientUserId: '',
