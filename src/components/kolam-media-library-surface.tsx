@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Image,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -511,116 +510,110 @@ function KolamMediaOrphanCleanupDialog({
   const unsafeCount = checkResult?.unsafe.length ?? 0;
   const busy = cleanupPhase === 'checking' || cleanupPhase === 'deleting';
   const ignoreBackdropPress = React.useCallback(() => undefined, []);
-  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const {width: windowWidth} = useWindowDimensions();
   const cardWidth = Math.max(360, Math.min(windowWidth - 48, 640));
 
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={onClose}
-      transparent
-      visible={visible}>
+    <View style={styles.cleanupModalRoot}>
+      <KolamModalBackdrop onPress={busy ? ignoreBackdropPress : onClose} />
       <View
-        style={[
-          styles.cleanupModalRoot,
-          {height: windowHeight, width: windowWidth},
-        ]}>
-        <KolamModalBackdrop onPress={busy ? ignoreBackdropPress : onClose} />
-        <View
-          accessibilityLabel="Cleanup orphan"
-          style={[styles.cleanupModalCard, {width: cardWidth}]}>
-          <View style={styles.cleanupModalHeader}>
-            <Text style={styles.cleanupTitle}>Hapus orphan</Text>
-            <Text style={styles.cleanupText}>
-              Re-check file orphan sebelum hapus.
-            </Text>
-          </View>
+        accessibilityLabel="Cleanup orphan"
+        style={[styles.cleanupModalCard, {width: cardWidth}]}>
+        <View style={styles.cleanupModalHeader}>
+          <Text style={styles.cleanupTitle}>Hapus orphan</Text>
+          <Text style={styles.cleanupText}>
+            Re-check file orphan sebelum hapus.
+          </Text>
+        </View>
 
-          <ScrollView style={styles.cleanupModalScroll}>
-            <View style={styles.cleanupModalBody}>
-              {cleanupPhase === 'checking' ? (
-                <Text style={styles.cleanupText}>Memeriksa file orphan...</Text>
-              ) : null}
+        <ScrollView style={styles.cleanupModalScroll}>
+          <View style={styles.cleanupModalBody}>
+            {cleanupPhase === 'checking' ? (
+              <Text style={styles.cleanupText}>Memeriksa file orphan...</Text>
+            ) : null}
 
-              {cleanupPhase === 'review' ? (
-                <>
-                  <View style={styles.cleanupMetricRow}>
-                    <KolamMediaCleanupMetric label="Kandidat" value={candidateCount} />
-                    <KolamMediaCleanupMetric label="Aman" value={safeCount} />
-                    <KolamMediaCleanupMetric label="Lewati" value={unsafeCount} />
-                  </View>
-
-                  {cleanupError ? (
-                    <Text style={styles.cleanupError}>{cleanupError}</Text>
-                  ) : null}
-
-                  {safeCount > 0 ? (
-                    <View style={styles.cleanupSection}>
-                      <Text style={styles.cleanupSectionTitle}>Aman</Text>
-                      {checkResult?.safe.slice(0, 10).map(filename => (
-                        <Text key={filename} style={styles.cleanupListText}>
-                          {filename}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {unsafeCount > 0 ? (
-                    <View style={styles.cleanupSection}>
-                      <Text style={styles.cleanupSectionTitle}>Dilewati</Text>
-                      {checkResult?.unsafe.slice(0, 10).map(entry => (
-                        <Text key={entry.filename} style={styles.cleanupListText}>
-                          {entry.filename} -{' '}
-                          {entry.foundIn.join(', ') || 'Referenced'}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-                </>
-              ) : null}
-
-              {cleanupPhase === 'deleting' ? (
-                <Text style={styles.cleanupText}>Menghapus orphan...</Text>
-              ) : null}
-
-              {cleanupPhase === 'done' ? (
+            {cleanupPhase === 'review' ? (
+              <>
                 <View style={styles.cleanupMetricRow}>
-                  <KolamMediaCleanupMetric
-                    label="Terhapus"
-                    value={cleanupResult?.deleted ?? 0}
-                  />
-                  <KolamMediaCleanupMetric
-                    label="Gagal"
-                    value={cleanupResult?.failed.length ?? 0}
-                  />
-                  <KolamMediaCleanupMetric
-                    label="Lewati"
-                    value={cleanupResult?.skippedUnsafe ?? 0}
-                  />
+                  <KolamMediaCleanupMetric label="Kandidat" value={candidateCount} />
+                  <KolamMediaCleanupMetric label="Aman" value={safeCount} />
+                  <KolamMediaCleanupMetric label="Lewati" value={unsafeCount} />
                 </View>
-              ) : null}
 
-              {cleanupPhase === 'ready' && cleanupError ? (
-                <Text style={styles.cleanupError}>{cleanupError}</Text>
-              ) : null}
-            </View>
-          </ScrollView>
+                {cleanupError ? (
+                  <Text style={styles.cleanupError}>{cleanupError}</Text>
+                ) : null}
 
-          <View style={styles.cleanupModalFooter}>
-            <KolamButton disabled={busy} label="Tutup" onPress={onClose} />
-            {cleanupPhase === 'review' && safeCount > 0 ? (
-              <KolamButton
-                intent="danger"
-                label="Hapus"
-                onPress={() => {
-                  onDeleteSafe().catch(() => undefined);
-                }}
-              />
+                {safeCount > 0 ? (
+                  <View style={styles.cleanupSection}>
+                    <Text style={styles.cleanupSectionTitle}>Aman</Text>
+                    {checkResult?.safe.slice(0, 10).map(filename => (
+                      <Text key={filename} style={styles.cleanupListText}>
+                        {filename}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+
+                {unsafeCount > 0 ? (
+                  <View style={styles.cleanupSection}>
+                    <Text style={styles.cleanupSectionTitle}>Dilewati</Text>
+                    {checkResult?.unsafe.slice(0, 10).map(entry => (
+                      <Text key={entry.filename} style={styles.cleanupListText}>
+                        {entry.filename} -{' '}
+                        {entry.foundIn.join(', ') || 'Referenced'}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+              </>
+            ) : null}
+
+            {cleanupPhase === 'deleting' ? (
+              <Text style={styles.cleanupText}>Menghapus orphan...</Text>
+            ) : null}
+
+            {cleanupPhase === 'done' ? (
+              <View style={styles.cleanupMetricRow}>
+                <KolamMediaCleanupMetric
+                  label="Terhapus"
+                  value={cleanupResult?.deleted ?? 0}
+                />
+                <KolamMediaCleanupMetric
+                  label="Gagal"
+                  value={cleanupResult?.failed.length ?? 0}
+                />
+                <KolamMediaCleanupMetric
+                  label="Lewati"
+                  value={cleanupResult?.skippedUnsafe ?? 0}
+                />
+              </View>
+            ) : null}
+
+            {cleanupPhase === 'ready' && cleanupError ? (
+              <Text style={styles.cleanupError}>{cleanupError}</Text>
             ) : null}
           </View>
+        </ScrollView>
+
+        <View style={styles.cleanupModalFooter}>
+          <KolamButton disabled={busy} label="Tutup" onPress={onClose} />
+          {cleanupPhase === 'review' && safeCount > 0 ? (
+            <KolamButton
+              intent="danger"
+              label="Hapus"
+              onPress={() => {
+                onDeleteSafe().catch(() => undefined);
+              }}
+            />
+          ) : null}
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 
@@ -657,6 +650,7 @@ const styles = StyleSheet.create({
   root: {
     gap: 12,
     minHeight: 0,
+    position: 'relative',
   },
   toolbarWrap: {
     overflow: 'visible',
@@ -900,10 +894,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   cleanupModalRoot: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    flex: 1,
+    elevation: 96,
     justifyContent: 'center',
     padding: 24,
+    zIndex: 9600,
   },
   cleanupModalScroll: {
     flexGrow: 0,
