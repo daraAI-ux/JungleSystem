@@ -64,6 +64,21 @@ export async function generateAllKolamPayrollSlips(input: {
   );
 }
 
+export async function generateKolamPayrollSlip(input: {
+  periodKey: string;
+  userId: string;
+  withAi?: boolean;
+}): Promise<KolamPayrollSlip | null> {
+  const payload = await kolamRequest<unknown>(
+    `/payroll/periods/${encodeURIComponent(input.periodKey)}/generate/${encodeURIComponent(input.userId)}`,
+    {
+      method: 'POST',
+      body: { withAi: Boolean(input.withAi) },
+    },
+  );
+  return normalizeKolamPayrollSlip(unwrapRow(payload));
+}
+
 export async function finalizeKolamPayrollPeriod(input: {
   periodKey: string;
   walletId?: string;
@@ -82,6 +97,16 @@ export async function fetchKolamPayrollSlip(
 ): Promise<KolamPayrollSlip | null> {
   const payload = await kolamRequest<unknown>(
     `/payroll/slips/${encodeURIComponent(slipId)}`,
+  );
+  return normalizeKolamPayrollSlip(unwrapRow(payload));
+}
+
+export async function refreshKolamPayrollPph21Ai(
+  slipId: string,
+): Promise<KolamPayrollSlip | null> {
+  const payload = await kolamRequest<unknown>(
+    `/payroll/slips/${encodeURIComponent(slipId)}/pph21-ai`,
+    { method: 'POST' },
   );
   return normalizeKolamPayrollSlip(unwrapRow(payload));
 }

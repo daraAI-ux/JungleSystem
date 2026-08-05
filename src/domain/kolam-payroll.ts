@@ -8,12 +8,44 @@ export const KOLAM_PAYROLL_ROOT = '/finance/payroll';
 
 export type KolamPayrollPeriodStatus = 'draft' | 'finalized';
 export type KolamPayrollSlipStatus = 'draft' | 'finalized';
+export type KolamPayrollWarningSeverity = 'info' | 'warning' | 'error';
 
 export type KolamPayrollPermissionAction = 'view' | 'create' | 'update' | 'confirm';
 
 export type KolamPayrollPermissionEntry = {
   resource?: string;
   actions?: string[];
+};
+
+export type KolamPayrollTaxSettlement = {
+  id: string;
+  code: string;
+  status: string;
+  amount: number;
+};
+
+export type KolamPayrollWarning = {
+  code: string;
+  message: string;
+  severity: KolamPayrollWarningSeverity;
+};
+
+export type KolamPayrollPph21Line = {
+  applicable: boolean;
+  rate: number;
+  taxableBase: number;
+  amount: number;
+};
+
+export type KolamPayrollEmployeeSnapshot = {
+  firstName: string;
+  lastName: string;
+  employeeNumber: string;
+  position: string;
+  department: string;
+  taxNumber: string;
+  isPkp: boolean;
+  salaryDate: number | null;
 };
 
 export type KolamPayrollPeriod = {
@@ -30,6 +62,8 @@ export type KolamPayrollPeriod = {
   totalPph21Payroll: number;
   walletId: string;
   walletName: string;
+  walletBalance: number | null;
+  taxSettlement: KolamPayrollTaxSettlement | null;
   finalizedAt: string;
   createdAt: string;
 };
@@ -38,15 +72,26 @@ export type KolamPayrollSlip = {
   id: string;
   slipCode: string;
   periodKey: string;
+  userId: string;
   userLabel: string;
   employeeNumber: string;
   status: KolamPayrollSlipStatus;
+  warnings: KolamPayrollWarning[];
+  employeeSnapshot: KolamPayrollEmployeeSnapshot;
   baseSalary: number;
   bonusTotal: number;
+  commissionGross: number;
+  commissionPph21Withheld: number;
+  commissionNet: number;
+  kasbonTotal: number;
+  salaryDeductionTotal: number;
   takeHomePay: number;
   grossBruto: number;
   totalDeductions: number;
+  pph21Payroll: KolamPayrollPph21Line;
+  /** Convenience mirror of `pph21Payroll.amount` for existing UI. */
   pph21Amount: number;
+  pph21AiNote: string;
   generatedAt: string;
 };
 
@@ -237,7 +282,7 @@ export function normalizeKolamPayrollPeriodDetail(
 }
 
 export function normalizeKolamPayrollSlip(payload: unknown): KolamPayrollSlip | null {
-  const slip = normalizePayrollSlip(payload);
+  const slip = normalizePayrollSlip(unwrapData(payload));
   return slip.id ? slip : null;
 }
 
@@ -246,12 +291,17 @@ function normalizePayrollPeriod(payload: unknown): KolamPayrollPeriod {
   const wallet = record.wallet;
   let walletId = '';
   let walletName = '';
+  let walletBalance: number | null = null;
   if (typeof wallet === 'string') {
     walletId = wallet.trim();
   } else {
     const walletRecord = asRecord(wallet);
     walletId = getString(walletRecord, '_id') || getString(walletRecord, 'id');
     walletName = getString(walletRecord, 'name');
+    walletBalance = getOptionalNumber(walletRecord, 'currentBalance');
+    if (walletBalance == null) {
+      walletBalance = getOptionalNumber(walletRecord, 'balance');
+    }
   }
   return {
     id: getString(record, '_id') || getString(record, 'id'),
@@ -270,8 +320,35 @@ function normalizePayrollPeriod(payload: unknown): KolamPayrollPeriod {
     totalPph21Payroll: Number(record.totalPph21Payroll) || 0,
     walletId,
     walletName,
+    walletBalance,
+    taxSettlement: normalizeTaxSettlement(record.taxSettlement),
     finalizedAt: getString(record, 'finalizedAt'),
     createdAt: getString(record, 'createdAt'),
+  };
+}
+
+function normalizeTaxSettlement(
+  payload: unknown,
+): KolamPayrollTaxSettlement | null {
+  if (payload == null || payload === '') {
+    return null;
+  }
+  if (typeof payload === 'string') {
+    const id = payload.trim();
+    return id
+      ? {id, code: '', status: '', amount: 0}
+      : null;
+  }
+  const record = asRecord(payload);
+  const id = getString(record, '_id') || getString(record, 'id');
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    code: getString(record, 'code'),
+    status: getString(record, 'status'),
+    amount: Number(record.amount) || 0,
   };
 }
 
@@ -280,40 +357,117 @@ function normalizePayrollSlip(payload: unknown): KolamPayrollSlip {
   const user = record.user;
   const snapshot = asRecord(record.employeeSnapshot);
   const pph21 = asRecord(record.pph21Payroll);
+  let userId = '';
   let userLabel = '';
-  if (typeof user === 'object' && user) {
+  if (typeof user === 'string') {
+    userId = user.trim();
+  } else if (typeof user === 'object' && user) {
     const userRecord = asRecord(user);
+    userId = getString(userRecord, '_id') || getString(userRecord, 'id');
     userLabel = `${getString(userRecord, 'first_name')} ${getString(
       userRecord,
       'last_name',
     )}`.trim();
   }
-  if (!userLabel) {
-    userLabel = `${getString(snapshot, 'firstName')} ${getString(
-      snapshot,
-      'lastName',
-    )}`.trim();
+  if (!userId) {
+    userId = getString(record, 'userId');
   }
+  const firstName = getString(snapshot, 'firstName');
+  const lastName = getString(snapshot, 'lastName');
+  if (!userLabel) {
+    userLabel = `${firstName} ${lastName}`.trim();
+  }
+  const employeeNumber =
+    getString(snapshot, 'employeeNumber') ||
+    getString(snapshot, 'employee_number');
+  const pph21Payroll: KolamPayrollPph21Line = {
+    applicable: pph21.applicable === true,
+    rate: Number(pph21.rate) || 0,
+    taxableBase: Number(pph21.taxableBase) || 0,
+    amount: Number(pph21.amount) || 0,
+  };
+  const salaryDateRaw = snapshot.salaryDate;
+  const salaryDate =
+    salaryDateRaw == null || salaryDateRaw === ''
+      ? null
+      : Number.isFinite(Number(salaryDateRaw))
+        ? Number(salaryDateRaw)
+        : null;
   return {
     id: getString(record, '_id') || getString(record, 'id'),
     slipCode: getString(record, 'slipCode'),
     periodKey: getString(record, 'periodKey'),
+    userId,
     userLabel: userLabel || '—',
-    employeeNumber:
-      getString(snapshot, 'employeeNumber') ||
-      getString(snapshot, 'employee_number'),
+    employeeNumber,
     status:
       getString(record, 'status').toLowerCase() === 'finalized'
         ? 'finalized'
         : 'draft',
+    warnings: normalizeWarnings(record.warnings),
+    employeeSnapshot: {
+      firstName,
+      lastName,
+      employeeNumber,
+      position: getString(snapshot, 'position'),
+      department: getString(snapshot, 'department'),
+      taxNumber:
+        getString(snapshot, 'taxNumber') || getString(snapshot, 'tax_number'),
+      isPkp: snapshot.isPkp === true,
+      salaryDate,
+    },
     baseSalary: Number(record.baseSalary) || 0,
     bonusTotal: Number(record.bonusTotal) || 0,
+    commissionGross: Number(record.commissionGross) || 0,
+    commissionPph21Withheld: Number(record.commissionPph21Withheld) || 0,
+    commissionNet: Number(record.commissionNet) || 0,
+    kasbonTotal: Number(record.kasbonTotal) || 0,
+    salaryDeductionTotal: Number(record.salaryDeductionTotal) || 0,
     takeHomePay: Number(record.takeHomePay) || 0,
     grossBruto: Number(record.grossBruto) || 0,
     totalDeductions: Number(record.totalDeductions) || 0,
-    pph21Amount: Number(pph21.amount) || 0,
+    pph21Payroll,
+    pph21Amount: pph21Payroll.amount,
+    pph21AiNote: getString(record, 'pph21AiNote'),
     generatedAt: getString(record, 'generatedAt'),
   };
+}
+
+function normalizeWarnings(payload: unknown): KolamPayrollWarning[] {
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+  return payload
+    .map(item => {
+      const record = asRecord(item);
+      const code = getString(record, 'code');
+      if (!code) {
+        return null;
+      }
+      const severityRaw = getString(record, 'severity').toLowerCase();
+      const severity: KolamPayrollWarningSeverity =
+        severityRaw === 'error' || severityRaw === 'info'
+          ? severityRaw
+          : 'warning';
+      return {
+        code,
+        message: getString(record, 'message'),
+        severity,
+      };
+    })
+    .filter((row): row is KolamPayrollWarning => row != null);
+}
+
+function getOptionalNumber(
+  record: Record<string, unknown>,
+  key: string,
+): number | null {
+  const value = record[key];
+  if (value == null || value === '') {
+    return null;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
 }
 
 function normalizePendingEmployee(payload: unknown): KolamPayrollPendingEmployee {
