@@ -14,7 +14,6 @@ import {
   computeKolamProyekOutstanding,
   formatKolamProyekComplaintWindowLabel,
   formatKolamProyekDpRowStatusLabel,
-  formatKolamProyekItemTypeLabel,
   formatKolamProyekLifecycleLabel,
   formatKolamProyekLifecycleTransitionLabel,
   formatKolamProyekReviewDecisionLabel,
@@ -33,6 +32,7 @@ import {
   type KolamProyekDetail,
   type KolamProyekHppMaterial,
   type KolamProyekLifecycleStatus,
+  type KolamProyekLinkedUnexpectedExpense,
   type KolamProyekListItem,
   type KolamProyekNextStepAction,
   type KolamProyekNextStepHero,
@@ -933,83 +933,15 @@ function KolamProyekDetailRead({
           </DetailSection>
         ) : null}
 
-        <DetailSection title="Item penawaran">
-          {detail.items.length === 0 ? (
-            <Text style={styles.metaText}>Belum ada item.</Text>
-          ) : (
-            detail.items.map(item => (
-              <View key={item.id} style={styles.listRow}>
-                <Text style={styles.primaryText}>{item.title}</Text>
-                <Text style={styles.metaText}>
-                  {formatKolamProyekItemTypeLabel(item.itemType)} ·{' '}
-                  {item.quantity} × {formatRupiah(item.unitPrice)} ={' '}
-                  {formatRupiah(item.subtotal)}
-                </Text>
-                {item.note ? (
-                  <Text style={styles.metaText}>{item.note}</Text>
-                ) : null}
-              </View>
-            ))
-          )}
-        </DetailSection>
-
-        <DetailSection title="Bahan Tambahan">
-          <Text style={styles.metaText}>
-            Pembelian di luar toko — dari Unexpected Expense ter-link ke proyek
-            ini.
-          </Text>
-          {detail.linkedUnexpectedExpenses.length === 0 ? (
-            <Text style={styles.metaText}>
-              Belum ada pembelian luar tercatat.
-            </Text>
-          ) : (
-            detail.linkedUnexpectedExpenses.map(expense => (
-              <View key={expense.id} style={styles.listRow}>
-                <View style={styles.dpRowHeader}>
-                  <Pressable
-                    onPress={() =>
-                      onRouteChange?.(`/unexpected-expense/${expense.id}`)
-                    }
-                  >
-                    <Text style={styles.linkText}>
-                      {expense.code
-                        ? `${expense.code} · ${formatRupiah(expense.amount)}`
-                        : formatRupiah(expense.amount)}
-                    </Text>
-                  </Pressable>
-                  <KolamStatusBadge
-                    intent={
-                      expense.status === 'verified' ? 'success' : 'warning'
-                    }
-                    label={
-                      expense.status === 'verified'
-                        ? 'Verified'
-                        : 'Belum verified'
-                    }
-                  />
-                </View>
-                {expense.executedAt ? (
-                  <Text style={styles.metaText}>
-                    {formatShortDate(expense.executedAt)}
-                  </Text>
-                ) : null}
-                {expense.allocationLabels.map((label, index) => (
-                  <Text
-                    key={`${expense.id}-alloc-${index}`}
-                    style={styles.metaText}
-                  >
-                    {label}
-                  </Text>
-                ))}
-                {expense.shippingAmount > 0 ? (
-                  <Text style={styles.metaText}>
-                    Ongkir: {formatRupiah(expense.shippingAmount)}
-                  </Text>
-                ) : null}
-              </View>
-            ))
-          )}
-        </DetailSection>
+        <ProyekBahanTambahanTable
+          expenses={detail.linkedUnexpectedExpenses}
+          onOpenExpense={id => onRouteChange?.(`/unexpected-expense/${id}`)}
+          onCreateExpense={() =>
+            onRouteChange?.(
+              `/unexpected-expense/create?projectId=${encodeURIComponent(detail.id)}`,
+            )
+          }
+        />
 
         {showHpp ? (
           <ProyekHppMaterialsSection
@@ -1918,6 +1850,114 @@ function KolamProyekDetailRead({
         </View>
       </Modal>
     </View>
+  );
+}
+
+function ProyekBahanTambahanTable({
+  expenses,
+  onCreateExpense,
+  onOpenExpense,
+}: {
+  expenses: KolamProyekLinkedUnexpectedExpense[];
+  onCreateExpense: () => void;
+  onOpenExpense: (id: string) => void;
+}) {
+  return (
+    <KolamCardFrame style={styles.bahanCard} variant="compact">
+      <View style={styles.bahanHeader}>
+        <View style={styles.bahanHeaderCopy}>
+          <Text style={styles.bahanTitle}>Bahan tambahan</Text>
+          <Text style={styles.bahanDescription}>
+            Pembelian di luar toko — dari Unexpected Expense ter-link ke proyek
+            ini.
+          </Text>
+        </View>
+        <KolamButton
+          intent="outline"
+          label="Catat pembelian"
+          onPress={onCreateExpense}
+        />
+      </View>
+
+      {expenses.length === 0 ? (
+        <Text style={styles.metaText}>Belum ada pembelian luar tercatat.</Text>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator>
+          <View style={styles.bahanTable}>
+            <View style={[styles.bahanTableRow, styles.bahanTableHead]}>
+              <Text style={[styles.bahanTh, styles.bahanColCode]}>Kode</Text>
+              <Text style={[styles.bahanTh, styles.bahanColAmount]}>Jumlah</Text>
+              <Text style={[styles.bahanTh, styles.bahanColStatus]}>
+                Status
+              </Text>
+              <Text style={[styles.bahanTh, styles.bahanColDate]}>Tanggal</Text>
+              <Text style={[styles.bahanTh, styles.bahanColAlloc]}>
+                Alokasi
+              </Text>
+              <Text style={[styles.bahanTh, styles.bahanColShip]}>Ongkir</Text>
+            </View>
+            {expenses.map(expense => {
+              const verified = expense.status === 'verified';
+              return (
+                <View key={expense.id} style={styles.bahanTableRow}>
+                  <View style={styles.bahanColCode}>
+                    <Pressable onPress={() => onOpenExpense(expense.id)}>
+                      <Text style={styles.linkText} numberOfLines={1}>
+                        {expense.code || expense.id}
+                      </Text>
+                    </Pressable>
+                    {expense.vendorName ? (
+                      <Text style={styles.bahanSubMeta} numberOfLines={1}>
+                        {expense.vendorName}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text
+                    style={[
+                      styles.bahanTd,
+                      styles.bahanColAmount,
+                      styles.tabular,
+                    ]}
+                  >
+                    {formatRupiah(expense.amount)}
+                  </Text>
+                  <View style={styles.bahanColStatus}>
+                    <KolamStatusBadge
+                      intent={verified ? 'success' : 'warning'}
+                      label={verified ? 'Verified' : 'Belum verified'}
+                    />
+                  </View>
+                  <Text style={[styles.bahanTd, styles.bahanColDate]}>
+                    {expense.executedAt
+                      ? formatShortDate(expense.executedAt)
+                      : '—'}
+                  </Text>
+                  <Text
+                    style={[styles.bahanTd, styles.bahanColAlloc]}
+                    numberOfLines={2}
+                  >
+                    {expense.allocationLabels.length > 0
+                      ? expense.allocationLabels.join(' · ')
+                      : '—'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.bahanTd,
+                      styles.bahanColShip,
+                      styles.tabular,
+                    ]}
+                  >
+                    {expense.shippingAmount > 0
+                      ? formatRupiah(expense.shippingAmount)
+                      : '—'}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
+    </KolamCardFrame>
   );
 }
 
@@ -2857,6 +2897,96 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     lineHeight: 17,
+  },
+  bahanCard: {
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  bahanHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  bahanHeaderCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 180,
+  },
+  bahanTitle: {
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  bahanDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  bahanTable: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    minWidth: 720,
+    overflow: 'hidden',
+  },
+  bahanTableHead: {
+    backgroundColor: V.colors.mutedSoft,
+  },
+  bahanTableRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  bahanTh: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.45,
+    textTransform: 'uppercase',
+  },
+  bahanTd: {
+    color: V.colors.fg,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  bahanSubMeta: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  bahanColCode: {
+    minWidth: 110,
+    width: 120,
+  },
+  bahanColAmount: {
+    minWidth: 100,
+    textAlign: 'right',
+    width: 110,
+  },
+  bahanColStatus: {
+    minWidth: 110,
+    width: 120,
+  },
+  bahanColDate: {
+    minWidth: 90,
+    width: 100,
+  },
+  bahanColAlloc: {
+    flexGrow: 1,
+    minWidth: 160,
+  },
+  bahanColShip: {
+    minWidth: 90,
+    textAlign: 'right',
+    width: 100,
   },
   detailTop: {
     flexShrink: 0,
