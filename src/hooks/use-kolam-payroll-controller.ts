@@ -22,6 +22,7 @@ import {
   finalizeKolamPayrollPeriod,
   generateAllKolamPayrollSlips,
   generateKolamPayrollSlip,
+  refreshKolamPayrollPph21Ai,
   setKolamPayrollPeriodWallet,
 } from '../services/kolam-payroll-api';
 import { getKolamWalletOptionsPaginated } from '../services/kolam-wallet-option-api';
@@ -60,6 +61,7 @@ export interface KolamPayrollController {
     openSlip?: boolean;
   }) => Promise<void>;
   onFinalize: () => Promise<void>;
+  onRefreshPph21Ai: () => Promise<void>;
 }
 
 export function useKolamPayrollController(
@@ -260,6 +262,18 @@ export function useKolamPayrollController(
     });
   }, [canUpdate, periodKey, runMutation, selectedWalletId]);
 
+  const onRefreshPph21Ai = useCallback(async () => {
+    if (!slipId) {
+      return;
+    }
+    await runMutation('Narasi PPh 21 AI diperbarui', async () => {
+      const next = await refreshKolamPayrollPph21Ai(slipId);
+      if (next) {
+        setSlip(next);
+      }
+    });
+  }, [runMutation, slipId]);
+
   return {
     mode,
     periodKey,
@@ -290,6 +304,7 @@ export function useKolamPayrollController(
     onGenerateAll,
     onGenerateOne,
     onFinalize,
+    onRefreshPph21Ai,
   };
 }
 

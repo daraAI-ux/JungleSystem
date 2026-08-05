@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamPayrollPeriodStatusLabel,
   getKolamPayrollPeriodStatusIntent,
@@ -597,40 +597,231 @@ function PayrollSlipBody({
     return <KolamEmptyState title="Slip tidak ditemukan" />;
   }
 
+  if (!slip) {
+    return (
+      <View style={styles.emptyWrap}>
+        <KolamEmptyState compact title="Memuat…" />
+      </View>
+    );
+  }
+
+  const snapshot = slip.employeeSnapshot;
+  const name =
+    `${snapshot.firstName} ${snapshot.lastName}`.trim() || slip.userLabel;
+  const pphRateLabel = slip.pph21Payroll.applicable
+    ? ` (${slip.pph21Payroll.rate}%)`
+    : '';
+  const printedAt = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <>
       <View style={styles.detailHeader}>
-        {onRouteChange && slip?.periodKey ? (
+        {onRouteChange && slip.periodKey ? (
           <KolamButton
             intent="secondary"
-            label="Kembali"
+            label="Kembali ke periode"
             onPress={() =>
               onRouteChange(buildKolamPayrollPeriodRoute(slip.periodKey))
             }
-            style={styles.backButton}
+            style={styles.backButtonWide}
           />
         ) : null}
-        <Text style={styles.detailTitle}>{slip?.slipCode || 'Slip gaji'}</Text>
+        <View style={styles.slipTitleBlock}>
+          <Text style={styles.detailTitle}>
+            Slip Gaji — {slip.periodKey || '—'}
+          </Text>
+          <Text style={styles.metaText}>{slip.slipCode || '—'}</Text>
+        </View>
+        <KolamButton
+          disabled={controller.mutating}
+          intent="secondary"
+          label={
+            controller.mutating ? 'Memperbarui…' : 'Refresh narasi AI'
+          }
+          onPress={() => {
+            void controller.onRefreshPph21Ai();
+          }}
+          style={styles.aiButton}
+        />
       </View>
 
-      {slip ? (
-        <KolamCardFrame style={styles.summaryCard}>
-          <Text style={styles.primaryText}>{slip.userLabel}</Text>
-          <Text style={styles.metaText}>
-            Gaji pokok {formatRupiah(slip.baseSalary)} · Bonus{' '}
-            {formatRupiah(slip.bonusTotal)}
-          </Text>
-          <Text style={styles.metaText}>
-            Bruto {formatRupiah(slip.grossBruto)} · Potongan{' '}
-            {formatRupiah(slip.totalDeductions)} · PPh21{' '}
-            {formatRupiah(slip.pph21Amount)}
-          </Text>
-          <Text style={styles.primaryText}>
-            THP {formatRupiah(slip.takeHomePay)}
-          </Text>
+      <ScrollView
+        contentContainerStyle={styles.slipScrollContent}
+        style={styles.slipScroll}
+      >
+        <KolamCardFrame style={styles.slipCard}>
+          <View style={styles.slipDocHeader}>
+            <Text style={styles.slipBrand}>Dunia Anura</Text>
+            <View style={styles.slipDocHeaderRight}>
+              <Text style={styles.slipDocTitle}>Slip Gaji</Text>
+              <Text style={styles.metaText}>Periode {slip.periodKey}</Text>
+              <Text style={styles.metaText}>{slip.slipCode || '—'}</Text>
+            </View>
+          </View>
+
+          {slip.warnings.length > 0 ? (
+            <View style={styles.warningBox}>
+              {slip.warnings.map(warning => (
+                <Text key={warning.code} style={styles.warningText}>
+                  <Text style={styles.warningCode}>{warning.code}: </Text>
+                  {warning.message}
+                </Text>
+              ))}
+            </View>
+          ) : null}
+
+          <View style={styles.identityGrid}>
+            <SlipIdentityField label="Nama" value={name} />
+            <SlipIdentityField
+              label="No. Karyawan"
+              value={snapshot.employeeNumber || '—'}
+            />
+            <SlipIdentityField
+              label="NPWP"
+              value={snapshot.taxNumber || '—'}
+            />
+            <SlipIdentityField
+              label="PKP"
+              value={snapshot.isPkp ? 'Berlaku' : 'Tidak berlaku'}
+            />
+            <SlipIdentityField
+              label="Departemen"
+              value={snapshot.department || '—'}
+            />
+            <SlipIdentityField
+              label="Posisi"
+              value={snapshot.position || '—'}
+            />
+          </View>
+
+          <View style={styles.amountTable}>
+            <SlipAmountRow
+              label="Gaji pokok"
+              value={formatRupiah(slip.baseSalary)}
+            />
+            <SlipAmountRow
+              label="Bonus (verified)"
+              value={formatRupiah(slip.bonusTotal)}
+            />
+            <SlipAmountRow
+              label="Komisi bruto (released)"
+              value={formatRupiah(slip.commissionGross)}
+            />
+            <SlipAmountRow
+              emphasis
+              label="Bruto"
+              value={formatRupiah(slip.grossBruto)}
+            />
+            <SlipAmountRow
+              indented
+              muted
+              label="PPh 21 komisi (sudah dipotong)"
+              value={`(${formatRupiah(slip.commissionPph21Withheld)})`}
+            />
+            <SlipAmountRow
+              indented
+              muted
+              label={`PPh 21 gaji+bonus${pphRateLabel}`}
+              value={`(${formatRupiah(slip.pph21Payroll.amount)})`}
+            />
+            <SlipAmountRow
+              indented
+              muted
+              label="Kasbon"
+              value={`(${formatRupiah(slip.kasbonTotal)})`}
+            />
+            <SlipAmountRow
+              indented
+              muted
+              label="Potongan gaji"
+              value={`(${formatRupiah(slip.salaryDeductionTotal)})`}
+            />
+            <SlipAmountRow
+              strong
+              label="Take home pay"
+              value={formatRupiah(slip.takeHomePay)}
+            />
+          </View>
+
+          {slip.pph21AiNote ? (
+            <View style={styles.aiNoteBox}>
+              <Text style={styles.aiNoteTitle}>
+                Catatan PPh 21 (AI — estimasi)
+              </Text>
+              <Text style={styles.aiNoteBody}>{slip.pph21AiNote}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.slipFooter}>
+            <Text style={styles.footerText}>
+              Dokumen estimasi internal. Bukan bukti potong resmi DJP. Rekap PPh
+              21 bulanan: Tax Intelligence.
+            </Text>
+            <Text style={styles.footerText}>Dicetak: {printedAt}</Text>
+          </View>
         </KolamCardFrame>
-      ) : null}
+      </ScrollView>
     </>
+  );
+}
+
+function SlipIdentityField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.identityField}>
+      <Text style={styles.metaText}>{label}</Text>
+      <Text style={styles.primaryText}>{value}</Text>
+    </View>
+  );
+}
+
+function SlipAmountRow({
+  label,
+  value,
+  emphasis,
+  strong,
+  muted,
+  indented,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+  strong?: boolean;
+  muted?: boolean;
+  indented?: boolean;
+}) {
+  return (
+    <View style={[styles.amountRow, strong ? styles.amountRowStrong : null]}>
+      <Text
+        style={[
+          styles.amountLabel,
+          indented ? styles.amountLabelIndented : null,
+          muted ? styles.metaText : null,
+          emphasis || strong ? styles.amountLabelEmphasis : null,
+        ]}
+      >
+        {label}
+      </Text>
+      <Text
+        style={[
+          styles.amountValue,
+          muted ? styles.metaText : null,
+          emphasis || strong ? styles.amountValueEmphasis : null,
+          strong ? styles.amountValueStrong : null,
+        ]}
+      >
+        {value}
+      </Text>
+    </View>
   );
 }
 
@@ -762,6 +953,17 @@ const styles = StyleSheet.create({
   backButton: {
     minWidth: 88,
   },
+  backButtonWide: {
+    minWidth: 140,
+  },
+  aiButton: {
+    minWidth: 148,
+  },
+  slipTitleBlock: {
+    flex: 1,
+    gap: 2,
+    minWidth: 160,
+  },
   detailTitle: {
     color: V.colors.fg,
     flex: 1,
@@ -772,6 +974,139 @@ const styles = StyleSheet.create({
   summaryCard: {
     gap: 4,
     padding: 12,
+  },
+  slipScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  slipScrollContent: {
+    paddingBottom: 16,
+  },
+  slipCard: {
+    gap: 16,
+    padding: 16,
+  },
+  slipDocHeader: {
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+  },
+  slipBrand: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  slipDocHeaderRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  slipDocTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  warningBox: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
+    borderRadius: V.radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    padding: 10,
+  },
+  warningText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+  },
+  warningCode: {
+    fontWeight: '700',
+  },
+  identityGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  identityField: {
+    gap: 2,
+    minWidth: '45%',
+    width: '47%',
+  },
+  amountTable: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  amountRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  amountRowStrong: {
+    borderBottomWidth: 0,
+    paddingTop: 12,
+  },
+  amountLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    paddingRight: 8,
+  },
+  amountLabelIndented: {
+    paddingLeft: 12,
+  },
+  amountLabelEmphasis: {
+    fontWeight: '600',
+  },
+  amountValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    textAlign: 'right',
+  },
+  amountValueEmphasis: {
+    fontWeight: '600',
+  },
+  amountValueStrong: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  aiNoteBox: {
+    borderColor: V.colors.border,
+    borderRadius: V.radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+    padding: 10,
+  },
+  aiNoteTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  aiNoteBody: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  slipFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingTop: 12,
+  },
+  footerText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    lineHeight: 16,
   },
   opsCard: {
     padding: 12,
