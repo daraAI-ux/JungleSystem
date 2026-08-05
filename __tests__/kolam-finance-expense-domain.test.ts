@@ -11,9 +11,13 @@ import {
   buildKolamAssetPurchaseCreatePayload,
   buildKolamAssetPurchaseDetailRoute,
   buildKolamAssetPurchaseHistoryItems,
+  buildKolamUnexpectedIncomeCreatePayload,
+  buildKolamUnexpectedIncomeHistoryItems,
   createEmptyKolamAssetPurchaseForm,
+  createEmptyKolamUnexpectedIncomeForm,
   createInitialFinanceExpenseListFilters,
   createKolamAssetPurchaseFormFromDetail,
+  createKolamUnexpectedIncomeFormFromDetail,
   getAssetPurchaseFormTotal,
   getKolamAssetPurchaseDetailTab,
   getKolamAssetPurchaseEditRoute,
@@ -21,6 +25,10 @@ import {
   getKolamAssetPurchaseSurfaceMode,
   getKolamFinanceExpenseKindFromRoute,
   getKolamFinanceExpenseSurfaceMode,
+  getKolamUnexpectedIncomeCreateRoute,
+  getKolamUnexpectedIncomeEditRoute,
+  getKolamUnexpectedIncomeIdFromRoute,
+  getKolamUnexpectedIncomeSurfaceMode,
   isKolamAssetPurchaseRoute,
   isKolamFinanceExpenseListRoute,
   isKolamFinanceExpenseRoute,
@@ -29,7 +37,9 @@ import {
   isKolamUnexpectedIncomeRoute,
   normalizeKolamAssetPurchaseDetail,
   normalizeKolamFinanceExpenseList,
+  normalizeKolamUnexpectedIncomeDetail,
   validateKolamAssetPurchaseForm,
+  validateKolamUnexpectedIncomeForm,
 } from '../src/domain/kolam-finance-expense';
 
 describe('Kolam finance expense domain', () => {
@@ -332,6 +342,76 @@ describe('Kolam finance expense domain', () => {
     expect(history[0]?.title).toBe('Pembelian Diperbarui');
     expect(history[1]?.title).toBe('Pembelian Aset Dibuat');
     expect(history[1]?.lines[0]).toContain('Laptop');
+  });
+  it('maps unexpected-income create, detail, and edit surface modes', () => {
+    expect(getKolamUnexpectedIncomeSurfaceMode('/unexpected-income')).toBe(
+      'list',
+    );
+    expect(
+      getKolamUnexpectedIncomeSurfaceMode('/unexpected-income/create'),
+    ).toBe('create');
+    expect(
+      getKolamUnexpectedIncomeSurfaceMode('/unexpected-income/abc'),
+    ).toBe('detail');
+    expect(
+      getKolamUnexpectedIncomeSurfaceMode('/unexpected-income/abc/edit'),
+    ).toBe('edit');
+    expect(getKolamUnexpectedIncomeIdFromRoute('/unexpected-income/abc')).toBe(
+      'abc',
+    );
+    expect(
+      getKolamUnexpectedIncomeIdFromRoute('/unexpected-income/abc/edit'),
+    ).toBe('abc');
+    expect(getKolamUnexpectedIncomeCreateRoute()).toBe(
+      '/unexpected-income/create',
+    );
+    expect(getKolamUnexpectedIncomeEditRoute('abc')).toBe(
+      '/unexpected-income/abc/edit',
+    );
+  });
+
+  it('builds unexpected-income create payload and validates form', () => {
+    const form = createEmptyKolamUnexpectedIncomeForm('2026-08-05');
+    expect(validateKolamUnexpectedIncomeForm(form)).toBe(
+      'Masukkan nama pemasukan',
+    );
+    form.name = 'Refund vendor';
+    form.amountText = '150000';
+    form.walletId = 'w1';
+    form.reason = 'Diskon';
+    expect(validateKolamUnexpectedIncomeForm(form)).toBeNull();
+    expect(buildKolamUnexpectedIncomeCreatePayload(form)).toMatchObject({
+      name: 'Refund vendor',
+      amount: 150000,
+      wallet: 'w1',
+      reason: 'Diskon',
+    });
+  });
+
+  it('normalizes unexpected-income detail for edit form', () => {
+    const detail = normalizeKolamUnexpectedIncomeDetail({
+      data: {
+        _id: 'inc1',
+        code: 'UINC-01',
+        name: 'Kasbon Ali',
+        amount: 50000,
+        status: 'unverified',
+        wallet: { _id: 'w1', name: 'Kas' },
+        executedAt: '2026-08-01T00:00:00.000Z',
+        reason: 'Kasbon',
+        createdAt: '2026-08-01T00:00:00.000Z',
+        updatedAt: '2026-08-02T00:00:00.000Z',
+      },
+    });
+    expect(detail.id).toBe('inc1');
+    expect(detail.walletLabel).toBe('Kas');
+    const form = createKolamUnexpectedIncomeFormFromDetail(detail);
+    expect(form.name).toBe('Kasbon Ali');
+    expect(form.amountText).toBe('50000');
+    expect(form.walletId).toBe('w1');
+    expect(buildKolamUnexpectedIncomeHistoryItems(detail)[0]?.title).toBe(
+      'Pemasukan Diperbarui',
+    );
   });
 });
 

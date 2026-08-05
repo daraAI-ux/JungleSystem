@@ -7,6 +7,10 @@ import {
   getKolamAssetPurchaseDetailRoute,
   getKolamAssetPurchaseEditRoute,
   getKolamAssetPurchaseSurfaceMode,
+  getKolamUnexpectedIncomeCreateRoute,
+  getKolamUnexpectedIncomeDetailRoute,
+  getKolamUnexpectedIncomeEditRoute,
+  getKolamUnexpectedIncomeSurfaceMode,
   KOLAM_FINANCE_EXPENSE_PERIOD_FILTER_OPTIONS,
   KOLAM_FINANCE_EXPENSE_STATUS_FILTER_OPTIONS,
   type KolamFinanceExpenseKind,
@@ -28,6 +32,8 @@ import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surfa
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
+import { KolamUnexpectedIncomeDetailSurface } from './kolam-unexpected-income-detail-surface';
+import { KolamUnexpectedIncomeFormSurface } from './kolam-unexpected-income-form-surface';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -59,6 +65,7 @@ function buildColumns(
   onRequestDelete?: (row: KolamFinanceExpenseListRow) => void,
 ): ColumnDef[] {
   const isAssetPurchase = kind === 'asset-purchase';
+  const isUnexpectedIncome = kind === 'unexpected-income';
   const base: ColumnDef[] = [
     {
       id: 'code',
@@ -168,7 +175,16 @@ function buildColumns(
       label: 'Jumlah',
       flex: 1,
       render: row => (
-        <Text style={styles.primaryText}>{formatRupiah(row.amount)}</Text>
+        <Text
+          style={[
+            styles.primaryText,
+            isUnexpectedIncome ? styles.incomeAmount : null,
+          ]}
+        >
+          {isUnexpectedIncome
+            ? `+ ${formatRupiah(row.amount)}`
+            : formatRupiah(row.amount)}
+        </Text>
       ),
     });
   }
@@ -197,7 +213,7 @@ function buildColumns(
     ),
   });
 
-  if (kind === 'unexpected-expense' || kind === 'unexpected-income') {
+  if (kind === 'unexpected-expense') {
     base.push({
       id: 'reason',
       label: 'Alasan',
@@ -243,7 +259,7 @@ function buildColumns(
       flex: 0.55,
       render: row => <AssetPurchasePicAvatar row={row} />,
     });
-  } else {
+  } else if (!isUnexpectedIncome) {
     base.push({
       id: 'createdBy',
       label: 'Dibuat oleh',
@@ -269,8 +285,8 @@ function buildColumns(
     });
   }
 
-  if (kind === 'asset-purchase') {
-    // Action column rendered by AssetPurchaseListRow (needs menu-open z-index).
+  if (kind === 'asset-purchase' || isUnexpectedIncome) {
+    // Action column rendered by menu row (needs menu-open z-index).
     return base;
   }
 
@@ -297,7 +313,8 @@ function buildColumns(
   return base;
 }
 
-function buildAssetPurchaseRowActions(
+function buildCrudListRowActions(
+  kind: 'asset-purchase' | 'unexpected-income',
   row: KolamFinanceExpenseListRow,
   controller: KolamFinanceExpenseListController,
   onRouteChange?: (route: string) => void,
@@ -318,12 +335,22 @@ function buildAssetPurchaseRowActions(
   if (onRouteChange) {
     actions.push({
       label: 'Lihat',
-      onPress: () => onRouteChange(getKolamAssetPurchaseDetailRoute(row.id)),
+      onPress: () =>
+        onRouteChange(
+          kind === 'asset-purchase'
+            ? getKolamAssetPurchaseDetailRoute(row.id)
+            : getKolamUnexpectedIncomeDetailRoute(row.id),
+        ),
     });
     if (controller.canUpdate) {
       actions.push({
         label: 'Rubah',
-        onPress: () => onRouteChange(getKolamAssetPurchaseEditRoute(row.id)),
+        onPress: () =>
+          onRouteChange(
+            kind === 'asset-purchase'
+              ? getKolamAssetPurchaseEditRoute(row.id)
+              : getKolamUnexpectedIncomeEditRoute(row.id),
+          ),
       });
     }
   }
@@ -337,6 +364,25 @@ function buildAssetPurchaseRowActions(
     });
   }
   return actions;
+}
+
+function buildAssetPurchaseRowActions(
+  row: KolamFinanceExpenseListRow,
+  controller: KolamFinanceExpenseListController,
+  onRouteChange?: (route: string) => void,
+  onRequestDelete?: (row: KolamFinanceExpenseListRow) => void,
+): Array<{
+  label: string;
+  onPress: () => void;
+  tone?: 'default' | 'danger';
+}> {
+  return buildCrudListRowActions(
+    'asset-purchase',
+    row,
+    controller,
+    onRouteChange,
+    onRequestDelete,
+  );
 }
 
 function AssetPurchasePicAvatar({
@@ -441,6 +487,50 @@ function AssetPurchaseListRow({
   );
 }
 
+function UnexpectedIncomeListRow({
+  columns,
+  controller,
+  item,
+  onRequestDelete,
+  onRouteChange,
+}: {
+  columns: ColumnDef[];
+  controller: KolamFinanceExpenseListController;
+  item: KolamFinanceExpenseListRow;
+  onRequestDelete?: (row: KolamFinanceExpenseListRow) => void;
+  onRouteChange?: (route: string) => void;
+}) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const actions = buildCrudListRowActions(
+    'unexpected-income',
+    item,
+    controller,
+    onRouteChange,
+    onRequestDelete,
+  );
+
+  return (
+    <View style={[styles.row, menuOpen ? styles.rowMenuOpen : null]}>
+      {columns.map(column => (
+        <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
+          {column.render(item)}
+        </View>
+      ))}
+      <View style={[styles.cell, styles.actionsCell]}>
+        {actions.length > 0 ? (
+          <View style={styles.rowActions}>
+            <KolamOverflowMenuButton
+              accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
+              actions={actions}
+              onOpenChange={setMenuOpen}
+            />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export function KolamFinanceExpenseListSurface({
   kind,
   onRouteChange,
@@ -505,6 +595,9 @@ function FinanceExpenseListBody({
   const [deleteCandidate, setDeleteCandidate] =
     useState<KolamFinanceExpenseListRow | null>(null);
   const isAssetPurchase = kind === 'asset-purchase';
+  const isUnexpectedIncome = kind === 'unexpected-income';
+  const hasPeriodFilters = isAssetPurchase || isUnexpectedIncome;
+  const hasCrudRowMenu = isAssetPurchase || isUnexpectedIncome;
   const columns = React.useMemo(
     () =>
       buildColumns(kind, controller, onRouteChange, row =>
@@ -566,6 +659,18 @@ function FinanceExpenseListBody({
     if (isAssetPurchase) {
       return (
         <AssetPurchaseListRow
+          key={item.id}
+          columns={columns}
+          controller={controller}
+          item={item}
+          onRequestDelete={row => setDeleteCandidate(row)}
+          onRouteChange={onRouteChange}
+        />
+      );
+    }
+    if (isUnexpectedIncome) {
+      return (
+        <UnexpectedIncomeListRow
           key={item.id}
           columns={columns}
           controller={controller}
@@ -683,7 +788,7 @@ function FinanceExpenseListBody({
               showLabelInTrigger={false}
               value={controller.filters.status}
             />
-            {isAssetPurchase ? (
+            {hasPeriodFilters ? (
               <>
                 <KolamDropdownSelect
                   label={periodLabel}
@@ -725,19 +830,21 @@ function FinanceExpenseListBody({
                     />
                   </>
                 ) : null}
-                <KolamDropdownSelect
-                  label="Lokasi"
-                  onChange={controller.onLocationChange}
-                  options={locationOptions}
-                  showLabelInTrigger={false}
-                  style={styles.locationSelect}
-                  value={controller.filters.locationId}
-                />
+                {isAssetPurchase ? (
+                  <KolamDropdownSelect
+                    label="Lokasi"
+                    onChange={controller.onLocationChange}
+                    options={locationOptions}
+                    showLabelInTrigger={false}
+                    style={styles.locationSelect}
+                    value={controller.filters.locationId}
+                  />
+                ) : null}
               </>
             ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            {isAssetPurchase && filtersApplied ? (
+            {hasPeriodFilters && filtersApplied ? (
               <KolamResetButton
                 intent="secondary"
                 onPress={controller.onClearFilters}
@@ -758,12 +865,18 @@ function FinanceExpenseListBody({
                 void controller.onRefresh();
               }}
             />
-            {isAssetPurchase && controller.canCreate && onRouteChange ? (
+            {hasCrudRowMenu && controller.canCreate && onRouteChange ? (
               <KolamButton
                 intent="primary"
                 label="Baru"
                 tone="positive"
-                onPress={() => onRouteChange(getKolamAssetPurchaseCreateRoute())}
+                onPress={() =>
+                  onRouteChange(
+                    isAssetPurchase
+                      ? getKolamAssetPurchaseCreateRoute()
+                      : getKolamUnexpectedIncomeCreateRoute(),
+                  )
+                }
               />
             ) : null}
           </View>
@@ -784,7 +897,7 @@ function FinanceExpenseListBody({
                 <Text style={styles.headerCellText}>{column.label}</Text>
               </View>
             ))}
-            {isAssetPurchase ? (
+            {hasCrudRowMenu ? (
               <View style={[styles.cell, styles.actionsCell]} />
             ) : null}
           </View>
@@ -832,10 +945,12 @@ function FinanceExpenseListBody({
         />
       ) : null}
 
-      {isAssetPurchase ? (
+      {hasCrudRowMenu ? (
         <KolamDeleteConfirmDialog
           itemLabel={deleteCandidate?.name || deleteCandidate?.code}
-          itemType="pembelian aset"
+          itemType={
+            isAssetPurchase ? 'pembelian aset' : 'pemasukan tak terduga'
+          }
           onCancel={() => setDeleteCandidate(null)}
           onConfirm={() => {
             const row = deleteCandidate;
@@ -998,6 +1113,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+  incomeAmount: {
+    color: V.colors.success,
+  },
   metaText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -1068,8 +1186,34 @@ export function KolamUnexpectedIncomeSurface(props: {
   onRouteChange?: (route: string) => void;
   route: string;
 }) {
+  const mode = getKolamUnexpectedIncomeSurfaceMode(props.route);
+  if (mode === 'create' || mode === 'edit') {
+    return <KolamUnexpectedIncomeFormSurface {...props} />;
+  }
+  if (mode === 'detail') {
+    return <KolamUnexpectedIncomeDetailSurface {...props} />;
+  }
+  if (mode === 'list') {
+    return (
+      <KolamFinanceExpenseListSurface kind="unexpected-income" {...props} />
+    );
+  }
   return (
-    <KolamFinanceExpenseListSurface kind="unexpected-income" {...props} />
+    <View style={styles.surface}>
+      <KolamEmptyState title="Belum tersedia" />
+      {props.onRouteChange ? (
+        <KolamButton
+          intent="secondary"
+          label="Kembali"
+          onPress={() =>
+            props.onRouteChange?.(
+              getFinanceExpenseUnsupportedBackRoute('unexpected-income'),
+            )
+          }
+          style={styles.backButton}
+        />
+      ) : null}
+    </View>
   );
 }
 
