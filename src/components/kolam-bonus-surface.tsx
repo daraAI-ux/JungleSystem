@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, StyleSheet, Text, View } from 'react-native';
 import {
   getKolamBonusStatusIntent,
   KOLAM_BONUS_MONTH_OPTIONS,
@@ -12,10 +12,12 @@ import {
 } from '../hooks/use-kolam-bonus-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -24,7 +26,7 @@ const BONUS_COLUMNS = [
   { id: 'employee', label: 'Karyawan', flex: 1.2 },
   { id: 'amount', label: 'Jumlah', flex: 1 },
   { id: 'status', label: 'Status', flex: 0.9 },
-  { id: 'reason', label: 'Alasan', flex: 1.2 },
+  { id: 'date', label: 'Tanggal', flex: 1.2 },
 ] as const;
 
 export function KolamBonusSurface({
@@ -47,7 +49,12 @@ export function KolamBonusSurface({
         />
       ) : null}
       <BonusToolbar controller={controller} />
+      <Text style={styles.helperText}>
+        Bonus masuk payroll setelah terverifikasi. Verifikasi lewat Pengeluaran
+        Tak Terduga.
+      </Text>
       <BonusList controller={controller} />
+      <BonusCreateDialog controller={controller} />
     </View>
   );
 }
@@ -97,12 +104,19 @@ function BonusToolbar({
           <KolamRefreshButton
             accessibilityLabel="Muat ulang"
             intent="secondary"
-
             onPress={() => {
               void controller.onRefresh();
             }}
             style={styles.toolbarButton}
           />
+          {controller.canCreate ? (
+            <KolamButton
+              intent="primary"
+              label="Tambah bonus"
+              onPress={controller.onOpenCreate}
+              style={styles.createToolbarButton}
+            />
+          ) : null}
         </View>
       </View>
     </View>
@@ -128,8 +142,8 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
         />
       </View>
       <View style={[styles.cell, { flex: 1.2 }]}>
-        <Text numberOfLines={2} style={styles.metaText}>
-          {item.reason || '—'}
+        <Text style={styles.metaText}>
+          {formatBonusDate(item.executedAt || item.createdAt)}
         </Text>
       </View>
     </View>
@@ -144,7 +158,13 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
           <View style={styles.emptyWrap}>
             <KolamEmptyState
               compact
-              title={controller.loading ? 'Memuat…' : 'Belum ada bonus'}
+              title={
+                !controller.canView
+                  ? 'Akses ditolak'
+                  : controller.loading
+                    ? 'Memuat…'
+                    : 'Belum ada bonus'
+              }
             />
           </View>
         }
@@ -167,6 +187,110 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
   );
 }
 
+function BonusCreateDialog({
+  controller,
+}: {
+  controller: KolamBonusListController;
+}) {
+  const amountValid =
+    Number.isFinite(Number(controller.createDraft.amount)) &&
+    Number(controller.createDraft.amount) > 0;
+  const canSubmit =
+    Boolean(controller.createDraft.userId.trim()) &&
+    amountValid &&
+    !controller.mutating;
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={controller.onCloseCreate}
+      transparent
+      visible={controller.createOpen}
+    >
+      <View style={styles.dialogOverlay}>
+        <KolamModalBackdrop onPress={controller.onCloseCreate} />
+        <View accessibilityLabel="Bonus baru" style={styles.dialog}>
+          <Text style={styles.dialogTitle}>Bonus baru</Text>
+          <Text style={styles.dialogHint}>
+            Bonus dibuat belum terverifikasi — verifikasi di Pengeluaran Tak
+            Terduga.
+          </Text>
+
+          <KolamDropdownSelect
+            label="Karyawan"
+            onChange={value =>
+              controller.onCreateDraftChange({ userId: value })
+            }
+            options={[
+              {
+                label: controller.loadingEmployees
+                  ? 'Memuat…'
+                  : 'Pilih karyawan',
+                value: '',
+              },
+              ...controller.employeeOptions,
+            ]}
+            searchable
+            value={controller.createDraft.userId}
+          />
+
+          <Text style={styles.fieldLabel}>Jumlah (Rp)</Text>
+          <KolamFormTextField
+            mode="numeric"
+            onChangeText={value =>
+              controller.onCreateDraftChange({ amount: value })
+            }
+            placeholder="0"
+            value={controller.createDraft.amount}
+          />
+
+          <Text style={styles.fieldLabel}>Alasan</Text>
+          <KolamFormTextField
+            multiline
+            onChangeText={value =>
+              controller.onCreateDraftChange({ reason: value })
+            }
+            placeholder="Opsional"
+            value={controller.createDraft.reason}
+          />
+
+          <View style={styles.dialogActions}>
+            <KolamButton
+              disabled={controller.mutating}
+              intent="secondary"
+              label="Batal"
+              onPress={controller.onCloseCreate}
+            />
+            <KolamButton
+              disabled={!canSubmit}
+              intent="primary"
+              label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+              onPress={() => {
+                void controller.onCreateBonus();
+              }}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function formatBonusDate(value: string): string {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
@@ -176,11 +300,20 @@ const styles = StyleSheet.create({
   banner: {
     alignSelf: 'stretch',
   },
+  helperText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   filtersAlignEnd: {
     justifyContent: 'flex-end',
   },
   toolbarButton: {
     minWidth: 96,
+  },
+  createToolbarButton: {
+    minWidth: 120,
   },
   tableFrame: {
     flex: 1,
@@ -230,5 +363,45 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  dialogOverlay: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  dialog: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    maxWidth: '92%',
+    padding: 16,
+    width: 420,
+    zIndex: 1,
+  },
+  dialogTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dialogHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  fieldLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+    marginTop: 4,
   },
 });
