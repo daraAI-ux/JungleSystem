@@ -1865,7 +1865,7 @@ function KolamTaskFormModal({
                 value={controller.form.taskTypeId}
               />
               <KolamDropdownSelect
-                label="Custom Project"
+                label="Proyek"
                 onChange={projectId =>
                   controller.onChangeForm({
                     customerId: taskFormShowsCustomerField({
