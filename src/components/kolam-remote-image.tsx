@@ -5,8 +5,10 @@ import {
   type ImageResizeMode,
   type ImageStyle,
   type StyleProp,
+  View,
   type ViewStyle,
 } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import {
   getRenderableKolamImageUri,
   syncKolamImageCache,
@@ -41,6 +43,8 @@ export function KolamRemoteImage({
   const imageRevision = revision ?? sourceUri ?? '';
   const [cachedUri, setCachedUri] = React.useState<string | null>(null);
   const [failedUri, setFailedUri] = React.useState<string | null>(null);
+  const svgXml = useKolamSvgXml(sourceUri);
+  const usesSvg = Boolean(sourceUri && isSvgUri(sourceUri));
   const [syncDone, setSyncDone] = React.useState(() => isDirectRenderUri(sourceUri));
 
   React.useEffect(() => {
@@ -53,7 +57,7 @@ export function KolamRemoteImage({
       return;
     }
 
-    if (isDirectRenderUri(sourceUri)) {
+    if (isDirectRenderUri(sourceUri) || isSvgUri(sourceUri)) {
       setCachedUri(sourceUri);
       setSyncDone(true);
       return;
@@ -115,20 +119,89 @@ export function KolamRemoteImage({
       }
       style={[style as StyleProp<ViewStyle>, styles.imageShell]}
     >
-      <Image
-        accessibilityIgnoresInvertColors
-        accessibilityLabel={accessibilityLabel}
-        resizeMode={resizeMode}
-        source={{ uri: visibleUri }}
-        style={styles.imageFill}
-        onError={() => setFailedUri(visibleUri)}
-      />
+      {usesSvg && svgXml ? (
+        <View style={styles.imageFill}>
+          <SvgXml height="100%" width="100%" xml={svgXml} />
+        </View>
+      ) : (
+        <Image
+          accessibilityIgnoresInvertColors
+          accessibilityLabel={accessibilityLabel}
+          resizeMode={resizeMode}
+          source={{ uri: visibleUri }}
+          style={styles.imageFill}
+          onError={() => setFailedUri(visibleUri)}
+        />
+      )}
     </KolamInteractionFrame>
   );
 }
 
 function isDirectRenderUri(uri: string | null | undefined) {
   return Boolean(uri && /^(data:|file:)/i.test(uri));
+}
+
+function useKolamSvgXml(sourceUri: string | null | undefined) {
+  const [svgXml, setSvgXml] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setSvgXml(null);
+
+    if (!sourceUri || !isSvgUri(sourceUri)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (isSvgDataUri(sourceUri)) {
+      setSvgXml(decodeSvgDataUri(sourceUri));
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    fetch(sourceUri)
+      .then(response => (response.ok ? response.text() : ''))
+      .then(svg => {
+        if (!cancelled && svg.trim()) {
+          setSvgXml(svg);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSvgXml(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sourceUri]);
+
+  return svgXml;
+}
+
+function isSvgUri(uri: string) {
+  return isSvgDataUri(uri) || /\.svg(?:[?#]|$)/i.test(uri);
+}
+
+function isSvgDataUri(uri: string) {
+  return /^data:image\/svg\+xml/i.test(uri);
+}
+
+function decodeSvgDataUri(uri: string) {
+  const commaIndex = uri.indexOf(',');
+  if (commaIndex < 0) {
+    return null;
+  }
+
+  const payload = uri.slice(commaIndex + 1);
+  try {
+    return decodeURIComponent(payload);
+  } catch {
+    return payload;
+  }
 }
 
 const styles = StyleSheet.create({

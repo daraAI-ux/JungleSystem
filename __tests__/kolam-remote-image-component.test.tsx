@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamRemoteImage } from '../src/components/kolam-remote-image';
 import { syncKolamImageCache } from '../src/services/kolam-image-local-cache';
@@ -84,10 +85,36 @@ describe('KolamRemoteImage', () => {
       );
     });
 
-    expect(renderer!.root.findByType(Image).props.source).toEqual({
-      uri: 'data:image/svg+xml;utf8,%3Csvg%2F%3E',
-    });
+    expect(renderer!.root.findByType(SvgXml).props.xml).toBe('<svg/>');
+    expect(renderer!.root.findAllByType(Image)).toHaveLength(0);
     expect(syncKolamImageCache).not.toHaveBeenCalled();
+  });
+
+  it('renders remote SVG images as native vector XML', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => '<svg viewBox="0 0 24 24" />',
+    }) as unknown as typeof fetch;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamRemoteImage
+          accessibilityLabel="DARA avatar"
+          sourceUri="https://cdn.example.com/media/dara/avatar.svg"
+          style={{ height: 40, width: 40 }}
+        />,
+      );
+    });
+
+    expect(renderer!.root.findByType(SvgXml).props.xml).toBe(
+      '<svg viewBox="0 0 24 24" />',
+    );
+    expect(renderer!.root.findAllByType(Image)).toHaveLength(0);
+    expect(syncKolamImageCache).not.toHaveBeenCalled();
+
+    globalThis.fetch = originalFetch;
   });
 
   it('can hide remote fallback until a local cache entry exists', async () => {
