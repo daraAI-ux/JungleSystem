@@ -596,8 +596,18 @@ function FinanceExpenseListBody({
     useState<KolamFinanceExpenseListRow | null>(null);
   const isAssetPurchase = kind === 'asset-purchase';
   const isUnexpectedIncome = kind === 'unexpected-income';
-  const hasPeriodFilters = isAssetPurchase || isUnexpectedIncome;
+  const isRoutineExpense = kind === 'routine-expense';
+  const hasPeriodFilters =
+    isAssetPurchase || isUnexpectedIncome || isRoutineExpense;
   const hasCrudRowMenu = isAssetPurchase || isUnexpectedIncome;
+  const hasExport =
+    isAssetPurchase || isUnexpectedIncome || isRoutineExpense;
+  const showCreateButton =
+    (hasCrudRowMenu || isRoutineExpense) &&
+    controller.canCreate &&
+    Boolean(onRouteChange);
+  const showPosRutin =
+    isRoutineExpense && controller.canCreate && Boolean(onRouteChange);
   const columns = React.useMemo(
     () =>
       buildColumns(kind, controller, onRouteChange, row =>
@@ -850,7 +860,7 @@ function FinanceExpenseListBody({
                 onPress={controller.onClearFilters}
               />
             ) : null}
-            {isAssetPurchase ? (
+            {hasExport ? (
               <KolamButton
                 intent="secondary"
                 label="Ekspor"
@@ -865,18 +875,32 @@ function FinanceExpenseListBody({
                 void controller.onRefresh();
               }}
             />
-            {hasCrudRowMenu && controller.canCreate && onRouteChange ? (
+            {showPosRutin ? (
+              <KolamButton
+                intent="secondary"
+                label="Pos Rutin"
+                onPress={() => onRouteChange?.('/routine-expenses/pos-rutin')}
+              />
+            ) : null}
+            {showCreateButton ? (
               <KolamButton
                 intent="primary"
-                label="Baru"
+                label={isUnexpectedIncome ? 'Buat' : 'Baru'}
                 tone="positive"
-                onPress={() =>
-                  onRouteChange(
-                    isAssetPurchase
-                      ? getKolamAssetPurchaseCreateRoute()
-                      : getKolamUnexpectedIncomeCreateRoute(),
-                  )
-                }
+                onPress={() => {
+                  if (!onRouteChange) {
+                    return;
+                  }
+                  if (isAssetPurchase) {
+                    onRouteChange(getKolamAssetPurchaseCreateRoute());
+                    return;
+                  }
+                  if (isUnexpectedIncome) {
+                    onRouteChange(getKolamUnexpectedIncomeCreateRoute());
+                    return;
+                  }
+                  onRouteChange('/routine-expenses/create');
+                }}
               />
             ) : null}
           </View>
@@ -914,10 +938,22 @@ function FinanceExpenseListBody({
         </KolamCatalogListTableShell>
       </View>
 
-      {isAssetPurchase ? (
+      {hasExport ? (
         <KolamExportDialog
-          catalogEndpoint="/asset-purchase/export/fields"
-          downloadEndpoint="/asset-purchase/export.xlsx"
+          catalogEndpoint={
+            isAssetPurchase
+              ? '/asset-purchase/export/fields'
+              : isUnexpectedIncome
+                ? '/unexpected-income/export/fields'
+                : '/routine-expense/export/fields'
+          }
+          downloadEndpoint={
+            isAssetPurchase
+              ? '/asset-purchase/export.xlsx'
+              : isUnexpectedIncome
+                ? '/unexpected-income/export.xlsx'
+                : '/routine-expense/export.xlsx'
+          }
           downloadParams={{
             search: controller.filters.search.trim() || undefined,
             period:
@@ -937,10 +973,28 @@ function FinanceExpenseListBody({
                 ? controller.filters.status
                 : undefined,
           }}
-          filenameHint="asset-purchase"
+          filenameHint={
+            isAssetPurchase
+              ? 'asset-purchase'
+              : isUnexpectedIncome
+                ? 'unexpected_income'
+                : 'routine_expense'
+          }
           onOpenChange={setExportOpen}
-          storageKey="asset-purchase-export-fields"
-          title="Ekspor Pembelian Aset"
+          storageKey={
+            isAssetPurchase
+              ? 'asset-purchase-export-fields'
+              : isUnexpectedIncome
+                ? 'export:unexpected-income:v1'
+                : 'export:routine-expense:v1'
+          }
+          title={
+            isAssetPurchase
+              ? 'Ekspor Pembelian Aset'
+              : isUnexpectedIncome
+                ? 'Ekspor Pemasukan Tak Terduga'
+                : 'Ekspor Pengeluaran Rutin'
+          }
           visible={exportOpen}
         />
       ) : null}
