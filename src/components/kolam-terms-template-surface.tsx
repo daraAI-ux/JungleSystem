@@ -14,11 +14,6 @@ import {
   type KolamTermsTemplate,
   type KolamTermsTemplateStatus,
 } from '../domain/kolam-terms-template';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamTermsTemplateController,
@@ -26,60 +21,26 @@ import {
 } from '../hooks/use-kolam-terms-template-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
-import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHtmlContent } from './kolam-html-content';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
-
-const LIST_COLUMNS_BASE: KolamTableColumn[] = [
-  { id: 'primary', label: 'Judul', align: 'left', width: 220 },
-  { id: 'meta', label: 'Slug', align: 'left', width: 140 },
-  { id: 'children', label: 'Kategori', align: 'left', width: 100 },
-  { id: 'status', label: 'Status', align: 'left', width: 110 },
-  { id: 'notes', label: 'Komplain', align: 'left', width: 80 },
-  { id: 'amount', label: 'Versi', align: 'left', width: 64 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
-
-function fitTermsTemplateListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(LIST_COLUMNS_BASE, containerWidth, {
-    actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-    paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-    primaryMinWidth: 160,
-    secondaryMinWidth: 56,
-  });
-}
 
 function FieldShell({
   children,
@@ -134,15 +95,15 @@ function KolamTermsTemplateList({
   const [searchInput, setSearchInput] = React.useState(controller.search);
   const [pendingArchive, setPendingArchive] =
     React.useState<KolamTermsTemplate | null>(null);
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const columns = React.useMemo(
-    () => fitTermsTemplateListColumns(tableBodyWidth),
-    [tableBodyWidth],
-  );
-  const actionsWidth = Math.max(
-    columns.find(column => column.id === 'actions')?.width ??
-      KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-    KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
+    () =>
+      buildTermsTemplateListColumns({
+        onOpen: item => {
+          controller.onSelectItem(item);
+          onRouteChange?.(buildKolamTermsTemplateDetailRoute(item.id));
+        },
+      }),
+    [controller, onRouteChange],
   );
 
   React.useEffect(() => {
@@ -216,7 +177,7 @@ function KolamTermsTemplateList({
               onPress={() => {
                 void controller.onRefresh();
               }}
-              tone="secondary"
+              intent="secondary"
             />
             <KolamButton
               label="Baru"
@@ -230,65 +191,30 @@ function KolamTermsTemplateList({
         </View>
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={columns} />
-        {!controller.loading && controller.items.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState message="Belum ada template." title="Kosong" />
-          </View>
-        ) : null}
-        {controller.items.map(item => (
-          <TermsTemplateListRow
-            actionsWidth={actionsWidth}
-            columns={columns}
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle="Kosong"
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
+        renderActions={item => (
+          <TermsTemplateActionsMenu
             item={item}
-            key={item.id}
             mutating={controller.mutating}
             onArchive={() => setPendingArchive(item)}
-            onOpen={() => {
-              controller.onSelectItem(item);
-              onRouteChange?.(buildKolamTermsTemplateDetailRoute(item.id));
-            }}
             onPublish={() => {
               void controller.onPublish(item);
             }}
           />
-        ))}
-      </KolamCatalogListTableShell>
+        )}
+        rows={controller.items}
+      />
 
       <KolamConfirmDialog
         confirmLabel="Arsipkan"
@@ -313,21 +239,96 @@ function KolamTermsTemplateList({
   );
 }
 
-function TermsTemplateListRow({
-  actionsWidth,
-  columns,
+function buildTermsTemplateListColumns({
+  onOpen,
+}: {
+  onOpen: (item: KolamTermsTemplate) => void;
+}): Array<KolamListTableColumn<KolamTermsTemplate>> {
+  return [
+    {
+      flex: 1.32,
+      id: 'title',
+      label: 'Judul',
+      render: item => (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onOpen(item)}
+          style={styles.identityCell}
+        >
+          <Text numberOfLines={2} style={styles.primaryText}>
+            {item.title}
+          </Text>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.88,
+      id: 'slug',
+      label: 'Slug',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {item.slug || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'category',
+      label: 'Kategori',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {item.category || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <KolamStatusBadge
+          intent={getKolamTermsTemplateStatusIntent(item.status)}
+          label={formatKolamTermsTemplateStatusLabel(item.status)}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'complaint',
+      label: 'Komplain',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {formatKolamTermsTemplateComplaintWindow(item.complaintWindowDays)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.48,
+      id: 'version',
+      label: 'Versi',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {String(item.version)}
+        </Text>
+      ),
+    },
+  ];
+}
+
+function TermsTemplateActionsMenu({
   item,
   mutating,
   onArchive,
-  onOpen,
   onPublish,
 }: {
-  actionsWidth: number;
-  columns: KolamTableColumn[];
   item: KolamTermsTemplate;
   mutating: boolean;
   onArchive: () => void;
-  onOpen: () => void;
   onPublish: () => void;
 }) {
   const actions = [
@@ -352,94 +353,8 @@ function TermsTemplateListRow({
       : []),
   ];
 
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onOpen}
-          style={styles.rowPressable}
-        >
-          {columns
-            .filter(column => column.id !== 'actions')
-            .map(column => {
-              const style = getKolamDataTableColumnStyle(column);
-              if (column.id === 'primary') {
-                return (
-                  <View key={column.id} style={style}>
-                    <Text numberOfLines={2} style={styles.primaryText}>
-                      {item.title}
-                    </Text>
-                  </View>
-                );
-              }
-              if (column.id === 'meta') {
-                return (
-                  <Text
-                    key={column.id}
-                    numberOfLines={1}
-                    style={[styles.cellText, style]}
-                  >
-                    {item.slug || '—'}
-                  </Text>
-                );
-              }
-              if (column.id === 'children') {
-                return (
-                  <Text
-                    key={column.id}
-                    numberOfLines={1}
-                    style={[styles.cellText, style]}
-                  >
-                    {item.category || '—'}
-                  </Text>
-                );
-              }
-              if (column.id === 'status') {
-                return (
-                  <View key={column.id} style={style}>
-                    <KolamStatusBadge
-                      intent={getKolamTermsTemplateStatusIntent(item.status)}
-                      label={formatKolamTermsTemplateStatusLabel(item.status)}
-                    />
-                  </View>
-                );
-              }
-              if (column.id === 'notes') {
-                return (
-                  <Text
-                    key={column.id}
-                    numberOfLines={1}
-                    style={[styles.cellText, style]}
-                  >
-                    {formatKolamTermsTemplateComplaintWindow(
-                      item.complaintWindowDays,
-                    )}
-                  </Text>
-                );
-              }
-              if (column.id === 'amount') {
-                return (
-                  <Text
-                    key={column.id}
-                    numberOfLines={1}
-                    style={[styles.cellText, style]}
-                  >
-                    {String(item.version)}
-                  </Text>
-                );
-              }
-              return <View key={column.id} style={style} />;
-            })}
-        </Pressable>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack width={actionsWidth}>
-        {actions.length > 0 ? <KolamOverflowMenuButton actions={actions} /> : null}
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
+  return actions.length > 0 ? <KolamOverflowMenuButton actions={actions} /> : null;
 }
-
 function KolamTermsTemplateFormShell({
   controller,
   onRouteChange,
@@ -480,7 +395,7 @@ function KolamTermsTemplateFormShell({
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_TERMS_TEMPLATE_ROOT);
               }}
-              tone="secondary"
+              intent="secondary"
             />
             {item && item.status === 'archived' ? (
               <KolamButton
@@ -489,7 +404,7 @@ function KolamTermsTemplateFormShell({
                 onPress={() => {
                   void controller.onSetDraft(item);
                 }}
-                tone="secondary"
+                intent="secondary"
               />
             ) : null}
             {item && canPublishKolamTermsTemplate(item) ? (
@@ -506,14 +421,14 @@ function KolamTermsTemplateFormShell({
                 disabled={controller.mutating}
                 label="Arsipkan"
                 onPress={() => setPendingArchive(true)}
-                tone="secondary"
+                intent="secondary"
               />
             ) : null}
             {controller.mode === 'detail' && editable ? (
               <KolamButton
                 label="Ubah"
                 onPress={() => controller.onEdit()}
-                tone="secondary"
+                intent="secondary"
               />
             ) : null}
             {(controller.mode === 'new' ||
@@ -731,14 +646,6 @@ const styles = StyleSheet.create({
   statusFilter: {
     minWidth: 140,
   },
-  rowPressable: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexGrow: 0,
-    flexShrink: 1,
-    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-    minWidth: 0,
-  },
   primaryText: {
     color: V.colors.fg,
     fontSize: 13,
@@ -747,6 +654,16 @@ const styles = StyleSheet.create({
   cellText: {
     color: V.colors.fg,
     fontSize: 12,
+  },
+  identityCell: {
+    minWidth: 0,
+    width: '100%',
+  },
+  cellTextCenter: {
+    color: V.colors.fg,
+    fontSize: 12,
+    textAlign: 'center',
+    width: '100%',
   },
   detailToolbarContext: {
     color: V.colors.fg,

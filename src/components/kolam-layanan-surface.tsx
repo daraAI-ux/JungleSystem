@@ -19,7 +19,6 @@ import {
   type KolamLayananService,
   type KolamLayananSubscription,
 } from '../domain/kolam-layanan';
-import { type KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamLayananController,
@@ -27,81 +26,26 @@ import {
 } from '../hooks/use-kolam-layanan-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamLayananExecutionDetail } from './kolam-layanan-execution-detail';
 import { KolamLayananServiceEditor } from './kolam-layanan-service-editor';
 import { KolamLayananSubscriptionDetail } from './kolam-layanan-subscription-detail';
 import { KolamLayananVoucherDetail } from './kolam-layanan-voucher-detail';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatsCard } from './kolam-stats-card';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const WEEKDAY_HEADERS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-
-const SERVICE_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Nama', align: 'left', width: 180 },
-  { id: 'meta', label: 'SKU', align: 'left', width: 110 },
-  { id: 'children', label: 'Kode paket', align: 'left', width: 110 },
-  { id: 'products', label: 'Merek', align: 'left', width: 130 },
-  { id: 'status', label: 'Tipe', align: 'left', width: 110 },
-  { id: 'notes', label: 'Jual m³', align: 'right', width: 90 },
-  { id: 'marketplace', label: 'Jual km', align: 'right', width: 90 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
-
-const PENDING_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Voucher', align: 'left', width: 140 },
-  { id: 'meta', label: 'Invoice', align: 'left', width: 120 },
-  { id: 'children', label: 'Paket', align: 'left', width: 160 },
-  { id: 'products', label: 'Pelanggan', align: 'left', width: 140 },
-  { id: 'status', label: 'Status', align: 'left', width: 130 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
-
-const SUBSCRIPTION_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Nomor', align: 'left', width: 130 },
-  { id: 'meta', label: 'Pelanggan', align: 'left', width: 140 },
-  { id: 'children', label: 'Paket', align: 'left', width: 160 },
-  { id: 'products', label: 'Voucher', align: 'left', width: 120 },
-  { id: 'status', label: 'Periode', align: 'left', width: 150 },
-  { id: 'notes', label: 'Status', align: 'left', width: 120 },
-  { id: 'marketplace', label: 'Perpanjang otomatis', align: 'left', width: 130 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
 
 export function KolamLayananSurface({
   onRouteChange,
@@ -447,45 +391,45 @@ function KolamLayananServiceTable({
   controller: KolamLayananController;
   onRouteChange?: (route: string) => void;
 }) {
-  const columns = useFitColumns(SERVICE_COLUMNS);
+  const columns = React.useMemo(
+    () =>
+      buildLayananServiceColumns({
+        onSelect: service => {
+          controller.onSelectService(service);
+          onRouteChange?.(KOLAM_LAYANAN_ROOT + '/' + service.id);
+        },
+      }),
+    [controller, onRouteChange],
+  );
 
   return (
-    <KolamCatalogListTableShell
-      footer={
-        <CatalogPagination
-          onSetPage={controller.onSetPage}
-          onSetPageSize={controller.onSetPageSize}
-          page={controller.page}
-          pageSize={controller.pageSize}
-          total={controller.total}
-          totalPages={controller.totalPages}
-        />
-      }
-      onBodyWidthChange={columns.setWidth}
-    >
-      <KolamDataTableHeader columns={columns.columns} />
-      {!controller.loading && controller.services.length === 0 ? (
-        <KolamEmptyState
-          message="Belum ada paket layanan, atau pencarian tidak menemukan hasil."
-          title="Layanan kosong"
-        />
-      ) : null}
-      {controller.services.map(service => (
-        <KolamLayananServiceRow
-          columns={columns.columns}
-          key={service.id}
+    <KolamListTableComposition
+      actionsColumn
+      columns={columns}
+      emptyTitle="Layanan kosong"
+      getRowKey={service => service.id}
+      loading={controller.loading}
+      pagination={{
+        onPageChange: controller.onSetPage,
+        page: controller.page,
+        pageSize: controller.pageSize,
+        total: controller.total,
+      }}
+      renderActions={service => (
+        <KolamLayananServiceActionsMenu
           onEdit={() => {
             controller.onOpenEdit(service);
-            onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/${service.id}/edit`);
+            onRouteChange?.(KOLAM_LAYANAN_ROOT + '/' + service.id + '/edit');
           }}
           onSelect={() => {
             controller.onSelectService(service);
-            onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/${service.id}`);
+            onRouteChange?.(KOLAM_LAYANAN_ROOT + '/' + service.id);
           }}
-          service={service}
         />
-      ))}
-    </KolamCatalogListTableShell>
+      )}
+      rows={controller.services}
+      style={styles.fullWidth}
+    />
   );
 }
 
@@ -496,42 +440,44 @@ function KolamLayananPendingTable({
   controller: KolamLayananController;
   onRouteChange?: (route: string) => void;
 }) {
-  const columns = useFitColumns(PENDING_COLUMNS);
+  const columns = React.useMemo(
+    () =>
+      buildLayananPendingColumns({
+        onSelect: item => {
+          controller.onSelectPending(item);
+          onRouteChange?.(KOLAM_LAYANAN_ROOT + '/voucher/' + item.id);
+        },
+      }),
+    [controller, onRouteChange],
+  );
 
   return (
-    <KolamCatalogListTableShell
-      footer={
-        <CatalogPagination
-          onSetPage={controller.onSetPage}
-          onSetPageSize={controller.onSetPageSize}
-          page={controller.page}
-          pageSize={controller.pageSize}
-          total={controller.total}
-          totalPages={controller.totalPages}
-        />
-      }
-      onBodyWidthChange={columns.setWidth}
-    >
+    <View style={styles.tableGroup}>
       <Text style={styles.tableCaption}>Voucher menunggu tindakan</Text>
-      <KolamDataTableHeader columns={columns.columns} />
-      {!controller.loading && controller.pendingServices.length === 0 ? (
-        <KolamEmptyState
-          message="Tidak ada voucher terbuka saat ini."
-          title="Voucher kosong"
-        />
-      ) : null}
-      {controller.pendingServices.map(item => (
-        <KolamLayananPendingRow
-          columns={columns.columns}
-          item={item}
-          key={item.id}
-          onSelect={() => {
-            controller.onSelectPending(item);
-            onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/voucher/${item.id}`);
-          }}
-        />
-      ))}
-    </KolamCatalogListTableShell>
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle="Voucher kosong"
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
+        renderActions={item => (
+          <KolamLayananSimpleActionsMenu
+            onSelect={() => {
+              controller.onSelectPending(item);
+              onRouteChange?.(KOLAM_LAYANAN_ROOT + '/voucher/' + item.id);
+            }}
+          />
+        )}
+        rows={controller.pendingServices}
+        style={styles.fullWidth}
+      />
+    </View>
   );
 }
 
@@ -542,312 +488,344 @@ function KolamLayananSubscriptionTable({
   controller: KolamLayananController;
   onRouteChange?: (route: string) => void;
 }) {
-  const columns = useFitColumns(SUBSCRIPTION_COLUMNS);
+  const columns = React.useMemo(
+    () =>
+      buildLayananSubscriptionColumns({
+        onSelect: item => {
+          controller.onSelectSubscription(item);
+          onRouteChange?.(KOLAM_LAYANAN_ROOT + '/langganan/' + item.id);
+        },
+      }),
+    [controller, onRouteChange],
+  );
 
   return (
-    <KolamCatalogListTableShell
-      footer={
-        <CatalogPagination
-          onSetPage={controller.onSetPage}
-          onSetPageSize={controller.onSetPageSize}
-          page={controller.page}
-          pageSize={controller.pageSize}
-          total={controller.total}
-          totalPages={controller.totalPages}
-        />
-      }
-      onBodyWidthChange={columns.setWidth}
-    >
-      <KolamDataTableHeader columns={columns.columns} />
-      {!controller.loading && controller.subscriptions.length === 0 ? (
-        <KolamEmptyState
-          message="Belum ada langganan, atau filter tidak menemukan hasil."
-          title="Langganan kosong"
-        />
-      ) : null}
-      {controller.subscriptions.map(item => (
-        <KolamLayananSubscriptionRow
-          columns={columns.columns}
-          item={item}
-          key={item.id}
+    <KolamListTableComposition
+      actionsColumn
+      columns={columns}
+      emptyTitle="Langganan kosong"
+      getRowKey={item => item.id}
+      loading={controller.loading}
+      pagination={{
+        onPageChange: controller.onSetPage,
+        page: controller.page,
+        pageSize: controller.pageSize,
+        total: controller.total,
+      }}
+      renderActions={item => (
+        <KolamLayananSimpleActionsMenu
           onSelect={() => {
             controller.onSelectSubscription(item);
-            onRouteChange?.(`${KOLAM_LAYANAN_ROOT}/langganan/${item.id}`);
+            onRouteChange?.(KOLAM_LAYANAN_ROOT + '/langganan/' + item.id);
           }}
         />
-      ))}
-    </KolamCatalogListTableShell>
+      )}
+      rows={controller.subscriptions}
+      style={styles.fullWidth}
+    />
   );
 }
 
-function CatalogPagination({
-  onSetPage,
-  onSetPageSize,
-  page,
-  pageSize,
-  total,
-  totalPages,
-}: {
-  onSetPage: (page: number) => void;
-  onSetPageSize: (pageSize: number) => void;
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-}) {
-  return (
-    <KolamTableFooterControls
-      onPageSizeChange={onSetPageSize}
-      page={page}
-      pageSize={pageSize}
-      total={total}
-    >
-      {totalPages > 1 ? (
-        <View style={styles.paginationRow}>
-          <KolamButton
-            disabled={page <= 1}
-            label="Sebelumnya"
-            onPress={() => onSetPage(Math.max(1, page - 1))}
-          />
-          <Text style={styles.pageLabel}>
-            {page} / {totalPages}
-          </Text>
-          <KolamButton
-            disabled={page >= totalPages}
-            label="Berikutnya"
-            onPress={() => onSetPage(Math.min(totalPages, page + 1))}
-          />
-        </View>
-      ) : null}
-    </KolamTableFooterControls>
-  );
-}
-
-function useFitColumns(baseColumns: KolamTableColumn[]) {
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-  const columns = React.useMemo(() => {
-    if (tableBodyWidth <= 0) {
-      return baseColumns;
-    }
-    const flexible = baseColumns.filter(column => column.id !== 'actions');
-    const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-    const gapTotal = KOLAM_DATA_TABLE_COLUMN_GAP * (baseColumns.length - 1);
-    const available = Math.max(
-      420,
-      tableBodyWidth - actionsWidth - gapTotal,
-    );
-    const baseWidth = flexible.reduce(
-      (sum, column) => sum + (column.width ?? 100),
-      0,
-    );
-    const scale = available / Math.max(1, baseWidth);
-    return [
-      ...flexible.map(column => ({
-        ...column,
-        width: Math.max(56, Math.round((column.width ?? 100) * scale)),
-      })),
-      { ...baseColumns[baseColumns.length - 1], width: actionsWidth },
-    ];
-  }, [baseColumns, tableBodyWidth]);
-
-  return { columns, setWidth: setTableBodyWidth };
-}
-
-function KolamLayananServiceRow({
-  columns,
-  onEdit,
+function buildLayananServiceColumns({
   onSelect,
-  service,
 }: {
-  columns: KolamTableColumn[];
-  onEdit: () => void;
-  onSelect: () => void;
-  service: KolamLayananService;
-}) {
-  const brandLabel =
-    service.brands.length === 0
-      ? '—'
-      : service.brands
-          .slice(0, 2)
-          .map(brand => brand.name)
-          .join(', ') +
-        (service.brands.length > 2 ? ` +${service.brands.length - 2}` : '');
-
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
+  onSelect: (service: KolamLayananService) => void;
+}): Array<KolamListTableColumn<KolamLayananService>> {
+  return [
+    {
+      flex: 1.18,
+      id: 'name',
+      label: 'Nama',
+      render: service => (
         <Pressable
           accessibilityRole="button"
-          onPress={onSelect}
-          style={getKolamDataTableColumnStyle(columns[0])}
+          onPress={() => onSelect(service)}
+          style={styles.identityCell}
         >
           <Text numberOfLines={1} style={styles.primaryText}>
             {service.name}
           </Text>
         </Pressable>
-        <View style={getKolamDataTableColumnStyle(columns[1])}>
-          <Text numberOfLines={1} style={styles.monoText}>
-            {service.sku}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[2])}>
-          <Text numberOfLines={1} style={styles.monoText}>
-            {service.packageCode}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[3])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {brandLabel}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[4])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {getKolamLayananTaskTypeLabel(service.taskType)}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[5])}>
-          <Text numberOfLines={1} style={styles.priceText}>
-            {formatKolamLayananUnitPrice(service.priceM3, 'm3')}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[6])}>
-          <Text numberOfLines={1} style={styles.priceText}>
-            {formatKolamLayananUnitPrice(service.priceKm, 'km')}
-          </Text>
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
-        <KolamOverflowMenuButton
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'sku',
+      label: 'SKU',
+      render: service => (
+        <Text numberOfLines={1} style={styles.monoTextCenter}>
+          {service.sku}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'packageCode',
+      label: 'Kode paket',
+      render: service => (
+        <Text numberOfLines={1} style={styles.monoTextCenter}>
+          {service.packageCode}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'brand',
+      label: 'Merek',
+      render: service => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {formatLayananBrandLabel(service)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'type',
+      label: 'Tipe',
+      render: service => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {getKolamLayananTaskTypeLabel(service.taskType)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.64,
+      id: 'priceM3',
+      label: 'Jual m3',
+      render: service => (
+        <Text numberOfLines={1} style={styles.priceTextCenter}>
+          {formatKolamLayananUnitPrice(service.priceM3, 'm3')}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.64,
+      id: 'priceKm',
+      label: 'Jual km',
+      render: service => (
+        <Text numberOfLines={1} style={styles.priceTextCenter}>
+          {formatKolamLayananUnitPrice(service.priceKm, 'km')}
+        </Text>
+      ),
+    },
+  ];
 }
 
-function KolamLayananPendingRow({
-  columns,
-  item,
+function buildLayananPendingColumns({
   onSelect,
 }: {
-  columns: KolamTableColumn[];
-  item: KolamLayananPendingService;
-  onSelect: () => void;
-}) {
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
+  onSelect: (item: KolamLayananPendingService) => void;
+}): Array<KolamListTableColumn<KolamLayananPendingService>> {
+  return [
+    {
+      flex: 0.9,
+      id: 'voucher',
+      label: 'Voucher',
+      render: item => (
         <Pressable
           accessibilityRole="button"
-          onPress={onSelect}
-          style={getKolamDataTableColumnStyle(columns[0])}
+          onPress={() => onSelect(item)}
+          style={styles.identityCell}
         >
           <Text numberOfLines={1} style={styles.monoText}>
             {item.serviceSerial}
           </Text>
         </Pressable>
-        <View style={getKolamDataTableColumnStyle(columns[1])}>
-          <Text numberOfLines={1} style={styles.monoText}>
-            {item.invoiceCode}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[2])}>
-          <Text numberOfLines={1} style={styles.primaryText}>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'invoice',
+      label: 'Invoice',
+      render: item => (
+        <Text numberOfLines={1} style={styles.monoTextCenter}>
+          {item.invoiceCode}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1.05,
+      id: 'package',
+      label: 'Paket',
+      render: item => (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={styles.primaryTextCenter}>
             {item.serviceName}
           </Text>
-          <Text numberOfLines={1} style={styles.metaText}>
+          <Text numberOfLines={1} style={styles.metaTextCenter}>
             {item.packageCode}
           </Text>
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[3])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {item.customerName}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[4])}>
-          <KolamStatusBadge
-            intent="warning"
-            label={getKolamLayananPendingStatusLabel(item.status)}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
-        <KolamOverflowMenuButton
-          actions={[{ label: 'Lihat', onPress: onSelect }]}
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'customer',
+      label: 'Pelanggan',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {item.customerName}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <KolamStatusBadge
+          intent="warning"
+          label={getKolamLayananPendingStatusLabel(item.status)}
         />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
+      ),
+    },
+  ];
 }
 
-function KolamLayananSubscriptionRow({
-  columns,
-  item,
+function buildLayananSubscriptionColumns({
   onSelect,
 }: {
-  columns: KolamTableColumn[];
-  item: KolamLayananSubscription;
-  onSelect: () => void;
-}) {
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
+  onSelect: (item: KolamLayananSubscription) => void;
+}): Array<KolamListTableColumn<KolamLayananSubscription>> {
+  return [
+    {
+      flex: 0.86,
+      id: 'number',
+      label: 'Nomor',
+      render: item => (
         <Pressable
           accessibilityRole="button"
-          onPress={onSelect}
-          style={getKolamDataTableColumnStyle(columns[0])}
+          onPress={() => onSelect(item)}
+          style={styles.identityCell}
         >
           <Text numberOfLines={1} style={styles.monoText}>
             {item.subscriptionNumber}
           </Text>
         </Pressable>
-        <View style={getKolamDataTableColumnStyle(columns[1])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {item.customerName}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[2])}>
-          <Text numberOfLines={1} style={styles.primaryText}>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'customer',
+      label: 'Pelanggan',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {item.customerName}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1.05,
+      id: 'package',
+      label: 'Paket',
+      render: item => (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={styles.primaryTextCenter}>
             {item.serviceName}
           </Text>
-          <Text numberOfLines={1} style={styles.metaText}>
+          <Text numberOfLines={1} style={styles.metaTextCenter}>
             {item.packageCode}
           </Text>
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[3])}>
-          <Text numberOfLines={1} style={styles.monoText}>
-            {item.voucherSerial}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[4])}>
-          <Text numberOfLines={2} style={styles.cellText}>
-            {formatListDate(item.startDate)} – {formatListDate(item.endDate)}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[5])}>
-          <KolamStatusBadge
-            intent={getKolamLayananSubscriptionStatusIntent(item.status)}
-            label={getKolamLayananSubscriptionStatusLabel(item.status)}
-          />
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[6])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {item.autoRenew ? 'Ya' : 'Tidak'}
-          </Text>
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
-        <KolamOverflowMenuButton
-          actions={[{ label: 'Lihat', onPress: onSelect }]}
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'voucher',
+      label: 'Voucher',
+      render: item => (
+        <Text numberOfLines={1} style={styles.monoTextCenter}>
+          {item.voucherSerial}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.98,
+      id: 'period',
+      label: 'Periode',
+      render: item => (
+        <Text numberOfLines={2} style={styles.cellTextCenter}>
+          {formatListDate(item.startDate)} - {formatListDate(item.endDate)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'status',
+      label: 'Status',
+      render: item => (
+        <KolamStatusBadge
+          intent={getKolamLayananSubscriptionStatusIntent(item.status)}
+          label={getKolamLayananSubscriptionStatusLabel(item.status)}
         />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'autoRenew',
+      label: 'Perpanjang otomatis',
+      render: item => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {item.autoRenew ? 'Ya' : 'Tidak'}
+        </Text>
+      ),
+    },
+  ];
+}
+
+function KolamLayananServiceActionsMenu({
+  onEdit,
+  onSelect,
+}: {
+  onEdit: () => void;
+  onSelect: () => void;
+}) {
+  return (
+    <KolamOverflowMenuButton
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+      ]}
+    />
   );
 }
 
+function KolamLayananSimpleActionsMenu({
+  onSelect,
+}: {
+  onSelect: () => void;
+}) {
+  return <KolamOverflowMenuButton actions={[{ label: 'Lihat', onPress: onSelect }]} />;
+}
+
+function formatLayananBrandLabel(service: KolamLayananService) {
+  if (service.brands.length === 0) {
+    return '-';
+  }
+  return (
+    service.brands
+      .slice(0, 2)
+      .map(brand => brand.name)
+      .join(', ') +
+    (service.brands.length > 2 ? ` +${service.brands.length - 2}` : '')
+  );
+}
 function formatListDate(value?: string | null) {
   if (!value) {
     return '—';
@@ -965,6 +943,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
   },
+  tableGroup: {
+    alignSelf: 'stretch',
+    gap: 6,
+    minWidth: 0,
+    width: '100%',
+  },
   alertBlock: {
     gap: 6,
     marginTop: 8,
@@ -1040,15 +1024,59 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
   },
+  identityCell: {
+    minWidth: 0,
+    width: '100%',
+  },
+  centerCell: {
+    alignItems: 'center',
+    gap: 3,
+    minWidth: 0,
+    width: '100%',
+  },
+  primaryTextCenter: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
+  },
+  monoTextCenter: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
+    width: '100%',
+  },
+  cellTextCenter: {
+    color: V.colors.fg,
+    fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
+  },
   metaText: {
     color: V.colors.mutedFg,
     fontSize: 12,
+  },
+  metaTextCenter: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    textAlign: 'center',
+    width: '100%',
   },
   priceText: {
     color: V.colors.success,
     fontSize: 12,
     fontVariant: ['tabular-nums'],
     textAlign: 'right',
+  },
+  priceTextCenter: {
+    color: V.colors.success,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
+    width: '100%',
   },
   paginationRow: {
     alignItems: 'center',

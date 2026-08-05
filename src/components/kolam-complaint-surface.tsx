@@ -54,7 +54,6 @@ import {
   type KolamComplaintTrackingStatus,
   type KolamComplaintVendorClaimStatus,
 } from '../domain/kolam-complaint';
-import { type KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import { pickNativeImageFile } from '../services/native-file-picker';
@@ -66,48 +65,22 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const LIST_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Kode Tiket', align: 'left', width: 150 },
-  { id: 'meta', label: 'Invoice', align: 'left', width: 140 },
-  { id: 'children', label: 'Sumber', align: 'left', width: 110 },
-  { id: 'products', label: 'Item', align: 'right', width: 64 },
-  { id: 'status', label: 'Status', align: 'left', width: 120 },
-  { id: 'notes', label: 'Keputusan', align: 'left', width: 130 },
-  { id: 'marketplace', label: 'Staf', align: 'left', width: 120 },
-  { id: 'amount', label: 'Dibuat', align: 'left', width: 110 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
 
 function descRow(id: string, label: string, value: string) {
   return { id, label, meta: '', tone: 'default' as const, value };
@@ -241,32 +214,17 @@ function KolamComplaintList({
   controller: KolamComplaintController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-
-  const columns = React.useMemo(() => {
-    if (tableBodyWidth <= 0) {
-      return LIST_COLUMNS;
-    }
-    const flexible = LIST_COLUMNS.filter(column => column.id !== 'actions');
-    const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-    const gapTotal = KOLAM_DATA_TABLE_COLUMN_GAP * (LIST_COLUMNS.length - 1);
-    const available = Math.max(
-      420,
-      tableBodyWidth - actionsWidth - gapTotal,
-    );
-    const baseWidth = flexible.reduce(
-      (sum, column) => sum + (column.width ?? 100),
-      0,
-    );
-    const scale = available / Math.max(1, baseWidth);
-    return [
-      ...flexible.map(column => ({
-        ...column,
-        width: Math.max(56, Math.round((column.width ?? 100) * scale)),
-      })),
-      { ...LIST_COLUMNS[LIST_COLUMNS.length - 1], width: actionsWidth },
-    ];
-  }, [tableBodyWidth]);
+  const columns = React.useMemo(
+    () =>
+      buildComplaintListColumns({
+        onSelect: complaint => {
+          void controller.onSelectComplaint(complaint).then(() => {
+            onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/${complaint.id}`);
+          });
+        },
+      }),
+    [controller, onRouteChange],
+  );
 
   return (
     <View style={styles.stack}>
@@ -398,81 +356,49 @@ function KolamComplaintList({
         </View>
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={columns} />
-        {!controller.loading && controller.complaints.length === 0 ? (
-          <KolamEmptyState
-            message="Belum ada tiket komplain, atau filter tidak menemukan hasil."
-            title="Komplain kosong"
-          />
-        ) : null}
-        {controller.complaints.map(complaint => (
-          <KolamComplaintRow
-            columns={columns}
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle="Komplain kosong"
+        getRowKey={complaint => complaint.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
+        renderActions={complaint => (
+          <KolamComplaintActionsMenu
             complaint={complaint}
-            key={complaint.id}
             onSelect={() => {
               void controller.onSelectComplaint(complaint).then(() => {
                 onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/${complaint.id}`);
               });
             }}
           />
-        ))}
-      </KolamCatalogListTableShell>
+        )}
+        rows={controller.complaints}
+      />
     </View>
   );
 }
 
-function KolamComplaintRow({
-  columns,
-  complaint,
+function buildComplaintListColumns({
   onSelect,
 }: {
-  columns: KolamTableColumn[];
-  complaint: KolamComplaint;
-  onSelect: () => void;
-}) {
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
+  onSelect: (complaint: KolamComplaint) => void;
+}): Array<KolamListTableColumn<KolamComplaint>> {
+  return [
+    {
+      flex: 1.05,
+      id: 'ticket',
+      label: 'Kode Tiket',
+      render: complaint => (
         <Pressable
           accessibilityRole="button"
-          onPress={onSelect}
-          style={getKolamDataTableColumnStyle(columns[0])}
+          onPress={() => onSelect(complaint)}
+          style={styles.identityCell}
         >
           <Text numberOfLines={1} style={styles.primaryText}>
             {complaint.ticketCode}
@@ -483,52 +409,105 @@ function KolamComplaintRow({
             </Text>
           ) : null}
         </Pressable>
-        <View style={getKolamDataTableColumnStyle(columns[1])}>
-          <Text numberOfLines={1} style={styles.cellText}>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'invoice',
+      label: 'Invoice',
+      render: complaint => (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={styles.cellTextCenter}>
             {complaint.invoiceCode}
           </Text>
           {complaint.isCustomProject ? (
             <KolamStatusBadge intent="info" label="Proyek khusus" />
           ) : null}
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[2])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {getKolamComplaintSourceLabel(complaint.source)}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[3])}>
-          <Text style={styles.cellText}>{complaint.itemCount}</Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[4])}>
-          <KolamStatusBadge
-            intent={getKolamComplaintStatusBadgeIntent(complaint.status)}
-            label={getKolamComplaintStatusLabel(complaint.status)}
-          />
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[5])}>
-          <KolamStatusBadge
-            intent={getKolamComplaintDecisionBadgeIntent(complaint.decision)}
-            label={getKolamComplaintDecisionLabel(complaint.decision)}
-          />
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[6])}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {complaint.assignedStaffName}
-          </Text>
-        </View>
-        <View style={getKolamDataTableColumnStyle(columns[7])}>
-          <Text numberOfLines={1} style={styles.metaText}>
-            {formatListDate(complaint.createdAt)}
-          </Text>
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${complaint.ticketCode}`}
-          actions={[{ label: 'Lihat', onPress: onSelect }]}
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'source',
+      label: 'Sumber',
+      render: complaint => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {getKolamComplaintSourceLabel(complaint.source)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.48,
+      id: 'items',
+      label: 'Item',
+      render: complaint => (
+        <Text style={styles.cellTextCenter}>{complaint.itemCount}</Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'status',
+      label: 'Status',
+      render: complaint => (
+        <KolamStatusBadge
+          intent={getKolamComplaintStatusBadgeIntent(complaint.status)}
+          label={getKolamComplaintStatusLabel(complaint.status)}
         />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'decision',
+      label: 'Keputusan',
+      render: complaint => (
+        <KolamStatusBadge
+          intent={getKolamComplaintDecisionBadgeIntent(complaint.decision)}
+          label={getKolamComplaintDecisionLabel(complaint.decision)}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'staff',
+      label: 'Staf',
+      render: complaint => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {complaint.assignedStaffName}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.82,
+      id: 'created',
+      label: 'Dibuat',
+      render: complaint => (
+        <Text numberOfLines={1} style={styles.metaTextCenter}>
+          {formatListDate(complaint.createdAt)}
+        </Text>
+      ),
+    },
+  ];
+}
+
+function KolamComplaintActionsMenu({
+  complaint,
+  onSelect,
+}: {
+  complaint: KolamComplaint;
+  onSelect: () => void;
+}) {
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${complaint.ticketCode}`}
+      actions={[{ label: 'Lihat', onPress: onSelect }]}
+    />
   );
 }
 
@@ -2644,6 +2623,28 @@ const styles = StyleSheet.create({
   cellText: {
     color: V.colors.fg,
     fontSize: 13,
+  },
+  identityCell: {
+    minWidth: 0,
+    width: '100%',
+  },
+  centerCell: {
+    alignItems: 'center',
+    gap: 4,
+    minWidth: 0,
+    width: '100%',
+  },
+  cellTextCenter: {
+    color: V.colors.fg,
+    fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
+  },
+  metaTextCenter: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    textAlign: 'center',
+    width: '100%',
   },
   paginationRow: {
     alignItems: 'center',
