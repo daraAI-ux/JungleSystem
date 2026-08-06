@@ -2393,10 +2393,12 @@ function renderRecurringScheduleCell(
     case 'status':
       return (
         <View style={styles.centerCell}>
-          <KolamStatusBadge
-            intent={getRecurringStatusIntent(row.status)}
-            label={row.status}
-          />
+          <View style={styles.recurringScheduleStatusCell}>
+            <KolamStatusBadge
+              intent={getRecurringStatusIntent(row.status)}
+              label={row.status}
+            />
+          </View>
         </View>
       );
     case 'pic':
@@ -3893,6 +3895,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 4,
     minWidth: 0,
+    width: '100%',
+  },
+  recurringScheduleStatusCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
   },
   centerCell: {
