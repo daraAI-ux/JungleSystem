@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {
   Alert,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -23,6 +22,7 @@ import {
   updateKolamDaraTrainingPhrase,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -286,7 +286,7 @@ export function KolamDaraTrainingFulfillmentBody({
               Frasa dicocokkan substring (huruf kecil). Mengubah status consent
               autopilot — bukan balasan chat.
             </Text>
-            <ScrollView contentContainerStyle={styles.form}>
+            <KolamDetailScrollSurface contentContainerStyle={styles.form}>
               <Field
                 label="Frasa pelanggan"
                 onChangeText={setPhrase}
@@ -331,7 +331,7 @@ export function KolamDaraTrainingFulfillmentBody({
                 onChangeText={setNotes}
                 value={notes}
               />
-            </ScrollView>
+            </KolamDetailScrollSurface>
             <View style={styles.modalFooter}>
               <KolamButton
                 disabled={saving}

@@ -38,6 +38,7 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamControlTabList } from './kolam-control-tab-list';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -384,7 +385,7 @@ function OverviewTab({
   }
   const summary = controller.reviewSummary;
   return (
-    <ScrollView contentContainerStyle={styles.tabBody}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.tabBody}>
       <View style={styles.overviewGrid}>
         <KolamCardFrame style={styles.infoCard} variant="compact">
           <Text style={styles.sectionTitle}>Informasi sesi</Text>
@@ -438,7 +439,7 @@ function OverviewTab({
           />
         </KolamCardFrame>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -456,7 +457,7 @@ function ReviewTab({
   onReject: (group: KolamAdminCashflowInvoiceGroup) => void;
 }) {
   return (
-    <ScrollView contentContainerStyle={styles.tabBody}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.tabBody}>
       <View style={styles.reviewToolbar}>
         <Text style={styles.sectionTitle}>
           Tinjauan per invoice · {controller.reviewSummary.unconfirmedCount}{' '}
@@ -594,7 +595,7 @@ function ReviewTab({
           );
         })
       )}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -615,7 +616,7 @@ function DepositsTab({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.tabBody}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.tabBody}>
       {controller.deposits.map(deposit => (
         <DepositCard
           acting={controller.acting}
@@ -627,7 +628,7 @@ function DepositsTab({
           sessionLocked={controller.session?.status === 'locked'}
         />
       ))}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

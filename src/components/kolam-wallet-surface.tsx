@@ -49,6 +49,7 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -803,7 +804,7 @@ function WalletCreateMode({
       </View>
 
       <KolamCardFrame style={styles.formCard}>
-        <ScrollView contentContainerStyle={styles.formBody}>
+        <KolamDetailScrollSurface contentContainerStyle={styles.formBody}>
           {formError ? (
             <KolamStatusBadge intent="danger" label={formError} numberOfLines={3} />
           ) : null}
@@ -930,7 +931,7 @@ function WalletCreateMode({
               }}
             />
           </View>
-        </ScrollView>
+        </KolamDetailScrollSurface>
       </KolamCardFrame>
     </View>
   );
@@ -1001,7 +1002,7 @@ function WalletEditMode({
         <Text style={styles.metaText}>Memuat…</Text>
       ) : (
         <KolamCardFrame style={styles.formCard}>
-          <ScrollView contentContainerStyle={styles.formBody}>
+          <KolamDetailScrollSurface contentContainerStyle={styles.formBody}>
             {formError ? (
               <KolamStatusBadge
                 intent="danger"
@@ -1103,7 +1104,7 @@ function WalletEditMode({
                 }}
               />
             </View>
-          </ScrollView>
+          </KolamDetailScrollSurface>
         </KolamCardFrame>
       )}
     </View>

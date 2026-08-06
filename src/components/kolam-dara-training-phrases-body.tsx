@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {
   Alert,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -23,6 +22,7 @@ import {
   updateKolamDaraTrainingPhrase,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -278,7 +278,7 @@ export function KolamDaraTrainingPhrasesBody({
               Frasa dicocokkan setelah normalisasi (huruf kecil, tanpa tanda baca
               di akhir).
             </Text>
-            <ScrollView contentContainerStyle={styles.form}>
+            <KolamDetailScrollSurface contentContainerStyle={styles.form}>
               <Field
                 label="Frasa pelanggan"
                 onChangeText={setPhrase}
@@ -334,7 +334,7 @@ export function KolamDaraTrainingPhrasesBody({
                 onChangeText={setNotes}
                 value={notes}
               />
-            </ScrollView>
+            </KolamDetailScrollSurface>
             <View style={styles.modalFooter}>
               <KolamButton
                 disabled={saving}

@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -26,6 +25,7 @@ import {
   verifyKolamDaraTaxSettlement,
 } from '../services/kolam-dara-tax-settlement-api';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -225,7 +225,7 @@ export function KolamDaraTaxSetoranBody() {
             <Text style={styles.meta}>
               Debit wallet setelah verifikasi. Periode opsional (YYYY-MM).
             </Text>
-            <ScrollView contentContainerStyle={styles.form}>
+            <KolamDetailScrollSurface contentContainerStyle={styles.form}>
               <KolamDropdownSelect
                 label="Jenis pajak"
                 onChange={value =>
@@ -275,7 +275,7 @@ export function KolamDaraTaxSetoranBody() {
                 onChangeText={setNote}
                 value={note}
               />
-            </ScrollView>
+            </KolamDetailScrollSurface>
             <View style={styles.modalFooter}>
               <KolamButton
                 disabled={saving}

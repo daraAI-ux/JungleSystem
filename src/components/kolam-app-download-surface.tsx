@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Linking,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -33,6 +32,7 @@ import {
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSettingsWebFieldLabel} from './kolam-settings-web-field-label';
@@ -243,7 +243,7 @@ export function KolamAppDownloadSurface() {
         </Text>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.list}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.list}>
         {mode === 'admin' && isAdmin ? (
           <KolamAppDownloadAdminPanel
             acting={acting}
@@ -302,7 +302,7 @@ export function KolamAppDownloadSurface() {
             />
           ))
         )}
-      </ScrollView>
+      </KolamDetailScrollSurface>
 
       <KolamConfirmDialog
         destructive
