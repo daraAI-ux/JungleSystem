@@ -1136,7 +1136,9 @@ function PackingPhotoManager({
       }
 
       setBusy(true);
-      const updated = await uploadKolamPackingMaterialPhotos(item.id, [localUri]);
+      const updated = await uploadKolamPackingMaterialPhotos(item.id, [
+        localUri,
+      ]);
       await controller.onSelectMaterial(updated);
     } catch (uploadError) {
       setError(getPackingPhotoErrorMessage(uploadError));
@@ -2616,7 +2618,11 @@ const styles = StyleSheet.create({
   },
 
   surface: {
+    alignSelf: 'stretch',
+    flexGrow: 1,
     gap: 16,
+    minHeight: 0,
+    width: '100%',
   },
   detailToolbarContext: {
     color: V.colors.fg,
@@ -2632,9 +2638,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   stack: {
+    alignSelf: 'stretch',
     gap: 16,
+    minHeight: 0,
     overflow: 'visible',
     position: 'relative',
+    width: '100%',
   },
   toolbarWrap: {
     position: 'relative',
