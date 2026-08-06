@@ -42,6 +42,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHtmlContent } from './kolam-html-content';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -49,6 +50,7 @@ import {
 import { openKolamMediaPreview } from './kolam-media-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamOverdueTaskIcon } from './kolam-overdue-task-icon';
+import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSelesaiTaskIcon } from './kolam-selesai-task-icon';
@@ -1608,17 +1610,13 @@ function renderTaskListCell(
     case 'meta':
       return (
         <View style={styles.centerCell}>
-          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
-            {getKolamTaskUserDisplayName(task.assignedTo)}
-          </Text>
+          <KolamTaskUserAvatar user={task.assignedTo} />
         </View>
       );
     case 'children':
       return (
         <View style={styles.centerCell}>
-          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
-            {getKolamTaskUserDisplayName(task.assistedBy)}
-          </Text>
+          <KolamTaskUserAvatar user={task.assistedBy} />
         </View>
       );
     case 'status':
@@ -1701,6 +1699,52 @@ function renderTaskListCell(
         </View>
       );
   }
+}
+
+function KolamTaskUserAvatar({
+  user,
+}: {
+  user: KolamTaskManagerTask['assignedTo'];
+}) {
+  const name = getKolamTaskUserDisplayName(user);
+  const label = name || '-';
+  const photoUri =
+    user && typeof user === 'object'
+      ? getKolamFileUrl(user.profilePicture)
+      : '';
+  const initials = getTaskUserInitials(label);
+
+  return (
+    <KolamHoverTooltip
+      align="center"
+      containerStyle={styles.taskUserTooltip}
+      label={label}
+    >
+      <View accessibilityLabel={label} style={styles.taskUserAvatar}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.taskUserAvatarImage}
+          imageUrl={photoUri}
+          initials={initials}
+          textStyle={styles.taskUserAvatarText}
+        />
+      </View>
+    </KolamHoverTooltip>
+  );
+}
+
+function getTaskUserInitials(name: string) {
+  const normalized = name.trim();
+  if (!normalized || normalized === '-') {
+    return '?';
+  }
+  return (
+    normalized
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || '?'
+  );
 }
 
 function renderTaskListActions(
@@ -3578,6 +3622,31 @@ const styles = StyleSheet.create({
   centerText: {
     textAlign: 'center',
     width: '100%',
+  },
+  taskUserTooltip: {
+    alignSelf: 'center',
+  },
+  taskUserAvatar: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primarySoft,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  taskUserAvatarImage: {
+    borderRadius: 16,
+    height: 32,
+    width: 32,
+  },
+  taskUserAvatarText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
   },
   tableSelect: {
     minWidth: 104,
