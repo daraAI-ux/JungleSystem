@@ -1,22 +1,20 @@
-import React, {useMemo, useState} from 'react';
+import React from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
-import {formatKolamDaraSeoMentionSource} from '../domain/kolam-dara-seo';
+import {
+  formatKolamDaraSeoMentionSource,
+  KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE,
+  type KolamDaraSeoMentionRow,
+} from '../domain/kolam-dara-seo';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoMentionsController} from '../hooks/use-kolam-dara-seo-mentions-controller';
 import {KolamButton} from './kolam-button';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamStatusBadge} from './kolam-status-badge';
-
-const COL_SUMBER = 120;
-const COL_ENGINE = 100;
-const ROW_PAD = 20;
-const FIXED_COLS = COL_SUMBER + COL_ENGINE + ROW_PAD;
 
 /**
  * FE parity: DA-Dara-Plugin `dara-seo-mentions.tsx`
  * Entitas / Sumber / Engine / Snippet + client page size 10.
- * Reuses KolamCatalogListTableShell (same chrome as Keywords / Species lists).
  */
 export function KolamDaraSeoMentionsBody({
   canDraft,
@@ -25,15 +23,7 @@ export function KolamDaraSeoMentionsBody({
   canDraft: boolean;
   controller: KolamDaraSeoMentionsController;
 }) {
-  const [bodyWidth, setBodyWidth] = useState(0);
   const showTable = controller.pagedItems.length > 0;
-  const tableWidth = Math.max(bodyWidth, 640);
-  const flexibleWidths = useMemo(() => {
-    const remaining = Math.max(320, tableWidth - FIXED_COLS);
-    const entityWidth = Math.max(160, Math.round(remaining * 0.38));
-    const snippetWidth = Math.max(160, remaining - entityWidth);
-    return {entityWidth, snippetWidth};
-  }, [tableWidth]);
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
@@ -117,7 +107,7 @@ export function KolamDaraSeoMentionsBody({
       ) : null}
 
       {controller.loading && !controller.rows.length ? (
-        <Text style={styles.meta}>Memuat…</Text>
+        <Text style={styles.meta}>Memuat...</Text>
       ) : null}
       {controller.error && !controller.rows.length ? (
         <KolamEmptyState message={controller.error} title="Gagal memuat" />
@@ -132,75 +122,67 @@ export function KolamDaraSeoMentionsBody({
       ) : null}
 
       {showTable ? (
-        <KolamCatalogListTableShell
-          footer={
-            <View style={styles.pager}>
-              <KolamButton
-                disabled={controller.page <= 1}
-                label="Sebelumnya"
-                onPress={() => controller.onSetPage(controller.page - 1)}
-              />
-              <Text style={styles.pageLabel}>
-                {`${controller.page} / ${controller.totalPages} · ${controller.total}`}
-              </Text>
-              <KolamButton
-                disabled={controller.page >= controller.totalPages}
-                label="Berikutnya"
-                onPress={() => controller.onSetPage(controller.page + 1)}
-              />
-            </View>
-          }
-          onBodyWidthChange={setBodyWidth}
-          style={styles.tableShell}>
-          <View
-            style={[styles.table, bodyWidth > 0 ? {width: tableWidth} : null]}>
-            <View style={styles.headerRow}>
-              <Text style={[styles.th, {width: flexibleWidths.entityWidth}]}>
-                Entitas
-              </Text>
-              <Text style={[styles.th, styles.colSumber]}>Sumber</Text>
-              <Text style={[styles.th, styles.colEngine]}>Engine</Text>
-              <Text style={[styles.th, {width: flexibleWidths.snippetWidth}]}>
-                Snippet
-              </Text>
-            </View>
-            {controller.pagedItems.map(row => (
-              <View key={row.id} style={styles.bodyRow}>
-                <View
-                  style={[
-                    styles.entityCell,
-                    {width: flexibleWidths.entityWidth},
-                  ]}>
-                  <Text numberOfLines={2} style={styles.entityText}>
-                    {row.entityName}
-                  </Text>
-                </View>
-                <View style={styles.colSumber}>
-                  <KolamStatusBadge
-                    intent="secondary"
-                    label={formatKolamDaraSeoMentionSource(
-                      row.sourceType,
-                      row.sourceName,
-                    )}
-                  />
-                </View>
-                <Text style={[styles.engineText, styles.colEngine]}>
-                  {row.engine || '—'}
+        <KolamListTableComposition
+          columns={[
+            {
+              flex: 1.4,
+              id: 'entity',
+              label: 'Entitas',
+              render: row => (
+                <Text numberOfLines={2} style={styles.entityText}>
+                  {row.entityName}
                 </Text>
-                <Text
-                  numberOfLines={2}
-                  style={[
-                    styles.snippetText,
-                    {width: flexibleWidths.snippetWidth},
-                  ]}>
+              ),
+            },
+            {
+              align: 'center',
+              flex: 0.8,
+              id: 'source',
+              label: 'Sumber',
+              render: row => <MentionSourceBadge row={row} />,
+            },
+            {
+              align: 'center',
+              flex: 0.7,
+              id: 'engine',
+              label: 'Engine',
+              render: row => (
+                <Text style={styles.engineText}>{row.engine || '—'}</Text>
+              ),
+            },
+            {
+              flex: 1.8,
+              id: 'snippet',
+              label: 'Snippet',
+              render: row => (
+                <Text numberOfLines={2} style={styles.snippetText}>
                   {row.snippet || '—'}
                 </Text>
-              </View>
-            ))}
-          </View>
-        </KolamCatalogListTableShell>
+              ),
+            },
+          ]}
+          getRowKey={row => row.id}
+          pagination={{
+            onPageChange: controller.onSetPage,
+            page: controller.page,
+            pageSize: KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE,
+            total: controller.total,
+          }}
+          rows={controller.pagedItems}
+          style={styles.tableShell}
+        />
       ) : null}
     </ScrollView>
+  );
+}
+
+function MentionSourceBadge({row}: {row: KolamDaraSeoMentionRow}) {
+  return (
+    <KolamStatusBadge
+      intent="secondary"
+      label={formatKolamDaraSeoMentionSource(row.sourceType, row.sourceName)}
+      style={styles.centerBadge}
+    />
   );
 }
 
@@ -286,75 +268,25 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     width: '100%',
   },
-  table: {
-    alignSelf: 'stretch',
-    width: '100%',
-  },
-  headerRow: {
-    alignSelf: 'stretch',
-    backgroundColor: V.colors.muted,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    width: '100%',
-  },
-  bodyRow: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    width: '100%',
-  },
-  th: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  colSumber: {
-    width: COL_SUMBER,
-  },
-  colEngine: {
-    width: COL_ENGINE,
-  },
-  entityCell: {
-    paddingRight: 10,
-  },
   entityText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '600',
   },
+  centerBadge: {
+    alignSelf: 'center',
+  },
   engineText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+    textAlign: 'center',
   },
   snippetText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     paddingRight: 4,
-  },
-  pager: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
 });

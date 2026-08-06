@@ -1,14 +1,14 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {KOLAM_DARA_SEO_AUDIT_LOGS_PAGE_SIZE} from '../domain/kolam-dara-seo';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoAuditLogsController} from '../hooks/use-kolam-dara-seo-audit-logs-controller';
-import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamListTableComposition} from './kolam-list-table-composition';
+import {KolamRefreshButton} from './kolam-refresh-button';
 
 /**
- * FE parity table chrome: same 10/page + KolamCatalogListTableShell as Mentions/Social.
+ * FE parity table chrome: same 10/page + KolamListTableComposition as SEO tables.
  */
 export function KolamDaraSeoAuditLogsBody({
   controller,
@@ -23,7 +23,6 @@ export function KolamDaraSeoAuditLogsBody({
         <KolamRefreshButton
           accessibilityLabel="Refresh"
           disabled={controller.loading}
-
           onPress={() => {
             void controller.onRefresh();
           }}
@@ -38,48 +37,47 @@ export function KolamDaraSeoAuditLogsBody({
       ) : null}
 
       {showTable ? (
-        <KolamCatalogListTableShell
-          footer={
-            <View style={styles.pager}>
-              <KolamButton
-                disabled={controller.page <= 1}
-                label="Sebelumnya"
-                onPress={() => controller.onSetPage(controller.page - 1)}
-              />
-              <Text style={styles.pageLabel}>
-                {`${controller.page} / ${controller.totalPages} · ${controller.total}`}
-              </Text>
-              <KolamButton
-                disabled={controller.page >= controller.totalPages}
-                label="Berikutnya"
-                onPress={() => controller.onSetPage(controller.page + 1)}
-              />
-            </View>
-          }
-          style={styles.tableShell}>
-          <View style={styles.table}>
-            <View style={styles.headRow}>
-              <Text style={[styles.headCell, styles.colAction]}>Aksi</Text>
-              <Text style={[styles.headCell, styles.colProduct]}>Produk</Text>
-              <Text style={[styles.headCell, styles.colTime]}>Waktu</Text>
-            </View>
-            {controller.pagedItems.map(row => (
-              <View key={row.id} style={styles.bodyRow}>
-                <Text style={[styles.bodyCell, styles.colAction]}>
-                  {row.action}
-                </Text>
-                <Text style={[styles.bodyCell, styles.colProduct]}>
+        <KolamListTableComposition
+          columns={[
+            {
+              flex: 2,
+              id: 'action',
+              label: 'Aksi',
+              render: row => <Text style={styles.bodyCell}>{row.action}</Text>,
+            },
+            {
+              flex: 1,
+              id: 'product',
+              label: 'Produk',
+              render: row => (
+                <Text style={styles.bodyCell}>
                   {row.productId ? row.productId.slice(-8) : '—'}
                 </Text>
-                <Text style={[styles.bodyCell, styles.colTime]}>
+              ),
+            },
+            {
+              flex: 1,
+              id: 'time',
+              label: 'Waktu',
+              render: row => (
+                <Text style={styles.bodyCell}>
                   {row.createdAt
                     ? new Date(row.createdAt).toLocaleString('id-ID')
                     : '—'}
                 </Text>
-              </View>
-            ))}
-          </View>
-        </KolamCatalogListTableShell>
+              ),
+            },
+          ]}
+          getRowKey={row => row.id}
+          pagination={{
+            onPageChange: controller.onSetPage,
+            page: controller.page,
+            pageSize: KOLAM_DARA_SEO_AUDIT_LOGS_PAGE_SIZE,
+            total: controller.total,
+          }}
+          rows={controller.pagedItems}
+          style={styles.tableShell}
+        />
       ) : null}
     </ScrollView>
   );
@@ -93,51 +91,8 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     width: '100%',
   },
-  table: {
-    alignSelf: 'stretch',
-    width: '100%',
-  },
-  headRow: {
-    backgroundColor: V.colors.muted,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    width: '100%',
-  },
-  headCell: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  bodyRow: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    width: '100%',
-  },
   bodyCell: {
     color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-  },
-  colAction: {flex: 2},
-  colProduct: {flex: 1},
-  colTime: {flex: 1},
-  pager: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
   },

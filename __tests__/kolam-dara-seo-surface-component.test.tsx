@@ -4,11 +4,13 @@ import {KolamDaraSeoSurface} from '../src/components/kolam-dara-seo-surface';
 import {useKolamAuthContext} from '../src/context/kolam-app-contexts';
 import {
   fetchKolamDaraSeoActiveBrands,
+  fetchKolamDaraSeoAuditLogs,
   fetchKolamDaraSeoBrandMentions,
   fetchKolamDaraSeoDashboard,
   fetchKolamDaraSeoKeywords,
   fetchKolamDaraSeoPendingSuggestions,
   fetchKolamDaraSeoRankings,
+  fetchKolamDaraSeoSocialInsights,
   fetchKolamDaraSeoStatus,
   fetchKolamDaraSeoSuggestion,
   fetchKolamDaraSeoSuggestions,
@@ -95,6 +97,12 @@ const keywordsMock = fetchKolamDaraSeoKeywords as jest.MockedFunction<
 const mentionsMock = fetchKolamDaraSeoBrandMentions as jest.MockedFunction<
   typeof fetchKolamDaraSeoBrandMentions
 >;
+const auditLogsMock = fetchKolamDaraSeoAuditLogs as jest.MockedFunction<
+  typeof fetchKolamDaraSeoAuditLogs
+>;
+const socialMock = fetchKolamDaraSeoSocialInsights as jest.MockedFunction<
+  typeof fetchKolamDaraSeoSocialInsights
+>;
 const websitePreviewMock = fetchKolamDaraSeoWebsitePreview as jest.MockedFunction<
   typeof fetchKolamDaraSeoWebsitePreview
 >;
@@ -111,6 +119,8 @@ describe('KolamDaraSeoSurface', () => {
     rankingsMock.mockResolvedValue({items: [], total: 0});
     keywordsMock.mockResolvedValue([]);
     mentionsMock.mockResolvedValue([]);
+    auditLogsMock.mockResolvedValue([]);
+    socialMock.mockResolvedValue({rows: [], total: 0});
     websitePreviewMock.mockResolvedValue({
       companyName: 'Dunia Anura',
       publicSiteUrl: 'https://duniaanura.test',
@@ -414,6 +424,87 @@ describe('KolamDaraSeoSurface', () => {
     expect(text).toContain('Kompetitor');
     expect(text).toContain('Backlink');
     expect(mentionsMock).toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders social insights snapshot history with shared table columns', async () => {
+    socialMock.mockResolvedValue({
+      total: 1,
+      rows: [
+        {
+          id: 'soc-1',
+          platform: 'instagram',
+          status: 'success',
+          periodDays: 7,
+          metrics: {
+            followers: 1200,
+            reach: 3400,
+            impressions: 4500,
+            profileViews: 55,
+            engagementRate: 4.2,
+            videoViews: null,
+            likes: null,
+          },
+          error: '',
+          fetchedAt: '2026-08-04T00:00:00.000Z',
+          createdAt: '2026-08-04T00:00:00.000Z',
+        },
+      ],
+    });
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo/social-insights" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Riwayat snapshot');
+    expect(text).toContain('Platform');
+    expect(text).toContain('Status');
+    expect(text).toContain('Periode');
+    expect(text).toContain('Followers');
+    expect(text).toContain('Reach / Views');
+    expect(text).toContain('Waktu');
+    expect(text).toContain('instagram');
+    expect(text).toContain('Sukses');
+    expect(socialMock).toHaveBeenCalledWith({limit: 30});
+    await ReactTestRenderer.act(async () => {
+      tree!.unmount();
+    });
+  });
+
+  it('renders audit logs with shared table columns', async () => {
+    auditLogsMock.mockResolvedValue([
+      {
+        id: 'audit-1',
+        action: 'seo.apply',
+        productId: 'product-12345678',
+        createdAt: '2026-08-04T00:00:00.000Z',
+      },
+    ]);
+
+    let tree: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      tree = ReactTestRenderer.create(
+        <KolamDaraSeoSurface route="/campaign/dara-seo/audit-logs" />,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const text = JSON.stringify(tree!.toJSON());
+    expect(text).toContain('Aksi');
+    expect(text).toContain('Produk');
+    expect(text).toContain('Waktu');
+    expect(text).toContain('seo.apply');
+    expect(text).toContain('12345678');
+    expect(auditLogsMock).toHaveBeenCalled();
     await ReactTestRenderer.act(async () => {
       tree!.unmount();
     });

@@ -1,10 +1,11 @@
-import React, {useMemo, useState} from 'react';
+import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {
   formatKolamDaraSeoSocialDate,
   formatKolamDaraSeoSocialMetric,
   formatKolamDaraSeoSocialStatusLabel,
   getKolamDaraSeoSocialStatusIntent,
+  KOLAM_DARA_SEO_SOCIAL_PAGE_SIZE,
   pickKolamDaraSeoLatestSocialSnapshot,
   type KolamDaraSeoSocialPlatform,
   type KolamDaraSeoSocialSnapshot,
@@ -12,21 +13,12 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoSocialController} from '../hooks/use-kolam-dara-seo-social-controller';
 import {KolamButton} from './kolam-button';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamStatusBadge} from './kolam-status-badge';
 
 /** Same asset as chat rail (`kolam-global-chat-rail`). */
 const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
-
-const COL_PLATFORM = 110;
-const COL_STATUS = 110;
-const COL_PERIOD = 88;
-const COL_FOLLOWERS = 100;
-const COL_REACH = 120;
-const ROW_PAD = 20;
-const FIXED_COLS =
-  COL_PLATFORM + COL_STATUS + COL_PERIOD + COL_FOLLOWERS + COL_REACH + ROW_PAD;
 
 /**
  * FE parity: DA-Dara-Plugin `dara-seo-social-insights.tsx`
@@ -37,7 +29,6 @@ export function KolamDaraSeoSocialBody({
 }: {
   controller: KolamDaraSeoSocialController;
 }) {
-  const [bodyWidth, setBodyWidth] = useState(0);
   const igLatest = pickKolamDaraSeoLatestSocialSnapshot(
     controller.rows,
     'instagram',
@@ -47,11 +38,6 @@ export function KolamDaraSeoSocialBody({
     'tiktok',
   );
   const showTable = controller.pagedItems.length > 0;
-  const tableWidth = Math.max(bodyWidth, 720);
-  const timeWidth = useMemo(
-    () => Math.max(140, tableWidth - FIXED_COLS),
-    [tableWidth],
-  );
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
@@ -59,7 +45,7 @@ export function KolamDaraSeoSocialBody({
         <Text style={styles.notice}>{controller.notice}</Text>
       ) : null}
       {controller.loading && !controller.rows.length ? (
-        <Text style={styles.meta}>Memuat…</Text>
+        <Text style={styles.meta}>Memuat...</Text>
       ) : null}
       {controller.error && !controller.rows.length ? (
         <KolamEmptyState message={controller.error} title="Gagal memuat" />
@@ -85,7 +71,7 @@ export function KolamDaraSeoSocialBody({
       <View style={styles.historyCard}>
         <Text style={styles.historyTitle}>Riwayat snapshot</Text>
         {controller.loading && !controller.rows.length ? (
-          <Text style={styles.meta}>Memuat…</Text>
+          <Text style={styles.meta}>Memuat...</Text>
         ) : null}
         {!controller.loading && !controller.rows.length ? (
           <Text style={styles.emptyLine}>
@@ -94,72 +80,89 @@ export function KolamDaraSeoSocialBody({
         ) : null}
 
         {showTable ? (
-          <KolamCatalogListTableShell
-            footer={
-              <View style={styles.pager}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  label="Sebelumnya"
-                  onPress={() => controller.onSetPage(controller.page - 1)}
-                />
-                <Text style={styles.pageLabel}>
-                  {`${controller.page} / ${controller.totalPages} · ${controller.total}`}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  label="Berikutnya"
-                  onPress={() => controller.onSetPage(controller.page + 1)}
-                />
-              </View>
-            }
-            onBodyWidthChange={setBodyWidth}
-            style={styles.tableShell}>
-            <View
-              style={[
-                styles.table,
-                bodyWidth > 0 ? {width: tableWidth} : null,
-              ]}>
-              <View style={styles.headerRow}>
-                <Text style={[styles.th, styles.colPlatform]}>Platform</Text>
-                <Text style={[styles.th, styles.colStatus]}>Status</Text>
-                <Text style={[styles.th, styles.colPeriod]}>Periode</Text>
-                <Text style={[styles.th, styles.colFollowers]}>Followers</Text>
-                <Text style={[styles.th, styles.colReach]}>Reach / Views</Text>
-                <Text style={[styles.th, {width: timeWidth}]}>Waktu</Text>
-              </View>
-              {controller.pagedItems.map(row => (
-                <View key={row.id} style={styles.bodyRow}>
-                  <Text style={[styles.td, styles.colPlatform, styles.capitalize]}>
+          <KolamListTableComposition
+            columns={[
+              {
+                flex: 0.9,
+                id: 'platform',
+                label: 'Platform',
+                render: row => (
+                  <Text style={[styles.td, styles.capitalize]}>
                     {row.platform}
                   </Text>
-                  <View style={styles.colStatus}>
-                    <KolamStatusBadge
-                      intent={getKolamDaraSeoSocialStatusIntent(row.status)}
-                      label={formatKolamDaraSeoSocialStatusLabel(row.status)}
-                    />
-                  </View>
-                  <Text style={[styles.td, styles.colPeriod]}>
-                    {`${row.periodDays} hari`}
-                  </Text>
-                  <Text style={[styles.td, styles.colFollowers]}>
+                ),
+              },
+              {
+                align: 'center',
+                flex: 0.9,
+                id: 'status',
+                label: 'Status',
+                render: row => (
+                  <KolamStatusBadge
+                    intent={getKolamDaraSeoSocialStatusIntent(row.status)}
+                    label={formatKolamDaraSeoSocialStatusLabel(row.status)}
+                    style={styles.centerBadge}
+                  />
+                ),
+              },
+              {
+                align: 'center',
+                flex: 0.7,
+                id: 'period',
+                label: 'Periode',
+                render: row => (
+                  <Text style={styles.td}>{`${row.periodDays} hari`}</Text>
+                ),
+              },
+              {
+                align: 'right',
+                flex: 0.9,
+                id: 'followers',
+                label: 'Followers',
+                render: row => (
+                  <Text style={styles.td}>
                     {formatKolamDaraSeoSocialMetric(row.metrics.followers)}
                   </Text>
-                  <Text style={[styles.td, styles.colReach]}>
+                ),
+              },
+              {
+                align: 'right',
+                flex: 1,
+                id: 'reach',
+                label: 'Reach / Views',
+                render: row => (
+                  <Text style={styles.td}>
                     {formatKolamDaraSeoSocialMetric(
                       row.platform === 'tiktok'
                         ? row.metrics.videoViews
                         : row.metrics.reach,
                     )}
                   </Text>
-                  <Text style={[styles.timeText, {width: timeWidth}]}>
+                ),
+              },
+              {
+                flex: 1.3,
+                id: 'time',
+                label: 'Waktu',
+                render: row => (
+                  <Text style={styles.timeText}>
                     {formatKolamDaraSeoSocialDate(
                       row.fetchedAt || row.createdAt,
                     )}
                   </Text>
-                </View>
-              ))}
-            </View>
-          </KolamCatalogListTableShell>
+                ),
+              },
+            ]}
+            getRowKey={row => row.id}
+            pagination={{
+              onPageChange: controller.onSetPage,
+              page: controller.page,
+              pageSize: KOLAM_DARA_SEO_SOCIAL_PAGE_SIZE,
+              total: controller.total,
+            }}
+            rows={controller.pagedItems}
+            style={styles.tableShell}
+          />
         ) : null}
       </View>
     </ScrollView>
@@ -254,12 +257,12 @@ function PlatformCard({
         <KolamButton
           disabled={busy}
           intent="primary"
-          label={busy ? 'Sync…' : 'Sync 7 hari'}
+          label={busy ? 'Sync...' : 'Sync 7 hari'}
           onPress={() => onSync(7)}
         />
         <KolamButton
           disabled={busy}
-          label={busy ? 'Sync…' : 'Sync 28 hari'}
+          label={busy ? 'Sync...' : 'Sync 28 hari'}
           onPress={() => onSync(28)}
         />
       </View>
@@ -276,7 +279,6 @@ function SocialPlatformLogo({platform}: {platform: KolamDaraSeoSocialPlatform}) 
   if (platform === 'tiktok') {
     return (
       <View style={styles.logoSlot}>
-        {/* Asset has black padding; overscale + cover so the glyph matches IG visual size. */}
         <Image
           resizeMode="cover"
           source={TIKTOK_LOGO}
@@ -358,7 +360,6 @@ const styles = StyleSheet.create({
     width: 36,
   },
   tiktokLogoImage: {
-    // Crop black padding in tiktok.webp so the white glyph reads ~same size as IG.
     height: 52,
     width: 52,
   },
@@ -462,65 +463,18 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     width: '100%',
   },
-  table: {
-    alignSelf: 'stretch',
-    width: '100%',
-  },
-  headerRow: {
-    alignSelf: 'stretch',
-    backgroundColor: V.colors.muted,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    width: '100%',
-  },
-  bodyRow: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    width: '100%',
-  },
-  th: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
   td: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
   },
+  centerBadge: {
+    alignSelf: 'center',
+  },
   capitalize: {
     textTransform: 'capitalize',
   },
-  colPlatform: {width: COL_PLATFORM},
-  colStatus: {width: COL_STATUS},
-  colPeriod: {width: COL_PERIOD},
-  colFollowers: {width: COL_FOLLOWERS},
-  colReach: {width: COL_REACH},
   timeText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-  },
-  pager: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  pageLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
