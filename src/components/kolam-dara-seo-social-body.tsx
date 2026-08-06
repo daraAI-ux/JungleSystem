@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import {
   formatKolamDaraSeoSocialDate,
   formatKolamDaraSeoSocialMetric,
@@ -13,6 +13,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoSocialController} from '../hooks/use-kolam-dara-seo-social-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -40,7 +41,7 @@ export function KolamDaraSeoSocialBody({
   const showTable = controller.pagedItems.length > 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       {controller.notice ? (
         <Text style={styles.notice}>{controller.notice}</Text>
       ) : null}
@@ -166,7 +167,7 @@ export function KolamDaraSeoSocialBody({
           />
         ) : null}
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

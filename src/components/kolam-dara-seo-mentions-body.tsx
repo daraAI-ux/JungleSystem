@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
 import {
   formatKolamDaraSeoMentionSource,
   KOLAM_DARA_SEO_MENTIONS_PAGE_SIZE,
@@ -8,6 +8,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoMentionsController} from '../hooks/use-kolam-dara-seo-mentions-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -26,7 +27,7 @@ export function KolamDaraSeoMentionsBody({
   const showTable = controller.pagedItems.length > 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       {canDraft ? (
         <View style={styles.ingestCard}>
           <Text style={styles.ingestTitle}>Tambah data</Text>
@@ -172,7 +173,7 @@ export function KolamDaraSeoMentionsBody({
           style={styles.tableShell}
         />
       ) : null}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

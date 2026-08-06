@@ -1,8 +1,9 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
 import {KOLAM_DARA_SEO_AUDIT_LOGS_PAGE_SIZE} from '../domain/kolam-dara-seo';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoAuditLogsController} from '../hooks/use-kolam-dara-seo-audit-logs-controller';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamRefreshButton} from './kolam-refresh-button';
@@ -18,7 +19,7 @@ export function KolamDaraSeoAuditLogsBody({
   const showTable = controller.pagedItems.length > 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       <View style={styles.toolbar}>
         <KolamRefreshButton
           accessibilityLabel="Refresh"
@@ -79,7 +80,7 @@ export function KolamDaraSeoAuditLogsBody({
           style={styles.tableShell}
         />
       ) : null}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

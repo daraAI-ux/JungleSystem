@@ -1,5 +1,5 @@
 import React, {useMemo, useRef, useState} from 'react';
-import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {
   KolamDaraSeoSentimentController,
@@ -7,6 +7,7 @@ import type {
 } from '../hooks/use-kolam-dara-seo-sentiment-controller';
 import {formatKolamDaraSeoSentimentRelativeTime} from '../hooks/use-kolam-dara-seo-sentiment-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -79,7 +80,7 @@ export function KolamDaraSeoSentimentBody({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       {canDraft ? (
         <View style={styles.llamaBar}>
           <KolamButton
@@ -383,7 +384,7 @@ export function KolamDaraSeoSentimentBody({
           </View>
         </View>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

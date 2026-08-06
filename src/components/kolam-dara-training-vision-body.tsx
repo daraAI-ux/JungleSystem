@@ -63,6 +63,7 @@ import {
   trainKolamDaraTrainingVisionYoloProducts,
 } from '../services/kolam-dara-training-vision-api';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
@@ -578,7 +579,7 @@ export function KolamDaraTrainingVisionBody({
 
   return (
     <>
-    <ScrollView contentContainerStyle={styles.root}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.introCard}>
         <Text style={styles.introTitle}>Vision inbox — closed-world</Text>
         <Text style={styles.meta}>
@@ -1662,7 +1663,7 @@ export function KolamDaraTrainingVisionBody({
           ) : null}
         </View>
       ) : null}
-    </ScrollView>
+    </KolamDetailScrollSurface>
 
       <Modal
         animationType="fade"

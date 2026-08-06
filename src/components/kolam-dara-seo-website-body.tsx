@@ -1,10 +1,11 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
 import {formatKolamDaraSeoScoreStatus} from '../domain/kolam-dara-seo';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoJobsProgressController} from '../hooks/use-kolam-dara-seo-jobs-progress';
 import type {KolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-website-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
 
 const AUDIT_JOB_TYPE = 'seo.audit_website';
@@ -28,7 +29,7 @@ export function KolamDaraSeoWebsiteBody({
   const canIndex = canApprove && controller.publicSiteUrl.trim().length > 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       {controller.notice ? (
         <Text style={styles.notice}>{controller.notice}</Text>
       ) : null}
@@ -161,7 +162,7 @@ export function KolamDaraSeoWebsiteBody({
           </View>
         </View>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

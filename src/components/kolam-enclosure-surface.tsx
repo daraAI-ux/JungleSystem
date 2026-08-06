@@ -64,6 +64,7 @@ import {KolamResetButton} from './kolam-reset-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -432,7 +433,7 @@ function KolamEnclosureEditSurface({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.editFormContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.editFormContent}>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -793,7 +794,7 @@ function KolamEnclosureEditSurface({
           onPress={() => onRouteChange?.(detailRoute)}
         />
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -1521,7 +1522,7 @@ function KolamEnclosureDashboardPanel({
 
   const stats = controller.dashboardStats;
   return (
-    <ScrollView contentContainerStyle={styles.dashboardContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.dashboardContent}>
       <View
         onLayout={event => setSummaryRowWidth(event.nativeEvent.layout.width)}
         style={styles.summaryGridHeroMeasure}>
@@ -1587,7 +1588,7 @@ function KolamEnclosureDashboardPanel({
         speciesDistinct={stats.production.speciesDistinct}
         totalQty={stats.production.totalQty}
       />
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -2066,7 +2067,7 @@ function KolamEnclosureAllocationPanel({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.dashboardContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.dashboardContent}>
       <View style={styles.summaryGrid}>
         <SummaryTile
           iconElement={<KolamKatakSpeciesIcon style={styles.summaryHeroIcon} />}
@@ -2112,7 +2113,7 @@ function KolamEnclosureAllocationPanel({
         rows={allocationRows}
         style={styles.tableFrame}
       />
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

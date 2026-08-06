@@ -3,6 +3,7 @@ import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoRankingsController} from '../hooks/use-kolam-dara-seo-rankings-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
@@ -51,7 +52,7 @@ export function KolamDaraSeoRankingsBody({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -167,7 +168,7 @@ export function KolamDaraSeoRankingsBody({
           </Text>
         </View>
       ))}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

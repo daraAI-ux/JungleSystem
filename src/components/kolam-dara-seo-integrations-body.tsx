@@ -1,8 +1,9 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoIntegrationsController} from '../hooks/use-kolam-dara-seo-integrations-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
 
@@ -24,7 +25,7 @@ export function KolamDaraSeoIntegrationsBody({
   const showTest = canDraft;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       {canManageSettings ? (
         <View style={styles.topActions}>
           <KolamButton
@@ -371,7 +372,7 @@ export function KolamDaraSeoIntegrationsBody({
           </View>
         </View>
       ) : null}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
