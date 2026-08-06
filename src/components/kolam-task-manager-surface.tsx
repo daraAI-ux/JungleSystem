@@ -32,6 +32,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamDateField } from './kolam-date-field';
@@ -345,33 +346,58 @@ function KolamTaskManagerDetail({
         )}
       </View>
 
-      <View style={styles.detailGrid}>
-        <KolamTaskDetailMetric label="PIC" value={getKolamTaskUserDisplayName(task.assignedTo)} />
-        <KolamTaskDetailMetric label="Dibantu" value={getKolamTaskUserDisplayName(task.assistedBy)} />
-        <KolamTaskDetailMetric label="Tipe task" value={getTaskTypeLabel(task)} />
-        <KolamTaskDetailMetric label="Dibuat" value={formatKolamTaskListDatetime(task.createdAt)} />
-        <KolamTaskDetailMetric label="Due" value={formatKolamTaskListDatetime(task.dueDate)} />
-        <KolamTaskDetailMetric
-          label="Countdown"
-          value={getKolamTaskDueCountdownLabel(task)}
-        />
-        <KolamTaskDetailMetric
-          label="Diselesaikan"
-          value={completedAt ? formatKolamTaskListDatetime(completedAt) : '-'}
-        />
-        <KolamTaskDetailMetric
-          label="Durasi"
-          value={getKolamTaskResolutionDuration(task)}
-        />
-        <KolamTaskDetailMetric
-          label="Checklist"
-          value={
-            checklistProgress
+      <KolamDetailSummaryCard
+        fields={[
+          {
+            id: 'pic',
+            label: 'PIC',
+            value: getKolamTaskUserDisplayName(task.assignedTo),
+          },
+          {
+            id: 'assistedBy',
+            label: 'Dibantu',
+            value: getKolamTaskUserDisplayName(task.assistedBy),
+          },
+          {
+            id: 'taskType',
+            label: 'Tipe task',
+            value: getTaskTypeLabel(task),
+          },
+          {
+            id: 'createdAt',
+            label: 'Dibuat',
+            value: formatKolamTaskListDatetime(task.createdAt),
+          },
+          {
+            id: 'dueDate',
+            label: 'Due',
+            value: formatKolamTaskListDatetime(task.dueDate),
+          },
+          {
+            id: 'countdown',
+            label: 'Countdown',
+            value: getKolamTaskDueCountdownLabel(task),
+          },
+          {
+            id: 'completedAt',
+            label: 'Diselesaikan',
+            value: completedAt ? formatKolamTaskListDatetime(completedAt) : '-',
+          },
+          {
+            id: 'duration',
+            label: 'Durasi',
+            value: getKolamTaskResolutionDuration(task),
+          },
+          {
+            id: 'checklist',
+            label: 'Checklist',
+            value: checklistProgress
               ? `${checklistProgress.done}/${checklistProgress.total}`
-              : '-'
-          }
-        />
-      </View>
+              : '-',
+          },
+        ]}
+        title="Ringkasan tugas"
+      />
 
       {controller.crmContext?.customer ? (
         <View style={styles.detailCard}>
@@ -1918,6 +1944,10 @@ function KolamTaskRecurringPanel({
 
   return (
     <View style={styles.detailStack}>
+      {controller.isTaskAdmin ? (
+        <KolamTaskRecurringEnrollmentDashboard controller={controller} />
+      ) : null}
+
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
@@ -1974,10 +2004,6 @@ function KolamTaskRecurringPanel({
           </View>
         </View>
       </View>
-
-      {controller.isTaskAdmin ? (
-        <KolamTaskRecurringEnrollmentDashboard controller={controller} />
-      ) : null}
 
       <View style={styles.detailCard}>
         <Text style={styles.sectionTitle}>Template aktif</Text>
