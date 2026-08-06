@@ -3380,8 +3380,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   stack: {
+    alignSelf: 'stretch',
     gap: 12,
     minHeight: 0,
+    width: '100%',
   },
   tabRow: {
     alignItems: 'center',
@@ -3393,10 +3395,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   kpiRow: {
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'nowrap',
     gap: 8,
     minWidth: 0,
+    width: '100%',
   },
   kpiCard: {
     backgroundColor: V.colors.bg,
@@ -3477,21 +3481,27 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   taskToolbarWrap: {
+    alignSelf: 'stretch',
     elevation: 1000,
     overflow: 'visible',
     position: 'relative',
+    width: '100%',
     zIndex: 100000,
   },
   taskToolbarStack: {
+    alignSelf: 'stretch',
     gap: 6,
     overflow: 'visible',
+    width: '100%',
   },
   taskToolbarSearchRow: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'space-between',
     overflow: 'visible',
+    width: '100%',
   },
   taskFilterFillItem: {
     flexBasis: 0,
@@ -3554,7 +3564,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   taskListTable: {
+    alignSelf: 'stretch',
     minHeight: 0,
+    width: '100%',
   },
   taskTitleCell: {
     minWidth: 0,
