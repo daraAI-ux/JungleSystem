@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   estimateKolamSourceCostOnAmount,
   formatKolamSourceCostField,
@@ -24,6 +24,7 @@ import {
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -492,7 +493,7 @@ function KolamSourceDetail({
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.detailContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
       <View style={styles.detailHero}>
         {source.logoUri ? (
           <KolamRemoteImage
@@ -643,7 +644,7 @@ function KolamSourceDetail({
         }}
         visible={deleteOpen}
       />
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -710,7 +711,7 @@ function KolamSourceForm({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.detailContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
       <SourceFormSection
         description="Nama, tipe saluran, status, dan flag marketplace."
         title="Informasi Dasar"
@@ -1018,7 +1019,7 @@ function KolamSourceForm({
           }}
         />
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

@@ -48,6 +48,7 @@ import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -625,7 +626,7 @@ function KolamProductionForm({
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.formScroll}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.formScroll}>
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>{isEdit ? 'Edit Produksi' : 'Produksi Baru'}</Text>
 
@@ -892,7 +893,7 @@ function KolamProductionForm({
           />
         </View>
       </KolamContentFrame>
-    </ScrollView>
+    </KolamDetailScrollSurface>
     </View>
   );
 }
@@ -1039,7 +1040,7 @@ function KolamProductionDetail({
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.detailScroll}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.detailScroll}>
       <View style={styles.detailSplitRow}>
         <View
           style={[
@@ -1262,7 +1263,7 @@ function KolamProductionDetail({
           });
         }}
       />
-    </ScrollView>
+    </KolamDetailScrollSurface>
     </View>
   );
 }

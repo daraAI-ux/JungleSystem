@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   buildKolamTermsTemplateDetailRoute,
   canArchiveKolamTermsTemplate,
@@ -22,6 +22,7 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {
@@ -489,7 +490,7 @@ function KolamTermsTemplateFormShell({
       !item ? (
         <KolamEmptyState message="Memuat…" title="Detail" />
       ) : (
-        <ScrollView contentContainerStyle={styles.detailContent}>
+        <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
           <KolamContentFrame variant="nativeFormSection">
             <KolamCopyStack
               containerStyle={styles.sectionCopy}
@@ -615,7 +616,7 @@ function KolamTermsTemplateFormShell({
               </View>
             )}
           </KolamContentFrame>
-        </ScrollView>
+        </KolamDetailScrollSurface>
       )}
 
       <KolamConfirmDialog

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   formatFinanceExpenseDateTime,
   formatFinanceExpenseStatusLabel,
@@ -12,6 +12,7 @@ import {
 } from '../hooks/use-kolam-unexpected-expense-detail-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import type { KolamDescriptionListRow } from './kolam-description-list-types';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -248,7 +249,10 @@ function UnexpectedExpenseDetailBody({
         }))}
       />
 
-      <ScrollView contentContainerStyle={styles.bodyScroll} style={styles.body}>
+      <KolamDetailScrollSurface
+        contentContainerStyle={styles.bodyScroll}
+        style={styles.body}
+      >
         {controller.tab === 'history' ? (
           <View style={styles.historyList}>
             {controller.historyItems.length === 0 ? (
@@ -272,7 +276,7 @@ function UnexpectedExpenseDetailBody({
             <KolamDescriptionList rows={infoRows} />
           </View>
         )}
-      </ScrollView>
+      </KolamDetailScrollSurface>
     </View>
   );
 }

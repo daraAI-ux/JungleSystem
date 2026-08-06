@@ -47,6 +47,7 @@ import { KolamDataTableHeader } from './kolam-data-table-header';
 import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -557,7 +558,10 @@ function KolamPurchaseOrderForm({
         </View>
       </View>
 
-      <ScrollView style={styles.formRoot} contentContainerStyle={styles.formContent}>
+      <KolamDetailScrollSurface
+        style={styles.formRoot}
+        contentContainerStyle={styles.formContent}
+      >
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Data utama</Text>
         <View style={styles.formSplitRow}>
@@ -738,7 +742,7 @@ function KolamPurchaseOrderForm({
           }}
         />
       </View>
-      </ScrollView>
+      </KolamDetailScrollSurface>
     </View>
   );
 }

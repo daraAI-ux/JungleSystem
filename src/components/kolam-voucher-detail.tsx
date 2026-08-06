@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   buildKolamVoucherEditRoute,
   formatKolamVoucherApplicableToLabel,
@@ -18,6 +18,7 @@ import { copyTextToClipboard } from '../lib/native-clipboard';
 import type { KolamVoucherController } from '../hooks/use-kolam-voucher-controller';
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -59,7 +60,7 @@ export function KolamVoucherDetail({
     .reduce((sum, item) => sum + item.discountApplied, 0);
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={styles.titleBlock}>
@@ -316,7 +317,7 @@ export function KolamVoucherDetail({
           </View>
         ) : null}
       </KolamContentFrame>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

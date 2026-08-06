@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { getKolamFinanceExpenseRoot } from '../domain/kolam-finance-expense';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -11,6 +11,7 @@ import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -121,7 +122,7 @@ function RoutineExpenseFormBody({
         />
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.formScroll}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.formScroll}>
         <KolamContentFrame variant="nativeFormSection">
           <KolamCopyStack
             containerStyle={styles.sectionCopy}
@@ -204,7 +205,7 @@ function RoutineExpenseFormBody({
             </View>
           </KolamContentFrame>
         </KolamContentFrame>
-      </ScrollView>
+      </KolamDetailScrollSurface>
     </View>
   );
 }

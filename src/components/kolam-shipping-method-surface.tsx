@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   buildMethodName,
   findCourier,
@@ -25,6 +25,7 @@ import {
   useKolamShippingMethodController,
   type KolamShippingMethodController,
 } from '../hooks/use-kolam-shipping-method-controller';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -783,7 +784,7 @@ function KolamShippingMethodDetail({
   const biteship = isKolamShippingMethodBiteship(method);
 
   return (
-    <ScrollView contentContainerStyle={styles.detailContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
       <View style={styles.detailHero}>
         {method.logoUri ? (
           <KolamRemoteImage
@@ -942,7 +943,7 @@ function KolamShippingMethodDetail({
           ]}
         />
       </ShippingMethodFormSection>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -1030,7 +1031,7 @@ function KolamShippingMethodForm({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.detailContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
       <ShippingMethodFormSection title="Informasi dasar">
         <KolamDropdownSelect
           label="Sumber tarif"
@@ -1373,7 +1374,7 @@ function KolamShippingMethodForm({
           />
         </KolamInteractionFrame>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ScrollView,
   StyleSheet,
+  type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -10,14 +11,17 @@ export function KolamDetailScrollSurface({
   children,
   contentContainerStyle,
   style,
+  keyboardShouldPersistTaps = 'handled',
+  ...scrollViewProps
 }: {
   children: React.ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
-}) {
+} & Omit<ScrollViewProps, 'contentContainerStyle' | 'style'>) {
   return (
     <ScrollView
-      keyboardShouldPersistTaps="handled"
+      {...scrollViewProps}
+      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       style={[styles.scroll, style]}
       contentContainerStyle={[styles.content, contentContainerStyle]}
     >

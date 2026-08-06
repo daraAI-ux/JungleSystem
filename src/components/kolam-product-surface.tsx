@@ -83,6 +83,7 @@ import {
   KolamDetailTermsTemplatesPanel,
 } from './kolam-detail-more-panels';
 import { KolamDescriptionList } from './kolam-description-list';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamMediaPlayer } from './kolam-media-player';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
@@ -1231,7 +1232,7 @@ function KolamProductDetailView({
 
   if (!product) {
     return (
-      <ScrollView contentContainerStyle={styles.root}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
           <View style={styles.headingCopy}>
             <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
@@ -1244,7 +1245,7 @@ function KolamProductDetailView({
           </View>
           <KolamButton label="Daftar" onPress={onBack} />
         </View>
-      </ScrollView>
+      </KolamDetailScrollSurface>
     );
   }
 
@@ -1294,7 +1295,7 @@ function KolamProductDetailView({
     : 'overview';
 
   return (
-    <ScrollView contentContainerStyle={styles.root}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
@@ -1382,7 +1383,7 @@ function KolamProductDetailView({
           ) : null}
         </View>
       )}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -1402,7 +1403,7 @@ function ProductEditFormPage({
 
   if (!form) {
     return (
-      <ScrollView contentContainerStyle={styles.root}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
           <View style={styles.headingCopy}>
             <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
@@ -1415,7 +1416,7 @@ function ProductEditFormPage({
           </View>
           <KolamButton label="Batal" onPress={onCancel} />
         </View>
-      </ScrollView>
+      </KolamDetailScrollSurface>
     );
   }
 
@@ -1451,7 +1452,7 @@ function ProductEditFormPage({
 
   if (isRawForm) {
     return (
-      <ScrollView contentContainerStyle={styles.root}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
           <View style={styles.headingCopy}>
             <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
@@ -1836,12 +1837,12 @@ function ProductEditFormPage({
           }}
           visible={Boolean(deleteMediaTarget)}
         />
-      </ScrollView>
+      </KolamDetailScrollSurface>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.root}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
@@ -2256,7 +2257,7 @@ function ProductEditFormPage({
         }}
         visible={Boolean(deleteMediaTarget)}
       />
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

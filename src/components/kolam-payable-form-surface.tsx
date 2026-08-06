@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { KOLAM_PAYABLE_ROOT } from '../domain/kolam-payable';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -10,6 +10,7 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -116,7 +117,7 @@ function PayableFormBody({
         />
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.formScroll}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.formScroll}>
         <KolamContentFrame variant="nativeFormSection">
           <Text style={styles.sectionTitle}>Informasi Hutang</Text>
           <KolamContentFrame variant="nativeFormControls">
@@ -211,7 +212,7 @@ function PayableFormBody({
             </View>
           </KolamContentFrame>
         </KolamContentFrame>
-      </ScrollView>
+      </KolamDetailScrollSurface>
     </View>
   );
 }
