@@ -11,10 +11,10 @@ import {
   KOLAM_FINANCE_CONFIRM_STATUS_OPTIONS,
   KOLAM_FINANCE_DETAIL_FILTER_OPTIONS,
   KOLAM_FINANCE_RANGE_OPTIONS,
-  txMatchesFinanceFocusId,
   type KolamFinanceConfirmStatusFilter,
   type KolamFinanceDetailFilterMode,
   type KolamFinanceRange,
+  type KolamFinanceTransaction,
 } from '../domain/kolam-finance-summary';
 import { KOLAM_FINANCE_TAX_ROOT } from '../domain/kolam-finance-tax';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -26,30 +26,32 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
-import { KolamTableFooterControls } from './kolam-dropdown-select';
-import { KolamEmptyState } from './kolam-empty-state';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
 } from './kolam-filter-panel-anchor';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamSegment } from './kolam-segment';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const TX_COLUMNS = [
-  { id: 'date', label: 'Tanggal', flex: 1.1 },
-  { id: 'wallet', label: 'Dompet', flex: 1 },
-  { id: 'type', label: 'Tipe', flex: 0.7 },
-  { id: 'amount', label: 'Jumlah', flex: 1 },
-  { id: 'status', label: 'Status', flex: 1 },
-  { id: 'note', label: 'Catatan', flex: 1.2 },
-  { id: 'action', label: '', flex: 0.8 },
+  { id: 'date', label: 'Tanggal', flex: 1.1, align: 'left' },
+  { id: 'wallet', label: 'Dompet', flex: 1, align: 'left' },
+  { id: 'type', label: 'Tipe', flex: 0.7, align: 'left' },
+  { id: 'amount', label: 'Jumlah', flex: 1, align: 'left' },
+  { id: 'status', label: 'Status', flex: 1, align: 'left' },
+  { id: 'note', label: 'Catatan', flex: 1.2, align: 'left' },
 ] as const;
+
+type FinanceTxColumnId = (typeof TX_COLUMNS)[number]['id'];
 
 const FINANCE_FILTER_PANEL_WIDTH = 220;
 
@@ -917,130 +919,106 @@ function FinanceTransactionList({
   controller: KolamFinanceSummaryController;
 }) {
   const safePage = Math.max(1, controller.filters.page);
-  const pageCount = Math.max(1, controller.totalPages);
+  const transactionColumns = React.useMemo(
+    () => createFinanceTransactionColumns(),
+    [],
+  );
 
   return (
     <View style={styles.listRoot}>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.filters.limit}
-            total={controller.filteredTransactions.length}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  disabled={safePage >= pageCount || controller.loading}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
-        style={styles.tableFrame}
-      >
-        <View style={styles.headerRow}>
-          {TX_COLUMNS.map(column => (
-            <View
-              key={column.id}
-              style={[styles.cell, { flex: column.flex }]}
-            >
-              <Text style={styles.headerCellText}>{column.label}</Text>
-            </View>
-          ))}
-        </View>
-        {controller.paginatedTransactions.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              title={controller.loading ? 'Memuat…' : 'Tidak ada transaksi'}
-            />
-          </View>
-        ) : (
-          controller.paginatedTransactions.map(item => {
-            const focused = txMatchesFinanceFocusId(item, controller.focusTxId);
-            const canConfirmRow =
-              controller.canConfirm &&
-              item.confirmStatus === 'unconfirmed' &&
-              item.id;
-            return (
-              <View
-                key={item.id}
-                style={[styles.row, focused ? styles.rowFocused : null]}
-              >
-                <View style={[styles.cell, { flex: 1.1 }]}>
-                  <Text numberOfLines={2} style={styles.metaText}>
-                    {formatTxDate(item.date)}
-                  </Text>
-                </View>
-                <View style={[styles.cell, { flex: 1 }]}>
-                  <Text numberOfLines={1} style={styles.primaryText}>
-                    {item.wallet}
-                  </Text>
-                </View>
-                <View style={[styles.cell, { flex: 0.7 }]}>
-                  <Text style={styles.metaText}>
-                    {formatKolamFinanceTxTypeLabel(item.type)}
-                  </Text>
-                </View>
-                <View style={[styles.cell, { flex: 1 }]}>
-                  <Text style={styles.primaryText}>
-                    {formatRupiah(item.amount)}
-                  </Text>
-                </View>
-                <View style={[styles.cell, { flex: 1 }]}>
-                  <KolamStatusBadge
-                    intent={getKolamFinanceConfirmStatusIntent(
-                      item.confirmStatus,
-                    )}
-                    label={formatKolamFinanceConfirmStatusLabel(
-                      item.confirmStatus,
-                    )}
-                  />
-                </View>
-                <View style={[styles.cell, { flex: 1.2 }]}>
-                  <Text numberOfLines={2} style={styles.metaText}>
-                    {item.note || item.source || '—'}
-                  </Text>
-                </View>
-                <View style={[styles.cell, { flex: 0.8 }]}>
-                  {canConfirmRow ? (
-                    <KolamButton
-                      intent="primary"
-                      label={
-                        controller.confirmingTxId === item.id
-                          ? '…'
-                          : 'Konfirmasi'
-                      }
-                      onPress={() => {
-                        void controller.onConfirmTransaction(item);
-                      }}
-                      style={styles.confirmButton}
-                    />
-                  ) : null}
-                </View>
-              </View>
-            );
-          })
+      <KolamListTableComposition
+        columns={transactionColumns}
+        emptyTitle={controller.loading ? 'Memuat...' : 'Tidak ada transaksi'}
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.filters.limit,
+          total: controller.filteredTransactions.length,
+        }}
+        renderActions={item => (
+          <FinanceTransactionActions controller={controller} item={item} />
         )}
-      </KolamCatalogListTableShell>
+        rows={controller.paginatedTransactions}
+        style={styles.tableFrame}
+      />
     </View>
   );
+}
+
+function createFinanceTransactionColumns(): Array<
+  KolamListTableColumn<KolamFinanceTransaction>
+> {
+  return TX_COLUMNS.map(column => ({
+    ...column,
+    render: item => renderFinanceTransactionCell(column.id, item),
+  }));
+}
+
+function renderFinanceTransactionCell(
+  columnId: FinanceTxColumnId,
+  item: KolamFinanceTransaction,
+) {
+  switch (columnId) {
+    case 'date':
+      return (
+        <Text numberOfLines={2} style={styles.metaText}>
+          {formatTxDate(item.date)}
+        </Text>
+      );
+    case 'wallet':
+      return (
+        <Text numberOfLines={1} style={styles.primaryText}>
+          {item.wallet}
+        </Text>
+      );
+    case 'type':
+      return (
+        <Text style={styles.metaText}>
+          {formatKolamFinanceTxTypeLabel(item.type)}
+        </Text>
+      );
+    case 'amount':
+      return (
+        <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
+      );
+    case 'status':
+      return (
+        <KolamStatusBadge
+          intent={getKolamFinanceConfirmStatusIntent(item.confirmStatus)}
+          label={formatKolamFinanceConfirmStatusLabel(item.confirmStatus)}
+        />
+      );
+    case 'note':
+      return (
+        <Text numberOfLines={2} style={styles.metaText}>
+          {item.note || item.source || '-'}
+        </Text>
+      );
+  }
+}
+
+function FinanceTransactionActions({
+  controller,
+  item,
+}: {
+  controller: KolamFinanceSummaryController;
+  item: KolamFinanceTransaction;
+}) {
+  const canConfirmRow =
+    controller.canConfirm && item.confirmStatus === 'unconfirmed' && item.id;
+
+  return canConfirmRow ? (
+    <KolamButton
+      intent="primary"
+      label={controller.confirmingTxId === item.id ? '...' : 'Konfirmasi'}
+      onPress={() => {
+        void controller.onConfirmTransaction(item);
+      }}
+      style={styles.confirmButton}
+    />
+  ) : null;
 }
 
 function formatTxDate(value: string): string {
@@ -1567,50 +1545,6 @@ const styles = StyleSheet.create({
   },
   tableFrame: {
     width: '100%',
-  },
-  emptyWrap: {
-    paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  rowFocused: {
-    backgroundColor: V.colors.primarySoft,
-  },
-  cell: {
-    paddingHorizontal: 4,
   },
   primaryText: {
     color: V.colors.fg,
