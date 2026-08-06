@@ -75,7 +75,7 @@ export function KolamDaraSeoSocialBody({
         ) : null}
         {!controller.loading && !controller.rows.length ? (
           <Text style={styles.emptyLine}>
-            Belum ada snapshot. Tekan Sync di atas.
+            Belum ada snapshot. Tekan Sinkron di atas.
           </Text>
         ) : null}
 
@@ -115,10 +115,10 @@ export function KolamDaraSeoSocialBody({
                 ),
               },
               {
-                align: 'right',
+                align: 'center',
                 flex: 0.9,
                 id: 'followers',
-                label: 'Followers',
+                label: 'Pengikut',
                 render: row => (
                   <Text style={styles.td}>
                     {formatKolamDaraSeoSocialMetric(row.metrics.followers)}
@@ -126,10 +126,10 @@ export function KolamDaraSeoSocialBody({
                 ),
               },
               {
-                align: 'right',
+                align: 'center',
                 flex: 1,
                 id: 'reach',
-                label: 'Reach / Views',
+                label: 'Jangkauan / Tayangan',
                 render: row => (
                   <Text style={styles.td}>
                     {formatKolamDaraSeoSocialMetric(
@@ -141,6 +141,7 @@ export function KolamDaraSeoSocialBody({
                 ),
               },
               {
+                align: 'center',
                 flex: 1.3,
                 id: 'time',
                 label: 'Waktu',
@@ -186,7 +187,7 @@ function PlatformCard({
   const busy = syncing || latest?.status === 'pending';
   const statusLabel = latest
     ? formatKolamDaraSeoSocialStatusLabel(latest.status)
-    : 'Belum sync';
+    : 'Belum sinkron';
   const statusIntent = latest
     ? getKolamDaraSeoSocialStatusIntent(latest.status)
     : 'secondary';
@@ -197,7 +198,7 @@ function PlatformCard({
         <View style={styles.platformHeadText}>
           <Text style={styles.platformTitle}>{title}</Text>
           <Text style={styles.platformDesc}>
-            Akun inbox AM · sync via Playwright lalu kembali standby
+            Akun inbox AM - sinkron via Playwright lalu kembali standby
           </Text>
         </View>
         <KolamStatusBadge intent={statusIntent} label={statusLabel} />
@@ -206,13 +207,13 @@ function PlatformCard({
       <View style={styles.metricsGrid}>
         {platform === 'instagram' ? (
           <MetricCell
-            label="Followers"
+            label="Pengikut"
             value={formatKolamDaraSeoSocialMetric(m?.followers)}
           />
         ) : (
           <MetricCell
-            hint="Dari halaman profil, bukan analytics"
-            label="Followers (profil)"
+            hint="Dari halaman profil, bukan analitik"
+            label="Pengikut (profil)"
             value={
               m?.followers != null
                 ? formatKolamDaraSeoSocialMetric(m.followers)
@@ -221,20 +222,20 @@ function PlatformCard({
           />
         )}
         <MetricCell
-          label={platform === 'tiktok' ? 'Video views' : 'Reach'}
+          label={platform === 'tiktok' ? 'Tayangan video' : 'Jangkauan'}
           value={formatKolamDaraSeoSocialMetric(
             platform === 'tiktok' ? m?.videoViews : m?.reach,
           )}
         />
         <MetricCell
-          label={platform === 'tiktok' ? 'Profile views' : 'Views'}
+          label={platform === 'tiktok' ? 'Kunjungan profil' : 'Tayangan'}
           value={formatKolamDaraSeoSocialMetric(
             platform === 'tiktok' ? m?.profileViews : m?.impressions,
           )}
         />
         {platform === 'instagram' ? (
           <MetricCell
-            label="Profile visits"
+            label="Kunjungan profil"
             value={formatKolamDaraSeoSocialMetric(m?.profileViews)}
           />
         ) : null}
@@ -249,7 +250,7 @@ function PlatformCard({
       <Text style={styles.meta}>
         {`Terakhir: ${formatKolamDaraSeoSocialDate(
           latest?.fetchedAt || latest?.createdAt,
-        )}${latest?.periodDays ? ` · ${latest.periodDays} hari` : ''}`}
+        )}${latest?.periodDays ? ` - ${latest.periodDays} hari` : ''}`}
       </Text>
       {latest?.error ? <Text style={styles.warnText}>{latest.error}</Text> : null}
 
@@ -257,12 +258,12 @@ function PlatformCard({
         <KolamButton
           disabled={busy}
           intent="primary"
-          label={busy ? 'Sync...' : 'Sync 7 hari'}
+          label={busy ? 'Sinkron...' : 'Sinkron 7 hari'}
           onPress={() => onSync(7)}
         />
         <KolamButton
           disabled={busy}
-          label={busy ? 'Sync...' : 'Sync 28 hari'}
+          label={busy ? 'Sinkron...' : 'Sinkron 28 hari'}
           onPress={() => onSync(28)}
         />
       </View>

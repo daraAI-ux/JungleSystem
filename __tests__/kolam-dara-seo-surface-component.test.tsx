@@ -468,9 +468,11 @@ describe('KolamDaraSeoSurface', () => {
     expect(text).toContain('Platform');
     expect(text).toContain('Status');
     expect(text).toContain('Periode');
-    expect(text).toContain('Followers');
-    expect(text).toContain('Reach / Views');
+    expect(text).toContain('Pengikut');
+    expect(text).toContain('Jangkauan / Tayangan');
     expect(text).toContain('Waktu');
+    expect(text).toContain('Sinkron 7 hari');
+    expect(text).toContain('Sinkron 28 hari');
     expect(text).toContain('instagram');
     expect(text).toContain('Sukses');
     expect(socialMock).toHaveBeenCalledWith({limit: 30});
