@@ -2410,16 +2410,20 @@ function SummaryTile({
               : styles.summaryAccentDefault,
         ]}
       />
-      {iconElement ? (
-        <View pointerEvents="none" style={styles.summaryHeroIconShell}>
-          {iconElement}
+      <View
+        style={[
+          styles.summaryBody,
+          iconElement ? styles.summaryBodyWithLogo : null,
+        ]}>
+        <View style={styles.summaryTextStack}>
+          <Text style={styles.summaryLabel}>{label}</Text>
+          <Text numberOfLines={1} style={styles.summaryValue}>
+            {String(value)}
+          </Text>
         </View>
-      ) : null}
-      <View style={styles.summaryBody}>
-        <Text style={styles.summaryLabel}>{label}</Text>
-        <Text numberOfLines={1} style={styles.summaryValue}>
-          {String(value)}
-        </Text>
+        {iconElement ? (
+          <View style={styles.summaryLogoShell}>{iconElement}</View>
+        ) : null}
         {hint ? (
           <Text numberOfLines={2} style={styles.summaryHint}>
             {hint}
@@ -3320,17 +3324,28 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingVertical: 12,
   },
-  summaryHeroIconShell: {
-    bottom: -18,
-    opacity: 0.2,
-    position: 'absolute',
-    right: -14,
-    top: -10,
-    width: 110,
+  summaryBodyWithLogo: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
   },
   summaryHeroIcon: {
     height: '100%',
     width: '100%',
+  },
+  summaryLogoShell: {
+    alignItems: 'center',
+    borderRadius: 30,
+    flexShrink: 0,
+    height: 60,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 60,
+  },
+  summaryTextStack: {
+    flex: 1,
+    minWidth: 0,
   },
   summaryValue: {
     color: V.colors.fg,
