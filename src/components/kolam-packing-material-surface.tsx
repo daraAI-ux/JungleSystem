@@ -45,6 +45,7 @@ import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import type { KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import {
@@ -998,101 +999,105 @@ function PackingOverviewPanel({
 
   return (
     <View style={styles.detailSectionStack}>
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <View style={styles.detailCardHeader}>
-          <View style={styles.detailTitleWrap}>
-            <View style={styles.detailTitleRow}>
-              <View style={styles.infoIcon}>
-                <Text style={styles.infoIconText}>i</Text>
-              </View>
-              <Text style={styles.detailCardTitle}>Ringkasan</Text>
+      <View style={styles.overviewContent}>
+        <View style={styles.gallery}>
+          {mediaItems.length ? (
+            <KolamDetailMediaPreview items={mediaItems} title={item.name} />
+          ) : (
+            <View style={styles.galleryEmpty}>
+              <Text style={styles.galleryEmptyTitle}>{item.name}</Text>
+              <Text style={styles.galleryEmptyMeta}>
+                Belum ada foto bahan kemasan.
+              </Text>
             </View>
-            <Text style={styles.detailCardDescription}>
-              Data bahan kemasan yang dipakai saat pembayaran dan pengiriman.
-            </Text>
-          </View>
-          <View style={styles.badgeRow}>
-            <KolamStatusBadge
-              intent={getCategoryIntent(item.category)}
-              label={getPackingCategoryLabel(item.category)}
-            />
-            <KolamStatusBadge
-              intent={item.status === 'active' ? 'success' : 'warning'}
-              label={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
-            />
-          </View>
+          )}
         </View>
-        <View style={styles.overviewContent}>
-          <View style={styles.gallery}>
-            {mediaItems.length ? (
-              <KolamDetailMediaPreview items={mediaItems} title={item.name} />
-            ) : (
-              <View style={styles.galleryEmpty}>
-                <Text style={styles.galleryEmptyTitle}>{item.name}</Text>
-                <Text style={styles.galleryEmptyMeta}>
-                  Belum ada foto bahan kemasan.
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.overviewBody}>
-            <View style={styles.overviewMetricGrid}>
-              <DetailMetric
-                label="Status checkout"
-                value={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                badgeIntent={item.status === 'active' ? 'success' : 'warning'}
-              />
-              <DetailMetric
-                label="Stok"
-                value={item.stock === 0 ? 'Stok habis' : String(item.stock)}
-                badgeIntent={item.stock === 0 ? 'danger' : undefined}
-              />
-              <DetailMetric
-                label="Dimensi (P x L x T)"
-                value={formatPackingDimension(item)}
-              />
-              <DetailMetric label="Berat" value={formatPackingWeight(item)} />
-            </View>
-            {item.description.trim() ? (
-              <View style={styles.descriptionBlock}>
-                <Text style={styles.fieldLabel}>Deskripsi</Text>
-                {containsHtmlMarkup(item.description) ? (
-                  <KolamHtmlContent html={item.description} />
-                ) : (
-                  <Text style={styles.descriptionText}>{item.description}</Text>
-                )}
-              </View>
-            ) : null}
-            <View style={styles.separator} />
-            <View style={styles.priceSection}>
-              <Text style={styles.fieldLabel}>Harga</Text>
-              <View style={styles.priceGrid}>
-                <PriceTile
-                  label="Harga tagih customer"
-                  value={formatRupiah(item.price)}
-                />
-                <PriceTile
-                  label="HPP dari vendor"
-                  value={effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
-                  note={
-                    cheapestSupplier
-                      ? `Termurah: ${cheapestSupplier.vendorName}`
-                      : undefined
-                  }
-                />
-                <PriceTile
-                  label="Supplier"
-                  value={
-                    vendorPrices.length
-                      ? `${vendorPrices.length} supplier`
-                      : 'Belum ada'
-                  }
-                />
-              </View>
-            </View>
-          </View>
+        <View style={styles.overviewBody}>
+          <KolamDetailSummaryCard
+            description="Data bahan kemasan yang dipakai saat pembayaran dan pengiriman."
+            fieldColumns={3}
+            fields={[
+              {
+                id: 'category',
+                label: 'Kategori',
+                value: (
+                  <KolamStatusBadge
+                    intent={getCategoryIntent(item.category)}
+                    label={getPackingCategoryLabel(item.category)}
+                  />
+                ),
+              },
+              {
+                id: 'status',
+                label: 'Status checkout',
+                value: (
+                  <KolamStatusBadge
+                    intent={item.status === 'active' ? 'success' : 'warning'}
+                    label={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                  />
+                ),
+              },
+              {
+                id: 'stock',
+                label: 'Stok',
+                value:
+                  item.stock === 0 ? (
+                    <KolamStatusBadge intent="danger" label="Stok habis" />
+                  ) : (
+                    String(item.stock)
+                  ),
+              },
+              {
+                id: 'dimension',
+                label: 'Dimensi',
+                value: formatPackingDimension(item),
+              },
+              {
+                id: 'weight',
+                label: 'Berat',
+                value: formatPackingWeight(item),
+              },
+              {
+                id: 'price',
+                label: 'Harga tagih customer',
+                value: formatRupiah(item.price),
+              },
+              {
+                id: 'hpp',
+                label: 'HPP dari vendor',
+                value: effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-',
+              },
+              {
+                id: 'supplier',
+                label: 'Supplier',
+                value: vendorPrices.length
+                  ? `${vendorPrices.length} supplier`
+                  : 'Belum ada',
+              },
+              {
+                id: 'cheapestSupplier',
+                label: 'Termurah',
+                value: cheapestSupplier?.vendorName ?? '-',
+              },
+            ]}
+            style={styles.overviewSummaryCard}
+            title="Ringkasan"
+          />
+          {item.description.trim() ? (
+            <KolamContentFrame
+              style={styles.descriptionFrame}
+              variant="settingsWebConfig"
+            >
+              <Text style={styles.fieldLabel}>Deskripsi</Text>
+              {containsHtmlMarkup(item.description) ? (
+                <KolamHtmlContent html={item.description} />
+              ) : (
+                <Text style={styles.descriptionText}>{item.description}</Text>
+              )}
+            </KolamContentFrame>
+          ) : null}
         </View>
-      </KolamContentFrame>
+      </View>
       <KolamVendorPriceCard
         badge={String(vendorPrices.length)}
         description="Referensi harga pokok dari supplier. Baris termurah ditandai Terbaik."
@@ -1857,45 +1862,6 @@ function PackingHero({ item }: { item: KolamPackingMaterial }) {
   );
 }
 
-function DetailMetric({
-  badgeIntent,
-  label,
-  value,
-}: {
-  badgeIntent?: 'success' | 'warning' | 'danger' | 'muted';
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.detailMetricTile}>
-      <Text style={styles.detailMetricLabel}>{label}</Text>
-      {badgeIntent ? (
-        <KolamStatusBadge intent={badgeIntent} label={value} />
-      ) : (
-        <Text style={styles.detailMetricValue}>{value}</Text>
-      )}
-    </View>
-  );
-}
-
-function PriceTile({
-  label,
-  note,
-  value,
-}: {
-  label: string;
-  note?: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.priceTile}>
-      <Text style={styles.priceTileLabel}>{label}</Text>
-      <Text style={styles.priceTileValue}>{value}</Text>
-      {note ? <Text style={styles.priceTileNote}>{note}</Text> : null}
-    </View>
-  );
-}
-
 function getCheapestSupplier(item: KolamPackingMaterial) {
   return item.vendorPrices
     .filter(price => (price.totalCost || price.price + price.shippingCost) > 0)
@@ -2340,39 +2306,14 @@ const styles = StyleSheet.create({
     gap: 14,
     minWidth: 520,
   },
-  overviewMetricGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+  overviewSummaryCard: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
-  detailMetricTile: {
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: V.radius.lg,
-    borderWidth: 1,
-    flex: 1,
-    flexBasis: '23%',
+  descriptionFrame: {
     gap: 6,
-    minHeight: 76,
-    minWidth: 150,
-    padding: 12,
-  },
-  detailMetricLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    lineHeight: 15,
-  },
-  detailMetricValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 14,
-    fontWeight: '800',
-    lineHeight: 20,
-  },
-  descriptionBlock: {
-    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
@@ -2388,51 +2329,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 20,
-  },
-  separator: {
-    backgroundColor: V.colors.border,
-    height: 1,
-  },
-  priceSection: {
-    gap: 8,
-  },
-  priceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  priceTile: {
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: V.radius.lg,
-    borderWidth: 1,
-    flex: 1,
-    flexBasis: '30%',
-    minWidth: 190,
-    padding: 12,
-  },
-  priceTileLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '800',
-    lineHeight: 15,
-  },
-  priceTileValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 14,
-    fontWeight: '900',
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  priceTileNote: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 15,
-    marginTop: 4,
   },
   gallery: {
     gap: 10,
