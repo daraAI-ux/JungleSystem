@@ -1033,7 +1033,6 @@ function PackingOverviewPanel({
                 </Text>
               </View>
             )}
-            <PackingPhotoManager controller={controller} item={item} />
           </View>
           <View style={styles.overviewBody}>
             <View style={styles.overviewMetricGrid}>
@@ -1109,7 +1108,7 @@ function PackingOverviewPanel({
   );
 }
 
-function PackingPhotoManager({
+function PackingPhotoEditPanel({
   controller,
   item,
 }: {
@@ -1118,6 +1117,7 @@ function PackingPhotoManager({
 }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [pickedPhotoUri, setPickedPhotoUri] = React.useState('');
   const previewItems = React.useMemo(
     () => createPackingPhotoPreviewItems(item),
     [item],
@@ -1132,11 +1132,14 @@ function PackingPhotoManager({
         return;
       }
 
+      setPickedPhotoUri(localUri);
       setBusy(true);
       const updated = await uploadKolamPackingMaterialPhotos(item.id, [
         localUri,
       ]);
       await controller.onSelectMaterial(updated);
+      controller.onEdit();
+      setPickedPhotoUri('');
     } catch (uploadError) {
       setError(getPackingPhotoErrorMessage(uploadError));
     } finally {
@@ -1151,6 +1154,7 @@ function PackingPhotoManager({
       try {
         const updated = await deleteKolamPackingMaterialPhoto(item.id, index);
         await controller.onSelectMaterial(updated);
+        controller.onEdit();
       } catch (deleteError) {
         setError(getPackingPhotoErrorMessage(deleteError));
       } finally {
@@ -1161,55 +1165,75 @@ function PackingPhotoManager({
   );
 
   return (
-    <View style={styles.photoManager}>
-      <View style={styles.photoManagerHeader}>
-        <Text style={styles.fieldLabel}>Foto</Text>
-        <KolamButton
-          disabled={busy}
-          label={busy ? 'Memproses...' : 'Tambah Foto'}
-          onPress={() => {
-            void uploadPhoto();
-          }}
-        />
-      </View>
-      {item.photos.length ? (
-        <View style={styles.photoManagerGrid}>
-          {item.photos.map((photo, index) => {
-            const uri = getKolamFileUrl(photo);
-            return (
-              <View key={`${photo}-${index}`} style={styles.photoManagerTile}>
-                {uri ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={`${item.name} ${index + 1}`}
-                    previewIndex={index}
-                    previewItems={previewItems}
-                    resizeMode="cover"
-                    revision={photo}
-                    scope="packing-material"
-                    sourceUri={uri}
-                    style={styles.photoManagerImage}
-                  />
-                ) : (
-                  <View style={styles.photoManagerMissing}>
-                    <Text style={styles.photoManagerMissingText}>-</Text>
-                  </View>
-                )}
-                <KolamButton
-                  disabled={busy}
-                  intent="plain"
-                  label="Hapus"
-                  onPress={() => {
-                    void deletePhoto(index);
-                  }}
-                  textStyle={styles.photoManagerDeleteText}
-                />
-              </View>
-            );
-          })}
+    <FieldShell label="Foto">
+      <View style={styles.variantMediaPanel}>
+        <View style={styles.mediaPickerRow}>
+          <KolamFormTextField
+            editable={false}
+            mode="url"
+            placeholder="Pilih foto untuk ditambahkan"
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.mediaPickerInput,
+            ]}
+            value={pickedPhotoUri}
+          />
+          <KolamButton
+            disabled={busy || controller.saving}
+            label={busy ? 'Memproses...' : 'Tambah Foto'}
+            onPress={() => {
+              void uploadPhoto();
+            }}
+          />
         </View>
-      ) : null}
-      {error ? <Text style={styles.photoManagerError}>{error}</Text> : null}
-    </View>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'photo-note',
+              text: 'Foto dikirim ke backend saat dipilih.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        {item.photos.length ? (
+          <View style={styles.photoManagerGrid}>
+            {item.photos.map((photo, index) => {
+              const uri = getKolamFileUrl(photo);
+              return (
+                <View key={`${photo}-${index}`} style={styles.photoManagerTile}>
+                  {uri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={`${item.name} ${index + 1}`}
+                      previewIndex={index}
+                      previewItems={previewItems}
+                      resizeMode="cover"
+                      revision={photo}
+                      scope="packing-material"
+                      sourceUri={uri}
+                      style={styles.photoManagerImage}
+                    />
+                  ) : (
+                    <View style={styles.photoManagerMissing}>
+                      <Text style={styles.photoManagerMissingText}>-</Text>
+                    </View>
+                  )}
+                  <KolamButton
+                    disabled={busy || controller.saving}
+                    intent="plain"
+                    label="Hapus"
+                    onPress={() => {
+                      void deletePhoto(index);
+                    }}
+                    textStyle={styles.photoManagerDeleteText}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+        {error ? <Text style={styles.photoManagerError}>{error}</Text> : null}
+      </View>
+    </FieldShell>
   );
 }
 
@@ -1468,6 +1492,12 @@ function KolamPackingMaterialForm({
               value={form.description}
             />
           </FieldShell>
+          {controller.selectedMaterial ? (
+            <PackingPhotoEditPanel
+              controller={controller}
+              item={controller.selectedMaterial}
+            />
+          ) : null}
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
               <FieldShell label="Kategori" required>
@@ -2444,20 +2474,30 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: 'center',
   },
-  photoManager: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+  variantMediaPanel: {
+    alignSelf: 'stretch',
+    backgroundColor: V.colors.secondary,
+    borderRadius: 6,
     gap: 10,
     padding: 10,
-    width: 320,
+    width: '100%',
   },
-  photoManagerHeader: {
+  mediaPickerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mediaPickerInput: {
+    flex: 1,
+    minWidth: 240,
+  },
+  fieldHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   photoManagerGrid: {
     flexDirection: 'row',
