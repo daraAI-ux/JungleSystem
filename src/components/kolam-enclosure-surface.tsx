@@ -78,6 +78,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamSkullEventIcon} from './kolam-skull-event-icon';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
@@ -1620,6 +1621,7 @@ function KolamEnclosureDeathHistoryPanel({
         />
         <SummaryTile
           hint={`${deaths.totalAnimals} ekor`}
+          iconElement={<KolamSkullEventIcon style={styles.summaryHeroIcon} />}
           icon="E"
           label="Total event"
           value={deaths.totalCases}
