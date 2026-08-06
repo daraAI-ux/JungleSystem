@@ -15,35 +15,42 @@ export function KolamDashboardCountCard({
   card: DashboardCountCard;
   onOpenRoute?: (route: string) => void;
 }) {
+  const isProductCard = card.id === 'products';
+  const icon = (
+    <View
+      style={
+        card.id === 'products' ||
+        card.id === 'rawProducts' ||
+        card.id === 'species' ||
+        card.id === 'services'
+          ? styles.dashboardFullCountIcon
+          : styles.dashboardCountIcon
+      }>
+      <KolamDashboardCountIcon kind={card.iconKind} />
+    </View>
+  );
+  const copy = (
+    <KolamCopyStack
+      containerStyle={styles.dashboardCountCopy}
+      items={[
+        {
+          id: 'value',
+          text: card.value.toLocaleString('id-ID'),
+          style: styles.dashboardCountValue,
+        },
+        {id: 'label', text: card.label, style: styles.dashboardCountLabel},
+        {
+          id: 'subLabel',
+          text: card.subLabel,
+          style: styles.dashboardCountSubLabel,
+        },
+      ]}
+    />
+  );
   const content = (
     <>
-      <View
-        style={
-          card.id === 'products' ||
-          card.id === 'rawProducts' ||
-          card.id === 'species' ||
-          card.id === 'services'
-            ? styles.dashboardFullCountIcon
-            : styles.dashboardCountIcon
-        }>
-        <KolamDashboardCountIcon kind={card.iconKind} />
-      </View>
-      <KolamCopyStack
-        containerStyle={styles.dashboardCountCopy}
-        items={[
-          {
-            id: 'value',
-            text: card.value.toLocaleString('id-ID'),
-            style: styles.dashboardCountValue,
-          },
-          {id: 'label', text: card.label, style: styles.dashboardCountLabel},
-          {
-            id: 'subLabel',
-            text: card.subLabel,
-            style: styles.dashboardCountSubLabel,
-          },
-        ]}
-      />
+      {isProductCard ? copy : icon}
+      {isProductCard ? icon : copy}
     </>
   );
 
