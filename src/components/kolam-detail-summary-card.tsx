@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     flexBasis: '31%',
     flexGrow: 0,
     flexShrink: 1,
-    minWidth: 0,
+    minWidth: 96,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
