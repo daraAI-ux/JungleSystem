@@ -123,7 +123,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
         }
 
         setQuery('');
-        rowLayer?.setMenuOpen(false);
         onOpenChange?.(false);
         return false;
       });
@@ -133,7 +132,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
-    rowLayer?.setMenuOpen(false);
     if (!inlineMenu) {
       clearActiveOpenMenu(openMenuIdRef.current);
     }
@@ -144,25 +142,26 @@ export function KolamDropdownSelect<TValue extends string = string>({
       const next = !current;
       if (!next) {
         setQuery('');
-        rowLayer?.setMenuOpen(false);
         if (!inlineMenu) {
           clearActiveOpenMenu(openMenuIdRef.current);
         }
       } else if (!inlineMenu) {
         setActiveOpenMenu(openMenuIdRef.current);
       }
-      rowLayer?.setMenuOpen(next);
       onOpenChange?.(next);
       return next;
     });
   };
 
-  React.useEffect(
-    () => () => {
+  React.useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+    rowLayer?.setMenuOpen(true);
+    return () => {
       rowLayer?.setMenuOpen(false);
-    },
-    [rowLayer],
-  );
+    };
+  }, [open, rowLayer]);
 
   const menu = (
     <View
