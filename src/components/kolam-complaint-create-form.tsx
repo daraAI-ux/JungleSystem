@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -30,6 +29,7 @@ import {
 } from '../services/kolam-sales-api';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamSearchField } from './kolam-search-field';
@@ -313,7 +313,7 @@ export function KolamComplaintCreateForm({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.scroll}>
       <View style={styles.header}>
         <Text style={styles.title}>Buat Keluhan Baru</Text>
         <Text style={styles.subtitle}>
@@ -521,7 +521,7 @@ export function KolamComplaintCreateForm({
           }}
         />
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

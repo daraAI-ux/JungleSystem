@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   buildKolamCampaignEditRoute,
   countKolamCampaignVariants,
@@ -17,6 +17,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamCampaignController } from '../hooks/use-kolam-campaign-controller';
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -61,7 +62,7 @@ export function KolamCampaignDetail({
   const endLabel = new Date(campaign.endDate).toLocaleDateString('id-ID');
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={styles.titleBlock}>
@@ -336,7 +337,7 @@ export function KolamCampaignDetail({
           </KolamContentFrame>
         </View>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

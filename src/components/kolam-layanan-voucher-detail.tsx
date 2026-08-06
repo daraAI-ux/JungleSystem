@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   calcKolamLayananVolumeM3FromUnitLabel,
   formatKolamLayananContractDuration,
@@ -37,6 +37,7 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDetailMetaStrip,
   KolamDetailMetaStripItem,
@@ -194,7 +195,7 @@ export function KolamLayananVoucherDetail({
           title="Tidak ada data"
         />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <KolamDetailScrollSurface contentContainerStyle={styles.content}>
           <KolamDetailMetaStrip>
             <KolamDetailMetaStripItem label="Status voucher">
               <KolamStatusBadge
@@ -255,7 +256,7 @@ export function KolamLayananVoucherDetail({
               </View>
             </View>
           )}
-        </ScrollView>
+        </KolamDetailScrollSurface>
       )}
     </View>
   );

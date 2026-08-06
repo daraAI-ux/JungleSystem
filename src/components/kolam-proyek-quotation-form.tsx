@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamProyekController } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -91,7 +92,7 @@ export function KolamProyekQuotationForm({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.formContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.formContent}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <Text numberOfLines={1} style={styles.heading}>
@@ -464,7 +465,7 @@ export function KolamProyekQuotationForm({
           onPress={controller.onAddFormItem}
         />
       </FormSection>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

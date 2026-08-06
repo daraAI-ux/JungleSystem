@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import {
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -22,6 +21,7 @@ import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -220,7 +220,7 @@ function AssetPurchaseFormBody({
         />
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.content}>
         <FormSection title="Informasi Aset">
           <FieldShell label="Nama Aset" required>
             <KolamFormTextField
@@ -420,7 +420,7 @@ function AssetPurchaseFormBody({
             />
           </FieldShell>
         </FormSection>
-      </ScrollView>
+      </KolamDetailScrollSurface>
     </View>
   );
 }

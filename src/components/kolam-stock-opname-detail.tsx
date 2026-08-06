@@ -37,6 +37,7 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -188,7 +189,7 @@ export function KolamStockOpnameDetail({
 
   return (
     <>
-    <ScrollView contentContainerStyle={styles.root}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -710,7 +711,7 @@ export function KolamStockOpnameDetail({
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </KolamDetailScrollSurface>
     <KolamMarketplacePriceSyncDialog
       itemCount={marketplaceSyncTargets.productIds.length}
       onOpenChange={open => {

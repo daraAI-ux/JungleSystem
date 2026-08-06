@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   getKolamLayananSubscriptionStatusIntent,
   getKolamLayananSubscriptionStatusLabel,
@@ -11,6 +11,7 @@ import { useKolamLayananSubscriptionController } from '../hooks/use-kolam-layana
 import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDetailMetaStrip,
   KolamDetailMetaStripItem,
@@ -208,7 +209,7 @@ export function KolamLayananSubscriptionDetail({
           title="Tidak ada data"
         />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <KolamDetailScrollSurface contentContainerStyle={styles.content}>
           <KolamDetailMetaStrip>
             <KolamDetailMetaStripItem label="Status">
               <KolamStatusBadge
@@ -550,7 +551,7 @@ export function KolamLayananSubscriptionDetail({
               </FormSection>
             </View>
           </View>
-        </ScrollView>
+        </KolamDetailScrollSurface>
       )}
     </View>
   );

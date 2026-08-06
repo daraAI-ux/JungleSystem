@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_CAMPAIGN_DISCOUNT_TYPE_OPTIONS,
   KOLAM_CAMPAIGN_ROOT,
@@ -13,6 +13,7 @@ import { KolamButton } from './kolam-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -65,7 +66,7 @@ export function KolamCampaignForm({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.formContent}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.formContent}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <Text numberOfLines={1} style={styles.heading}>
@@ -366,7 +367,7 @@ export function KolamCampaignForm({
           onPress={controller.onAddProductRow}
         />
       </CampaignFormSection>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

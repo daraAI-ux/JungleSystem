@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   getKolamLayananExecutionStatusLabel,
   getKolamLayananProgressStepLabel,
@@ -16,6 +16,7 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -146,7 +147,7 @@ export function KolamLayananExecutionDetail({
           title="Tidak ada data"
         />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <KolamDetailScrollSurface contentContainerStyle={styles.content}>
           <View style={styles.stripRow}>
             <KolamStatusBadge
               intent={
@@ -389,7 +390,7 @@ export function KolamLayananExecutionDetail({
               </Text>
             ) : null}
           </FormSection>
-        </ScrollView>
+        </KolamDetailScrollSurface>
       )}
     </View>
   );

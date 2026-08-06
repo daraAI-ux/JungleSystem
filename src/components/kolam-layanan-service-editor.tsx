@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   formatKolamLayananCommission,
@@ -31,6 +31,7 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDetailMetaStrip,
@@ -315,7 +316,7 @@ function KolamLayananServiceDetail({
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content}>
       <KolamDetailMetaStrip>
         <KolamDetailMetaStripItem label="Status jual">
           <KolamStatusBadge
@@ -636,7 +637,7 @@ function KolamLayananServiceDetail({
           />
         </View>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -925,7 +926,7 @@ function KolamLayananServiceForm({
   }, [controller.brandOptions, form.brandIds]);
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.content}>
       <FormSection
         description="Nama, SKU, merek, dan status jual."
         title="Informasi dasar"
@@ -1224,7 +1225,7 @@ function KolamLayananServiceForm({
           </FieldShell>
         ) : null}
       </FormSection>
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 
