@@ -45,11 +45,6 @@ import {
 } from '../domain/kolam-enclosure';
 import type {KolamBarcodeLabelItem} from '../domain/kolam-barcode';
 import type {KolamSpecies} from '../domain/kolam-species';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {pickNativeImageFile} from '../services/native-file-picker';
@@ -66,24 +61,11 @@ import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamCardFrame} from './kolam-card-frame';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
 import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import {KolamDataTableHeader} from './kolam-data-table-header';
-import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
-import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -144,22 +126,33 @@ const ENCLOSURE_DASHBOARD_SUMMARY_CARD_COUNT = 6;
 const ENCLOSURE_DASHBOARD_SUMMARY_CARD_GAP = 8;
 const ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH = 154;
 
-const DASHBOARD_DEATH_COLUMNS: KolamTableColumn[] = [
-  {id: 'meta', label: 'Waktu', align: 'left', width: 142},
-  {id: 'children', label: 'Enclosure', align: 'left', width: 120},
-  {id: 'primary', label: 'Species', align: 'left'},
-  {id: 'amount', label: 'Qty', align: 'right', width: 80},
-  {id: 'status', label: 'Status', align: 'center', width: 132},
-  {id: 'actions', label: '', align: 'center', headerAlign: 'center', width: 64},
-];
+const PRODUCTION_STATS_COLUMNS = [
+  {id: 'species', label: 'Species', flex: 1.4, align: 'left'},
+  {id: 'variant', label: 'Varian', flex: 1, align: 'left'},
+  {id: 'qty', label: 'Qty', flex: 0.8, align: 'right'},
+  {id: 'enclosure', label: 'Enc', flex: 0.6, align: 'center'},
+] as const;
 
-const ALLOCATION_OVERVIEW_COLUMNS: KolamTableColumn[] = [
-  {id: 'primary', label: 'Species', align: 'left'},
-  {id: 'notes', label: 'Varian', align: 'left', width: 132},
-  {id: 'children', label: 'Sudah di enclosure', align: 'right', width: 148},
-  {id: 'amount', label: 'Belum di enclosure', align: 'right', width: 148},
-  {id: 'marketplace', label: 'Kode enclosure', align: 'left', width: 220},
-];
+const DASHBOARD_DEATH_COLUMNS = [
+  {id: 'meta', label: 'Waktu', flex: 1.05, align: 'left'},
+  {id: 'children', label: 'Enclosure', flex: 0.9, align: 'left'},
+  {id: 'primary', label: 'Species', flex: 1.4, align: 'left'},
+  {id: 'amount', label: 'Qty', flex: 0.55, align: 'right'},
+  {id: 'status', label: 'Status', flex: 1, align: 'center'},
+] as const;
+
+const ALLOCATION_OVERVIEW_COLUMNS = [
+  {id: 'primary', label: 'Species', flex: 1.45, align: 'left'},
+  {id: 'notes', label: 'Varian', flex: 0.85, align: 'left'},
+  {id: 'children', label: 'Sudah di enclosure', flex: 1, align: 'right'},
+  {id: 'amount', label: 'Belum di enclosure', flex: 1, align: 'right'},
+  {id: 'marketplace', label: 'Kode enclosure', flex: 1.35, align: 'left'},
+] as const;
+
+type ProductionStatsColumnId = (typeof PRODUCTION_STATS_COLUMNS)[number]['id'];
+type DashboardDeathColumnId = (typeof DASHBOARD_DEATH_COLUMNS)[number]['id'];
+type AllocationOverviewColumnId =
+  (typeof ALLOCATION_OVERVIEW_COLUMNS)[number]['id'];
 
 const LIVESTOCK_FILTER_OPTIONS: Array<{
   label: string;
@@ -1664,6 +1657,10 @@ function DashboardProductionStatsCard({
     () => buildProductionDiagramRows(rows, totalQty),
     [rows, totalQty],
   );
+  const tableColumns = React.useMemo(
+    () => createProductionStatsColumns(),
+    [],
+  );
 
   React.useEffect(() => {
     setPage(1);
@@ -1692,99 +1689,14 @@ function DashboardProductionStatsCard({
 
       <View style={styles.productionStatsBody}>
         <View style={styles.productionStatsTablePane}>
-          <View style={styles.productionStatsTable}>
-            <View style={styles.productionStatsTableHead}>
-              <Text
-                style={[
-                  styles.productionStatsHeadCell,
-                  styles.productionStatsColSpecies,
-                ]}
-              >
-                Species
-              </Text>
-              <Text
-                style={[
-                  styles.productionStatsHeadCell,
-                  styles.productionStatsColVariant,
-                ]}
-              >
-                Varian
-              </Text>
-              <Text
-                style={[
-                  styles.productionStatsHeadCell,
-                  styles.productionStatsColQty,
-                ]}
-              >
-                Qty
-              </Text>
-              <Text
-                style={[
-                  styles.productionStatsHeadCell,
-                  styles.productionStatsColEnc,
-                ]}
-              >
-                Enc
-              </Text>
-            </View>
-            {pageRows.length ? (
-              pageRows.map(row => (
-                <View
-                  key={`${row.speciesId}:${row.variantId || ''}`}
-                  style={styles.productionStatsTableRow}
-                >
-                  <View style={styles.productionStatsColSpecies}>
-                    <Text numberOfLines={1} style={styles.productionStatsSpecies}>
-                      {row.speciesName || '-'}
-                    </Text>
-                    {row.scientificName ? (
-                      <Text
-                        numberOfLines={1}
-                        style={styles.productionStatsScientific}
-                      >
-                        {row.scientificName}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.productionStatsCell,
-                      styles.productionStatsColVariant,
-                    ]}
-                  >
-                    {row.variantLabel || '—'}
-                  </Text>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.productionStatsCellStrong,
-                      styles.productionStatsColQty,
-                    ]}
-                  >
-                    {row.qty} {row.unit || 'ekor'}
-                  </Text>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.productionStatsCellStrong,
-                      styles.productionStatsColEnc,
-                    ]}
-                  >
-                    {row.enclosureCount}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  message="Belum ada livestock produksi."
-                  title="Belum ada indukan produksi"
-                />
-              </View>
-            )}
-          </View>
+          <KolamListTableComposition
+            columns={tableColumns}
+            emptyTitle="Belum ada indukan produksi"
+            getRowKey={row => `${row.speciesId}:${row.variantId || ''}`}
+            rows={pageRows}
+            showFooter={false}
+            style={styles.productionStatsTable}
+          />
         </View>
 
         <View style={styles.productionDiagramPane}>
@@ -1858,6 +1770,54 @@ function buildProductionDiagramRows(
   }));
 }
 
+function createProductionStatsColumns(): Array<
+  KolamListTableColumn<KolamEnclosureDashboardSpeciesRow>
+> {
+  return PRODUCTION_STATS_COLUMNS.map(column => ({
+    ...column,
+    render: row => renderProductionStatsCell(column.id, row),
+  }));
+}
+
+function renderProductionStatsCell(
+  columnId: ProductionStatsColumnId,
+  row: KolamEnclosureDashboardSpeciesRow,
+) {
+  switch (columnId) {
+    case 'species':
+      return (
+        <View>
+          <Text numberOfLines={1} style={styles.productionStatsSpecies}>
+            {row.speciesName || '-'}
+          </Text>
+          {row.scientificName ? (
+            <Text numberOfLines={1} style={styles.productionStatsScientific}>
+              {row.scientificName}
+            </Text>
+          ) : null}
+        </View>
+      );
+    case 'variant':
+      return (
+        <Text numberOfLines={1} style={styles.productionStatsCell}>
+          {row.variantLabel || '-'}
+        </Text>
+      );
+    case 'qty':
+      return (
+        <Text numberOfLines={1} style={styles.productionStatsCellStrong}>
+          {row.qty} {row.unit || 'ekor'}
+        </Text>
+      );
+    case 'enclosure':
+      return (
+        <Text numberOfLines={1} style={styles.productionStatsCellStrong}>
+          {row.enclosureCount}
+        </Text>
+      );
+  }
+}
+
 function DashboardDeathTable({
   events,
   onRouteChange,
@@ -1865,12 +1825,11 @@ function DashboardDeathTable({
   events: KolamEnclosureDashboardDeathEvent[];
   onRouteChange?: (route: string) => void;
 }) {
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(DASHBOARD_DEATH_PAGE_SIZE);
   const columns = React.useMemo(
-    () => fitDeathHistoryColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () => createDashboardDeathColumns(onRouteChange),
+    [onRouteChange],
   );
   const totalPages = Math.max(1, Math.ceil(events.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -1884,133 +1843,65 @@ function DashboardDeathTable({
   }, [events, pageSize]);
 
   return (
-    <KolamCatalogListTableShell
-      footer={
-        <KolamTableFooterControls
-          onPageSizeChange={next => {
-            setPageSize(normalizeKolamEnclosurePageSize(next));
-            setPage(1);
-          }}
-          page={safePage}
-          pageSize={pageSize}
-          total={events.length}
-        >
-          {totalPages > 1 ? (
-            <View style={styles.paginationRow}>
-              <KolamButton
-                disabled={safePage <= 1}
-                label="Sebelumnya"
-                onPress={() => setPage(Math.max(1, safePage - 1))}
-              />
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'page',
-                    text: `${safePage} / ${totalPages}`,
-                    style: styles.pageLabel,
-                  },
-                ]}
-              />
-              <KolamButton
-                disabled={safePage >= totalPages}
-                label="Berikutnya"
-                onPress={() => setPage(Math.min(totalPages, safePage + 1))}
-              />
-            </View>
-          ) : null}
-        </KolamTableFooterControls>
+    <KolamListTableComposition
+      columns={columns}
+      emptyTitle="Belum ada catatan kematian"
+      getRowKey={(event, index) =>
+        `${event.enclosureId}:${event.createdAt || index}`
       }
-      onBodyWidthChange={setTableBodyWidth}
-      style={styles.tableFrame}
-    >
-      <KolamDataTableHeader columns={columns} />
-      {pageEvents.length ? (
-        pageEvents.map((event, index) => (
-          <DashboardDeathRow
-            columns={columns}
-            event={event}
-            key={`${event.enclosureId}:${event.createdAt || index}`}
-            onRouteChange={onRouteChange}
-          />
-        ))
-      ) : (
-        <View style={styles.emptyWrap}>
-          <KolamEmptyState
-            compact
-            message="Belum ada catatan kematian."
-            title="Belum ada catatan kematian"
-          />
-        </View>
+      pagination={{
+        onPageChange: setPage,
+        page: safePage,
+        pageSize,
+        total: events.length,
+      }}
+      renderActions={event => (
+        <DashboardDeathActions event={event} onRouteChange={onRouteChange} />
       )}
-    </KolamCatalogListTableShell>
+      rows={pageEvents}
+      style={styles.tableFrame}
+    />
   );
 }
 
-function DashboardDeathRow({
-  columns,
-  event,
-  onRouteChange,
-}: {
-  columns: KolamTableColumn[];
-  event: KolamEnclosureDashboardDeathEvent;
-  onRouteChange?: (route: string) => void;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const stockRoute = event.stockTransactionId
-    ? `/stock-transaction/${event.stockTransactionId}`
-    : event.speciesId
-      ? `/stock-transaction?speciesId=${encodeURIComponent(event.speciesId)}`
-      : '/stock-transaction';
-  const columnOf = React.useCallback(
-    (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const metaColumn = columnOf('meta');
-  const enclosureColumn = columnOf('children');
-  const primaryColumn = columnOf('primary');
-  const amountColumn = columnOf('amount');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
+function createDashboardDeathColumns(
+  onRouteChange?: (route: string) => void,
+): Array<KolamListTableColumn<KolamEnclosureDashboardDeathEvent>> {
+  return DASHBOARD_DEATH_COLUMNS.map(column => ({
+    ...column,
+    render: event => renderDashboardDeathCell(column.id, event, onRouteChange),
+  }));
+}
 
-  return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <View
-          style={[
-            styles.listCell,
-            metaColumn ? getKolamDataTableColumnStyle(metaColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.cellText}>
-            {formatDashboardDateTime(event.createdAt)}
-          </Text>
-        </View>
+function renderDashboardDeathCell(
+  columnId: DashboardDeathColumnId,
+  event: KolamEnclosureDashboardDeathEvent,
+  onRouteChange?: (route: string) => void,
+): React.ReactNode {
+  switch (columnId) {
+    case 'meta':
+      return (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {formatDashboardDateTime(event.createdAt)}
+        </Text>
+      );
+    case 'children':
+      return (
         <Pressable
           onPress={() =>
             event.enclosureId
               ? onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${event.enclosureId}`)
               : undefined
           }
-          style={[
-            styles.listCell,
-            enclosureColumn
-              ? getKolamDataTableColumnStyle(enclosureColumn)
-              : null,
-          ]}
         >
           <Text numberOfLines={1} style={styles.linkText}>
             {event.enclosureCode || event.enclosureId.slice(-8) || '-'}
           </Text>
         </Pressable>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
+      );
+    case 'primary':
+      return (
+        <View style={styles.identityCell}>
           <Text numberOfLines={1} style={styles.rowTitle}>
             {event.speciesName || '-'}
           </Text>
@@ -2020,48 +1911,44 @@ function DashboardDeathRow({
             </Text>
           ) : null}
         </View>
-        <View
-          style={[
-            styles.listCell,
-            amountColumn ? getKolamDataTableColumnStyle(amountColumn) : null,
-          ]}
-        >
-          <Text style={styles.numText}>{event.qty}</Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={event.reported ? 'warning' : 'muted'}
-            label={event.reported ? 'Dilaporkan' : 'Tanpa laporan'}
-            style={styles.centerBadge}
-            textStyle={styles.badgeTextSm}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Aksi kematian ${event.enclosureCode || event.speciesName || ''}`}
-          actions={[
-            {
-              label: 'Lihat',
-              onPress: () => onRouteChange?.(stockRoute),
-            },
-          ]}
-          onOpenChange={setActionMenuOpen}
+      );
+    case 'amount':
+      return <Text style={styles.numText}>{event.qty}</Text>;
+    case 'status':
+      return (
+        <KolamStatusBadge
+          intent={event.reported ? 'warning' : 'muted'}
+          label={event.reported ? 'Dilaporkan' : 'Tanpa laporan'}
+          style={styles.centerBadge}
+          textStyle={styles.badgeTextSm}
         />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+      );
+  }
+}
+
+function DashboardDeathActions({
+  event,
+  onRouteChange,
+}: {
+  event: KolamEnclosureDashboardDeathEvent;
+  onRouteChange?: (route: string) => void;
+}) {
+  const stockRoute = event.stockTransactionId
+    ? `/stock-transaction/${event.stockTransactionId}`
+    : event.speciesId
+      ? `/stock-transaction?speciesId=${encodeURIComponent(event.speciesId)}`
+      : '/stock-transaction';
+
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Aksi kematian ${event.enclosureCode || event.speciesName || ''}`}
+      actions={[
+        {
+          label: 'Lihat',
+          onPress: () => onRouteChange?.(stockRoute),
+        },
+      ]}
+    />
   );
 }
 
@@ -2162,6 +2049,10 @@ function KolamEnclosureAllocationPanel({
     (safePage - 1) * DASHBOARD_SPECIES_PAGE_SIZE,
     safePage * DASHBOARD_SPECIES_PAGE_SIZE,
   );
+  const allocationRows = React.useMemo(
+    () => buildAllocationOverviewTableRows(pageGroups, openSpeciesIds),
+    [openSpeciesIds, pageGroups],
+  );
 
   React.useEffect(() => {
     setPage(1);
@@ -2178,6 +2069,14 @@ function KolamEnclosureAllocationPanel({
       return next;
     });
   }, []);
+  const allocationColumns = React.useMemo(
+    () =>
+      createAllocationOverviewColumns({
+        onRouteChange,
+        onToggle: toggleGroup,
+      }),
+    [onRouteChange, toggleGroup],
+  );
 
   if (controller.loading && !controller.allocationOverview.items.length) {
     return <InlineState title="Memuat statistik allocation..." />;
@@ -2224,7 +2123,9 @@ function KolamEnclosureAllocationPanel({
       <Text style={styles.sectionMeta}>
         {groups.length} species / {controller.allocationOverview.totals.rowCount} varian
       </Text>
-      <KolamCatalogListTableShell
+      <KolamListTableComposition
+        columns={allocationColumns}
+        emptyTitle={search ? 'Species tidak ditemukan' : 'Belum ada data stok'}
         footer={
           groups.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
             <SimpleDashboardPagination
@@ -2237,35 +2138,10 @@ function KolamEnclosureAllocationPanel({
             <Text style={styles.sectionMeta}>{groups.length} species</Text>
           )
         }
+        getRowKey={row => row.key}
+        rows={allocationRows}
         style={styles.tableFrame}
-      >
-        <View style={styles.dashboardTable}>
-          <KolamDataTableHeader columns={ALLOCATION_OVERVIEW_COLUMNS} />
-          {pageGroups.length ? (
-            pageGroups.map(group => (
-              <AllocationSpeciesGroupRow
-                group={group}
-                key={group.speciesId}
-                onRouteChange={onRouteChange}
-                onToggle={() => toggleGroup(group.speciesId)}
-                open={openSpeciesIds.has(group.speciesId)}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                message={
-                  search
-                    ? `Tidak ada species untuk "${search}".`
-                    : 'Belum ada data stok species.'
-                }
-                title={search ? 'Species tidak ditemukan' : 'Belum ada data stok'}
-              />
-            </View>
-          )}
-        </View>
-      </KolamCatalogListTableShell>
+      />
     </ScrollView>
   );
 }
@@ -2273,40 +2149,108 @@ function KolamEnclosureAllocationPanel({
 type AllocationSpeciesGroup =
   KolamEnclosureController['allocationSpeciesGroups'][number];
 
-function AllocationSpeciesGroupRow({
-  group,
+type AllocationOverviewTableRow =
+  | {group: AllocationSpeciesGroup; key: string; kind: 'group'; open: boolean}
+  | {
+      group: AllocationSpeciesGroup;
+      key: string;
+      kind: 'single';
+      row: KolamEnclosureAllocationOverviewRow;
+    }
+  | {key: string; kind: 'variant'; row: KolamEnclosureAllocationOverviewRow};
+
+function buildAllocationOverviewTableRows(
+  groups: AllocationSpeciesGroup[],
+  openSpeciesIds: Set<string>,
+): AllocationOverviewTableRow[] {
+  return groups.flatMap(group => {
+    const rows: AllocationOverviewTableRow[] = [];
+    const singleRow = group.rows.length === 1 && !group.hasVariants;
+    const row = group.rows[0];
+
+    if (singleRow && row) {
+      rows.push({
+        group,
+        key: `single:${group.speciesId}:${row.variantId || ''}`,
+        kind: 'single',
+        row,
+      });
+      return rows;
+    }
+
+    const open = openSpeciesIds.has(group.speciesId);
+    rows.push({
+      group,
+      key: `group:${group.speciesId}`,
+      kind: 'group',
+      open,
+    });
+
+    if (open) {
+      group.rows.forEach(rowItem => {
+        rows.push({
+          key: `variant:${rowItem.speciesId}:${rowItem.variantId || ''}`,
+          kind: 'variant',
+          row: rowItem,
+        });
+      });
+    }
+
+    return rows;
+  });
+}
+
+function createAllocationOverviewColumns({
   onRouteChange,
   onToggle,
-  open,
 }: {
-  group: AllocationSpeciesGroup;
   onRouteChange?: (route: string) => void;
-  onToggle: () => void;
-  open: boolean;
-}) {
-  const singleRow = group.rows.length === 1 && !group.hasVariants;
-  const row = group.rows[0];
+  onToggle: (speciesId: string) => void;
+}): Array<KolamListTableColumn<AllocationOverviewTableRow>> {
+  return ALLOCATION_OVERVIEW_COLUMNS.map(column => ({
+    ...column,
+    render: row =>
+      renderAllocationOverviewCell(column.id, row, {onRouteChange, onToggle}),
+  }));
+}
 
-  if (singleRow && row) {
-    return (
-      <AllocationOverviewRow
-        allocated={row.allocated}
-        codes={row.enclosureCodes}
-        enclosures={row.enclosures}
-        onRouteChange={onRouteChange}
-        scientificName={group.scientificName}
-        speciesName={group.speciesName || group.speciesId}
-        unit={row.unit || group.unit}
-        unallocated={row.unallocated}
-        variantLabel={row.variantLabel || '-'}
-      />
-    );
+function renderAllocationOverviewCell(
+  columnId: AllocationOverviewColumnId,
+  row: AllocationOverviewTableRow,
+  handlers: {
+    onRouteChange?: (route: string) => void;
+    onToggle: (speciesId: string) => void;
+  },
+) {
+  if (row.kind === 'group') {
+    return renderAllocationGroupCell(columnId, row, handlers);
   }
 
-  return (
-    <View>
-      <KolamDataTableRowFrame>
-        <View style={[styles.cell, styles.primaryCell]}>
+  return renderAllocationRowCell(
+    columnId,
+    row.kind === 'single' ? row.row : row.row,
+    {
+      group: row.kind === 'single' ? row.group : undefined,
+      isVariant: row.kind === 'variant',
+      onRouteChange: handlers.onRouteChange,
+    },
+  );
+}
+
+function renderAllocationGroupCell(
+  columnId: AllocationOverviewColumnId,
+  row: Extract<AllocationOverviewTableRow, {kind: 'group'}>,
+  handlers: {
+    onRouteChange?: (route: string) => void;
+    onToggle: (speciesId: string) => void;
+  },
+) {
+  const {group, open} = row;
+
+  switch (columnId) {
+    case 'primary':
+      return (
+        <View style={styles.primaryCell}>
           <Text numberOfLines={1} style={styles.rowTitle}>
             {group.speciesName || group.speciesId}
           </Text>
@@ -2316,138 +2260,101 @@ function AllocationSpeciesGroupRow({
             </Text>
           ) : null}
         </View>
-        <View style={[styles.cell, {width: allocationWidthOf('notes')}]}>
-          <KolamButton
-            label={`${group.rows.length} varian ${open ? 'up' : 'down'}`}
-            onPress={onToggle}
-            style={styles.variantToggleButton}
-          />
-        </View>
-        <View style={[styles.cell, {width: allocationWidthOf('children')}]}>
-          <Text style={styles.numText}>
-            {group.totalAllocated} {group.unit}
-          </Text>
-        </View>
-        <View style={[styles.cell, {width: allocationWidthOf('amount')}]}>
-          <Text
-            style={[
-              styles.numText,
-              group.totalUnallocated > 0 ? styles.warningText : null,
-            ]}
-          >
-            {group.totalUnallocated} {group.unit}
-          </Text>
-        </View>
-        <View style={[styles.cell, {width: allocationWidthOf('marketplace')}]}>
-          <AllocationEnclosureCodeLinks
-            onRouteChange={onRouteChange}
-            rows={group.rows}
-          />
-        </View>
-      </KolamDataTableRowFrame>
-      {open ? (
-        <View style={styles.allocationVariantPanel}>
-          {group.rows.map(rowItem => (
-            <AllocationVariantRow
-              key={`${rowItem.speciesId}:${rowItem.variantId || ''}`}
-              onRouteChange={onRouteChange}
-              row={rowItem}
-            />
-          ))}
-        </View>
-      ) : null}
-    </View>
-  );
+      );
+    case 'notes':
+      return (
+        <KolamButton
+          label={`${group.rows.length} varian ${open ? 'up' : 'down'}`}
+          onPress={() => handlers.onToggle(group.speciesId)}
+          style={styles.variantToggleButton}
+        />
+      );
+    case 'children':
+      return (
+        <Text style={styles.numText}>
+          {group.totalAllocated} {group.unit}
+        </Text>
+      );
+    case 'amount':
+      return (
+        <Text
+          style={[
+            styles.numText,
+            group.totalUnallocated > 0 ? styles.warningText : null,
+          ]}
+        >
+          {group.totalUnallocated} {group.unit}
+        </Text>
+      );
+    case 'marketplace':
+      return (
+        <AllocationEnclosureCodeLinks
+          onRouteChange={handlers.onRouteChange}
+          rows={group.rows}
+        />
+      );
+  }
 }
 
-function AllocationOverviewRow({
-  allocated,
-  codes,
-  enclosures,
-  onRouteChange,
-  scientificName,
-  speciesName,
-  unit,
-  unallocated,
-  variantLabel,
-}: {
-  allocated: number;
-  codes: string[];
-  enclosures: KolamEnclosureAllocationOverviewRow['enclosures'];
-  onRouteChange?: (route: string) => void;
-  scientificName: string;
-  speciesName: string;
-  unit: string;
-  unallocated: number;
-  variantLabel: string;
-}) {
-  return (
-    <KolamDataTableRowFrame>
-      <View style={[styles.cell, styles.primaryCell]}>
-        <Text numberOfLines={1} style={styles.rowTitle}>
-          {speciesName || '-'}
-        </Text>
-        {scientificName ? (
-          <Text numberOfLines={1} style={styles.scientificText}>
-            {scientificName}
+function renderAllocationRowCell(
+  columnId: AllocationOverviewColumnId,
+  row: KolamEnclosureAllocationOverviewRow,
+  {
+    group,
+    isVariant,
+    onRouteChange,
+  }: {
+    group?: AllocationSpeciesGroup;
+    isVariant?: boolean;
+    onRouteChange?: (route: string) => void;
+  },
+) {
+  const speciesName = group?.speciesName || row.speciesName || row.speciesId;
+  const scientificName = group?.scientificName || row.scientificName;
+
+  switch (columnId) {
+    case 'primary':
+      return (
+        <View style={styles.primaryCell}>
+          <Text
+            numberOfLines={1}
+            style={[styles.rowTitle, isVariant ? styles.variantName : null]}
+          >
+            {speciesName || '-'}
           </Text>
-        ) : null}
-      </View>
-      <View style={[styles.cell, {width: allocationWidthOf('notes')}]}>
+          {scientificName && !isVariant ? (
+            <Text numberOfLines={1} style={styles.scientificText}>
+              {scientificName}
+            </Text>
+          ) : null}
+        </View>
+      );
+    case 'notes':
+      return (
         <Text numberOfLines={2} style={styles.cellText}>
-          {variantLabel || '-'}
+          {row.variantLabel || '-'}
         </Text>
-      </View>
-      <View style={[styles.cell, {width: allocationWidthOf('children')}]}>
+      );
+    case 'children':
+      return (
         <Text style={styles.numText}>
-          {allocated} {unit}
+          {row.allocated} {row.unit}
         </Text>
-      </View>
-      <View style={[styles.cell, {width: allocationWidthOf('amount')}]}>
-        <Text style={[styles.numText, unallocated > 0 ? styles.warningText : null]}>
-          {unallocated} {unit}
+      );
+    case 'amount':
+      return (
+        <Text style={[styles.numText, row.unallocated > 0 ? styles.warningText : null]}>
+          {row.unallocated} {row.unit}
         </Text>
-      </View>
-      <View style={[styles.cell, {width: allocationWidthOf('marketplace')}]}>
+      );
+    case 'marketplace':
+      return (
         <AllocationEnclosureCodeLinks
           onRouteChange={onRouteChange}
-          rows={[{enclosureCodes: codes, enclosures}]}
+          rows={[row]}
         />
-      </View>
-    </KolamDataTableRowFrame>
-  );
-}
-
-function AllocationVariantRow({
-  onRouteChange,
-  row,
-}: {
-  onRouteChange?: (route: string) => void;
-  row: KolamEnclosureAllocationOverviewRow;
-}) {
-  return (
-    <View style={styles.allocationVariantRow}>
-      <Text numberOfLines={2} style={[styles.cellText, styles.variantName]}>
-        {row.variantLabel || '-'}
-      </Text>
-      <Text style={styles.allocationVariantMetric}>
-        Di enclosure: {row.allocated} {row.unit}
-      </Text>
-      <Text
-        style={[
-          styles.allocationVariantMetric,
-          row.unallocated > 0 ? styles.warningText : null,
-        ]}
-      >
-        Belum: {row.unallocated} {row.unit}
-      </Text>
-      <AllocationEnclosureCodeLinks
-        onRouteChange={onRouteChange}
-        rows={[row]}
-        style={styles.allocationVariantCodes}
-      />
-    </View>
-  );
+      );
+  }
 }
 
 function AllocationEnclosureCodeLinks({
@@ -2564,20 +2471,6 @@ export function getEnclosureDashboardSummaryCardWidth(containerWidth: number) {
     ENCLOSURE_DASHBOARD_SUMMARY_CARD_MIN_WIDTH,
     Math.floor(width),
   );
-}
-
-function fitDeathHistoryColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(DASHBOARD_DEATH_COLUMNS, containerWidth, {
-    actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-    gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-    paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-    primaryMinWidth: 160,
-    secondaryMinWidth: 72,
-  });
-}
-
-function allocationWidthOf(id: KolamTableColumn['id']) {
-  return ALLOCATION_OVERVIEW_COLUMNS.find(column => column.id === id)?.width;
 }
 
 function filterAllocationGroups(
@@ -3223,11 +3116,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  listCell: {
-    gap: 2,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
   identityCell: {
     alignItems: 'flex-start',
   },
@@ -3238,9 +3126,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
   overflowVisible: {
     overflow: 'visible',
     zIndex: 9000,
@@ -3250,11 +3135,6 @@ const styles = StyleSheet.create({
   },
   picTooltip: {
     alignSelf: 'center',
-  },
-  activeActionRow: {
-    elevation: 30,
-    overflow: 'visible',
-    zIndex: 1000,
   },
   picAvatar: {
     alignItems: 'center',
@@ -3294,12 +3174,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'visible',
   },
-  cell: {
-    justifyContent: 'center',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
   primaryCell: {
     flex: 1,
     minWidth: 0,
@@ -3310,9 +3184,6 @@ const styles = StyleSheet.create({
   },
   centerBadge: {
     alignSelf: 'center',
-  },
-  actionsTrack: {
-    justifyContent: 'center',
   },
   actionCell: {
     alignItems: 'flex-end',
@@ -3505,9 +3376,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-  dashboardTableBlock: {
-    gap: 8,
-  },
   productionStatsCard: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -3639,49 +3507,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
-  productionStatsTableHead: {
-    alignItems: 'center',
-    backgroundColor: V.colors.secondary,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  productionStatsTableRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-  productionStatsHeadCell: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  productionStatsColSpecies: {
-    flex: 1.4,
-    minWidth: 0,
-  },
-  productionStatsColVariant: {
-    flex: 1,
-    minWidth: 0,
-  },
-  productionStatsColQty: {
-    flex: 0.7,
-    minWidth: 72,
-    textAlign: 'right',
-  },
-  productionStatsColEnc: {
-    flex: 0.45,
-    minWidth: 40,
-    textAlign: 'right',
-  },
   productionStatsSpecies: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -3705,10 +3530,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  dashboardTable: {
-    gap: 0,
-    overflow: 'visible',
-  },
   dashboardPagination: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -3721,42 +3542,10 @@ const styles = StyleSheet.create({
     minHeight: 30,
     paddingHorizontal: 8,
   },
-  allocationVariantPanel: {
-    backgroundColor: V.colors.secondary,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  allocationVariantRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 12,
-    minHeight: 42,
-    paddingVertical: 7,
-  },
   variantName: {
     flex: 1,
     fontWeight: '700',
     minWidth: 0,
-  },
-  allocationVariantMetric: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    minWidth: 112,
-    textAlign: 'right',
-  },
-  allocationVariantCodes: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    minWidth: 180,
-    width: 220,
   },
   panelList: {
     backgroundColor: V.colors.bg,
