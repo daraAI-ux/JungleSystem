@@ -922,7 +922,7 @@ function KolamTaskKpiRow({
   controller: KolamTaskManagerController;
 }) {
   const cards = [
-    { id: 'todo', label: 'To Do', value: controller.kpi.todo, tone: 'primary' },
+    { id: 'todo', label: 'To Do', value: controller.kpi.todo, tone: 'warning' },
     {
       id: 'progress',
       label: 'Sedang berjalan',
@@ -959,7 +959,7 @@ function KolamTaskKpiRow({
 }
 
 function getTaskKpiAccentStyle(
-  tone: 'danger' | 'info' | 'muted' | 'primary' | 'success',
+  tone: 'danger' | 'info' | 'muted' | 'success' | 'warning',
 ) {
   switch (tone) {
     case 'danger':
@@ -968,10 +968,10 @@ function getTaskKpiAccentStyle(
       return styles.kpiAccentInfo;
     case 'muted':
       return styles.kpiAccentMuted;
-    case 'primary':
-      return styles.kpiAccentPrimary;
     case 'success':
       return styles.kpiAccentSuccess;
+    case 'warning':
+      return styles.kpiAccentWarning;
   }
 }
 
@@ -3401,11 +3401,11 @@ const styles = StyleSheet.create({
   kpiAccentMuted: {
     backgroundColor: V.colors.border,
   },
-  kpiAccentPrimary: {
-    backgroundColor: V.colors.primary,
-  },
   kpiAccentSuccess: {
     backgroundColor: V.colors.success,
+  },
+  kpiAccentWarning: {
+    backgroundColor: V.colors.warning,
   },
   kpiBody: {
     gap: 2,
