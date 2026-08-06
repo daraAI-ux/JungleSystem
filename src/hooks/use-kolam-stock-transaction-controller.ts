@@ -106,7 +106,8 @@ export function useKolamStockTransactionController(
   route: string,
 ): KolamStockTransactionController {
   const initialMode = getInitialMode(route);
-  const [mode, setMode] = useState<KolamStockTransactionSurfaceMode>(initialMode);
+  const [mode, setMode] =
+    useState<KolamStockTransactionSurfaceMode>(initialMode);
   const [filters, setFilters] = useState<KolamStockTransactionListFilters>(() =>
     createInitialStockTransactionListFilters(route),
   );
@@ -118,10 +119,14 @@ export function useKolamStockTransactionController(
   const [pendingReturns, setPendingReturns] = useState<
     KolamStockTransactionPendingReturn[]
   >([]);
-  const [productOptions, setProductOptions] = useState<KolamProductOption[]>([]);
+  const [productOptions, setProductOptions] = useState<KolamProductOption[]>(
+    [],
+  );
   const [speciesOptions, setSpeciesOptions] = useState<KolamSpecies[]>([]);
   const [opnameProducts, setOpnameProducts] = useState<KolamProduct[]>([]);
-  const [opnameRawProducts, setOpnameRawProducts] = useState<KolamProduct[]>([]);
+  const [opnameRawProducts, setOpnameRawProducts] = useState<KolamProduct[]>(
+    [],
+  );
   const [freyerOptions, setFreyerOptions] = useState<KolamFreyerOption[]>([]);
   const [teranuraOptions, setTeranuraOptions] = useState<KolamTeranura[]>([]);
   const [walletOptions, setWalletOptions] = useState<KolamWalletOption[]>([]);
@@ -234,6 +239,7 @@ export function useKolamStockTransactionController(
     setError(null);
 
     try {
+      await refreshListOptions();
       const live = await getKolamStockTransaction(id);
       setSelectedTransaction(live);
       setDataSource('live');
@@ -243,7 +249,7 @@ export function useKolamStockTransactionController(
     } finally {
       setLoading(false);
     }
-  }, [route]);
+  }, [refreshListOptions, route]);
 
   const refreshOpname = useCallback(async () => {
     if (!isKolamStockTransactionOpnameRoute(route)) {
@@ -306,7 +312,8 @@ export function useKolamStockTransactionController(
   ]);
 
   const opnameCurrentStock = useMemo(
-    () => getStockOpnameCurrentStock(opnameSelectedTarget, opnameForm.variantId),
+    () =>
+      getStockOpnameCurrentStock(opnameSelectedTarget, opnameForm.variantId),
     [opnameForm.variantId, opnameSelectedTarget],
   );
   const opnameDiff = useMemo(
@@ -388,7 +395,8 @@ export function useKolamStockTransactionController(
   }, [filters]);
 
   const onVerify = useCallback(async () => {
-    const id = selectedTransaction?.id || getKolamStockTransactionRouteId(route);
+    const id =
+      selectedTransaction?.id || getKolamStockTransactionRouteId(route);
     if (!id) {
       return false;
     }
@@ -410,7 +418,8 @@ export function useKolamStockTransactionController(
   }, [route, selectedTransaction?.id]);
 
   const onCancelFinance = useCallback(async () => {
-    const id = selectedTransaction?.id || getKolamStockTransactionRouteId(route);
+    const id =
+      selectedTransaction?.id || getKolamStockTransactionRouteId(route);
     if (!id) {
       return false;
     }
@@ -435,13 +444,19 @@ export function useKolamStockTransactionController(
     (patch: Partial<KolamStockOpnameFormState>) => {
       setOpnameForm(current => {
         const next = { ...current, ...patch };
-        if (patch.targetType !== undefined && patch.targetType !== current.targetType) {
+        if (
+          patch.targetType !== undefined &&
+          patch.targetType !== current.targetType
+        ) {
           next.targetId = '';
           next.variantId = '';
           next.adjustedStock = '0';
           next.walletId = '';
         }
-        if (patch.targetId !== undefined && patch.targetId !== current.targetId) {
+        if (
+          patch.targetId !== undefined &&
+          patch.targetId !== current.targetId
+        ) {
           next.variantId = '';
           next.adjustedStock = '0';
           next.walletId = '';
@@ -470,7 +485,9 @@ export function useKolamStockTransactionController(
   const onRemoveOpnamePhoto = useCallback((index: number) => {
     setOpnameForm(current => ({
       ...current,
-      photoUris: current.photoUris.filter((_, itemIndex) => itemIndex !== index),
+      photoUris: current.photoUris.filter(
+        (_, itemIndex) => itemIndex !== index,
+      ),
     }));
   }, []);
 
@@ -508,7 +525,9 @@ export function useKolamStockTransactionController(
     }
   }, [opnameForm, opnameSelectedTarget]);
 
-  const onSubmitOpname = useCallback(async (): Promise<'wallet' | 'done' | 'error'> => {
+  const onSubmitOpname = useCallback(async (): Promise<
+    'wallet' | 'done' | 'error'
+  > => {
     const validationError = validateKolamStockOpnameForm(
       opnameForm,
       opnameSelectedTarget,
