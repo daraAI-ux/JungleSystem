@@ -70,6 +70,7 @@ import {
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
+import {KolamKandangEnclosureIcon} from './kolam-kandang-enclosure-icon';
 import {KolamKatakSpeciesIcon} from './kolam-katak-species-icon';
 import {
   KolamListTableComposition,
@@ -2075,6 +2076,7 @@ function KolamEnclosureAllocationPanel({
         />
         <SummaryTile
           accent="primary"
+          iconElement={<KolamKandangEnclosureIcon style={styles.summaryHeroIcon} />}
           icon="E"
           label="Sudah di kandang"
           value={controller.allocationOverview.totals.totalAllocated}
