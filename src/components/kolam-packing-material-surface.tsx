@@ -150,51 +150,8 @@ function KolamPackingMaterialShell({
     );
   }
 
-  const contextLabel =
-    controller.mode === 'new'
-      ? 'Bahan kemasan baru'
-      : controller.mode === 'edit'
-      ? `Edit · ${
-          controller.selectedMaterial?.name ||
-          controller.form.name ||
-          'Bahan kemasan'
-        }`
-      : controller.selectedMaterial?.name || 'Detail bahan kemasan';
-
   return (
     <View style={styles.surface}>
-      <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-            <KolamButton
-              label="Daftar"
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/packing-materials');
-              }}
-            />
-            {controller.mode === 'detail' ? (
-              <KolamButton
-                intent="primary"
-                label="Edit"
-                onPress={controller.onEdit}
-              />
-            ) : null}
-          </View>
-        </View>
-      </View>
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -904,6 +861,13 @@ function KolamPackingMaterialDetail({
   );
   const [deleteCandidate, setDeleteCandidate] =
     React.useState<KolamPackingMaterial | null>(null);
+  const goBackToList = React.useCallback(() => {
+    controller.onBackToList();
+    onRouteChange?.('/packing-materials');
+  }, [controller, onRouteChange]);
+  const refreshDetail = React.useCallback(() => {
+    void controller.onRefresh();
+  }, [controller]);
 
   if (!item && controller.mode !== 'new') {
     return (
@@ -917,8 +881,28 @@ function KolamPackingMaterialDetail({
   }
 
   if (editable || !item) {
+    const formTitle =
+      controller.mode === 'new'
+        ? 'Bahan kemasan baru'
+        : controller.selectedMaterial?.name ||
+          controller.form.name ||
+          'Bahan kemasan';
+
     return (
       <View style={styles.stack}>
+        <View style={styles.detailPageHeader}>
+          <View style={styles.detailHeading}>
+            <Text style={styles.detailPageTitle}>{formTitle}</Text>
+          </View>
+          <View style={styles.detailTopActions}>
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={controller.loading}
+              onPress={refreshDetail}
+            />
+            <KolamButton label="Daftar" onPress={goBackToList} />
+          </View>
+        </View>
         <KolamPackingMaterialForm controller={controller} />
       </View>
     );
@@ -934,6 +918,17 @@ function KolamPackingMaterialDetail({
           </Text>
         </View>
         <View style={styles.detailTopActions}>
+          <KolamRefreshButton
+            accessibilityLabel="Refresh"
+            disabled={controller.loading}
+            onPress={refreshDetail}
+          />
+          <KolamButton label="Daftar" onPress={goBackToList} />
+          <KolamButton
+            intent="primary"
+            label="Edit"
+            onPress={controller.onEdit}
+          />
           <KolamButton
             disabled={item.status !== 'active' || controller.saving}
             intent="danger"
@@ -2606,16 +2601,6 @@ const styles = StyleSheet.create({
     gap: 16,
     minHeight: 0,
     width: '100%',
-  },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
