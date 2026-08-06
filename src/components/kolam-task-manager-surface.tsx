@@ -1078,140 +1078,144 @@ function KolamTaskToolbar({
   return (
     <View ref={toolbarRef} style={styles.taskToolbarWrap}>
       <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
+        <View style={styles.taskToolbarStack}>
+          <View style={styles.taskToolbarSearchRow}>
             <KolamSearchField
               containerStyle={kolamTableToolbarStyles.searchInput}
               onChangeText={controller.onSetSearch}
               placeholder="Cari tugas..."
               value={controller.search}
             />
-            <View ref={bucketTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'bucket' ||
-                  controller.categoryBucketFilter !== 'all'
-                }
-                label={bucketLabel}
-                onPress={() => togglePanel('bucket')}
-                open={activeFilterPanel === 'bucket'}
-                variant="quiet"
-              />
-            </View>
-            <View ref={categoryTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'category' ||
-                  controller.categoryFilter !== 'all'
-                }
-                label={categoryLabel}
-                onPress={() => togglePanel('category')}
-                open={activeFilterPanel === 'category'}
-                variant="quiet"
-              />
-            </View>
-            <View ref={picTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'pic' ||
-                  controller.assignedToFilter !== 'all'
-                }
-                label={picLabel}
-                onPress={() => togglePanel('pic')}
-                open={activeFilterPanel === 'pic'}
-                variant="quiet"
-              />
-            </View>
-            <View ref={projectTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'project' ||
-                  controller.projectFilter !== 'all'
-                }
-                label={projectLabel}
-                onPress={() => togglePanel('project')}
-                open={activeFilterPanel === 'project'}
-                variant="quiet"
-              />
-            </View>
-            <View ref={statusTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'status' ||
-                  controller.statusFilter !== 'all'
-                }
-                label={statusLabel}
-                onPress={() => togglePanel('status')}
-                open={activeFilterPanel === 'status'}
-                variant="quiet"
-              />
-            </View>
-            <View ref={priorityTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={
-                  activeFilterPanel === 'priority' ||
-                  controller.priorityFilter !== 'all'
-                }
-                label={priorityLabel}
-                onPress={() => togglePanel('priority')}
-                open={activeFilterPanel === 'priority'}
-                variant="quiet"
-              />
-            </View>
-            <KolamButton
-              disabled={controller.loading}
-              intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
-              label="Prioritas tinggi"
-              onPress={() => {
-                closePanels();
-                controller.onSetPriorityFilter(
-                  controller.priorityFilter === 'high' ? 'all' : 'high',
-                );
-              }}
-              style={styles.taskToolbarButton}
-            />
           </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <View style={styles.switchInline}>
-              <Text style={styles.metaText}>Tugas saya</Text>
-              <KolamSwitch
-                active={controller.mineOnly}
-                onPress={() => {
-                  closePanels();
-                  controller.onSetMineOnly(!controller.mineOnly);
-                }}
-              />
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <View ref={bucketTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'bucket' ||
+                    controller.categoryBucketFilter !== 'all'
+                  }
+                  label={bucketLabel}
+                  onPress={() => togglePanel('bucket')}
+                  open={activeFilterPanel === 'bucket'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={categoryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'category' ||
+                    controller.categoryFilter !== 'all'
+                  }
+                  label={categoryLabel}
+                  onPress={() => togglePanel('category')}
+                  open={activeFilterPanel === 'category'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={picTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'pic' ||
+                    controller.assignedToFilter !== 'all'
+                  }
+                  label={picLabel}
+                  onPress={() => togglePanel('pic')}
+                  open={activeFilterPanel === 'pic'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={projectTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'project' ||
+                    controller.projectFilter !== 'all'
+                  }
+                  label={projectLabel}
+                  onPress={() => togglePanel('project')}
+                  open={activeFilterPanel === 'project'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'status' ||
+                    controller.statusFilter !== 'all'
+                  }
+                  label={statusLabel}
+                  onPress={() => togglePanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={priorityTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'priority' ||
+                    controller.priorityFilter !== 'all'
+                  }
+                  label={priorityLabel}
+                  onPress={() => togglePanel('priority')}
+                  open={activeFilterPanel === 'priority'}
+                  variant="quiet"
+                />
+              </View>
             </View>
-            <KolamResetButton
-              disabled={controller.loading}
-              onPress={() => {
-                closePanels();
-                controller.onResetFilters();
-              }}
-              style={styles.taskToolbarButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                closePanels();
-                void controller.onRefresh();
-              }}
-              style={styles.taskToolbarButton}
-            />
-            {controller.isTaskAdmin ? (
+            <View style={kolamTableToolbarStyles.actions}>
               <KolamButton
-                intent="primary"
-                label="Baru"
-                tone="positive"
+                disabled={controller.loading}
+                intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
                 onPress={() => {
                   closePanels();
-                  controller.onCreateNew();
+                  controller.onSetPriorityFilter(
+                    controller.priorityFilter === 'high' ? 'all' : 'high',
+                  );
+                }}
+                label="Prioritas tinggi"
+                style={styles.taskToolbarButton}
+              />
+              <View style={styles.switchInline}>
+                <Text style={styles.metaText}>Tugas saya</Text>
+                <KolamSwitch
+                  active={controller.mineOnly}
+                  onPress={() => {
+                    closePanels();
+                    controller.onSetMineOnly(!controller.mineOnly);
+                  }}
+                />
+              </View>
+              <KolamResetButton
+                disabled={controller.loading}
+                onPress={() => {
+                  closePanels();
+                  controller.onResetFilters();
                 }}
                 style={styles.taskToolbarButton}
               />
-            ) : null}
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+
+                onPress={() => {
+                  closePanels();
+                  void controller.onRefresh();
+                }}
+                style={styles.taskToolbarButton}
+              />
+              {controller.isTaskAdmin ? (
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  tone="positive"
+                  onPress={() => {
+                    closePanels();
+                    controller.onCreateNew();
+                  }}
+                  style={styles.taskToolbarButton}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
       </View>
@@ -3325,6 +3329,14 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  taskToolbarStack: {
+    gap: 6,
+    overflow: 'visible',
+  },
+  taskToolbarSearchRow: {
+    flexDirection: 'row',
+    overflow: 'visible',
   },
   taskToolbarButton: {
     minHeight: 34,
