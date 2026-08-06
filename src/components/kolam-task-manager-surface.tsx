@@ -2092,51 +2092,52 @@ function KolamTaskRecurringKpiRow({
   controller: KolamTaskManagerController;
   scheduleRows: RecurringScheduleRow[];
 }) {
-  const activeTemplates = controller.recurringTemplates.filter(
-    template => template.active,
+  const dashboard = controller.recurringEnrollmentDashboard;
+  const compliance = controller.recurringEnrollmentCompliance;
+  const sampleReviewCount = scheduleRows.filter(
+    row => row.sampleReviewRequired,
   ).length;
   const pendingCount = scheduleRows.filter(
     row => row.status === 'pending',
   ).length;
-  const doneCount = scheduleRows.filter(row => row.status === 'done').length;
   const missedCount = scheduleRows.filter(
     row => row.status === 'missed',
   ).length;
   const cards = [
     {
+      id: 'occurrence',
+      iconElement: <KolamTotalTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Occurrence',
+      value: compliance ? compliance.total : scheduleRows.length,
+      tone: 'muted',
+    },
+    {
       id: 'pending',
       iconElement: <KolamTodoTaskIcon style={styles.kpiCardIcon} />,
       label: 'Pending',
-      value: pendingCount,
+      value: compliance ? `${compliance.pendingPercent}%` : pendingCount,
       tone: 'warning',
-    },
-    {
-      id: 'done',
-      iconElement: <KolamSelesaiTaskIcon style={styles.kpiCardIcon} />,
-      label: 'Selesai',
-      value: doneCount,
-      tone: 'success',
     },
     {
       id: 'missed',
       iconElement: <KolamOverdueTaskIcon style={styles.kpiCardIcon} />,
       label: 'Terlewat',
-      value: missedCount,
+      value: compliance ? `${compliance.missedPercent}%` : missedCount,
       tone: 'danger',
     },
     {
-      id: 'templates',
+      id: 'sample-review',
       iconElement: <KolamProsesTaskIcon style={styles.kpiCardIcon} />,
-      label: 'Template aktif',
-      value: activeTemplates,
+      label: 'Review sampel',
+      value: compliance ? compliance.sampleReviewPending : sampleReviewCount,
       tone: 'info',
     },
     {
-      id: 'total',
-      iconElement: <KolamTotalTaskIcon style={styles.kpiCardIcon} />,
-      label: 'Total jadwal',
-      value: scheduleRows.length,
-      tone: 'muted',
+      id: 'enrollment',
+      iconElement: <KolamSelesaiTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Enrollment aktif',
+      value: dashboard ? dashboard.totalActive : 0,
+      tone: 'success',
     },
   ] as const;
 
@@ -2166,8 +2167,7 @@ function KolamTaskRecurringEnrollmentDashboard({
   controller: KolamTaskManagerController;
 }) {
   const dashboard = controller.recurringEnrollmentDashboard;
-  const compliance = controller.recurringEnrollmentCompliance;
-  if (!dashboard && !compliance) return null;
+  if (!dashboard) return null;
 
   return (
     <View style={styles.detailCard}>
@@ -2177,26 +2177,6 @@ function KolamTaskRecurringEnrollmentDashboard({
         </Text>
         <Text style={styles.metaText}>30 hari terakhir</Text>
       </View>
-      {compliance ? (
-        <View style={styles.kpiRow}>
-          <KolamTaskDetailMetric
-            label="Occurrence"
-            value={String(compliance.total)}
-          />
-          <KolamTaskDetailMetric
-            label="Terlewat"
-            value={`${compliance.missedPercent}%`}
-          />
-          <KolamTaskDetailMetric
-            label="Pending"
-            value={`${compliance.pendingPercent}%`}
-          />
-          <KolamTaskDetailMetric
-            label="Review sampel"
-            value={String(compliance.sampleReviewPending)}
-          />
-        </View>
-      ) : null}
       {dashboard ? (
         <View style={styles.enrollmentGrid}>
           <View style={styles.enrollmentList}>
