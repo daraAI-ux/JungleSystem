@@ -180,6 +180,45 @@ describe('Kolam session sync controller hook', () => {
     expect(refreshInputs).toEqual([]);
   });
 
+  it('keeps sign-in successful when the first live dataset sync fails', async () => {
+    let latest: SessionSyncController | null = null;
+    const messages: string[] = [];
+    const reconciledDatasets: UnifiedDataset[] = [];
+    const session: AuthSession = {
+      source: 'kolam',
+      token: 'token',
+      user: kolamUser,
+    };
+
+    await ReactTestRenderer.act(async () => {
+      ReactTestRenderer.create(
+        <SessionSyncHarness
+          onMessage={message => messages.push(message)}
+          onReconcileDataset={dataset => reconciledDatasets.push(dataset)}
+          onRefreshUnifiedDataset={async () => {
+            throw new Error('Token expired');
+          }}
+          onRender={controller => {
+            latest = controller;
+          }}
+          onSignIn={async () => session}
+          onSignOut={async () => undefined}
+        />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await expect(
+        requireController(latest).handleSignIn(),
+      ).resolves.toBeUndefined();
+    });
+
+    expect(reconciledDatasets).toEqual([]);
+    expect(messages).toEqual([
+      'Login berhasil, tetapi sinkronisasi data gagal: Token expired',
+    ]);
+  });
+
   it('logs out before returning to seed/fallback access scope', async () => {
     let latest: SessionSyncController | null = null;
     const events: string[] = [];

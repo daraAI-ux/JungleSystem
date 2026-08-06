@@ -42,13 +42,21 @@ export function useKolamSessionSyncController({
   const handleSignIn = async () => {
     const session = await onSignIn();
     if (session) {
-      const nextDataset = await onRefreshUnifiedDataset({
-        cacheOwnerId: getCacheOwnerId(session.user),
-        preferLiveApi: true,
-        enabledAreas: getAccessScope(session.user),
-      });
-      onReconcileDataset(nextDataset);
-      onMessage(getUnifiedSyncMessage(nextDataset));
+      try {
+        const nextDataset = await onRefreshUnifiedDataset({
+          cacheOwnerId: getCacheOwnerId(session.user),
+          preferLiveApi: true,
+          enabledAreas: getAccessScope(session.user),
+        });
+        onReconcileDataset(nextDataset);
+        onMessage(getUnifiedSyncMessage(nextDataset));
+      } catch (error) {
+        onMessage(
+          error instanceof Error
+            ? `Login berhasil, tetapi sinkronisasi data gagal: ${error.message}`
+            : 'Login berhasil, tetapi sinkronisasi data gagal.',
+        );
+      }
     }
   };
 
