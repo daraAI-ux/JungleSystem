@@ -23,6 +23,7 @@ import type {KolamDaraMarketIntelApprovalsController} from '../hooks/use-kolam-d
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -206,56 +207,27 @@ export function KolamDaraMarketIntelApprovalsBody({
           <Text style={styles.meta}>Memuat…</Text>
         ) : null}
 
-        {!controller.loading && controller.pageItems.length === 0 ? (
-          <Text style={styles.meta}>
-            Tidak ada rekomendasi untuk filter ini.
-          </Text>
-        ) : (
-          <View style={styles.table}>
-            <View style={styles.tableHead}>
-              {canApprove ? <View style={styles.colCheck} /> : null}
-              <Text style={[styles.th, styles.colCategory]}>Kategori</Text>
-              <Text style={[styles.th, styles.colProduct]}>Produk</Text>
-              <Text style={[styles.th, styles.colStatus]}>Status</Text>
-              <Text style={[styles.th, styles.colSummary]}>Ringkasan</Text>
-              <Text style={[styles.th, styles.colAction]}>Aksi</Text>
-            </View>
-            {controller.pageItems.map(item => (
-              <RecommendationRow
-                canApprove={canApprove}
-                item={item}
-                key={item.id}
-                onOpen={() => controller.onOpenDetail(item.id)}
-                onToggle={() => controller.onToggleSelected(item.id)}
-                selected={controller.selectedIds.includes(item.id)}
-              />
-            ))}
-          </View>
-        )}
-
-        {controller.filteredTotal > 0 ? (
-          <View style={styles.pagination}>
-            <KolamButton
-              disabled={controller.page <= 1}
-              label="Sebelumnya"
-              onPress={() =>
-                controller.onPageChange(Math.max(1, controller.page - 1))
-              }
-            />
-            <Text style={styles.meta}>
-              {`${controller.page} / ${controller.totalPages} · ${controller.filteredTotal}`}
-            </Text>
-            <KolamButton
-              disabled={controller.page >= controller.totalPages}
-              label="Berikutnya"
-              onPress={() =>
-                controller.onPageChange(
-                  Math.min(controller.totalPages, controller.page + 1),
-                )
-              }
-            />
-          </View>
-        ) : null}
+        <KolamListTableComposition
+          columns={buildRecommendationColumns({
+            canApprove,
+            controller,
+          })}
+          emptyTitle="Tidak ada rekomendasi untuk filter ini."
+          getRowKey={item => item.id}
+          loading={controller.loading}
+          pagination={
+            controller.filteredTotal > 0
+              ? {
+                  onPageChange: controller.onPageChange,
+                  page: controller.page,
+                  pageSize: 10,
+                  total: controller.filteredTotal,
+                }
+              : undefined
+          }
+          rows={controller.pageItems}
+          style={styles.table}
+        />
       </ScrollView>
 
       <DetailModal
@@ -268,54 +240,99 @@ export function KolamDaraMarketIntelApprovalsBody({
   );
 }
 
-function RecommendationRow({
+function buildRecommendationColumns({
   canApprove,
-  item,
-  onOpen,
-  onToggle,
-  selected,
+  controller,
 }: {
   canApprove: boolean;
-  item: KolamDaraMarketIntelRecommendation;
-  onOpen: () => void;
-  onToggle: () => void;
-  selected: boolean;
+  controller: KolamDaraMarketIntelApprovalsController;
 }) {
-  const ready = isKolamDaraMarketIntelApprovable(item);
-  return (
-    <View style={styles.tableRow}>
-      {canApprove ? (
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityState={{checked: selected, disabled: !ready}}
-          disabled={!ready}
-          onPress={onToggle}
-          style={[
-            styles.check,
-            styles.colCheck,
-            selected ? styles.checkOn : null,
-            !ready ? styles.checkDisabled : null,
-          ]}>
-          <Text style={styles.checkMark}>{selected ? '✓' : ''}</Text>
-        </Pressable>
-      ) : null}
-      <Text style={[styles.td, styles.colCategory, styles.badge]}>
-        {formatKolamDaraMarketIntelCategory(item.category)}
-      </Text>
-      <Text style={[styles.td, styles.colProduct, styles.productName]} numberOfLines={2}>
-        {formatKolamDaraMarketIntelEntityName(item)}
-      </Text>
-      <Text style={[styles.td, styles.colStatus]}>
-        {formatKolamDaraMarketIntelRecStatus(item.status)}
-      </Text>
-      <Text style={[styles.td, styles.colSummary]} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <View style={styles.colAction}>
-        <KolamButton label="Review" onPress={onOpen} />
-      </View>
-    </View>
-  );
+  return [
+    ...(canApprove
+      ? [
+          {
+            align: 'center' as const,
+            flex: 0.32,
+            id: 'select',
+            label: '',
+            render: (item: KolamDaraMarketIntelRecommendation) => {
+              const ready = isKolamDaraMarketIntelApprovable(item);
+              const selected = controller.selectedIds.includes(item.id);
+              return (
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{
+                    checked: selected,
+                    disabled: !ready,
+                  }}
+                  disabled={!ready}
+                  onPress={() => controller.onToggleSelected(item.id)}
+                  style={[
+                    styles.check,
+                    selected ? styles.checkOn : null,
+                    !ready ? styles.checkDisabled : null,
+                  ]}>
+                  <Text style={styles.checkMark}>{selected ? '✓' : ''}</Text>
+                </Pressable>
+              );
+            },
+          },
+        ]
+      : []),
+    {
+      flex: 0.9,
+      id: 'category',
+      label: 'Kategori',
+      render: (item: KolamDaraMarketIntelRecommendation) => (
+        <Text style={styles.badge}>
+          {formatKolamDaraMarketIntelCategory(item.category)}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.4,
+      id: 'product',
+      label: 'Produk',
+      render: (item: KolamDaraMarketIntelRecommendation) => (
+        <Text numberOfLines={2} style={[styles.td, styles.productName]}>
+          {formatKolamDaraMarketIntelEntityName(item)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center' as const,
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: (item: KolamDaraMarketIntelRecommendation) => (
+        <Text style={styles.td}>
+          {formatKolamDaraMarketIntelRecStatus(item.status)}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.8,
+      id: 'summary',
+      label: 'Ringkasan',
+      render: (item: KolamDaraMarketIntelRecommendation) => (
+        <Text numberOfLines={2} style={styles.td}>
+          {item.title}
+        </Text>
+      ),
+    },
+    {
+      align: 'center' as const,
+      flex: 0.8,
+      id: 'action',
+      label: 'Aksi',
+      render: (item: KolamDaraMarketIntelRecommendation) => (
+        <KolamButton
+          label="Review"
+          onPress={() => controller.onOpenDetail(item.id)}
+        />
+      ),
+    },
+  ];
 }
 
 function DetailModal({

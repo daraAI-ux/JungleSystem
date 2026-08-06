@@ -15,12 +15,14 @@ import {
   type KolamDaraMarketPlatformFeeMeta,
   type KolamDaraMarketPlatformFeeProfile,
   type KolamDaraMarketPlatformFeePrograms,
+  type KolamDaraMarketPlatformFeeSource,
 } from '../domain/kolam-dara-market-platform-fee';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraMarketPlatformFeeController} from '../hooks/use-kolam-dara-market-platform-fee-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
@@ -171,54 +173,50 @@ function MonitorTab({
           </View>
         </View>
 
-        <View>
-          <View style={styles.tableHead}>
-            <Text style={[styles.th, styles.colPlatform]}>Platform</Text>
-            <Text style={[styles.th, styles.colName]}>Nama</Text>
-            <Text style={[styles.th, styles.colChecked]}>Terakhir cek</Text>
-            <Text style={[styles.th, styles.colAction]}>Aksi</Text>
-          </View>
-          {controller.sources.map(source => {
-            const rowScanning = controller.scanningId === source.id;
-            return (
-              <View
-                key={source.id}
-                style={[
-                  styles.tableRow,
-                  rowScanning ? styles.sourceBusy : null,
-                ]}>
-                <Text
-                  style={[
-                    styles.td,
-                    styles.colPlatform,
-                    styles.sourcePlatform,
-                  ]}>
+        <KolamListTableComposition
+          columns={[
+            {
+              flex: 0.8,
+              id: 'platform',
+              label: 'Platform',
+              render: source => (
+                <Text style={[styles.td, styles.sourcePlatform]}>
                   {source.platform}
                 </Text>
-                <View style={[styles.colName, styles.nameCell]}>
-                  <Pressable
-                    accessibilityRole="link"
-                    disabled={!source.url}
-                    onPress={() => {
-                      if (source.url) {
-                        void Linking.openURL(source.url);
-                      }
-                    }}>
-                    <Text style={styles.sourceLink}>{source.name}</Text>
-                  </Pressable>
-                  {rowScanning ? (
-                    <Text style={styles.scanTiny}>Memindai…</Text>
-                  ) : null}
-                  {source.lastError && !rowScanning ? (
-                    <Text style={styles.errorTiny}>{source.lastError}</Text>
-                  ) : null}
-                </View>
-                <Text style={[styles.td, styles.colChecked, styles.meta]}>
+              ),
+            },
+            {
+              flex: 1.8,
+              id: 'name',
+              label: 'Nama',
+              render: source => (
+                <SourceNameCell
+                  rowScanning={controller.scanningId === source.id}
+                  source={source}
+                />
+              ),
+            },
+            {
+              align: 'center',
+              flex: 1,
+              id: 'checked',
+              label: 'Terakhir cek',
+              render: source => (
+                <Text style={[styles.td, styles.meta]}>
                   {formatKolamDaraMarketPlatformFeeCheckedAt(
                     source.lastCheckedAt,
                   )}
                 </Text>
-                <View style={styles.colAction}>
+              ),
+            },
+            {
+              align: 'center',
+              flex: 0.7,
+              id: 'action',
+              label: 'Aksi',
+              render: source => {
+                const rowScanning = controller.scanningId === source.id;
+                return (
                   <KolamButton
                     disabled={controller.isScanning}
                     intent="outline"
@@ -228,11 +226,15 @@ function MonitorTab({
                     }}
                     size="sm"
                   />
-                </View>
-              </View>
-            );
-          })}
-        </View>
+                );
+              },
+            },
+          ]}
+          emptyTitle="Belum ada URL sumber regulasi."
+          getRowKey={source => source.id}
+          rows={controller.sources}
+          style={styles.sourceTable}
+        />
       </View>
 
       {controller.snapshots.length ? (
@@ -279,6 +281,33 @@ function MonitorTab({
             </View>
           ))}
         </View>
+      ) : null}
+    </View>
+  );
+}
+
+function SourceNameCell({
+  rowScanning,
+  source,
+}: {
+  rowScanning: boolean;
+  source: KolamDaraMarketPlatformFeeSource;
+}) {
+  return (
+    <View style={styles.nameCell}>
+      <Pressable
+        accessibilityRole="link"
+        disabled={!source.url}
+        onPress={() => {
+          if (source.url) {
+            void Linking.openURL(source.url);
+          }
+        }}>
+        <Text style={styles.sourceLink}>{source.name}</Text>
+      </Pressable>
+      {rowScanning ? <Text style={styles.scanTiny}>Memindai…</Text> : null}
+      {source.lastError && !rowScanning ? (
+        <Text style={styles.errorTiny}>{source.lastError}</Text>
       ) : null}
     </View>
   );
@@ -798,6 +827,10 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 11,
+  },
+  sourceTable: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   tableHead: {
     borderBottomColor: V.colors.border,
