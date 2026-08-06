@@ -58,6 +58,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamCasesReportedIcon} from './kolam-cases-reported-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamCardFrame} from './kolam-card-frame';
@@ -1612,6 +1613,7 @@ function KolamEnclosureDeathHistoryPanel({
         <SummaryTile
           accent="warning"
           hint={`${deaths.reportedAnimals} ekor`}
+          iconElement={<KolamCasesReportedIcon style={styles.summaryHeroIcon} />}
           icon="!"
           label="Kasus dilaporkan"
           value={deaths.reportedCases}
