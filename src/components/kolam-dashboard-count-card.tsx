@@ -16,7 +16,9 @@ export function KolamDashboardCountCard({
   onOpenRoute?: (route: string) => void;
 }) {
   const usesProductIconLayout =
-    card.id === 'products' || card.id === 'rawProducts';
+    card.id === 'products' ||
+    card.id === 'rawProducts' ||
+    card.id === 'species';
   const iconStyle =
     usesProductIconLayout
       ? styles.dashboardProductCountIcon
