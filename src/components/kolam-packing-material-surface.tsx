@@ -1247,9 +1247,81 @@ function PackingUsageCard({
   const [rows, setRows] = React.useState<KolamPackingCatalogUsageRow[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const pagedRows = rows.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const usageColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamPackingCatalogUsageRow>>
+  >(
+    () => [
+      {
+        align: 'center',
+        flex: 0.9,
+        id: 'type',
+        label: 'Tipe',
+        render: row => (
+          <KolamStatusBadge
+            intent={getUsageIntent(row)}
+            label={getUsageTypeLabel(row)}
+            style={styles.centerBadge}
+          />
+        ),
+      },
+      {
+        flex: 2,
+        id: 'name',
+        label: 'Nama',
+        render: row => (
+          <Text
+            numberOfLines={2}
+            onPress={() => onRouteChange?.(getUsageRoute(row))}
+            style={styles.tableLink}
+          >
+            {row.name}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.9,
+        id: 'code',
+        label: 'Kode',
+        render: row => (
+          <Text numberOfLines={1} style={styles.cellText}>
+            {row.code || '-'}
+          </Text>
+        ),
+      },
+      {
+        flex: 1,
+        id: 'variant',
+        label: 'Varian',
+        render: row => (
+          <Text numberOfLines={2} style={styles.cellText}>
+            {row.variantLabel || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'right',
+        flex: 0.6,
+        id: 'quantity',
+        label: 'Qty',
+        render: row => (
+          <Text numberOfLines={1} style={styles.usageQtyText}>
+            x{row.quantity}
+          </Text>
+        ),
+      },
+    ],
+    [onRouteChange],
+  );
 
   React.useEffect(() => {
     let active = true;
+    setPage(1);
     setLoading(true);
     setError('');
     void getKolamPackingMaterialUsedIn(item.id)
@@ -1292,57 +1364,36 @@ function PackingUsageCard({
         ) : null}
       </View>
       {loading ? (
-        <Text style={styles.emptyText}>Memuat...</Text>
+        <KolamListTableComposition
+          columns={usageColumns}
+          emptyTitle="Memuat..."
+          getRowKey={getPackingUsageRowKey}
+          loading
+          pagination={{
+            onPageChange: setPage,
+            page: safePage,
+            pageSize,
+            total: rows.length,
+          }}
+          rows={pagedRows}
+          style={styles.usageTable}
+        />
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
-      ) : rows.length ? (
-        <View style={styles.simpleTable}>
-          <View style={[styles.simpleTableRow, styles.simpleTableHeader]}>
-            <Text style={[styles.simpleTableHead, styles.typeCell]}>Tipe</Text>
-            <Text style={[styles.simpleTableHead, styles.usageNameCell]}>
-              Nama
-            </Text>
-            <Text style={[styles.simpleTableHead, styles.codeCell]}>Kode</Text>
-            <Text style={[styles.simpleTableHead, styles.variantCell]}>
-              Varian
-            </Text>
-            <Text style={[styles.simpleTableHead, styles.qtyCell]}>Qty</Text>
-          </View>
-          {rows.map(row => (
-            <View
-              key={`${row.entityType}-${row.entityId}-${row.variantLabel}-${row.quantity}`}
-              style={styles.simpleTableRow}
-            >
-              <View style={styles.typeCell}>
-                <KolamStatusBadge
-                  intent={getUsageIntent(row)}
-                  label={getUsageTypeLabel(row)}
-                />
-              </View>
-              <View style={styles.usageNameCell}>
-                <Text
-                  onPress={() => onRouteChange?.(getUsageRoute(row))}
-                  style={styles.tableLink}
-                >
-                  {row.name}
-                </Text>
-              </View>
-              <Text style={[styles.simpleTableText, styles.codeCell]}>
-                {row.code || '-'}
-              </Text>
-              <Text style={[styles.simpleTableText, styles.variantCell]}>
-                {row.variantLabel || '-'}
-              </Text>
-              <Text style={[styles.simpleTableStrong, styles.qtyCell]}>
-                x{row.quantity}
-              </Text>
-            </View>
-          ))}
-        </View>
       ) : (
-        <Text style={styles.emptyText}>
-          Belum dipakai di produk atau spesies manapun.
-        </Text>
+        <KolamListTableComposition
+          columns={usageColumns}
+          emptyTitle="Belum dipakai di produk atau spesies manapun."
+          getRowKey={getPackingUsageRowKey}
+          pagination={{
+            onPageChange: setPage,
+            page: safePage,
+            pageSize,
+            total: rows.length,
+          }}
+          rows={pagedRows}
+          style={styles.usageTable}
+        />
       )}
     </KolamContentFrame>
   );
@@ -1995,6 +2046,16 @@ function getUsageRoute(row: KolamPackingCatalogUsageRow) {
   return `/products/${entityId}`;
 }
 
+function getPackingUsageRowKey(row: KolamPackingCatalogUsageRow) {
+  return [
+    row.entityType,
+    row.entityId,
+    row.productType ?? '',
+    row.variantLabel ?? '',
+    row.quantity,
+  ].join(':');
+}
+
 function openPackingAssetDownload(packingId: string, assetId: string) {
   const base = appConfig.kolamApiBaseUrl.replace(/\/$/, '');
   void Linking.openURL(
@@ -2524,62 +2585,6 @@ const styles = StyleSheet.create({
     borderColor: V.colors.primary,
     borderWidth: 2,
   },
-  simpleTable: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    margin: 12,
-    overflow: 'hidden',
-  },
-  simpleTableRow: {
-    alignItems: 'center',
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  simpleTableHeader: {
-    backgroundColor: V.colors.mutedSoft,
-    borderTopWidth: 0,
-  },
-  simpleTableHead: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 16,
-  },
-  simpleTableText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  simpleTableStrong: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 18,
-  },
-  tableTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '900',
-    lineHeight: 18,
-  },
-  tableMeta: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
   tableLink: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,
@@ -2587,40 +2592,18 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 18,
   },
-  supplierCell: {
-    flex: 1.6,
-    minWidth: 180,
-  },
-  moneyCell: {
-    flex: 1,
-    minWidth: 110,
+  usageQtyText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
     textAlign: 'right',
+    width: '100%',
   },
-  linkCell: {
-    alignItems: 'flex-end',
-    flex: 0.8,
-    minWidth: 86,
-  },
-  typeCell: {
-    flex: 0.9,
-    minWidth: 112,
-  },
-  usageNameCell: {
-    flex: 2,
-    minWidth: 220,
-  },
-  codeCell: {
-    flex: 0.9,
-    minWidth: 92,
-  },
-  variantCell: {
-    flex: 1,
-    minWidth: 110,
-  },
-  qtyCell: {
-    flex: 0.5,
-    minWidth: 60,
-    textAlign: 'right',
+  usageTable: {
+    marginHorizontal: 12,
+    marginVertical: 12,
   },
   errorText: {
     color: V.colors.danger,
