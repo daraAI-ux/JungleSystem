@@ -968,7 +968,6 @@ function KolamTaskToolbar({
               value: option.id,
             }))}
             showLabelInTrigger={false}
-            style={styles.taskFilterSelect}
             value={controller.categoryBucketFilter}
           />
           <KolamDropdownSelect
@@ -983,7 +982,6 @@ function KolamTaskToolbar({
             ]}
             searchable
             showLabelInTrigger={false}
-            style={styles.taskFilterSelect}
             value={controller.categoryFilter}
           />
           <KolamDropdownSelect
@@ -998,7 +996,6 @@ function KolamTaskToolbar({
             ]}
             searchable
             showLabelInTrigger={false}
-            style={styles.taskFilterSelect}
             value={controller.assignedToFilter}
           />
           <KolamDropdownSelect
@@ -1013,7 +1010,6 @@ function KolamTaskToolbar({
             ]}
             searchable
             showLabelInTrigger={false}
-            style={styles.taskFilterSelect}
             value={controller.projectFilter}
           />
           <KolamDropdownSelect
@@ -1026,7 +1022,6 @@ function KolamTaskToolbar({
               value: option.id,
             }))}
             showLabelInTrigger={false}
-            style={styles.taskFilterSelect}
             value={controller.statusFilter}
           />
           <KolamDropdownSelect
@@ -1041,7 +1036,6 @@ function KolamTaskToolbar({
               value: option.id,
             }))}
             showLabelInTrigger={false}
-            style={styles.taskFilterSelect}
             value={controller.priorityFilter}
           />
         </View>
@@ -2961,15 +2955,10 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   taskToolbarFilters: {
-    alignItems: 'stretch',
+    alignItems: 'center',
   },
   taskSearchInput: {
     flexBasis: 220,
-  },
-  taskFilterSelect: {
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 112,
   },
   taskToolbarActions: {
     alignSelf: 'stretch',
