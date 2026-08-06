@@ -662,18 +662,11 @@ function KolamLocationDetail({
         />
       ) : null}
 
-      <View style={styles.detailGrid}>
-        <View style={styles.detailMainColumn}>
-          <KolamLocationSummaryCard location={location} />
-        </View>
-        <View style={styles.detailSideColumn}>
-          <KolamLocationHierarchyCard
-            descendants={descendants}
-            location={location}
-            onRouteChange={onRouteChange}
-          />
-        </View>
-      </View>
+      <KolamLocationSummaryCard
+        descendants={descendants}
+        location={location}
+        onRouteChange={onRouteChange}
+      />
       <KolamLocationInventorySection
         locationId={location.id}
         onRouteChange={onRouteChange}
@@ -683,9 +676,13 @@ function KolamLocationDetail({
 }
 
 function KolamLocationSummaryCard({
+  descendants,
   location,
+  onRouteChange,
 }: {
+  descendants: KolamLocationListItem[];
   location: KolamLocationDetailItem;
+  onRouteChange?: (route: string) => void;
 }) {
   return (
     <KolamDetailSummaryCard
@@ -770,12 +767,25 @@ function KolamLocationSummaryCard({
           value: formatLocationDateTime(location.updatedAt),
         },
       ]}
+      sections={[
+        {
+          id: 'hierarchy',
+          title: 'Hierarki',
+          content: (
+            <KolamLocationHierarchyContent
+              descendants={descendants}
+              location={location}
+              onRouteChange={onRouteChange}
+            />
+          ),
+        },
+      ]}
       title="Informasi Lokasi"
     />
   );
 }
 
-function KolamLocationHierarchyCard({
+function KolamLocationHierarchyContent({
   descendants,
   location,
   onRouteChange,
@@ -785,44 +795,34 @@ function KolamLocationHierarchyCard({
   onRouteChange?: (route: string) => void;
 }) {
   return (
-    <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
-      <SectionTitle
-        description={
-          location.parent
-            ? 'Lokasi ini berada di bawah lokasi induk'
-            : 'Ini adalah lokasi tingkat atas'
-        }
-        title="Hierarki"
-      />
-      <View style={styles.hierarchyStack}>
-        {location.parent ? (
-          <HierarchyItem
-            label={location.parent.name || location.parent.id}
-            meta={getKolamLocationTypeLabel(location.parent.type)}
-            marker="-"
-            onPress={() => onRouteChange?.(`/locations/${location.parent?.id}`)}
-          />
-        ) : null}
+    <View style={styles.hierarchyStack}>
+      {location.parent ? (
         <HierarchyItem
-          active
-          label={location.name}
-          meta="Saat ini"
-          marker="*"
+          label={location.parent.name || location.parent.id}
+          meta={getKolamLocationTypeLabel(location.parent.type)}
+          marker="-"
+          onPress={() => onRouteChange?.(`/locations/${location.parent?.id}`)}
         />
-        {descendants.map(child => (
-          <HierarchyItem
-            key={child.id}
-            label={child.name}
-            meta={getKolamLocationTypeLabel(child.type)}
-            marker="+"
-            onPress={() => onRouteChange?.(`/locations/${child.id}`)}
-          />
-        ))}
-        {descendants.length ? null : (
-          <Text style={styles.mutedText}>Belum ada lokasi anak.</Text>
-        )}
-      </View>
-    </KolamContentFrame>
+      ) : null}
+      <HierarchyItem
+        active
+        label={location.name}
+        meta="Saat ini"
+        marker="*"
+      />
+      {descendants.map(child => (
+        <HierarchyItem
+          key={child.id}
+          label={child.name}
+          meta={getKolamLocationTypeLabel(child.type)}
+          marker="+"
+          onPress={() => onRouteChange?.(`/locations/${child.id}`)}
+        />
+      ))}
+      {descendants.length ? null : (
+        <Text style={styles.mutedText}>Belum ada lokasi anak.</Text>
+      )}
+    </View>
   );
 }
 
@@ -2013,21 +2013,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 20,
-  },
-  detailGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  detailMainColumn: {
-    flex: 3,
-    gap: 12,
-    minWidth: 420,
-  },
-  detailSideColumn: {
-    flex: 1,
-    gap: 12,
-    minWidth: 280,
   },
   detailCard: {
     gap: 12,

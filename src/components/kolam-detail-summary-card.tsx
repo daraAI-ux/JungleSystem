@@ -15,6 +15,12 @@ export type KolamDetailSummaryField = {
   value: React.ReactNode;
 };
 
+export type KolamDetailSummarySection = {
+  content: React.ReactNode;
+  id: string;
+  title?: string;
+};
+
 export type KolamDetailSummaryCardProps = {
   /** Optional longer block under the field grid (notes, HTML, lists). */
   body?: React.ReactNode;
@@ -22,9 +28,26 @@ export type KolamDetailSummaryCardProps = {
   bodyTitle?: string;
   description?: string;
   fields: KolamDetailSummaryField[];
+  /** Extra soft panels under the field grid (after `body` when both set). */
+  sections?: KolamDetailSummarySection[];
   style?: StyleProp<ViewStyle>;
   title: string;
 };
+
+function SummaryBodyPanel({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <View style={styles.bodyBlock}>
+      {title ? <Text style={styles.bodyTitle}>{title}</Text> : null}
+      <View style={styles.bodyContent}>{children}</View>
+    </View>
+  );
+}
 
 /**
  * Reusable detail summary card — labeled field grid + optional body.
@@ -35,6 +58,7 @@ export function KolamDetailSummaryCard({
   bodyTitle,
   description,
   fields,
+  sections,
   style,
   title,
 }: KolamDetailSummaryCardProps) {
@@ -74,13 +98,14 @@ export function KolamDetailSummaryCard({
       ) : null}
 
       {body ? (
-        <View style={styles.bodyBlock}>
-          {bodyTitle ? (
-            <Text style={styles.bodyTitle}>{bodyTitle}</Text>
-          ) : null}
-          <View style={styles.bodyContent}>{body}</View>
-        </View>
+        <SummaryBodyPanel title={bodyTitle}>{body}</SummaryBodyPanel>
       ) : null}
+
+      {sections?.map(section => (
+        <SummaryBodyPanel key={section.id} title={section.title}>
+          {section.content}
+        </SummaryBodyPanel>
+      ))}
     </KolamCardFrame>
   );
 }
