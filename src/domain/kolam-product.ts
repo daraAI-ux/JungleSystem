@@ -443,7 +443,7 @@ export function getKolamProductBreadcrumbPath(
   }
 
   if (selectedProduct) {
-    const key = selectedProduct.slug || selectedProduct.id;
+    const key = selectedProduct.id;
     const detailBasePath = selectedProduct.type === 'raw' ? '/raw-materials' : '/products';
     return mode === 'edit' ? `${detailBasePath}/${key}/edit` : `${detailBasePath}/${key}`;
   }
@@ -2512,7 +2512,6 @@ function createStableHash(value: unknown) {
 
   return String(hash);
 }
-
 
 
 

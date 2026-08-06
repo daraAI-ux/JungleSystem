@@ -460,12 +460,21 @@ export function useKolamProductController(
       return;
     }
 
+    const routeProduct = products.find(product =>
+      productMatchesRouteKey(product, routeProductKey),
+    );
+
     if (selectedProduct && productMatchesRouteKey(selectedProduct, routeProductKey)) {
-      return;
+      if (!routeProduct || selectedProduct.id === routeProduct.id) {
+        return;
+      }
     }
 
     let active = true;
-    void resolveRouteProduct(routeProductKey, products).then(product => {
+    void (routeProduct
+      ? Promise.resolve(routeProduct)
+      : resolveRouteProduct(routeProductKey, products)
+    ).then(product => {
       if (active) {
         void onSelectProduct(product, initialMode === 'edit' ? 'edit' : 'detail');
       }
@@ -1331,11 +1340,36 @@ function productMatchesRouteKey(product: KolamProduct, key: string) {
 }
 
 async function resolveRouteProduct(routeProductKey: string, products: KolamProduct[]) {
-  return (
-    products.find(product => productMatchesRouteKey(product, routeProductKey)) ??
-    (await readKolamProductFromListCacheByRouteKey(routeProductKey)) ??
-    createRouteProductStub(routeProductKey)
+  const inMemoryProduct = products.find(product =>
+    productMatchesRouteKey(product, routeProductKey),
   );
+  if (inMemoryProduct) {
+    return inMemoryProduct;
+  }
+
+  const cachedProduct = await readKolamProductFromListCacheByRouteKey(routeProductKey);
+  if (cachedProduct) {
+    return cachedProduct;
+  }
+
+  const liveProduct = await resolveLiveProductByRouteKey(routeProductKey);
+  return liveProduct ?? createRouteProductStub(routeProductKey);
+}
+
+async function resolveLiveProductByRouteKey(routeProductKey: string) {
+  try {
+    const result = await getKolamProducts({
+      limit: 10,
+      search: routeProductKey,
+      view: '',
+    });
+    return (
+      result.data.find(product => productMatchesRouteKey(product, routeProductKey)) ??
+      null
+    );
+  } catch {
+    return null;
+  }
 }
 
 function createRouteProductStub(key: string): KolamProduct {
@@ -1449,8 +1483,6 @@ function getErrorMessage(error: unknown) {
 
   return 'Terjadi kendala saat membaca data produk.';
 }
-
-
 
 
 

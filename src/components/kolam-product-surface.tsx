@@ -556,9 +556,7 @@ export function KolamProductSurface({
               onDelete={() => setPendingAction({ type: 'delete', product })}
               onDetail={() => {
                 void controller.onSelectProduct(product);
-                const key = isRawCatalog
-                  ? product.id
-                  : product.slug || product.id;
+                const key = product.id;
                 onRouteChange?.(`${listRoute}/${key}`);
               }}
               onDuplicate={() =>
@@ -566,9 +564,7 @@ export function KolamProductSurface({
               }
               onEdit={() => {
                 void controller.onSelectProduct(product, 'edit');
-                const key = isRawCatalog
-                  ? product.id
-                  : product.slug || product.id;
+                const key = product.id;
                 onRouteChange?.(`${listRoute}/${key}/edit`);
               }}
               onLicense={() =>
@@ -8695,7 +8691,7 @@ function getProductCode(product: KolamProduct) {
 function getProductDetailRoute(product: KolamProduct) {
   const isRaw = product.type === 'raw';
   const basePath = isRaw ? '/raw-materials' : '/products';
-  const routeKey = isRaw ? product.id : product.slug || product.id;
+  const routeKey = product.id;
   return `${basePath}/${routeKey}`;
 }
 

@@ -1,6 +1,7 @@
 import {
   createKolamProductFormState,
   createKolamProductSavePayload,
+  getKolamProductBreadcrumbPath,
   normalizeKolamProductDetail,
 } from '../src/domain/kolam-product';
 
@@ -373,6 +374,24 @@ describe('Kolam product domain contract', () => {
           warrantyTermsTemplate: 'terms-1',
         },
       }),
+    );
+  });
+
+  it('uses product id for product detail breadcrumb paths even when a slug exists', () => {
+    const product = normalizeKolamProductDetail({
+      data: {
+        _id: '689a4ca70bb4670565ac062d',
+        name: 'Frog Soil',
+        slug: 'frog-soil',
+        sku: 'FRG-001',
+      },
+    });
+
+    expect(getKolamProductBreadcrumbPath('detail', product, 'product')).toBe(
+      '/products/689a4ca70bb4670565ac062d',
+    );
+    expect(getKolamProductBreadcrumbPath('edit', product, 'product')).toBe(
+      '/products/689a4ca70bb4670565ac062d/edit',
     );
   });
 });
