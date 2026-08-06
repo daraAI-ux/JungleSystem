@@ -57,7 +57,7 @@ function KolamAppShellSurfaceComponent({
     sidebar.activeModule === 'kolam' ||
     sidebar.activeModule === 'am' ||
     isKolamCenteredRoute(sidebar.activeRoute);
-  const ownsListScroll = isCatalogTableListRoute(sidebar.activeRoute);
+  const ownsWorkspaceScroll = isCatalogTableListRoute(sidebar.activeRoute);
   const pageContentStyle = [
     styles.mainContent,
     isKolamDashboard && styles.dashboardPageContent,
@@ -74,7 +74,7 @@ function KolamAppShellSurfaceComponent({
         {workspaceTabs}
         <MemoKolamOverlaySurface {...overlay} />
 
-        {ownsListScroll ? (
+        {ownsWorkspaceScroll ? (
           <View
             style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}
           >
@@ -112,11 +112,12 @@ function isKolamCenteredRoute(route?: string | null) {
   );
 }
 
-/** Catalog/ops table lists own scrolling via FlatList; disable shell ScrollView nesting. */
+/** Routes that own workspace scrolling; disable shell ScrollView nesting. */
 export function isCatalogTableListRoute(route?: string | null) {
   const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
 
   return (
+    routePath === '/' ||
     routePath === '/species' ||
     routePath === '/products' ||
     routePath === '/products/archive' ||
@@ -125,6 +126,7 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/list-of-users' ||
     routePath === '/payable' ||
     routePath === '/receivable' ||
+    routePath === '/commissions' ||
     routePath === '/finance/payroll' ||
     routePath === '/finance/bonus' ||
     routePath === '/cashflow-session' ||

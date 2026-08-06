@@ -5,6 +5,7 @@ import type {UnifiedSurface} from '../domain/unified';
 import type {DashboardCustomerVisitConfirmation} from '../domain/dashboard-customer-visit-confirmations';
 import type {DashboardSalesGraphRange} from '../domain/dashboard-sales-graph';
 import type {KolamOverviewDataset} from './kolam-workspace-module-surface-types';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamUnifiedOverviewPanel} from './kolam-unified-overview-widgets';
 
 export function KolamOverviewSurface({
@@ -29,17 +30,19 @@ export function KolamOverviewSurface({
   salesGraphRange?: DashboardSalesGraphRange;
 }) {
   return (
-    <KolamUnifiedOverviewPanel
-      module={getShellModule(moduleId)}
-      dataset={dataset}
-      onCustomerVisitConfirm={onCustomerVisitConfirm}
-      onCommandSelect={onCommandSelect}
-      onDashboardRoute={onDashboardRoute}
-      onSelectModule={onSelectModule}
-      onSurfaceSelect={onSurfaceSelect}
-      onSalesGraphRangeSelect={onSalesGraphRangeSelect}
-      salesGraphRange={salesGraphRange}
-    />
+    <KolamDetailScrollSurface>
+      <KolamUnifiedOverviewPanel
+        module={getShellModule(moduleId)}
+        dataset={dataset}
+        onCustomerVisitConfirm={onCustomerVisitConfirm}
+        onCommandSelect={onCommandSelect}
+        onDashboardRoute={onDashboardRoute}
+        onSelectModule={onSelectModule}
+        onSurfaceSelect={onSurfaceSelect}
+        onSalesGraphRangeSelect={onSalesGraphRangeSelect}
+        salesGraphRange={salesGraphRange}
+      />
+    </KolamDetailScrollSurface>
   );
 }
 

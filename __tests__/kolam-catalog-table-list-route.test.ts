@@ -1,6 +1,11 @@
 import { isCatalogTableListRoute } from '../src/components/kolam-app-shell-surface';
 
 describe('isCatalogTableListRoute', () => {
+  it('matches overview root because Beranda owns its page scroll', () => {
+    expect(isCatalogTableListRoute('/')).toBe(true);
+    expect(isCatalogTableListRoute('')).toBe(true);
+  });
+
   it('matches species/product/raw list roots only', () => {
     expect(isCatalogTableListRoute('/species')).toBe(true);
     expect(isCatalogTableListRoute('/products')).toBe(true);
