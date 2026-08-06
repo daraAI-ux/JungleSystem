@@ -6290,6 +6290,7 @@ function ProductRawVariantsPanel({ product }: { product: KolamProduct }) {
         getRowKey={(row, index) => row.variant.id || String(index)}
         rows={rows}
         showFooter={false}
+        style={styles.detailListTable}
       />
     </View>
   );
@@ -6586,6 +6587,7 @@ function ProductRawComponentsTable({
         }
         getRowKey={component => component.id}
         rows={components}
+        style={styles.detailListTable}
       />
     </View>
   );
@@ -6783,6 +6785,7 @@ function ProductRawCatalogUsagePanel({
           }
           rows={rows}
           showFooter={false}
+          style={styles.detailListTable}
         />
       ) : (
         <Text style={styles.detailMutedText}>
@@ -8886,12 +8889,16 @@ function formatDateTime(value: string | undefined) {
 
 const styles = StyleSheet.create({
   root: {
+    alignSelf: 'stretch',
     gap: 18,
     overflow: 'visible',
     padding: 24,
+    width: '100%',
   },
   surface: {
+    alignSelf: 'stretch',
     gap: 16,
+    width: '100%',
   },
   listSurface: {
     flex: 1,
@@ -8964,16 +8971,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stack: {
+    alignSelf: 'stretch',
     gap: 16,
     overflow: 'visible',
     position: 'relative',
+    width: '100%',
   },
   listStack: {
     flex: 1,
     minHeight: 0,
   },
   listTableFrame: {
+    alignSelf: 'stretch',
     minHeight: 0,
+    width: '100%',
   },
   listFlatList: {
     flexGrow: 0,
@@ -9764,8 +9775,10 @@ const styles = StyleSheet.create({
     width: 320,
   },
   detailMain: {
+    alignSelf: 'stretch',
     flex: 1,
     minWidth: 0,
+    width: '100%',
   },
   detailHeroPlaceholder: {
     alignItems: 'center',
@@ -9834,12 +9847,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   detailPanel: {
-    gap: 12,
-    padding: 16,
+    alignSelf: 'stretch',
+    backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: V.colors.bg,
+    gap: 12,
+    padding: 16,
+    width: '100%',
+  },
+  detailListTable: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   detailPanelTitle: {
     color: V.colors.fg,
