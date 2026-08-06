@@ -516,13 +516,25 @@ function KolamPusatAiProsesBody({
               Proses
             </Text>
             <Text style={[styles.jobsHeaderCell, styles.colModul]}>Modul</Text>
-            <Text style={[styles.jobsHeaderCell, styles.colStatus]}>
+            <Text
+              style={[
+                styles.jobsHeaderCell,
+                styles.colStatus,
+                styles.jobsHeaderCellCenter,
+              ]}>
               Status
             </Text>
             <Text style={[styles.jobsHeaderCell, styles.colProgress]}>
               Progress
             </Text>
-            <Text style={[styles.jobsHeaderCell, styles.colAksi]}>Aksi</Text>
+            <Text
+              style={[
+                styles.jobsHeaderCell,
+                styles.colAksi,
+                styles.jobsHeaderCellCenter,
+              ]}>
+              Aksi
+            </Text>
           </View>
 
           {controller.jobs.length === 0 ? (
@@ -578,7 +590,7 @@ function ProsesJobRow({
           label={formatKolamDaraJobModuleLabel(job.module)}
         />
       </View>
-      <View style={[styles.jobsCell, styles.colStatus]}>
+      <View style={[styles.jobsCell, styles.colStatus, styles.jobsCellCenter]}>
         <KolamStatusBadge
           intent={getKolamDaraJobStatusIntent(job.status)}
           label={job.status}
@@ -592,7 +604,13 @@ function ProsesJobRow({
           {formatKolamDaraJobProgressLabel(job)}
         </Text>
       </View>
-      <View style={[styles.jobsCell, styles.colAksi, styles.jobActions]}>
+      <View
+        style={[
+          styles.jobsCell,
+          styles.colAksi,
+          styles.jobsCellCenter,
+          styles.jobActions,
+        ]}>
         {active ? (
           <KolamButton
             disabled={polling}
@@ -1188,6 +1206,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  jobsHeaderCellCenter: {
+    textAlign: 'center',
+  },
   jobsRow: {
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
@@ -1199,6 +1220,9 @@ const styles = StyleSheet.create({
   jobsCell: {
     justifyContent: 'center',
     minWidth: 0,
+  },
+  jobsCellCenter: {
+    alignItems: 'center',
   },
   colProses: {
     flex: 2.2,
@@ -1258,6 +1282,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+    justifyContent: 'center',
   },
   modules: {
     flexDirection: 'row',
