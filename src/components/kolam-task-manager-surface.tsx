@@ -1172,177 +1172,289 @@ function KolamTaskToolbar({
                 />
               </View>
             </View>
-          </View>
-          <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
-            <KolamButton
-              disabled={controller.loading}
-              intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
-              label="Prioritas tinggi"
-              onPress={() => {
-                closePanels();
-                controller.onSetPriorityFilter(
-                  controller.priorityFilter === 'high' ? 'all' : 'high',
-                );
-              }}
-            />
-            <View style={styles.switchInline}>
-              <Text style={styles.metaText}>Tugas saya</Text>
-              <KolamSwitch
-                active={controller.mineOnly}
-                onPress={() => {
-                  closePanels();
-                  controller.onSetMineOnly(!controller.mineOnly);
-                }}
-              />
-            </View>
-            <KolamResetButton
-              disabled={controller.loading}
-              onPress={() => {
-                closePanels();
-                controller.onResetFilters();
-              }}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                closePanels();
-                void controller.onRefresh();
-              }}
-            />
-            {controller.isTaskAdmin ? (
+            <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
               <KolamButton
-                intent="primary"
-                label="Baru"
-                tone="positive"
+                disabled={controller.loading}
+                intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
+                label="Prioritas tinggi"
                 onPress={() => {
                   closePanels();
-                  controller.onCreateNew();
+                  controller.onSetPriorityFilter(
+                    controller.priorityFilter === 'high' ? 'all' : 'high',
+                  );
                 }}
               />
-            ) : null}
+              <View style={styles.switchInline}>
+                <Text style={styles.metaText}>Tugas saya</Text>
+                <KolamSwitch
+                  active={controller.mineOnly}
+                  onPress={() => {
+                    closePanels();
+                    controller.onSetMineOnly(!controller.mineOnly);
+                  }}
+                />
+              </View>
+              <KolamResetButton
+                disabled={controller.loading}
+                onPress={() => {
+                  closePanels();
+                  controller.onResetFilters();
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+
+                onPress={() => {
+                  closePanels();
+                  void controller.onRefresh();
+                }}
+              />
+              {controller.isTaskAdmin ? (
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  tone="positive"
+                  onPress={() => {
+                    closePanels();
+                    controller.onCreateNew();
+                  }}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
       </View>
       {bucketOpen && panelAnchor ? (
-        <TaskFilterPanel
-          activeValue={controller.categoryBucketFilter}
-          anchor={panelAnchor}
-          onClose={() => setBucketOpen(false)}
-          onSelect={value => {
-            controller.onSetCategoryBucketFilter(
-              value as typeof controller.categoryBucketFilter,
-            );
-            setBucketOpen(false);
-          }}
-          options={bucketOptions}
-        />
+        <View
+          style={[
+            styles.taskFilterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: panelAnchor.width,
+            },
+          ]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.taskFilterPanelContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.taskFilterPanelScroll}
+          >
+            {bucketOptions.map(option => (
+              <KolamButton
+                intent={
+                  option.value === controller.categoryBucketFilter
+                    ? 'primary'
+                    : 'plain'
+                }
+                key={option.value || 'all'}
+                label={option.label}
+                onPress={() => {
+                  controller.onSetCategoryBucketFilter(
+                    option.value as typeof controller.categoryBucketFilter,
+                  );
+                  setBucketOpen(false);
+                }}
+                style={styles.taskFilterPanelOption}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.taskFilterPanelFooter}>
+            <KolamButton label="Tutup" onPress={() => setBucketOpen(false)} />
+          </View>
+        </View>
       ) : null}
       {categoryOpen && panelAnchor ? (
-        <TaskFilterPanel
-          activeValue={controller.categoryFilter}
-          anchor={panelAnchor}
-          onClose={() => setCategoryOpen(false)}
-          onSelect={value => {
-            controller.onSetCategoryFilter(value);
-            setCategoryOpen(false);
-          }}
-          options={categoryOptions}
-        />
+        <View
+          style={[
+            styles.taskFilterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: panelAnchor.width,
+            },
+          ]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.taskFilterPanelContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.taskFilterPanelScroll}
+          >
+            {categoryOptions.map(option => (
+              <KolamButton
+                intent={
+                  option.value === controller.categoryFilter ? 'primary' : 'plain'
+                }
+                key={option.value || 'all'}
+                label={option.label}
+                onPress={() => {
+                  controller.onSetCategoryFilter(option.value);
+                  setCategoryOpen(false);
+                }}
+                style={styles.taskFilterPanelOption}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.taskFilterPanelFooter}>
+            <KolamButton label="Tutup" onPress={() => setCategoryOpen(false)} />
+          </View>
+        </View>
       ) : null}
       {picOpen && panelAnchor ? (
-        <TaskFilterPanel
-          activeValue={controller.assignedToFilter}
-          anchor={panelAnchor}
-          onClose={() => setPicOpen(false)}
-          onSelect={value => {
-            controller.onSetAssignedToFilter(value);
-            setPicOpen(false);
-          }}
-          options={picOptions}
-        />
+        <View
+          style={[
+            styles.taskFilterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: panelAnchor.width,
+            },
+          ]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.taskFilterPanelContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.taskFilterPanelScroll}
+          >
+            {picOptions.map(option => (
+              <KolamButton
+                intent={
+                  option.value === controller.assignedToFilter
+                    ? 'primary'
+                    : 'plain'
+                }
+                key={option.value || 'all'}
+                label={option.label}
+                onPress={() => {
+                  controller.onSetAssignedToFilter(option.value);
+                  setPicOpen(false);
+                }}
+                style={styles.taskFilterPanelOption}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.taskFilterPanelFooter}>
+            <KolamButton label="Tutup" onPress={() => setPicOpen(false)} />
+          </View>
+        </View>
       ) : null}
       {projectOpen && panelAnchor ? (
-        <TaskFilterPanel
-          activeValue={controller.projectFilter}
-          anchor={panelAnchor}
-          onClose={() => setProjectOpen(false)}
-          onSelect={value => {
-            controller.onSetProjectFilter(value);
-            setProjectOpen(false);
-          }}
-          options={projectOptions}
-        />
+        <View
+          style={[
+            styles.taskFilterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: panelAnchor.width,
+            },
+          ]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.taskFilterPanelContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.taskFilterPanelScroll}
+          >
+            {projectOptions.map(option => (
+              <KolamButton
+                intent={
+                  option.value === controller.projectFilter
+                    ? 'primary'
+                    : 'plain'
+                }
+                key={option.value || 'all'}
+                label={option.label}
+                onPress={() => {
+                  controller.onSetProjectFilter(option.value);
+                  setProjectOpen(false);
+                }}
+                style={styles.taskFilterPanelOption}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.taskFilterPanelFooter}>
+            <KolamButton label="Tutup" onPress={() => setProjectOpen(false)} />
+          </View>
+        </View>
       ) : null}
       {statusOpen && panelAnchor ? (
-        <TaskFilterPanel
-          activeValue={controller.statusFilter}
-          anchor={panelAnchor}
-          onClose={() => setStatusOpen(false)}
-          onSelect={value => {
-            controller.onSetStatusFilter(value as typeof controller.statusFilter);
-            setStatusOpen(false);
-          }}
-          options={statusOptions}
-        />
+        <View
+          style={[
+            styles.taskFilterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: panelAnchor.width,
+            },
+          ]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.taskFilterPanelContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.taskFilterPanelScroll}
+          >
+            {statusOptions.map(option => (
+              <KolamButton
+                intent={
+                  option.value === controller.statusFilter ? 'primary' : 'plain'
+                }
+                key={option.value || 'all'}
+                label={option.label}
+                onPress={() => {
+                  controller.onSetStatusFilter(
+                    option.value as typeof controller.statusFilter,
+                  );
+                  setStatusOpen(false);
+                }}
+                style={styles.taskFilterPanelOption}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.taskFilterPanelFooter}>
+            <KolamButton label="Tutup" onPress={() => setStatusOpen(false)} />
+          </View>
+        </View>
       ) : null}
       {priorityOpen && panelAnchor ? (
-        <TaskFilterPanel
-          activeValue={controller.priorityFilter}
-          anchor={panelAnchor}
-          onClose={() => setPriorityOpen(false)}
-          onSelect={value => {
-            controller.onSetPriorityFilter(
-              value as typeof controller.priorityFilter,
-            );
-            setPriorityOpen(false);
-          }}
-          options={priorityOptions}
-        />
+        <View
+          style={[
+            styles.taskFilterOverlayPanel,
+            {
+              left: panelAnchor.left,
+              top: panelAnchor.top,
+              width: panelAnchor.width,
+            },
+          ]}
+        >
+          <ScrollView
+            contentContainerStyle={styles.taskFilterPanelContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.taskFilterPanelScroll}
+          >
+            {priorityOptions.map(option => (
+              <KolamButton
+                intent={
+                  option.value === controller.priorityFilter
+                    ? 'primary'
+                    : 'plain'
+                }
+                key={option.value || 'all'}
+                label={option.label}
+                onPress={() => {
+                  controller.onSetPriorityFilter(
+                    option.value as typeof controller.priorityFilter,
+                  );
+                  setPriorityOpen(false);
+                }}
+                style={styles.taskFilterPanelOption}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.taskFilterPanelFooter}>
+            <KolamButton label="Tutup" onPress={() => setPriorityOpen(false)} />
+          </View>
+        </View>
       ) : null}
-    </View>
-  );
-}
-
-function TaskFilterPanel<T extends string>({
-  activeValue,
-  anchor,
-  options,
-  onSelect,
-  onClose,
-}: {
-  activeValue: T;
-  anchor: { left: number; top: number; width: number };
-  options: Array<{ label: string; value: T }>;
-  onSelect: (value: T) => void;
-  onClose: () => void;
-}) {
-  return (
-    <View
-      style={[
-        styles.taskFilterOverlayPanel,
-        { left: anchor.left, top: anchor.top, width: anchor.width },
-      ]}
-    >
-      <ScrollView
-        contentContainerStyle={styles.taskFilterPanelContent}
-        keyboardShouldPersistTaps="handled"
-        style={styles.taskFilterPanelScroll}
-      >
-        {options.map(option => (
-          <KolamButton
-            intent={option.value === activeValue ? 'primary' : 'plain'}
-            key={option.value || 'all'}
-            label={option.label}
-            onPress={() => onSelect(option.value)}
-            style={styles.taskFilterPanelOption}
-          />
-        ))}
-      </ScrollView>
-      <View style={styles.taskFilterPanelFooter}>
-        <KolamButton label="Tutup" onPress={onClose} />
-      </View>
     </View>
   );
 }
@@ -3245,8 +3357,6 @@ const styles = StyleSheet.create({
   },
   taskToolbarFilters: {
     alignItems: 'center',
-    flexBasis: '100%',
-    width: '100%',
   },
   taskSearchInput: {
     flexGrow: 1,
@@ -3254,10 +3364,10 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   taskFilterItem: {
-    flexBasis: 112,
+    flexBasis: 88,
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 96,
+    minWidth: 76,
   },
   taskFilterTrigger: {
     alignSelf: 'stretch',
@@ -3292,12 +3402,8 @@ const styles = StyleSheet.create({
   },
   taskToolbarActions: {
     alignSelf: 'stretch',
-    borderLeftWidth: 0,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
+    borderTopWidth: 0,
     justifyContent: 'flex-end',
-    paddingLeft: 0,
-    paddingTop: 6,
   },
   switchInline: {
     alignItems: 'center',
