@@ -143,10 +143,10 @@ const DASHBOARD_DEATH_COLUMNS = [
 
 const ALLOCATION_OVERVIEW_COLUMNS = [
   {id: 'primary', label: 'Species', flex: 1.45, align: 'left'},
-  {id: 'notes', label: 'Varian', flex: 0.85, align: 'left'},
-  {id: 'children', label: 'Sudah di enclosure', flex: 1, align: 'right'},
-  {id: 'amount', label: 'Belum di enclosure', flex: 1, align: 'right'},
-  {id: 'marketplace', label: 'Kode enclosure', flex: 1.35, align: 'left'},
+  {id: 'notes', label: 'Varian', flex: 0.85, align: 'center'},
+  {id: 'children', label: 'Sudah di enclosure', flex: 1, align: 'center'},
+  {id: 'amount', label: 'Belum di enclosure', flex: 1, align: 'center'},
+  {id: 'marketplace', label: 'Kode enclosure', flex: 1.35, align: 'center'},
 ] as const;
 
 type ProductionStatsColumnId = (typeof PRODUCTION_STATS_COLUMNS)[number]['id'];
@@ -2229,7 +2229,7 @@ function renderAllocationGroupCell(
       );
     case 'children':
       return (
-        <Text style={styles.numText}>
+        <Text style={[styles.numText, styles.centerText]}>
           {group.totalAllocated} {group.unit}
         </Text>
       );
@@ -2238,6 +2238,7 @@ function renderAllocationGroupCell(
         <Text
           style={[
             styles.numText,
+            styles.centerText,
             group.totalUnallocated > 0 ? styles.warningText : null,
           ]}
         >
@@ -2289,19 +2290,25 @@ function renderAllocationRowCell(
       );
     case 'notes':
       return (
-        <Text numberOfLines={2} style={styles.cellText}>
+        <Text numberOfLines={2} style={[styles.cellText, styles.centerText]}>
           {row.variantLabel || '-'}
         </Text>
       );
     case 'children':
       return (
-        <Text style={styles.numText}>
+        <Text style={[styles.numText, styles.centerText]}>
           {row.allocated} {row.unit}
         </Text>
       );
     case 'amount':
       return (
-        <Text style={[styles.numText, row.unallocated > 0 ? styles.warningText : null]}>
+        <Text
+          style={[
+            styles.numText,
+            styles.centerText,
+            row.unallocated > 0 ? styles.warningText : null,
+          ]}
+        >
           {row.unallocated} {row.unit}
         </Text>
       );
@@ -2328,7 +2335,7 @@ function AllocationEnclosureCodeLinks({
 }) {
   const links = collectAllocationEnclosureLinks(rows);
   if (!links.length) {
-    return <Text style={[styles.cellText, style]}>-</Text>;
+    return <Text style={[styles.cellText, styles.centerText, style]}>-</Text>;
   }
 
   return (
@@ -3187,6 +3194,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 0,
+    justifyContent: 'center',
     minWidth: 0,
   },
   scientificText: {
@@ -3479,7 +3487,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   variantToggleButton: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     minHeight: 30,
     paddingHorizontal: 8,
   },
