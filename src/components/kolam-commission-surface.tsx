@@ -6,6 +6,7 @@ import {
   getCommissionStatusIntent,
   KOLAM_COMMISSION_STATUS_FILTER_OPTIONS,
   type KolamCommissionListRow,
+  type KolamCommissionRecipientSummaryRow,
   type KolamCommissionStatusFilter,
 } from '../domain/kolam-commission';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -16,25 +17,13 @@ import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
-import {
-  KolamDropdownSelect,
-  KolamTableFooterControls,
-} from './kolam-dropdown-select';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const COMMISSION_COLUMNS = [
-  { id: 'invoice', label: 'Invoice', flex: 1 },
-  { id: 'recipient', label: 'Penerima', flex: 1 },
-  { id: 'item', label: 'Item', flex: 1.1 },
-  { id: 'status', label: 'Status', flex: 0.9 },
-  { id: 'amount', label: 'Komisi', flex: 0.9 },
-  { id: 'action', label: 'Pembayaran', flex: 1.2 },
-] as const;
 
 export function KolamCommissionSurface({
   onRouteChange,
@@ -136,17 +125,107 @@ function CommissionListBody({
   ];
 
   const safePage = Math.max(1, controller.pagination.page);
-  const pageCount = Math.max(1, controller.pagination.totalPages);
 
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamCommissionListRow }) => {
-      const showRelease =
-        controller.canRelease && canReleaseCommissionRowFromNormalized(item);
-      const selectedWallet = controller.walletByRow[item.id] ?? '';
+  const recipientSummaryColumns = React.useMemo(
+    () => [
+      {
+        flex: 1.4,
+        id: 'recipient',
+        label: 'Penerima',
+        render: (row: KolamCommissionRecipientSummaryRow) => (
+          <View style={styles.summaryRecipientIdentity}>
+            <View
+              accessibilityLabel={`Penerima ${row.displayName}`}
+              style={styles.recipientAvatar}
+            >
+              <KolamProfileAvatarContent
+                imageStyle={styles.recipientAvatarImage}
+                imageUrl={getRecipientSummaryPhotoUrl(row.profilePicture)}
+                initials={getRecipientSummaryInitials(row.displayName)}
+                textStyle={styles.recipientAvatarText}
+              />
+            </View>
+            <View style={styles.summaryRecipientText}>
+              <Text numberOfLines={1} style={styles.primaryText}>
+                {row.displayName}
+              </Text>
+              {row.email ? (
+                <Text numberOfLines={1} style={styles.metaText}>
+                  {row.email}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ),
+      },
+      {
+        align: 'right' as const,
+        flex: 1,
+        id: 'accrued',
+        label: 'Terakru',
+        render: (row: KolamCommissionRecipientSummaryRow) => (
+          <Text numberOfLines={1} style={styles.primaryText}>
+            {formatRupiah(row.totalAccrued)}
+          </Text>
+        ),
+      },
+      {
+        align: 'right' as const,
+        flex: 1,
+        id: 'released',
+        label: 'Dibayar',
+        render: (row: KolamCommissionRecipientSummaryRow) => (
+          <Text numberOfLines={1} style={styles.primaryText}>
+            {formatRupiah(row.totalReleased)}
+          </Text>
+        ),
+      },
+      {
+        align: 'right' as const,
+        flex: 1.1,
+        id: 'count',
+        label: 'Baris',
+        render: (row: KolamCommissionRecipientSummaryRow) => (
+          <View style={styles.summaryCountStack}>
+            <KolamStatusBadge
+              intent="warning"
+              label={`${row.countAccrued} terakru`}
+              style={styles.summaryBadge}
+            />
+            <KolamStatusBadge
+              intent="success"
+              label={`${row.countReleased} dibayar`}
+              style={styles.summaryBadge}
+            />
+          </View>
+        ),
+      },
+      {
+        align: 'right' as const,
+        flex: 0.9,
+        id: 'action',
+        label: 'Aksi',
+        render: (row: KolamCommissionRecipientSummaryRow) => (
+          <KolamButton
+            intent="secondary"
+            label="Lihat baris"
+            onPress={() => controller.onRecipientFilterChange(row.recipientUser)}
+            style={styles.summaryActionButton}
+          />
+        ),
+      },
+    ],
+    [controller],
+  );
 
-      return (
-        <View style={styles.row}>
-          <View style={[styles.cell, { flex: 1 }]}>
+  const commissionColumns = React.useMemo(
+    () => [
+      {
+        flex: 1,
+        id: 'invoice',
+        label: 'Invoice',
+        render: (item: KolamCommissionListRow) => (
+          <View>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.invoiceLabel}
             </Text>
@@ -156,12 +235,26 @@ function CommissionListBody({
               </Text>
             ) : null}
           </View>
-          <View style={[styles.cell, { flex: 1 }]}>
+        ),
+      },
+      {
+        flex: 1,
+        id: 'recipient',
+        label: 'Penerima',
+        render: (item: KolamCommissionListRow) => (
+          <View>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.recipientLabel}
             </Text>
           </View>
-          <View style={[styles.cell, { flex: 1.1 }]}>
+        ),
+      },
+      {
+        flex: 1.1,
+        id: 'item',
+        label: 'Item',
+        render: (item: KolamCommissionListRow) => (
+          <View>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.itemLabel}
             </Text>
@@ -170,7 +263,14 @@ function CommissionListBody({
               {item.quantity ? ` | Jml ${item.quantity}` : ''}
             </Text>
           </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
+        ),
+      },
+      {
+        flex: 0.9,
+        id: 'status',
+        label: 'Status',
+        render: (item: KolamCommissionListRow) => (
+          <View>
             <KolamStatusBadge
               intent={getCommissionStatusIntent(item.status)}
               label={item.statusLabel}
@@ -179,7 +279,14 @@ function CommissionListBody({
               {item.deliveryStatusLabel}
             </Text>
           </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
+        ),
+      },
+      {
+        flex: 0.9,
+        id: 'amount',
+        label: 'Komisi',
+        render: (item: KolamCommissionListRow) => (
+          <View>
             <Text style={styles.primaryText}>
               {formatRupiah(item.commissionAmount)}
             </Text>
@@ -194,8 +301,18 @@ function CommissionListBody({
               {item.commissionRateLabel}
             </Text>
           </View>
-          <View style={[styles.cell, { flex: 1.2 }]}>
-            {showRelease ? (
+        ),
+      },
+      {
+        flex: 1.2,
+        id: 'action',
+        label: 'Pembayaran',
+        render: (item: KolamCommissionListRow) => {
+          const showRelease =
+            controller.canRelease && canReleaseCommissionRowFromNormalized(item);
+          const selectedWallet = controller.walletByRow[item.id] ?? '';
+
+          return showRelease ? (
               <View style={styles.releaseRow}>
                 <KolamDropdownSelect
                   label="Dompet"
@@ -218,7 +335,7 @@ function CommissionListBody({
                   style={styles.releaseButton}
                 />
               </View>
-            ) : item.status === 'released' ? (
+          ) : item.status === 'released' ? (
               <View style={styles.paymentStack}>
                 <KolamStatusBadge
                   intent="success"
@@ -248,11 +365,10 @@ function CommissionListBody({
                   />
                 )}
               </View>
-            ) : null}
-          </View>
-        </View>
-      );
-    },
+          ) : null;
+        },
+      },
+    ],
     [controller, walletSelectOptions],
   );
 
@@ -300,106 +416,16 @@ function CommissionListBody({
               : `${controller.recipientSummaryRows.length} penerima`}
           </Text>
         </View>
-        <View style={styles.summaryHeaderRow}>
-          <View style={styles.summaryRecipientCell}>
-            <Text style={styles.summaryHeaderText}>Penerima</Text>
-          </View>
-          <View style={styles.summaryMoneyCell}>
-            <Text style={[styles.summaryHeaderText, styles.alignRight]}>
-              Terakru
-            </Text>
-          </View>
-          <View style={styles.summaryMoneyCell}>
-            <Text style={[styles.summaryHeaderText, styles.alignRight]}>
-              Dibayar
-            </Text>
-          </View>
-          <View style={styles.summaryCountCell}>
-            <Text style={[styles.summaryHeaderText, styles.alignRight]}>
-              Baris
-            </Text>
-          </View>
-          <View style={styles.summaryActionCell}>
-            <Text style={[styles.summaryHeaderText, styles.alignRight]}>
-              Aksi
-            </Text>
-          </View>
-        </View>
-        {controller.recipientSummaryRows.length ? (
-          controller.recipientSummaryRows.map(row => (
-            <View
-              key={row.recipientUser || row.displayName}
-              style={styles.summaryRow}
-            >
-              <View style={styles.summaryRecipientCell}>
-                <View style={styles.summaryRecipientIdentity}>
-                  <View
-                    accessibilityLabel={`Penerima ${row.displayName}`}
-                    style={styles.recipientAvatar}
-                  >
-                    <KolamProfileAvatarContent
-                      imageStyle={styles.recipientAvatarImage}
-                      imageUrl={getRecipientSummaryPhotoUrl(row.profilePicture)}
-                      initials={getRecipientSummaryInitials(row.displayName)}
-                      textStyle={styles.recipientAvatarText}
-                    />
-                  </View>
-                  <View style={styles.summaryRecipientText}>
-                    <Text numberOfLines={1} style={styles.primaryText}>
-                      {row.displayName}
-                    </Text>
-                    {row.email ? (
-                      <Text numberOfLines={1} style={styles.metaText}>
-                        {row.email}
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-              </View>
-              <Text
-                numberOfLines={1}
-                style={[styles.primaryText, styles.summaryMoneyCell]}
-              >
-                {formatRupiah(row.totalAccrued)}
-              </Text>
-              <Text
-                numberOfLines={1}
-                style={[styles.primaryText, styles.summaryMoneyCell]}
-              >
-                {formatRupiah(row.totalReleased)}
-              </Text>
-              <View style={styles.summaryCountCell}>
-                <KolamStatusBadge
-                  intent="warning"
-                  label={`${row.countAccrued} terakru`}
-                  style={styles.summaryBadge}
-                />
-                <KolamStatusBadge
-                  intent="success"
-                  label={`${row.countReleased} dibayar`}
-                  style={styles.summaryBadge}
-                />
-              </View>
-              <View style={styles.summaryActionCell}>
-                <KolamButton
-                  intent="secondary"
-                  label="Lihat baris"
-                  onPress={() =>
-                    controller.onRecipientFilterChange(row.recipientUser)
-                  }
-                  style={styles.summaryActionButton}
-                />
-              </View>
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptySummary}>
-            <KolamEmptyState
-              compact
-              title={controller.summaryLoading ? 'Memuat...' : 'Tidak ada data'}
-            />
-          </View>
-        )}
+        <KolamListTableComposition
+          columns={recipientSummaryColumns}
+          emptyTitle={
+            controller.summaryLoading ? 'Memuat...' : 'Tidak ada data'
+          }
+          getRowKey={row => row.recipientUser || row.displayName}
+          loading={controller.summaryLoading}
+          rows={controller.recipientSummaryRows}
+          style={styles.summaryTableFrame}
+        />
       </KolamCardFrame>
 
       {controller.canRelease ? (
@@ -531,66 +557,20 @@ function CommissionListBody({
       ) : null}
 
       <View style={styles.listRoot}>
-        <KolamCatalogListTableShell
-          footer={
-            <KolamTableFooterControls
-              onPageSizeChange={controller.onLimitChange}
-              page={safePage}
-              pageSize={controller.pagination.limit}
-              total={controller.pagination.total}
-            >
-              {pageCount > 1 ? (
-                <View style={styles.paginationBar}>
-                  <KolamButton
-                    disabled={safePage <= 1 || controller.loading}
-                    label="Sebelumnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.max(1, safePage - 1))
-                    }
-                  />
-                  <Text style={styles.pageLabel}>
-                    {safePage} / {pageCount}
-                  </Text>
-                  <KolamButton
-                    disabled={safePage >= pageCount || controller.loading}
-                    label="Berikutnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.min(pageCount, safePage + 1))
-                    }
-                  />
-                </View>
-              ) : null}
-            </KolamTableFooterControls>
-          }
+        <KolamListTableComposition
+          columns={commissionColumns}
+          emptyTitle={controller.loading ? 'Memuat...' : 'Tidak ada data'}
+          getRowKey={item => item.id}
+          loading={controller.loading}
+          pagination={{
+            onPageChange: controller.onPageChange,
+            page: safePage,
+            pageSize: controller.pagination.limit,
+            total: controller.pagination.total,
+          }}
+          rows={controller.rows}
           style={styles.tableFrame}
-        >
-          <View style={styles.tableBody}>
-            <View style={styles.headerRow}>
-              {COMMISSION_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-            {controller.rows.length === 0 ? (
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  title={controller.loading ? 'Memuat...' : 'Tidak ada data'}
-                />
-              </View>
-            ) : (
-              controller.rows.map(item => (
-                <React.Fragment key={item.id}>
-                  {renderRow({ item })}
-                </React.Fragment>
-              ))
-            )}
-          </View>
-        </KolamCatalogListTableShell>
+        />
       </View>
     </View>
   );
@@ -677,39 +657,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  summaryHeaderRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 34,
-    paddingHorizontal: 8,
-  },
-  summaryHeaderText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  alignRight: {
-    textAlign: 'right',
-  },
-  summaryRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 48,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  summaryRecipientCell: {
-    flex: 1.4,
-    minWidth: 0,
-    paddingHorizontal: 4,
-  },
   summaryRecipientIdentity: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -741,24 +688,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-  summaryMoneyCell: {
-    flex: 1,
-    minWidth: 0,
-    paddingHorizontal: 4,
-    textAlign: 'right',
-  },
-  summaryCountCell: {
+  summaryCountStack: {
     alignItems: 'flex-end',
-    flex: 1.1,
     gap: 4,
-    minWidth: 0,
-    paddingHorizontal: 4,
-  },
-  summaryActionCell: {
-    alignItems: 'flex-end',
-    flex: 0.9,
-    minWidth: 0,
-    paddingHorizontal: 4,
   },
   summaryBadge: {
     alignSelf: 'flex-end',
@@ -766,8 +698,9 @@ const styles = StyleSheet.create({
   summaryActionButton: {
     flexGrow: 0,
   },
-  emptySummary: {
-    paddingVertical: 18,
+  summaryTableFrame: {
+    borderWidth: 0,
+    minHeight: 0,
   },
   adminActionsPanel: {
     flexDirection: 'row',
@@ -843,43 +776,6 @@ const styles = StyleSheet.create({
   tableFrame: {
     minHeight: 0,
   },
-  tableBody: {
-    minHeight: 0,
-    width: '100%',
-  },
-  emptyWrap: {
-    minHeight: 200,
-    paddingVertical: 24,
-    justifyContent: 'center',
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  cell: {
-    paddingHorizontal: 4,
-  },
   primaryText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -940,15 +836,5 @@ const styles = StyleSheet.create({
   releaseButton: {
     flexGrow: 0,
     flexShrink: 0,
-  },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
 });
