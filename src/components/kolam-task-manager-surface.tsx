@@ -50,6 +50,7 @@ import { openKolamMediaPreview } from './kolam-media-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSelesaiTaskIcon } from './kolam-selesai-task-icon';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamProsesTaskIcon } from './kolam-proses-task-icon';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -938,7 +939,13 @@ function KolamTaskKpiRow({
       value: controller.kpi.inProgress,
       tone: 'info',
     },
-    { id: 'done', label: 'Selesai', value: controller.kpi.done, tone: 'success' },
+    {
+      id: 'done',
+      iconElement: <KolamSelesaiTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Selesai',
+      value: controller.kpi.done,
+      tone: 'success',
+    },
     {
       id: 'overdue',
       label: 'Overdue',
