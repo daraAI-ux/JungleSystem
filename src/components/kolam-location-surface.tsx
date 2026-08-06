@@ -38,6 +38,7 @@ import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
+import {KolamCardFrame} from './kolam-card-frame';
 import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
@@ -685,104 +686,108 @@ function KolamLocationSummaryCard({
   onRouteChange?: (route: string) => void;
 }) {
   return (
-    <KolamDetailSummaryCard
-      description="Informasi lokasi, kontak, alamat, dan waktu"
-      fieldColumns={3}
-      fields={[
-        {
-          id: 'type',
-          label: 'Tipe',
-          value: (
-            <KolamStatusBadge
-              intent={getLocationTypeIntent(location.type)}
-              label={getKolamLocationTypeLabel(location.type)}
-            />
-          ),
-        },
-        {
-          id: 'tier',
-          label: 'Tingkat',
-          value: (
-            <KolamStatusBadge
-              intent={getLocationTierIntent(location.tier)}
-              label={getKolamLocationTierLabel(location.tier)}
-            />
-          ),
-        },
-        {
-          id: 'parent',
-          label: 'Lokasi Induk',
-          value: <LocationParentInline parent={location.parent} />,
-        },
-        {
-          id: 'capacity',
-          label: 'Kapasitas Slot',
-          value: location.capacitySlots ?? '-',
-        },
-        {
-          id: 'phone',
-          label: 'Telepon',
-          value: location.phoneNumber ? (
-            <KolamButton
-              label={location.phoneNumber}
-              onPress={() => {
-                void Linking.openURL(`tel:${location.phoneNumber}`);
-              }}
-            />
-          ) : (
-            '-'
-          ),
-        },
-        {
-          id: 'map',
-          label: 'Peta',
-          value: location.mapsUrl ? (
-            <KolamButton
-              label="Google Maps"
-              onPress={() => {
-                void Linking.openURL(location.mapsUrl);
-              }}
-            />
-          ) : (
-            '-'
-          ),
-        },
-        {
-          id: 'address',
-          label: 'Alamat',
-          value: location.address || '-',
-        },
-        {
-          id: 'description',
-          label: 'Deskripsi',
-          value: location.description || '-',
-        },
-        {
-          id: 'created',
-          label: 'Dibuat',
-          value: formatLocationDateTime(location.createdAt),
-        },
-        {
-          id: 'updated',
-          label: 'Diperbarui',
-          value: formatLocationDateTime(location.updatedAt),
-        },
-      ]}
-      sections={[
-        {
-          id: 'hierarchy',
-          title: 'Hierarki',
-          content: (
-            <KolamLocationHierarchyContent
-              descendants={descendants}
-              location={location}
-              onRouteChange={onRouteChange}
-            />
-          ),
-        },
-      ]}
-      title="Informasi Lokasi"
-    />
+    <View style={styles.locationSummaryRow}>
+      <KolamDetailSummaryCard
+        description="Informasi lokasi, kontak, alamat, dan waktu"
+        fieldColumns={3}
+        fields={[
+          {
+            id: 'type',
+            label: 'Tipe',
+            value: (
+              <KolamStatusBadge
+                intent={getLocationTypeIntent(location.type)}
+                label={getKolamLocationTypeLabel(location.type)}
+              />
+            ),
+          },
+          {
+            id: 'tier',
+            label: 'Tingkat',
+            value: (
+              <KolamStatusBadge
+                intent={getLocationTierIntent(location.tier)}
+                label={getKolamLocationTierLabel(location.tier)}
+              />
+            ),
+          },
+          {
+            id: 'parent',
+            label: 'Lokasi Induk',
+            value: <LocationParentInline parent={location.parent} />,
+          },
+          {
+            id: 'capacity',
+            label: 'Kapasitas Slot',
+            value: location.capacitySlots ?? '-',
+          },
+          {
+            id: 'phone',
+            label: 'Telepon',
+            value: location.phoneNumber ? (
+              <KolamButton
+                label={location.phoneNumber}
+                onPress={() => {
+                  void Linking.openURL(`tel:${location.phoneNumber}`);
+                }}
+              />
+            ) : (
+              '-'
+            ),
+          },
+          {
+            id: 'map',
+            label: 'Peta',
+            value: location.mapsUrl ? (
+              <KolamButton
+                label="Google Maps"
+                onPress={() => {
+                  void Linking.openURL(location.mapsUrl);
+                }}
+              />
+            ) : (
+              '-'
+            ),
+          },
+          {
+            id: 'address',
+            label: 'Alamat',
+            value: location.address || '-',
+          },
+          {
+            id: 'description',
+            label: 'Deskripsi',
+            value: location.description || '-',
+          },
+          {
+            id: 'created',
+            label: 'Dibuat',
+            value: formatLocationDateTime(location.createdAt),
+          },
+          {
+            id: 'updated',
+            label: 'Diperbarui',
+            value: formatLocationDateTime(location.updatedAt),
+          },
+        ]}
+        style={styles.locationInfoCard}
+        title="Informasi Lokasi"
+      />
+      <KolamCardFrame
+        accessibilityLabel="Hierarki"
+        style={styles.locationHierarchyCard}
+        variant="compact"
+      >
+        <View style={styles.sectionTitleStack}>
+          <Text style={styles.sectionTitle}>Hierarki</Text>
+        </View>
+        <KolamLocationHierarchyContent
+          descendants={descendants}
+          location={location}
+          onRouteChange={onRouteChange}
+        />
+      </KolamCardFrame>
+    </View>
   );
 }
 
@@ -2018,6 +2023,25 @@ const styles = StyleSheet.create({
   detailCard: {
     gap: 12,
     padding: 16,
+  },
+  locationSummaryRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  locationInfoCard: {
+    flexBasis: 620,
+    flexGrow: 1,
+    minWidth: 360,
+  },
+  locationHierarchyCard: {
+    flexBasis: 280,
+    flexGrow: 0.45,
+    gap: 14,
+    minWidth: 260,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
   sectionTitleStack: {
     gap: 2,
