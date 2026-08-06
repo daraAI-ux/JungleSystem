@@ -9,12 +9,6 @@ import {
   type KolamLocationTier,
   type KolamLocationType,
 } from '../domain/kolam-location';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   createKolamLocation,
@@ -41,29 +35,13 @@ import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import {
-  KolamDataTableAmountCell,
-  KolamDataTableMetaCell,
-} from './kolam-data-table-text-cell';
-import {KolamDataTableHeader} from './kolam-data-table-header';
-import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -684,20 +662,12 @@ function KolamLocationDetail({
         />
       ) : null}
 
-      <View style={styles.detailGrid}>
-        <View style={styles.detailMainColumn}>
-          <KolamLocationInfoCard location={location} />
-          <KolamLocationHierarchyCard
-            descendants={descendants}
-            location={location}
-            onRouteChange={onRouteChange}
-          />
-        </View>
-        <View style={styles.detailSideColumn}>
-          <KolamLocationContactCard location={location} />
-          <KolamLocationTimestampsCard location={location} />
-        </View>
-      </View>
+      <KolamLocationSummaryCard location={location} />
+      <KolamLocationHierarchyCard
+        descendants={descendants}
+        location={location}
+        onRouteChange={onRouteChange}
+      />
       <KolamLocationInventorySection
         locationId={location.id}
         onRouteChange={onRouteChange}
@@ -706,77 +676,96 @@ function KolamLocationDetail({
   );
 }
 
-function KolamLocationInfoCard({
+function KolamLocationSummaryCard({
   location,
 }: {
   location: KolamLocationDetailItem;
 }) {
   return (
-    <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
-      <SectionTitle
-        description="Informasi lengkap tentang lokasi ini"
-        title="Informasi Lokasi"
-      />
-      <View style={styles.detailRows}>
-        <DetailRow
-          label="Tipe"
-          value={
+    <KolamDetailSummaryCard
+      description="Informasi lokasi, kontak, alamat, dan waktu"
+      fields={[
+        {
+          id: 'type',
+          label: 'Tipe',
+          value: (
             <KolamStatusBadge
               intent={getLocationTypeIntent(location.type)}
               label={getKolamLocationTypeLabel(location.type)}
             />
-          }
-        />
-        <DetailRow
-          label="Tingkat"
-          value={
+          ),
+        },
+        {
+          id: 'tier',
+          label: 'Tingkat',
+          value: (
             <KolamStatusBadge
               intent={getLocationTierIntent(location.tier)}
               label={getKolamLocationTierLabel(location.tier)}
             />
-          }
-        />
-        <DetailRow
-          label="Lokasi Induk"
-          value={<LocationParentInline parent={location.parent} />}
-        />
-        <DetailRow label="Deskripsi" value={location.description || '-'} />
-        <DetailRow label="Alamat" value={location.address || '-'} />
-        <DetailRow
-          label="Nomor Telepon"
-          value={
-            location.phoneNumber ? (
-              <KolamButton
-                label={location.phoneNumber}
-                onPress={() => {
-                  void Linking.openURL(`tel:${location.phoneNumber}`);
-                }}
-              />
-            ) : (
-              '-'
-            )
-          }
-        />
-        <DetailRow
-          label="URL Peta"
-          value={
-            location.mapsUrl ? (
-              <KolamButton
-                label="Lihat di Google Maps"
-                onPress={() => {
-                  void Linking.openURL(location.mapsUrl);
-                }}
-              />
-            ) : (
-              '-'
-            )
-          }
-        />
-        {location.capacitySlots != null ? (
-          <DetailRow label="Kapasitas Slot" value={location.capacitySlots} />
-        ) : null}
-      </View>
-    </KolamContentFrame>
+          ),
+        },
+        {
+          id: 'parent',
+          label: 'Lokasi Induk',
+          value: <LocationParentInline parent={location.parent} />,
+        },
+        {
+          id: 'capacity',
+          label: 'Kapasitas Slot',
+          value: location.capacitySlots ?? '-',
+        },
+        {
+          id: 'phone',
+          label: 'Telepon',
+          value: location.phoneNumber ? (
+            <KolamButton
+              label={location.phoneNumber}
+              onPress={() => {
+                void Linking.openURL(`tel:${location.phoneNumber}`);
+              }}
+            />
+          ) : (
+            '-'
+          ),
+        },
+        {
+          id: 'map',
+          label: 'Peta',
+          value: location.mapsUrl ? (
+            <KolamButton
+              label="Google Maps"
+              onPress={() => {
+                void Linking.openURL(location.mapsUrl);
+              }}
+            />
+          ) : (
+            '-'
+          ),
+        },
+        {
+          id: 'address',
+          label: 'Alamat',
+          value: location.address || '-',
+        },
+        {
+          id: 'description',
+          label: 'Deskripsi',
+          value: location.description || '-',
+        },
+        {
+          id: 'created',
+          label: 'Dibuat',
+          value: formatLocationDateTime(location.createdAt),
+        },
+        {
+          id: 'updated',
+          label: 'Diperbarui',
+          value: formatLocationDateTime(location.updatedAt),
+        },
+      ]}
+      title="Informasi Lokasi"
+    />
   );
 }
 
@@ -826,80 +815,6 @@ function KolamLocationHierarchyCard({
         {descendants.length ? null : (
           <Text style={styles.mutedText}>Belum ada lokasi anak.</Text>
         )}
-      </View>
-    </KolamContentFrame>
-  );
-}
-
-function KolamLocationContactCard({
-  location,
-}: {
-  location: KolamLocationDetailItem;
-}) {
-  const hasContact =
-    Boolean(location.address) ||
-    Boolean(location.mapsUrl) ||
-    Boolean(location.phoneNumber);
-
-  return (
-    <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
-      <SectionTitle
-        description="Alamat fisik dan informasi kontak"
-        title="Kontak & Alamat"
-      />
-      {hasContact ? (
-        <View style={styles.contactStack}>
-          {location.phoneNumber ? (
-            <ContactBlock
-              label="Telepon"
-              value={location.phoneNumber}
-              onPress={() => {
-                void Linking.openURL(`tel:${location.phoneNumber}`);
-              }}
-            />
-          ) : null}
-          {location.address ? (
-            <ContactBlock label="Alamat" value={location.address} />
-          ) : null}
-          {location.mapsUrl ? (
-            <ContactBlock
-              label="Peta"
-              value="Buka di Google Maps"
-              onPress={() => {
-                void Linking.openURL(location.mapsUrl);
-              }}
-            />
-          ) : null}
-        </View>
-      ) : (
-        <Text style={styles.mutedText}>
-          Belum ada informasi kontak atau alamat.
-        </Text>
-      )}
-    </KolamContentFrame>
-  );
-}
-
-function KolamLocationTimestampsCard({
-  location,
-}: {
-  location: KolamLocationDetailItem;
-}) {
-  return (
-    <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
-      <SectionTitle
-        description="Tanggal pembuatan dan pembaruan terakhir"
-        title="Waktu"
-      />
-      <View style={styles.contactStack}>
-        <ContactBlock
-          label="Dibuat"
-          value={formatLocationDateTime(location.createdAt)}
-        />
-        <ContactBlock
-          label="Diperbarui"
-          value={formatLocationDateTime(location.updatedAt)}
-        />
       </View>
     </KolamContentFrame>
   );
@@ -983,47 +898,50 @@ function KolamLocationInventorySection({
       ) : null}
       <View style={styles.inventoryStack}>
         <InventoryTableBlock
-          empty={products.length === 0}
+          columns={buildLocationProductInventoryColumns()}
+          emptyTitle="Produk: tidak ada data."
+          getRowKey={product => product.id}
           loading={loading}
+          renderActions={product => (
+            <KolamButton
+              label="Lihat"
+              onPress={() => onRouteChange?.(`/products/${product.id}`)}
+            />
+          )}
+          rows={products}
           subtitle={`${totals.products || products.length} item`}
-          tableId="location-product"
-          title="Produk">
-          {products.map(product => (
-            <LocationProductInventoryRow
-              key={product.id}
-              onRouteChange={onRouteChange}
-              product={product}
-            />
-          ))}
-        </InventoryTableBlock>
+          title="Produk"
+        />
         <InventoryTableBlock
-          empty={enclosures.length === 0}
+          columns={buildLocationEnclosureInventoryColumns()}
+          emptyTitle="Kandang: tidak ada data."
+          getRowKey={enclosure => enclosure.id}
           loading={loading}
+          renderActions={enclosure => (
+            <KolamButton
+              label="Lihat"
+              onPress={() => onRouteChange?.(`/enclosures/${enclosure.id}`)}
+            />
+          )}
+          rows={enclosures}
           subtitle={`${totals.enclosures || enclosures.length} unit`}
-          tableId="location-enclosure"
-          title="Kandang">
-          {enclosures.map(enclosure => (
-            <LocationEnclosureInventoryRow
-              enclosure={enclosure}
-              key={enclosure.id}
-              onRouteChange={onRouteChange}
-            />
-          ))}
-        </InventoryTableBlock>
+          title="Kandang"
+        />
         <InventoryTableBlock
-          empty={assets.length === 0}
+          columns={buildLocationAssetInventoryColumns()}
+          emptyTitle="Aset: tidak ada data."
+          getRowKey={asset => asset.id}
           loading={loading}
-          subtitle={`${totals.assets || assets.length} item`}
-          tableId="location-asset"
-          title="Aset">
-          {assets.map(asset => (
-            <LocationAssetInventoryRow
-              asset={asset}
-              key={asset.id}
-              onRouteChange={onRouteChange}
+          renderActions={asset => (
+            <KolamButton
+              label="Lihat"
+              onPress={() => onRouteChange?.(`/assets/${asset.id}`)}
             />
-          ))}
-        </InventoryTableBlock>
+          )}
+          rows={assets}
+          subtitle={`${totals.assets || assets.length} item`}
+          title="Aset"
+        />
       </View>
     </KolamContentFrame>
   );
@@ -1458,39 +1376,18 @@ function SectionTitle({
   );
 }
 
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailRowLabel}>{label}</Text>
-      <View style={styles.detailRowValue}>
-        {typeof value === 'string' || typeof value === 'number' ? (
-          <Text style={styles.detailRowText}>{value}</Text>
-        ) : (
-          value
-        )}
-      </View>
-    </View>
-  );
-}
-
 function LocationParentInline({
   parent,
 }: {
   parent: KolamLocationDetailItem['parent'];
 }) {
   if (!parent) {
-    return <Text style={styles.detailRowText}>-</Text>;
+    return <Text style={styles.summaryInlineText}>-</Text>;
   }
 
   return (
     <View style={styles.inlineBadgeRow}>
-      <Text style={styles.detailRowText}>{parent.name || parent.id}</Text>
+      <Text style={styles.summaryInlineText}>{parent.name || parent.id}</Text>
       {parent.type ? (
         <KolamStatusBadge
           intent={getLocationTypeIntent(parent.type)}
@@ -1535,31 +1432,6 @@ function HierarchyItem({
   );
 }
 
-function ContactBlock({
-  label,
-  onPress,
-  value,
-}: {
-  label: string;
-  onPress?: () => void;
-  value: string;
-}) {
-  return (
-    <View style={styles.contactBlock}>
-      <Text style={styles.contactLabel}>{label}</Text>
-      {onPress ? (
-        <KolamButton
-          label={value}
-          onPress={onPress}
-          style={styles.contactButton}
-        />
-      ) : (
-        <Text style={styles.contactValue}>{value || '-'}</Text>
-      )}
-    </View>
-  );
-}
-
 function LabeledFormField({
   children,
   label,
@@ -1598,19 +1470,23 @@ function LocationTierCard({
   );
 }
 
-function InventoryTableBlock({
-  children,
-  empty,
+function InventoryTableBlock<TRow>({
+  columns,
+  emptyTitle,
+  getRowKey,
   loading,
+  renderActions,
+  rows,
   subtitle,
-  tableId,
   title,
 }: {
-  children: React.ReactNode;
-  empty: boolean;
+  columns: Array<KolamListTableColumn<TRow>>;
+  emptyTitle: string;
+  getRowKey: (row: TRow, index: number) => string;
   loading: boolean;
+  renderActions: (row: TRow) => React.ReactNode;
+  rows: TRow[];
   subtitle: string;
-  tableId: Parameters<typeof getKolamTableColumns>[0];
   title: string;
 }) {
   return (
@@ -1619,147 +1495,220 @@ function InventoryTableBlock({
         <Text style={styles.inventoryTitle}>{title}</Text>
         <Text style={styles.inventorySubtitle}>{subtitle}</Text>
       </View>
-      <View style={styles.inventoryTable}>
-        <KolamDataTableHeader columns={getKolamTableColumns(tableId)} />
-        {loading ? (
-          <View style={styles.inventoryEmpty}>
-            <Text style={styles.mutedText}>Memuat {title.toLowerCase()}...</Text>
-          </View>
-        ) : empty ? (
-          <View style={styles.inventoryEmpty}>
-            <Text style={styles.mutedText}>{title}: tidak ada data.</Text>
-          </View>
-        ) : (
-          children
-        )}
-      </View>
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle={loading ? `Memuat ${title.toLowerCase()}...` : emptyTitle}
+        getRowKey={getRowKey}
+        loading={loading}
+        renderActions={renderActions}
+        rows={rows}
+        showFooter={false}
+      />
     </View>
   );
 }
 
-function LocationProductInventoryRow({
-  onRouteChange,
-  product,
-}: {
-  onRouteChange?: (route: string) => void;
-  product: KolamLocationProductRow;
-}) {
-  const imageUri = getKolamFileUrl(product.thumbnailImage);
-
-  return (
-    <KolamDataTableRowFrame>
-      <View style={styles.inventoryPhotoCell}>
-        {imageUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${product.name}`}
-            resizeMode="cover"
-            scope="location-product"
-            sourceUri={imageUri}
-            style={styles.inventoryPhoto}
-          />
-        ) : (
-          <Text style={styles.mutedText}>-</Text>
-        )}
-      </View>
-      <View style={styles.inventoryNameCell}>
-        <Text style={styles.inventoryNameText}>{product.name}</Text>
-      </View>
-      <KolamDataTableMetaCell style={styles.inventoryCodeCell}>
-        {product.sku || '-'}
-      </KolamDataTableMetaCell>
-      <KolamDataTableAmountCell style={styles.inventoryStockCell}>
-        {product.stock}
-      </KolamDataTableAmountCell>
-      <View style={styles.inventoryStatusCell}>
+function buildLocationProductInventoryColumns(): Array<
+  KolamListTableColumn<KolamLocationProductRow>
+> {
+  return [
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'photo',
+      label: 'Foto',
+      render: product => (
+        <InventoryPhoto
+          label={`Foto ${product.name}`}
+          scope="location-product"
+          sourceUri={getKolamFileUrl(product.thumbnailImage)}
+        />
+      ),
+    },
+    {
+      flex: 1.45,
+      id: 'name',
+      label: 'Produk',
+      render: product => (
+        <Text numberOfLines={2} style={styles.inventoryNameText}>
+          {product.name}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'sku',
+      label: 'SKU',
+      render: product => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {product.sku || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.65,
+      id: 'stock',
+      label: 'Stok',
+      render: product => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {product.stock}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'status',
+      label: 'Status',
+      render: product => (
         <KolamStatusBadge
           intent={product.sellable ? 'success' : 'secondary'}
           label={product.sellable ? 'Layak Jual' : 'Tidak Layak Jual'}
         />
-      </View>
-      <View style={styles.inventoryActionCell}>
-        <KolamButton
-          label="Lihat"
-          onPress={() => onRouteChange?.(`/products/${product.id}`)}
-        />
-      </View>
-    </KolamDataTableRowFrame>
-  );
+      ),
+    },
+  ];
 }
 
-function LocationEnclosureInventoryRow({
-  enclosure,
-  onRouteChange,
-}: {
-  enclosure: KolamLocationEnclosureRow;
-  onRouteChange?: (route: string) => void;
-}) {
-  const imageUri = getKolamFileUrl(enclosure.coverPhotoUrl);
-
-  return (
-    <KolamDataTableRowFrame>
-      <View style={styles.inventoryPhotoCell}>
-        {imageUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Foto ${enclosure.name}`}
-            resizeMode="cover"
-            scope="location-enclosure"
-            sourceUri={imageUri}
-            style={styles.inventoryPhoto}
-          />
-        ) : (
-          <Text style={styles.mutedText}>-</Text>
-        )}
-      </View>
-      <KolamDataTableMetaCell style={styles.enclosureCodeCell}>
-        {enclosure.code || '-'}
-      </KolamDataTableMetaCell>
-      <View style={styles.inventoryNameCell}>
-        <Text style={styles.inventoryNameText}>{enclosure.name}</Text>
-      </View>
-      <KolamDataTableMetaCell style={styles.enclosureTypeCell}>
-        {enclosure.type || '-'}
-      </KolamDataTableMetaCell>
-      <KolamDataTableMetaCell style={styles.enclosurePicCell}>
-        {enclosure.assignedToName || '-'}
-      </KolamDataTableMetaCell>
-      <KolamDataTableMetaCell style={styles.inventoryStatusTextCell}>
-        {enclosure.status || '-'}
-      </KolamDataTableMetaCell>
-      <View style={styles.inventoryActionCell}>
-        <KolamButton
-          label="Lihat"
-          onPress={() => onRouteChange?.(`/enclosures/${enclosure.id}`)}
+function buildLocationEnclosureInventoryColumns(): Array<
+  KolamListTableColumn<KolamLocationEnclosureRow>
+> {
+  return [
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'photo',
+      label: 'Foto',
+      render: enclosure => (
+        <InventoryPhoto
+          label={`Foto ${enclosure.name}`}
+          scope="location-enclosure"
+          sourceUri={getKolamFileUrl(enclosure.coverPhotoUrl)}
         />
-      </View>
-    </KolamDataTableRowFrame>
-  );
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.84,
+      id: 'code',
+      label: 'Kode',
+      render: enclosure => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {enclosure.code || '-'}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.35,
+      id: 'name',
+      label: 'Kandang',
+      render: enclosure => (
+        <Text numberOfLines={2} style={styles.inventoryNameText}>
+          {enclosure.name}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'type',
+      label: 'Tipe',
+      render: enclosure => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {enclosure.type || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1,
+      id: 'pic',
+      label: 'PIC',
+      render: enclosure => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {enclosure.assignedToName || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: enclosure => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {enclosure.status || '-'}
+        </Text>
+      ),
+    },
+  ];
 }
 
-function LocationAssetInventoryRow({
-  asset,
-  onRouteChange,
+function buildLocationAssetInventoryColumns(): Array<
+  KolamListTableColumn<KolamLocationAssetRow>
+> {
+  return [
+    {
+      flex: 1.5,
+      id: 'name',
+      label: 'Aset',
+      render: asset => (
+        <Text numberOfLines={2} style={styles.inventoryNameText}>
+          {asset.name}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'code',
+      label: 'Kode',
+      render: asset => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {asset.code || '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.86,
+      id: 'status',
+      label: 'Status',
+      render: asset => (
+        <Text numberOfLines={1} style={styles.inventoryCenterText}>
+          {asset.status || '-'}
+        </Text>
+      ),
+    },
+  ];
+}
+
+function InventoryPhoto({
+  label,
+  scope,
+  sourceUri,
 }: {
-  asset: KolamLocationAssetRow;
-  onRouteChange?: (route: string) => void;
+  label: string;
+  scope: string;
+  sourceUri: string | null;
 }) {
   return (
-    <KolamDataTableRowFrame>
-      <View style={styles.inventoryNameCell}>
-        <Text style={styles.inventoryNameText}>{asset.name}</Text>
-      </View>
-      <KolamDataTableMetaCell style={styles.inventoryCodeCell}>
-        {asset.code || '-'}
-      </KolamDataTableMetaCell>
-      <KolamDataTableMetaCell style={styles.inventoryStatusTextCell}>
-        {asset.status || '-'}
-      </KolamDataTableMetaCell>
-      <View style={styles.inventoryActionCell}>
-        <KolamButton
-          label="Lihat"
-          onPress={() => onRouteChange?.(`/assets/${asset.id}`)}
+    <View style={styles.inventoryPhotoCell}>
+      {sourceUri ? (
+        <KolamRemoteImage
+          accessibilityLabel={label}
+          resizeMode="cover"
+          scope={scope}
+          sourceUri={sourceUri}
+          style={styles.inventoryPhoto}
         />
-      </View>
-    </KolamDataTableRowFrame>
+      ) : (
+        <Text style={styles.mutedText}>-</Text>
+      )}
+    </View>
   );
 }
 
@@ -2092,30 +2041,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  detailRows: {
-    gap: 0,
-  },
-  detailRow: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 16,
-    paddingVertical: 10,
-  },
-  detailRowLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 20,
-    width: 148,
-  },
-  detailRowValue: {
-    flex: 1,
-    minWidth: 0,
-  },
-  detailRowText: {
+  summaryInlineText: {
     color: V.colors.fg,
     fontSize: 13,
+    fontWeight: '600',
     lineHeight: 20,
   },
   inlineBadgeRow: {
@@ -2165,30 +2094,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   inlineActionButton: {
-    alignSelf: 'flex-start',
-  },
-  contactStack: {
-    gap: 10,
-  },
-  contactBlock: {
-    gap: 4,
-  },
-  contactLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  contactValue: {
-    backgroundColor: V.colors.muted,
-    borderRadius: 8,
-    color: V.colors.fg,
-    fontSize: 13,
-    lineHeight: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  contactButton: {
     alignSelf: 'flex-start',
   },
   formStack: {
@@ -2305,31 +2210,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  inventoryTable: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  inventoryEmpty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 92,
-    padding: 16,
-  },
   inventoryPhotoCell: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 64,
+    width: '100%',
   },
   inventoryPhoto: {
     borderRadius: 8,
     height: 40,
     width: 40,
-  },
-  inventoryNameCell: {
-    flex: 1,
-    minWidth: 0,
   },
   inventoryNameText: {
     color: V.colors.fg,
@@ -2337,30 +2226,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 20,
   },
-  inventoryCodeCell: {
-    width: 118,
-  },
-  inventoryStockCell: {
-    width: 90,
-  },
-  inventoryStatusCell: {
-    width: 126,
-  },
-  inventoryStatusTextCell: {
-    width: 126,
-  },
-  inventoryActionCell: {
-    alignItems: 'flex-end',
-    width: 64,
-  },
-  enclosureCodeCell: {
-    width: 104,
-  },
-  enclosureTypeCell: {
-    width: 120,
-  },
-  enclosurePicCell: {
-    width: 140,
+  inventoryCenterText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+    textAlign: 'center',
+    width: '100%',
   },
   mutedText: {
     color: V.colors.mutedFg,
