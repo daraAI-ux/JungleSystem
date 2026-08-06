@@ -135,6 +135,7 @@ function KolamTopNavigationControlTooltip({
   label: string;
 }) {
   const [visible, setVisible] = React.useState(false);
+  const bubbleWidth = Math.min(220, Math.max(96, label.length * 8 + 28));
 
   return (
     <View
@@ -143,7 +144,9 @@ function KolamTopNavigationControlTooltip({
       style={[styles.tooltipRoot, visible ? styles.tooltipRootOpen : null]}>
       {children}
       {visible ? (
-        <View pointerEvents="none" style={styles.tooltipBubble}>
+        <View
+          pointerEvents="none"
+          style={[styles.tooltipBubble, {width: bubbleWidth}]}>
           <Text numberOfLines={1} style={styles.tooltipText}>
             {label}
           </Text>
@@ -175,9 +178,7 @@ const styles = StyleSheet.create({
     elevation: 130,
     justifyContent: 'center',
     marginTop: 7,
-    maxWidth: 180,
     minHeight: 28,
-    minWidth: 96,
     paddingHorizontal: 9,
     paddingVertical: 5,
     position: 'absolute',
