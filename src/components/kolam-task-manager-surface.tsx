@@ -1944,6 +1944,11 @@ function KolamTaskRecurringPanel({
 
   return (
     <View style={styles.detailStack}>
+      <KolamTaskRecurringKpiRow
+        controller={controller}
+        scheduleRows={scheduleRows}
+      />
+
       {controller.isTaskAdmin ? (
         <KolamTaskRecurringEnrollmentDashboard controller={controller} />
       ) : null}
@@ -2076,6 +2081,81 @@ function KolamTaskRecurringPanel({
           style={styles.recurringScheduleTable}
         />
       </View>
+    </View>
+  );
+}
+
+function KolamTaskRecurringKpiRow({
+  controller,
+  scheduleRows,
+}: {
+  controller: KolamTaskManagerController;
+  scheduleRows: RecurringScheduleRow[];
+}) {
+  const activeTemplates = controller.recurringTemplates.filter(
+    template => template.active,
+  ).length;
+  const pendingCount = scheduleRows.filter(
+    row => row.status === 'pending',
+  ).length;
+  const doneCount = scheduleRows.filter(row => row.status === 'done').length;
+  const missedCount = scheduleRows.filter(
+    row => row.status === 'missed',
+  ).length;
+  const cards = [
+    {
+      id: 'pending',
+      iconElement: <KolamTodoTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Pending',
+      value: pendingCount,
+      tone: 'warning',
+    },
+    {
+      id: 'done',
+      iconElement: <KolamSelesaiTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Selesai',
+      value: doneCount,
+      tone: 'success',
+    },
+    {
+      id: 'missed',
+      iconElement: <KolamOverdueTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Terlewat',
+      value: missedCount,
+      tone: 'danger',
+    },
+    {
+      id: 'templates',
+      iconElement: <KolamProsesTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Template aktif',
+      value: activeTemplates,
+      tone: 'info',
+    },
+    {
+      id: 'total',
+      iconElement: <KolamTotalTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Total jadwal',
+      value: scheduleRows.length,
+      tone: 'muted',
+    },
+  ] as const;
+
+  return (
+    <View style={styles.kpiRow}>
+      {cards.map(card => (
+        <View key={card.id} style={styles.kpiCard}>
+          <View style={[styles.kpiAccent, getTaskKpiAccentStyle(card.tone)]} />
+          <View style={[styles.kpiBody, styles.kpiBodyWithIcon]}>
+            <Text numberOfLines={1} style={styles.kpiLabel}>
+              {card.label}
+            </Text>
+            <Text numberOfLines={1} style={styles.kpiValue}>
+              {card.value}
+            </Text>
+          </View>
+          <View style={styles.kpiIconShell}>{card.iconElement}</View>
+        </View>
+      ))}
     </View>
   );
 }
