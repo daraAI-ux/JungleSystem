@@ -662,12 +662,18 @@ function KolamLocationDetail({
         />
       ) : null}
 
-      <KolamLocationSummaryCard location={location} />
-      <KolamLocationHierarchyCard
-        descendants={descendants}
-        location={location}
-        onRouteChange={onRouteChange}
-      />
+      <View style={styles.detailGrid}>
+        <View style={styles.detailMainColumn}>
+          <KolamLocationSummaryCard location={location} />
+        </View>
+        <View style={styles.detailSideColumn}>
+          <KolamLocationHierarchyCard
+            descendants={descendants}
+            location={location}
+            onRouteChange={onRouteChange}
+          />
+        </View>
+      </View>
       <KolamLocationInventorySection
         locationId={location.id}
         onRouteChange={onRouteChange}
@@ -2014,7 +2020,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   detailMainColumn: {
-    flex: 2,
+    flex: 3,
     gap: 12,
     minWidth: 420,
   },
