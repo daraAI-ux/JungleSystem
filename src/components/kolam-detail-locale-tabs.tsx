@@ -1,11 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import type { KolamCountryFlagOption } from '../domain/kolam-country-flags';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamLabelFieldDetailSectionItem } from './kolam-label-field-detail-overview';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
-import { KolamFlagIcon } from './kolam-flag-icon';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
+import { KolamStatusBadge } from './kolam-status-badge';
 
 export interface KolamDetailLocaleField {
   label: string;
@@ -48,7 +47,6 @@ export function KolamDetailLocaleTabs({
   );
   const activeItem = items[activeIndex] ?? items[0];
   const localeFields = activeItem.fields?.filter(field => field.label) ?? [];
-  const activeLocaleFlag = getLocaleFlagOption(activeItem.badge);
 
   return (
     <View style={styles.stack}>
@@ -56,31 +54,19 @@ export function KolamDetailLocaleTabs({
         {items.map((item, index) => {
           const key = getLocaleItemKey(item, index);
           const selected = key === safeActiveKey;
-          const localeFlag = getLocaleFlagOption(item.badge ?? item.title);
           return (
             <KolamInteractionFrame
               accessibilityLabel={`Buka terjemahan ${item.title}`}
-              accessibilityState={localeFlag ? undefined : { selected }}
               key={key}
               onPress={() => setActiveKey(key)}
-              selected={localeFlag ? undefined : selected}
-              style={[
-                localeFlag ? styles.flagTab : styles.tab,
-                !localeFlag && selected ? styles.tabActive : null,
-              ]}
+              selected={selected}
+              style={[styles.tab, selected ? styles.tabActive : null]}
             >
-              {localeFlag ? (
-                <KolamFlagIcon option={localeFlag} />
-              ) : (
-                <Text
-                  style={[
-                    styles.tabText,
-                    selected ? styles.tabTextActive : null,
-                  ]}
-                >
-                  {item.badge || item.title}
-                </Text>
-              )}
+              <Text
+                style={[styles.tabText, selected ? styles.tabTextActive : null]}
+              >
+                {item.badge || item.title}
+              </Text>
             </KolamInteractionFrame>
           );
         })}
@@ -88,10 +74,8 @@ export function KolamDetailLocaleTabs({
       <View style={styles.panel}>
         <View style={styles.panelHeader}>
           <Text style={styles.title}>{activeItem.title}</Text>
-          {activeLocaleFlag ? (
-            <KolamFlagIcon option={activeLocaleFlag} size="md" />
-          ) : activeItem.badge ? (
-            <Text style={styles.panelBadgeFallback}>{activeItem.badge}</Text>
+          {activeItem.badge ? (
+            <KolamStatusBadge intent="success" label={activeItem.badge} />
           ) : null}
         </View>
         {activeItem.meta ? (
@@ -199,64 +183,6 @@ function getLocaleItemKey(
   return item ? `${item.badge ?? item.title}-${index}` : '';
 }
 
-function getLocaleFlagOption(
-  value: string | undefined,
-): KolamCountryFlagOption | null {
-  const normalized = value?.trim().toLowerCase();
-  if (!normalized) {
-    return null;
-  }
-
-  if (
-    normalized === 'id' ||
-    normalized === 'id-id' ||
-    normalized === 'indonesia' ||
-    normalized === 'indonesian' ||
-    normalized === 'bahasa indonesia'
-  ) {
-    return createLocaleFlagOption('ID', 'Indonesia');
-  }
-
-  if (
-    normalized === 'en' ||
-    normalized === 'en-us' ||
-    normalized === 'english' ||
-    normalized === 'inggris'
-  ) {
-    return createLocaleFlagOption('US', 'English');
-  }
-
-  if (normalized === 'en-gb' || normalized === 'gb' || normalized === 'uk') {
-    return createLocaleFlagOption('GB', 'English');
-  }
-
-  if (normalized === 'ja' || normalized === 'jp' || normalized === 'japanese') {
-    return createLocaleFlagOption('JP', 'Japanese');
-  }
-
-  if (normalized === 'ko' || normalized === 'kr' || normalized === 'korean') {
-    return createLocaleFlagOption('KR', 'Korean');
-  }
-
-  if (normalized === 'zh' || normalized === 'cn' || normalized === 'chinese') {
-    return createLocaleFlagOption('CN', 'Chinese');
-  }
-
-  return null;
-}
-
-function createLocaleFlagOption(
-  code: string,
-  country: string,
-): KolamCountryFlagOption {
-  return {
-    code,
-    country,
-    flag: code,
-    imageUrl: null,
-  };
-}
-
 const styles = StyleSheet.create({
   stack: {
     gap: 12,
@@ -279,15 +205,6 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: '#16a34a',
-  },
-  flagTab: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    minHeight: 18,
-    minWidth: 24,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
   },
   tabText: {
     color: V.colors.mutedFg,
@@ -312,13 +229,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     justifyContent: 'space-between',
-  },
-  panelBadgeFallback: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 16,
   },
   title: {
     color: V.colors.fg,
