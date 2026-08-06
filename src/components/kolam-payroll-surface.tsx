@@ -896,8 +896,8 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   tableFrame: {
-    flex: 1,
-    minHeight: 0,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   detailTableFrame: {
     alignSelf: 'stretch',
