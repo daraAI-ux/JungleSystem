@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   getKolamBonusStatusIntent,
   KOLAM_BONUS_MONTH_OPTIONS,
@@ -13,25 +13,17 @@ import {
 } from '../hooks/use-kolam-bonus-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const BONUS_COLUMNS = [
-  { id: 'code', label: 'Kode', flex: 0.9 },
-  { id: 'employee', label: 'Karyawan', flex: 1.2 },
-  { id: 'amount', label: 'Jumlah', flex: 1 },
-  { id: 'status', label: 'Status', flex: 0.9 },
-  { id: 'date', label: 'Tanggal', flex: 1.2 },
-] as const;
 
 export function KolamBonusSurface({
   onRouteChange,
@@ -147,66 +139,70 @@ function BonusToolbar({
 }
 
 function BonusList({ controller }: { controller: KolamBonusListController }) {
-  const renderRow = ({ item }: { item: KolamBonusListRow }) => (
-    <View style={styles.row}>
-      <View style={[styles.cell, { flex: 0.9 }]}>
-        <Text style={styles.primaryText}>{item.code || item.name || '—'}</Text>
-      </View>
-      <View style={[styles.cell, { flex: 1.2 }]}>
-        <Text style={styles.primaryText}>{item.employeeLabel}</Text>
-      </View>
-      <View style={[styles.cell, { flex: 1 }]}>
-        <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
-      </View>
-      <View style={[styles.cell, { flex: 0.9 }]}>
-        <KolamStatusBadge
-          intent={getKolamBonusStatusIntent(item.status)}
-          label={item.statusLabel}
-        />
-      </View>
-      <View style={[styles.cell, { flex: 1.2 }]}>
-        <Text style={styles.metaText}>
-          {formatBonusDate(item.executedAt || item.createdAt)}
-        </Text>
-      </View>
-    </View>
+  const columns = React.useMemo(
+    () => [
+      {
+        id: 'code',
+        label: 'Kode',
+        flex: 0.9,
+        render: (item: KolamBonusListRow) => (
+          <Text style={styles.primaryText}>
+            {item.code || item.name || '—'}
+          </Text>
+        ),
+      },
+      {
+        id: 'employee',
+        label: 'Karyawan',
+        flex: 1.2,
+        render: (item: KolamBonusListRow) => (
+          <Text style={styles.primaryText}>{item.employeeLabel}</Text>
+        ),
+      },
+      {
+        id: 'amount',
+        label: 'Jumlah',
+        flex: 1,
+        render: (item: KolamBonusListRow) => (
+          <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
+        ),
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        flex: 0.9,
+        render: (item: KolamBonusListRow) => (
+          <KolamStatusBadge
+            intent={getKolamBonusStatusIntent(item.status)}
+            label={item.statusLabel}
+          />
+        ),
+      },
+      {
+        id: 'date',
+        label: 'Tanggal',
+        flex: 1.2,
+        render: (item: KolamBonusListRow) => (
+          <Text style={styles.metaText}>
+            {formatBonusDate(item.executedAt || item.createdAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
   );
 
   return (
-    <KolamCatalogListTableShell fill footer={null} style={styles.tableFrame}>
-      <FlatList
-        data={controller.rows}
-        keyExtractor={item => item.id}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              title={
-                !controller.canView
-                  ? 'Akses ditolak'
-                  : controller.loading
-                    ? 'Memuat…'
-                    : 'Belum ada bonus'
-              }
-            />
-          </View>
-        }
-        ListHeaderComponent={
-          <View style={styles.headerRow}>
-            {BONUS_COLUMNS.map(column => (
-              <View
-                key={column.id}
-                style={[styles.cell, { flex: column.flex }]}
-              >
-                <Text style={styles.headerCellText}>{column.label}</Text>
-              </View>
-            ))}
-          </View>
-        }
-        renderItem={renderRow}
-        style={styles.list}
-      />
-    </KolamCatalogListTableShell>
+    <KolamListTableComposition
+      columns={columns}
+      emptyTitle={!controller.canView ? 'Akses ditolak' : 'Belum ada bonus'}
+      fill
+      getRowKey={item => item.id}
+      loading={controller.loading}
+      rows={controller.rows}
+      showFooter={false}
+      style={styles.tableFrame}
+    />
   );
 }
 
@@ -384,41 +380,6 @@ const styles = StyleSheet.create({
   tableFrame: {
     flex: 1,
     minHeight: 0,
-  },
-  list: {
-    flex: 1,
-  },
-  emptyWrap: {
-    paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  cell: {
-    justifyContent: 'center',
-    paddingHorizontal: 4,
   },
   primaryText: {
     color: V.colors.fg,

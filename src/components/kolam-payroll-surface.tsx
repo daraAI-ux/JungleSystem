@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamPayrollPeriodStatusLabel,
   getKolamPayrollPeriodStatusIntent,
@@ -21,36 +21,13 @@ import { buildKolamDaraTaxRoute } from '../domain/kolam-finance-tax';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamPayrollSlipPrintDialog } from './kolam-payroll-slip-print-dialog';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const PERIOD_COLUMNS = [
-  { id: 'period', label: 'Periode', flex: 1 },
-  { id: 'status', label: 'Status', flex: 0.8 },
-  { id: 'slips', label: 'Slip', flex: 0.6 },
-  { id: 'thp', label: 'THP', flex: 1 },
-  { id: 'wallet', label: 'Dompet', flex: 1 },
-  { id: 'action', label: '', flex: 0.7 },
-] as const;
-
-const SLIP_COLUMNS = [
-  { id: 'code', label: 'Kode', flex: 0.9 },
-  { id: 'employee', label: 'Karyawan', flex: 1.2 },
-  { id: 'thp', label: 'THP', flex: 1 },
-  { id: 'pkp', label: 'PKP', flex: 0.5 },
-  { id: 'action', label: '', flex: 1.1 },
-] as const;
-
-const PENDING_COLUMNS = [
-  { id: 'name', label: 'Karyawan', flex: 1.6 },
-  { id: 'salary', label: 'Pokok', flex: 1 },
-  { id: 'action', label: '', flex: 0.8 },
-] as const;
 
 type DetailListTab = 'slips' | 'pending';
 
@@ -129,43 +106,73 @@ function PayrollListBody({
     value: String(option.value),
   }));
 
-  const renderRow = ({ item }: { item: KolamPayrollPeriod }) => (
-    <View style={styles.row}>
-      <View style={[styles.cell, { flex: 1 }]}>
-        <Text style={styles.primaryText}>{item.periodKey}</Text>
-      </View>
-      <View style={[styles.cell, { flex: 0.8 }]}>
-        <KolamStatusBadge
-          intent={getKolamPayrollPeriodStatusIntent(item.status)}
-          label={formatKolamPayrollPeriodStatusLabel(item.status)}
-        />
-      </View>
-      <View style={[styles.cell, { flex: 0.6 }]}>
-        <Text style={styles.metaText}>{item.slipCount}</Text>
-      </View>
-      <View style={[styles.cell, { flex: 1 }]}>
-        <Text style={styles.primaryText}>
-          {formatRupiah(item.totalTakeHome)}
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: 1 }]}>
-        <Text numberOfLines={1} style={styles.metaText}>
-          {item.walletName || '—'}
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: 0.7 }]}>
-        <KolamButton
-          intent="secondary"
-          label="Buka"
-          onPress={() =>
-            onRouteChange?.(buildKolamPayrollPeriodRoute(item.periodKey))
-          }
-          style={styles.rowAction}
-        />
-      </View>
-    </View>
+  const periodColumns = React.useMemo(
+    () => [
+      {
+        id: 'period',
+        label: 'Periode',
+        flex: 1,
+        render: (item: KolamPayrollPeriod) => (
+          <Text style={styles.primaryText}>{item.periodKey}</Text>
+        ),
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        flex: 0.8,
+        render: (item: KolamPayrollPeriod) => (
+          <KolamStatusBadge
+            intent={getKolamPayrollPeriodStatusIntent(item.status)}
+            label={formatKolamPayrollPeriodStatusLabel(item.status)}
+          />
+        ),
+      },
+      {
+        id: 'slips',
+        label: 'Slip',
+        flex: 0.6,
+        render: (item: KolamPayrollPeriod) => (
+          <Text style={styles.metaText}>{item.slipCount}</Text>
+        ),
+      },
+      {
+        id: 'thp',
+        label: 'THP',
+        flex: 1,
+        render: (item: KolamPayrollPeriod) => (
+          <Text style={styles.primaryText}>
+            {formatRupiah(item.totalTakeHome)}
+          </Text>
+        ),
+      },
+      {
+        id: 'wallet',
+        label: 'Dompet',
+        flex: 1,
+        render: (item: KolamPayrollPeriod) => (
+          <Text numberOfLines={1} style={styles.metaText}>
+            {item.walletName || '—'}
+          </Text>
+        ),
+      },
+      {
+        id: 'action',
+        label: '',
+        flex: 0.7,
+        render: (item: KolamPayrollPeriod) => (
+          <KolamButton
+            intent="secondary"
+            label="Buka"
+            onPress={() =>
+              onRouteChange?.(buildKolamPayrollPeriodRoute(item.periodKey))
+            }
+            style={styles.rowAction}
+          />
+        ),
+      },
+    ],
+    [onRouteChange],
   );
-
   return (
     <View style={styles.listBody}>
       <View style={kolamTableToolbarStyles.shell}>
@@ -226,34 +233,16 @@ function PayrollListBody({
         </View>
       </View>
 
-      <KolamCatalogListTableShell fill footer={null} style={styles.tableFrame}>
-        <FlatList
-          data={controller.filteredPeriods}
-          keyExtractor={item => item.id || item.periodKey}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={controller.loading ? 'Memuat…' : 'Belum ada periode'}
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {PERIOD_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.list}
-        />
-      </KolamCatalogListTableShell>
+      <KolamListTableComposition
+        columns={periodColumns}
+        emptyTitle="Belum ada periode"
+        fill
+        getRowKey={item => item.id || item.periodKey}
+        loading={controller.loading}
+        rows={controller.filteredPeriods}
+        showFooter={false}
+        style={styles.tableFrame}
+      />
     </View>
   );
 }
@@ -306,84 +295,131 @@ function PayrollDetailBody({
     return pending.filter(row => row.name.toLowerCase().includes(q));
   }, [employeeSearch, pending]);
 
-  const renderSlipRow = ({ item }: { item: KolamPayrollSlip }) => {
-    const hasErrorWarning = item.warnings.some(
-      warning => warning.severity === 'error',
-    );
-    const isPkp = item.employeeSnapshot.isPkp;
-    return (
-      <View style={styles.row}>
-        <View style={[styles.cell, { flex: 0.9 }]}>
+  const slipColumns = React.useMemo(
+    () => [
+      {
+        id: 'code',
+        label: 'Kode',
+        flex: 0.9,
+        render: (item: KolamPayrollSlip) => (
           <Text style={styles.primaryText}>{item.slipCode || '—'}</Text>
-        </View>
-        <View style={[styles.cell, { flex: 1.2 }]}>
-          <Text style={styles.primaryText}>{item.userLabel}</Text>
-          {item.employeeNumber ? (
-            <Text style={styles.metaText}>{item.employeeNumber}</Text>
-          ) : null}
-        </View>
-        <View style={[styles.cell, { flex: 1 }]}>
+        ),
+      },
+      {
+        id: 'employee',
+        label: 'Karyawan',
+        flex: 1.2,
+        render: (item: KolamPayrollSlip) => (
+          <View>
+            <Text style={styles.primaryText}>{item.userLabel}</Text>
+            {item.employeeNumber ? (
+              <Text style={styles.metaText}>{item.employeeNumber}</Text>
+            ) : null}
+          </View>
+        ),
+      },
+      {
+        id: 'thp',
+        label: 'THP',
+        flex: 1,
+        render: (item: KolamPayrollSlip) => (
           <Text style={styles.primaryText}>
             {formatRupiah(item.takeHomePay)}
           </Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.5 }]}>
-          <Text style={styles.metaText}>
-            {isPkp ? 'Y' : '—'}
-            {hasErrorWarning ? ' !' : ''}
-          </Text>
-        </View>
-        <View style={[styles.cell, styles.actionCell, { flex: 1.1 }]}>
-          {!isFinal && controller.canUpdate ? (
+        ),
+      },
+      {
+        id: 'pkp',
+        label: 'PKP',
+        flex: 0.5,
+        render: (item: KolamPayrollSlip) => {
+          const hasErrorWarning = item.warnings.some(
+            warning => warning.severity === 'error',
+          );
+          const isPkp = item.employeeSnapshot.isPkp;
+          return (
+            <Text style={styles.metaText}>
+              {isPkp ? 'Y' : '—'}
+              {hasErrorWarning ? ' !' : ''}
+            </Text>
+          );
+        },
+      },
+      {
+        id: 'action',
+        label: '',
+        flex: 1.1,
+        render: (item: KolamPayrollSlip) => (
+          <View style={styles.actionCell}>
+            {!isFinal && controller.canUpdate ? (
+              <KolamButton
+                disabled={controller.mutating || !item.userId}
+                intent="secondary"
+                label="↻"
+                onPress={() => {
+                  void controller.onGenerateOne({ userId: item.userId });
+                }}
+                style={styles.iconAction}
+              />
+            ) : null}
             <KolamButton
-              disabled={controller.mutating || !item.userId}
               intent="secondary"
-              label="↻"
-              onPress={() => {
-                void controller.onGenerateOne({ userId: item.userId });
-              }}
-              style={styles.iconAction}
+              label="Slip"
+              onPress={() => onRouteChange?.(buildKolamPayrollSlipRoute(item.id))}
+              style={styles.rowAction}
             />
-          ) : null}
-          <KolamButton
-            intent="secondary"
-            label="Slip"
-            onPress={() => onRouteChange?.(buildKolamPayrollSlipRoute(item.id))}
-            style={styles.rowAction}
-          />
-        </View>
-      </View>
-    );
-  };
-
-  const renderPendingRow = ({ item }: { item: KolamPayrollPendingEmployee }) => (
-    <View style={styles.row}>
-      <View style={[styles.cell, { flex: 1.6 }]}>
-        <Text style={styles.primaryText}>{item.name || '—'}</Text>
-        {item.isPkp ? <Text style={styles.metaText}>PKP</Text> : null}
-      </View>
-      <View style={[styles.cell, { flex: 1 }]}>
-        <Text style={styles.primaryText}>
-          {item.salary != null ? formatRupiah(item.salary) : '—'}
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: 0.8 }]}>
-        <KolamButton
-          disabled={controller.mutating || !item.userId}
-          intent="secondary"
-          label="Buat"
-          onPress={() => {
-            void controller.onGenerateOne({
-              userId: item.userId,
-              openSlip: true,
-            });
-          }}
-          style={styles.rowAction}
-        />
-      </View>
-    </View>
+          </View>
+        ),
+      },
+    ],
+    [controller, isFinal, onRouteChange],
   );
 
+  const pendingColumns = React.useMemo(
+    () => [
+      {
+        id: 'name',
+        label: 'Karyawan',
+        flex: 1.6,
+        render: (item: KolamPayrollPendingEmployee) => (
+          <View>
+            <Text style={styles.primaryText}>{item.name || '—'}</Text>
+            {item.isPkp ? <Text style={styles.metaText}>PKP</Text> : null}
+          </View>
+        ),
+      },
+      {
+        id: 'salary',
+        label: 'Pokok',
+        flex: 1,
+        render: (item: KolamPayrollPendingEmployee) => (
+          <Text style={styles.primaryText}>
+            {item.salary != null ? formatRupiah(item.salary) : '—'}
+          </Text>
+        ),
+      },
+      {
+        id: 'action',
+        label: '',
+        flex: 0.8,
+        render: (item: KolamPayrollPendingEmployee) => (
+          <KolamButton
+            disabled={controller.mutating || !item.userId}
+            intent="secondary"
+            label="Buat"
+            onPress={() => {
+              void controller.onGenerateOne({
+                userId: item.userId,
+                openSlip: true,
+              });
+            }}
+            style={styles.rowAction}
+          />
+        ),
+      },
+    ],
+    [controller],
+  );
   if (!period && !controller.loading) {
     return <KolamEmptyState title="Periode tidak ditemukan" />;
   }
@@ -554,63 +590,25 @@ function PayrollDetailBody({
       </View>
 
       {listTab === 'slips' ? (
-        <KolamCatalogListTableShell footer={null} style={styles.detailTableFrame}>
-          <FlatList
-            data={filteredSlips}
-            keyExtractor={item => item.id}
-            ListEmptyComponent={
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  title={controller.loading ? 'Memuat…' : emptySlipMsg}
-                />
-              </View>
-            }
-            ListHeaderComponent={
-              <View style={styles.headerRow}>
-                {SLIP_COLUMNS.map(column => (
-                  <View
-                    key={column.id}
-                    style={[styles.cell, { flex: column.flex }]}
-                  >
-                    <Text style={styles.headerCellText}>{column.label}</Text>
-                  </View>
-                ))}
-              </View>
-            }
-            renderItem={renderSlipRow}
-            scrollEnabled={false}
-          />
-        </KolamCatalogListTableShell>
+        <KolamListTableComposition
+          columns={slipColumns}
+          emptyTitle={emptySlipMsg}
+          getRowKey={item => item.id}
+          loading={controller.loading}
+          rows={filteredSlips}
+          showFooter={false}
+          style={styles.detailTableFrame}
+        />
       ) : (
-        <KolamCatalogListTableShell footer={null} style={styles.detailTableFrame}>
-          <FlatList
-            data={filteredPending}
-            keyExtractor={item => item.userId}
-            ListEmptyComponent={
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  title={controller.loading ? 'Memuat…' : emptyPendingMsg}
-                />
-              </View>
-            }
-            ListHeaderComponent={
-              <View style={styles.headerRow}>
-                {PENDING_COLUMNS.map(column => (
-                  <View
-                    key={column.id}
-                    style={[styles.cell, { flex: column.flex }]}
-                  >
-                    <Text style={styles.headerCellText}>{column.label}</Text>
-                  </View>
-                ))}
-              </View>
-            }
-            renderItem={renderPendingRow}
-            scrollEnabled={false}
-          />
-        </KolamCatalogListTableShell>
+        <KolamListTableComposition
+          columns={pendingColumns}
+          emptyTitle={emptyPendingMsg}
+          getRowKey={item => item.userId}
+          loading={controller.loading}
+          rows={filteredPending}
+          showFooter={false}
+          style={styles.detailTableFrame}
+        />
       )}
     </>
   );
@@ -902,44 +900,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
   },
-  list: {
-    flex: 1,
-  },
   detailTableFrame: {
     alignSelf: 'stretch',
     width: '100%',
   },
   emptyWrap: {
     paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  cell: {
-    justifyContent: 'center',
-    paddingHorizontal: 4,
   },
   primaryText: {
     color: V.colors.fg,
