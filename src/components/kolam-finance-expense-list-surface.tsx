@@ -49,7 +49,6 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamPaginationSummaryLabel,
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -712,16 +711,7 @@ function FinanceExpenseListBody({
       </View>
     ) : null;
 
-  const tableFooter = isAssetPurchase ? (
-    <View style={styles.fixedPageFooter}>
-      <KolamPaginationSummaryLabel
-        page={safePage}
-        pageSize={10}
-        total={controller.pagination.total}
-      />
-      {paginationControls}
-    </View>
-  ) : (
+  const tableFooter = (
     <KolamTableFooterControls
       onPageSizeChange={controller.onLimitChange}
       page={safePage}
@@ -907,9 +897,14 @@ function FinanceExpenseListBody({
           <KolamListTableComposition
             columns={columns}
             emptyTitle="Tidak ada data"
-            footer={tableFooter}
             getRowKey={item => item.id}
             loading={controller.loading}
+            pagination={{
+              onPageChange: controller.onPageChange,
+              page: safePage,
+              pageSize: 10,
+              total: controller.pagination.total,
+            }}
             renderActions={item => (
               <AssetPurchaseRowActions
                 controller={controller}
@@ -1226,14 +1221,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignSelf: 'flex-start',
-  },
-  fixedPageFooter: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-    width: '100%',
   },
   paginationBar: {
     alignItems: 'center',
