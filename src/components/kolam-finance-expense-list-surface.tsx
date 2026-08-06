@@ -43,13 +43,11 @@ import { KolamUnexpectedExpenseFormSurface } from './kolam-unexpected-expense-fo
 import { KolamUnexpectedIncomeDetailSurface } from './kolam-unexpected-income-detail-surface';
 import { KolamUnexpectedIncomeFormSurface } from './kolam-unexpected-income-form-surface';
 import { KolamRoutineExpenseFormSurface } from './kolam-routine-expense-form-surface';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -476,22 +474,20 @@ function AssetPurchaseRowActions({
     </View>
   );
 }
-function UnexpectedIncomeListRow({
-  columns,
+
+function UnexpectedExpenseRowActions({
   controller,
   item,
   kind = 'unexpected-income',
   onRequestDelete,
   onRouteChange,
 }: {
-  columns: ColumnDef[];
   controller: KolamFinanceExpenseListController;
   item: KolamFinanceExpenseListRow;
   kind?: 'unexpected-income' | 'unexpected-expense';
   onRequestDelete?: (row: KolamFinanceExpenseListRow) => void;
   onRouteChange?: (route: string) => void;
 }) {
-  const [menuOpen, setMenuOpen] = React.useState(false);
   const actions = buildCrudListRowActions(
     kind,
     item,
@@ -500,24 +496,16 @@ function UnexpectedIncomeListRow({
     onRequestDelete,
   );
 
+  if (!actions.length) {
+    return null;
+  }
+
   return (
-    <View style={[styles.row, menuOpen ? styles.rowMenuOpen : null]}>
-      {columns.map(column => (
-        <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-          {column.render(item)}
-        </View>
-      ))}
-      <View style={[styles.cell, styles.actionsCell]}>
-        {actions.length > 0 ? (
-          <View style={styles.rowActions}>
-            <KolamOverflowMenuButton
-              accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
-              actions={actions}
-              onOpenChange={setMenuOpen}
-            />
-          </View>
-        ) : null}
-      </View>
+    <View style={styles.rowActions}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
+        actions={actions}
+      />
     </View>
   );
 }
@@ -662,65 +650,6 @@ function FinanceExpenseListBody({
     Boolean(controller.filters.locationId.trim());
 
   const safePage = Math.max(1, controller.pagination.page);
-  const pageCount = Math.max(1, controller.pagination.totalPages);
-
-  const renderRow = (item: KolamFinanceExpenseListRow) => {
-    if (isUnexpectedIncome || isUnexpectedExpense) {
-      return (
-        <UnexpectedIncomeListRow
-          key={item.id}
-          columns={columns}
-          controller={controller}
-          item={item}
-          kind={isUnexpectedIncome ? 'unexpected-income' : 'unexpected-expense'}
-          onRequestDelete={row => setDeleteCandidate(row)}
-          onRouteChange={onRouteChange}
-        />
-      );
-    }
-
-    return (
-      <View key={item.id} style={styles.row}>
-        {columns.map(column => (
-          <View key={column.id} style={[styles.cell, { flex: column.flex }]}>
-            {column.render(item)}
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const paginationControls =
-    pageCount > 1 ? (
-      <View style={styles.paginationBar}>
-        <KolamButton
-          disabled={safePage <= 1 || controller.loading}
-          label="Sebelumnya"
-          onPress={() => controller.onPageChange(Math.max(1, safePage - 1))}
-        />
-        <Text style={styles.pageLabel}>
-          {safePage} / {pageCount}
-        </Text>
-        <KolamButton
-          disabled={safePage >= pageCount || controller.loading}
-          label="Berikutnya"
-          onPress={() =>
-            controller.onPageChange(Math.min(pageCount, safePage + 1))
-          }
-        />
-      </View>
-    ) : null;
-
-  const tableFooter = (
-    <KolamTableFooterControls
-      onPageSizeChange={controller.onLimitChange}
-      page={safePage}
-      pageSize={controller.pagination.limit}
-      total={controller.pagination.total}
-    >
-      {paginationControls}
-    </KolamTableFooterControls>
-  );
 
   return (
     <View style={styles.surface}>
@@ -893,63 +822,46 @@ function FinanceExpenseListBody({
       </View>
 
       <View style={styles.listRoot}>
-        {isAssetPurchase || isRoutineExpense ? (
-          <KolamListTableComposition
-            columns={columns}
-            emptyTitle="Tidak ada data"
-            getRowKey={item => item.id}
-            loading={controller.loading}
-            pagination={{
-              onPageChange: controller.onPageChange,
-              page: safePage,
-              pageSize: isAssetPurchase ? 10 : controller.pagination.limit,
-              total: controller.pagination.total,
-            }}
-            renderActions={
-              isAssetPurchase
+        <KolamListTableComposition
+          columns={columns}
+          emptyTitle="Tidak ada data"
+          getRowKey={item => item.id}
+          loading={controller.loading}
+          pagination={{
+            onPageChange: controller.onPageChange,
+            page: safePage,
+            pageSize: isAssetPurchase ? 10 : controller.pagination.limit,
+            total: controller.pagination.total,
+          }}
+          renderActions={
+            isAssetPurchase
+              ? item => (
+                  <AssetPurchaseRowActions
+                    controller={controller}
+                    item={item}
+                    onRequestDelete={row => setDeleteCandidate(row)}
+                    onRouteChange={onRouteChange}
+                  />
+                )
+              : isUnexpectedIncome || isUnexpectedExpense
                 ? item => (
-                    <AssetPurchaseRowActions
+                    <UnexpectedExpenseRowActions
                       controller={controller}
                       item={item}
+                      kind={
+                        isUnexpectedIncome
+                          ? 'unexpected-income'
+                          : 'unexpected-expense'
+                      }
                       onRequestDelete={row => setDeleteCandidate(row)}
                       onRouteChange={onRouteChange}
                     />
                   )
                 : undefined
-            }
-            rows={controller.rows}
-            style={styles.tableFrame}
-          />
-        ) : (
-          <KolamCatalogListTableShell
-            footer={tableFooter}
-            style={styles.tableFrame}
-          >
-            <View style={styles.headerRow}>
-              {columns.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-              {hasCrudRowMenu ? (
-                <View style={[styles.cell, styles.actionsCell]} />
-              ) : null}
-            </View>
-            {controller.rows.length === 0 ? (
-              <View style={styles.emptyWrap}>
-                <KolamEmptyState
-                  compact
-                  title={controller.loading ? 'Memuat…' : 'Tidak ada data'}
-                />
-              </View>
-            ) : (
-              controller.rows.map(item => renderRow(item))
-            )}
-          </KolamCatalogListTableShell>
-        )}
+          }
+          rows={controller.rows}
+          style={styles.tableFrame}
+        />
       </View>
 
       {hasExport ? (
@@ -1103,53 +1015,6 @@ const styles = StyleSheet.create({
     width: '100%',
     zIndex: 1,
   },
-  emptyWrap: {
-    paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    overflow: 'visible',
-    paddingHorizontal: 8,
-    zIndex: 0,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 44,
-    overflow: 'visible',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    position: 'relative',
-    zIndex: 1,
-  },
-  rowMenuOpen: {
-    elevation: 1000,
-    overflow: 'visible',
-    zIndex: 1000,
-  },
-  cell: {
-    minWidth: 0,
-    overflow: 'visible',
-    paddingHorizontal: 4,
-  },
-  picCellOverflow: {
-    overflow: 'visible',
-    zIndex: 2,
-  },
   picCell: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1178,16 +1043,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '800',
-  },
-  actionsCell: {
-    alignItems: 'flex-end',
-    flex: 0.45,
-    flexGrow: 0,
-    flexShrink: 0,
-    justifyContent: 'center',
-    minWidth: 48,
-    overflow: 'visible',
-    zIndex: 2,
   },
   primaryText: {
     color: V.colors.fg,
@@ -1225,16 +1080,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignSelf: 'flex-start',
-  },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
 });
 
