@@ -3377,7 +3377,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 12,
     minHeight: 0,
-    padding: 16,
   },
   stack: {
     alignSelf: 'stretch',
