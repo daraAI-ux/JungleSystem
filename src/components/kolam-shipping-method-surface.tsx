@@ -119,8 +119,20 @@ const METHOD_LIST_COLUMNS_BASE: KolamTableColumn[] = [
   { id: 'children', label: 'Kurir / Layanan', align: 'left', width: 140 },
   { id: 'marketplace', label: 'Harga', align: 'left', width: 120 },
   { id: 'notes', label: 'Perkiraan hari', align: 'left', width: 100 },
-  { id: 'status', label: 'Status', align: 'left', width: 120 },
-  { id: 'products', label: 'Webstore', align: 'left', width: 120 },
+  {
+    id: 'status',
+    label: 'Status',
+    align: 'center',
+    headerAlign: 'center',
+    width: 120,
+  },
+  {
+    id: 'products',
+    label: 'Webstore',
+    align: 'center',
+    headerAlign: 'center',
+    width: 120,
+  },
   {
     id: 'actions',
     label: '',
@@ -133,7 +145,13 @@ const CATALOG_LIST_COLUMNS_BASE: KolamTableColumn[] = [
   { id: 'primary', label: 'Kurir', align: 'left', width: 140 },
   { id: 'meta', label: 'Layanan', align: 'left', width: 160 },
   { id: 'children', label: 'Kategori', align: 'left', width: 100 },
-  { id: 'status', label: 'Status', align: 'left', width: 120 },
+  {
+    id: 'status',
+    label: 'Status',
+    align: 'center',
+    headerAlign: 'center',
+    width: 120,
+  },
   { id: 'notes', label: 'Disinkronkan', align: 'left', width: 160 },
 ];
 
@@ -655,6 +673,7 @@ function ShippingMethodListRow({
             <KolamStatusBadge
               intent={method.isActive ? 'success' : 'danger'}
               label={method.isActive ? 'Aktif' : 'Nonaktif'}
+              style={styles.centerBadge}
             />
           </View>
         </View>
@@ -667,6 +686,7 @@ function ShippingMethodListRow({
             <KolamStatusBadge
               intent={method.isAvailableOnWebstore ? 'success' : 'danger'}
               label={method.isAvailableOnWebstore ? 'Ya' : 'Tidak'}
+              style={styles.centerBadge}
             />
           </View>
         </View>
@@ -763,6 +783,7 @@ function KolamShippingMethodCatalogTable({
                     <KolamStatusBadge
                       intent={item.isActive ? 'success' : 'danger'}
                       label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                      style={styles.centerBadge}
                     />
                   </View>
                 </View>
@@ -1545,8 +1566,14 @@ const styles = StyleSheet.create({
   },
   switchBadgeRow: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     gap: 8,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  centerBadge: {
+    alignSelf: 'center',
   },
   detailContent: {
     gap: 16,

@@ -363,12 +363,12 @@ function KolamVoucherList({
                         </View>
                       ) : null}
                       {column.id === 'amount' ? (
-                        <Text numberOfLines={2} style={styles.cellText}>
+                        <Text numberOfLines={2} style={styles.cellTextCenter}>
                           {formatKolamVoucherDiscountLabel(voucher)}
                         </Text>
                       ) : null}
                       {column.id === 'meta' ? (
-                        <Text numberOfLines={1} style={styles.cellText}>
+                        <Text numberOfLines={1} style={styles.cellTextCenter}>
                           {voucher.minPurchaseAmount > 0
                             ? formatRupiah(voucher.minPurchaseAmount)
                             : '—'}
@@ -381,7 +381,7 @@ function KolamVoucherList({
                       ) : null}
                       {column.id === 'notes' ? (
                         <View style={styles.periodCell}>
-                          <Text numberOfLines={1} style={styles.cellText}>
+                          <Text numberOfLines={1} style={styles.cellTextCenter}>
                             {formatKolamVoucherPeriodLabel(voucher)}
                           </Text>
                           <Text
@@ -414,6 +414,7 @@ function KolamVoucherList({
                           <KolamStatusBadge
                             intent={getKolamVoucherStatusIntent(voucher.status)}
                             label={formatKolamVoucherStatusLabel(voucher.status)}
+                            style={styles.centerBadge}
                           />
                         </View>
                       ) : null}
@@ -581,8 +582,17 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
+  cellTextCenter: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    textAlign: 'center',
+    width: '100%',
+  },
   periodCell: {
+    alignItems: 'center',
     gap: 2,
+    width: '100%',
   },
   remainingText: {
     fontFamily: V.fontFamily,
@@ -600,9 +610,14 @@ const styles = StyleSheet.create({
   },
   statusCell: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
     justifyContent: 'center',
+    width: '100%',
+  },
+  centerBadge: {
+    alignSelf: 'center',
   },
 });

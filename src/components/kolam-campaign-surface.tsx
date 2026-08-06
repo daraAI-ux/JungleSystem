@@ -445,6 +445,7 @@ function KolamCampaignRow({
           <View
             style={[
               styles.cell,
+              styles.centerCell,
               columnOf('children')
                 ? getKolamDataTableColumnStyle(columnOf('children')!)
                 : null,
@@ -463,6 +464,7 @@ function KolamCampaignRow({
           <View
             style={[
               styles.cell,
+              styles.centerCell,
               columnOf('marketplace')
                 ? getKolamDataTableColumnStyle(columnOf('marketplace')!)
                 : null,
@@ -495,12 +497,13 @@ function KolamCampaignRow({
           <View
             style={[
               styles.cell,
+              styles.centerCell,
               columnOf('amount')
                 ? getKolamDataTableColumnStyle(columnOf('amount')!)
                 : null,
             ]}
           >
-            <Text numberOfLines={2} style={styles.primaryText}>
+            <Text numberOfLines={2} style={styles.centerText}>
               {formatKolamCampaignDiscountLabel(campaign)}
             </Text>
           </View>
@@ -653,6 +656,13 @@ const styles = StyleSheet.create({
   },
   centerCell: {
     alignItems: 'center',
+  },
+  centerText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    textAlign: 'center',
+    width: '100%',
   },
   centerBadge: {
     alignSelf: 'center',

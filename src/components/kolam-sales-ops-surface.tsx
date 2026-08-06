@@ -1730,7 +1730,11 @@ function KolamSalesOpsApproval({
                     <Text numberOfLines={1} style={styles.approvalBuyerInline}>
                       {sale.buyerLabel}
                     </Text>
-                    <KolamStatusBadge intent="warning" label="Pending" />
+                    <KolamStatusBadge
+                      intent="warning"
+                      label="Pending"
+                      style={styles.centerBadge}
+                    />
                   </View>
                   <View style={styles.approvalMetaRow}>
                     <Text style={styles.metaText}>
@@ -2488,7 +2492,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   approvalCardList: {
-    gap: 12,
+    gap: 8,
   },
   approvalCard: {
     borderColor: V.colors.border,
@@ -2500,16 +2504,18 @@ const styles = StyleSheet.create({
     borderColor: V.colors.warning,
   },
   approvalRowHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
-    padding: 12,
+    minHeight: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   approvalHeaderCopy: {
     flex: 1,
     gap: 6,
-    minWidth: 200,
+    minWidth: 0,
   },
   approvalTitleRow: {
     alignItems: 'center',
@@ -2536,8 +2542,9 @@ const styles = StyleSheet.create({
   },
   approvalHeaderTotals: {
     alignItems: 'flex-end',
+    flexShrink: 0,
     gap: 2,
-    minWidth: 120,
+    minWidth: 150,
   },
   approvalFinalLabel: {
     color: V.colors.mutedFg,

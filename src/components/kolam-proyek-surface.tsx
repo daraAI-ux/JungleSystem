@@ -95,8 +95,8 @@ import {
 const LIST_COLUMNS_BASE: KolamTableColumn[] = [
   { id: 'primary', label: 'Penawaran', align: 'left', width: 160 },
   { id: 'meta', label: 'Pelanggan', align: 'left', width: 160 },
-  { id: 'status', label: 'Status', align: 'left', width: 130 },
-  { id: 'notes', label: 'Progress', align: 'left', width: 80 },
+  { id: 'status', label: 'Status', align: 'center', headerAlign: 'center', width: 130 },
+  { id: 'notes', label: 'Progress', align: 'center', headerAlign: 'center', width: 80 },
   { id: 'amount', label: 'Nilai kontrak', align: 'right', width: 120 },
   {
     id: 'actions',
@@ -385,17 +385,20 @@ function ProyekListRow({
         <View
           style={[
             styles.listCell,
+            styles.listCellCenter,
             statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
           ]}
         >
           <KolamStatusBadge
             intent={getKolamProyekLifecycleIntent(item.lifecycleStatus)}
             label={formatKolamProyekLifecycleLabel(item.lifecycleStatus)}
+            style={styles.centerBadge}
           />
         </View>
         <View
           style={[
             styles.listCell,
+            styles.listCellCenter,
             notesColumn ? getKolamDataTableColumnStyle(notesColumn) : null,
           ]}
         >
@@ -2930,6 +2933,12 @@ const styles = StyleSheet.create({
   listCell: {
     justifyContent: 'center',
     minWidth: 0,
+  },
+  listCellCenter: {
+    alignItems: 'center',
+  },
+  centerBadge: {
+    alignSelf: 'center',
   },
   cellPrimary: {
     color: V.colors.fg,
