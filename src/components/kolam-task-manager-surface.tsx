@@ -65,6 +65,7 @@ import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 import { KolamTodoTaskIcon } from './kolam-todo-task-icon';
+import { KolamTotalTaskIcon } from './kolam-total-task-icon';
 
 const LIST_COLUMNS = [
   { id: 'primary', label: 'Tugas', align: 'left', flex: 2.3 },
@@ -954,7 +955,13 @@ function KolamTaskKpiRow({
       value: controller.kpi.overdue,
       tone: 'danger',
     },
-    { id: 'total', label: 'Total', value: controller.kpi.total, tone: 'muted' },
+    {
+      id: 'total',
+      iconElement: <KolamTotalTaskIcon style={styles.kpiCardIcon} />,
+      label: 'Total',
+      value: controller.kpi.total,
+      tone: 'muted',
+    },
   ] as const;
 
   return (
