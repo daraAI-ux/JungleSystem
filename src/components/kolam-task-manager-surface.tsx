@@ -943,12 +943,36 @@ function KolamTaskKpiRow({
     <View style={styles.kpiRow}>
       {cards.map(card => (
         <View key={card.id} style={styles.kpiCard}>
-          <KolamStatusBadge intent={card.tone} label={card.label} />
-          <Text style={styles.kpiValue}>{card.value}</Text>
+          <View style={[styles.kpiAccent, getTaskKpiAccentStyle(card.tone)]} />
+          <View style={styles.kpiBody}>
+            <Text numberOfLines={1} style={styles.kpiLabel}>
+              {card.label}
+            </Text>
+            <Text numberOfLines={1} style={styles.kpiValue}>
+              {card.value}
+            </Text>
+          </View>
         </View>
       ))}
     </View>
   );
+}
+
+function getTaskKpiAccentStyle(
+  tone: 'danger' | 'info' | 'muted' | 'primary' | 'success',
+) {
+  switch (tone) {
+    case 'danger':
+      return styles.kpiAccentDanger;
+    case 'info':
+      return styles.kpiAccentInfo;
+    case 'muted':
+      return styles.kpiAccentMuted;
+    case 'primary':
+      return styles.kpiAccentPrimary;
+    case 'success':
+      return styles.kpiAccentSuccess;
+  }
 }
 
 function KolamTaskToolbar({
@@ -3342,24 +3366,69 @@ const styles = StyleSheet.create({
   },
   kpiRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 8,
+    minWidth: 0,
   },
   kpiCard: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
-    borderRadius: V.radius.lg,
+    borderRadius: 8,
     borderWidth: 1,
-    gap: 8,
-    minWidth: 120,
-    padding: 12,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+    padding: 0,
+    position: 'relative',
+  },
+  kpiAccent: {
+    borderBottomLeftRadius: 10,
+    borderTopLeftRadius: 10,
+    bottom: 10,
+    left: 0,
+    position: 'absolute',
+    top: 10,
+    width: 3,
+  },
+  kpiAccentDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  kpiAccentInfo: {
+    backgroundColor: V.colors.info,
+  },
+  kpiAccentMuted: {
+    backgroundColor: V.colors.border,
+  },
+  kpiAccentPrimary: {
+    backgroundColor: V.colors.primary,
+  },
+  kpiAccentSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  kpiBody: {
+    gap: 2,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    paddingLeft: 16,
+    paddingVertical: 12,
+  },
+  kpiLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    lineHeight: 14,
+    textTransform: 'uppercase',
   },
   kpiValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 28,
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 24,
   },
   taskToolbarWrap: {
     elevation: 1000,
