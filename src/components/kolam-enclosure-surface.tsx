@@ -80,6 +80,7 @@ import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamStatusBadge} from './kolam-status-badge';
+import {KolamStokTotalIcon} from './kolam-stok-total-icon';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -2070,6 +2071,7 @@ function KolamEnclosureAllocationPanel({
         />
         <SummaryTile
           hint={`${controller.allocationOverview.totals.rowCount} varian`}
+          iconElement={<KolamStokTotalIcon style={styles.summaryHeroIcon} />}
           icon="T"
           label="Stok total"
           value={controller.allocationOverview.totals.totalStock}
