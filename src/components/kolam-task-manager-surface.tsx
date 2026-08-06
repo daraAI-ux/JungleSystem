@@ -1637,7 +1637,7 @@ function renderTaskListCell(
                 );
               }}
               options={statusOptions.map(option => ({
-                label: option.label,
+                label: getTaskTableStatusOptionLabel(option.id, option.label),
                 value: option.id,
               }))}
               showLabelInTrigger={false}
@@ -1823,6 +1823,9 @@ function KolamTaskDueCountdownText({
   const danger =
     isKolamTaskOverdue(task) || label.toLowerCase().includes('terlambat');
   const overdueMatch = /^terlambat\s+(.+)$/i.exec(label.trim());
+  const completedLateMatch = /^selesai\s+\(terlambat\s+(.+)\)$/i.exec(
+    label.trim(),
+  );
 
   if (overdueMatch) {
     return (
@@ -1837,6 +1840,24 @@ function KolamTaskDueCountdownText({
           ]}
         >
           {overdueMatch[1]}
+        </Text>
+      </View>
+    );
+  }
+
+  if (completedLateMatch) {
+    return (
+      <View style={styles.taskCountdownStack}>
+        <Text style={[styles.cellText, styles.dangerText]}>Selesai</Text>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.cellText,
+            styles.dangerText,
+            styles.taskCountdownDuration,
+          ]}
+        >
+          Terlambat {completedLateMatch[1]}
         </Text>
       </View>
     );
@@ -1857,6 +1878,10 @@ function getKolamTaskDueCountdownTextLabel(task: KolamTaskManagerTask) {
     ...task,
     timeline: Array.isArray(task.timeline) ? task.timeline : [],
   });
+}
+
+function getTaskTableStatusOptionLabel(status: string, label: string) {
+  return status === 'needs_review' ? 'Periksa' : label;
 }
 
 function KolamTaskRecurringPanel({
