@@ -26,7 +26,7 @@ import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
-import { KolamDescriptionList } from './kolam-description-list';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -661,13 +661,33 @@ function KolamStockTransactionDetail({
         </View>
       </View>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Informasi transaksi</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Detil transaksi stok"
-          rows={infoRows}
-        />
-      </KolamContentFrame>
+      <KolamDetailSummaryCard
+        description="Detil transaksi stok dan status verifikasi."
+        fields={infoRows.map(row => ({
+          id: row.id,
+          label: row.label,
+          value: (
+            <View style={styles.summaryFieldStack}>
+              <Text
+                style={[
+                  styles.summaryFieldValue,
+                  row.tone === 'success' ? styles.successText : null,
+                  row.tone === 'warning' ? styles.warningText : null,
+                  row.tone === 'danger' ? styles.dangerText : null,
+                ]}
+              >
+                {row.value || '—'}
+              </Text>
+              {row.meta ? (
+                <Text style={styles.summaryFieldMeta}>{row.meta}</Text>
+              ) : null}
+            </View>
+          ),
+        }))}
+        fieldColumns={3}
+        style={styles.detailCard}
+        title="Informasi transaksi"
+      />
 
       {(() => {
         const crossSyncDisplay = resolveStockTxCrossSyncDisplay(
@@ -1719,6 +1739,28 @@ const styles = StyleSheet.create({
   metaText: {
     color: V.colors.mutedFg,
     fontSize: 11,
+  },
+  summaryFieldStack: {
+    gap: 3,
+    minWidth: 0,
+  },
+  summaryFieldValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  summaryFieldMeta: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  successText: {
+    color: V.colors.success,
+  },
+  warningText: {
+    color: V.colors.warning,
   },
   dangerText: {
     color: V.colors.danger,
