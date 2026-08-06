@@ -80,6 +80,18 @@ const LIST_COLUMNS = [
 ] as const;
 
 type TaskListColumnId = (typeof LIST_COLUMNS)[number]['id'];
+const RECURRING_SCHEDULE_COLUMNS = [
+  { id: 'schedule', label: 'Jadwal', align: 'left', flex: 2 },
+  { id: 'kind', label: 'Tipe', align: 'center', flex: 0.9 },
+  { id: 'category', label: 'Kategori', align: 'center', flex: 1.1 },
+  { id: 'status', label: 'Status', align: 'center', flex: 0.9 },
+  { id: 'pic', label: 'PIC', align: 'center', flex: 1 },
+  { id: 'time', label: 'Waktu', align: 'center', flex: 1.35 },
+  { id: 'customer', label: 'Pelanggan', align: 'center', flex: 1.1 },
+] as const;
+
+type RecurringScheduleColumnId =
+  (typeof RECURRING_SCHEDULE_COLUMNS)[number]['id'];
 const TASK_FILTER_PANEL_WIDTH = 180;
 type TaskToolbarFilterPanel =
   | 'bucket'
@@ -1902,41 +1914,7 @@ function KolamTaskRecurringPanel({
   controller: KolamTaskManagerController;
   onRouteChange?: (route: string) => void;
 }) {
-  const scheduleRows = [
-    ...controller.recurringOccurrences.map(row => ({
-      id: `occ-${row.id}`,
-      kind: 'internal' as const,
-      title: row.title,
-      category: row.categoryLabel || getKolamTaskCategoryBucketLabel(row.categoryBucket),
-      status: row.status,
-      assignedTo: row.assignedTo,
-      scheduledAt: row.scheduledAt,
-      dueAt: row.dueAt,
-      customerId: '',
-      customerName: '',
-      href: '',
-      sampleReviewRequired: row.sampleReviewRequired,
-      taskId: row.taskId,
-    })),
-    ...controller.recurringServiceVisits.map(row => ({
-      id: `svc-${row.id}`,
-      kind: 'subscription' as const,
-      title: row.title,
-      category: row.categoryLabel || row.serviceName,
-      status: row.status,
-      assignedTo: row.assignedTo,
-      scheduledAt: row.scheduledAt,
-      dueAt: row.dueAt,
-      customerId: row.customerId,
-      customerName: row.customerName,
-      href: row.href,
-      sampleReviewRequired: false,
-      taskId: '',
-    })),
-  ].sort(
-    (a, b) =>
-      new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
-  );
+  const scheduleRows = getRecurringScheduleRows(controller);
 
   return (
     <View style={styles.detailStack}>
@@ -2060,53 +2038,17 @@ function KolamTaskRecurringPanel({
 
       <View style={styles.detailCard}>
         <Text style={styles.sectionTitle}>Jadwal / occurrence</Text>
-        {scheduleRows.length ? (
-          scheduleRows.map(row => (
-            <Pressable
-              accessibilityRole="button"
-              key={row.id}
-              onPress={() => {
-                if (row.taskId) {
-                  onRouteChange?.(`/task-manager/${row.taskId}`);
-                } else if (row.href) {
-                  onRouteChange?.(row.href);
-                }
-              }}
-              style={styles.timelineRow}
-            >
-              <View style={styles.titleRow}>
-                <Text style={styles.timelineTitle}>{row.title || '-'}</Text>
-                <View style={styles.badgeRow}>
-                  {row.sampleReviewRequired ? (
-                    <KolamStatusBadge intent="warning" label="Sampel" />
-                  ) : null}
-                  <KolamStatusBadge
-                    intent={getRecurringStatusIntent(row.status)}
-                    label={row.status}
-                  />
-                </View>
-              </View>
-              <Text style={styles.metaText}>
-                {row.kind === 'internal' ? 'Internal' : 'Subscription'} -{' '}
-                {row.category || '-'}
-              </Text>
-              <Text style={styles.metaText}>
-                {formatKolamTaskListDatetime(row.scheduledAt)} -{' '}
-                {formatKolamTaskListDatetime(row.dueAt)}
-              </Text>
-              <Text style={styles.metaText}>
-                {getKolamTaskUserDisplayName(row.assignedTo)}
-              </Text>
-              {row.customerName ? (
-                <Text style={styles.metaText}>{row.customerName}</Text>
-              ) : null}
-            </Pressable>
-          ))
-        ) : (
-          <Text style={styles.metaText}>
-            {controller.loading ? 'Memuat...' : 'Belum ada occurrence'}
-          </Text>
-        )}
+        <KolamListTableComposition
+          columns={createRecurringScheduleColumns(onRouteChange)}
+          emptyTitle={
+            controller.loading ? 'Memuat...' : 'Belum ada occurrence'
+          }
+          getRowKey={row => row.id}
+          loading={controller.loading}
+          rows={scheduleRows}
+          showFooter={false}
+          style={styles.recurringScheduleTable}
+        />
       </View>
     </View>
   );
@@ -2211,6 +2153,137 @@ function getRecurringTemplateTaskTypeId(
   if (!template.taskType) return '';
   if (typeof template.taskType === 'string') return template.taskType;
   return template.taskType.id;
+}
+
+type RecurringScheduleRow = ReturnType<typeof getRecurringScheduleRows>[number];
+
+function getRecurringScheduleRows(controller: KolamTaskManagerController) {
+  return [
+    ...controller.recurringOccurrences.map(row => ({
+      id: `occ-${row.id}`,
+      kind: 'internal' as const,
+      title: row.title,
+      category:
+        row.categoryLabel ||
+        getKolamTaskCategoryBucketLabel(row.categoryBucket),
+      status: row.status,
+      assignedTo: row.assignedTo,
+      scheduledAt: row.scheduledAt,
+      dueAt: row.dueAt,
+      customerId: '',
+      customerName: '',
+      href: '',
+      sampleReviewRequired: row.sampleReviewRequired,
+      taskId: row.taskId,
+    })),
+    ...controller.recurringServiceVisits.map(row => ({
+      id: `svc-${row.id}`,
+      kind: 'subscription' as const,
+      title: row.title,
+      category: row.categoryLabel || row.serviceName,
+      status: row.status,
+      assignedTo: row.assignedTo,
+      scheduledAt: row.scheduledAt,
+      dueAt: row.dueAt,
+      customerId: row.customerId,
+      customerName: row.customerName,
+      href: row.href,
+      sampleReviewRequired: false,
+      taskId: '',
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+  );
+}
+
+function createRecurringScheduleColumns(
+  onRouteChange?: (route: string) => void,
+): Array<KolamListTableColumn<RecurringScheduleRow>> {
+  return RECURRING_SCHEDULE_COLUMNS.map(column => ({
+    ...column,
+    render: row => renderRecurringScheduleCell(column.id, row, onRouteChange),
+  }));
+}
+
+function renderRecurringScheduleCell(
+  columnId: RecurringScheduleColumnId,
+  row: RecurringScheduleRow,
+  onRouteChange?: (route: string) => void,
+) {
+  switch (columnId) {
+    case 'schedule':
+      return (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            if (row.taskId) {
+              onRouteChange?.(`/task-manager/${row.taskId}`);
+            } else if (row.href) {
+              onRouteChange?.(row.href);
+            }
+          }}
+          style={styles.recurringScheduleTitleCell}
+        >
+          <Text numberOfLines={1} style={styles.timelineTitle}>
+            {row.title || '-'}
+          </Text>
+          {row.sampleReviewRequired ? (
+            <KolamStatusBadge intent="warning" label="Sampel" />
+          ) : null}
+        </Pressable>
+      );
+    case 'kind':
+      return (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
+            {row.kind === 'internal' ? 'Internal' : 'Subscription'}
+          </Text>
+        </View>
+      );
+    case 'category':
+      return (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
+            {row.category || '-'}
+          </Text>
+        </View>
+      );
+    case 'status':
+      return (
+        <View style={styles.centerCell}>
+          <KolamStatusBadge
+            intent={getRecurringStatusIntent(row.status)}
+            label={row.status}
+          />
+        </View>
+      );
+    case 'pic':
+      return (
+        <View style={styles.centerCell}>
+          <KolamTaskUserAvatar user={row.assignedTo} />
+        </View>
+      );
+    case 'time':
+      return (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={2} style={[styles.cellText, styles.centerText]}>
+            {formatKolamTaskListDatetime(row.scheduledAt)}
+          </Text>
+          <Text numberOfLines={2} style={[styles.metaText, styles.centerText]}>
+            {formatKolamTaskListDatetime(row.dueAt)}
+          </Text>
+        </View>
+      );
+    case 'customer':
+      return (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
+            {row.customerName || '-'}
+          </Text>
+        </View>
+      );
+  }
 }
 
 function getRecurringStatusIntent(
@@ -3668,8 +3741,18 @@ const styles = StyleSheet.create({
     minHeight: 0,
     width: '100%',
   },
+  recurringScheduleTable: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
   taskTitleCell: {
     minWidth: 0,
+  },
+  recurringScheduleTitleCell: {
+    alignItems: 'flex-start',
+    gap: 4,
+    minWidth: 0,
+    width: '100%',
   },
   centerCell: {
     alignItems: 'center',
