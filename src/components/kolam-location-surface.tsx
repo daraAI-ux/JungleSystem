@@ -687,6 +687,7 @@ function KolamLocationSummaryCard({
   return (
     <KolamDetailSummaryCard
       description="Informasi lokasi, kontak, alamat, dan waktu"
+      fieldColumns={3}
       fields={[
         {
           id: 'type',

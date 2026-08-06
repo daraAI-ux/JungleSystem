@@ -27,6 +27,7 @@ export type KolamDetailSummaryCardProps = {
   /** Label above `body` when body is present. */
   bodyTitle?: string;
   description?: string;
+  fieldColumns?: 2 | 3;
   fields: KolamDetailSummaryField[];
   /** Extra soft panels under the field grid (after `body` when both set). */
   sections?: KolamDetailSummarySection[];
@@ -57,6 +58,7 @@ export function KolamDetailSummaryCard({
   body,
   bodyTitle,
   description,
+  fieldColumns = 2,
   fields,
   sections,
   style,
@@ -78,7 +80,13 @@ export function KolamDetailSummaryCard({
       {fields.length > 0 ? (
         <View style={styles.fieldGrid}>
           {fields.map(field => (
-            <View key={field.id} style={styles.fieldCell}>
+            <View
+              key={field.id}
+              style={[
+                styles.fieldCell,
+                fieldColumns === 3 && styles.fieldCellThreeColumns,
+              ]}
+            >
               <Text style={styles.fieldLabel}>{field.label}</Text>
               <View style={styles.fieldValue}>
                 {typeof field.value === 'string' ||
@@ -143,6 +151,10 @@ const styles = StyleSheet.create({
     minWidth: 140,
     paddingHorizontal: 4,
     paddingVertical: 6,
+  },
+  fieldCellThreeColumns: {
+    flexBasis: '30%',
+    minWidth: 120,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
