@@ -13,12 +13,6 @@ import {
   type KolamVoucher,
   type KolamVoucherStatus,
 } from '../domain/kolam-voucher';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import {
@@ -27,19 +21,7 @@ import {
 } from '../hooks/use-kolam-voucher-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -47,27 +29,15 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamVoucherDetail } from './kolam-voucher-detail';
 import { KolamVoucherForm } from './kolam-voucher-form';
-
-const VOUCHER_SKELETON_ROW_COUNT = 6;
-
-function fitVoucherListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('voucher'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 160,
-      secondaryMinWidth: 56,
-    },
-  );
-}
 
 export function KolamVoucherSurface({
   onRouteChange,
@@ -123,11 +93,6 @@ function KolamVoucherList({
   const [pendingToggle, setPendingToggle] = React.useState<KolamVoucher | null>(
     null,
   );
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-  const columns = React.useMemo(
-    () => fitVoucherListColumns(tableBodyWidth),
-    [tableBodyWidth],
-  );
 
   React.useEffect(() => {
     setSearchInput(controller.search);
@@ -149,6 +114,22 @@ function KolamVoucherList({
     KOLAM_VOUCHER_STATUS_FILTER_OPTIONS.find(
       option => option.value === controller.statusFilter,
     )?.label ?? 'Status';
+  const openVoucher = React.useCallback(
+    (voucher: KolamVoucher) => {
+      onRouteChange?.(buildKolamVoucherDetailRoute(voucher.id));
+    },
+    [onRouteChange],
+  );
+  const columns = React.useMemo(
+    () =>
+      buildVoucherListColumns({
+        canUpdate: controller.canUpdate,
+        loading: controller.mutating,
+        onSelect: openVoucher,
+        onToggle: setPendingToggle,
+      }),
+    [controller.canUpdate, controller.mutating, openVoucher],
+  );
 
   return (
     <View style={styles.surface}>
@@ -258,7 +239,10 @@ function KolamVoucherList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle={controller.loading ? 'Memuat voucher...' : 'Voucher kosong'}
         footer={
           <KolamTableFooterControls
             onPageSizeChange={controller.onSetPageSize}
@@ -294,168 +278,31 @@ function KolamVoucherList({
             ) : null}
           </KolamTableFooterControls>
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={columns} />
-        {controller.loading && controller.vouchers.length === 0
-          ? Array.from({ length: VOUCHER_SKELETON_ROW_COUNT }).map(
-              (_, index) => (
-                <KolamDataTableRowFrame key={`sk-${index}`}>
-                  <KolamDataTableMainTrack>
-                    {columns
-                      .filter(column => column.id !== 'actions')
-                      .map(column => (
-                        <View
-                          key={column.id}
-                          style={[
-                            getKolamDataTableColumnStyle(column),
-                            styles.skeletonCell,
-                          ]}
-                        />
-                      ))}
-                  </KolamDataTableMainTrack>
-                </KolamDataTableRowFrame>
-              ),
-            )
-          : null}
-
-        {!controller.loading && controller.vouchers.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message={
-                filtersApplied
-                  ? 'Sesuaikan filter atau muat ulang dari server.'
-                  : 'Belum ada voucher diskon di kampanye.'
-              }
-              title="Voucher kosong"
-            />
-          </View>
-        ) : null}
-
-        {controller.vouchers.map(voucher => {
-          const remaining = formatKolamVoucherRemainingLabel(voucher);
-          return (
-            <KolamDataTableRowFrame
-              key={voucher.id}
-              onPress={() =>
-                onRouteChange?.(buildKolamVoucherDetailRoute(voucher.id))
-              }
-            >
-              <KolamDataTableMainTrack>
-                {columns.map(column => {
-                  if (column.id === 'actions') {
-                    return null;
-                  }
-                  return (
-                    <View
-                      key={column.id}
-                      style={getKolamDataTableColumnStyle(column)}
-                    >
-                      {column.id === 'primary' ? (
-                        <View style={styles.primaryCell}>
-                          <Text numberOfLines={1} style={styles.primaryTitle}>
-                            {voucher.title || '—'}
-                          </Text>
-                          <Text numberOfLines={1} style={styles.primaryCode}>
-                            {voucher.code || '—'}
-                          </Text>
-                        </View>
-                      ) : null}
-                      {column.id === 'amount' ? (
-                        <Text numberOfLines={2} style={styles.cellTextCenter}>
-                          {formatKolamVoucherDiscountLabel(voucher)}
-                        </Text>
-                      ) : null}
-                      {column.id === 'meta' ? (
-                        <Text numberOfLines={1} style={styles.cellTextCenter}>
-                          {voucher.minPurchaseAmount > 0
-                            ? formatRupiah(voucher.minPurchaseAmount)
-                            : '—'}
-                        </Text>
-                      ) : null}
-                      {column.id === 'children' ? (
-                        <Text numberOfLines={1} style={styles.cellText}>
-                          {formatKolamVoucherUsageLabel(voucher)}
-                        </Text>
-                      ) : null}
-                      {column.id === 'notes' ? (
-                        <View style={styles.periodCell}>
-                          <Text numberOfLines={1} style={styles.cellTextCenter}>
-                            {formatKolamVoucherPeriodLabel(voucher)}
-                          </Text>
-                          <Text
-                            numberOfLines={1}
-                            style={[
-                              styles.remainingText,
-                              remaining.intent === 'danger' &&
-                                styles.remainingDanger,
-                              remaining.intent === 'warning' &&
-                                styles.remainingWarning,
-                              remaining.intent === 'success' &&
-                                styles.remainingSuccess,
-                            ]}
-                          >
-                            {remaining.label}
-                          </Text>
-                        </View>
-                      ) : null}
-                      {column.id === 'status' ? (
-                        <View style={styles.statusCell}>
-                          {controller.canUpdate &&
-                          voucher.status !== 'expired' ? (
-                            <Switch
-                              accessibilityLabel={`Ubah status ${voucher.code}`}
-                              disabled={controller.mutating}
-                              onValueChange={() => setPendingToggle(voucher)}
-                              value={voucher.status === 'active'}
-                            />
-                          ) : null}
-                          <KolamStatusBadge
-                            intent={getKolamVoucherStatusIntent(voucher.status)}
-                            label={formatKolamVoucherStatusLabel(voucher.status)}
-                            style={styles.centerBadge}
-                          />
-                        </View>
-                      ) : null}
-                    </View>
-                  );
-                })}
-              </KolamDataTableMainTrack>
-              <KolamDataTableActionsTrack
-                width={Math.max(
-                  columns.find(column => column.id === 'actions')?.width ??
-                    KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-                  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-                )}
-              >
-                <KolamOverflowMenuButton
-                  accessibilityLabel={`Menu ${voucher.code}`}
-                  actions={[
+        getRowKey={voucher => voucher.id}
+        loading={controller.loading}
+        renderActions={voucher => (
+          <KolamOverflowMenuButton
+            accessibilityLabel={`Menu ${voucher.code}`}
+            actions={[
+              {
+                label: 'Lihat',
+                onPress: () => openVoucher(voucher),
+              },
+              ...(controller.canDelete
+                ? [
                     {
-                      label: 'Lihat',
-                      onPress: () =>
-                        onRouteChange?.(
-                          buildKolamVoucherDetailRoute(voucher.id),
-                        ),
+                      label: 'Hapus',
+                      onPress: () => setPendingDelete(voucher),
+                      disabled: controller.mutating,
+                      tone: 'danger' as const,
                     },
-                    ...(controller.canDelete
-                      ? [
-                          {
-                            label: 'Hapus',
-                            onPress: () => setPendingDelete(voucher),
-                            disabled: controller.mutating,
-                            tone: 'danger' as const,
-                          },
-                        ]
-                      : []),
-                  ]}
-                />
-              </KolamDataTableActionsTrack>
-            </KolamDataTableRowFrame>
-          );
-        })}
-      </KolamCatalogListTableShell>
+                  ]
+                : []),
+            ]}
+          />
+        )}
+        rows={controller.vouchers}
+      />
 
       <KolamDeleteConfirmDialog
         itemLabel={pendingDelete?.code}
@@ -496,6 +343,123 @@ function KolamVoucherList({
       />
     </View>
   );
+}
+
+function buildVoucherListColumns({
+  canUpdate,
+  loading,
+  onSelect,
+  onToggle,
+}: {
+  canUpdate: boolean;
+  loading: boolean;
+  onSelect: (voucher: KolamVoucher) => void;
+  onToggle: (voucher: KolamVoucher) => void;
+}): Array<KolamListTableColumn<KolamVoucher>> {
+  return [
+    {
+      flex: 1.4,
+      id: 'primary',
+      label: 'Voucher',
+      render: voucher => (
+        <Pressable onPress={() => onSelect(voucher)} style={styles.cellPressable}>
+          <View style={styles.primaryCell}>
+            <Text numberOfLines={1} style={styles.primaryTitle}>
+              {voucher.title || 'â€”'}
+            </Text>
+            <Text numberOfLines={1} style={styles.primaryCode}>
+              {voucher.code || 'â€”'}
+            </Text>
+          </View>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'amount',
+      label: 'Diskon',
+      render: voucher => (
+        <Text numberOfLines={2} style={styles.cellTextCenter}>
+          {formatKolamVoucherDiscountLabel(voucher)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'meta',
+      label: 'Min. belanja',
+      render: voucher => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {voucher.minPurchaseAmount > 0
+            ? formatRupiah(voucher.minPurchaseAmount)
+            : 'â€”'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'children',
+      label: 'Pemakaian',
+      render: voucher => (
+        <Text numberOfLines={1} style={styles.cellTextCenter}>
+          {formatKolamVoucherUsageLabel(voucher)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 1,
+      id: 'notes',
+      label: 'Periode',
+      render: voucher => {
+        const remaining = formatKolamVoucherRemainingLabel(voucher);
+        return (
+          <View style={styles.periodCell}>
+            <Text numberOfLines={1} style={styles.cellTextCenter}>
+              {formatKolamVoucherPeriodLabel(voucher)}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.remainingText,
+                remaining.intent === 'danger' && styles.remainingDanger,
+                remaining.intent === 'warning' && styles.remainingWarning,
+                remaining.intent === 'success' && styles.remainingSuccess,
+              ]}
+            >
+              {remaining.label}
+            </Text>
+          </View>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: voucher => (
+        <View style={styles.statusCell}>
+          {canUpdate && voucher.status !== 'expired' ? (
+            <Switch
+              accessibilityLabel={`Ubah status ${voucher.code}`}
+              disabled={loading}
+              onValueChange={() => onToggle(voucher)}
+              value={voucher.status === 'active'}
+            />
+          ) : null}
+          <KolamStatusBadge
+            intent={getKolamVoucherStatusIntent(voucher.status)}
+            label={formatKolamVoucherStatusLabel(voucher.status)}
+            style={styles.centerBadge}
+          />
+        </View>
+      ),
+    },
+  ];
 }
 
 const styles = StyleSheet.create({
@@ -555,13 +519,11 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  emptyWrap: {
-    paddingVertical: 24,
-  },
-  skeletonCell: {
-    backgroundColor: V.colors.muted,
-    borderRadius: 4,
-    height: 14,
+  cellPressable: {
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    minHeight: 44,
+    width: '100%',
   },
   primaryCell: {
     gap: 2,

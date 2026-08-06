@@ -15,12 +15,6 @@ import {
   type KolamCampaign,
   type KolamCampaignStatus,
 } from '../domain/kolam-campaign';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamCampaignController,
@@ -30,18 +24,6 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCampaignDetail } from './kolam-campaign-detail';
 import { KolamCampaignForm } from './kolam-campaign-form';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -49,25 +31,13 @@ import {
   KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const CAMPAIGN_SKELETON_ROW_COUNT = 8;
-
-function fitCampaignListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('campaign'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 160,
-      secondaryMinWidth: 56,
-    },
-  );
-}
 
 export function KolamCampaignSurface({
   onRouteChange,
@@ -120,11 +90,6 @@ function KolamCampaignList({
   const [pendingDelete, setPendingDelete] = React.useState<KolamCampaign | null>(
     null,
   );
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
-  const columns = React.useMemo(
-    () => fitCampaignListColumns(tableBodyWidth),
-    [tableBodyWidth],
-  );
 
   React.useEffect(() => {
     setSearchInput(controller.search);
@@ -155,6 +120,16 @@ function KolamCampaignList({
   const clearStatusFilter = () => {
     controller.onSetStatusFilter('');
   };
+  const openCampaign = React.useCallback(
+    (campaign: KolamCampaign) => {
+      onRouteChange?.(buildKolamCampaignDetailRoute(campaign.id));
+    },
+    [onRouteChange],
+  );
+  const columns = React.useMemo(
+    () => buildCampaignListColumns({ onSelect: openCampaign }),
+    [openCampaign],
+  );
 
   return (
     <View style={styles.surface}>
@@ -263,7 +238,12 @@ function KolamCampaignList({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle={
+          controller.loading ? 'Memuat kampanye...' : 'Kampanye kosong'
+        }
         footer={
           <KolamTableFooterControls
             onPageSizeChange={controller.onSetPageSize}
@@ -296,38 +276,39 @@ function KolamCampaignList({
             ) : null}
           </KolamTableFooterControls>
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={columns} />
-        {controller.loading && controller.campaigns.length === 0
-          ? Array.from({ length: CAMPAIGN_SKELETON_ROW_COUNT }).map((_, index) => (
-              <KolamCampaignSkeletonRow columns={columns} key={`sk-${index}`} />
-            ))
-          : null}
-        {!controller.loading && controller.campaigns.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              message="Belum ada kampanye untuk filter ini."
-              title="Kampanye kosong"
-            />
-          </View>
-        ) : null}
-        {controller.campaigns.map(campaign => (
-          <KolamCampaignRow
-            campaign={campaign}
-            canDelete={controller.canDelete}
-            canUpdate={controller.canUpdate}
-            columns={columns}
-            key={campaign.id}
-            mutating={controller.mutating}
-            onDelete={() => setPendingDelete(campaign)}
-            onEdit={() => onRouteChange?.(buildKolamCampaignEditRoute(campaign.id))}
-            onSelect={() =>
-              onRouteChange?.(buildKolamCampaignDetailRoute(campaign.id))
-            }
+        getRowKey={campaign => campaign.id}
+        loading={controller.loading}
+        renderActions={campaign => (
+          <KolamOverflowMenuButton
+            accessibilityLabel={`Menu ${campaign.title}`}
+            actions={[
+              { label: 'Lihat', onPress: () => openCampaign(campaign) },
+              ...(controller.canUpdate
+                ? [
+                    {
+                      label: 'Rubah',
+                      onPress: () =>
+                        onRouteChange?.(
+                          buildKolamCampaignEditRoute(campaign.id),
+                        ),
+                    },
+                  ]
+                : []),
+              ...(controller.canDelete
+                ? [
+                    {
+                      label: 'Hapus',
+                      onPress: () => setPendingDelete(campaign),
+                      disabled: controller.mutating,
+                      tone: 'danger' as const,
+                    },
+                  ]
+                : []),
+            ]}
           />
-        ))}
-      </KolamCatalogListTableShell>
+        )}
+        rows={controller.campaigns}
+      />
 
       <KolamDeleteConfirmDialog
         itemLabel={pendingDelete?.title}
@@ -346,111 +327,47 @@ function KolamCampaignList({
   );
 }
 
-function KolamCampaignSkeletonRow({
-  columns,
-}: {
-  columns: KolamTableColumn[];
-}) {
-  const mainColumns = columns.filter(column => column.id !== 'actions');
-
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
-        {mainColumns.map(column => (
-          <View
-            key={column.id}
-            style={[styles.cell, getKolamDataTableColumnStyle(column)]}
-          >
-            <View
-              style={[
-                styles.skeletonBar,
-                column.id === 'primary'
-                  ? styles.skeletonBarWide
-                  : styles.skeletonBarNarrow,
-              ]}
-            />
-          </View>
-        ))}
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
-        <View style={styles.skeletonAction} />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
-}
-
-function KolamCampaignRow({
-  campaign,
-  canDelete,
-  canUpdate,
-  columns,
-  mutating,
-  onDelete,
-  onEdit,
+function buildCampaignListColumns({
   onSelect,
 }: {
-  campaign: KolamCampaign;
-  canDelete: boolean;
-  canUpdate: boolean;
-  columns: KolamTableColumn[];
-  mutating: boolean;
-  onDelete: () => void;
-  onEdit: () => void;
-  onSelect: () => void;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = (id: KolamTableColumn['id']) =>
-    columns.find(column => column.id === id);
-  const start = formatKolamCampaignDateTimeParts(campaign.startDate);
-  const end = formatKolamCampaignDateTimeParts(campaign.endDate);
-  const variantCount = countKolamCampaignVariants(campaign);
-  const actionsColumn = columnOf('actions');
-
-  return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <Pressable onPress={onSelect} style={styles.rowPressable}>
-        <KolamDataTableMainTrack>
-          <View
-            style={[
-              styles.cell,
-              columnOf('primary')
-                ? getKolamDataTableColumnStyle(columnOf('primary')!)
-                : null,
-            ]}
-          >
-            <Text numberOfLines={2} style={styles.title}>
-              {campaign.title}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('status')
-                ? getKolamDataTableColumnStyle(columnOf('status')!)
-                : null,
-            ]}
-          >
-            <KolamStatusBadge
-              intent={getKolamCampaignStatusIntent(campaign.status)}
-              label={formatKolamCampaignStatusLabel(campaign.status)}
-              numberOfLines={2}
-              style={styles.centerBadge}
-            />
-          </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('children')
-                ? getKolamDataTableColumnStyle(columnOf('children')!)
-                : null,
-            ]}
-          >
+  onSelect: (campaign: KolamCampaign) => void;
+}): Array<KolamListTableColumn<KolamCampaign>> {
+  return [
+    {
+      flex: 1.5,
+      id: 'primary',
+      label: 'Kampanye',
+      render: campaign => (
+        <Pressable onPress={() => onSelect(campaign)} style={styles.cellPressable}>
+          <Text numberOfLines={2} style={styles.title}>
+            {campaign.title}
+          </Text>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: campaign => (
+        <KolamStatusBadge
+          intent={getKolamCampaignStatusIntent(campaign.status)}
+          label={formatKolamCampaignStatusLabel(campaign.status)}
+          numberOfLines={2}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'children',
+      label: 'Mulai',
+      render: campaign => {
+        const start = formatKolamCampaignDateTimeParts(campaign.startDate);
+        return (
+          <View style={styles.centerCell}>
             <Text numberOfLines={1} style={styles.startDate}>
               {start.date}
             </Text>
@@ -460,16 +377,18 @@ function KolamCampaignRow({
               </Text>
             ) : null}
           </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('marketplace')
-                ? getKolamDataTableColumnStyle(columnOf('marketplace')!)
-                : null,
-            ]}
-          >
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'marketplace',
+      label: 'Selesai',
+      render: campaign => {
+        const end = formatKolamCampaignDateTimeParts(campaign.endDate);
+        return (
+          <View style={styles.centerCell}>
             <Text numberOfLines={1} style={styles.endDate}>
               {end.date}
             </Text>
@@ -479,44 +398,40 @@ function KolamCampaignRow({
               </Text>
             ) : null}
           </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('notes')
-                ? getKolamDataTableColumnStyle(columnOf('notes')!)
-                : null,
-            ]}
-          >
-            <Text numberOfLines={1} style={styles.primaryText}>
-              {formatKolamCampaignDurationLabel(campaign)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('amount')
-                ? getKolamDataTableColumnStyle(columnOf('amount')!)
-                : null,
-            ]}
-          >
-            <Text numberOfLines={2} style={styles.centerText}>
-              {formatKolamCampaignDiscountLabel(campaign)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('products')
-                ? getKolamDataTableColumnStyle(columnOf('products')!)
-                : null,
-            ]}
-          >
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'notes',
+      label: 'Durasi',
+      render: campaign => (
+        <Text numberOfLines={1} style={styles.centerText}>
+          {formatKolamCampaignDurationLabel(campaign)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'amount',
+      label: 'Diskon',
+      render: campaign => (
+        <Text numberOfLines={2} style={styles.centerText}>
+          {formatKolamCampaignDiscountLabel(campaign)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'products',
+      label: 'Produk',
+      render: campaign => {
+        const variantCount = countKolamCampaignVariants(campaign);
+        return (
+          <View style={styles.centerCell}>
             <KolamStatusBadge
               intent="secondary"
               label={`${campaign.products.length} Produk`}
@@ -532,68 +447,27 @@ function KolamCampaignRow({
               />
             ) : null}
           </View>
-
-          <View
-            style={[
-              styles.cell,
-              styles.centerCell,
-              columnOf('meta')
-                ? getKolamDataTableColumnStyle(columnOf('meta')!)
-                : null,
-            ]}
-          >
-            <Text numberOfLines={1} style={styles.meta}>
-              {formatKolamCampaignCreatedAt(campaign.createdAt)}
-            </Text>
-          </View>
-        </KolamDataTableMainTrack>
-      </Pressable>
-
-      <KolamDataTableActionsTrack
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${campaign.title}`}
-          onOpenChange={setActionMenuOpen}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            ...(canUpdate
-              ? [{ label: 'Rubah', onPress: onEdit }]
-              : []),
-            ...(canDelete
-              ? [
-                  {
-                    label: 'Hapus',
-                    onPress: onDelete,
-                    disabled: mutating,
-                    tone: 'danger' as const,
-                  },
-                ]
-              : []),
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'meta',
+      label: 'Dibuat',
+      render: campaign => (
+        <Text numberOfLines={1} style={styles.centerMeta}>
+          {formatKolamCampaignCreatedAt(campaign.createdAt)}
+        </Text>
+      ),
+    },
+  ];
 }
 
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
     gap: 10,
-  },
-  activeActionRow: {
-    elevation: 30,
-    overflow: 'visible',
-    zIndex: 1000,
-  },
-  rowPressable: {
-    flexGrow: 0,
-    flexShrink: 1,
-    minWidth: 0,
   },
   statusFilter: {
     flexGrow: 0,
@@ -645,17 +519,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  emptyWrap: {
-    padding: 16,
-  },
-  cell: {
-    gap: 2,
-    justifyContent: 'center',
-    minWidth: 0,
-    paddingVertical: 8,
-  },
   centerCell: {
     alignItems: 'center',
+    gap: 2,
+    width: '100%',
+  },
+  cellPressable: {
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    minHeight: 44,
+    width: '100%',
   },
   centerText: {
     color: V.colors.fg,
@@ -666,24 +539,6 @@ const styles = StyleSheet.create({
   },
   centerBadge: {
     alignSelf: 'center',
-  },
-  skeletonBar: {
-    backgroundColor: V.colors.muted,
-    borderRadius: 4,
-    height: 12,
-  },
-  skeletonBarWide: {
-    width: '78%',
-  },
-  skeletonBarNarrow: {
-    width: '56%',
-  },
-  skeletonAction: {
-    alignSelf: 'center',
-    backgroundColor: V.colors.muted,
-    borderRadius: 4,
-    height: 18,
-    width: 28,
   },
   title: {
     color: V.colors.fg,
@@ -700,6 +555,13 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
+  },
+  centerMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    textAlign: 'center',
+    width: '100%',
   },
   startDate: {
     color: V.colors.success,
