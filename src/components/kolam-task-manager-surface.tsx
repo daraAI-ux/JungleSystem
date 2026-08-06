@@ -1172,56 +1172,56 @@ function KolamTaskToolbar({
                 />
               </View>
             </View>
-            <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
-              <KolamButton
-                disabled={controller.loading}
-                intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
-                label="Prioritas tinggi"
+          </View>
+          <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
+            <KolamButton
+              disabled={controller.loading}
+              intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
+              label="Prioritas tinggi"
+              onPress={() => {
+                closePanels();
+                controller.onSetPriorityFilter(
+                  controller.priorityFilter === 'high' ? 'all' : 'high',
+                );
+              }}
+            />
+            <View style={styles.switchInline}>
+              <Text style={styles.metaText}>Tugas saya</Text>
+              <KolamSwitch
+                active={controller.mineOnly}
                 onPress={() => {
                   closePanels();
-                  controller.onSetPriorityFilter(
-                    controller.priorityFilter === 'high' ? 'all' : 'high',
-                  );
+                  controller.onSetMineOnly(!controller.mineOnly);
                 }}
               />
-              <View style={styles.switchInline}>
-                <Text style={styles.metaText}>Tugas saya</Text>
-                <KolamSwitch
-                  active={controller.mineOnly}
-                  onPress={() => {
-                    closePanels();
-                    controller.onSetMineOnly(!controller.mineOnly);
-                  }}
-                />
-              </View>
-              <KolamResetButton
-                disabled={controller.loading}
-                onPress={() => {
-                  closePanels();
-                  controller.onResetFilters();
-                }}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  closePanels();
-                  void controller.onRefresh();
-                }}
-              />
-              {controller.isTaskAdmin ? (
-                <KolamButton
-                  intent="primary"
-                  label="Baru"
-                  tone="positive"
-                  onPress={() => {
-                    closePanels();
-                    controller.onCreateNew();
-                  }}
-                />
-              ) : null}
             </View>
+            <KolamResetButton
+              disabled={controller.loading}
+              onPress={() => {
+                closePanels();
+                controller.onResetFilters();
+              }}
+            />
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={controller.loading}
+
+              onPress={() => {
+                closePanels();
+                void controller.onRefresh();
+              }}
+            />
+            {controller.isTaskAdmin ? (
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                tone="positive"
+                onPress={() => {
+                  closePanels();
+                  controller.onCreateNew();
+                }}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -3238,13 +3238,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     minHeight: 40,
     overflow: 'visible',
     zIndex: 9200,
   },
   taskToolbarFilters: {
     alignItems: 'center',
+    flexBasis: '100%',
+    width: '100%',
   },
   taskSearchInput: {
     flexGrow: 1,
@@ -3252,10 +3254,10 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   taskFilterItem: {
-    flexBasis: 132,
+    flexBasis: 112,
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 112,
+    minWidth: 96,
   },
   taskFilterTrigger: {
     alignSelf: 'stretch',
@@ -3290,6 +3292,12 @@ const styles = StyleSheet.create({
   },
   taskToolbarActions: {
     alignSelf: 'stretch',
+    borderLeftWidth: 0,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    justifyContent: 'flex-end',
+    paddingLeft: 0,
+    paddingTop: 6,
   },
   switchInline: {
     alignItems: 'center',
