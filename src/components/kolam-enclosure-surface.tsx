@@ -69,6 +69,7 @@ import {
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {KolamGagalUnallocatedIcon} from './kolam-gagal-unallocated-icon';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
 import {KolamKandangEnclosureIcon} from './kolam-kandang-enclosure-icon';
 import {KolamKatakSpeciesIcon} from './kolam-katak-species-icon';
@@ -2085,6 +2086,7 @@ function KolamEnclosureAllocationPanel({
         />
         <SummaryTile
           accent="warning"
+          iconElement={<KolamGagalUnallocatedIcon style={styles.summaryHeroIcon} />}
           icon="!"
           label="Belum di kandang"
           value={controller.allocationOverview.totals.totalUnallocated}
