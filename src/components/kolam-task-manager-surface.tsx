@@ -1066,137 +1066,138 @@ function KolamTaskToolbar({
   return (
     <View ref={toolbarRef} style={styles.taskToolbarWrap}>
       <View style={kolamTableToolbarStyles.shell}>
-        <View style={kolamTableToolbarStyles.row}>
-          <View style={[kolamTableToolbarStyles.filters, styles.taskToolbarFilters]}>
-          <KolamSearchField
-            containerStyle={[
-              kolamTableToolbarStyles.searchInput,
-              styles.taskSearchInput,
-            ]}
-            onChangeText={controller.onSetSearch}
-            placeholder="Cari tugas..."
-            value={controller.search}
-          />
-            <View ref={bucketTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={bucketOpen || controller.categoryBucketFilter !== 'all'}
-                label={bucketLabel}
-                onPress={() =>
-                  togglePanel(bucketOpen, bucketTriggerRef, setBucketOpen)
-                }
-                open={bucketOpen}
-                style={styles.taskFilterTrigger}
-                variant="quiet"
-              />
-            </View>
-            <View ref={categoryTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={categoryOpen || controller.categoryFilter !== 'all'}
-                label={categoryLabel}
-                onPress={() =>
-                  togglePanel(categoryOpen, categoryTriggerRef, setCategoryOpen)
-                }
-                open={categoryOpen}
-                style={styles.taskFilterTrigger}
-                variant="quiet"
-              />
-            </View>
-            <View ref={picTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={picOpen || controller.assignedToFilter !== 'all'}
-                label={picLabel}
-                onPress={() => togglePanel(picOpen, picTriggerRef, setPicOpen)}
-                open={picOpen}
-                style={styles.taskFilterTrigger}
-                variant="quiet"
-              />
-            </View>
-            <View ref={projectTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={projectOpen || controller.projectFilter !== 'all'}
-                label={projectLabel}
-                onPress={() =>
-                  togglePanel(projectOpen, projectTriggerRef, setProjectOpen)
-                }
-                open={projectOpen}
-                style={styles.taskFilterTrigger}
-                variant="quiet"
-              />
-            </View>
-            <View ref={statusTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={statusOpen || controller.statusFilter !== 'all'}
-                label={statusLabel}
-                onPress={() =>
-                  togglePanel(statusOpen, statusTriggerRef, setStatusOpen)
-                }
-                open={statusOpen}
-                style={styles.taskFilterTrigger}
-                variant="quiet"
-              />
-            </View>
-            <View ref={priorityTriggerRef} collapsable={false}>
-              <KolamTableFilterTrigger
-                active={priorityOpen || controller.priorityFilter !== 'all'}
-                label={priorityLabel}
-                onPress={() =>
-                  togglePanel(priorityOpen, priorityTriggerRef, setPriorityOpen)
-                }
-                open={priorityOpen}
-                style={styles.taskFilterTrigger}
-                variant="quiet"
-              />
-            </View>
+        <View style={styles.taskToolbarStack}>
+          <View style={styles.taskToolbarSearchRow}>
+            <KolamSearchField
+              containerStyle={styles.taskSearchInput}
+              onChangeText={controller.onSetSearch}
+              placeholder="Cari tugas..."
+              value={controller.search}
+            />
           </View>
-          <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
-            <KolamButton
-              disabled={controller.loading}
-              intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
-              label="Prioritas tinggi"
-              onPress={() => {
-                closePanels();
-                controller.onSetPriorityFilter(
-                  controller.priorityFilter === 'high' ? 'all' : 'high',
-                );
-              }}
-            />
-            <View style={styles.switchInline}>
-              <Text style={styles.metaText}>Tugas saya</Text>
-              <KolamSwitch
-                active={controller.mineOnly}
-                onPress={() => {
-                  closePanels();
-                  controller.onSetMineOnly(!controller.mineOnly);
-                }}
-              />
+          <View style={styles.taskToolbarFilterRow}>
+            <View style={[kolamTableToolbarStyles.filters, styles.taskToolbarFilters]}>
+              <View ref={bucketTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={bucketOpen || controller.categoryBucketFilter !== 'all'}
+                  label={bucketLabel}
+                  onPress={() =>
+                    togglePanel(bucketOpen, bucketTriggerRef, setBucketOpen)
+                  }
+                  open={bucketOpen}
+                  style={styles.taskFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={categoryTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={categoryOpen || controller.categoryFilter !== 'all'}
+                  label={categoryLabel}
+                  onPress={() =>
+                    togglePanel(categoryOpen, categoryTriggerRef, setCategoryOpen)
+                  }
+                  open={categoryOpen}
+                  style={styles.taskFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={picTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={picOpen || controller.assignedToFilter !== 'all'}
+                  label={picLabel}
+                  onPress={() => togglePanel(picOpen, picTriggerRef, setPicOpen)}
+                  open={picOpen}
+                  style={styles.taskFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={projectTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={projectOpen || controller.projectFilter !== 'all'}
+                  label={projectLabel}
+                  onPress={() =>
+                    togglePanel(projectOpen, projectTriggerRef, setProjectOpen)
+                  }
+                  open={projectOpen}
+                  style={styles.taskFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={statusOpen || controller.statusFilter !== 'all'}
+                  label={statusLabel}
+                  onPress={() =>
+                    togglePanel(statusOpen, statusTriggerRef, setStatusOpen)
+                  }
+                  open={statusOpen}
+                  style={styles.taskFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={priorityTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={priorityOpen || controller.priorityFilter !== 'all'}
+                  label={priorityLabel}
+                  onPress={() =>
+                    togglePanel(priorityOpen, priorityTriggerRef, setPriorityOpen)
+                  }
+                  open={priorityOpen}
+                  style={styles.taskFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
             </View>
-            <KolamResetButton
-              disabled={controller.loading}
-              onPress={() => {
-                closePanels();
-                controller.onResetFilters();
-              }}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                closePanels();
-                void controller.onRefresh();
-              }}
-            />
-            {controller.isTaskAdmin ? (
+            <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
               <KolamButton
-                intent="primary"
-                label="Baru"
-                tone="positive"
+                disabled={controller.loading}
+                intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
+                label="Prioritas tinggi"
                 onPress={() => {
                   closePanels();
-                  controller.onCreateNew();
+                  controller.onSetPriorityFilter(
+                    controller.priorityFilter === 'high' ? 'all' : 'high',
+                  );
                 }}
               />
-            ) : null}
+              <View style={styles.switchInline}>
+                <Text style={styles.metaText}>Tugas saya</Text>
+                <KolamSwitch
+                  active={controller.mineOnly}
+                  onPress={() => {
+                    closePanels();
+                    controller.onSetMineOnly(!controller.mineOnly);
+                  }}
+                />
+              </View>
+              <KolamResetButton
+                disabled={controller.loading}
+                onPress={() => {
+                  closePanels();
+                  controller.onResetFilters();
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+
+                onPress={() => {
+                  closePanels();
+                  void controller.onRefresh();
+                }}
+              />
+              {controller.isTaskAdmin ? (
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  tone="positive"
+                  onPress={() => {
+                    closePanels();
+                    controller.onCreateNew();
+                  }}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
       </View>
@@ -3199,11 +3200,32 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
   },
+  taskToolbarStack: {
+    gap: 6,
+    overflow: 'visible',
+  },
+  taskToolbarSearchRow: {
+    flexDirection: 'row',
+    overflow: 'visible',
+  },
+  taskToolbarFilterRow: {
+    alignItems: 'center',
+    elevation: 96,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'space-between',
+    minHeight: 40,
+    overflow: 'visible',
+    zIndex: 9200,
+  },
   taskToolbarFilters: {
     alignItems: 'center',
   },
   taskSearchInput: {
-    flexBasis: 220,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 140,
   },
   taskFilterTrigger: {
     flexGrow: 0,
