@@ -5528,10 +5528,6 @@ function ProductSummaryTab({
     <View style={styles.detailPanel}>
       <View style={styles.panelTitleRow}>
         <Text style={styles.detailPanelTitle}>Ringkasan</Text>
-        <KolamBadge
-          intent="outline"
-          label={product.type === 'raw' ? 'Kode produk' : 'SKU'}
-        />
       </View>
 
       <View style={styles.overviewGrid}>
@@ -5720,6 +5716,12 @@ function ProductSummaryTab({
         </View>
 
         <View style={styles.overviewContent}>
+          {productCode ? (
+            <ProductCopyableCodeChip
+              code={productCode}
+              label={product.type === 'raw' ? 'Kode' : 'SKU'}
+            />
+          ) : null}
           <View style={styles.localeTitleRow}>
             <Text style={styles.detailSectionTitle}>Konten per bahasa</Text>
           </View>
