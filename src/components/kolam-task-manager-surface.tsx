@@ -2397,6 +2397,8 @@ function renderRecurringScheduleCell(
             <KolamStatusBadge
               intent={getRecurringStatusIntent(row.status)}
               label={row.status}
+              style={styles.recurringScheduleStatusBadge}
+              textStyle={styles.recurringScheduleStatusText}
             />
           </View>
         </View>
@@ -3900,6 +3902,15 @@ const styles = StyleSheet.create({
   recurringScheduleStatusCell: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+  },
+  recurringScheduleStatusBadge: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+    minWidth: 72,
+  },
+  recurringScheduleStatusText: {
+    textAlign: 'center',
     width: '100%',
   },
   centerCell: {
