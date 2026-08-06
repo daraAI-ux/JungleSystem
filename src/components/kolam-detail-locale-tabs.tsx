@@ -60,7 +60,7 @@ export function KolamDetailLocaleTabs({
           return (
             <KolamInteractionFrame
               accessibilityLabel={`Buka terjemahan ${item.title}`}
-              accessibilityState={{ selected }}
+              accessibilityState={localeFlag ? undefined : { selected }}
               key={key}
               onPress={() => setActiveKey(key)}
               selected={localeFlag ? undefined : selected}
