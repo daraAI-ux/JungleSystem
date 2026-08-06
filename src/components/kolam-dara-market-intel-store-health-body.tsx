@@ -17,6 +17,7 @@ import type {KolamDaraMarketIntelStoreHealthController} from '../hooks/use-kolam
 import {KolamButton} from './kolam-button';
 import {KolamDaraMarketIntelStoreHealthGauge} from './kolam-dara-market-intel-store-health-gauge';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 
 /** FE `StoreHealthProductsPanel` + Kesehatan page card. */
 export function KolamDaraMarketIntelStoreHealthBody({
@@ -131,33 +132,15 @@ export function KolamDaraMarketIntelStoreHealthBody({
                 </Text>
               </View>
             ) : (
-              <View style={styles.table}>
-                <View style={styles.tableHead}>
-                  <Text style={[styles.th, styles.colSku]}>SKU</Text>
-                  <Text style={[styles.th, styles.colName]}>Nama</Text>
-                  <Text style={[styles.th, styles.colScore]}>Skor</Text>
-                  <Text style={[styles.th, styles.colNum]}>Blk</Text>
-                  <Text style={[styles.th, styles.colNum]}>Wrn</Text>
-                  <Text style={[styles.th, styles.colAction]}>Aksi</Text>
-                </View>
-                {data.products.map(row => (
-                  <ProductRow
-                    expanded={controller.expandedId === row.productId}
-                    key={row.productId}
-                    onOpenEdit={() =>
-                      onRouteChange?.(
-                        buildKolamDaraMarketIntelProductEditRoute(
-                          row.productId,
-                        ),
-                      )
-                    }
-                    onToggle={() =>
-                      controller.onToggleExpanded(row.productId)
-                    }
-                    row={row}
-                  />
-                ))}
-              </View>
+              <KolamListTableComposition
+                columns={buildStoreHealthProductColumns({
+                  controller,
+                  onRouteChange,
+                })}
+                getRowKey={row => row.productId}
+                rows={data.products}
+                style={styles.table}
+              />
             )}
           </>
         ) : null}
@@ -199,46 +182,135 @@ function ParameterBar({
   );
 }
 
-function ProductRow({
+function buildStoreHealthProductColumns({
+  controller,
+  onRouteChange,
+}: {
+  controller: KolamDaraMarketIntelStoreHealthController;
+  onRouteChange?: (route: string) => void;
+}) {
+  return [
+    {
+      flex: 0.7,
+      id: 'sku',
+      label: 'SKU',
+      render: (row: KolamDaraMarketIntelStoreHealthProductRow) => (
+        <StoreHealthToggleCell
+          onPress={() => controller.onToggleExpanded(row.productId)}>
+          <Text numberOfLines={1} style={styles.td}>
+            {row.sku || '—'}
+          </Text>
+        </StoreHealthToggleCell>
+      ),
+    },
+    {
+      flex: 1.7,
+      id: 'name',
+      label: 'Nama',
+      render: (row: KolamDaraMarketIntelStoreHealthProductRow) => (
+        <StoreHealthProductNameCell
+          expanded={controller.expandedId === row.productId}
+          onToggle={() => controller.onToggleExpanded(row.productId)}
+          row={row}
+        />
+      ),
+    },
+    {
+      align: 'center' as const,
+      flex: 0.55,
+      id: 'score',
+      label: 'Skor',
+      render: (row: KolamDaraMarketIntelStoreHealthProductRow) => (
+        <StoreHealthToggleCell
+          onPress={() => controller.onToggleExpanded(row.productId)}>
+          <Text
+            style={[
+              styles.td,
+              styles.scoreText,
+              row.score >= 70 ? styles.scoreWarn : styles.scoreBad,
+            ]}>
+            {`${row.score}%`}
+          </Text>
+        </StoreHealthToggleCell>
+      ),
+    },
+    {
+      align: 'right' as const,
+      flex: 0.42,
+      id: 'blockers',
+      label: 'Blk',
+      render: (row: KolamDaraMarketIntelStoreHealthProductRow) => (
+        <StoreHealthToggleCell
+          onPress={() => controller.onToggleExpanded(row.productId)}>
+          <Text style={[styles.td, styles.numText]}>{row.blockers}</Text>
+        </StoreHealthToggleCell>
+      ),
+    },
+    {
+      align: 'right' as const,
+      flex: 0.42,
+      id: 'warnings',
+      label: 'Wrn',
+      render: (row: KolamDaraMarketIntelStoreHealthProductRow) => (
+        <StoreHealthToggleCell
+          onPress={() => controller.onToggleExpanded(row.productId)}>
+          <Text style={[styles.td, styles.numText]}>{row.warnings}</Text>
+        </StoreHealthToggleCell>
+      ),
+    },
+    {
+      align: 'center' as const,
+      flex: 0.8,
+      id: 'action',
+      label: 'Aksi',
+      render: (row: KolamDaraMarketIntelStoreHealthProductRow) => (
+        <Pressable
+          accessibilityRole="link"
+          onPress={() =>
+            onRouteChange?.(
+              buildKolamDaraMarketIntelProductEditRoute(row.productId),
+            )
+          }>
+          <Text style={styles.link}>Buka edit</Text>
+        </Pressable>
+      ),
+    },
+  ];
+}
+
+function StoreHealthToggleCell({
+  children,
+  onPress,
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={styles.toggleCell}>
+      {children}
+    </Pressable>
+  );
+}
+
+function StoreHealthProductNameCell({
   expanded,
-  onOpenEdit,
   onToggle,
   row,
 }: {
   expanded: boolean;
-  onOpenEdit: () => void;
   onToggle: () => void;
   row: KolamDaraMarketIntelStoreHealthProductRow;
 }) {
   return (
-    <View style={styles.productBlock}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onToggle}
-        style={styles.tableRow}>
-        <Text numberOfLines={1} style={[styles.td, styles.colSku]}>
-          {row.sku || '—'}
-        </Text>
-        <Text numberOfLines={1} style={[styles.td, styles.colName]}>
+    <View style={styles.nameCell}>
+      <StoreHealthToggleCell onPress={onToggle}>
+        <Text numberOfLines={1} style={styles.td}>
           {row.name}
         </Text>
-        <Text
-          style={[
-            styles.td,
-            styles.colScore,
-            row.score >= 70 ? styles.scoreWarn : styles.scoreBad,
-          ]}>
-          {`${row.score}%`}
-        </Text>
-        <Text style={[styles.td, styles.colNum]}>{row.blockers}</Text>
-        <Text style={[styles.td, styles.colNum]}>{row.warnings}</Text>
-        <Pressable
-          accessibilityRole="link"
-          onPress={onOpenEdit}
-          style={styles.colAction}>
-          <Text style={styles.link}>Buka edit</Text>
-        </Pressable>
-      </Pressable>
+      </StoreHealthToggleCell>
       {expanded ? (
         <View style={styles.issues}>
           {row.issues.map(issue => (
@@ -422,52 +494,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
-  tableHead: {
-    backgroundColor: V.colors.muted,
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  th: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  productBlock: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-  },
-  tableRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
   td: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  colSku: {
-    width: 72,
+  toggleCell: {
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    minHeight: 28,
   },
-  colName: {
-    flex: 1,
-    minWidth: 80,
+  nameCell: {
+    alignSelf: 'stretch',
+    gap: 6,
+    justifyContent: 'center',
+    minWidth: 0,
   },
-  colScore: {
-    width: 48,
+  scoreText: {
     fontWeight: '700',
   },
-  colNum: {
+  numText: {
     textAlign: 'right',
-    width: 36,
-  },
-  colAction: {
-    width: 72,
   },
   scoreWarn: {
     color: V.colors.warning,

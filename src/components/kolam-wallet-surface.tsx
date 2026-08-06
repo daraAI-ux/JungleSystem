@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  FlatList,
   Image,
   Linking,
   Modal,
@@ -49,7 +48,6 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
 import {
   KolamDropdownSelect,
@@ -60,6 +58,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { type KolamImagePreviewItem } from './kolam-image-preview-dialog';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -70,18 +69,6 @@ type WalletProofPick = {
   name: string;
   uri: string;
 };
-
-const TX_COLUMNS = [
-  { id: 'date', label: 'Tanggal', flex: 1 },
-  { id: 'wallet', label: 'Dompet', flex: 1 },
-  { id: 'type', label: 'Tipe', flex: 0.7 },
-  { id: 'source', label: 'Sumber', flex: 0.9 },
-  { id: 'amount', label: 'Jumlah', flex: 1 },
-  { id: 'status', label: 'Status', flex: 0.9 },
-  { id: 'bukti', label: 'Bukti', flex: 0.9 },
-  { id: 'note', label: 'Catatan', flex: 1 },
-  { id: 'action', label: '', flex: 0.8 },
-] as const;
 
 /**
  * Wallet ops — FE `/wallet` (dompet list + transaksi + drop/tarik/transfer).
@@ -1213,78 +1200,8 @@ function WalletTransactionPanel({
           option => option.value === controller.txFilters.confirmStatus,
         )?.label ?? 'Status');
 
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamWalletTransaction }) => {
-      const canConfirmRow =
-        controller.canConfirm &&
-        item.confirmStatus === 'unconfirmed' &&
-        Boolean(item.id);
-      return (
-        <View style={styles.row}>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text numberOfLines={2} style={styles.metaText}>
-              {formatTxDate(item.createdAt)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text numberOfLines={1} style={styles.primaryText}>
-              {item.walletName || item.walletId || '—'}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.7 }]}>
-            <Text style={styles.metaText}>
-              {formatKolamWalletTxTypeLabel(item.type)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
-            <Text numberOfLines={1} style={styles.metaText}>
-              {formatKolamWalletTxSourceLabel(item.source)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text
-              style={[
-                styles.primaryText,
-                item.type === 'credit'
-                  ? styles.valuePrimary
-                  : styles.valueDanger,
-              ]}
-            >
-              {item.type === 'credit' ? '+' : '-'}
-              {formatRupiah(item.amount)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
-            <KolamStatusBadge
-              intent={getKolamWalletConfirmStatusIntent(item.confirmStatus)}
-              label={formatKolamWalletConfirmStatusLabel(item.confirmStatus)}
-            />
-          </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
-            <WalletProofThumbs proofs={item.proofs} />
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text numberOfLines={2} style={styles.metaText}>
-              {item.note || '—'}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.8 }]}>
-            {canConfirmRow ? (
-              <KolamButton
-                intent="primary"
-                label={
-                  controller.confirmingTxId === item.id ? '…' : 'Konfirmasi'
-                }
-                onPress={() => {
-                  void controller.onConfirmTransaction(item);
-                }}
-                style={styles.confirmButton}
-              />
-            ) : null}
-          </View>
-        </View>
-      );
-    },
+  const transactionColumns = React.useMemo(
+    () => buildWalletTransactionColumns(controller),
     [controller],
   );
 
@@ -1456,7 +1373,13 @@ function WalletTransactionPanel({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
+      <KolamListTableComposition
+        columns={transactionColumns}
+        emptyTitle={
+          controller.loadingTransactions
+            ? 'Memuat...'
+            : 'Transaksi tidak ditemukan'
+        }
         footer={
           <KolamTableFooterControls
             onPageSizeChange={controller.onTxLimitChange}
@@ -1491,41 +1414,11 @@ function WalletTransactionPanel({
             ) : null}
           </KolamTableFooterControls>
         }
+        getRowKey={item => item.id}
+        loading={controller.loadingTransactions}
+        rows={controller.transactions}
         style={styles.tableFrame}
-      >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.transactions}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={
-                  controller.loadingTransactions
-                    ? 'Memuat…'
-                    : 'Transaksi tidak ditemukan'
-                }
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {TX_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          scrollEnabled={false}
-          style={styles.list}
-        />
-      </KolamCatalogListTableShell>
+      />
 
       <KolamExportDialog
         catalogEndpoint="/wallet-transaction/export/fields"
@@ -1555,6 +1448,117 @@ function WalletTransactionPanel({
       />
     </View>
   );
+}
+
+function buildWalletTransactionColumns(controller: KolamWalletController) {
+  return [
+    {
+      flex: 1,
+      id: 'date',
+      label: 'Tanggal',
+      render: (item: KolamWalletTransaction) => (
+        <Text numberOfLines={2} style={styles.metaText}>
+          {formatTxDate(item.createdAt)}
+        </Text>
+      ),
+    },
+    {
+      flex: 1,
+      id: 'wallet',
+      label: 'Dompet',
+      render: (item: KolamWalletTransaction) => (
+        <Text numberOfLines={1} style={styles.primaryText}>
+          {item.walletName || item.walletId || '—'}
+        </Text>
+      ),
+    },
+    {
+      flex: 0.7,
+      id: 'type',
+      label: 'Tipe',
+      render: (item: KolamWalletTransaction) => (
+        <Text style={styles.metaText}>
+          {formatKolamWalletTxTypeLabel(item.type)}
+        </Text>
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'source',
+      label: 'Sumber',
+      render: (item: KolamWalletTransaction) => (
+        <Text numberOfLines={1} style={styles.metaText}>
+          {formatKolamWalletTxSourceLabel(item.source)}
+        </Text>
+      ),
+    },
+    {
+      flex: 1,
+      id: 'amount',
+      label: 'Jumlah',
+      render: (item: KolamWalletTransaction) => (
+        <Text
+          style={[
+            styles.primaryText,
+            item.type === 'credit' ? styles.valuePrimary : styles.valueDanger,
+          ]}
+        >
+          {item.type === 'credit' ? '+' : '-'}
+          {formatRupiah(item.amount)}
+        </Text>
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'status',
+      label: 'Status',
+      render: (item: KolamWalletTransaction) => (
+        <KolamStatusBadge
+          intent={getKolamWalletConfirmStatusIntent(item.confirmStatus)}
+          label={formatKolamWalletConfirmStatusLabel(item.confirmStatus)}
+        />
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'bukti',
+      label: 'Bukti',
+      render: (item: KolamWalletTransaction) => (
+        <WalletProofThumbs proofs={item.proofs} />
+      ),
+    },
+    {
+      flex: 1,
+      id: 'note',
+      label: 'Catatan',
+      render: (item: KolamWalletTransaction) => (
+        <Text numberOfLines={2} style={styles.metaText}>
+          {item.note || '—'}
+        </Text>
+      ),
+    },
+    {
+      flex: 0.8,
+      id: 'action',
+      label: '',
+      render: (item: KolamWalletTransaction) => {
+        const canConfirmRow =
+          controller.canConfirm &&
+          item.confirmStatus === 'unconfirmed' &&
+          Boolean(item.id);
+        return canConfirmRow ? (
+          <KolamButton
+            intent="primary"
+            label={controller.confirmingTxId === item.id ? '...' : 'Konfirmasi'}
+            onPress={() => {
+              void controller.onConfirmTransaction(item);
+            }}
+            style={styles.confirmButton}
+          />
+        ) : null;
+      },
+    },
+  ];
 }
 
 function WalletProofThumbs({
@@ -2612,30 +2616,8 @@ const styles = StyleSheet.create({
   tableFrame: {
     flex: 1,
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
   emptyWrap: {
     paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
   },
   filterTrigger: {
     flexShrink: 0,
@@ -2706,19 +2688,6 @@ const styles = StyleSheet.create({
   dateFieldTrigger: {
     minWidth: 96,
     paddingHorizontal: 8,
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  cell: {
-    minWidth: 0,
   },
   primaryText: {
     color: V.colors.fg,
