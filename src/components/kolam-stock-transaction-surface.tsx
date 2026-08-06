@@ -444,6 +444,13 @@ function KolamStockTransactionDetail({
     );
   }
 
+  const targetSpecies =
+    tx.target?.kind === 'species'
+      ? controller.speciesOptions.find(species => species.id === tx.target?.id)
+      : null;
+  const targetSpeciesPhotoUri =
+    targetSpecies?.thumbnailUri || targetSpecies?.photoUris[0] || null;
+
   const infoRows: Array<{
     id: string;
     label: string;
@@ -666,23 +673,40 @@ function KolamStockTransactionDetail({
         fields={infoRows.map(row => ({
           id: row.id,
           label: row.label,
-          value: (
-            <View style={styles.summaryFieldStack}>
-              <Text
-                style={[
-                  styles.summaryFieldValue,
-                  row.tone === 'success' ? styles.successText : null,
-                  row.tone === 'warning' ? styles.warningText : null,
-                  row.tone === 'danger' ? styles.dangerText : null,
-                ]}
-              >
-                {row.value || '—'}
-              </Text>
-              {row.meta ? (
-                <Text style={styles.summaryFieldMeta}>{row.meta}</Text>
-              ) : null}
-            </View>
-          ),
+          value:
+            row.id === 'target' && targetSpeciesPhotoUri ? (
+              <View style={styles.summaryTargetRow}>
+                <KolamRemoteImage
+                  accessibilityLabel={row.value || 'Foto spesies'}
+                  sourceUri={targetSpeciesPhotoUri}
+                  style={styles.summaryTargetPhoto}
+                />
+                <View style={styles.summaryTargetCopy}>
+                  <Text style={styles.summaryFieldValue}>
+                    {row.value || '—'}
+                  </Text>
+                  {row.meta ? (
+                    <Text style={styles.summaryFieldMeta}>{row.meta}</Text>
+                  ) : null}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.summaryFieldStack}>
+                <Text
+                  style={[
+                    styles.summaryFieldValue,
+                    row.tone === 'success' ? styles.successText : null,
+                    row.tone === 'warning' ? styles.warningText : null,
+                    row.tone === 'danger' ? styles.dangerText : null,
+                  ]}
+                >
+                  {row.value || '—'}
+                </Text>
+                {row.meta ? (
+                  <Text style={styles.summaryFieldMeta}>{row.meta}</Text>
+                ) : null}
+              </View>
+            ),
         }))}
         fieldColumns={3}
         style={styles.detailCard}
@@ -1741,6 +1765,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   summaryFieldStack: {
+    gap: 3,
+    minWidth: 0,
+  },
+  summaryTargetRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
+  },
+  summaryTargetPhoto: {
+    borderRadius: 8,
+    height: 42,
+    width: 42,
+  },
+  summaryTargetCopy: {
+    flex: 1,
     gap: 3,
     minWidth: 0,
   },
