@@ -154,6 +154,7 @@ export const shellModules: ShellModule[] = [
       'list-of-users',
       'terms-templates',
       'proyek',
+      'proyek/new',
       'appointments',
       'kontrol-layanan',
       'stock-transaction',

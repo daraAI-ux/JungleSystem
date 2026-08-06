@@ -446,17 +446,17 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Terms & Conditions',
+        label: 'Syarat & Ketentuan',
         route: '/terms-templates',
         description: 'Template syarat dan ketentuan untuk surat penawaran',
-        group: 'Proyek',
+        group: 'Penjualan',
         requiredAccess: ['kolam'],
       },
       {
         label: 'Proyek',
         route: '/proyek',
         description: 'Detil proyek & surat penawaran',
-        group: 'Proyek',
+        group: 'Penjualan',
         requiredAccess: ['kolam'],
       },
       {
