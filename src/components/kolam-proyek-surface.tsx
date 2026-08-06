@@ -51,6 +51,7 @@ import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { kolamDetailMetaStripStyles } from './kolam-detail-meta-strip';
 import {
@@ -840,7 +841,7 @@ function KolamProyekDetailRead({
       <View style={styles.detailFrame}>
         <View style={styles.bodyRow}>
           <View style={styles.mainPane}>
-            <ScrollView
+            <KolamDetailScrollSurface
               contentContainerStyle={styles.detailContent}
               ref={detailScrollRef}
               style={styles.mainScroll}
@@ -1478,7 +1479,7 @@ function KolamProyekDetailRead({
             />
           </DetailSection>
         ) : null}
-            </ScrollView>
+            </KolamDetailScrollSurface>
           </View>
 
           <View style={styles.historyPane}>

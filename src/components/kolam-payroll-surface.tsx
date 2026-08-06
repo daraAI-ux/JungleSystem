@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamPayrollPeriodStatusLabel,
   getKolamPayrollPeriodStatusIntent,
@@ -21,6 +21,7 @@ import { buildKolamDaraTaxRoute } from '../domain/kolam-finance-tax';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -685,7 +686,7 @@ function PayrollSlipBody({
         />
       </View>
 
-      <ScrollView
+      <KolamDetailScrollSurface
         contentContainerStyle={styles.slipScrollContent}
         style={styles.slipScroll}
       >
@@ -800,7 +801,7 @@ function PayrollSlipBody({
             <Text style={styles.footerText}>Dicetak: {printedAt}</Text>
           </View>
         </KolamCardFrame>
-      </ScrollView>
+      </KolamDetailScrollSurface>
 
       <KolamPayrollSlipPrintDialog
         onOpenChange={setPrintOpen}

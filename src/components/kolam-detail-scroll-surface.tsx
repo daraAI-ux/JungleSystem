@@ -7,20 +7,29 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-export function KolamDetailScrollSurface({
-  children,
-  contentContainerStyle,
-  style,
-  keyboardShouldPersistTaps = 'handled',
-  ...scrollViewProps
-}: {
+type KolamDetailScrollSurfaceProps = {
   children: React.ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
-} & Omit<ScrollViewProps, 'contentContainerStyle' | 'style'>) {
+} & Omit<ScrollViewProps, 'contentContainerStyle' | 'style'>;
+
+export const KolamDetailScrollSurface = React.forwardRef<
+  React.ElementRef<typeof ScrollView>,
+  KolamDetailScrollSurfaceProps
+>(function DetailScrollSurface(
+  {
+    children,
+    contentContainerStyle,
+    style,
+    keyboardShouldPersistTaps = 'handled',
+    ...scrollViewProps
+  },
+  ref,
+) {
   return (
     <ScrollView
       {...scrollViewProps}
+      ref={ref}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       style={[styles.scroll, style]}
       contentContainerStyle={[styles.content, contentContainerStyle]}
@@ -28,7 +37,7 @@ export function KolamDetailScrollSurface({
       {children}
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   scroll: {

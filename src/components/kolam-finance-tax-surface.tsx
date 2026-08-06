@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   buildKolamDaraTaxRoute,
@@ -18,6 +18,7 @@ import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-contr
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
+import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDaraTaxLaporanBody} from './kolam-dara-tax-laporan-body';
 import {KolamDaraTaxOperasionalBody} from './kolam-dara-tax-operasional-body';
 import {KolamDaraTaxRegulasiBody} from './kolam-dara-tax-regulasi-body';
@@ -126,7 +127,7 @@ export function KolamFinanceTaxSurface({
           />
         </View>
 
-        <ScrollView
+        <KolamDetailScrollSurface
           contentContainerStyle={styles.scrollContent}
           style={styles.scroll}>
           {selectedTab === 'ringkasan' ? (
@@ -183,7 +184,7 @@ export function KolamFinanceTaxSurface({
               <Text style={styles.stubTitle}>{selectedTabLabel}</Text>
             </View>
           )}
-        </ScrollView>
+        </KolamDetailScrollSurface>
       </View>
     );
   }

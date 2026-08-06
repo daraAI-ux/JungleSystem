@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   buildKolamLayananOpsKpiCards,
   formatKolamLayananUnitPrice,
@@ -27,6 +27,7 @@ import {
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -128,7 +129,7 @@ function KolamLayananList({
   const kpiCards = buildKolamLayananOpsKpiCards(controller.opsDashboard);
 
   return (
-    <ScrollView
+    <KolamDetailScrollSurface
       contentContainerStyle={styles.listContent}
       style={styles.stack}
     >
@@ -248,7 +249,7 @@ function KolamLayananList({
           onRouteChange={onRouteChange}
         />
       ) : null}
-    </ScrollView>
+    </KolamDetailScrollSurface>
   );
 }
 

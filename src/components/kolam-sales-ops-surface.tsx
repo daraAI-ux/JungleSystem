@@ -47,6 +47,7 @@ import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDateField } from './kolam-date-field';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -724,7 +725,7 @@ function KolamSalesOpsCreateForm({
         </View>
       </View>
 
-      <ScrollView
+      <KolamDetailScrollSurface
         contentContainerStyle={styles.formContent}
         style={styles.formScroll}
       >
@@ -1575,7 +1576,7 @@ function KolamSalesOpsCreateForm({
           </KolamContentFrame>
         </View>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
     </View>
   );
 }

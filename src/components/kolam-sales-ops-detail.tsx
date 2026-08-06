@@ -76,6 +76,7 @@ import {
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
@@ -288,7 +289,7 @@ export function KolamSalesOpsDetail({
         />
       ) : null}
 
-      <ScrollView
+      <KolamDetailScrollSurface
         contentContainerStyle={styles.detailContent}
         style={styles.detailRoot}
       >
@@ -1174,7 +1175,7 @@ export function KolamSalesOpsDetail({
           ) : null}
         </View>
       </View>
-    </ScrollView>
+    </KolamDetailScrollSurface>
 
       <KolamConfirmDialog
         cancelLabel="Batal"

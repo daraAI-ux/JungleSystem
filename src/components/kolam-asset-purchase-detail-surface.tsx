@@ -22,6 +22,7 @@ import { formatRupiah } from '../lib/money';
 import { KolamAssetPurchaseDepreciationTab } from './kolam-asset-purchase-depreciation-tab';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import type { KolamDescriptionListRow } from './kolam-description-list-types';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -294,7 +295,7 @@ function AssetPurchaseDetailBody({
       <View style={styles.detailFrame}>
         <View style={styles.bodyRow}>
           <View style={styles.mainPane}>
-            <ScrollView
+            <KolamDetailScrollSurface
               contentContainerStyle={styles.content}
               style={styles.mainScroll}
             >
@@ -318,7 +319,7 @@ function AssetPurchaseDetailBody({
                   purchase={detail}
                 />
               ) : null}
-            </ScrollView>
+            </KolamDetailScrollSurface>
           </View>
 
           <View style={styles.historyPane}>
