@@ -1853,26 +1853,7 @@ function createPackingPhotoPreviewItems(
 }
 
 function createPackingImageItems(item: KolamPackingMaterial) {
-  const photoItems = item.photos.reduce<
-    Array<{ id: string; label: string; revision: string; uri: string }>
-  >((items, photo, index) => {
-    const uri = getKolamFileUrl(photo);
-    if (uri) {
-      items.push({
-        id: `${item.id}-photo-${index}`,
-        label: `${item.name} ${index + 1}`,
-        revision: photo,
-        uri,
-      });
-    }
-    return items;
-  }, []);
-
-  if (photoItems.length) {
-    return photoItems;
-  }
-
-  return item.assets.reduce<
+  const assetItems = item.assets.reduce<
     Array<{ id: string; label: string; revision: string; uri: string }>
   >((items, asset, index) => {
     if (!isPackingImageAsset(asset)) {
@@ -1892,6 +1873,23 @@ function createPackingImageItems(item: KolamPackingMaterial) {
 
     return items;
   }, []);
+
+  const photoItems = item.photos.reduce<
+    Array<{ id: string; label: string; revision: string; uri: string }>
+  >((items, photo, index) => {
+    const uri = getKolamFileUrl(photo);
+    if (uri) {
+      items.push({
+        id: `${item.id}-photo-${index}`,
+        label: `${item.name} ${index + 1}`,
+        revision: photo,
+        uri,
+      });
+    }
+    return items;
+  }, []);
+
+  return [...assetItems, ...photoItems];
 }
 
 function isPackingImageAsset(asset: KolamPackingMaterial['assets'][number]) {
