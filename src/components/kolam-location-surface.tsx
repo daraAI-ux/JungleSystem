@@ -1576,10 +1576,12 @@ function buildLocationProductInventoryColumns(): Array<
       id: 'status',
       label: 'Status',
       render: product => (
-        <KolamStatusBadge
-          intent={product.sellable ? 'success' : 'secondary'}
-          label={product.sellable ? 'Layak Jual' : 'Tidak Layak Jual'}
-        />
+        <View style={styles.inventoryBadgeCell}>
+          <KolamStatusBadge
+            intent={product.sellable ? 'success' : 'secondary'}
+            label={product.sellable ? 'Layak Jual' : 'Tidak Layak Jual'}
+          />
+        </View>
       ),
     },
   ];
@@ -2248,6 +2250,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 20,
     textAlign: 'center',
+    width: '100%',
+  },
+  inventoryBadgeCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
   },
   mutedText: {
