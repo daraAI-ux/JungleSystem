@@ -364,78 +364,74 @@ function KolamComplaintList({
               kolamTableToolbarStyles.filters,
               styles.complaintToolbarFilters,
             ]}>
-            <View style={styles.complaintSearchRow}>
-              <KolamSearchField
-                containerStyle={[
-                  kolamTableToolbarStyles.searchInput,
-                  styles.complaintSearchInput,
-                ]}
-                onChangeText={controller.onSearchChange}
-                placeholder="Cari tiket, invoice, pelanggan…"
-                value={controller.search}
+            <KolamSearchField
+              containerStyle={[
+                kolamTableToolbarStyles.searchInput,
+                styles.complaintSearchInput,
+              ]}
+              onChangeText={controller.onSearchChange}
+              placeholder="Cari tiket, invoice, pelanggan…"
+              value={controller.search}
+            />
+            <View ref={sourceTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'source' ||
+                  controller.sourceFilter !== 'all'
+                }
+                label={sourceFilterLabel}
+                onPress={() => toggleFilterPanel('source')}
+                open={activeFilterPanel === 'source'}
+                variant="quiet"
               />
             </View>
-            <View style={styles.complaintFilterRow}>
-              <View ref={sourceTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={
-                    activeFilterPanel === 'source' ||
-                    controller.sourceFilter !== 'all'
-                  }
-                  label={sourceFilterLabel}
-                  onPress={() => toggleFilterPanel('source')}
-                  open={activeFilterPanel === 'source'}
-                  variant="quiet"
-                />
-              </View>
-              <View ref={statusTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={
-                    activeFilterPanel === 'status' ||
-                    controller.statusFilter !== 'all'
-                  }
-                  label={statusFilterLabel}
-                  onPress={() => toggleFilterPanel('status')}
-                  open={activeFilterPanel === 'status'}
-                  variant="quiet"
-                />
-              </View>
-              <View ref={decisionTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={
-                    activeFilterPanel === 'decision' ||
-                    controller.decisionFilter !== 'all'
-                  }
-                  label={decisionFilterLabel}
-                  onPress={() => toggleFilterPanel('decision')}
-                  open={activeFilterPanel === 'decision'}
-                  variant="quiet"
-                />
-              </View>
-              <View ref={priorityTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={
-                    activeFilterPanel === 'priority' ||
-                    controller.priorityFilter !== 'all'
-                  }
-                  label={priorityFilterLabel}
-                  onPress={() => toggleFilterPanel('priority')}
-                  open={activeFilterPanel === 'priority'}
-                  variant="quiet"
-                />
-              </View>
-              <View ref={categoryTriggerRef} collapsable={false}>
-                <KolamTableFilterTrigger
-                  active={
-                    activeFilterPanel === 'category' ||
-                    controller.categoryFilter !== 'all'
-                  }
-                  label={categoryFilterLabel}
-                  onPress={() => toggleFilterPanel('category')}
-                  open={activeFilterPanel === 'category'}
-                  variant="quiet"
-                />
-              </View>
+            <View ref={statusTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'status' ||
+                  controller.statusFilter !== 'all'
+                }
+                label={statusFilterLabel}
+                onPress={() => toggleFilterPanel('status')}
+                open={activeFilterPanel === 'status'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={decisionTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'decision' ||
+                  controller.decisionFilter !== 'all'
+                }
+                label={decisionFilterLabel}
+                onPress={() => toggleFilterPanel('decision')}
+                open={activeFilterPanel === 'decision'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={priorityTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'priority' ||
+                  controller.priorityFilter !== 'all'
+                }
+                label={priorityFilterLabel}
+                onPress={() => toggleFilterPanel('priority')}
+                open={activeFilterPanel === 'priority'}
+                variant="quiet"
+              />
+            </View>
+            <View ref={categoryTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'category' ||
+                  controller.categoryFilter !== 'all'
+                }
+                label={categoryFilterLabel}
+                onPress={() => toggleFilterPanel('category')}
+                open={activeFilterPanel === 'category'}
+                variant="quiet"
+              />
             </View>
           </View>
           <View
@@ -2872,34 +2868,16 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   complaintToolbarFilters: {
-    alignItems: 'stretch',
-    flexDirection: 'column',
     flexGrow: 1,
     flexShrink: 1,
     flexWrap: 'nowrap',
-    gap: 6,
     minWidth: 0,
-  },
-  complaintSearchRow: {
-    alignItems: 'stretch',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    minWidth: 0,
-  },
-  complaintFilterRow: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    minWidth: 0,
-    overflow: 'visible',
   },
   complaintSearchInput: {
-    flexBasis: 'auto',
+    flexBasis: 150,
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 140,
+    minWidth: 104,
   },
   complaintToolbarActions: {
     flexGrow: 0,
