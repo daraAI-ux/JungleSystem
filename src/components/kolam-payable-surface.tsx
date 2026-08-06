@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import {
   formatKolamPayableSourceLabel,
   formatKolamPayableStatusLabel,
@@ -588,18 +596,26 @@ function PayableList({
         ),
       },
       {
+        align: 'center' as const,
         flex: 0.7,
         id: 'source',
         label: 'Sumber',
         render: (item: KolamPayable) => (
-          <PayableListCell item={item} onRouteChange={onRouteChange}>
-            <Text style={styles.metaText}>
+          <PayableListCell
+            contentStyle={styles.centeredListCell}
+            item={item}
+            onRouteChange={onRouteChange}
+          >
+            <Text style={[styles.metaText, styles.centerText]}>
               {formatKolamPayableSourceLabel(item.sourceModel)}
             </Text>
             {item.sourceLabel &&
             item.sourceModel === 'PurchaseOrder' &&
             item.sourceLabel !== 'PO' ? (
-              <Text numberOfLines={1} style={styles.metaText}>
+              <Text
+                numberOfLines={1}
+                style={[styles.metaText, styles.centerText]}
+              >
                 {item.sourceLabel}
               </Text>
             ) : null}
@@ -642,21 +658,31 @@ function PayableList({
         },
       },
       {
+        align: 'center' as const,
         flex: 1.15,
         id: 'installments',
         label: 'Cicilan',
         render: (item: KolamPayable) => (
-          <PayableListCell item={item} onRouteChange={onRouteChange}>
+          <PayableListCell
+            contentStyle={styles.centeredListCell}
+            item={item}
+            onRouteChange={onRouteChange}
+          >
             <PayableInstallmentSummaryCell summary={item.installmentSummary} />
           </PayableListCell>
         ),
       },
       {
+        align: 'center' as const,
         flex: 0.9,
         id: 'status',
         label: 'Status',
         render: (item: KolamPayable) => (
-          <PayableListCell item={item} onRouteChange={onRouteChange}>
+          <PayableListCell
+            contentStyle={styles.centeredListCell}
+            item={item}
+            onRouteChange={onRouteChange}
+          >
             <KolamStatusBadge
               intent={getKolamPayableStatusIntent(item.status)}
               label={formatKolamPayableStatusLabel(item.status)}
@@ -752,10 +778,12 @@ function PayableList({
 
 function PayableListCell({
   children,
+  contentStyle,
   item,
   onRouteChange,
 }: {
   children: React.ReactNode;
+  contentStyle?: StyleProp<ViewStyle>;
   item: KolamPayable;
   onRouteChange?: (route: string) => void;
 }) {
@@ -766,7 +794,7 @@ function PayableListCell({
       }
       style={styles.listCellPressable}
     >
-      {children}
+      <View style={contentStyle}>{children}</View>
     </Pressable>
   );
 }
@@ -1399,6 +1427,12 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     justifyContent: 'center',
     minHeight: 44,
+  },
+  centeredListCell: {
+    alignItems: 'center',
+  },
+  centerText: {
+    textAlign: 'center',
   },
   actionCell: {
     alignItems: 'center',
