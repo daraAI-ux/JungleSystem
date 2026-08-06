@@ -2188,12 +2188,10 @@ function KolamTaskRecurringEnrollmentDashboard({
           label: 'PIC',
           value: dashboard.byPic.length,
         },
-      ]}
-      sections={[
         {
           id: 'location',
-          title: 'Per kandang',
-          content: dashboard.byLocation.length ? (
+          label: 'Per kandang',
+          value: dashboard.byLocation.length ? (
             <View style={styles.enrollmentSummaryList}>
               {dashboard.byLocation.slice(0, 12).map(row => (
                 <View
@@ -2213,8 +2211,8 @@ function KolamTaskRecurringEnrollmentDashboard({
         },
         {
           id: 'pic',
-          title: 'Per PIC',
-          content: dashboard.byPic.length ? (
+          label: 'Per PIC',
+          value: dashboard.byPic.length ? (
             <View style={styles.enrollmentSummaryList}>
               {dashboard.byPic.slice(0, 12).map(row => (
                 <View
