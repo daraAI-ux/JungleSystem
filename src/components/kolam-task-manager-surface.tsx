@@ -71,10 +71,10 @@ import { KolamTotalTaskIcon } from './kolam-total-task-icon';
 
 const LIST_COLUMNS = [
   { id: 'primary', label: 'Tugas', align: 'left', flex: 2.3 },
-  { id: 'meta', label: 'PIC', align: 'center', flex: 1 },
-  { id: 'children', label: 'Asisten', align: 'center', flex: 0.95 },
-  { id: 'status', label: 'Status', align: 'center', flex: 1.05 },
-  { id: 'notes', label: 'Prioritas', align: 'center', flex: 0.95 },
+  { id: 'meta', label: 'PIC', align: 'center', flex: 0.62 },
+  { id: 'children', label: 'Asisten', align: 'center', flex: 0.68 },
+  { id: 'status', label: 'Status', align: 'center', flex: 1.38 },
+  { id: 'notes', label: 'Prioritas', align: 'center', flex: 1.28 },
   { id: 'marketplace', label: 'Countdown', align: 'center', flex: 1.05 },
   { id: 'amount', label: 'Due', align: 'center', flex: 1 },
 ] as const;
@@ -1642,6 +1642,7 @@ function renderTaskListCell(
               }))}
               showLabelInTrigger={false}
               style={styles.tableSelect}
+              triggerStyle={styles.tableSelectTrigger}
               value={task.status}
             />
           )}
@@ -1672,6 +1673,7 @@ function renderTaskListCell(
               }))}
               showLabelInTrigger={false}
               style={styles.tableSelect}
+              triggerStyle={styles.tableSelectTrigger}
               value={task.priority}
             />
           )}
@@ -3640,6 +3642,7 @@ const styles = StyleSheet.create({
   taskUserAvatarImage: {
     borderRadius: 16,
     height: 32,
+    overflow: 'hidden',
     width: 32,
   },
   taskUserAvatarText: {
@@ -3649,7 +3652,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   tableSelect: {
-    minWidth: 104,
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
+  },
+  tableSelectTrigger: {
+    minWidth: 0,
+    width: '100%',
   },
   primaryText: {
     color: V.colors.fg,
