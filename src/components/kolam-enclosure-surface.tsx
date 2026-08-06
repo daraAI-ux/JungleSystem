@@ -2426,14 +2426,14 @@ function SummaryTile({
           <Text numberOfLines={1} style={styles.summaryValue}>
             {String(value)}
           </Text>
+          {hint ? (
+            <Text numberOfLines={2} style={styles.summaryHint}>
+              {hint}
+            </Text>
+          ) : null}
         </View>
         {iconElement ? (
           <View style={styles.summaryLogoShell}>{iconElement}</View>
-        ) : null}
-        {hint ? (
-          <Text numberOfLines={2} style={styles.summaryHint}>
-            {hint}
-          </Text>
         ) : null}
       </View>
     </KolamCardFrame>
