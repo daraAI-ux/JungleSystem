@@ -2378,7 +2378,7 @@ export function resolveKolamSaleCreateItemDisplayName(
   }
   if (item.itemType === 'enclosure') {
     return (
-      enclosures.find(row => row.id === item.enclosureId)?.name || 'Enclosure'
+      enclosures.find(row => row.id === item.enclosureId)?.name || 'Kandang'
     );
   }
   return 'Item';
@@ -2868,7 +2868,7 @@ function validateSaleItems(
         errors.push(`Item ${idx}: kandang harus ObjectId valid`);
       }
       if (item.quantity !== 1) {
-        errors.push(`Item ${idx}: kuantitas enclosure harus 1`);
+        errors.push(`Item ${idx}: kuantitas kandang harus 1`);
       }
     }
     if (

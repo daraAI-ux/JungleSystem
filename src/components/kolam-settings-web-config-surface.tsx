@@ -5535,8 +5535,8 @@ export function KolamSettingsWebConfigSurface({
         <>
           <KolamToggleRow
             variant="settingsForm"
-            label="Plugin Enclosure"
-            description="Aktifkan route dan registry plugin enclosure."
+            label="Plugin Kandang"
+            description="Aktifkan route dan registry plugin kandang."
             active={draft.pluginControls.enclosure}
             onPress={() =>
               !disabled &&
@@ -8967,7 +8967,7 @@ function FinancialSettingsPanel({
                 },
                 {
                   id: 'enclosure-commission-detail',
-                  text: 'Tarif global untuk baris invoice itemType enclosure.',
+                  text: 'Tarif global untuk baris invoice itemType kandang.',
                   style: styles.marketplaceOverviewMeta,
                 },
               ]}

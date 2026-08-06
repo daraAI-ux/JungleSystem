@@ -165,7 +165,7 @@ const STOCK_SOURCE_LABELS: Record<string, string> = {
   'complaint-return': 'Retur komplain',
   'complaint-replacement': 'Pengganti komplain',
   custom_project: 'Proyek kustom',
-  enclosure: 'Enclosure',
+  enclosure: 'Kandang',
   adjustment: 'Penyesuaian',
   arrival_inspection: 'Inspeksi kedatangan',
   warranty_claim: 'Klaim garansi',

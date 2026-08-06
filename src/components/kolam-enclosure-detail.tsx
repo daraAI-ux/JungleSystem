@@ -122,14 +122,14 @@ export function KolamEnclosureDetailSurface({
   }, [activeDetailTab, detailTabs]);
 
   if (controller.loading && controller.dataSource === 'idle') {
-    return <InlineState title="Memuat detail enclosure..." />;
+    return <InlineState title="Memuat detail kandang..." />;
   }
   if (controller.error) {
     return (
       <View style={styles.surface}>
         <InlineState
           message={controller.error}
-          title="Gagal memuat detail enclosure"
+          title="Gagal memuat detail kandang"
         />
         <View style={styles.detailActions}>
           <KolamButton
@@ -149,8 +149,8 @@ export function KolamEnclosureDetailSurface({
   if (!enclosure) {
     return (
       <InlineState
-        message="Data enclosure tidak ditemukan dari response Kolam."
-        title="Enclosure tidak ditemukan"
+        message="Data kandang tidak ditemukan dari response Kolam."
+        title="Kandang tidak ditemukan"
       />
     );
   }
@@ -376,7 +376,7 @@ function KolamEnclosureDetailOverview({
               <View style={styles.detailThumbRow}>
                 {photoUris.slice(0, 4).map((uri, index) => (
                   <KolamRemoteImage
-                    accessibilityLabel={`Foto enclosure ${index + 1}`}
+                  accessibilityLabel={`Foto kandang ${index + 1}`}
                     key={`${uri}:${index}`}
                     resizeMode="cover"
                     scope="enclosure-detail-thumbs"
@@ -458,10 +458,10 @@ function KolamEnclosureDetailOverview({
       </View>
 
       <KolamBarcodePrintDialog
-        description="Label CODE128 memakai kode enclosure. Ukuran label mengikuti web enclosure: 75mm × 45mm."
+        description="Label CODE128 memakai kode kandang. Ukuran label mengikuti web kandang: 75mm × 45mm."
         items={barcodeItems}
         onOpenChange={setBarcodeOpen}
-        title="Cetak Barcode Enclosure"
+        title="Cetak Barcode Kandang"
         visible={barcodeOpen}
       />
     </>
@@ -478,7 +478,7 @@ function KolamEnclosureDetailSpeciesTab({
   return (
     <>
       <View style={styles.detailTwoColumn}>
-        <DetailSection title="Spesies di enclosure">
+        <DetailSection title="Spesies di kandang">
           {enclosure.species.length ? (
             enclosure.species.map(item => {
               const photoUri = getKolamFileUrl(item.thumbnailUrl);
@@ -754,7 +754,7 @@ function KolamEnclosureDetailTasksTab({
       <DetailSection title="Tugas terkait">
         <View style={styles.detailSectionIntroRow}>
           <Text style={styles.sectionMeta}>
-            Task manual & sub-task dari enclosure ini
+            Task manual & sub-task dari kandang ini
           </Text>
           <KolamButton
             label="Buat"
@@ -838,18 +838,18 @@ function KolamEnclosureDetailTasksTab({
 
       <DetailSection title="Jadwal berulang">
         <Text style={styles.sectionMeta}>
-          Per tipe task · PIC dari enclosure
+          Per tipe task · PIC dari kandang
         </Text>
         {controller.enclosureRecurringLoading ? (
           <Text style={styles.sectionMeta}>Memuat…</Text>
         ) : recurringRows.length === 0 ? (
-          <Text style={styles.sectionMeta}>Tidak ada tipe task enclosure.</Text>
+          <Text style={styles.sectionMeta}>Tidak ada tipe task kandang.</Text>
         ) : (
           recurringRows.map(row => (
             <KolamToggleRow
               key={row.taskType.id}
               active={row.active}
-              description="PIC dari enclosure"
+              description="PIC dari kandang"
               disabled={controller.operationLoading}
               label={row.taskType.name}
               onPress={() =>
@@ -1207,7 +1207,7 @@ function EnclosureClimateParameters({
       <DetailSection title={title}>
         <View style={styles.detailWarningBand}>
           <Text style={styles.warningText}>
-            Sub-tipe air (tawar/laut) belum diset. Atur saat setup enclosure di
+            Sub-tipe air (tawar/laut) belum diset. Atur saat setup kandang di
             form edit.
           </Text>
         </View>
@@ -1436,7 +1436,7 @@ function EnclosureProvisioningOperation({
     <DetailSection title="Provisioning kode">
       <View style={styles.detailWarningBand}>
         <Text style={styles.warningText}>
-          Enclosure belum punya kode. Simpan kode agar bisa dilacak dan dicetak
+          Kandang belum punya kode. Simpan kode agar bisa dilacak dan dicetak
           barcode.
         </Text>
       </View>
@@ -1588,7 +1588,7 @@ function EnclosureCommentsOperation({
   return (
     <DetailSection title="Komentar">
       <Text style={styles.sectionMeta}>
-        Catatan tim terkait enclosure ini
+        Catatan tim terkait kandang ini
       </Text>
       <KolamTipTapExclusiveGroup initialFieldId={ENCLOSURE_COMMENT_COMPOSE_FIELD}>
         <View style={styles.commentComposer}>
@@ -2029,7 +2029,7 @@ function EnclosureSpeciesOperation({
 
       <Text style={styles.sectionMeta}>Event populasi</Text>
       <KolamDropdownSelect
-        label="Line di enclosure"
+        label="Line di kandang"
         menuPlacement="inline"
         onChange={setLineKey}
         options={lineOptions}
@@ -3430,4 +3430,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-

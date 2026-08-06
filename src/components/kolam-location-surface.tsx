@@ -970,7 +970,7 @@ function KolamLocationInventorySection({
   return (
     <KolamContentFrame variant="settingsWebConfig" style={styles.detailCard}>
       <SectionTitle
-        description="Produk, enclosure, dan aset yang terhubung ke lokasi ini."
+        description="Produk, kandang, dan aset yang terhubung ke lokasi ini."
         title="Inventaris di lokasi"
       />
       {error ? (
@@ -1001,7 +1001,7 @@ function KolamLocationInventorySection({
           loading={loading}
           subtitle={`${totals.enclosures || enclosures.length} unit`}
           tableId="location-enclosure"
-          title="Enclosure">
+          title="Kandang">
           {enclosures.map(enclosure => (
             <LocationEnclosureInventoryRow
               enclosure={enclosure}

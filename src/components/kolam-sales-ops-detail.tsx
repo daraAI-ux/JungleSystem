@@ -281,7 +281,7 @@ export function KolamSalesOpsDetail({
           items={[
             {
               id: 'livestock',
-              text: `${sale.openLivestockPendingCount} species perlu atur enclosure`,
+              text: `${sale.openLivestockPendingCount} species perlu atur kandang`,
               style: styles.warningHint,
             },
           ]}
@@ -1120,7 +1120,7 @@ export function KolamSalesOpsDetail({
         <View style={styles.columnSide}>
           {controller.livestockAllocations.length > 0 ? (
             <>
-              <Text style={styles.sectionTitle}>Alokasi enclosure</Text>
+              <Text style={styles.sectionTitle}>Alokasi kandang</Text>
               {controller.livestockAllocations.map(row => (
                 <Text key={row.id} style={styles.metaText}>
                   {row.label} · {row.status}

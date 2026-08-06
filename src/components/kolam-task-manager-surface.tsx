@@ -798,7 +798,7 @@ function getTaskRelatedLinks(task: KolamTaskManagerTask) {
   const links: Array<{ label: string; route: string }> = [];
   if (task.enclosureId) {
     links.push({
-      label: `Enclosure ${task.enclosure?.code || task.enclosure?.name || task.enclosureId}`,
+      label: `Kandang ${task.enclosure?.code || task.enclosure?.name || task.enclosureId}`,
       route: `/enclosures/${task.enclosureId}`,
     });
   }
@@ -1399,7 +1399,7 @@ function KolamTaskRecurringPanel({
           <View style={kolamTableToolbarStyles.actions}>
             {controller.isTaskAdmin ? (
               <View style={styles.switchInline}>
-                <Text style={styles.metaText}>Hanya enclosure</Text>
+                <Text style={styles.metaText}>Hanya kandang</Text>
                 <KolamSwitch
                   active={controller.recurringEnclosureOnly}
                   onPress={() =>
@@ -1575,7 +1575,7 @@ function KolamTaskRecurringEnrollmentDashboard({
     <View style={styles.detailCard}>
       <View>
         <Text style={styles.sectionTitle}>
-          Enclosure - enrollment & compliance
+          Kandang - enrollment & compliance
         </Text>
         <Text style={styles.metaText}>30 hari terakhir</Text>
       </View>
@@ -2384,7 +2384,7 @@ function KolamTaskRecurringBulkEnrollmentModal({
         <View style={styles.categoryModalCard}>
           <View style={styles.modalHeader}>
             <Text numberOfLines={1} style={styles.modalTitle}>
-              Bulk enrollment enclosure
+              Bulk enrollment kandang
             </Text>
             <View style={styles.modalActions}>
               <KolamButton
@@ -2449,7 +2449,7 @@ function KolamTaskRecurringBulkEnrollmentModal({
             value={controller.recurringBulkForm.locationId}
           />
           <View style={styles.formSwitchRow}>
-            <Text style={styles.cellText}>Hanya enclosure yang punya PIC</Text>
+            <Text style={styles.cellText}>Hanya kandang yang punya PIC</Text>
             <KolamSwitch
               active={controller.recurringBulkForm.allWithPic}
               onPress={() =>
@@ -2459,7 +2459,7 @@ function KolamTaskRecurringBulkEnrollmentModal({
               }
             />
           </View>
-          <Text style={styles.metaText}>Maks. 500 enclosure per operasi.</Text>
+          <Text style={styles.metaText}>Maks. 500 kandang per operasi.</Text>
         </View>
       </View>
     </Modal>
@@ -2818,7 +2818,7 @@ function KolamTaskRecurringTemplateFormModal({
                 value={controller.recurringTemplateForm.assignedToId}
               />
               <KolamDropdownSelect
-                label="Tipe task enclosure"
+                label="Tipe task kandang"
                 onChange={taskTypeId =>
                   controller.onChangeRecurringTemplateForm({
                     taskTypeId: taskTypeId === '__none__' ? '' : taskTypeId,

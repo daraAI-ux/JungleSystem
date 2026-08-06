@@ -755,7 +755,7 @@ function KolamUserListSurface({
         destructive
         message={
           deleteTarget
-            ? `Hapus permanen pengguna "${deleteTarget.displayName}"? Backend akan menjalankan hard cleanup: unlink referensi transaksi/ownership/notifikasi, menghapus enclosure/species/user storage/cart milik user, menghapus dokumen user, dan membersihkan file terkait. Aksi ini tidak bisa dibatalkan.${deleteError ? `\n\n${deleteError}` : ''}`
+            ? `Hapus permanen pengguna "${deleteTarget.displayName}"? Backend akan menjalankan hard cleanup: unlink referensi transaksi/ownership/notifikasi, menghapus kandang/species/user storage/cart milik user, menghapus dokumen user, dan membersihkan file terkait. Aksi ini tidak bisa dibatalkan.${deleteError ? `\n\n${deleteError}` : ''}`
             : 'Pilih pengguna yang akan dihapus permanen.'
         }
         onCancel={() => {

@@ -26,7 +26,7 @@ const SOURCE_BADGES: Record<
   'complaint-return': { shortLabel: 'Retur', tone: 'warning' },
   'complaint-replacement': { shortLabel: 'Ganti', tone: 'warning' },
   custom_project: { shortLabel: 'Proyek', tone: 'info' },
-  enclosure: { shortLabel: 'Enclosure', tone: 'default' },
+  enclosure: { shortLabel: 'Kandang', tone: 'default' },
   adjustment: { shortLabel: 'Adjust', tone: 'default' },
   arrival_inspection: { shortLabel: 'Inspeksi', tone: 'info' },
   warranty_claim: { shortLabel: 'Garansi', tone: 'danger' },

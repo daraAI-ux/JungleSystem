@@ -448,7 +448,7 @@ export const KOLAM_TASK_CATEGORY_BUCKET_LABEL: Record<
   KolamTaskCategoryBucket,
   string
 > = {
-  enclosure: 'Enclosure',
+  enclosure: 'Kandang',
   project: 'Proyek / Layanan',
   crm: 'CRM / Chat',
   production: 'Produksi',

@@ -5392,7 +5392,7 @@ function createFinancialSummaryRows(
     },
     {
       id: 'enclosure-sale-commission',
-      label: 'Enclosure sale commission',
+      label: 'Komisi penjualan kandang',
       value: formatEnabled(commission.enabled === true),
       detail: `${commission.type ?? 'percentage'} ${formatNumber(
         commission.value,

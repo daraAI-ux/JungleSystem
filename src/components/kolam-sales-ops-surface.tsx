@@ -632,7 +632,7 @@ function KolamSalesOpsCreateForm({
       ? 'Ubah data invoice draft sebelum dikirim ke pembeli.'
       : mode === 'add-items'
         ? 'Tambahkan produk atau item custom ke invoice yang sudah lunas.'
-        : 'Buat invoice backoffice (produk, spesies, custom, layanan, atau enclosure).';
+        : 'Buat invoice backoffice (produk, spesies, custom, layanan, atau kandang).';
 
   const backRoute =
     (isEditMode || isAddItemsMode) && controller.selectedSale?.id

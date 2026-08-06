@@ -310,9 +310,9 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Enclosures',
+        label: 'Kandang',
         route: '/enclosures',
-        description: 'Animal enclosure and habitat records from live Kolam',
+        description: 'Data kandang dan habitat dari live Kolam',
         group: 'Stok Hidup',
         requiredAccess: ['kolam'],
       },
@@ -768,7 +768,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       }),
       sidebarItem('/enclosures', {
         group: 'Produksi',
-        label: 'Daftar Enclosure',
+        label: 'Daftar Kandang',
       }),
       sidebarItem('/locations', {
         description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
@@ -1819,13 +1819,13 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/enclosures',
     labelSuffix: 'Detail',
     route: '/enclosures/:id',
-    description: 'Enclosure detail page from live Kolam',
+    description: 'Detail kandang dari live Kolam',
   },
   {
     baseRoute: '/enclosures',
     labelSuffix: 'Edit',
     route: '/enclosures/:id/edit',
-    description: 'Edit enclosure page from live Kolam',
+    description: 'Edit kandang dari live Kolam',
   },
   {
     baseRoute: '/finance',

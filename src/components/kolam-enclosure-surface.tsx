@@ -130,12 +130,12 @@ const PRODUCTION_STATS_COLUMNS = [
   {id: 'species', label: 'Species', flex: 1.4, align: 'left'},
   {id: 'variant', label: 'Varian', flex: 1, align: 'left'},
   {id: 'qty', label: 'Qty', flex: 0.8, align: 'right'},
-  {id: 'enclosure', label: 'Enc', flex: 0.6, align: 'center'},
+  {id: 'enclosure', label: 'Kdg', flex: 0.6, align: 'center'},
 ] as const;
 
 const DASHBOARD_DEATH_COLUMNS = [
   {id: 'meta', label: 'Waktu', flex: 1.05, align: 'left'},
-  {id: 'children', label: 'Enclosure', flex: 0.9, align: 'left'},
+  {id: 'children', label: 'Kandang', flex: 0.9, align: 'left'},
   {id: 'primary', label: 'Species', flex: 1.4, align: 'left'},
   {id: 'amount', label: 'Qty', flex: 0.55, align: 'right'},
   {id: 'status', label: 'Status', flex: 1, align: 'center'},
@@ -144,9 +144,9 @@ const DASHBOARD_DEATH_COLUMNS = [
 const ALLOCATION_OVERVIEW_COLUMNS = [
   {id: 'primary', label: 'Species', flex: 1.45, align: 'left'},
   {id: 'notes', label: 'Varian', flex: 0.85, align: 'center'},
-  {id: 'children', label: 'Sudah di enclosure', flex: 1, align: 'center'},
-  {id: 'amount', label: 'Belum di enclosure', flex: 1, align: 'center'},
-  {id: 'marketplace', label: 'Kode enclosure', flex: 1.35, align: 'center'},
+  {id: 'children', label: 'Sudah di kandang', flex: 1, align: 'center'},
+  {id: 'amount', label: 'Belum di kandang', flex: 1, align: 'center'},
+  {id: 'marketplace', label: 'Kode kandang', flex: 1.35, align: 'center'},
 ] as const;
 
 type ProductionStatsColumnId = (typeof PRODUCTION_STATS_COLUMNS)[number]['id'];
@@ -247,14 +247,14 @@ function KolamEnclosureEditSurface({
   }, [enclosure, hydratedId]);
 
   if (controller.loading && controller.dataSource === 'idle') {
-    return <InlineState title="Memuat data enclosure..." />;
+    return <InlineState title="Memuat data kandang..." />;
   }
   if (controller.error && !enclosure) {
     return (
       <View style={styles.surface}>
         <InlineState
           message={controller.error}
-          title="Gagal memuat data enclosure"
+          title="Gagal memuat data kandang"
         />
         <View style={styles.detailActions}>
           <KolamButton
@@ -275,8 +275,8 @@ function KolamEnclosureEditSurface({
     return (
       <View style={styles.surface}>
         <InlineState
-          message="Data enclosure tidak ditemukan dari response Kolam."
-          title="Enclosure tidak ditemukan"
+          message="Data kandang tidak ditemukan dari response Kolam."
+          title="Kandang tidak ditemukan"
         />
         <View style={styles.detailActions}>
           <KolamButton
@@ -465,7 +465,7 @@ function KolamEnclosureEditSurface({
                   enclosure_code: value.toUpperCase(),
                 }))
               }
-              placeholder="Kode enclosure"
+              placeholder="Kode kandang"
               style={styles.editFormInput}
               value={form.enclosure_code}
             />
@@ -560,11 +560,11 @@ function KolamEnclosureEditSurface({
       </DetailSection>
 
       <DetailSection title="Foto sampul">
-        <Text style={styles.sectionMeta}>Gambar utama enclosure.</Text>
+        <Text style={styles.sectionMeta}>Gambar utama kandang.</Text>
         <View style={styles.editCoverPreview}>
           {coverUri ? (
             <KolamRemoteImage
-              accessibilityLabel="Cover enclosure"
+              accessibilityLabel="Cover kandang"
               resizeMode="cover"
               scope="enclosure-edit-cover"
               sourceUri={coverUri}
@@ -692,7 +692,7 @@ function KolamEnclosureEditSurface({
         <Text style={styles.sectionMeta}>
           {sizeLocked
             ? 'Dimensi sudah tercatat — view-only setelah provisioning.'
-            : 'Dimensi fisik enclosure.'}
+            : 'Dimensi fisik kandang.'}
         </Text>
         {sizeLocked ? (
           <View style={styles.editSizeLockedList}>
@@ -1000,7 +1000,7 @@ function KolamEnclosureList({
               <KolamSearchField
                 containerStyle={kolamTableToolbarStyles.searchInput}
                 onChangeText={setSearchInput}
-                placeholder="Cari kode / nama enclosure"
+                placeholder="Cari kode / nama kandang"
                 value={searchInput}
               />
               <View ref={typeTriggerRef} collapsable={false}>
@@ -1210,10 +1210,10 @@ function KolamEnclosureTable({
       columns={listColumns}
       emptyTitle={
         controller.loading
-          ? 'Memuat enclosure...'
+          ? 'Memuat kandang...'
           : controller.error
-            ? 'Gagal memuat enclosure'
-            : 'Belum ada enclosure'
+            ? 'Gagal memuat kandang'
+            : 'Belum ada kandang'
       }
       getRowKey={item => item.id || item.code}
       loading={controller.loading}
@@ -1277,7 +1277,7 @@ function buildEnclosureListColumns({
     {
       flex: 1.18,
       id: 'name',
-      label: 'Enclosure',
+      label: 'Kandang',
       render: enclosure => {
         const sizeText = formatEnclosureSize(enclosure);
         return (
@@ -1526,7 +1526,7 @@ function KolamEnclosureDashboardPanel({
           <SummaryTile
             compact
             icon="E"
-            label="Jumlah enclosure"
+            label="Jumlah kandang"
             value={stats.totals.enclosures}
             width={summaryCardWidth}
           />
@@ -1534,7 +1534,7 @@ function KolamEnclosureDashboardPanel({
             compact
             hint={`${stats.totals.individuals} ekor total`}
             icon="S"
-            label="Spesies di enclosure"
+            label="Spesies di kandang"
             value={stats.totals.speciesDistinct}
             width={summaryCardWidth}
           />
@@ -1551,7 +1551,7 @@ function KolamEnclosureDashboardPanel({
             compact
             hint={`${stats.saleable.speciesDistinct} jenis`}
             icon="J"
-            label="Stok jual di enclosure"
+            label="Stok jual di kandang"
             value={stats.saleable.totalQty}
             width={summaryCardWidth}
           />
@@ -2052,7 +2052,7 @@ function KolamEnclosureAllocationPanel({
     return (
       <InlineState
         title="Belum ada statistik"
-        message="Belum ada livestock yang terhubung ke enclosure."
+        message="Belum ada livestock yang terhubung ke kandang."
       />
     );
   }
@@ -2074,13 +2074,13 @@ function KolamEnclosureAllocationPanel({
         <SummaryTile
           accent="primary"
           icon="E"
-          label="Sudah di enclosure"
+          label="Sudah di kandang"
           value={controller.allocationOverview.totals.totalAllocated}
         />
         <SummaryTile
           accent="warning"
           icon="!"
-          label="Belum di enclosure"
+          label="Belum di kandang"
           value={controller.allocationOverview.totals.totalUnallocated}
         />
       </View>

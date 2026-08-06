@@ -2218,7 +2218,7 @@ function LocationPanel({ species }: { species: KolamSpecies }) {
 
             {pendingRows.length ? (
               <View style={styles.locationListCard}>
-                <Text style={styles.variantPricingTitle}>Penjualan - perlu alokasi enclosure</Text>
+                <Text style={styles.variantPricingTitle}>Penjualan - perlu alokasi kandang</Text>
                 {pendingRows.map(row => (
                   <View key={row.id} style={styles.locationListRow}>
                     <Text style={styles.logisticsMethodTitle}>{row.invoiceCode || row.saleId}</Text>
@@ -2231,7 +2231,7 @@ function LocationPanel({ species }: { species: KolamSpecies }) {
             ) : null}
 
             <View style={styles.locationListCard}>
-              <Text style={styles.variantPricingTitle}>Posisi per enclosure</Text>
+              <Text style={styles.variantPricingTitle}>Posisi per kandang</Text>
               {placements.length ? (
                 placements.map((row, index) => (
                   <View key={`${row.enclosure.id}-${row.variantId ?? 'root'}-${index}`} style={styles.locationListRow}>
@@ -2241,7 +2241,7 @@ function LocationPanel({ species }: { species: KolamSpecies }) {
                   </View>
                 ))
               ) : (
-                <Text style={styles.emptyText}>Belum ditempatkan di enclosure manapun.</Text>
+                <Text style={styles.emptyText}>Belum ditempatkan di kandang manapun.</Text>
               )}
             </View>
           </View>

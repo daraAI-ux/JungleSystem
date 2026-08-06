@@ -144,7 +144,7 @@ describe('Kolam enclosure surface', () => {
 
     const root = renderer!.root;
     expect(root.findAllByProps({label: 'Dashboard'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({placeholder: 'Cari kode / nama enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({placeholder: 'Cari kode / nama kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Tipe'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({label: 'Livestock'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'ENC-1'}).length).toBeGreaterThan(0);
@@ -171,7 +171,7 @@ describe('Kolam enclosure surface', () => {
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Customer'})[0].props.onPress();
       root
-        .findAllByProps({placeholder: 'Cari kode / nama enclosure'})
+        .findAllByProps({placeholder: 'Cari kode / nama kandang'})
         .find(node => typeof node.props.onChangeText === 'function')!
         .props.onChangeText('frog');
     });
@@ -234,7 +234,7 @@ describe('Kolam enclosure surface', () => {
     });
 
     expect(
-      renderer!.root.findAllByProps({title: 'Memuat enclosure…'}).length,
+      renderer!.root.findAllByProps({title: 'Memuat kandang...'}).length,
     ).toBeGreaterThan(0);
 
     const emptyController = createController({
@@ -251,7 +251,7 @@ describe('Kolam enclosure surface', () => {
     });
 
     expect(
-      renderer!.root.findAllByProps({title: 'Belum ada enclosure'}).length,
+      renderer!.root.findAllByProps({title: 'Belum ada kandang'}).length,
     ).toBeGreaterThan(0);
 
     const errorController = createController({
@@ -269,7 +269,7 @@ describe('Kolam enclosure surface', () => {
     });
 
     expect(
-      renderer!.root.findAllByProps({title: 'Gagal memuat enclosure'}).length,
+      renderer!.root.findAllByProps({title: 'Gagal memuat kandang'}).length,
     ).toBeGreaterThan(0);
     expect(renderer!.root.findAllByProps({label: 'backend down'}).length).toBeGreaterThan(0);
   });
@@ -301,10 +301,10 @@ describe('Kolam enclosure surface', () => {
     });
 
     const root = renderer!.root;
-    expect(root.findAllByProps({children: 'Jumlah enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Spesies di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Jumlah kandang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Spesies di kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Indukan produksi'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Stok jual di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Stok jual di kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Kematian dilaporkan'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Total kelahiran indukan'}).length).toBeGreaterThan(0);
     expect(
@@ -481,7 +481,7 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Jual unit kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Komentar'}).length).toBeGreaterThan(0);
     expect(
-      root.findAllByProps({children: 'Catatan tim terkait enclosure ini'}).length,
+      root.findAllByProps({children: 'Catatan tim terkait kandang ini'}).length,
     ).toBeGreaterThan(0);
     expect(
       root.findAllByProps({children: 'editor:Tulis komentar…:'}).length,
@@ -499,7 +499,7 @@ describe('Kolam enclosure surface', () => {
     await ReactTestRenderer.act(async () => {
       root.findAllByProps({label: 'Spesies'})[0].props.onPress();
     });
-    expect(root.findAllByProps({children: 'Spesies di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Spesies di kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Ranitomeya'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Riwayat populasi'}).length).toBeGreaterThan(0);
 
@@ -519,7 +519,7 @@ describe('Kolam enclosure surface', () => {
     expect(root.findAllByProps({children: 'Jadwal berulang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Belum ada tugas.'}).length).toBeGreaterThan(0);
     expect(
-      root.findAllByProps({children: 'Tidak ada tipe task enclosure.'}).length,
+      root.findAllByProps({children: 'Tidak ada tipe task kandang.'}).length,
     ).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
@@ -708,11 +708,11 @@ describe('Kolam enclosure surface', () => {
     const root = renderer!.root;
     expect(root.findAllByProps({label: 'Satuan ukuran'}).length).toBeGreaterThan(0);
     expect(
-      root.findAllByProps({children: 'Dimensi fisik enclosure.'}).length,
+      root.findAllByProps({children: 'Dimensi fisik kandang.'}).length,
     ).toBeGreaterThan(0);
 
     await ReactTestRenderer.act(async () => {
-      root.findAllByProps({placeholder: 'Kode enclosure'})[0].props.onChangeText(
+      root.findAllByProps({placeholder: 'Kode kandang'})[0].props.onChangeText(
         'enc-new',
       );
       root
@@ -913,8 +913,8 @@ describe('Kolam enclosure surface', () => {
     const root = renderer!.root;
     expect(root.findAllByProps({children: 'Jumlah species'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Stok total'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Sudah di enclosure'}).length).toBeGreaterThan(0);
-    expect(root.findAllByProps({children: 'Belum di enclosure'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Sudah di kandang'}).length).toBeGreaterThan(0);
+    expect(root.findAllByProps({children: 'Belum di kandang'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'Tinctorius'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: '2 varian down'}).length).toBeGreaterThan(0);
     expect(root.findAllByProps({children: 'ENC-A'}).length).toBeGreaterThan(0);

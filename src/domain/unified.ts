@@ -231,10 +231,10 @@ export const pluginRegistry: PluginDescriptor[] = [
   },
   {
     id: 'enclosure',
-    label: 'Enclosure',
+    label: 'Kandang',
     manifestName: 'DA-Enclosure-Plugin',
     description:
-      'Kelola enclosure, livestock di enclosure, task, jadwal, dan pergerakan stok.',
+      'Kelola kandang, livestock di kandang, task, jadwal, dan pergerakan stok.',
     packageName: '@dara-ai/da-enclosure-plugin',
     packageVersion: '1.4.58',
     manifestVersion: '1.4.58',
@@ -354,7 +354,7 @@ export const pluginRegistry: PluginDescriptor[] = [
     label: 'Manajemen Tugas',
     manifestName: 'DA-Task-Manager-Plugin',
     description:
-      'Kelola tugas, tugas terjadwal, kategori, tipe task enclosure, dan integrasi proyek.',
+      'Kelola tugas, tugas terjadwal, kategori, tipe task kandang, dan integrasi proyek.',
     packageName: '@dara-ai/da-task-manager-plugin',
     packageVersion: '1.0.13',
     manifestVersion: '1.0.13',

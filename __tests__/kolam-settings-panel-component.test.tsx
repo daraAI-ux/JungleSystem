@@ -137,7 +137,7 @@ describe('KolamSettingsPanel', () => {
     });
 
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Plugin', 'Plugin Enclosure', 'Plugin DARA']),
+      expect.arrayContaining(['Plugin', 'Plugin Kandang', 'Plugin DARA']),
     );
     expect(renderText(renderer!)).not.toEqual(
       expect.arrayContaining(['Ringkasan Landing Marketplace']),
@@ -155,7 +155,7 @@ describe('KolamSettingsPanel', () => {
       ]),
     );
     expect(renderText(renderer!)).not.toEqual(
-      expect.arrayContaining(['Plugin Enclosure']),
+      expect.arrayContaining(['Plugin Kandang']),
     );
   });
 
@@ -225,7 +225,7 @@ describe('KolamSettingsPanel', () => {
         'Firebase',
         'DARA business',
         'Suara notifikasi',
-        'Plugin Enclosure',
+        'Plugin Kandang',
         'Ringkasan Landing Marketplace',
       ]),
     );
@@ -315,7 +315,7 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining([
         'Tagline Perusahaan',
         'Akses MAC',
-        'Plugin Enclosure',
+        'Plugin Kandang',
         'Ringkasan Landing Marketplace',
       ]),
     );
@@ -409,7 +409,7 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining([
         'Tagline Perusahaan',
         'OTP masuk staf',
-        'Plugin Enclosure',
+        'Plugin Kandang',
         'Ringkasan Landing Marketplace',
         'Google Maps browser key',
         'Alamat asal',
@@ -464,7 +464,7 @@ describe('KolamSettingsPanel', () => {
         'Tagline Perusahaan',
         'Biteship API key',
         'OTP masuk staf',
-        'Plugin Enclosure',
+        'Plugin Kandang',
         'Ringkasan Landing Marketplace',
       ]),
     );
@@ -503,8 +503,8 @@ describe('KolamSettingsPanel', () => {
         'Overtime calculation',
         'Overtime policy',
         'Komisi penjualan kandang',
-        'Tarif global untuk baris invoice itemType enclosure.',
-        'Enclosure sale commission',
+        'Tarif global untuk baris invoice itemType kandang.',
+        'Komisi penjualan kandang',
       ]),
     );
     expect(text.indexOf('Metode pembayaran')).toBeLessThan(
@@ -520,7 +520,7 @@ describe('KolamSettingsPanel', () => {
       expect.arrayContaining([
         'Google Sign-In webstore',
         'Biteship API key',
-        'Plugin Enclosure',
+        'Plugin Kandang',
         'Ringkasan Landing Marketplace',
       ]),
     );

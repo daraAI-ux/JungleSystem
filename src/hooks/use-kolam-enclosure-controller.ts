@@ -317,7 +317,7 @@ export function useKolamEnclosureController(
         if (!enclosureId) {
           setSelectedEnclosure(null);
           setDataSource('error');
-          setError('ID enclosure tidak ditemukan.');
+          setError('ID kandang tidak ditemukan.');
           return;
         }
         setEnclosureStatisticsLoading(true);
@@ -418,7 +418,7 @@ export function useKolamEnclosureController(
         if (!enclosureId) {
           setSelectedEnclosure(null);
           setDataSource('error');
-          setError('ID enclosure tidak ditemukan.');
+          setError('ID kandang tidak ditemukan.');
           return;
         }
         const [detail, assignees, brands, locations, units] = await Promise.all([
@@ -598,7 +598,7 @@ export function useKolamEnclosureController(
     async (input: {title?: string; taskTypeId?: string}) => {
       const enclosureId = getKolamEnclosureRouteId(route);
       if (!enclosureId) {
-        throw new Error('ID enclosure tidak ditemukan.');
+        throw new Error('ID kandang tidak ditemukan.');
       }
       setOperationLoading(true);
       setError(null);
@@ -627,7 +627,7 @@ export function useKolamEnclosureController(
     async (input: {taskTypeId: string; active: boolean}) => {
       const enclosureId = getKolamEnclosureRouteId(route);
       if (!enclosureId) {
-        throw new Error('ID enclosure tidak ditemukan.');
+        throw new Error('ID kandang tidak ditemukan.');
       }
       setOperationLoading(true);
       setError(null);
@@ -726,9 +726,9 @@ export function useKolamEnclosureController(
     (body: KolamEnclosureParameterInput) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await upsertKolamEnclosureParameter(enclosureId, body);
-      }, 'Parameter enclosure diperbarui.'),
+      }, 'Parameter kandang diperbarui.'),
     [route, runOperation],
   );
 
@@ -736,7 +736,7 @@ export function useKolamEnclosureController(
     async (body: KolamEnclosureParameterInput) => {
       const enclosureId = getKolamEnclosureRouteId(route);
       if (!enclosureId) {
-        throw new Error('ID enclosure tidak ditemukan.');
+        throw new Error('ID kandang tidak ditemukan.');
       }
       await upsertKolamEnclosureParameter(enclosureId, body);
       const detail = await getKolamEnclosureDetail(enclosureId);
@@ -749,13 +749,13 @@ export function useKolamEnclosureController(
     (enclosureCode: string) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         const next = enclosureCode.trim().toUpperCase();
         if (!next) {
-          throw new Error('Kode enclosure wajib diisi.');
+          throw new Error('Kode kandang wajib diisi.');
         }
         await updateKolamEnclosure(enclosureId, {enclosure_code: next});
-      }, 'Kode enclosure disimpan.'),
+      }, 'Kode kandang disimpan.'),
     [route, runOperation],
   );
 
@@ -766,7 +766,7 @@ export function useKolamEnclosureController(
     }): Promise<boolean> => {
       const enclosureId = getKolamEnclosureRouteId(route);
       if (!enclosureId) {
-        setError('ID enclosure tidak ditemukan.');
+        setError('ID kandang tidak ditemukan.');
         return false;
       }
       setOperationLoading(true);
@@ -782,7 +782,7 @@ export function useKolamEnclosureController(
         if (nextPic !== currentPic) {
           await updateKolamEnclosureAssignedTo(enclosureId, nextPic);
         }
-        setStatusMessage('Enclosure disimpan.');
+        setStatusMessage('Kandang disimpan.');
         await refresh();
         return true;
       } catch (operationError) {
@@ -799,9 +799,9 @@ export function useKolamEnclosureController(
     (localUri: string) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await uploadKolamEnclosureCoverPhoto(enclosureId, localUri);
-      }, 'Cover enclosure diunggah.'),
+      }, 'Cover kandang diunggah.'),
     [route, runOperation],
   );
 
@@ -809,9 +809,9 @@ export function useKolamEnclosureController(
     () =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await deleteKolamEnclosureCoverPhoto(enclosureId);
-      }, 'Cover enclosure dihapus.'),
+      }, 'Cover kandang dihapus.'),
     [route, runOperation],
   );
 
@@ -819,9 +819,9 @@ export function useKolamEnclosureController(
     (localUris: string[]) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await uploadKolamEnclosurePhotos(enclosureId, localUris);
-      }, 'Foto enclosure diunggah.'),
+      }, 'Foto kandang diunggah.'),
     [route, runOperation],
   );
 
@@ -829,9 +829,9 @@ export function useKolamEnclosureController(
     (index: number) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await deleteKolamEnclosurePhoto(enclosureId, index);
-      }, 'Foto enclosure dihapus.'),
+      }, 'Foto kandang dihapus.'),
     [route, runOperation],
   );
 
@@ -881,9 +881,9 @@ export function useKolamEnclosureController(
     (body: KolamEnclosureSaleListingInput) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await updateKolamEnclosureSaleListing(enclosureId, body);
-      }, 'Listing penjualan enclosure diperbarui.'),
+      }, 'Listing penjualan kandang diperbarui.'),
     [route, runOperation],
   );
 
@@ -891,7 +891,7 @@ export function useKolamEnclosureController(
     (comment: string) =>
       runOperation(async () => {
         const enclosureId = getKolamEnclosureRouteId(route);
-        if (!enclosureId) throw new Error('ID enclosure tidak ditemukan.');
+        if (!enclosureId) throw new Error('ID kandang tidak ditemukan.');
         await createKolamEnclosureComment(enclosureId, comment);
         await refreshComments();
       }, 'Komentar ditambahkan.'),

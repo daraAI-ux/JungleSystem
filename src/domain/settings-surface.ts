@@ -428,7 +428,7 @@ export const settingsTabItems: SettingsTabItem[] = [
     breadcrumbLabel: 'Finansial',
     route: '/pengaturan',
     description:
-      'Metode pembayaran, profil pajak perusahaan, overtime, dan enclosure sale commission.',
+      'Metode pembayaran, profil pajak perusahaan, overtime, dan komisi penjualan kandang.',
     permission: 'wallet:view|tax:view',
     status: 'source-audit',
     surfaceId: 'web-settings',
@@ -1924,7 +1924,7 @@ export function getSettingsRoleResourceLabel(resource: string) {
     'dara-training': 'Pelatihan DARA',
     'task-manager': 'Task Manager (plugin)',
     layanan: 'Layanan / Langganan (plugin)',
-    enclosure: 'Enclosure (plugin)',
+    enclosure: 'Kandang (plugin)',
     freyer: 'Freyr - katalog & IoT (plugin)',
     teranura: 'Teranura - katalog perangkat (plugin)',
     'activity-log': 'Activity Log',
