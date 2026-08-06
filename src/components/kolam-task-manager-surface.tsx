@@ -51,6 +51,7 @@ import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { KolamProsesTaskIcon } from './kolam-proses-task-icon';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -932,6 +933,7 @@ function KolamTaskKpiRow({
     },
     {
       id: 'progress',
+      iconElement: <KolamProsesTaskIcon style={styles.kpiCardIcon} />,
       label: 'Sedang berjalan',
       value: controller.kpi.inProgress,
       tone: 'info',
