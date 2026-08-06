@@ -190,6 +190,7 @@ export function useKolamShippingMethodController(
 
     try {
       const live = await getKolamShippingCourierCatalog({
+        limit: 10,
         search: catalogSearch.trim() || undefined,
       });
       setCatalogItems(live);
