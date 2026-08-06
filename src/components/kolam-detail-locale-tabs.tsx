@@ -63,7 +63,11 @@ export function KolamDetailLocaleTabs({
               key={key}
               onPress={() => setActiveKey(key)}
               selected={selected}
-              style={[styles.tab, selected ? styles.tabActive : null]}
+              style={[
+                localeFlag ? styles.flagTab : styles.tab,
+                !localeFlag && selected ? styles.tabActive : null,
+                localeFlag && selected ? styles.flagTabActive : null,
+              ]}
             >
               {localeFlag ? (
                 <KolamFlagIcon option={localeFlag} />
@@ -275,6 +279,20 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: '#16a34a',
+  },
+  flagTab: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 4,
+    justifyContent: 'center',
+    minHeight: 22,
+    minWidth: 30,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  flagTabActive: {
+    borderColor: V.colors.primary,
+    borderWidth: 1,
   },
   tabText: {
     color: V.colors.mutedFg,
