@@ -16,16 +16,16 @@ export function KolamDashboardCountCard({
   onOpenRoute?: (route: string) => void;
 }) {
   const isProductCard = card.id === 'products';
+  const iconStyle =
+    card.id === 'products'
+      ? styles.dashboardProductCountIcon
+      : card.id === 'rawProducts' ||
+          card.id === 'species' ||
+          card.id === 'services'
+        ? styles.dashboardFullCountIcon
+        : styles.dashboardCountIcon;
   const icon = (
-    <View
-      style={
-        card.id === 'products' ||
-        card.id === 'rawProducts' ||
-        card.id === 'species' ||
-        card.id === 'services'
-          ? styles.dashboardFullCountIcon
-          : styles.dashboardCountIcon
-      }>
+    <View style={iconStyle}>
       <KolamDashboardCountIcon kind={card.iconKind} />
     </View>
   );
@@ -86,6 +86,12 @@ const styles = StyleSheet.create({
   dashboardFullCountIcon: {
     width: DASHBOARD_COUNT_VISUAL.iconTile.size,
     height: DASHBOARD_COUNT_VISUAL.iconTile.size,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dashboardProductCountIcon: {
+    width: 68,
+    height: 68,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -5,7 +5,7 @@ import {KOLAM_DASHBOARD_PRODUK_ICON_SVG} from '../assets/icons/dashboard-produk-
 
 export function KolamDashboardProductCountIcon() {
   return (
-    <View accessibilityLabel="Icon produk" style={{height: 46, width: 46}}>
+    <View accessibilityLabel="Icon produk" style={{height: '100%', width: '100%'}}>
       <SvgXml
         height="100%"
         width="100%"
