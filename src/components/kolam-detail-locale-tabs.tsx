@@ -54,6 +54,7 @@ export function KolamDetailLocaleTabs({
         {items.map((item, index) => {
           const key = getLocaleItemKey(item, index);
           const selected = key === safeActiveKey;
+          const localeFlag = getLocaleFlag(item.badge ?? item.title);
           return (
             <KolamInteractionFrame
               accessibilityLabel={`Buka terjemahan ${item.title}`}
@@ -65,7 +66,7 @@ export function KolamDetailLocaleTabs({
               <Text
                 style={[styles.tabText, selected ? styles.tabTextActive : null]}
               >
-                {item.badge || item.title}
+                {localeFlag || item.badge || item.title}
               </Text>
             </KolamInteractionFrame>
           );
@@ -75,7 +76,10 @@ export function KolamDetailLocaleTabs({
         <View style={styles.panelHeader}>
           <Text style={styles.title}>{activeItem.title}</Text>
           {activeItem.badge ? (
-            <KolamStatusBadge intent="success" label={activeItem.badge} />
+            <KolamStatusBadge
+              intent="success"
+              label={getLocaleFlag(activeItem.badge) || activeItem.badge}
+            />
           ) : null}
         </View>
         {activeItem.meta ? (
@@ -151,7 +155,9 @@ function createLocaleFieldsHtml(fields: KolamDetailLocaleField[]) {
       return `<section class="locale-field-card"><div class="locale-field-label">${escapeHtml(
         field.label,
       )}</div><div class="locale-field-body">${
-        value ? normalizeLocaleFieldValue(value) : '<span class="locale-empty">-</span>'
+        value
+          ? normalizeLocaleFieldValue(value)
+          : '<span class="locale-empty">-</span>'
       }</div></section>`;
     })
     .join('')}</div>`;
@@ -179,6 +185,50 @@ function getLocaleItemKey(
   index: number,
 ) {
   return item ? `${item.badge ?? item.title}-${index}` : '';
+}
+
+function getLocaleFlag(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return '';
+  }
+
+  if (
+    normalized === 'id' ||
+    normalized === 'id-id' ||
+    normalized === 'indonesia' ||
+    normalized === 'indonesian' ||
+    normalized === 'bahasa indonesia'
+  ) {
+    return '🇮🇩';
+  }
+
+  if (
+    normalized === 'en' ||
+    normalized === 'en-us' ||
+    normalized === 'english' ||
+    normalized === 'inggris'
+  ) {
+    return '🇺🇸';
+  }
+
+  if (normalized === 'en-gb' || normalized === 'gb' || normalized === 'uk') {
+    return '🇬🇧';
+  }
+
+  if (normalized === 'ja' || normalized === 'jp' || normalized === 'japanese') {
+    return '🇯🇵';
+  }
+
+  if (normalized === 'ko' || normalized === 'kr' || normalized === 'korean') {
+    return '🇰🇷';
+  }
+
+  if (normalized === 'zh' || normalized === 'cn' || normalized === 'chinese') {
+    return '🇨🇳';
+  }
+
+  return '';
 }
 
 const styles = StyleSheet.create({
