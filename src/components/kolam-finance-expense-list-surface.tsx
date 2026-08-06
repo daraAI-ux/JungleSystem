@@ -55,12 +55,14 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 type ColumnDef = {
+  align?: 'left' | 'center' | 'right';
   id: string;
   label: string;
   flex: number;
@@ -149,6 +151,7 @@ function buildColumns(
         ),
       },
       {
+        align: 'center',
         id: 'bookValue',
         label: 'Nilai buku',
         flex: 0.9,
@@ -170,6 +173,7 @@ function buildColumns(
           ),
       },
       {
+        align: 'center',
         id: 'location',
         label: 'Lokasi',
         flex: 0.8,
@@ -265,6 +269,7 @@ function buildColumns(
 
   if (kind === 'asset-purchase') {
     base.push({
+      align: 'center',
       id: 'createdBy',
       label: 'PIC',
       flex: 0.55,
@@ -441,65 +446,37 @@ function AssetPurchasePicAvatar({
   );
 }
 
-function AssetPurchaseListRow({
-  columns,
+function AssetPurchaseRowActions({
   controller,
   item,
   onRequestDelete,
   onRouteChange,
 }: {
-  columns: ColumnDef[];
   controller: KolamFinanceExpenseListController;
   item: KolamFinanceExpenseListRow;
   onRequestDelete?: (row: KolamFinanceExpenseListRow) => void;
   onRouteChange?: (route: string) => void;
 }) {
-  const [menuOpen, setMenuOpen] = React.useState(false);
-  const [picTooltipOpen, setPicTooltipOpen] = React.useState(false);
   const actions = buildAssetPurchaseRowActions(
     item,
     controller,
     onRouteChange,
     onRequestDelete,
   );
-  const elevate = menuOpen || picTooltipOpen;
+
+  if (!actions.length) {
+    return null;
+  }
 
   return (
-    <View style={[styles.row, elevate ? styles.rowMenuOpen : null]}>
-      {columns.map(column => (
-        <View
-          key={column.id}
-          style={[
-            styles.cell,
-            { flex: column.flex },
-            column.id === 'createdBy' ? styles.picCellOverflow : null,
-          ]}
-        >
-          {column.id === 'createdBy' ? (
-            <AssetPurchasePicAvatar
-              onTooltipOpenChange={setPicTooltipOpen}
-              row={item}
-            />
-          ) : (
-            column.render(item)
-          )}
-        </View>
-      ))}
-      <View style={[styles.cell, styles.actionsCell]}>
-        {actions.length > 0 ? (
-          <View style={styles.rowActions}>
-            <KolamOverflowMenuButton
-              accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
-              actions={actions}
-              onOpenChange={setMenuOpen}
-            />
-          </View>
-        ) : null}
-      </View>
+    <View style={styles.rowActions}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
+        actions={actions}
+      />
     </View>
   );
 }
-
 function UnexpectedIncomeListRow({
   columns,
   controller,
@@ -689,18 +666,6 @@ function FinanceExpenseListBody({
   const pageCount = Math.max(1, controller.pagination.totalPages);
 
   const renderRow = (item: KolamFinanceExpenseListRow) => {
-    if (isAssetPurchase) {
-      return (
-        <AssetPurchaseListRow
-          key={item.id}
-          columns={columns}
-          controller={controller}
-          item={item}
-          onRequestDelete={row => setDeleteCandidate(row)}
-          onRouteChange={onRouteChange}
-        />
-      );
-    }
     if (isUnexpectedIncome || isUnexpectedExpense) {
       return (
         <UnexpectedIncomeListRow
@@ -938,34 +903,54 @@ function FinanceExpenseListBody({
       </View>
 
       <View style={styles.listRoot}>
-        <KolamCatalogListTableShell
-          footer={tableFooter}
-          style={styles.tableFrame}
-        >
-          <View style={styles.headerRow}>
-            {columns.map(column => (
-              <View
-                key={column.id}
-                style={[styles.cell, { flex: column.flex }]}
-              >
-                <Text style={styles.headerCellText}>{column.label}</Text>
-              </View>
-            ))}
-            {hasCrudRowMenu ? (
-              <View style={[styles.cell, styles.actionsCell]} />
-            ) : null}
-          </View>
-          {controller.rows.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={controller.loading ? 'Memuat…' : 'Tidak ada data'}
+        {isAssetPurchase ? (
+          <KolamListTableComposition
+            columns={columns}
+            emptyTitle="Tidak ada data"
+            footer={tableFooter}
+            getRowKey={item => item.id}
+            loading={controller.loading}
+            renderActions={item => (
+              <AssetPurchaseRowActions
+                controller={controller}
+                item={item}
+                onRequestDelete={row => setDeleteCandidate(row)}
+                onRouteChange={onRouteChange}
               />
+            )}
+            rows={controller.rows}
+            style={styles.tableFrame}
+          />
+        ) : (
+          <KolamCatalogListTableShell
+            footer={tableFooter}
+            style={styles.tableFrame}
+          >
+            <View style={styles.headerRow}>
+              {columns.map(column => (
+                <View
+                  key={column.id}
+                  style={[styles.cell, { flex: column.flex }]}
+                >
+                  <Text style={styles.headerCellText}>{column.label}</Text>
+                </View>
+              ))}
+              {hasCrudRowMenu ? (
+                <View style={[styles.cell, styles.actionsCell]} />
+              ) : null}
             </View>
-          ) : (
-            controller.rows.map(item => renderRow(item))
-          )}
-        </KolamCatalogListTableShell>
+            {controller.rows.length === 0 ? (
+              <View style={styles.emptyWrap}>
+                <KolamEmptyState
+                  compact
+                  title={controller.loading ? 'Memuat…' : 'Tidak ada data'}
+                />
+              </View>
+            ) : (
+              controller.rows.map(item => renderRow(item))
+            )}
+          </KolamCatalogListTableShell>
+        )}
       </View>
 
       {hasExport ? (
