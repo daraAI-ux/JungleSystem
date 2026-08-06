@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {
@@ -8,7 +8,7 @@ import {useKolamAdminCashflowHeaderController} from '../hooks/use-kolam-admin-ca
 import {KolamIconButton} from './kolam-icon-button';
 
 /**
- * Top-nav cashflow quick access — FE parity with CashflowHeaderIcon
+ * Top-nav cashflow quick access â€” FE parity with CashflowHeaderIcon
  * (`header-quick-access-icons.tsx`). Poll state stays in this host so App
  * chrome does not re-render on the 60s interval.
  */
@@ -59,7 +59,7 @@ function CashflowSessionIcon() {
       <Circle cx={256} cy={256} r={256} fill="#050505" />
       <Path
         d="M153 184h242c21 0 38 17 38 38v96c0 21-17 38-38 38H153c-21 0-38-17-38-38v-96c0-21 17-38 38-38Z"
-        fill="#DDF6E6"
+        fill="#B9F7CB"
         stroke="#050505"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -67,7 +67,7 @@ function CashflowSessionIcon() {
       />
       <Path
         d="M116 224h250c23 0 42 19 42 42v93c0 23-19 42-42 42H116c-23 0-42-19-42-42v-93c0-23 19-42 42-42Z"
-        fill="#DDF6E6"
+        fill="#B9F7CB"
         stroke="#050505"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -75,7 +75,7 @@ function CashflowSessionIcon() {
       />
       <Path
         d="M223 311c0-43 25-76 58-76s58 33 58 76-25 76-58 76-58-33-58-76Z"
-        fill="#DDF6E6"
+        fill="#B9F7CB"
         stroke="#050505"
         strokeLinecap="round"
         strokeLinejoin="round"
