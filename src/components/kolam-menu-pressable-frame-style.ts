@@ -7,6 +7,8 @@ export function getMenuPressableFrameStyle(
   switch (variant) {
     case 'groupedItem':
       return [styles.item, styles.groupedItem];
+    case 'groupToggle':
+      return styles.groupToggle;
     case 'sectionToggle':
       return styles.sectionToggle;
     case 'item':

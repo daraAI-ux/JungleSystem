@@ -24,6 +24,18 @@ export const menuPressableFrameStyles = StyleSheet.create({
     marginLeft: 14,
     paddingLeft: 16,
   },
+  groupToggle: {
+    minHeight: 32,
+    marginLeft: 8,
+    paddingLeft: 10,
+    paddingRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: V.radius.md,
+    borderColor: 'transparent',
+    borderWidth: 1,
+  },
   sectionToggle: {
     flex: 1,
     minWidth: 0,

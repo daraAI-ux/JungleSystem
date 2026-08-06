@@ -1,25 +1,38 @@
 import React from 'react';
-import {KolamCopyStack} from './kolam-copy-stack';
-import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { KolamChevronIcon } from './kolam-chevron-icon';
+import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamMenuPressableFrame } from './kolam-menu-pressable-frame';
 
-export function KolamMenuItemGroupLabel({label}: {label: string}) {
+export function KolamMenuItemGroupLabel({
+  expanded,
+  label,
+  onPress,
+}: {
+  expanded: boolean;
+  label: string;
+  onPress: () => void;
+}) {
   return (
-    <KolamCopyStack
-      items={[{id: 'group', text: label, style: styles.groupLabel}]}
-    />
+    <KolamMenuPressableFrame onPress={onPress} variant="groupToggle">
+      <KolamChevronIcon
+        direction={expanded ? 'down' : 'right'}
+        size="menu-sm"
+      />
+      <KolamCopyStack
+        items={[{ id: 'group', text: label, style: styles.groupLabel }]}
+      />
+    </KolamMenuPressableFrame>
   );
 }
 
 const styles = StyleSheet.create({
   groupLabel: {
-    marginTop: 6,
-    marginLeft: 14,
-    paddingLeft: 16,
-    color: V.colors.mutedFg,
+    flex: 1,
+    color: V.colors.sidebarFg,
     fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

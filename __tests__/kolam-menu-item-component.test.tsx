@@ -30,15 +30,44 @@ describe('KolamMenuItem', () => {
   });
 
   it('renders shared menu group labels', async () => {
+    const onPress = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamMenuItemGroupLabel label="Settings" />,
+        <KolamMenuItemGroupLabel
+          expanded={false}
+          label="Label dan Field"
+          onPress={onPress}
+        />,
       );
     });
 
-    expect(renderer!.root.findByType(Text).props.children).toBe('Settings');
+    const pressable = renderer!.root.findByProps({
+      accessibilityRole: 'button',
+    });
+    pressable.props.onPress();
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(
+      renderer!.root.findAllByType(Text).map(node => node.props.children),
+    ).toContain('Label dan Field');
+  });
+
+  it('points the group disclosure chevron down when expanded', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamMenuItemGroupLabel
+          expanded
+          label="Label dan Field"
+          onPress={() => undefined}
+        />,
+      );
+    });
+
+    expect(renderer!.root.findByProps({ direction: 'down' })).toBeTruthy();
   });
 
   it('renders shared section toggles with caller-provided icons', async () => {

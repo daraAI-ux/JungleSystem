@@ -1,7 +1,8 @@
 import React from 'react';
 import {Text, View} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
-import {KolamSidebarModuleGroup} from '../src/components/kolam-sidebar-navigation-widgets';
+import {KolamSidebarNavGroup} from '../src/components/kolam-sidebar-navigation-widgets';
+import {getShellModulesByArea} from '../src/domain/app-shell';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -28,18 +29,14 @@ describe('sidebar navigation widgets', () => {
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
         <View>
-          <KolamSidebarModuleGroup
+          <KolamSidebarNavGroup
             activeModule="kolam"
-            area="kolam"
             collapsed={false}
             label="Kolam"
-            onSelect={() => undefined}
-          />
-          <KolamSidebarModuleGroup
-            activeModule="kolam"
-            area="am"
-            collapsed={false}
-            label=""
+            modules={[
+              ...getShellModulesByArea('kolam'),
+              ...getShellModulesByArea('am'),
+            ]}
             onSelect={() => undefined}
           />
         </View>,
@@ -49,6 +46,7 @@ describe('sidebar navigation widgets', () => {
     const text = renderText(renderer!);
 
     expect(text).toEqual(expect.arrayContaining(['Kolam', 'POS', 'AM']));
+    expect(text).not.toContain('38');
     expect(text).not.toEqual(expect.arrayContaining(['Plugin', 'Persiapan']));
   });
 });

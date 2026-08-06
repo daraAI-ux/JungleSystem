@@ -24,7 +24,7 @@ export function KolamNavItemCopy({
             },
           ]}
         />
-        {module.area === 'kolam' ? null : (
+        {module.area === 'kolam' || module.id === 'am' ? null : (
           <KolamNavItemBadge active={active} count={module.routes.length} />
         )}
       </KolamInlineFrame>
