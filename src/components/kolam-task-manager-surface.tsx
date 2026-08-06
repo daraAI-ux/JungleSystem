@@ -2385,7 +2385,14 @@ function renderRecurringScheduleCell(
     case 'category':
       return (
         <View style={styles.centerCell}>
-          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
+          <Text
+            numberOfLines={2}
+            style={[
+              styles.cellText,
+              styles.centerText,
+              styles.recurringScheduleCategoryText,
+            ]}
+          >
             {row.category || '-'}
           </Text>
         </View>
@@ -3912,6 +3919,9 @@ const styles = StyleSheet.create({
   recurringScheduleStatusText: {
     textAlign: 'center',
     width: '100%',
+  },
+  recurringScheduleCategoryText: {
+    lineHeight: 17,
   },
   centerCell: {
     alignItems: 'center',
