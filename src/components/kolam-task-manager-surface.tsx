@@ -1826,6 +1826,7 @@ function KolamTaskDueCountdownText({
   const completedLateMatch = /^selesai\s+\(terlambat\s+(.+)\)$/i.exec(
     label.trim(),
   );
+  const completedOnTime = /^selesai\s+\(tepat waktu\)$/i.test(label.trim());
 
   if (overdueMatch) {
     return (
@@ -1850,14 +1851,24 @@ function KolamTaskDueCountdownText({
       <View style={styles.taskCountdownStack}>
         <Text style={[styles.cellText, styles.dangerText]}>Selesai</Text>
         <Text
-          numberOfLines={1}
           style={[
             styles.cellText,
             styles.dangerText,
             styles.taskCountdownDuration,
           ]}
         >
-          Terlambat {completedLateMatch[1]}
+          Terlambat
+        </Text>
+      </View>
+    );
+  }
+
+  if (completedOnTime) {
+    return (
+      <View style={styles.taskCountdownStack}>
+        <Text style={styles.cellText}>Selesai</Text>
+        <Text style={[styles.cellText, styles.taskCountdownDuration]}>
+          Tepat waktu
         </Text>
       </View>
     );
