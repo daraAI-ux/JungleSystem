@@ -24,7 +24,6 @@ import {
   type KolamTaskCategoryBucket,
   type KolamTaskManagerTask,
 } from '../domain/kolam-task-manager';
-import type { KolamTableColumn } from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamTaskManagerController,
@@ -35,27 +34,18 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHtmlContent } from './kolam-html-content';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { openKolamMediaPreview } from './kolam-media-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -67,21 +57,17 @@ import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 
-const LIST_COLUMNS: KolamTableColumn[] = [
-  { id: 'primary', label: 'Tugas', align: 'left', width: 240 },
-  { id: 'meta', label: 'PIC', align: 'left', width: 130 },
-  { id: 'children', label: 'Asisten', align: 'left', width: 110 },
-  { id: 'status', label: 'Status', align: 'left', width: 140 },
-  { id: 'notes', label: 'Prioritas', align: 'left', width: 112 },
-  { id: 'marketplace', label: 'Countdown', align: 'left', width: 150 },
-  { id: 'amount', label: 'Due', align: 'left', width: 120 },
-  {
-    id: 'actions',
-    label: '',
-    align: 'right',
-    width: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  },
-];
+const LIST_COLUMNS = [
+  { id: 'primary', label: 'Tugas', align: 'left', flex: 2.3 },
+  { id: 'meta', label: 'PIC', align: 'center', flex: 1 },
+  { id: 'children', label: 'Asisten', align: 'center', flex: 0.95 },
+  { id: 'status', label: 'Status', align: 'center', flex: 1.05 },
+  { id: 'notes', label: 'Prioritas', align: 'center', flex: 0.95 },
+  { id: 'marketplace', label: 'Countdown', align: 'center', flex: 1.05 },
+  { id: 'amount', label: 'Due', align: 'center', flex: 1 },
+] as const;
+
+type TaskListColumnId = (typeof LIST_COLUMNS)[number]['id'];
 
 const TASK_TYPE_BUCKET_OPTIONS: Array<{
   id: KolamTaskCategoryBucket;
@@ -882,70 +868,37 @@ function KolamTaskManagerList({
   controller: KolamTaskManagerController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [tableBodyWidth, setTableBodyWidth] = React.useState(0);
   const columns = React.useMemo(
-    () => fitTaskColumns(tableBodyWidth),
-    [tableBodyWidth],
+    () => createTaskListColumns(controller, onRouteChange),
+    [controller, onRouteChange],
   );
 
   return (
     <View style={styles.stack}>
       <KolamTaskKpiRow controller={controller} />
       <KolamTaskToolbar controller={controller} />
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSelectPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={
-                    controller.page >= controller.totalPages || controller.loading
-                  }
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSelectPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle={
+          controller.loading && controller.tasks.length === 0
+            ? 'Memuat tugas...'
+            : 'Tugas kosong'
         }
-        onBodyWidthChange={setTableBodyWidth}
-      >
-        <KolamDataTableHeader columns={columns} />
-        {controller.loading && controller.tasks.length === 0 ? (
-          <KolamEmptyState message="Memuat tugas..." title="Task Manager" />
-        ) : null}
-        {!controller.loading && controller.tasks.length === 0 ? (
-          <KolamEmptyState message="Belum ada tugas" title="Tugas kosong" />
-        ) : null}
-        {controller.tasks.map(task => (
-          <KolamTaskRow
-            columns={columns}
-            controller={controller}
-            key={task.id}
-            onRouteChange={onRouteChange}
-            task={task}
-          />
-        ))}
-      </KolamCatalogListTableShell>
+        getRowKey={task => task.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSelectPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
+        renderActions={task =>
+          renderTaskListActions(task, controller, onRouteChange)
+        }
+        rows={controller.tasks}
+        style={styles.taskListTable}
+      />
     </View>
   );
 }
@@ -993,9 +946,12 @@ function KolamTaskToolbar({
   return (
     <View style={kolamTableToolbarStyles.shell}>
       <View style={kolamTableToolbarStyles.row}>
-        <View style={kolamTableToolbarStyles.filters}>
+        <View style={[kolamTableToolbarStyles.filters, styles.taskToolbarFilters]}>
           <KolamSearchField
-            containerStyle={kolamTableToolbarStyles.searchInput}
+            containerStyle={[
+              kolamTableToolbarStyles.searchInput,
+              styles.taskSearchInput,
+            ]}
             onChangeText={controller.onSetSearch}
             placeholder="Cari tugas..."
             value={controller.search}
@@ -1012,6 +968,7 @@ function KolamTaskToolbar({
               value: option.id,
             }))}
             showLabelInTrigger={false}
+            style={styles.taskFilterSelect}
             value={controller.categoryBucketFilter}
           />
           <KolamDropdownSelect
@@ -1026,6 +983,7 @@ function KolamTaskToolbar({
             ]}
             searchable
             showLabelInTrigger={false}
+            style={styles.taskFilterSelect}
             value={controller.categoryFilter}
           />
           <KolamDropdownSelect
@@ -1040,6 +998,7 @@ function KolamTaskToolbar({
             ]}
             searchable
             showLabelInTrigger={false}
+            style={styles.taskFilterSelect}
             value={controller.assignedToFilter}
           />
           <KolamDropdownSelect
@@ -1054,6 +1013,7 @@ function KolamTaskToolbar({
             ]}
             searchable
             showLabelInTrigger={false}
+            style={styles.taskFilterSelect}
             value={controller.projectFilter}
           />
           <KolamDropdownSelect
@@ -1066,6 +1026,7 @@ function KolamTaskToolbar({
               value: option.id,
             }))}
             showLabelInTrigger={false}
+            style={styles.taskFilterSelect}
             value={controller.statusFilter}
           />
           <KolamDropdownSelect
@@ -1080,10 +1041,11 @@ function KolamTaskToolbar({
               value: option.id,
             }))}
             showLabelInTrigger={false}
+            style={styles.taskFilterSelect}
             value={controller.priorityFilter}
           />
         </View>
-        <View style={kolamTableToolbarStyles.actions}>
+        <View style={[kolamTableToolbarStyles.actions, styles.taskToolbarActions]}>
           <KolamButton
             disabled={controller.loading}
             intent={controller.priorityFilter === 'high' ? 'primary' : 'outline'}
@@ -1127,17 +1089,23 @@ function KolamTaskToolbar({
   );
 }
 
-function KolamTaskRow({
-  columns,
-  controller,
-  onRouteChange,
-  task,
-}: {
-  columns: KolamTableColumn[];
-  controller: KolamTaskManagerController;
-  onRouteChange?: (route: string) => void;
-  task: KolamTaskManagerTask;
-}) {
+function createTaskListColumns(
+  controller: KolamTaskManagerController,
+  onRouteChange?: (route: string) => void,
+): Array<KolamListTableColumn<KolamTaskManagerTask>> {
+  return LIST_COLUMNS.map(column => ({
+    ...column,
+    render: task =>
+      renderTaskListCell(column.id, task, controller, onRouteChange),
+  }));
+}
+
+function renderTaskListCell(
+  columnId: TaskListColumnId,
+  task: KolamTaskManagerTask,
+  controller: KolamTaskManagerController,
+  onRouteChange?: (route: string) => void,
+) {
   const overdue = isKolamTaskOverdue(task);
   const statusOptions = getKolamTaskStatusOptionsForUser({
     currentUserId: controller.currentUserId,
@@ -1152,13 +1120,13 @@ function KolamTaskRow({
   const priorityDisabled =
     !controller.isTaskAdmin || controller.mutatingTaskId === task.id;
 
-  return (
-    <KolamDataTableRowFrame>
-      <KolamDataTableMainTrack>
+  switch (columnId) {
+    case 'primary':
+      return (
         <Pressable
           accessibilityRole="button"
           onPress={() => onRouteChange?.(`/task-manager/${task.id}`)}
-          style={getKolamDataTableColumnStyle(columns[0])}
+          style={styles.taskTitleCell}
         >
           <View style={styles.titleRow}>
             {showKolamTaskUrgentMarker(task) ? (
@@ -1184,17 +1152,26 @@ function KolamTaskRow({
             ) : null}
           </View>
         </Pressable>
-        <View style={getKolamDataTableColumnStyle(columns[1])}>
-          <Text numberOfLines={1} style={styles.cellText}>
+      );
+    case 'meta':
+      return (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
             {getKolamTaskUserDisplayName(task.assignedTo)}
           </Text>
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[2])}>
-          <Text numberOfLines={1} style={styles.cellText}>
+      );
+    case 'children':
+      return (
+        <View style={styles.centerCell}>
+          <Text numberOfLines={1} style={[styles.cellText, styles.centerText]}>
             {getKolamTaskUserDisplayName(task.assistedBy)}
           </Text>
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[3])}>
+      );
+    case 'status':
+      return (
+        <View style={styles.centerCell}>
           {statusDisabled ? (
             <KolamStatusBadge
               intent={getKolamTaskStatusBadgeIntent(task.status)}
@@ -1214,11 +1191,15 @@ function KolamTaskRow({
                 value: option.id,
               }))}
               showLabelInTrigger={false}
+              style={styles.tableSelect}
               value={task.status}
             />
           )}
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[4])}>
+      );
+    case 'notes':
+      return (
+        <View style={styles.centerCell}>
           {priorityDisabled ? (
             <KolamStatusBadge
               intent={getKolamTaskPriorityBadgeIntent(task.priority)}
@@ -1240,62 +1221,77 @@ function KolamTaskRow({
                 value: option.id,
               }))}
               showLabelInTrigger={false}
+              style={styles.tableSelect}
               value={task.priority}
             />
           )}
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[5])}>
+      );
+    case 'marketplace':
+      return (
+        <View style={styles.centerCell}>
           <KolamTaskDueCountdownText task={task} />
         </View>
-        <View style={getKolamDataTableColumnStyle(columns[6])}>
+      );
+    case 'amount':
+      return (
+        <View style={styles.centerCell}>
           <Text
             numberOfLines={1}
-            style={[styles.cellText, overdue && styles.dangerText]}
+            style={[
+              styles.cellText,
+              styles.centerText,
+              overdue && styles.dangerText,
+            ]}
           >
             {formatKolamTaskListDatetime(task.dueDate)}
           </Text>
         </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack>
-        <KolamOverflowMenuButton
-          actions={[
-            {
-              label: 'Detail',
-              onPress: () => onRouteChange?.(`/task-manager/${task.id}`),
-            },
-            ...(isTaskOvertimeRequestVisible(controller, task)
-              ? [
-                  {
-                    disabled:
-                      controller.mutatingTaskId === `overtime:${task.id}`,
-                    label: 'Lembur',
-                    onPress: () => controller.onOpenOvertimeRequest(task),
-                  },
-                ]
-              : []),
-            ...(controller.isTaskAdmin
-              ? [
-                  {
-                    disabled: controller.mutatingTaskId === task.id,
-                    label: 'Ubah',
-                    onPress: () => controller.onEditTask(task),
-                  },
-                ]
-              : []),
-            ...(controller.isTaskAdmin
-              ? [
-                  {
-                    disabled:
-                      controller.mutatingTaskId === `delete:${task.id}`,
-                    label: 'Hapus',
-                    onPress: () => controller.onRequestDeleteTask(task),
-                  },
-                ]
-              : []),
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
+      );
+  }
+}
+
+function renderTaskListActions(
+  task: KolamTaskManagerTask,
+  controller: KolamTaskManagerController,
+  onRouteChange?: (route: string) => void,
+) {
+  return (
+    <KolamOverflowMenuButton
+      actions={[
+        {
+          label: 'Detail',
+          onPress: () => onRouteChange?.(`/task-manager/${task.id}`),
+        },
+        ...(isTaskOvertimeRequestVisible(controller, task)
+          ? [
+              {
+                disabled: controller.mutatingTaskId === `overtime:${task.id}`,
+                label: 'Lembur',
+                onPress: () => controller.onOpenOvertimeRequest(task),
+              },
+            ]
+          : []),
+        ...(controller.isTaskAdmin
+          ? [
+              {
+                disabled: controller.mutatingTaskId === task.id,
+                label: 'Ubah',
+                onPress: () => controller.onEditTask(task),
+              },
+            ]
+          : []),
+        ...(controller.isTaskAdmin
+          ? [
+              {
+                disabled: controller.mutatingTaskId === `delete:${task.id}`,
+                label: 'Hapus',
+                onPress: () => controller.onRequestDeleteTask(task),
+              },
+            ]
+          : []),
+      ]}
+    />
   );
 }
 
@@ -2923,26 +2919,6 @@ function KolamTaskManagerPlaceholder({
   );
 }
 
-function fitTaskColumns(tableBodyWidth: number): KolamTableColumn[] {
-  if (tableBodyWidth <= 0) return LIST_COLUMNS;
-  const flexible = LIST_COLUMNS.filter(column => column.id !== 'actions');
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapTotal = KOLAM_DATA_TABLE_COLUMN_GAP * (LIST_COLUMNS.length - 1);
-  const available = Math.max(520, tableBodyWidth - actionsWidth - gapTotal);
-  const baseWidth = flexible.reduce(
-    (sum, column) => sum + (column.width ?? 100),
-    0,
-  );
-  const scale = available / Math.max(1, baseWidth);
-  return [
-    ...flexible.map(column => ({
-      ...column,
-      width: Math.max(72, Math.round((column.width ?? 100) * scale)),
-    })),
-    { ...LIST_COLUMNS[LIST_COLUMNS.length - 1], width: actionsWidth },
-  ];
-}
-
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
@@ -2984,6 +2960,20 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 28,
   },
+  taskToolbarFilters: {
+    alignItems: 'stretch',
+  },
+  taskSearchInput: {
+    flexBasis: 220,
+  },
+  taskFilterSelect: {
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 112,
+  },
+  taskToolbarActions: {
+    alignSelf: 'stretch',
+  },
   switchInline: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -2995,16 +2985,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
+  taskListTable: {
+    minHeight: 0,
   },
-  pageLabel: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
+  taskTitleCell: {
+    minWidth: 0,
+  },
+  centerCell: {
+    alignItems: 'center',
+    minWidth: 0,
+    width: '100%',
+  },
+  centerText: {
+    textAlign: 'center',
+    width: '100%',
+  },
+  tableSelect: {
+    minWidth: 104,
   },
   primaryText: {
     color: V.colors.fg,
