@@ -201,7 +201,7 @@ function CommissionListBody({
         ),
       },
       {
-        align: 'right' as const,
+        align: 'center' as const,
         flex: 0.9,
         id: 'action',
         label: 'Aksi',
@@ -424,6 +424,7 @@ function CommissionListBody({
           getRowKey={row => row.recipientUser || row.displayName}
           loading={controller.summaryLoading}
           rows={controller.recipientSummaryRows}
+          showFooter={false}
           style={styles.summaryTableFrame}
         />
       </KolamCardFrame>
@@ -696,6 +697,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   summaryActionButton: {
+    alignSelf: 'center',
     flexGrow: 0,
   },
   summaryTableFrame: {

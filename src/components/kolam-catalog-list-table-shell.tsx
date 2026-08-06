@@ -25,6 +25,7 @@ export function KolamCatalogListTableShell({
   fill = false,
   footer,
   onBodyWidthChange,
+  showFooter = true,
   style,
   variant = 'settingsWebConfig',
 }: {
@@ -33,6 +34,7 @@ export function KolamCatalogListTableShell({
   fill?: boolean;
   footer: React.ReactNode;
   onBodyWidthChange?: (width: number) => void;
+  showFooter?: boolean;
   style?: StyleProp<ViewStyle>;
   variant?: KolamContentFrameVariant;
 }) {
@@ -57,7 +59,7 @@ export function KolamCatalogListTableShell({
       >
         {children}
       </View>
-      <View style={styles.footer}>{footer}</View>
+      {showFooter ? <View style={styles.footer}>{footer}</View> : null}
     </KolamContentFrame>
   );
 }

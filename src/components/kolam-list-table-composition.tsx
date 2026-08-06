@@ -42,6 +42,7 @@ export function KolamListTableComposition<TRow>({
   renderActions,
   rowStyle,
   rows,
+  showFooter = true,
   style,
   columns,
 }: {
@@ -57,6 +58,7 @@ export function KolamListTableComposition<TRow>({
   renderActions?: (row: TRow) => React.ReactNode;
   rowStyle?: StyleProp<ViewStyle>;
   rows: TRow[];
+  showFooter?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const shouldRenderActionsColumn = actionsColumn || Boolean(renderActions);
@@ -72,6 +74,7 @@ export function KolamListTableComposition<TRow>({
         fill={fill}
         footer={resolvedFooter}
         onBodyWidthChange={onBodyWidthChange}
+        showFooter={showFooter}
         style={[styles.tableFrame, style]}
       >
         <View style={styles.headerRow}>
