@@ -8890,9 +8890,10 @@ function formatDateTime(value: string | undefined) {
 const styles = StyleSheet.create({
   root: {
     alignSelf: 'stretch',
-    gap: 18,
+    flexGrow: 1,
+    gap: 16,
+    minHeight: 0,
     overflow: 'visible',
-    padding: 24,
     width: '100%',
   },
   surface: {
