@@ -2260,12 +2260,16 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   detailSectionStack: {
+    alignSelf: 'stretch',
     gap: 16,
+    width: '100%',
   },
   detailCard: {
+    alignSelf: 'stretch',
     gap: 0,
     overflow: 'hidden',
     padding: 0,
+    width: '100%',
   },
   detailCardHeader: {
     alignItems: 'flex-start',
@@ -2328,6 +2332,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 22,
     padding: 16,
+    width: '100%',
   },
   overviewBody: {
     flex: 1,
@@ -2602,8 +2607,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   usageTable: {
-    marginHorizontal: 12,
-    marginVertical: 12,
+    marginHorizontal: 16,
+    marginVertical: 16,
   },
   errorText: {
     color: V.colors.danger,
