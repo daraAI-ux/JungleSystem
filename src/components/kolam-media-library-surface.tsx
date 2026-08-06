@@ -13,8 +13,8 @@ import {
   kolamMediaFilterOptions,
   parseKolamMediaRoute,
 } from '../domain/kolam-media';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {getKolamFileUrl} from '../lib/file-url';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getKolamFileUrl } from '../lib/file-url';
 import {
   checkKolamMediaOrphans,
   cleanupKolamMediaOrphans,
@@ -25,18 +25,18 @@ import {
   type KolamMediaOrphanCheckResult,
   type KolamMediaOrphanCleanupResult,
 } from '../services/kolam-media-api';
-import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
-import {KolamFormTextField} from './kolam-form-text-field';
-import {KolamInteractionFrame} from './kolam-interaction-frame';
+import { KolamButton } from './kolam-button';
+import { KolamRefreshButton } from './kolam-refresh-button';
+import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
 } from './kolam-filter-panel-anchor';
-import {KolamMediaPlayer} from './kolam-media-player';
-import {KolamModalBackdrop} from './kolam-modal-backdrop';
-import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
-import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import { KolamMediaPlayer } from './kolam-media-player';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 const PAGE_SIZE = 48;
 const FILTER_PANEL_WIDTH = 220;
@@ -73,7 +73,7 @@ export function KolamMediaLibrarySurface({
   const [loading, setLoading] = React.useState(false);
   const toolbarRef = React.useRef<View>(null);
   const filterTriggerRef = React.useRef<View>(null);
-  const {width} = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   React.useEffect(() => {
     setDraftSearch(routeState.search);
@@ -204,7 +204,7 @@ export function KolamMediaLibrarySurface({
 
       if (!filenames.length) {
         setCleanupPhase('review');
-        setCheckResult({safe: [], scanned: 0, unsafe: []});
+        setCheckResult({ safe: [], scanned: 0, unsafe: [] });
         return;
       }
 
@@ -236,7 +236,7 @@ export function KolamMediaLibrarySurface({
     setCleanupError(null);
 
     try {
-      const nextResult = await cleanupKolamMediaOrphans({filenames});
+      const nextResult = await cleanupKolamMediaOrphans({ filenames });
       setCleanupResult(nextResult);
       setCleanupPhase('done');
       refreshCurrentList();
@@ -257,7 +257,9 @@ export function KolamMediaLibrarySurface({
               <KolamFormTextField
                 mode="search"
                 onChangeText={setDraftSearch}
-                onSubmitEditing={() => setRoute({page: 1, search: draftSearch})}
+                onSubmitEditing={() =>
+                  setRoute({ page: 1, search: draftSearch })
+                }
                 placeholder="Cari media"
                 returnKeyType="search"
                 style={kolamTableToolbarStyles.searchInput}
@@ -266,12 +268,12 @@ export function KolamMediaLibrarySurface({
               <KolamTableFilterTrigger
                 active={routeState.type === 'image'}
                 label="Gambar"
-                onPress={() => setRoute({page: 1, type: 'image'})}
+                onPress={() => setRoute({ page: 1, type: 'image' })}
               />
               <KolamTableFilterTrigger
                 active={routeState.type === 'video'}
                 label="Video"
-                onPress={() => setRoute({page: 1, type: 'video'})}
+                onPress={() => setRoute({ page: 1, type: 'video' })}
               />
               <View ref={filterTriggerRef} collapsable={false}>
                 <KolamTableFilterTrigger
@@ -296,9 +298,12 @@ export function KolamMediaLibrarySurface({
               ) : null}
               <KolamButton
                 label="Cari"
-                onPress={() => setRoute({page: 1, search: draftSearch})}
+                onPress={() => setRoute({ page: 1, search: draftSearch })}
               />
-              <KolamRefreshButton accessibilityLabel="Refresh" onPress={() => setRoute({})} />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                onPress={() => setRoute({})}
+              />
             </View>
           </View>
         </View>
@@ -325,7 +330,7 @@ export function KolamMediaLibrarySurface({
                   key={option.id}
                   label={option.label}
                   onPress={() => {
-                    setRoute({filter: option.id, page: 1});
+                    setRoute({ filter: option.id, page: 1 });
                     closeFilterPanel();
                   }}
                   style={styles.filterPanelOption}
@@ -356,7 +361,11 @@ export function KolamMediaLibrarySurface({
             <Text style={styles.emptyText}>Tidak ada media.</Text>
           ) : null}
 
-          <ScrollView contentContainerStyle={styles.grid}>
+          <ScrollView
+            contentContainerStyle={styles.grid}
+            keyboardShouldPersistTaps="handled"
+            style={styles.gridScroll}
+          >
             {items.map(item => (
               <KolamMediaTile
                 key={item.filename}
@@ -372,14 +381,14 @@ export function KolamMediaLibrarySurface({
             <KolamButton
               disabled={routeState.page <= 1}
               label="Prev"
-              onPress={() => setRoute({page: routeState.page - 1})}
+              onPress={() => setRoute({ page: routeState.page - 1 })}
             />
             <KolamButton
               disabled={
                 (result?.page ?? routeState.page) >= (result?.totalPages ?? 1)
               }
               label="Next"
-              onPress={() => setRoute({page: routeState.page + 1})}
+              onPress={() => setRoute({ page: routeState.page + 1 })}
             />
           </View>
         </View>
@@ -421,12 +430,16 @@ function KolamMediaTile({
       style={[
         styles.tile,
         selected ? styles.tileSelected : null,
-        {width: tileBasis},
+        { width: tileBasis },
       ]}
     >
       <View style={styles.thumb}>
         {item.type === 'image' && uri ? (
-          <Image resizeMode="cover" source={{uri}} style={styles.thumbImage} />
+          <Image
+            resizeMode="cover"
+            source={{ uri }}
+            style={styles.thumbImage}
+          />
         ) : (
           <View style={styles.videoThumb}>
             <Text style={styles.videoGlyph}>Video</Text>
@@ -445,7 +458,7 @@ function KolamMediaTile({
   );
 }
 
-function KolamMediaPreviewPane({item}: {item: KolamMediaItem | null}) {
+function KolamMediaPreviewPane({ item }: { item: KolamMediaItem | null }) {
   const uri = item ? getKolamMediaUri(item) : null;
 
   if (!item || !uri) {
@@ -465,7 +478,11 @@ function KolamMediaPreviewPane({item}: {item: KolamMediaItem | null}) {
         {item.filename}
       </Text>
       {item.type === 'image' ? (
-        <Image resizeMode="contain" source={{uri}} style={styles.previewImage} />
+        <Image
+          resizeMode="contain"
+          source={{ uri }}
+          style={styles.previewImage}
+        />
       ) : (
         <KolamMediaPlayer
           kind="video"
@@ -511,7 +528,7 @@ function KolamMediaOrphanCleanupDialog({
   const unsafeCount = checkResult?.unsafe.length ?? 0;
   const busy = cleanupPhase === 'checking' || cleanupPhase === 'deleting';
   const ignoreBackdropPress = React.useCallback(() => undefined, []);
-  const {width: windowWidth} = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
   const cardWidth = Math.max(360, Math.min(windowWidth - 48, 640));
 
   if (!visible) {
@@ -523,7 +540,8 @@ function KolamMediaOrphanCleanupDialog({
       <KolamModalBackdrop onPress={busy ? ignoreBackdropPress : onClose} />
       <View
         accessibilityLabel="Cleanup orphan"
-        style={[styles.cleanupModalCard, {width: cardWidth}]}>
+        style={[styles.cleanupModalCard, { width: cardWidth }]}
+      >
         <View style={styles.cleanupModalHeader}>
           <Text style={styles.cleanupTitle}>Hapus orphan</Text>
           <Text style={styles.cleanupText}>
@@ -540,7 +558,10 @@ function KolamMediaOrphanCleanupDialog({
             {cleanupPhase === 'review' ? (
               <>
                 <View style={styles.cleanupMetricRow}>
-                  <KolamMediaCleanupMetric label="Kandidat" value={candidateCount} />
+                  <KolamMediaCleanupMetric
+                    label="Kandidat"
+                    value={candidateCount}
+                  />
                   <KolamMediaCleanupMetric label="Aman" value={safeCount} />
                   <KolamMediaCleanupMetric label="Lewati" value={unsafeCount} />
                 </View>
@@ -643,12 +664,15 @@ function getKolamMediaUri(item: KolamMediaItem): string | null {
   }
 
   return getKolamFileUrl(
-    item.type === 'video' ? `media/videos/${item.filename}` : `media/${item.filename}`,
+    item.type === 'video'
+      ? `media/videos/${item.filename}`
+      : `media/${item.filename}`,
   );
 }
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
     gap: 12,
     minHeight: 0,
     position: 'relative',
@@ -659,6 +683,7 @@ const styles = StyleSheet.create({
     zIndex: 200,
   },
   content: {
+    flex: 1,
     flexDirection: 'row',
     gap: 12,
     minHeight: 0,
@@ -666,6 +691,7 @@ const styles = StyleSheet.create({
   listPane: {
     flex: 1,
     gap: 10,
+    minHeight: 0,
     minWidth: 0,
   },
   summaryRow: {
@@ -726,6 +752,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginHorizontal: -4,
     paddingBottom: 4,
+  },
+  gridScroll: {
+    flex: 1,
+    minHeight: 0,
   },
   tile: {
     padding: 4,
