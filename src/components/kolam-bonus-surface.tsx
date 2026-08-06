@@ -64,12 +64,14 @@ export function KolamBonusSurface({
           style={styles.banner}
         />
       ) : null}
-      <BonusToolbar controller={controller} />
-      <Text style={styles.helperText}>
-        Bonus masuk payroll setelah terverifikasi. Verifikasi lewat Pengeluaran
-        Tak Terduga.
-      </Text>
-      <BonusList controller={controller} />
+      <View style={styles.listBody}>
+        <BonusToolbar controller={controller} />
+        <Text style={styles.helperText}>
+          Bonus masuk payroll setelah terverifikasi. Verifikasi lewat Pengeluaran
+          Tak Terduga.
+        </Text>
+        <BonusList controller={controller} />
+      </View>
     </View>
   );
 }
@@ -300,7 +302,7 @@ function BonusCreatePage({
             </View>
 
             <View style={settingsWebFormStyles.settingsWebFormField}>
-              <KolamSettingsWebFieldLabel label="Alasan" />
+              <KolamSettingsWebFieldLabel label="Alasan" required={false} />
               <KolamFormTextField
                 multiline
                 onChangeText={value =>
@@ -376,6 +378,11 @@ const styles = StyleSheet.create({
   },
   createToolbarButton: {
     minWidth: 120,
+  },
+  listBody: {
+    flex: 1,
+    gap: 10,
+    minHeight: 0,
   },
   tableFrame: {
     flex: 1,
