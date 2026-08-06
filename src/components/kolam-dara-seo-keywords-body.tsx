@@ -79,8 +79,12 @@ export function KolamDaraSeoKeywordsBody({
               <Text style={[styles.th, {width: keywordWidth}]}>Keyword</Text>
               <Text style={[styles.th, styles.colVolume]}>Volume</Text>
               <Text style={[styles.th, styles.colDifficulty]}>Difficulty</Text>
-              <Text style={[styles.th, styles.colTrend]}>Trend</Text>
-              <Text style={[styles.th, styles.colScore]}>Skor</Text>
+              <Text style={[styles.th, styles.colTrend, styles.centerText]}>
+                Trend
+              </Text>
+              <Text style={[styles.th, styles.colScore, styles.centerText]}>
+                Skor
+              </Text>
             </View>
             {controller.pagedItems.map(row => {
               const level = resolveKolamDaraSeoKeywordDifficulty(
@@ -124,7 +128,7 @@ export function KolamDaraSeoKeywordsBody({
                       </Text>
                     </View>
                   </View>
-                  <View style={styles.colTrend}>
+                  <View style={[styles.colTrend, styles.centerCell]}>
                     <View
                       accessibilityLabel="Estimasi tren"
                       style={styles.sparkTrack}>
@@ -133,7 +137,7 @@ export function KolamDaraSeoKeywordsBody({
                       <View style={[styles.sparkSeg, styles.sparkSegOk]} />
                     </View>
                   </View>
-                  <Text style={[styles.td, styles.colScore]}>
+                  <Text style={[styles.td, styles.colScore, styles.centerText]}>
                     {row.opportunityScore}
                   </Text>
                 </View>
@@ -199,6 +203,12 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 13,
+  },
+  centerCell: {
+    alignItems: 'center',
+  },
+  centerText: {
+    textAlign: 'center',
   },
   colVolume: {
     width: COL_VOLUME,
