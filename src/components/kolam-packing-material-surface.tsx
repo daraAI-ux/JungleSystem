@@ -45,6 +45,7 @@ import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
+import type { KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -67,7 +68,10 @@ import {
   getKolamPackingMaterialUsedIn,
   uploadKolamPackingMaterialAsset,
   deleteKolamPackingMaterialAsset,
+  uploadKolamPackingMaterialPhotos,
+  deleteKolamPackingMaterialPhoto,
 } from '../services/kolam-packing-option-api';
+import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { KolamSearchField } from './kolam-search-field';
@@ -952,7 +956,11 @@ function KolamPackingMaterialDetail({
         selectedId={activeTab}
       />
       {activeTab === 'overview' ? (
-        <PackingOverviewPanel item={item} onRouteChange={onRouteChange} />
+        <PackingOverviewPanel
+          controller={controller}
+          item={item}
+          onRouteChange={onRouteChange}
+        />
       ) : (
         <KolamPackingMaterialAssetsPanel controller={controller} item={item} />
       )}
@@ -980,9 +988,11 @@ function KolamPackingMaterialDetail({
 }
 
 function PackingOverviewPanel({
+  controller,
   item,
   onRouteChange,
 }: {
+  controller: KolamPackingMaterialController;
   item: KolamPackingMaterial;
   onRouteChange?: (route: string) => void;
 }) {
@@ -1032,6 +1042,7 @@ function PackingOverviewPanel({
                 </Text>
               </View>
             )}
+            <PackingPhotoManager controller={controller} item={item} />
           </View>
           <View style={styles.overviewBody}>
             <View style={styles.overviewMetricGrid}>
@@ -1103,6 +1114,108 @@ function PackingOverviewPanel({
         title="Harga Vendor"
       />
       <PackingUsageCard item={item} onRouteChange={onRouteChange} />
+    </View>
+  );
+}
+
+function PackingPhotoManager({
+  controller,
+  item,
+}: {
+  controller: KolamPackingMaterialController;
+  item: KolamPackingMaterial;
+}) {
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const previewItems = React.useMemo(
+    () => createPackingPhotoPreviewItems(item),
+    [item],
+  );
+
+  const uploadPhoto = React.useCallback(async () => {
+    setError('');
+    try {
+      const picked = await pickNativeImageFile();
+      const localUri = picked.uri || picked.path;
+      if (picked.cancelled || !localUri) {
+        return;
+      }
+
+      setBusy(true);
+      const updated = await uploadKolamPackingMaterialPhotos(item.id, [localUri]);
+      await controller.onSelectMaterial(updated);
+    } catch (uploadError) {
+      setError(getPackingPhotoErrorMessage(uploadError));
+    } finally {
+      setBusy(false);
+    }
+  }, [controller, item.id]);
+
+  const deletePhoto = React.useCallback(
+    async (index: number) => {
+      setError('');
+      setBusy(true);
+      try {
+        const updated = await deleteKolamPackingMaterialPhoto(item.id, index);
+        await controller.onSelectMaterial(updated);
+      } catch (deleteError) {
+        setError(getPackingPhotoErrorMessage(deleteError));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [controller, item.id],
+  );
+
+  return (
+    <View style={styles.photoManager}>
+      <View style={styles.photoManagerHeader}>
+        <Text style={styles.fieldLabel}>Foto</Text>
+        <KolamButton
+          disabled={busy}
+          label={busy ? 'Memproses...' : 'Tambah Foto'}
+          onPress={() => {
+            void uploadPhoto();
+          }}
+        />
+      </View>
+      {item.photos.length ? (
+        <View style={styles.photoManagerGrid}>
+          {item.photos.map((photo, index) => {
+            const uri = getKolamFileUrl(photo);
+            return (
+              <View key={`${photo}-${index}`} style={styles.photoManagerTile}>
+                {uri ? (
+                  <KolamRemoteImage
+                    accessibilityLabel={`${item.name} ${index + 1}`}
+                    previewIndex={index}
+                    previewItems={previewItems}
+                    resizeMode="cover"
+                    revision={photo}
+                    scope="packing-material"
+                    sourceUri={uri}
+                    style={styles.photoManagerImage}
+                  />
+                ) : (
+                  <View style={styles.photoManagerMissing}>
+                    <Text style={styles.photoManagerMissingText}>-</Text>
+                  </View>
+                )}
+                <KolamButton
+                  disabled={busy}
+                  intent="plain"
+                  label="Hapus"
+                  onPress={() => {
+                    void deletePhoto(index);
+                  }}
+                  textStyle={styles.photoManagerDeleteText}
+                />
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+      {error ? <Text style={styles.photoManagerError}>{error}</Text> : null}
     </View>
   );
 }
@@ -1741,6 +1854,39 @@ function createPackingMediaItems(
     .filter(Boolean) as KolamDetailMediaItem[];
 }
 
+function createPackingPhotoPreviewItems(
+  item: KolamPackingMaterial,
+): KolamImagePreviewItem[] {
+  const previewItems: KolamImagePreviewItem[] = [];
+
+  item.photos.forEach((photo, index) => {
+    const uri = getKolamFileUrl(photo);
+    if (!uri) {
+      return;
+    }
+
+    previewItems.push({
+      revision: photo,
+      scope: 'packing-material',
+      title: `${item.name} ${index + 1}`,
+      uri,
+    });
+  });
+
+  return previewItems;
+}
+
+function getPackingPhotoErrorMessage(error: unknown) {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  return 'Gagal memperbarui foto bahan kemasan.';
+}
+
 function createPackingVendorPriceItems(
   item: KolamPackingMaterial,
 ): KolamVendorPriceCardItem[] {
@@ -2207,6 +2353,69 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 6,
     textAlign: 'center',
+  },
+  photoManager: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+    width: 320,
+  },
+  photoManagerHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  photoManagerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  photoManagerTile: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    padding: 6,
+    width: 92,
+  },
+  photoManagerImage: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
+    height: 70,
+    width: 78,
+  },
+  photoManagerMissing: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 6,
+    height: 70,
+    justifyContent: 'center',
+    width: 78,
+  },
+  photoManagerMissingText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  photoManagerDeleteText: {
+    color: V.colors.danger,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  photoManagerError: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
   },
   galleryArrow: {
     minHeight: 32,

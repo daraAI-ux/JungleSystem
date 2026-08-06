@@ -96,12 +96,47 @@ export async function uploadKolamPackingMaterialAsset(
   return getKolamPackingMaterial(id);
 }
 
+export async function uploadKolamPackingMaterialPhotos(
+  id: string,
+  localUris: string[],
+): Promise<KolamPackingMaterial> {
+  const body = new FormData();
+  localUris.forEach((localUri, index) => {
+    body.append(
+      'photos',
+      createReactNativeFilePart(
+        localUri,
+        `packing-photo-${index + 1}`,
+      ) as unknown as Blob,
+    );
+  });
+
+  await kolamRequest<unknown>(`/packing/${encodeURIComponent(id)}/photos`, {
+    method: 'POST',
+    body,
+  });
+
+  return getKolamPackingMaterial(id);
+}
+
 export async function deleteKolamPackingMaterialAsset(
   id: string,
   assetId: string,
 ): Promise<KolamPackingMaterial> {
   await kolamRequest<unknown>(
     `/packing/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}`,
+    { method: 'DELETE' },
+  );
+
+  return getKolamPackingMaterial(id);
+}
+
+export async function deleteKolamPackingMaterialPhoto(
+  id: string,
+  index: number,
+): Promise<KolamPackingMaterial> {
+  await kolamRequest<unknown>(
+    `/packing/${encodeURIComponent(id)}/photos/${encodeURIComponent(String(index))}`,
     { method: 'DELETE' },
   );
 
