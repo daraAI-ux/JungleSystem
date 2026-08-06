@@ -55,18 +55,19 @@ import {
 import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
 import {KolamResetButton} from './kolam-reset-button';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
-import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
 import {KolamDateField} from './kolam-date-field';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
@@ -90,7 +91,6 @@ const USER_LIST_COLUMNS = [
   {id: 'role', label: 'Peran', flex: 0.8, align: 'left'},
   {id: 'employee', label: 'Status Karyawan', flex: 1, align: 'left'},
   {id: 'access', label: 'Akses', flex: 1.05, align: 'left'},
-  {id: 'actions', label: 'Aksi', flex: 0.4, align: 'right'},
 ] as const;
 
 type UserListColumnId = (typeof USER_LIST_COLUMNS)[number]['id'];
@@ -494,7 +494,7 @@ function KolamUserListSurface({
   const [pagination, setPagination] =
     React.useState<KolamUserListPagination>(INITIAL_PAGINATION);
   const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
+  const [pageSize] = React.useState(10);
   const [search, setSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [employeeFilter, setEmployeeFilter] =
@@ -614,18 +614,16 @@ function KolamUserListSurface({
       : debouncedSearch
         ? `Tidak ada pengguna untuk "${debouncedSearch}"`
         : 'Belum ada pengguna';
-  const emptyMessage = loading
-    ? 'Mengambil data pengguna dari server.'
-    : error ||
-      (debouncedSearch
-        ? 'Coba kata kunci lain.'
-        : 'Tidak ada data pengguna pada halaman ini.');
   const employeeFilterLabel =
     EMPLOYEE_FILTER_OPTIONS.find(option => option.value === employeeFilter)
       ?.label ?? 'Semua Status Karyawan';
   const filtersAppliedCount =
     Number(Boolean(search.trim())) + Number(employeeFilter !== 'all');
   const safePage = Math.min(page, Math.max(1, pagination.totalPages));
+  const userTableColumns = React.useMemo(
+    () => createUserListColumns(kasbonPendingSummary),
+    [kasbonPendingSummary],
+  );
   const handleDeleteUser = async () => {
     if (!deleteTarget || deletingUser) {
       return;
@@ -725,63 +723,32 @@ function KolamUserListSurface({
         ) : null}
       </View>
 
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={nextLimit => {
-              setPageSize(nextLimit);
-              setPage(1);
+      <KolamListTableComposition
+        columns={userTableColumns}
+        emptyTitle={emptyTitle}
+        getRowKey={user => user.id}
+        loading={loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: pagination.total,
+        }}
+        renderActions={user => (
+          <KolamUserListActions
+            canDeleteUser={canDeleteUser}
+            currentUserId={currentUserId}
+            onDeleteRequest={target => {
+              setDeleteError('');
+              setDeleteTarget(target);
             }}
-            page={safePage}
-            pageSize={pageSize}
-            total={pagination.total}
+            onRouteChange={onRouteChange}
+            user={user}
           />
-        }
-      >
-        <View style={styles.userHeaderRow}>
-          {USER_LIST_COLUMNS.map(column => (
-            <View
-              key={column.id}
-              style={[
-                styles.userListCell,
-                {flex: column.flex},
-                column.align === 'right' && styles.userListCellRight,
-              ]}>
-              <Text
-                style={[
-                  styles.userHeaderCellText,
-                  column.align === 'right' && styles.userTextRight,
-                ]}>
-                {column.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-        {items.length ? (
-          items.map(user => (
-            <KolamUserListRow
-              canDeleteUser={canDeleteUser}
-              currentUserId={currentUserId}
-              key={user.id}
-              pendingKasbonCount={kasbonPendingSummary.byUser[user.id] ?? 0}
-              onDeleteRequest={target => {
-                setDeleteError('');
-                setDeleteTarget(target);
-              }}
-              onRouteChange={onRouteChange}
-              user={user}
-            />
-          ))
-        ) : (
-          <View style={styles.emptyWrap}>
-            <KolamEmptyState
-              compact
-              message={emptyMessage}
-              title={emptyTitle}
-            />
-          </View>
         )}
-      </KolamCatalogListTableShell>
+        rowStyle={styles.userListRow}
+        rows={loading ? [] : items}
+      />
       <KolamConfirmDialog
         cancelLabel={deletingUser ? 'Tunggu' : 'Batal'}
         confirmLabel={deletingUser ? 'Menghapus...' : 'Hapus permanen'}
@@ -2846,31 +2813,30 @@ function UserFormField({
   );
 }
 
-function KolamUserListRow({
-  canDeleteUser,
-  currentUserId,
-  onDeleteRequest,
-  onRouteChange,
-  pendingKasbonCount = 0,
-  user,
-}: {
-  canDeleteUser: boolean;
-  currentUserId: string;
-  onDeleteRequest: (user: KolamUserListItem) => void;
-  onRouteChange?: (route: string) => void;
-  pendingKasbonCount?: number;
-  user: KolamUserListItem;
-}) {
-  const userRouteId = encodeURIComponent(user.id);
-  const profilePhotoUrl = resolveProfilePhotoUrl(user.profilePicture);
-  const deleteDisabled =
-    !canDeleteUser ||
-    currentUserId === String(user.id) ||
-    isSettingsSuperAdminRoleKey(user.role?.key ?? '');
+function createUserListColumns(
+  kasbonPendingSummary: KolamKasbonPendingSummary,
+): Array<KolamListTableColumn<KolamUserListItem>> {
+  return USER_LIST_COLUMNS.map(column => ({
+    ...column,
+    render: user =>
+      renderUserListCell(
+        column.id,
+        user,
+        kasbonPendingSummary.byUser[user.id] ?? 0,
+      ),
+  }));
+}
 
-  return (
-    <KolamDataTableRowFrame style={styles.userListRow}>
-      <View style={getUserListCellStyle('name')}>
+function renderUserListCell(
+  columnId: UserListColumnId,
+  user: KolamUserListItem,
+  pendingKasbonCount: number,
+) {
+  const profilePhotoUrl = resolveProfilePhotoUrl(user.profilePicture);
+
+  switch (columnId) {
+    case 'name':
+      return (
         <View style={styles.userNameCellContent}>
           {profilePhotoUrl ? (
             <KolamRemoteImage
@@ -2906,83 +2872,95 @@ function KolamUserListRow({
             ) : null}
           </View>
         </View>
-      </View>
-      <View style={getUserListCellStyle('email')}>
+      );
+    case 'email':
+      return (
         <Text numberOfLines={1} style={styles.userMetaText}>
           {user.email || '-'}
         </Text>
-      </View>
-      <View style={getUserListCellStyle('phone')}>
+      );
+    case 'phone':
+      return (
         <Text numberOfLines={1} style={styles.userMetaText}>
           {user.phoneNumber || '-'}
         </Text>
-      </View>
-      <View style={getUserListCellStyle('role')}>
+      );
+    case 'role':
+      return (
         <Text numberOfLines={1} style={styles.userMetaText}>
           {user.roleLabel || '-'}
         </Text>
-      </View>
-      <View style={getUserListCellStyle('employee')}>
+      );
+    case 'employee':
+      return (
         <KolamStatusBadge
           intent={user.isEmployee ? 'success' : 'secondary'}
           label={user.isEmployee ? 'Karyawan' : 'Bukan karyawan'}
           numberOfLines={1}
         />
-      </View>
-      <View style={getUserListCellStyle('access')}>
-        {user.accessBadges.length ? (
-          <View style={styles.accessBadgeRow}>
-            {user.accessBadges.map(access => (
-              <KolamStatusBadge
-                intent="secondary"
-                key={access.id}
-                label={access.label}
-                numberOfLines={1}
-                style={styles.accessBadge}
-              />
-            ))}
-          </View>
-        ) : (
-          <Text numberOfLines={1} style={styles.userMetaText}>
-            -
-          </Text>
-        )}
-      </View>
-      <View style={getUserListCellStyle('actions')}>
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${user.displayName}`}
-          actions={[
-            {
-              label: 'Lihat',
-              onPress: () =>
-                onRouteChange?.(`/list-of-users/users/${userRouteId}`),
-            },
-            {
-              label: 'Rubah',
-              onPress: () =>
-                onRouteChange?.(`/list-of-users/users/${userRouteId}/edit`),
-            },
-            {
-              disabled: deleteDisabled,
-              label: 'Hapus',
-              onPress: () => onDeleteRequest(user),
-              tone: 'danger',
-            },
-          ]}
-        />
-      </View>
-    </KolamDataTableRowFrame>
-  );
+      );
+    case 'access':
+      return user.accessBadges.length ? (
+        <View style={styles.accessBadgeRow}>
+          {user.accessBadges.map(access => (
+            <KolamStatusBadge
+              intent="secondary"
+              key={access.id}
+              label={access.label}
+              numberOfLines={1}
+              style={styles.accessBadge}
+            />
+          ))}
+        </View>
+      ) : (
+        <Text numberOfLines={1} style={styles.userMetaText}>
+          -
+        </Text>
+      );
+  }
 }
 
-function getUserListCellStyle(columnId: UserListColumnId) {
-  const column = USER_LIST_COLUMNS.find(item => item.id === columnId);
+function KolamUserListActions({
+  canDeleteUser,
+  currentUserId,
+  onDeleteRequest,
+  onRouteChange,
+  user,
+}: {
+  canDeleteUser: boolean;
+  currentUserId: string;
+  onDeleteRequest: (user: KolamUserListItem) => void;
+  onRouteChange?: (route: string) => void;
+  user: KolamUserListItem;
+}) {
+  const userRouteId = encodeURIComponent(user.id);
+  const deleteDisabled =
+    !canDeleteUser ||
+    currentUserId === String(user.id) ||
+    isSettingsSuperAdminRoleKey(user.role?.key ?? '');
 
-  return [
-    styles.userListCell,
-    {flex: column?.flex ?? 1},
-    column?.align === 'right' && styles.userListCellRight,
-  ];
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${user.displayName}`}
+      actions={[
+        {
+          label: 'Lihat',
+          onPress: () => onRouteChange?.(`/list-of-users/users/${userRouteId}`),
+        },
+        {
+          label: 'Rubah',
+          onPress: () =>
+            onRouteChange?.(`/list-of-users/users/${userRouteId}/edit`),
+        },
+        {
+          disabled: deleteDisabled,
+          label: 'Hapus',
+          onPress: () => onDeleteRequest(user),
+          tone: 'danger',
+        },
+      ]}
+    />
+  );
 }
 
 function getUserAccountStatusIntent(
@@ -3670,38 +3648,9 @@ const styles = StyleSheet.create({
   filterPanelOption: {
     justifyContent: 'flex-start',
   },
-  userHeaderRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 52,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  userHeaderCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
   userListRow: {
     alignItems: 'center',
     gap: 8,
-  },
-  userListCell: {
-    minWidth: 0,
-  },
-  userListCellRight: {
-    alignItems: 'flex-end',
-  },
-  userTextRight: {
-    textAlign: 'right',
   },
   userNameCellContent: {
     alignItems: 'center',
@@ -3769,10 +3718,6 @@ const styles = StyleSheet.create({
   },
   accessBadge: {
     maxWidth: 96,
-  },
-  emptyWrap: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
   },
   detailSurface: {
     gap: 12,

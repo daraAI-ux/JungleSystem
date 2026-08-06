@@ -24,10 +24,7 @@ import type {
   KolamCustomerSurfaceProps,
 } from './kolam-workspace-module-surface-types';
 import {KolamButton} from './kolam-button';
-import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamContentFrame} from './kolam-content-frame';
-import {KolamCopyStack} from './kolam-copy-stack';
-import {KolamDataTableRowFrame} from './kolam-data-table-row-frame';
 import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
@@ -35,10 +32,13 @@ import {
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -50,7 +50,6 @@ const CUSTOMER_LIST_COLUMNS = [
   {id: 'points', label: 'Poin', flex: 0.65, align: 'right'},
   {id: 'status', label: 'Status', flex: 1.05, align: 'left'},
   {id: 'created', label: 'Dibuat', flex: 0.95, align: 'right'},
-  {id: 'actions', label: '', flex: 0.35, align: 'right'},
 ] as const;
 
 type CustomerListColumnId = (typeof CUSTOMER_LIST_COLUMNS)[number]['id'];
@@ -137,7 +136,7 @@ function KolamCustomerListSurface({
   const [error, setError] = React.useState('');
   const [search, setSearch] = React.useState('');
   const [shouldSearchApi, setShouldSearchApi] = React.useState(false);
-  const [pageSize, setPageSize] = React.useState(10);
+  const [pageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const [pagination, setPagination] = React.useState(
     INITIAL_CUSTOMER_LIST.pagination,
@@ -220,6 +219,16 @@ function KolamCustomerListSurface({
   const safePage = Math.min(page, pageCount);
   const searchEmpty = Boolean(normalizedSearch) && !loading && !visibleItems.length;
   const filtersAppliedCount = Number(Boolean(search));
+  const customerTableColumns = React.useMemo(
+    () => createCustomerListColumns(),
+    [],
+  );
+  const customerTableRows = loading || searchEmpty ? [] : visibleItems;
+  const emptyTitle = loading
+    ? 'Memuat pelanggan...'
+    : searchEmpty
+      ? `Tidak ada pelanggan untuk "${search.trim()}"`
+      : 'Belum ada pelanggan';
 
   return (
     <View style={styles.stack}>
@@ -264,96 +273,26 @@ function KolamCustomerListSurface({
       {error ? (
         <Text style={styles.errorText}>{error}</Text>
       ) : null}
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={next => {
-              setPageSize(next);
-              setPage(1);
-            }}
-            page={safePage}
-            pageSize={pageSize}
-            total={tableTotal}>
-            {pageCount > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={safePage <= 1}
-                  label="Sebelumnya"
-                  onPress={() => setPage(current => Math.max(1, current - 1))}
-                />
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'page',
-                      text: `${safePage} / ${pageCount}`,
-                      style: styles.pageLabel,
-                    },
-                  ]}
-                />
-                <KolamButton
-                  disabled={safePage >= pageCount}
-                  label="Berikutnya"
-                  onPress={() =>
-                    setPage(current => Math.min(pageCount, current + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }>
-        {loading || searchEmpty || visibleItems.length === 0 ? (
-          <View style={styles.placeholderBody}>
-            <KolamEmptyState
-              compact
-              message={
-                searchEmpty
-                  ? shouldSearchApi
-                    ? 'Coba kata kunci lain'
-                    : 'Mencari pelanggan lain...'
-                  : 'Belum ada data pelanggan.'
-              }
-              title={
-                loading
-                  ? 'Memuat pelanggan...'
-                  : searchEmpty
-                    ? `Tidak ada pelanggan untuk "${search.trim()}"`
-                    : 'Belum ada pelanggan'
-              }
-            />
-          </View>
-        ) : (
-          <>
-            <View style={styles.customerHeaderRow}>
-              {CUSTOMER_LIST_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[
-                    styles.customerListCell,
-                    {flex: column.flex},
-                    column.align === 'right' && styles.customerListCellRight,
-                  ]}>
-                  {column.label ? (
-                    <Text
-                      style={[
-                        styles.customerHeaderCellText,
-                        column.align === 'right' && styles.customerTextRight,
-                      ]}>
-                      {column.label}
-                    </Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-            {visibleItems.map(customer => (
-              <KolamCustomerListRow
-                customer={customer}
-                key={customer.id}
-                onRouteChange={onRouteChange}
-              />
-            ))}
-          </>
+      <KolamListTableComposition
+        columns={customerTableColumns}
+        emptyTitle={emptyTitle}
+        getRowKey={customer => customer.id}
+        loading={loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize,
+          total: tableTotal,
+        }}
+        renderActions={customer => (
+          <KolamCustomerListActions
+            customer={customer}
+            onRouteChange={onRouteChange}
+          />
         )}
-      </KolamCatalogListTableShell>
+        rowStyle={styles.customerListRow}
+        rows={customerTableRows}
+      />
     </View>
   );
 }
@@ -932,21 +871,24 @@ function normalizeCustomerSearch(value: string) {
   return value.trim().toLowerCase();
 }
 
-function KolamCustomerListRow({
-  customer,
-  onRouteChange,
-}: {
-  customer: KolamCustomer;
-  onRouteChange?: (route: string) => void;
-}) {
+function createCustomerListColumns(): Array<KolamListTableColumn<KolamCustomer>> {
+  return CUSTOMER_LIST_COLUMNS.map(column => ({
+    ...column,
+    render: customer => renderCustomerListCell(column.id, customer),
+  }));
+}
+
+function renderCustomerListCell(
+  columnId: CustomerListColumnId,
+  customer: KolamCustomer,
+) {
   const photoUri = getKolamFileUrl(customer.photos[0]);
   const gender = getCustomerGenderSymbol(customer.gender);
   const points = customer.points.availablePoints;
-  const customerRouteId = encodeURIComponent(customer.id);
 
-  return (
-    <KolamDataTableRowFrame style={styles.customerListRow}>
-      <View style={getCustomerListCellStyle('customer')}>
+  switch (columnId) {
+    case 'customer':
+      return (
         <View style={styles.customerIdentityRow}>
           <View style={styles.customerAvatar}>
             {photoUri ? (
@@ -984,36 +926,40 @@ function KolamCustomerListRow({
             ) : null}
           </View>
         </View>
-      </View>
-      <View style={getCustomerListCellStyle('contact')}>
-        <Text numberOfLines={1} style={styles.customerMetaText}>
-          {customer.phone || '-'}
-        </Text>
-        {customer.email ? (
-          <Text numberOfLines={1} style={styles.customerSubText}>
-            {customer.email}
+      );
+    case 'contact':
+      return (
+        <>
+          <Text numberOfLines={1} style={styles.customerMetaText}>
+            {customer.phone || '-'}
           </Text>
-        ) : null}
-      </View>
-      <View style={getCustomerListCellStyle('location')}>
+          {customer.email ? (
+            <Text numberOfLines={1} style={styles.customerSubText}>
+              {customer.email}
+            </Text>
+          ) : null}
+        </>
+      );
+    case 'location':
+      return (
         <Text numberOfLines={2} style={styles.customerMetaText}>
           {getKolamCustomerLocationText(customer) || '-'}
         </Text>
-      </View>
-      <View style={getCustomerListCellStyle('points')}>
-        {points > 0 ? (
-          <KolamStatusBadge
-            intent="warning"
-            label={formatCustomerNumber(points)}
-            style={styles.customerPointBadge}
-          />
-        ) : (
-          <Text style={[styles.customerSubText, styles.customerTextRight]}>
-            0
-          </Text>
-        )}
-      </View>
-      <View style={getCustomerListCellStyle('status')}>
+      );
+    case 'points':
+      return points > 0 ? (
+        <KolamStatusBadge
+          intent="warning"
+          label={formatCustomerNumber(points)}
+          style={styles.customerPointBadge}
+        />
+      ) : (
+        <Text style={[styles.customerSubText, styles.customerTextRight]}>
+          0
+        </Text>
+      );
+    case 'status':
+      return (
         <View style={styles.customerStatusStack}>
           <View style={styles.customerStatusRow}>
             <KolamStatusBadge
@@ -1046,46 +992,46 @@ function KolamCustomerListRow({
             </View>
           ) : null}
         </View>
-      </View>
-      <View style={getCustomerListCellStyle('created')}>
+      );
+    case 'created':
+      return (
         <Text style={[styles.customerSubText, styles.customerTextRight]}>
           {formatCustomerDate(customer.createdAt)}
         </Text>
-      </View>
-      <View style={getCustomerListCellStyle('actions')}>
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${customer.name}`}
-          actions={[
-            {
-              label: 'Lihat',
-              onPress: () => onRouteChange?.(`/customers/${customerRouteId}`),
-            },
-            {
-              label: 'Rubah',
-              onPress: () =>
-                onRouteChange?.(`/customers/${customerRouteId}/edit`),
-            },
-            {
-              disabled: true,
-              label: 'Hapus',
-              onPress: () => undefined,
-              tone: 'danger',
-            },
-          ]}
-        />
-      </View>
-    </KolamDataTableRowFrame>
-  );
+      );
+  }
 }
 
-function getCustomerListCellStyle(columnId: CustomerListColumnId) {
-  const column = CUSTOMER_LIST_COLUMNS.find(item => item.id === columnId);
+function KolamCustomerListActions({
+  customer,
+  onRouteChange,
+}: {
+  customer: KolamCustomer;
+  onRouteChange?: (route: string) => void;
+}) {
+  const customerRouteId = encodeURIComponent(customer.id);
 
-  return [
-    styles.customerListCell,
-    {flex: column?.flex ?? 1},
-    column?.align === 'right' && styles.customerListCellRight,
-  ];
+  return (
+    <KolamOverflowMenuButton
+      accessibilityLabel={`Menu ${customer.name}`}
+      actions={[
+        {
+          label: 'Lihat',
+          onPress: () => onRouteChange?.(`/customers/${customerRouteId}`),
+        },
+        {
+          label: 'Rubah',
+          onPress: () => onRouteChange?.(`/customers/${customerRouteId}/edit`),
+        },
+        {
+          disabled: true,
+          label: 'Hapus',
+          onPress: () => undefined,
+          tone: 'danger',
+        },
+      ]}
+    />
+  );
 }
 
 function SectionTitle({
@@ -1388,37 +1334,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 20,
   },
-  placeholderBody: {
-    padding: 12,
-  },
-  customerHeaderRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 52,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  customerHeaderCellText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
   customerListRow: {
     alignItems: 'center',
     gap: 8,
-  },
-  customerListCell: {
-    minWidth: 0,
-  },
-  customerListCellRight: {
-    alignItems: 'flex-end',
   },
   customerIdentityRow: {
     alignItems: 'center',
@@ -1749,16 +1667,5 @@ const styles = StyleSheet.create({
   formDropdown: {
     alignSelf: 'flex-start',
     minWidth: 220,
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 20,
   },
 });
