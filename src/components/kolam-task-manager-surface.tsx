@@ -2093,7 +2093,7 @@ function KolamTaskRecurringPanel({
           }
           getRowKey={row => row.id}
           loading={controller.loading}
-          rows={scheduleRows}
+          rows={scheduleRows.slice(0, 10)}
           showFooter={false}
           style={styles.recurringScheduleTable}
         />
