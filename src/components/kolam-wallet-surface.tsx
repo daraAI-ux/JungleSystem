@@ -52,7 +52,6 @@ import { KolamDateField } from './kolam-date-field';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -627,8 +626,6 @@ function WalletListPanel({
     KOLAM_WALLET_TYPE_OPTIONS.find(
       option => option.value === controller.walletFilters.type,
     )?.label ?? 'Semua tipe';
-  const safePage = Math.max(1, controller.walletPagination.page);
-  const pageCount = Math.max(1, controller.walletPagination.totalPages);
 
   const renderWalletCard = React.useCallback(
     ({ item }: { item: KolamWallet }) => (
@@ -725,37 +722,6 @@ function WalletListPanel({
           ))}
         </View>
       )}
-
-      <KolamTableFooterControls
-        onPageSizeChange={controller.onWalletLimitChange}
-        page={safePage}
-        pageSize={controller.walletFilters.limit}
-        total={controller.walletPagination.total}
-      >
-        {pageCount > 1 ? (
-          <View style={styles.paginationBar}>
-            <KolamButton
-              intent="secondary"
-              label="‹"
-              onPress={() =>
-                controller.onWalletPageChange(Math.max(1, safePage - 1))
-              }
-              style={styles.pageButton}
-            />
-            <Text style={styles.metaText}>
-              {safePage} / {pageCount}
-            </Text>
-            <KolamButton
-              intent="secondary"
-              label="›"
-              onPress={() =>
-                controller.onWalletPageChange(Math.min(pageCount, safePage + 1))
-              }
-              style={styles.pageButton}
-            />
-          </View>
-        ) : null}
-      </KolamTableFooterControls>
 
       {deleteTarget ? (
         <Modal
@@ -2670,14 +2636,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-  },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageButton: {
-    minWidth: 32,
   },
   confirmButton: {
     minHeight: 28,
