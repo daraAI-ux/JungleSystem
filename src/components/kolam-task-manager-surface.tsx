@@ -1954,7 +1954,7 @@ function KolamTaskRecurringPanel({
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
-            <Text style={styles.detailContext}>Tugas berulang</Text>
+            <Text style={styles.detailContext}>Tugas terjadwal</Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamTaskManagerTabs controller={controller} />
@@ -2085,11 +2085,11 @@ function KolamTaskRecurringPanel({
       </View>
 
       <View style={styles.detailCard}>
-        <Text style={styles.sectionTitle}>Jadwal / occurrence</Text>
+        <Text style={styles.sectionTitle}>Jadwal tugas</Text>
         <KolamListTableComposition
           columns={createRecurringScheduleColumns(onRouteChange)}
           emptyTitle={
-            controller.loading ? 'Memuat...' : 'Belum ada occurrence'
+            controller.loading ? 'Memuat...' : 'Belum ada jadwal tugas'
           }
           getRowKey={row => row.id}
           loading={controller.loading}
@@ -2124,7 +2124,7 @@ function KolamTaskRecurringKpiRow({
     {
       id: 'occurrence',
       iconElement: <KolamTotalTaskIcon style={styles.kpiCardIcon} />,
-      label: 'Occurrence',
+      label: 'Jadwal',
       value: compliance ? compliance.total : scheduleRows.length,
       tone: 'muted',
     },
@@ -3496,7 +3496,7 @@ function KolamTaskRecurringTemplateFormModal({
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
             <Text numberOfLines={1} style={styles.modalTitle}>
-              Template tugas berulang
+              Template tugas terjadwal
             </Text>
             <View style={styles.modalActions}>
               <KolamButton
