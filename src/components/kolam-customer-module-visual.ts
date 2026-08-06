@@ -1,10 +1,8 @@
 ﻿import type {ViewStyle} from 'react-native';
 import {getKolamFormVisualContract} from '../domain/kolam-form';
-import {getKolamTableVisualContract} from '../domain/kolam-table';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 
 export const KOLAM_CUSTOMER_FORM_VISUAL = getKolamFormVisualContract();
-export const KOLAM_CUSTOMER_TABLE_VISUAL = getKolamTableVisualContract();
 
 export const KOLAM_CUSTOMER_CARD_SHADOW = {
   shadowColor: V.colors.fg,

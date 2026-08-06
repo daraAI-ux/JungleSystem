@@ -142,9 +142,6 @@ export function KolamPusatAiRingkasanSurface({
   );
 }
 
-/** Alias for hub surface. */
-export const KolamPusatAiSurface = KolamPusatAiRingkasanSurface;
-
 function resolveSelectedHubTab(
   route: string,
   isAdmin: boolean,
