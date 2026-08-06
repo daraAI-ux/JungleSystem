@@ -1077,7 +1077,11 @@ function KolamTaskToolbar({
           </View>
           <View style={styles.taskToolbarFilterRow}>
             <View style={[kolamTableToolbarStyles.filters, styles.taskToolbarFilters]}>
-              <View ref={bucketTriggerRef} collapsable={false}>
+              <View
+                ref={bucketTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterItem}
+              >
                 <KolamTableFilterTrigger
                   active={bucketOpen || controller.categoryBucketFilter !== 'all'}
                   label={bucketLabel}
@@ -1089,7 +1093,11 @@ function KolamTaskToolbar({
                   variant="quiet"
                 />
               </View>
-              <View ref={categoryTriggerRef} collapsable={false}>
+              <View
+                ref={categoryTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterItem}
+              >
                 <KolamTableFilterTrigger
                   active={categoryOpen || controller.categoryFilter !== 'all'}
                   label={categoryLabel}
@@ -1101,7 +1109,11 @@ function KolamTaskToolbar({
                   variant="quiet"
                 />
               </View>
-              <View ref={picTriggerRef} collapsable={false}>
+              <View
+                ref={picTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterItem}
+              >
                 <KolamTableFilterTrigger
                   active={picOpen || controller.assignedToFilter !== 'all'}
                   label={picLabel}
@@ -1111,7 +1123,11 @@ function KolamTaskToolbar({
                   variant="quiet"
                 />
               </View>
-              <View ref={projectTriggerRef} collapsable={false}>
+              <View
+                ref={projectTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterItem}
+              >
                 <KolamTableFilterTrigger
                   active={projectOpen || controller.projectFilter !== 'all'}
                   label={projectLabel}
@@ -1123,7 +1139,11 @@ function KolamTaskToolbar({
                   variant="quiet"
                 />
               </View>
-              <View ref={statusTriggerRef} collapsable={false}>
+              <View
+                ref={statusTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterItem}
+              >
                 <KolamTableFilterTrigger
                   active={statusOpen || controller.statusFilter !== 'all'}
                   label={statusLabel}
@@ -1135,7 +1155,11 @@ function KolamTaskToolbar({
                   variant="quiet"
                 />
               </View>
-              <View ref={priorityTriggerRef} collapsable={false}>
+              <View
+                ref={priorityTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterItem}
+              >
                 <KolamTableFilterTrigger
                   active={priorityOpen || controller.priorityFilter !== 'all'}
                   label={priorityLabel}
@@ -3227,9 +3251,16 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 140,
   },
+  taskFilterItem: {
+    flexBasis: 132,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 112,
+  },
   taskFilterTrigger: {
-    flexGrow: 0,
-    flexShrink: 0,
+    alignSelf: 'stretch',
+    flexGrow: 1,
+    flexShrink: 1,
   },
   taskFilterOverlayPanel: {
     backgroundColor: V.colors.bg,
