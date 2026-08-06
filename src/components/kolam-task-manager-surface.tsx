@@ -1941,6 +1941,8 @@ function KolamTaskRecurringPanel({
   onRouteChange?: (route: string) => void;
 }) {
   const scheduleRows = getRecurringScheduleRows(controller);
+  const hasEnrollmentDashboard =
+    controller.isTaskAdmin && Boolean(controller.recurringEnrollmentDashboard);
 
   return (
     <View style={styles.detailStack}>
@@ -1948,10 +1950,6 @@ function KolamTaskRecurringPanel({
         controller={controller}
         scheduleRows={scheduleRows}
       />
-
-      {controller.isTaskAdmin ? (
-        <KolamTaskRecurringEnrollmentDashboard controller={controller} />
-      ) : null}
 
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
@@ -2010,61 +2008,80 @@ function KolamTaskRecurringPanel({
         </View>
       </View>
 
-      <View style={styles.detailCard}>
-        <Text style={styles.sectionTitle}>Template aktif</Text>
-        {controller.recurringTemplates.length ? (
-          controller.recurringTemplates.map(template => {
-            const taskTypeId = getRecurringTemplateTaskTypeId(template);
-            return (
-              <View key={template.id} style={styles.timelineRow}>
-                <Text style={styles.timelineTitle}>{template.title}</Text>
-                <View style={styles.badgeRow}>
-                  <KolamStatusBadge
-                    intent={getKolamTaskPriorityBadgeIntent(template.priority)}
-                    label={getKolamTaskPriorityLabel(template.priority)}
-                  />
-                  <KolamStatusBadge
-                    intent={template.active ? 'success' : 'danger'}
-                    label={template.active ? 'Aktif' : 'Nonaktif'}
-                  />
-                </View>
-                <Text style={styles.metaText}>
-                  {getRecurrenceLabel(template.recurrence)} -{' '}
-                  {getKolamTaskUserDisplayName(template.assignedTo)}
-                </Text>
-                {controller.isTaskAdmin ? (
-                  <View style={styles.categoryActionsCell}>
-                    {taskTypeId ? (
-                      <KolamButton
-                        disabled={controller.loading}
-                        intent="outline"
-                        label="Enrollment"
-                        onPress={() =>
-                          controller.onCreateRecurringBulkEnrollment(taskTypeId)
-                        }
+      <View style={styles.recurringSummaryGrid}>
+        <View
+          style={
+            hasEnrollmentDashboard
+              ? styles.recurringSummaryColumn
+              : styles.recurringSummaryColumnFull
+          }
+        >
+          <View style={styles.detailCard}>
+            <Text style={styles.sectionTitle}>Template aktif</Text>
+            {controller.recurringTemplates.length ? (
+              controller.recurringTemplates.map(template => {
+                const taskTypeId = getRecurringTemplateTaskTypeId(template);
+                return (
+                  <View key={template.id} style={styles.timelineRow}>
+                    <Text style={styles.timelineTitle}>{template.title}</Text>
+                    <View style={styles.badgeRow}>
+                      <KolamStatusBadge
+                        intent={getKolamTaskPriorityBadgeIntent(
+                          template.priority,
+                        )}
+                        label={getKolamTaskPriorityLabel(template.priority)}
                       />
+                      <KolamStatusBadge
+                        intent={template.active ? 'success' : 'danger'}
+                        label={template.active ? 'Aktif' : 'Nonaktif'}
+                      />
+                    </View>
+                    <Text style={styles.metaText}>
+                      {getRecurrenceLabel(template.recurrence)} -{' '}
+                      {getKolamTaskUserDisplayName(template.assignedTo)}
+                    </Text>
+                    {controller.isTaskAdmin ? (
+                      <View style={styles.categoryActionsCell}>
+                        {taskTypeId ? (
+                          <KolamButton
+                            disabled={controller.loading}
+                            intent="outline"
+                            label="Enrollment"
+                            onPress={() =>
+                              controller.onCreateRecurringBulkEnrollment(
+                                taskTypeId,
+                              )
+                            }
+                          />
+                        ) : null}
+                        <KolamButton
+                          disabled={
+                            controller.mutatingTaskId ===
+                            `recurring-template:${template.id}`
+                          }
+                          intent="outline"
+                          label="Hapus"
+                          onPress={() => {
+                            void controller.onDeleteRecurringTemplate(template);
+                          }}
+                        />
+                      </View>
                     ) : null}
-                    <KolamButton
-                      disabled={
-                        controller.mutatingTaskId ===
-                        `recurring-template:${template.id}`
-                      }
-                      intent="outline"
-                      label="Hapus"
-                      onPress={() => {
-                        void controller.onDeleteRecurringTemplate(template);
-                      }}
-                    />
                   </View>
-                ) : null}
-              </View>
-            );
-          })
-        ) : (
-          <Text style={styles.metaText}>
-            {controller.loading ? 'Memuat...' : 'Belum ada template'}
-          </Text>
-        )}
+                );
+              })
+            ) : (
+              <Text style={styles.metaText}>
+                {controller.loading ? 'Memuat...' : 'Belum ada template'}
+              </Text>
+            )}
+          </View>
+        </View>
+        {hasEnrollmentDashboard ? (
+          <View style={styles.recurringSummaryColumn}>
+            <KolamTaskRecurringEnrollmentDashboard controller={controller} />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.detailCard}>
@@ -2210,7 +2227,7 @@ function KolamTaskRecurringEnrollmentDashboard({
           ),
         },
         {
-          id: 'pic',
+          id: 'pic-list',
           label: 'Per PIC',
           value: dashboard.byPic.length ? (
             <View style={styles.enrollmentSummaryList}>
@@ -4023,6 +4040,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
     padding: 14,
+  },
+  recurringSummaryGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  recurringSummaryColumn: {
+    flexBasis: 360,
+    flexGrow: 1,
+    minWidth: 320,
+  },
+  recurringSummaryColumnFull: {
+    flexGrow: 1,
+    minWidth: 320,
   },
   sectionTitle: {
     color: V.colors.fg,
