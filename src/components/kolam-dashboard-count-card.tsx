@@ -18,7 +18,8 @@ export function KolamDashboardCountCard({
   const usesProductIconLayout =
     card.id === 'products' ||
     card.id === 'rawProducts' ||
-    card.id === 'species';
+    card.id === 'species' ||
+    card.id === 'services';
   const iconStyle =
     usesProductIconLayout
       ? styles.dashboardProductCountIcon
