@@ -634,16 +634,13 @@ function buildPackingListColumns(): Array<
 }
 
 function PackingMaterialPhotoCell({ item }: { item: KolamPackingMaterial }) {
-  const photoUri = getKolamFileUrl(item.photos[0]);
+  const images = createPackingImageItems(item);
+  const photoUri = images[0]?.uri;
 
   return photoUri ? (
     <KolamRemoteImage
       accessibilityLabel={`Foto ${item.name}`}
-      previewItems={item.photos.map((photo, index) => ({
-        id: `${item.id}-${index}`,
-        title: `${item.name} ${index + 1}`,
-        uri: getKolamFileUrl(photo) ?? '',
-      }))}
+      previewItems={createPackingPhotoPreviewItems(item)}
       resizeMode="cover"
       scope="packing-material"
       sourceUri={photoUri}
@@ -729,7 +726,8 @@ function KolamPackingMaterialRow({
   onSelect: () => void;
 }) {
   const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const photoUri = getKolamFileUrl(item.photos[0]);
+  const images = createPackingImageItems(item);
+  const photoUri = images[0]?.uri;
   const description = item.description.trim();
   const effectiveHpp = getPackingEffectiveHpp(item);
   const columnOf = React.useCallback(
@@ -761,11 +759,7 @@ function KolamPackingMaterialRow({
           {photoUri ? (
             <KolamRemoteImage
               accessibilityLabel={`Foto ${item.name}`}
-              previewItems={item.photos.map((photo, index) => ({
-                id: `${item.id}-${index}`,
-                title: `${item.name} ${index + 1}`,
-                uri: getKolamFileUrl(photo) ?? '',
-              }))}
+              previewItems={createPackingPhotoPreviewItems(item)}
               resizeMode="cover"
               scope="packing-material"
               sourceUri={photoUri}
@@ -1834,46 +1828,86 @@ function getCheapestSupplier(item: KolamPackingMaterial) {
 function createPackingMediaItems(
   item: KolamPackingMaterial,
 ): KolamDetailMediaItem[] {
-  return item.photos
-    .map((photo, index) => {
-      const uri = getKolamFileUrl(photo) ?? '';
-      if (!uri) {
-        return null;
-      }
+  const images = createPackingImageItems(item);
 
-      return {
-        badgeLabel: `${index + 1} / ${item.photos.length}`,
-        id: `${item.id}-photo-${index}`,
-        label: `${item.name} ${index + 1}`,
-        revision: photo,
-        scope: 'packing-material',
-        type: 'image',
-        uri,
-      } satisfies KolamDetailMediaItem;
-    })
-    .filter(Boolean) as KolamDetailMediaItem[];
+  return images.map((image, index) => ({
+    badgeLabel: `${index + 1} / ${images.length}`,
+    id: image.id,
+    label: image.label,
+    revision: image.revision,
+    scope: 'packing-material',
+    type: 'image',
+    uri: image.uri,
+  }));
 }
 
 function createPackingPhotoPreviewItems(
   item: KolamPackingMaterial,
 ): KolamImagePreviewItem[] {
-  const previewItems: KolamImagePreviewItem[] = [];
+  return createPackingImageItems(item).map(image => ({
+    revision: image.revision,
+    scope: 'packing-material',
+    title: image.label,
+    uri: image.uri,
+  }));
+}
 
-  item.photos.forEach((photo, index) => {
+function createPackingImageItems(item: KolamPackingMaterial) {
+  const photoItems = item.photos.reduce<
+    Array<{ id: string; label: string; revision: string; uri: string }>
+  >((items, photo, index) => {
     const uri = getKolamFileUrl(photo);
-    if (!uri) {
-      return;
+    if (uri) {
+      items.push({
+        id: `${item.id}-photo-${index}`,
+        label: `${item.name} ${index + 1}`,
+        revision: photo,
+        uri,
+      });
+    }
+    return items;
+  }, []);
+
+  if (photoItems.length) {
+    return photoItems;
+  }
+
+  return item.assets.reduce<
+    Array<{ id: string; label: string; revision: string; uri: string }>
+  >((items, asset, index) => {
+    if (!isPackingImageAsset(asset)) {
+      return items;
     }
 
-    previewItems.push({
-      revision: photo,
-      scope: 'packing-material',
-      title: `${item.name} ${index + 1}`,
-      uri,
-    });
-  });
+    const path = asset.path || asset.url;
+    const uri = getKolamFileUrl(path);
+    if (path && uri) {
+      items.push({
+        id: `${item.id}-asset-photo-${asset.id || index}`,
+        label: asset.title || asset.name || `${item.name} ${index + 1}`,
+        revision: path,
+        uri,
+      });
+    }
 
-  return previewItems;
+    return items;
+  }, []);
+}
+
+function isPackingImageAsset(asset: KolamPackingMaterial['assets'][number]) {
+  const mimeType = (asset.mimeType || asset.type || '').toLowerCase();
+  if (mimeType.startsWith('image/')) {
+    return true;
+  }
+
+  const candidate = [
+    asset.path,
+    asset.url,
+    asset.originalFilename,
+    asset.name,
+  ].find(value => Boolean(value?.trim()));
+
+  return Boolean(candidate && /\.(avif|gif|jpe?g|png|webp)$/i.test(candidate));
 }
 
 function getPackingPhotoErrorMessage(error: unknown) {
