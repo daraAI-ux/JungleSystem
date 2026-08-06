@@ -70,6 +70,7 @@ import {
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamHoverTooltip} from './kolam-hover-tooltip';
+import {KolamKatakSpeciesIcon} from './kolam-katak-species-icon';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -2061,6 +2062,7 @@ function KolamEnclosureAllocationPanel({
     <ScrollView contentContainerStyle={styles.dashboardContent}>
       <View style={styles.summaryGrid}>
         <SummaryTile
+          iconElement={<KolamKatakSpeciesIcon style={styles.summaryIcon} />}
           icon="S"
           label="Jumlah species"
           value={controller.allocationOverview.totals.speciesCount}
@@ -2377,6 +2379,7 @@ function SummaryTile({
   accent,
   compact,
   hint,
+  iconElement,
   label,
   value,
   width,
@@ -2385,6 +2388,7 @@ function SummaryTile({
   compact?: boolean;
   hint?: string;
   icon: string;
+  iconElement?: React.ReactNode;
   label: string;
   value: number;
   width?: number;
@@ -2407,10 +2411,17 @@ function SummaryTile({
         ]}
       />
       <View style={styles.summaryBody}>
-        <Text style={styles.summaryLabel}>{label}</Text>
-        <Text numberOfLines={1} style={styles.summaryValue}>
-          {String(value)}
-        </Text>
+        <View style={styles.summaryMainRow}>
+          {iconElement ? (
+            <View style={styles.summaryIconShell}>{iconElement}</View>
+          ) : null}
+          <View style={styles.summaryTextStack}>
+            <Text style={styles.summaryLabel}>{label}</Text>
+            <Text numberOfLines={1} style={styles.summaryValue}>
+              {String(value)}
+            </Text>
+          </View>
+        </View>
         {hint ? (
           <Text numberOfLines={2} style={styles.summaryHint}>
             {hint}
@@ -3310,6 +3321,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingLeft: 16,
     paddingVertical: 12,
+  },
+  summaryMainRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  summaryIconShell: {
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  summaryIcon: {
+    height: 30,
+    width: 30,
+  },
+  summaryTextStack: {
+    flex: 1,
+    minWidth: 0,
   },
   summaryValue: {
     color: V.colors.fg,
