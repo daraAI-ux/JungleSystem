@@ -61,6 +61,7 @@ import {
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
+import { KolamTodoTaskIcon } from './kolam-todo-task-icon';
 
 const LIST_COLUMNS = [
   { id: 'primary', label: 'Tugas', align: 'left', flex: 2.3 },
@@ -922,7 +923,13 @@ function KolamTaskKpiRow({
   controller: KolamTaskManagerController;
 }) {
   const cards = [
-    { id: 'todo', label: 'To Do', value: controller.kpi.todo, tone: 'warning' },
+    {
+      id: 'todo',
+      iconElement: <KolamTodoTaskIcon style={styles.kpiCardIcon} />,
+      label: 'To Do',
+      value: controller.kpi.todo,
+      tone: 'warning',
+    },
     {
       id: 'progress',
       label: 'Sedang berjalan',
@@ -944,7 +951,7 @@ function KolamTaskKpiRow({
       {cards.map(card => (
         <View key={card.id} style={styles.kpiCard}>
           <View style={[styles.kpiAccent, getTaskKpiAccentStyle(card.tone)]} />
-          <View style={styles.kpiBody}>
+          <View style={[styles.kpiBody, 'iconElement' in card && styles.kpiBodyWithIcon]}>
             <Text numberOfLines={1} style={styles.kpiLabel}>
               {card.label}
             </Text>
@@ -952,6 +959,9 @@ function KolamTaskKpiRow({
               {card.value}
             </Text>
           </View>
+          {'iconElement' in card ? (
+            <View style={styles.kpiIconShell}>{card.iconElement}</View>
+          ) : null}
         </View>
       ))}
     </View>
@@ -3413,6 +3423,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingLeft: 16,
     paddingVertical: 12,
+  },
+  kpiBodyWithIcon: {
+    paddingRight: 66,
+  },
+  kpiIconShell: {
+    alignItems: 'center',
+    borderRadius: 999,
+    bottom: 6,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'absolute',
+    right: 8,
+    top: 6,
+    width: 46,
+  },
+  kpiCardIcon: {
+    height: '100%',
+    width: '100%',
   },
   kpiLabel: {
     color: V.colors.mutedFg,
