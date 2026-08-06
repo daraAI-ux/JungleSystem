@@ -1822,6 +1822,25 @@ function KolamTaskDueCountdownText({
 
   const danger =
     isKolamTaskOverdue(task) || label.toLowerCase().includes('terlambat');
+  const overdueMatch = /^terlambat\s+(.+)$/i.exec(label.trim());
+
+  if (overdueMatch) {
+    return (
+      <View style={styles.taskCountdownStack}>
+        <Text style={[styles.cellText, styles.dangerText]}>Terlambat</Text>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.cellText,
+            styles.dangerText,
+            styles.taskCountdownDuration,
+          ]}
+        >
+          {overdueMatch[1]}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <Text
@@ -3679,6 +3698,16 @@ const styles = StyleSheet.create({
   dangerText: {
     color: V.colors.danger,
     fontWeight: '900',
+  },
+  taskCountdownStack: {
+    alignItems: 'center',
+    gap: 1,
+    minWidth: 0,
+    width: '100%',
+  },
+  taskCountdownDuration: {
+    textAlign: 'center',
+    width: '100%',
   },
   titleRow: {
     alignItems: 'center',
