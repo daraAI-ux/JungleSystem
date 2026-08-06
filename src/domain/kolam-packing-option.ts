@@ -119,14 +119,14 @@ export function isKolamPackingMaterialRoute(route: string) {
 
 export function getKolamPackingMaterialBreadcrumbPath(
   mode: 'list' | 'detail' | 'edit' | 'new',
-  item?: Pick<KolamPackingMaterial, 'name'> | null,
+  item?: Pick<KolamPackingMaterial, 'id' | 'name'> | null,
 ) {
   if (mode === 'new') {
     return `${KOLAM_PACKING_MATERIAL_BREADCRUMB_ROOT}/baru`;
   }
 
   if ((mode === 'detail' || mode === 'edit') && item) {
-    return `${KOLAM_PACKING_MATERIAL_BREADCRUMB_ROOT}/${item.name}`;
+    return `${KOLAM_PACKING_MATERIAL_BREADCRUMB_ROOT}/${encodeURIComponent(item.id)}`;
   }
 
   return KOLAM_PACKING_MATERIAL_BREADCRUMB_ROOT;

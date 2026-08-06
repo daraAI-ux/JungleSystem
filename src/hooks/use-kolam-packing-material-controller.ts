@@ -144,12 +144,21 @@ export function useKolamPackingMaterialController(
       return;
     }
 
+    const routeMaterial = materials.find(item =>
+      materialMatchesRouteKey(item, routeKey),
+    );
+
     if (selectedMaterial && materialMatchesRouteKey(selectedMaterial, routeKey)) {
-      return;
+      if (!routeMaterial || selectedMaterial.id === routeMaterial.id) {
+        return;
+      }
     }
 
     let active = true;
-    void resolveRouteMaterial(routeKey, materials).then(item => {
+    void (routeMaterial
+      ? Promise.resolve(routeMaterial)
+      : resolveRouteMaterial(routeKey, materials)
+    ).then(item => {
       if (active) {
         void onSelectMaterial(item);
       }

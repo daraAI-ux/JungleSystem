@@ -1890,7 +1890,7 @@ function getPackingTime(item: KolamPackingMaterial) {
 }
 
 function getPackingRoute(item: KolamPackingMaterial) {
-  return `/packing-materials/${encodeURIComponent(item.name || item.id)}`;
+  return `/packing-materials/${encodeURIComponent(item.id)}`;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
