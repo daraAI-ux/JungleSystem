@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import {
   formatPackingDimension,
   formatPackingWeight,
@@ -907,78 +907,59 @@ function KolamPackingMaterialDetail({
 
   if (!item && controller.mode !== 'new') {
     return (
-      <ScrollView
-        contentContainerStyle={styles.stack}
-        keyboardShouldPersistTaps="handled"
-        style={styles.detailScroll}
-      >
+      <View style={styles.stack}>
         <KolamEmptyState
           message="Pilih salah satu bahan kemasan dari daftar untuk melihat detail."
           title="Belum ada bahan kemasan dipilih"
         />
-      </ScrollView>
+      </View>
     );
   }
 
   if (editable || !item) {
     return (
-      <ScrollView
-        contentContainerStyle={styles.stack}
-        keyboardShouldPersistTaps="handled"
-        style={styles.detailScroll}
-      >
+      <View style={styles.stack}>
         <KolamPackingMaterialForm controller={controller} />
-      </ScrollView>
+      </View>
     );
   }
 
   return (
-    <View style={styles.detailHost}>
-      <ScrollView
-        contentContainerStyle={styles.stack}
-        keyboardShouldPersistTaps="handled"
-        style={styles.detailScroll}
-      >
-        <View style={styles.detailPageHeader}>
-          <View style={styles.detailHeading}>
-            <Text style={styles.detailPageTitle}>{item.name}</Text>
-            <Text style={styles.detailPageMeta}>
-              {createPackingDetailTimestamp(item)}
-            </Text>
-          </View>
-          <View style={styles.detailTopActions}>
-            <KolamButton
-              disabled={item.status !== 'active' || controller.saving}
-              intent="danger"
-              label="Nonaktifkan"
-              onPress={() => setDeleteCandidate(item)}
-            />
-          </View>
+    <View style={styles.stack}>
+      <View style={styles.detailPageHeader}>
+        <View style={styles.detailHeading}>
+          <Text style={styles.detailPageTitle}>{item.name}</Text>
+          <Text style={styles.detailPageMeta}>
+            {createPackingDetailTimestamp(item)}
+          </Text>
         </View>
-        <KolamControlTabList
-          accessibilityLabel="Bagian detail bahan kemasan"
-          items={[
-            { id: 'overview', label: 'Ringkasan' },
-            { id: 'assets', label: 'Aset', count: item.assets.length },
-          ]}
-          onSelect={tab =>
-            setActiveTab(tab === 'assets' ? 'assets' : 'overview')
-          }
-          selectedId={activeTab}
+        <View style={styles.detailTopActions}>
+          <KolamButton
+            disabled={item.status !== 'active' || controller.saving}
+            intent="danger"
+            label="Nonaktifkan"
+            onPress={() => setDeleteCandidate(item)}
+          />
+        </View>
+      </View>
+      <KolamControlTabList
+        accessibilityLabel="Bagian detail bahan kemasan"
+        items={[
+          { id: 'overview', label: 'Ringkasan' },
+          { id: 'assets', label: 'Aset', count: item.assets.length },
+        ]}
+        onSelect={tab => setActiveTab(tab === 'assets' ? 'assets' : 'overview')}
+        selectedId={activeTab}
+      />
+      {activeTab === 'overview' ? (
+        <PackingOverviewPanel
+          controller={controller}
+          item={item}
+          onRouteChange={onRouteChange}
         />
-        {activeTab === 'overview' ? (
-          <PackingOverviewPanel
-            controller={controller}
-            item={item}
-            onRouteChange={onRouteChange}
-          />
-        ) : (
-          <KolamPackingMaterialAssetsPanel
-            controller={controller}
-            item={item}
-          />
-        )}
-      </ScrollView>
+      ) : (
+        <KolamPackingMaterialAssetsPanel controller={controller} item={item} />
+      )}
       <KolamDeleteConfirmDialog
         itemLabel={deleteCandidate?.name}
         itemType="bahan kemasan"
@@ -2638,18 +2619,6 @@ const styles = StyleSheet.create({
   },
   errorBadge: {
     alignSelf: 'flex-start',
-  },
-  detailHost: {
-    alignSelf: 'stretch',
-    flex: 1,
-    minHeight: 0,
-    position: 'relative',
-    width: '100%',
-  },
-  detailScroll: {
-    flex: 1,
-    minHeight: 0,
-    width: '100%',
   },
   stack: {
     alignSelf: 'stretch',

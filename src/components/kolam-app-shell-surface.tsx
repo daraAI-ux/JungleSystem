@@ -128,9 +128,7 @@ export function isCatalogTableListRoute(route?: string | null) {
     routePath === '/finance/payroll' ||
     routePath === '/finance/bonus' ||
     routePath === '/cashflow-session' ||
-    routePath === '/media' ||
-    routePath === '/packing-materials' ||
-    routePath.startsWith('/packing-materials/')
+    routePath === '/media'
   );
 }
 
