@@ -2170,21 +2170,32 @@ function KolamTaskRecurringEnrollmentDashboard({
   if (!dashboard) return null;
 
   return (
-    <View style={styles.detailCard}>
-      <View>
-        <Text style={styles.sectionTitle}>
-          Kandang - enrollment & compliance
-        </Text>
-        <Text style={styles.metaText}>30 hari terakhir</Text>
-      </View>
-      {dashboard ? (
-        <View style={styles.enrollmentGrid}>
-          <View style={styles.enrollmentList}>
-            <Text style={styles.timelineTitle}>
-              Enrollment aktif ({dashboard.totalActive})
-            </Text>
-            {dashboard.byLocation.length ? (
-              dashboard.byLocation.slice(0, 12).map(row => (
+    <KolamDetailSummaryCard
+      description="30 hari terakhir"
+      fields={[
+        {
+          id: 'active',
+          label: 'Enrollment aktif',
+          value: dashboard.totalActive,
+        },
+        {
+          id: 'locations',
+          label: 'Kandang',
+          value: dashboard.byLocation.length,
+        },
+        {
+          id: 'pic',
+          label: 'PIC',
+          value: dashboard.byPic.length,
+        },
+      ]}
+      sections={[
+        {
+          id: 'location',
+          title: 'Per kandang',
+          content: dashboard.byLocation.length ? (
+            <View style={styles.enrollmentSummaryList}>
+              {dashboard.byLocation.slice(0, 12).map(row => (
                 <View
                   key={row.locationId ?? row.locationName}
                   style={styles.enrollmentRow}
@@ -2194,15 +2205,18 @@ function KolamTaskRecurringEnrollmentDashboard({
                   </Text>
                   <Text style={styles.metaText}>{row.count}</Text>
                 </View>
-              ))
-            ) : (
-              <Text style={styles.metaText}>-</Text>
-            )}
-          </View>
-          <View style={styles.enrollmentList}>
-            <Text style={styles.timelineTitle}>Per PIC</Text>
-            {dashboard.byPic.length ? (
-              dashboard.byPic.slice(0, 12).map(row => (
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.metaText}>-</Text>
+          ),
+        },
+        {
+          id: 'pic',
+          title: 'Per PIC',
+          content: dashboard.byPic.length ? (
+            <View style={styles.enrollmentSummaryList}>
+              {dashboard.byPic.slice(0, 12).map(row => (
                 <View
                   key={row.userId ?? row.userName}
                   style={styles.enrollmentRow}
@@ -2212,14 +2226,15 @@ function KolamTaskRecurringEnrollmentDashboard({
                   </Text>
                   <Text style={styles.metaText}>{row.count}</Text>
                 </View>
-              ))
-            ) : (
-              <Text style={styles.metaText}>-</Text>
-            )}
-          </View>
-        </View>
-      ) : null}
-    </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.metaText}>-</Text>
+          ),
+        },
+      ]}
+      title="Kandang - enrollment & compliance"
+    />
   );
 }
 
@@ -4127,15 +4142,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 8,
   },
-  enrollmentGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  enrollmentList: {
-    flex: 1,
+  enrollmentSummaryList: {
     gap: 8,
-    minWidth: 220,
   },
   enrollmentRow: {
     alignItems: 'center',
