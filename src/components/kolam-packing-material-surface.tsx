@@ -45,6 +45,7 @@ import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import type { KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import {
   KolamDropdownSelect,
@@ -871,12 +872,12 @@ function KolamPackingMaterialDetail({
 
   if (!item && controller.mode !== 'new') {
     return (
-      <View style={styles.stack}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.stack}>
         <KolamEmptyState
           message="Pilih salah satu bahan kemasan dari daftar untuk melihat detail."
           title="Belum ada bahan kemasan dipilih"
         />
-      </View>
+      </KolamDetailScrollSurface>
     );
   }
 
@@ -889,7 +890,7 @@ function KolamPackingMaterialDetail({
           'Bahan kemasan';
 
     return (
-      <View style={styles.stack}>
+      <KolamDetailScrollSurface contentContainerStyle={styles.stack}>
         <View style={styles.detailPageHeader}>
           <View style={styles.detailHeading}>
             <Text style={styles.detailPageTitle}>{formTitle}</Text>
@@ -904,12 +905,12 @@ function KolamPackingMaterialDetail({
           </View>
         </View>
         <KolamPackingMaterialForm controller={controller} />
-      </View>
+      </KolamDetailScrollSurface>
     );
   }
 
   return (
-    <View style={styles.stack}>
+    <KolamDetailScrollSurface contentContainerStyle={styles.stack}>
       <View style={styles.detailPageHeader}>
         <View style={styles.detailHeading}>
           <Text style={styles.detailPageTitle}>{item.name}</Text>
@@ -974,7 +975,7 @@ function KolamPackingMaterialDetail({
         }}
         visible={Boolean(deleteCandidate)}
       />
-    </View>
+    </KolamDetailScrollSurface>
   );
 }
 
