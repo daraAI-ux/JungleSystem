@@ -893,7 +893,7 @@ function FinanceExpenseListBody({
       </View>
 
       <View style={styles.listRoot}>
-        {isAssetPurchase ? (
+        {isAssetPurchase || isRoutineExpense ? (
           <KolamListTableComposition
             columns={columns}
             emptyTitle="Tidak ada data"
@@ -902,17 +902,21 @@ function FinanceExpenseListBody({
             pagination={{
               onPageChange: controller.onPageChange,
               page: safePage,
-              pageSize: 10,
+              pageSize: isAssetPurchase ? 10 : controller.pagination.limit,
               total: controller.pagination.total,
             }}
-            renderActions={item => (
-              <AssetPurchaseRowActions
-                controller={controller}
-                item={item}
-                onRequestDelete={row => setDeleteCandidate(row)}
-                onRouteChange={onRouteChange}
-              />
-            )}
+            renderActions={
+              isAssetPurchase
+                ? item => (
+                    <AssetPurchaseRowActions
+                      controller={controller}
+                      item={item}
+                      onRequestDelete={row => setDeleteCandidate(row)}
+                      onRouteChange={onRouteChange}
+                    />
+                  )
+                : undefined
+            }
             rows={controller.rows}
             style={styles.tableFrame}
           />

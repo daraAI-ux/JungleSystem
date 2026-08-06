@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamReceivableSourceLabel,
   formatKolamReceivableStatusLabel,
@@ -19,22 +19,11 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
-import { KolamTableFooterControls } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const LIST_COLUMNS = [
-  { id: 'code', label: 'Kode', flex: 0.9 },
-  { id: 'name', label: 'Nama', flex: 1.2 },
-  { id: 'source', label: 'Sumber', flex: 0.8 },
-  { id: 'amount', label: 'Nominal', flex: 1 },
-  { id: 'due', label: 'Jatuh tempo', flex: 1 },
-  { id: 'status', label: 'Status', flex: 1 },
-  { id: 'action', label: '', flex: 0.9 },
-] as const;
 
 export function KolamReceivableSurface({
   route,
@@ -257,20 +246,24 @@ function ReceivableList({
   controller: KolamReceivableController;
 }) {
   const safePage = Math.max(1, controller.pagination.page);
-  const pageCount = Math.max(1, controller.pagination.totalPages);
-
-  const renderRow = useCallback(
-    ({ item }: { item: KolamReceivable }) => {
-      const canMarkRow =
-        controller.canMarkPaid && item.status === 'open' && Boolean(item.id);
-      return (
-        <View style={styles.row}>
-          <View style={[styles.cell, { flex: 0.9 }]}>
-            <Text numberOfLines={1} style={styles.primaryText}>
-              {item.code || '—'}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1.2 }]}>
+  const columns = React.useMemo(
+    () => [
+      {
+        id: 'code',
+        label: 'Kode',
+        flex: 0.9,
+        render: (item: KolamReceivable) => (
+          <Text numberOfLines={1} style={styles.primaryText}>
+            {item.code || '—'}
+          </Text>
+        ),
+      },
+      {
+        id: 'name',
+        label: 'Nama',
+        flex: 1.2,
+        render: (item: KolamReceivable) => (
+          <View>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.name || '—'}
             </Text>
@@ -278,12 +271,24 @@ function ReceivableList({
               {item.customerName}
             </Text>
           </View>
-          <View style={[styles.cell, { flex: 0.8 }]}>
-            <Text style={styles.metaText}>
-              {formatKolamReceivableSourceLabel(item.sourceModel)}
-            </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
+        ),
+      },
+      {
+        id: 'source',
+        label: 'Sumber',
+        flex: 0.8,
+        render: (item: KolamReceivable) => (
+          <Text style={styles.metaText}>
+            {formatKolamReceivableSourceLabel(item.sourceModel)}
+          </Text>
+        ),
+      },
+      {
+        id: 'amount',
+        label: 'Nominal',
+        flex: 1,
+        render: (item: KolamReceivable) => (
+          <View>
             <Text style={styles.primaryText}>
               {formatRupiah(item.remainingAmount || item.amount)}
             </Text>
@@ -293,96 +298,68 @@ function ReceivableList({
               </Text>
             ) : null}
           </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text style={styles.metaText}>{formatShortDate(item.dueDate)}</Text>
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <KolamStatusBadge
-              intent={getKolamReceivableStatusIntent(item.status)}
-              label={formatKolamReceivableStatusLabel(item.status)}
+        ),
+      },
+      {
+        id: 'due',
+        label: 'Jatuh tempo',
+        flex: 1,
+        render: (item: KolamReceivable) => (
+          <Text style={styles.metaText}>{formatShortDate(item.dueDate)}</Text>
+        ),
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        flex: 1,
+        render: (item: KolamReceivable) => (
+          <KolamStatusBadge
+            intent={getKolamReceivableStatusIntent(item.status)}
+            label={formatKolamReceivableStatusLabel(item.status)}
+          />
+        ),
+      },
+      {
+        id: 'action',
+        label: '',
+        flex: 0.9,
+        render: (item: KolamReceivable) => {
+          const canMarkRow =
+            controller.canMarkPaid &&
+            item.status === 'open' &&
+            Boolean(item.id);
+          return canMarkRow ? (
+            <KolamButton
+              intent="primary"
+              label={controller.markingId === item.id ? '…' : 'Tandai dibayar'}
+              onPress={() => {
+                void controller.onMarkPaid(item);
+              }}
+              style={styles.actionButton}
             />
-          </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
-            {canMarkRow ? (
-              <KolamButton
-                intent="primary"
-                label={controller.markingId === item.id ? '…' : 'Tandai dibayar'}
-                onPress={() => {
-                  void controller.onMarkPaid(item);
-                }}
-                style={styles.actionButton}
-              />
-            ) : null}
-          </View>
-        </View>
-      );
-    },
+          ) : null;
+        },
+      },
+    ],
     [controller],
   );
 
   return (
     <View style={styles.listRoot}>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  disabled={safePage >= pageCount || controller.loading}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
+      <KolamListTableComposition
+        columns={columns}
+        emptyTitle="Tidak ada piutang"
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        rows={controller.items}
         style={styles.tableFrame}
-      >
-        <FlatList
-          contentContainerStyle={styles.listContent}
-          data={controller.items}
-          keyExtractor={item => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={controller.loading ? 'Memuat…' : 'Tidak ada piutang'}
-              />
-            </View>
-          }
-          ListHeaderComponent={
-            <View style={styles.headerRow}>
-              {LIST_COLUMNS.map(column => (
-                <View
-                  key={column.id}
-                  style={[styles.cell, { flex: column.flex }]}
-                >
-                  <Text style={styles.headerCellText}>{column.label}</Text>
-                </View>
-              ))}
-            </View>
-          }
-          renderItem={renderRow}
-          style={styles.list}
-        />
-      </KolamCatalogListTableShell>
+      />
     </View>
   );
 }
@@ -468,43 +445,6 @@ const styles = StyleSheet.create({
   tableFrame: {
     flex: 1,
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  emptyWrap: {
-    paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  cell: {
-    paddingHorizontal: 4,
-  },
   primaryText: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -518,15 +458,5 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignSelf: 'flex-start',
-  },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
 });
