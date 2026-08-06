@@ -153,8 +153,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   fieldCellThreeColumns: {
-    flexBasis: 0,
-    flexGrow: 1,
+    flexBasis: '31%',
+    flexGrow: 0,
     flexShrink: 1,
     minWidth: 0,
   },
