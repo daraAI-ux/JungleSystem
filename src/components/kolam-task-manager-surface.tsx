@@ -48,6 +48,7 @@ import {
 } from './kolam-list-table-composition';
 import { openKolamMediaPreview } from './kolam-media-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamOverdueTaskIcon } from './kolam-overdue-task-icon';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSelesaiTaskIcon } from './kolam-selesai-task-icon';
@@ -948,6 +949,7 @@ function KolamTaskKpiRow({
     },
     {
       id: 'overdue',
+      iconElement: <KolamOverdueTaskIcon style={styles.kpiCardIcon} />,
       label: 'Overdue',
       value: controller.kpi.overdue,
       tone: 'danger',
