@@ -3363,6 +3363,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   taskFilterFillItem: {
+    alignItems: 'flex-start',
     flexBasis: 0,
     flexGrow: 1,
     flexShrink: 1,
