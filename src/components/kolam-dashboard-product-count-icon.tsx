@@ -1,16 +1,27 @@
 import React from 'react';
-import {View} from 'react-native';
-import {SvgXml} from 'react-native-svg';
-import {KOLAM_DASHBOARD_PRODUK_ICON_SVG} from '../assets/icons/dashboard-produk-icon-svg';
+import {Image, StyleSheet, View} from 'react-native';
+
+const DASHBOARD_PRODUK_ICON = require('../assets/icons/dashboard-produk-icon.png');
 
 export function KolamDashboardProductCountIcon() {
   return (
-    <View accessibilityLabel="Icon produk" style={{height: '100%', width: '100%'}}>
-      <SvgXml
-        height="100%"
-        width="100%"
-        xml={KOLAM_DASHBOARD_PRODUK_ICON_SVG}
+    <View accessibilityLabel="Icon produk" style={styles.root}>
+      <Image
+        resizeMode="contain"
+        source={DASHBOARD_PRODUK_ICON}
+        style={styles.image}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  image: {
+    height: '100%',
+    width: '100%',
+  },
+  root: {
+    height: '100%',
+    width: '100%',
+  },
+});
