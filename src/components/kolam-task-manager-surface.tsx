@@ -1089,7 +1089,11 @@ function KolamTaskToolbar({
           </View>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
-              <View ref={bucketTriggerRef} collapsable={false}>
+              <View
+                ref={bucketTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterFillItem}
+              >
                 <KolamTableFilterTrigger
                   active={
                     activeFilterPanel === 'bucket' ||
@@ -1098,10 +1102,15 @@ function KolamTaskToolbar({
                   label={bucketLabel}
                   onPress={() => togglePanel('bucket')}
                   open={activeFilterPanel === 'bucket'}
+                  style={styles.taskFilterFillTrigger}
                   variant="quiet"
                 />
               </View>
-              <View ref={categoryTriggerRef} collapsable={false}>
+              <View
+                ref={categoryTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterFillItem}
+              >
                 <KolamTableFilterTrigger
                   active={
                     activeFilterPanel === 'category' ||
@@ -1110,10 +1119,15 @@ function KolamTaskToolbar({
                   label={categoryLabel}
                   onPress={() => togglePanel('category')}
                   open={activeFilterPanel === 'category'}
+                  style={styles.taskFilterFillTrigger}
                   variant="quiet"
                 />
               </View>
-              <View ref={picTriggerRef} collapsable={false}>
+              <View
+                ref={picTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterFillItem}
+              >
                 <KolamTableFilterTrigger
                   active={
                     activeFilterPanel === 'pic' ||
@@ -1122,10 +1136,15 @@ function KolamTaskToolbar({
                   label={picLabel}
                   onPress={() => togglePanel('pic')}
                   open={activeFilterPanel === 'pic'}
+                  style={styles.taskFilterFillTrigger}
                   variant="quiet"
                 />
               </View>
-              <View ref={projectTriggerRef} collapsable={false}>
+              <View
+                ref={projectTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterFillItem}
+              >
                 <KolamTableFilterTrigger
                   active={
                     activeFilterPanel === 'project' ||
@@ -1134,10 +1153,15 @@ function KolamTaskToolbar({
                   label={projectLabel}
                   onPress={() => togglePanel('project')}
                   open={activeFilterPanel === 'project'}
+                  style={styles.taskFilterFillTrigger}
                   variant="quiet"
                 />
               </View>
-              <View ref={statusTriggerRef} collapsable={false}>
+              <View
+                ref={statusTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterFillItem}
+              >
                 <KolamTableFilterTrigger
                   active={
                     activeFilterPanel === 'status' ||
@@ -1146,10 +1170,15 @@ function KolamTaskToolbar({
                   label={statusLabel}
                   onPress={() => togglePanel('status')}
                   open={activeFilterPanel === 'status'}
+                  style={styles.taskFilterFillTrigger}
                   variant="quiet"
                 />
               </View>
-              <View ref={priorityTriggerRef} collapsable={false}>
+              <View
+                ref={priorityTriggerRef}
+                collapsable={false}
+                style={styles.taskFilterFillItem}
+              >
                 <KolamTableFilterTrigger
                   active={
                     activeFilterPanel === 'priority' ||
@@ -1158,6 +1187,7 @@ function KolamTaskToolbar({
                   label={priorityLabel}
                   onPress={() => togglePanel('priority')}
                   open={activeFilterPanel === 'priority'}
+                  style={styles.taskFilterFillTrigger}
                   variant="quiet"
                 />
               </View>
@@ -3337,6 +3367,15 @@ const styles = StyleSheet.create({
   taskToolbarSearchRow: {
     flexDirection: 'row',
     overflow: 'visible',
+  },
+  taskFilterFillItem: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 82,
+  },
+  taskFilterFillTrigger: {
+    width: '100%',
   },
   taskToolbarButton: {
     minHeight: 34,
