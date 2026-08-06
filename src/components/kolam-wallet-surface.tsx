@@ -1161,7 +1161,6 @@ function WalletTransactionPanel({
   const [walletOpen, setWalletOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const safePage = Math.max(1, controller.txPagination.page);
-  const pageCount = Math.max(1, controller.txPagination.totalPages);
 
   const walletOptions = useMemo(
     () => [
@@ -1380,42 +1379,14 @@ function WalletTransactionPanel({
             ? 'Memuat...'
             : 'Transaksi tidak ditemukan'
         }
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onTxLimitChange}
-            page={safePage}
-            pageSize={controller.txFilters.limit}
-            total={controller.txPagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  intent="secondary"
-                  label="‹"
-                  onPress={() =>
-                    controller.onTxPageChange(Math.max(1, safePage - 1))
-                  }
-                  style={styles.pageButton}
-                />
-                <Text style={styles.metaText}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  intent="secondary"
-                  label="›"
-                  onPress={() =>
-                    controller.onTxPageChange(
-                      Math.min(pageCount, safePage + 1),
-                    )
-                  }
-                  style={styles.pageButton}
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
         getRowKey={item => item.id}
         loading={controller.loadingTransactions}
+        pagination={{
+          onPageChange: controller.onTxPageChange,
+          page: safePage,
+          pageSize: controller.txFilters.limit,
+          total: controller.txPagination.total,
+        }}
         rows={controller.transactions}
         style={styles.tableFrame}
       />
