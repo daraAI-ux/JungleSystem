@@ -87,6 +87,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
+  const rowLayer = useKolamListTableRowLayer();
   const inlineMenu = menuPlacement === 'inline';
   const selected = options.find(option => option.value === value) ?? options[0];
   const selectedLabel = selected?.label ?? '-';
@@ -122,15 +123,17 @@ export function KolamDropdownSelect<TValue extends string = string>({
         }
 
         setQuery('');
+        rowLayer?.setMenuOpen(false);
         onOpenChange?.(false);
         return false;
       });
     });
-  }, [inlineMenu, onOpenChange]);
+  }, [inlineMenu, onOpenChange, rowLayer]);
 
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
+    rowLayer?.setMenuOpen(false);
     if (!inlineMenu) {
       clearActiveOpenMenu(openMenuIdRef.current);
     }
@@ -141,16 +144,25 @@ export function KolamDropdownSelect<TValue extends string = string>({
       const next = !current;
       if (!next) {
         setQuery('');
+        rowLayer?.setMenuOpen(false);
         if (!inlineMenu) {
           clearActiveOpenMenu(openMenuIdRef.current);
         }
       } else if (!inlineMenu) {
         setActiveOpenMenu(openMenuIdRef.current);
       }
+      rowLayer?.setMenuOpen(next);
       onOpenChange?.(next);
       return next;
     });
   };
+
+  React.useEffect(
+    () => () => {
+      rowLayer?.setMenuOpen(false);
+    },
+    [rowLayer],
+  );
 
   const menu = (
     <View
