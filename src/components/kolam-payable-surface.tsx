@@ -28,30 +28,16 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamDateField } from './kolam-date-field';
-import {
-  KolamOverflowMenuButton,
-  KolamTableFooterControls,
-} from './kolam-dropdown-select';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamPayableFormSurface } from './kolam-payable-form-surface';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const LIST_COLUMNS = [
-  { id: 'code', label: 'Kode', flex: 0.9 },
-  { id: 'name', label: 'Nama', flex: 1.2 },
-  { id: 'source', label: 'Sumber', flex: 0.7 },
-  { id: 'amount', label: 'Nominal', flex: 1 },
-  { id: 'due', label: 'Jatuh tempo', flex: 1 },
-  { id: 'installments', label: 'Cicilan', flex: 1.15 },
-  { id: 'status', label: 'Status', flex: 0.9 },
-  { id: 'action', label: '', flex: 0.8 },
-] as const;
 
 const FILTER_PANEL_WIDTH = 220;
 
@@ -570,38 +556,43 @@ function PayableList({
   onRouteChange?: (route: string) => void;
 }) {
   const safePage = Math.max(1, controller.pagination.page);
-  const pageCount = Math.max(1, controller.pagination.totalPages);
   const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
 
-  const renderRow = React.useCallback(
-    (item: KolamPayable) => {
-      const canPayRow =
-        controller.canPay && item.status === 'open' && Boolean(item.id);
-      const actionMenuOpen = actionMenuOpenId === item.id;
-      const due = getPayableDueTone(item.status, item.dueDate);
-      return (
-        <Pressable
-          onPress={() =>
-            onRouteChange?.(
-              `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
-            )
-          }
-          style={[styles.row, actionMenuOpen ? styles.activeActionRow : null]}
-        >
-          <View style={[styles.cell, { flex: 0.9 }]}>
+  const columns = React.useMemo(
+    () => [
+      {
+        flex: 0.9,
+        id: 'code',
+        label: 'Kode',
+        render: (item: KolamPayable) => (
+          <PayableListCell item={item} onRouteChange={onRouteChange}>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.code || '—'}
             </Text>
-          </View>
-          <View style={[styles.cell, { flex: 1.2 }]}>
+          </PayableListCell>
+        ),
+      },
+      {
+        flex: 1.2,
+        id: 'name',
+        label: 'Nama',
+        render: (item: KolamPayable) => (
+          <PayableListCell item={item} onRouteChange={onRouteChange}>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.name || '—'}
             </Text>
             <Text numberOfLines={1} style={styles.metaText}>
               {item.vendorName}
             </Text>
-          </View>
-          <View style={[styles.cell, { flex: 0.7 }]}>
+          </PayableListCell>
+        ),
+      },
+      {
+        flex: 0.7,
+        id: 'source',
+        label: 'Sumber',
+        render: (item: KolamPayable) => (
+          <PayableListCell item={item} onRouteChange={onRouteChange}>
             <Text style={styles.metaText}>
               {formatKolamPayableSourceLabel(item.sourceModel)}
             </Text>
@@ -612,149 +603,171 @@ function PayableList({
                 {item.sourceLabel}
               </Text>
             ) : null}
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
+          </PayableListCell>
+        ),
+      },
+      {
+        flex: 1,
+        id: 'amount',
+        label: 'Nominal',
+        render: (item: KolamPayable) => (
+          <PayableListCell item={item} onRouteChange={onRouteChange}>
             <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
             {item.paidAmount > 0 && item.paidAmount < item.amount ? (
               <Text style={styles.metaText}>
                 Dibayar {formatRupiah(item.paidAmount)}
               </Text>
             ) : null}
-          </View>
-          <View style={[styles.cell, { flex: 1 }]}>
-            <Text style={[styles.metaText, due.textStyle]}>
-              {formatShortDate(item.dueDate)}
-            </Text>
-            {due.label ? (
-              <Text style={[styles.dueMetaText, due.textStyle]}>
-                {due.label}
+          </PayableListCell>
+        ),
+      },
+      {
+        flex: 1,
+        id: 'due',
+        label: 'Jatuh tempo',
+        render: (item: KolamPayable) => {
+          const due = getPayableDueTone(item.status, item.dueDate);
+          return (
+            <PayableListCell item={item} onRouteChange={onRouteChange}>
+              <Text style={[styles.metaText, due.textStyle]}>
+                {formatShortDate(item.dueDate)}
               </Text>
-            ) : null}
-          </View>
-          <View style={[styles.cell, { flex: 1.15 }]}>
+              {due.label ? (
+                <Text style={[styles.dueMetaText, due.textStyle]}>
+                  {due.label}
+                </Text>
+              ) : null}
+            </PayableListCell>
+          );
+        },
+      },
+      {
+        flex: 1.15,
+        id: 'installments',
+        label: 'Cicilan',
+        render: (item: KolamPayable) => (
+          <PayableListCell item={item} onRouteChange={onRouteChange}>
             <PayableInstallmentSummaryCell summary={item.installmentSummary} />
-          </View>
-          <View style={[styles.cell, { flex: 0.9 }]}>
+          </PayableListCell>
+        ),
+      },
+      {
+        flex: 0.9,
+        id: 'status',
+        label: 'Status',
+        render: (item: KolamPayable) => (
+          <PayableListCell item={item} onRouteChange={onRouteChange}>
             <KolamStatusBadge
               intent={getKolamPayableStatusIntent(item.status)}
               label={formatKolamPayableStatusLabel(item.status)}
             />
-          </View>
-          <View
-            style={[
-              styles.cell,
-              styles.actionCell,
-              actionMenuOpen ? styles.activeActionCell : null,
-              { flex: 0.8 },
-            ]}
-          >
-            <KolamOverflowMenuButton
-              accessibilityLabel={`Menu ${item.code || item.name || 'hutang'}`}
-              onOpenChange={open => setActionMenuOpenId(open ? item.id : null)}
-              actions={[
-                {
-                  label: 'Lihat detail',
-                  onPress: () =>
-                    onRouteChange?.(
-                      `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
-                    ),
-                },
-                ...(item.status === 'open'
-                  ? [
-                      {
-                        disabled: !canPayRow || controller.payingId === item.id,
-                        label:
-                          controller.payingId === item.id
-                            ? 'Memproses...'
-                            : 'Lunasi dari Wallet',
-                        onPress: () => {
-                          if (!canPayRow || controller.payingId === item.id) {
-                            return;
-                          }
-                          void controller.onPayFull(item);
-                        },
-                      },
-                    ]
-                  : []),
-                ...(item.status === 'paid'
-                  ? [
-                      {
-                        disabled: true,
-                        label: 'Sudah lunas',
-                        onPress: () => undefined,
-                      },
-                    ]
-                  : []),
+          </PayableListCell>
+        ),
+      },
+      {
+        align: 'center' as const,
+        flex: 0.8,
+        id: 'action',
+        label: '',
+        render: (item: KolamPayable) => {
+          const canPayRow =
+            controller.canPay && item.status === 'open' && Boolean(item.id);
+          const actionMenuOpen = actionMenuOpenId === item.id;
+
+          return (
+            <View
+              style={[
+                styles.actionCell,
+                actionMenuOpen ? styles.activeActionCell : null,
               ]}
-            />
-          </View>
-        </Pressable>
-      );
-    },
+            >
+              <KolamOverflowMenuButton
+                accessibilityLabel={`Menu ${
+                  item.code || item.name || 'hutang'
+                }`}
+                onOpenChange={open => setActionMenuOpenId(open ? item.id : null)}
+                actions={[
+                  {
+                    label: 'Lihat detail',
+                    onPress: () =>
+                      onRouteChange?.(
+                        `${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`,
+                      ),
+                  },
+                  ...(item.status === 'open'
+                    ? [
+                        {
+                          disabled: !canPayRow || controller.payingId === item.id,
+                          label:
+                            controller.payingId === item.id
+                              ? 'Memproses...'
+                              : 'Lunasi dari Wallet',
+                          onPress: () => {
+                            if (!canPayRow || controller.payingId === item.id) {
+                              return;
+                            }
+                            void controller.onPayFull(item);
+                          },
+                        },
+                      ]
+                    : []),
+                  ...(item.status === 'paid'
+                    ? [
+                        {
+                          disabled: true,
+                          label: 'Sudah lunas',
+                          onPress: () => undefined,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            </View>
+          );
+        },
+      },
+    ],
     [actionMenuOpenId, controller, onRouteChange],
   );
 
   return (
     <View style={styles.listRoot}>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onLimitChange}
-            page={safePage}
-            pageSize={controller.pagination.limit}
-            total={controller.pagination.total}
-          >
-            {pageCount > 1 ? (
-              <View style={styles.paginationBar}>
-                <KolamButton
-                  disabled={safePage <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.max(1, safePage - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {safePage} / {pageCount}
-                </Text>
-                <KolamButton
-                  disabled={safePage >= pageCount || controller.loading}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onPageChange(Math.min(pageCount, safePage + 1))
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
+      <KolamListTableComposition
+        columns={columns}
+        emptyTitle={controller.loading ? 'Memuat...' : 'Tidak ada hutang'}
+        getRowKey={item => item.id}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onPageChange,
+          page: safePage,
+          pageSize: controller.pagination.limit,
+          total: controller.pagination.total,
+        }}
+        rows={controller.items}
         style={styles.tableFrame}
-      >
-        <View style={styles.tableBody}>
-          <View style={styles.headerRow}>
-            {LIST_COLUMNS.map(column => (
-              <View
-                key={column.id}
-                style={[styles.cell, { flex: column.flex }]}
-              >
-                <Text style={styles.headerCellText}>{column.label}</Text>
-              </View>
-            ))}
-          </View>
-          {controller.items.length ? (
-            controller.items.map(item => (
-              <React.Fragment key={item.id}>{renderRow(item)}</React.Fragment>
-            ))
-          ) : (
-            <View style={styles.emptyWrap}>
-              <KolamEmptyState
-                compact
-                title={controller.loading ? 'Memuat...' : 'Tidak ada hutang'}
-              />
-            </View>
-          )}
-        </View>
-      </KolamCatalogListTableShell>
+      />
     </View>
+  );
+}
+
+function PayableListCell({
+  children,
+  item,
+  onRouteChange,
+}: {
+  children: React.ReactNode;
+  item: KolamPayable;
+  onRouteChange?: (route: string) => void;
+}) {
+  return (
+    <Pressable
+      onPress={() =>
+        onRouteChange?.(`${KOLAM_PAYABLE_ROOT}/${encodeURIComponent(item.id)}`)
+      }
+      style={styles.listCellPressable}
+    >
+      {children}
+    </Pressable>
   );
 }
 
@@ -1382,50 +1395,13 @@ const styles = StyleSheet.create({
   tableFrame: {
     minHeight: 0,
   },
-  tableBody: {
-    minHeight: 0,
-    width: '100%',
-  },
-  emptyWrap: {
+  listCellPressable: {
+    alignSelf: 'stretch',
     justifyContent: 'center',
-    minHeight: 200,
-    paddingVertical: 24,
-  },
-  headerRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    minHeight: 36,
-    paddingHorizontal: 8,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
     minHeight: 44,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  activeActionRow: {
-    elevation: 30,
-    overflow: 'visible',
-    zIndex: 1000,
-  },
-  cell: {
-    paddingHorizontal: 4,
   },
   actionCell: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     overflow: 'visible',
     zIndex: 9000,
   },
@@ -1493,19 +1469,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 10,
-  },
-  actionButton: {
-    alignSelf: 'flex-start',
-  },
-  paginationBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
   detailRoot: {
     flex: 1,
