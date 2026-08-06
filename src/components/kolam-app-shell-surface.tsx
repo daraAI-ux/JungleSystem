@@ -1,9 +1,9 @@
 import React from 'react';
-import {ScrollView, StatusBar, StyleSheet, View} from 'react-native';
-import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KolamOverlaySurface} from './kolam-overlay-surface';
-import {KolamShellFrame} from './kolam-shell-frame';
+import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { getDashboardLayoutVisualContract } from '../domain/dashboard-layout';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { KolamOverlaySurface } from './kolam-overlay-surface';
+import { KolamShellFrame } from './kolam-shell-frame';
 import {
   KolamDashboardHeader,
   KolamSidebar,
@@ -13,7 +13,9 @@ import {
 type KolamDashboardHeaderProps = React.ComponentProps<
   typeof KolamDashboardHeader
 >;
-type KolamOverlaySurfaceProps = React.ComponentProps<typeof KolamOverlaySurface>;
+type KolamOverlaySurfaceProps = React.ComponentProps<
+  typeof KolamOverlaySurface
+>;
 type KolamSidebarProps = React.ComponentProps<typeof KolamSidebar>;
 type KolamTopNavigationProps = React.ComponentProps<typeof KolamTopNavigation>;
 const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
@@ -73,14 +75,18 @@ function KolamAppShellSurfaceComponent({
         <MemoKolamOverlaySurface {...overlay} />
 
         {ownsListScroll ? (
-          <View style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}>
+          <View
+            style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}
+          >
             <MemoKolamDashboardHeader {...dashboardHeader} />
             <View style={styles.ownedListWorkspace}>{children}</View>
           </View>
         ) : (
           <ScrollView
+            keyboardShouldPersistTaps="handled"
             style={styles.mainScroll}
-            contentContainerStyle={pageContentStyle}>
+            contentContainerStyle={[pageContentStyle, styles.scrollContent]}
+          >
             <MemoKolamDashboardHeader {...dashboardHeader} />
             {children}
           </ScrollView>
@@ -100,8 +106,8 @@ function isKolamCenteredRoute(route?: string | null) {
 
   return (
     KOLAM_CENTERED_EXACT_ROUTES.includes(routePath) ||
-    KOLAM_CENTERED_ROUTE_PREFIXES.some(prefix =>
-      routePath === prefix || routePath.startsWith(`${prefix}/`),
+    KOLAM_CENTERED_ROUTE_PREFIXES.some(
+      prefix => routePath === prefix || routePath.startsWith(`${prefix}/`),
     )
   );
 }
@@ -162,6 +168,9 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     padding: V.layout.contentPadding,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   dashboardPageContent: {
     width: '100%',
