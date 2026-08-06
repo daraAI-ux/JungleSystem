@@ -123,7 +123,6 @@ export function KolamTaskManagerSurface({
 
   return (
     <View style={styles.surface}>
-      <KolamTaskManagerTabs controller={controller} />
       {controller.error ? (
         <KolamStatusBadge
           intent="danger"
@@ -1086,6 +1085,7 @@ function KolamTaskToolbar({
               placeholder="Cari tugas..."
               value={controller.search}
             />
+            <KolamTaskManagerTabs controller={controller} />
           </View>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
@@ -1793,6 +1793,7 @@ function KolamTaskRecurringPanel({
             <Text style={styles.detailContext}>Tugas berulang</Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
+            <KolamTaskManagerTabs controller={controller} />
             {controller.isTaskAdmin ? (
               <View style={styles.switchInline}>
                 <Text style={styles.metaText}>Hanya kandang</Text>
@@ -3371,7 +3372,10 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   taskToolbarSearchRow: {
+    alignItems: 'center',
     flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
     overflow: 'visible',
   },
   taskFilterFillItem: {
