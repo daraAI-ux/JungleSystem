@@ -594,6 +594,7 @@ function ProsesJobRow({
         <KolamStatusBadge
           intent={getKolamDaraJobStatusIntent(job.status)}
           label={job.status}
+          style={styles.jobStatusBadge}
         />
       </View>
       <View style={[styles.jobsCell, styles.colProgress]}>
@@ -1277,6 +1278,9 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  jobStatusBadge: {
+    alignSelf: 'center',
   },
   jobActions: {
     flexDirection: 'row',
