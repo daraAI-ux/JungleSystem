@@ -56,10 +56,10 @@ export function KolamTopNavigationCashflowHost({
 function CashflowSessionIcon() {
   return (
     <Svg height={22} width={22} viewBox="0 0 512 512">
-      <Circle cx={256} cy={256} r={256} fill="#F47F65" />
+      <Circle cx={256} cy={256} r={256} fill="#050505" />
       <Path
         d="M153 184h242c21 0 38 17 38 38v96c0 21-17 38-38 38H153c-21 0-38-17-38-38v-96c0-21 17-38 38-38Z"
-        fill="#DFA7BD"
+        fill="#DDF6E6"
         stroke="#050505"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -67,7 +67,7 @@ function CashflowSessionIcon() {
       />
       <Path
         d="M116 224h250c23 0 42 19 42 42v93c0 23-19 42-42 42H116c-23 0-42-19-42-42v-93c0-23 19-42 42-42Z"
-        fill="#F4B8CF"
+        fill="#DDF6E6"
         stroke="#050505"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -75,7 +75,7 @@ function CashflowSessionIcon() {
       />
       <Path
         d="M223 311c0-43 25-76 58-76s58 33 58 76-25 76-58 76-58-33-58-76Z"
-        fill="#F4B8CF"
+        fill="#DDF6E6"
         stroke="#050505"
         strokeLinecap="round"
         strokeLinejoin="round"
