@@ -1941,8 +1941,28 @@ function KolamTaskRecurringPanel({
   onRouteChange?: (route: string) => void;
 }) {
   const scheduleRows = getRecurringScheduleRows(controller);
+  const [recurringSchedulePage, setRecurringSchedulePage] = React.useState(1);
   const hasEnrollmentDashboard =
     controller.isTaskAdmin && Boolean(controller.recurringEnrollmentDashboard);
+  const recurringSchedulePageSize = 10;
+  const recurringSchedulePageCount = Math.max(
+    1,
+    Math.ceil(scheduleRows.length / recurringSchedulePageSize),
+  );
+  const safeRecurringSchedulePage = Math.min(
+    recurringSchedulePage,
+    recurringSchedulePageCount,
+  );
+  const recurringSchedulePageRows = scheduleRows.slice(
+    (safeRecurringSchedulePage - 1) * recurringSchedulePageSize,
+    safeRecurringSchedulePage * recurringSchedulePageSize,
+  );
+
+  React.useEffect(() => {
+    if (recurringSchedulePage > recurringSchedulePageCount) {
+      setRecurringSchedulePage(recurringSchedulePageCount);
+    }
+  }, [recurringSchedulePage, recurringSchedulePageCount]);
 
   return (
     <View style={styles.detailStack}>
@@ -2093,8 +2113,13 @@ function KolamTaskRecurringPanel({
           }
           getRowKey={row => row.id}
           loading={controller.loading}
-          rows={scheduleRows.slice(0, 10)}
-          showFooter={false}
+          pagination={{
+            onPageChange: setRecurringSchedulePage,
+            page: safeRecurringSchedulePage,
+            pageSize: recurringSchedulePageSize,
+            total: scheduleRows.length,
+          }}
+          rows={recurringSchedulePageRows}
           style={styles.recurringScheduleTable}
         />
       </View>
