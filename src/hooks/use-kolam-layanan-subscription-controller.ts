@@ -45,6 +45,8 @@ export interface KolamLayananSubscriptionController {
   subscription: KolamLayananSubscriptionDetail | null;
   syncing: boolean;
   visitPreview: KolamLayananSubscriptionVisitPreviewResult;
+  visitsError: string | null;
+  visitsLoading: boolean;
   onChangeContractForm: (
     patch: Partial<KolamLayananSubscriptionContractFormState>,
   ) => void;
@@ -70,6 +72,8 @@ export function useKolamLayananSubscriptionController(
     );
   const [visitPreview, setVisitPreview] =
     useState<KolamLayananSubscriptionVisitPreviewResult>(EMPTY_VISIT_RESULT);
+  const [visitsLoading, setVisitsLoading] = useState(false);
+  const [visitsError, setVisitsError] = useState<string | null>(null);
   const [pendingVerifications, setPendingVerifications] = useState<
     KolamLayananSubscriptionPendingVerification[]
   >([]);
@@ -115,22 +119,36 @@ export function useKolamLayananSubscriptionController(
       setSubscription(detail);
       setContractForm(createKolamLayananSubscriptionContractForm(detail));
 
-      const [visits, verifications] = await Promise.all([
-        detail.status === 'active'
-          ? getKolamLayananSubscriptionUpcomingVisits(subscriptionId).catch(
-              () => EMPTY_VISIT_RESULT,
-            )
-          : Promise.resolve(EMPTY_VISIT_RESULT),
-        getKolamLayananSubscriptionPendingVerifications(subscriptionId).catch(
-          () => [],
-        ),
-      ]);
-      setVisitPreview(visits);
+      const verifications =
+        await getKolamLayananSubscriptionPendingVerifications(
+          subscriptionId,
+        ).catch(() => []);
       setPendingVerifications(verifications);
+
+      if (detail.status === 'active') {
+        setVisitsLoading(true);
+        setVisitsError(null);
+        try {
+          const visits =
+            await getKolamLayananSubscriptionUpcomingVisits(subscriptionId);
+          setVisitPreview(visits);
+        } catch (visitError) {
+          setVisitPreview(EMPTY_VISIT_RESULT);
+          setVisitsError(getErrorMessage(visitError));
+        } finally {
+          setVisitsLoading(false);
+        }
+      } else {
+        setVisitPreview(EMPTY_VISIT_RESULT);
+        setVisitsError(null);
+        setVisitsLoading(false);
+      }
     } catch (loadError) {
       setError(getErrorMessage(loadError));
       setSubscription(null);
       setVisitPreview(EMPTY_VISIT_RESULT);
+      setVisitsError(null);
+      setVisitsLoading(false);
       setPendingVerifications([]);
     } finally {
       setLoading(false);
@@ -252,6 +270,7 @@ export function useKolamLayananSubscriptionController(
     try {
       const result = await spawnKolamLayananSubscriptionVisits(subscriptionId, 14);
       setVisitPreview(result);
+      setVisitsError(null);
       if (result.skipped) {
         setNotice(result.reason || 'Jadwal tidak dibuat');
       } else {
@@ -283,6 +302,8 @@ export function useKolamLayananSubscriptionController(
       subscription,
       syncing,
       visitPreview,
+      visitsError,
+      visitsLoading,
       onChangeContractForm,
       onDownloadInvoice,
       onRefresh: refresh,
@@ -310,6 +331,8 @@ export function useKolamLayananSubscriptionController(
       subscription,
       syncing,
       visitPreview,
+      visitsError,
+      visitsLoading,
     ],
   );
 }

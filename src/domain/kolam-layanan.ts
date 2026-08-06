@@ -2040,6 +2040,20 @@ export function createKolamLayananSubscriptionUpdatePayload(
   };
 }
 
+function getDateTimeString(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+  return '';
+}
+
 export function normalizeKolamLayananSubscriptionVisitPreviews(
   payload: unknown,
 ): KolamLayananSubscriptionVisitPreviewResult {
@@ -2056,15 +2070,18 @@ export function normalizeKolamLayananSubscriptionVisitPreviews(
         packageTaskCode: getString(row, 'packageTaskCode'),
         visitTitle: getString(row, 'visitTitle') || 'Kunjungan',
         scheduledTime:
-          getString(row, 'scheduled_time') ||
-          getString(row, 'scheduledTime') ||
+          getDateTimeString(row, 'scheduled_time') ||
+          getDateTimeString(row, 'scheduledTime') ||
           null,
-        estimatedAt: getString(row, 'estimatedAt') || null,
+        estimatedAt: getDateTimeString(row, 'estimatedAt') || null,
       };
     }),
     skipped: getBoolean(record, 'skipped') ?? false,
     reason: getString(record, 'reason') || null,
-    taskId: getString(record, 'taskId') || null,
+    taskId:
+      getString(record, 'taskId') ||
+      getIdFromMaybeRef(record.taskId) ||
+      null,
     taskType: getString(record, 'taskType') || null,
     ops: getNumber(record, 'ops'),
   };

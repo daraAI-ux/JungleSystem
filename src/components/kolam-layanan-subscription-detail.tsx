@@ -298,14 +298,10 @@ export function KolamLayananSubscriptionDetail({
                           <Pressable
                             accessibilityRole="link"
                             onPress={() =>
-                              onRouteChange?.(
-                                `/sales/${subscription.saleId}`,
-                              )
+                              onRouteChange?.(`/sales/${subscription.saleId}`)
                             }
                           >
-                            <Text style={styles.linkText}>
-                              Lihat penjualan
-                            </Text>
+                            <Text style={styles.linkText}>Lihat penjualan</Text>
                           </Pressable>
                         ) : null}
                       </View>
@@ -369,12 +365,18 @@ export function KolamLayananSubscriptionDetail({
                     />
                   }
                 >
-                  {visitPreview.skipped ? (
+                  {controller.visitsLoading ? (
+                    <Text style={styles.metaText}>
+                      Memuat pratinjau jadwal kunjungan…
+                    </Text>
+                  ) : controller.visitsError ? (
+                    <Text style={styles.metaText}>
+                      Gagal memuat jadwal: {controller.visitsError}
+                    </Text>
+                  ) : visitPreview.skipped ? (
                     <Text style={styles.metaText}>
                       Belum bisa pratinjau:{' '}
-                      {visitPreview.reason ||
-                        'voucher atau tugas belum siap'}
-                      .
+                      {visitPreview.reason || 'voucher atau tugas belum siap'}.
                     </Text>
                   ) : visitPreview.preview.length === 0 ? (
                     <Text style={styles.metaText}>
@@ -446,7 +448,9 @@ export function KolamLayananSubscriptionDetail({
                       ))}
                     </View>
                   )}
-                  {visitPreview.taskId ? (
+                  {!controller.visitsLoading &&
+                  !controller.visitsError &&
+                  visitPreview.taskId ? (
                     <Text style={styles.metaText}>
                       Tugas operasional: {visitPreview.taskType || '—'} ·{' '}
                       {visitPreview.taskId}
@@ -576,7 +580,7 @@ const styles = StyleSheet.create({
     flexBasis: 420,
     flexGrow: 2,
     gap: 12,
-    minWidth: 0,
+    minWidth: 320,
   },
   detailSide: {
     flexBasis: 280,
