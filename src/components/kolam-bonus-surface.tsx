@@ -198,7 +198,6 @@ function BonusList({ controller }: { controller: KolamBonusListController }) {
     <KolamListTableComposition
       columns={columns}
       emptyTitle={!controller.canView ? 'Akses ditolak' : 'Belum ada bonus'}
-      fill
       getRowKey={item => item.id}
       loading={controller.loading}
       rows={controller.rows}

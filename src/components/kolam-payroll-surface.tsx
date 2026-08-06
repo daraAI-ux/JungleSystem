@@ -236,7 +236,6 @@ function PayrollListBody({
       <KolamListTableComposition
         columns={periodColumns}
         emptyTitle="Belum ada periode"
-        fill
         getRowKey={item => item.id || item.periodKey}
         loading={controller.loading}
         rows={controller.filteredPeriods}
