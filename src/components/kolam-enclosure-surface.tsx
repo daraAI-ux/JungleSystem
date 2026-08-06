@@ -2062,7 +2062,7 @@ function KolamEnclosureAllocationPanel({
     <ScrollView contentContainerStyle={styles.dashboardContent}>
       <View style={styles.summaryGrid}>
         <SummaryTile
-          iconElement={<KolamKatakSpeciesIcon style={styles.summaryIcon} />}
+          iconElement={<KolamKatakSpeciesIcon style={styles.summaryHeroIcon} />}
           icon="S"
           label="Jumlah species"
           value={controller.allocationOverview.totals.speciesCount}
@@ -2410,18 +2410,16 @@ function SummaryTile({
               : styles.summaryAccentDefault,
         ]}
       />
-      <View style={styles.summaryBody}>
-        <View style={styles.summaryMainRow}>
-          {iconElement ? (
-            <View style={styles.summaryIconShell}>{iconElement}</View>
-          ) : null}
-          <View style={styles.summaryTextStack}>
-            <Text style={styles.summaryLabel}>{label}</Text>
-            <Text numberOfLines={1} style={styles.summaryValue}>
-              {String(value)}
-            </Text>
-          </View>
+      {iconElement ? (
+        <View pointerEvents="none" style={styles.summaryHeroIconShell}>
+          {iconElement}
         </View>
+      ) : null}
+      <View style={styles.summaryBody}>
+        <Text style={styles.summaryLabel}>{label}</Text>
+        <Text numberOfLines={1} style={styles.summaryValue}>
+          {String(value)}
+        </Text>
         {hint ? (
           <Text numberOfLines={2} style={styles.summaryHint}>
             {hint}
@@ -3322,28 +3320,17 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingVertical: 12,
   },
-  summaryMainRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
+  summaryHeroIconShell: {
+    bottom: -18,
+    opacity: 0.2,
+    position: 'absolute',
+    right: -14,
+    top: -10,
+    width: 110,
   },
-  summaryIconShell: {
-    alignItems: 'center',
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
-    borderRadius: 10,
-    borderWidth: 1,
-    height: 42,
-    justifyContent: 'center',
-    width: 42,
-  },
-  summaryIcon: {
-    height: 30,
-    width: 30,
-  },
-  summaryTextStack: {
-    flex: 1,
-    minWidth: 0,
+  summaryHeroIcon: {
+    height: '100%',
+    width: '100%',
   },
   summaryValue: {
     color: V.colors.fg,
