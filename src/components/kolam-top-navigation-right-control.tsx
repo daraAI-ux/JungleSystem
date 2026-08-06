@@ -1,5 +1,7 @@
 import React from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import type {TopNavRightControl} from '../domain/top-nav';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamChatUnreadCounts} from '../hooks/use-kolam-chat-notification-host';
 import {KolamTopNavigationAvatarButton} from './kolam-top-navigation-avatar-button';
 import {KolamTopNavigationCashflowHost} from './kolam-top-navigation-cashflow-host';
@@ -32,79 +34,161 @@ export function KolamTopNavigationRightControl({
   profilePhotoUrl?: string | null;
 }) {
   if (control.id === 'cashflow') {
-    return <KolamTopNavigationCashflowHost onNavigate={onCashflowNavigate} />;
+    return (
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamTopNavigationCashflowHost onNavigate={onCashflowNavigate} />
+      </KolamTopNavigationControlTooltip>
+    );
   }
 
   if (control.id === 'chat-inbox' || control.id === 'chat-team') {
     const kind = control.id === 'chat-inbox' ? 'inbox' : 'team';
 
     return (
-      <KolamTopNavigationChatButton
-        accessibilityLabel={control.label}
-        kind={kind}
-        onPress={() => onChatControlPress?.(control)}
-        unreadCount={chatUnreadCounts?.[kind] ?? 0}
-      />
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamTopNavigationChatButton
+          accessibilityLabel={control.label}
+          kind={kind}
+          onPress={() => onChatControlPress?.(control)}
+          unreadCount={chatUnreadCounts?.[kind] ?? 0}
+        />
+      </KolamTopNavigationControlTooltip>
     );
   }
 
   if (control.id === 'task-manager') {
     return (
-      <KolamIconButton
-        accessibilityLabel={control.label}
-        onPress={() => onCashflowNavigate?.('/task-manager')}
-        size={32}
-        radius="full"
-        variant="ghost">
-        <KolamTopNavigationTaskIcon />
-      </KolamIconButton>
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamIconButton
+          accessibilityLabel={control.label}
+          onPress={() => onCashflowNavigate?.('/task-manager')}
+          size={32}
+          radius="full"
+          variant="ghost">
+          <KolamTopNavigationTaskIcon />
+        </KolamIconButton>
+      </KolamTopNavigationControlTooltip>
     );
   }
 
   if (control.id === 'app-downloads') {
     return (
-      <KolamIconButton
-        accessibilityLabel={control.label}
-        onPress={() => onCashflowNavigate?.('/app-downloads')}
-        size={32}
-        radius="full"
-        variant="ghost">
-        <KolamTopNavigationDownloadIcon />
-      </KolamIconButton>
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamIconButton
+          accessibilityLabel={control.label}
+          onPress={() => onCashflowNavigate?.('/app-downloads')}
+          size={32}
+          radius="full"
+          variant="ghost">
+          <KolamTopNavigationDownloadIcon />
+        </KolamIconButton>
+      </KolamTopNavigationControlTooltip>
     );
   }
 
   if (control.id === 'media') {
     return (
-      <KolamIconButton
-        accessibilityLabel={control.label}
-        onPress={() => onCashflowNavigate?.('/media')}
-        size={32}
-        radius="full"
-        variant="ghost">
-        <KolamTopNavigationMediaIcon />
-      </KolamIconButton>
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamIconButton
+          accessibilityLabel={control.label}
+          onPress={() => onCashflowNavigate?.('/media')}
+          size={32}
+          radius="full"
+          variant="ghost">
+          <KolamTopNavigationMediaIcon />
+        </KolamIconButton>
+      </KolamTopNavigationControlTooltip>
     );
   }
 
   if (control.id === 'notifications') {
     return (
-      <KolamTopNavigationNotificationButton
-        attentionCount={attentionCount}
-        onNotificationPress={onNotificationPress}
-      />
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamTopNavigationNotificationButton
+          attentionCount={attentionCount}
+          onNotificationPress={onNotificationPress}
+        />
+      </KolamTopNavigationControlTooltip>
     );
   }
 
   if (control.id === 'avatar') {
     return (
-      <KolamTopNavigationAvatarButton
-        displayInitials={displayInitials}
-        onAvatarPress={onAvatarPress}
-        profilePhotoUrl={profilePhotoUrl}
-      />
+      <KolamTopNavigationControlTooltip label={control.label}>
+        <KolamTopNavigationAvatarButton
+          displayInitials={displayInitials}
+          onAvatarPress={onAvatarPress}
+          profilePhotoUrl={profilePhotoUrl}
+        />
+      </KolamTopNavigationControlTooltip>
     );
   }
 
   return null;
 }
+
+function KolamTopNavigationControlTooltip({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  const [visible, setVisible] = React.useState(false);
+
+  return (
+    <View
+      onPointerEnter={() => setVisible(true)}
+      onPointerLeave={() => setVisible(false)}
+      style={[styles.tooltipRoot, visible ? styles.tooltipRootOpen : null]}>
+      {children}
+      {visible ? (
+        <View pointerEvents="none" style={styles.tooltipBubble}>
+          <Text numberOfLines={1} style={styles.tooltipText}>
+            {label}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  tooltipRoot: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'visible',
+    position: 'relative',
+    width: 32,
+  },
+  tooltipRootOpen: {
+    elevation: 120,
+    zIndex: 12000,
+  },
+  tooltipBubble: {
+    alignItems: 'center',
+    backgroundColor: V.colors.fg,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    elevation: 130,
+    justifyContent: 'center',
+    marginTop: 7,
+    maxWidth: 180,
+    minHeight: 28,
+    minWidth: 96,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    position: 'absolute',
+    top: '100%',
+    zIndex: 13000,
+  },
+  tooltipText: {
+    color: V.colors.bg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+});
