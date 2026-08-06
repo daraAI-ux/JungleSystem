@@ -1693,8 +1693,13 @@ function DashboardProductionStatsCard({
             columns={tableColumns}
             emptyTitle="Belum ada indukan produksi"
             getRowKey={row => `${row.speciesId}:${row.variantId || ''}`}
+            pagination={{
+              onPageChange: setPage,
+              page: safePage,
+              pageSize: DASHBOARD_PRODUCTION_STATS_PAGE_SIZE,
+              total: rows.length,
+            }}
             rows={pageRows}
-            showFooter={false}
             style={styles.productionStatsTable}
           />
         </View>
@@ -1727,14 +1732,6 @@ function DashboardProductionStatsCard({
         </View>
       </View>
 
-      {rows.length > DASHBOARD_PRODUCTION_STATS_PAGE_SIZE ? (
-        <SimpleDashboardPagination
-          onPageChange={setPage}
-          page={safePage}
-          totalItems={rows.length}
-          totalPages={totalPages}
-        />
-      ) : null}
     </View>
   );
 }
@@ -1826,7 +1823,7 @@ function DashboardDeathTable({
   onRouteChange?: (route: string) => void;
 }) {
   const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(DASHBOARD_DEATH_PAGE_SIZE);
+  const pageSize = DASHBOARD_DEATH_PAGE_SIZE;
   const columns = React.useMemo(
     () => createDashboardDeathColumns(onRouteChange),
     [onRouteChange],
@@ -1840,7 +1837,7 @@ function DashboardDeathTable({
 
   React.useEffect(() => {
     setPage(1);
-  }, [events, pageSize]);
+  }, [events]);
 
   return (
     <KolamListTableComposition
@@ -1949,39 +1946,6 @@ function DashboardDeathActions({
         },
       ]}
     />
-  );
-}
-
-function SimpleDashboardPagination({
-  onPageChange,
-  page,
-  totalItems,
-  totalPages,
-}: {
-  onPageChange: (page: number) => void;
-  page: number;
-  totalItems: number;
-  totalPages: number;
-}) {
-  return (
-    <View style={styles.dashboardPagination}>
-      <Text style={styles.sectionMeta}>{totalItems} baris</Text>
-      <View style={styles.paginationRow}>
-        <KolamButton
-          disabled={page <= 1}
-          label="Sebelumnya"
-          onPress={() => onPageChange(Math.max(1, page - 1))}
-        />
-        <Text style={styles.pageLabel}>
-          {page} / {totalPages}
-        </Text>
-        <KolamButton
-          disabled={page >= totalPages}
-          label="Berikutnya"
-          onPress={() => onPageChange(Math.min(totalPages, page + 1))}
-        />
-      </View>
-    </View>
   );
 }
 
@@ -2126,19 +2090,13 @@ function KolamEnclosureAllocationPanel({
       <KolamListTableComposition
         columns={allocationColumns}
         emptyTitle={search ? 'Species tidak ditemukan' : 'Belum ada data stok'}
-        footer={
-          groups.length > DASHBOARD_SPECIES_PAGE_SIZE ? (
-            <SimpleDashboardPagination
-              onPageChange={setPage}
-              page={safePage}
-              totalItems={groups.length}
-              totalPages={totalPages}
-            />
-          ) : (
-            <Text style={styles.sectionMeta}>{groups.length} species</Text>
-          )
-        }
         getRowKey={row => row.key}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize: DASHBOARD_SPECIES_PAGE_SIZE,
+          total: groups.length,
+        }}
         rows={allocationRows}
         style={styles.tableFrame}
       />
@@ -3106,16 +3064,6 @@ const styles = StyleSheet.create({
   emptyWrap: {
     padding: 16,
   },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-  },
   identityCell: {
     alignItems: 'flex-start',
   },
@@ -3529,13 +3477,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
-  },
-  dashboardPagination: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
   },
   variantToggleButton: {
     alignSelf: 'flex-start',
