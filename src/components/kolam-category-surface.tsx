@@ -35,6 +35,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamListTableComposition,
@@ -539,11 +540,12 @@ function KolamCategoryDetail({
             title="Ringkasan kategori"
           />
 
+          <CategoryLocaleSummaryCard
+            items={localeAuditItems}
+            total={countActiveLocaleAuditItems(localeAuditItems)}
+          />
+
           <View style={styles.categorySummaryGrid}>
-            <CategoryLocaleSummaryCard
-              items={localeAuditItems}
-              total={countActiveLocaleAuditItems(localeAuditItems)}
-            />
             <CategoryLinkedItemsSummaryCard
               description="Produk yang menggunakan kategori ini"
               emptyText={
@@ -612,14 +614,14 @@ function CategoryLocaleSummaryCard({
   return (
     <KolamDetailSummaryCard
       body={
-        <CategoryLinkedItemsList
+        <CategoryLocaleAccordionList
           emptyText="Belum ada data locale untuk diaudit."
           items={items}
         />
       }
       description="Audit isi locale kategori."
       fields={[{ id: 'total', label: 'Total', value: total }]}
-      style={styles.categorySummaryGridCard}
+      style={styles.categoryLocaleSummaryCard}
       title="Terjemahan"
     />
   );
@@ -709,6 +711,103 @@ function CategoryLinkedItemsList({
           ) : null}
         </View>
       ))}
+    </View>
+  );
+}
+
+function CategoryLocaleAccordionList({
+  emptyText,
+  items,
+}: {
+  emptyText: string;
+  items?: CategoryDetailListItem[];
+}) {
+  const [openKey, setOpenKey] = React.useState<string | null>(
+    items?.length ? getCategoryDetailItemKey(items[0], 0) : null,
+  );
+
+  React.useEffect(() => {
+    if (!items?.length) {
+      setOpenKey(null);
+      return;
+    }
+
+    const keys = items.map(getCategoryDetailItemKey);
+    if (!openKey || !keys.includes(openKey)) {
+      setOpenKey(keys[0]);
+    }
+  }, [items, openKey]);
+
+  if (!items?.length) {
+    return <Text style={styles.categorySummaryEmptyText}>{emptyText}</Text>;
+  }
+
+  return (
+    <View style={styles.categoryLocaleAccordionList}>
+      {items.map((item, index) => {
+        const key = getCategoryDetailItemKey(item, index);
+        const isOpen = openKey === key;
+
+        return (
+          <View key={key} style={styles.categoryLocaleAccordionItem}>
+            <KolamInteractionFrame
+              accessibilityLabel={`${isOpen ? 'Tutup' : 'Buka'} ${item.title}`}
+              accessibilityState={{ expanded: isOpen }}
+              onPress={() => setOpenKey(isOpen ? null : key)}
+              style={styles.categoryLocaleAccordionHeader}
+            >
+              <View style={styles.categoryLocaleAccordionCopy}>
+                <Text numberOfLines={1} style={styles.categorySummaryItemTitle}>
+                  {item.title}
+                </Text>
+                {item.value ? (
+                  <Text
+                    numberOfLines={1}
+                    style={styles.categoryLocaleAccordionSummary}
+                  >
+                    {item.value}
+                  </Text>
+                ) : null}
+              </View>
+              {item.badge ? (
+                <KolamStatusBadge
+                  intent={item.badge === 'Aktif' ? 'success' : 'muted'}
+                  label={item.badge}
+                />
+              ) : null}
+              <Text style={styles.categoryLocaleAccordionChevron}>
+                {isOpen ? '^' : 'v'}
+              </Text>
+            </KolamInteractionFrame>
+            {isOpen ? (
+              <View style={styles.categoryLocaleAccordionContent}>
+                {item.meta ? (
+                  <Text style={styles.categorySummaryItemMeta}>
+                    {item.meta}
+                  </Text>
+                ) : null}
+                {item.value ? (
+                  <Text style={styles.categorySummaryItemValue}>
+                    {item.value}
+                  </Text>
+                ) : null}
+                {item.fields?.length ? (
+                  <View style={styles.categorySummaryItemFields}>
+                    {item.fields.map(field => (
+                      <Text
+                        key={`${item.title}-${field.label}`}
+                        style={styles.categorySummaryItemMeta}
+                      >
+                        {field.label}: {field.value || '-'}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -1016,6 +1115,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 14,
   },
+  categoryLocaleSummaryCard: {
+    width: '100%',
+  },
   categorySummaryGridCard: {
     flexBasis: '48%',
     flexGrow: 1,
@@ -1071,6 +1173,49 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     maxWidth: 100,
     textAlign: 'right',
+  },
+  categoryLocaleAccordionList: {
+    gap: 8,
+  },
+  categoryLocaleAccordionItem: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  categoryLocaleAccordionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  categoryLocaleAccordionCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  categoryLocaleAccordionSummary: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  categoryLocaleAccordionChevron: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+    width: 18,
+  },
+  categoryLocaleAccordionContent: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
   },
   categorySummaryEmptyText: {
     color: V.colors.fg,
