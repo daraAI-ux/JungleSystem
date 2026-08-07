@@ -16,6 +16,7 @@ describe('isCatalogTableListRoute', () => {
     );
     expect(isCatalogTableListRoute('/suppliers')).toBe(false);
     expect(isCatalogTableListRoute('/customers')).toBe(false);
+    expect(isCatalogTableListRoute('/list-of-users')).toBe(false);
     expect(isCatalogTableListRoute('/purchase-order')).toBe(false);
     // Mapped-row Produksi uses shell ScrollView (same as supplier/PO) so header height stays compact.
     expect(isCatalogTableListRoute('/production')).toBe(false);
@@ -41,6 +42,7 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/finance/payroll')).toBe(false);
     expect(isCatalogTableListRoute('/finance/bonus')).toBe(false);
     expect(isCatalogTableListRoute('/cashflow-session')).toBe(true);
+    expect(isCatalogTableListRoute('/cashflow-session/')).toBe(true);
     expect(isCatalogTableListRoute('/finance/tax')).toBe(false);
     expect(isCatalogTableListRoute('/finance/settings/tax-profile')).toBe(false);
     expect(isCatalogTableListRoute('/finance/payroll/2026-08')).toBe(false);
