@@ -1331,6 +1331,24 @@ function KolamSpeciesForm({
               </View>
             </SpeciesEditSection>
 
+            <SpeciesEditSection
+              description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
+              title="Varian"
+            >
+              <View
+                style={[
+                  styles.speciesBasicInfoCard,
+                  styles.customFieldSettingsCard,
+                ]}
+              >
+                <SpeciesVariantEditorPanel
+                  controller={controller}
+                  onDeleteMedia={setDeleteMediaTarget}
+                  onDeleteVariant={setDeleteVariantTarget}
+                />
+              </View>
+            </SpeciesEditSection>
+
             <View style={styles.speciesEditTwoColumnSections}>
               <View style={styles.speciesEditTwoColumnSection}>
                 <SpeciesEditSection
@@ -1369,24 +1387,6 @@ function KolamSpeciesForm({
                 </SpeciesEditSection>
               </View>
             </View>
-
-            <SpeciesEditSection
-              description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
-              title="Varian"
-            >
-              <View
-                style={[
-                  styles.speciesBasicInfoCard,
-                  styles.customFieldSettingsCard,
-                ]}
-              >
-                <SpeciesVariantEditorPanel
-                  controller={controller}
-                  onDeleteMedia={setDeleteMediaTarget}
-                  onDeleteVariant={setDeleteVariantTarget}
-                />
-              </View>
-            </SpeciesEditSection>
 
             {showRootOnlySections ? (
               <SpeciesEditSection
