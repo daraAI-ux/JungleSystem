@@ -421,13 +421,15 @@ export function KolamOverflowMenuButton({
           transparent
           visible
         >
-          <Pressable
-            accessibilityLabel="Tutup menu aksi"
-            accessibilityRole="button"
-            onPress={() => setMenuOpen(false)}
-            style={styles.overflowModalDismiss}
-          />
-          {menu}
+          <View pointerEvents="box-none" style={styles.overflowModalRoot}>
+            <Pressable
+              accessibilityLabel="Tutup menu aksi"
+              accessibilityRole="button"
+              onPress={() => setMenuOpen(false)}
+              style={styles.overflowModalDismiss}
+            />
+            {menu}
+          </View>
         </Modal>
       ) : null}
       {open && !floating ? menu : null}
@@ -627,6 +629,10 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   overflowModalDismiss: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+  overflowModalRoot: {
     ...StyleSheet.absoluteFillObject,
   },
 });
