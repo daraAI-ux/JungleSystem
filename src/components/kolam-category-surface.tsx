@@ -848,6 +848,15 @@ function KolamCategoryForm({
     <KolamNativeFormSection section={getKolamFormSection('category-detail')}>
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+          <FieldShell label="Nama" required>
+            <KolamFormTextField
+              editable={!controller.saving}
+              onChangeText={name => controller.onChangeForm({ name })}
+              placeholder="Masukkan nama kategori"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.name}
+            />
+          </FieldShell>
           <FieldShell label="Pilih Induk">
             <KolamDropdownSelect
               accessibilityLabel="Pilih induk kategori"
