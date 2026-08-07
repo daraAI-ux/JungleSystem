@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS,
   KOLAM_STOCK_OPNAME_ROOT,
@@ -17,11 +10,6 @@ import {
   type KolamStockOpnameLineTargetType,
   type KolamStockOpnameStatus,
 } from '../domain/kolam-stock-opname';
-import {
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { getKolamFileUrl } from '../lib/file-url';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
@@ -35,16 +23,6 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDateField } from './kolam-date-field';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -580,119 +558,6 @@ function StockOpnameActionsMenu({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function StockOpnameListRow({
-  canDelete,
-  columns,
-  item,
-  onDelete,
-  onOpen,
-}: {
-  canDelete: boolean;
-  columns: ReturnType<typeof getKolamTableColumns>;
-  item: KolamStockOpname;
-  onDelete: () => void;
-  onOpen: () => void;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const statusColumn = columnOf('status');
-  const createdColumn = columnOf('marketplace');
-  const picColumn = columnOf('meta');
-  const actionsColumn = columnOf('actions');
-
-  return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack style={styles.mainTrackVisible}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onOpen}
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.primaryText}>
-            {item.documentNumber || item.id}
-          </Text>
-        </Pressable>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.statusCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={statusIntent(item.status)}
-            label={item.statusLabel}
-            style={styles.centerBadge}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            createdColumn ? getKolamDataTableColumnStyle(createdColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={2} style={styles.secondaryText}>
-            {formatDateTime(item.createdAt)}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.listCell,
-            styles.picCell,
-            picColumn ? getKolamDataTableColumnStyle(picColumn) : null,
-            styles.overflowVisible,
-          ]}
-        >
-          <StockOpnamePicAvatar item={item} />
-        </View>
-      </KolamDataTableMainTrack>
-
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Aksi ${item.documentNumber}`}
-          actions={[
-            {
-              label: 'Lihat',
-              onPress: onOpen,
-            },
-            ...(item.status === 'cancelled' && canDelete
-              ? [
-                  {
-                    label: 'Hapus',
-                    tone: 'danger' as const,
-                    onPress: onDelete,
-                  },
-                ]
-              : []),
-          ]}
-          onOpenChange={setActionMenuOpen}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
-}
-
 function StockOpnamePicAvatar({ item }: { item: KolamStockOpname }) {
   const name =
     stockOpnameUserDisplayName(item.owner) || item.owner?.email || 'Tanpa PIC';
@@ -850,46 +715,6 @@ function StockOpnameImportDialog({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function fitStockOpnameListColumns(containerWidth: number): KolamTableColumn[] {
-  const base = getKolamTableColumns('stock-opname');
-  if (containerWidth <= 0) {
-    return base;
-  }
-
-  const gap = KOLAM_DATA_TABLE_COLUMN_GAP;
-  const paddingX = getKolamTableVisualContract().body.cellPaddingX * 2;
-  const actionsWidth = KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH;
-  const gapsTotal = gap * Math.max(0, base.length - 1);
-  const contentBudget = Math.max(
-    0,
-    containerWidth - paddingX - gapsTotal - actionsWidth,
-  );
-  const contentColumns = base.filter(column => column.id !== 'actions');
-  const equalWidth = Math.max(
-    72,
-    Math.floor(contentBudget / Math.max(1, contentColumns.length)),
-  );
-  let remainder = contentBudget - equalWidth * contentColumns.length;
-  const lastContentId = contentColumns[contentColumns.length - 1]?.id;
-
-  return base.map(column => {
-    if (column.id === 'actions') {
-      return { ...column, width: actionsWidth };
-    }
-
-    const extra = column.id === lastContentId ? remainder : 0;
-    if (column.id === lastContentId) {
-      remainder = 0;
-    }
-
-    return {
-      ...column,
-      width: equalWidth + extra,
-    };
-  });
-}
-
 function statusIntent(
   status: string,
 ): 'success' | 'warning' | 'danger' | 'info' | 'secondary' {
@@ -992,29 +817,8 @@ const styles = StyleSheet.create({
     minHeight: 0,
     overflow: 'visible',
   },
-  listCell: {
-    gap: 2,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  identityCell: {
-    alignItems: 'flex-start',
-  },
-  statusCell: {
-    alignItems: 'center',
-  },
   centerBadge: {
     alignSelf: 'center',
-  },
-  mainTrackVisible: {
-    overflow: 'visible',
-  },
-  overflowVisible: {
-    overflow: 'visible',
-    zIndex: 9000,
-  },
-  picCell: {
-    alignItems: 'center',
   },
   ownerCell: {
     alignItems: 'center',
@@ -1049,9 +853,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '800',
-  },
-  actionsTrack: {
-    justifyContent: 'center',
   },
   primaryText: {
     color: V.colors.fg,

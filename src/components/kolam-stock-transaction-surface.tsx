@@ -942,89 +942,6 @@ function KolamStockTransactionList({
     setActiveFilterPanel(current => (current === panel ? null : panel));
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const renderRow = React.useCallback(
-    ({ item }: { item: KolamStockTransaction }) => (
-      <Pressable
-        accessibilityRole="button"
-        onPress={() =>
-          onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/${item.id}`)
-        }
-        style={({ pressed }) => [
-          styles.row,
-          pressed ? styles.rowPressed : null,
-        ]}
-      >
-        <View style={[styles.cell, { flex: 1.4 }]}>
-          <Text numberOfLines={2} style={styles.primaryText}>
-            {item.target?.label || '—'}
-          </Text>
-          <Text numberOfLines={1} style={styles.metaText}>
-            {item.target?.sku || '—'}
-          </Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.9 }]}>
-          <Text numberOfLines={2} style={styles.cellText}>
-            {item.variantLabel}
-          </Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.6 }]}>
-          <Text style={styles.cellText}>{formatType(item.type)}</Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.75 }]}>
-          <KolamStockTransactionSourceIcon
-            label={item.sourceLabel}
-            logoUri={item.salesSource?.logoUri}
-            salesSourceName={item.salesSource?.name}
-            source={item.source}
-          />
-        </View>
-        <View style={[styles.cell, { flex: 0.8 }]}>
-          <Text numberOfLines={2} style={styles.metaText}>
-            {resolveStockTxCrossSyncDisplay(item.crossSync, item.reason)
-              ?.summaryLabel ||
-              crossSyncSummaryLabel(item.crossSync?.summary) ||
-              '—'}
-          </Text>
-        </View>
-        <View style={[styles.cell, { flex: 1 }]}>
-          <Text numberOfLines={1} style={styles.cellText}>
-            {item.statusLabel}
-          </Text>
-          {item.financeNote ? (
-            <Text numberOfLines={2} style={styles.metaText}>
-              {item.financeNote}
-            </Text>
-          ) : null}
-        </View>
-        <View style={[styles.cell, { flex: 0.5 }]}>
-          <Text style={styles.numText}>{formatNumber(item.quantity)}</Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.6 }]}>
-          <Text style={styles.numText}>{formatNumber(item.before)}</Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.6 }]}>
-          <Text style={styles.numText}>{formatNumber(item.after)}</Text>
-        </View>
-        <View style={[styles.cell, { flex: 0.6 }]}>
-          <Text
-            style={[
-              styles.numText,
-              item.delta > 0
-                ? styles.deltaPositive
-                : item.delta < 0
-                ? styles.deltaNegative
-                : null,
-            ]}
-          >
-            {formatSigned(item.delta)}
-          </Text>
-        </View>
-      </Pressable>
-    ),
-    [onRouteChange],
-  );
-
   return (
     <View style={styles.listRoot}>
       {controller.filters.stockOpnameId ? (
@@ -1706,41 +1623,8 @@ const styles = StyleSheet.create({
   tableFrame: {
     minHeight: 0,
   },
-  listFlatList: {
-    flexGrow: 0,
-  },
-  listContent: {
-    flexGrow: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.colors.border,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    gap: 4,
-  },
-  headerCellText: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.colors.border,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    gap: 4,
-  },
   rowPressed: {
     backgroundColor: V.colors.muted,
-  },
-  cell: {
-    minWidth: 0,
   },
   stockTxCellButton: {
     alignSelf: 'stretch',
