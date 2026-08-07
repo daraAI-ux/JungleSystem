@@ -25,6 +25,10 @@ export function KolamCategoryIcon({
     variant === 'detail' && styles.iconDetail,
     variant === 'summary' && styles.iconSummary,
   ];
+  const placeholderStyle = [
+    styles.placeholder,
+    variant === 'summary' && styles.placeholderSummary,
+  ];
 
   if (usesSvg) {
     return (
@@ -44,7 +48,7 @@ export function KolamCategoryIcon({
         }}
         style={iconStyle}
       >
-        <View style={styles.placeholder}>
+        <View style={placeholderStyle}>
           {variant !== 'list' ? (
             <Text
               numberOfLines={1}
@@ -68,7 +72,7 @@ export function KolamCategoryIcon({
 
   return (
     <View style={iconStyle}>
-      <View style={styles.placeholder}>
+      <View style={placeholderStyle}>
         {variant !== 'list' ? (
           <Text
             numberOfLines={1}
@@ -184,6 +188,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   iconSummary: {
+    backgroundColor: 'transparent',
     width: 154,
     height: 154,
     borderRadius: 16,
@@ -198,6 +203,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: V.colors.successSoft,
+  },
+  placeholderSummary: {
+    backgroundColor: 'transparent',
   },
   placeholderText: {
     color: V.colors.success,
