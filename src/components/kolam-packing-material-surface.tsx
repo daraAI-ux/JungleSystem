@@ -12,12 +12,6 @@ import {
 } from '../domain/kolam-packing-option';
 import type { KolamUnit } from '../domain/kolam-unit';
 import { getKolamFormSection } from '../domain/kolam-form';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import { getKolamFileUrl } from '../lib/file-url';
@@ -30,16 +24,6 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDetailMediaPreview,
@@ -667,185 +651,6 @@ function KolamPackingMaterialActionsMenu({
         onOpenChange={setActionMenuOpen}
       />
     </View>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function KolamPackingMaterialRow({
-  columns,
-  item,
-  onDelete,
-  onEdit,
-  onSelect,
-}: {
-  columns: KolamTableColumn[];
-  item: KolamPackingMaterial;
-  onDelete: () => void;
-  onEdit: () => void;
-  onSelect: () => void;
-}) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const images = createPackingImageItems(item);
-  const photoUri = images[0]?.uri;
-  const description = item.description.trim();
-  const effectiveHpp = getPackingEffectiveHpp(item);
-  const columnOf = React.useCallback(
-    (id: (typeof columns)[number]['id']) =>
-      columns.find(column => column.id === id),
-    [columns],
-  );
-  const photoColumn = columnOf('meta');
-  const primaryColumn = columnOf('primary');
-  const categoryColumn = columnOf('children');
-  const dimensionColumn = columnOf('notes');
-  const weightColumn = columnOf('marketplace');
-  const hppColumn = columnOf('amount');
-  const stockColumn = columnOf('raws');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
-
-  return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack>
-        <View
-          style={[
-            styles.listCell,
-            photoColumn ? getKolamDataTableColumnStyle(photoColumn) : null,
-          ]}
-        >
-          {photoUri ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto ${item.name}`}
-              previewItems={createPackingPhotoPreviewItems(item)}
-              resizeMode="cover"
-              scope="packing-material"
-              sourceUri={photoUri}
-              style={styles.photoThumb}
-            />
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <Text style={styles.photoPlaceholderText}>-</Text>
-            </View>
-          )}
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <KolamCopyStack
-            containerStyle={styles.nameCopy}
-            items={[
-              {
-                id: 'name',
-                text: item.name,
-                style: styles.rowTitle,
-                textProps: { numberOfLines: 1 },
-              },
-              ...(description
-                ? [
-                    {
-                      id: 'description',
-                      text: description,
-                      style: styles.rowMeta,
-                      textProps: { numberOfLines: 1 },
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            categoryColumn
-              ? getKolamDataTableColumnStyle(categoryColumn)
-              : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={getCategoryIntent(item.category)}
-            label={getPackingCategoryLabel(item.category)}
-            style={styles.centerBadge}
-          />
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            dimensionColumn
-              ? getKolamDataTableColumnStyle(dimensionColumn)
-              : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {formatPackingDimension(item)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            weightColumn ? getKolamDataTableColumnStyle(weightColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {formatPackingWeight(item)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            hppColumn ? getKolamDataTableColumnStyle(hppColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {effectiveHpp > 0 ? formatRupiah(effectiveHpp) : '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {String(item.stock)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamStatusBadge
-            intent={item.status === 'active' ? 'success' : 'warning'}
-            label={item.status === 'active' ? 'Aktif' : 'Nonaktif'}
-            style={styles.centerBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${item.name}`}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            { label: 'Nonaktifkan', onPress: onDelete, tone: 'danger' },
-          ]}
-          onOpenChange={setActionMenuOpen}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
   );
 }
 
@@ -2128,24 +1933,6 @@ function getPackingRoute(item: KolamPackingMaterial) {
   return `/packing-materials/${encodeURIComponent(item.id)}`;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function fitPackingListColumns(containerWidth: number): KolamTableColumn[] {
-  // Prefer shared fitter so floors cannot exceed body budget (weighted Math.max
-  // floors previously overflowed MainTrack → cells piled onto neighbors).
-  // Preferred widths in `packing-material` columns already bias Nama.
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('packing-material'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 160,
-      secondaryMinWidth: 56,
-    },
-  );
-}
-
 function createUnitOptions(units: KolamUnit[]) {
   const options = units.map(unit => ({
     label: `${unit.name}${unit.initial ? ` (${unit.initial})` : ''}`,
@@ -2614,19 +2401,9 @@ const styles = StyleSheet.create({
     zIndex: 2000,
     elevation: 100,
   },
-  listCell: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 0,
-    overflow: 'hidden',
-    paddingVertical: 4,
-  },
   identityCell: {
     alignItems: 'flex-start',
     justifyContent: 'center',
-  },
-  actionsTrack: {
-    alignItems: 'center',
   },
   photoThumb: {
     width: 46,
