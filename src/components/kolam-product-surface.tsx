@@ -47,6 +47,7 @@ import {
 import type { KolamPackingCatalogUsageRow } from '../domain/kolam-packing-option';
 import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
+import {KolamBarcodePrintButton} from './kolam-barcode-print-button';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
@@ -414,7 +415,7 @@ export function KolamProductSurface({
                 />
                 {!isRawCatalog ? (
                   <>
-                    <KolamButton
+                    <KolamBarcodePrintButton
                       label={`Cetak barcode (${barcodeItems.length})`}
                       onPress={() => {
                         setBarcodeDialogItems(null);
