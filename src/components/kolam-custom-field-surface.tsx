@@ -864,68 +864,70 @@ function KolamCustomFieldForm({
                   }}
                 />
               </View>
+              {numericLike && form.hasMinMax ? (
+                <View style={[styles.formSplitRow, styles.customFieldNestedField]}>
+                  <View style={styles.formSplitCell}>
+                    <FieldShell label="Min Diizinkan">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        keyboardType="numeric"
+                        onChangeText={minAllowed =>
+                          controller.onChangeForm({ minAllowed })
+                        }
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={form.minAllowed}
+                      />
+                    </FieldShell>
+                  </View>
+                  <View style={styles.formSplitCell}>
+                    <FieldShell label="Max Diizinkan">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        keyboardType="numeric"
+                        onChangeText={maxAllowed =>
+                          controller.onChangeForm({ maxAllowed })
+                        }
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={form.maxAllowed}
+                      />
+                    </FieldShell>
+                  </View>
+                </View>
+              ) : null}
+              <View style={styles.customFieldNestedField}>
+                <FieldShell label="Nilai Default">
+                  {form.fieldType === 'boolean' ? (
+                    <View style={styles.segmentRow}>
+                      <KolamButton
+                        intent={form.defaultBoolean ? 'primary' : 'outline'}
+                        label="Ya"
+                        onPress={() =>
+                          controller.onChangeForm({ defaultBoolean: true })
+                        }
+                      />
+                      <KolamButton
+                        intent={!form.defaultBoolean ? 'primary' : 'outline'}
+                        label="Tidak"
+                        onPress={() =>
+                          controller.onChangeForm({ defaultBoolean: false })
+                        }
+                      />
+                    </View>
+                  ) : (
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType={numericLike ? 'numeric' : 'default'}
+                      onChangeText={defaultValueText =>
+                        controller.onChangeForm({ defaultValueText })
+                      }
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.defaultValueText}
+                    />
+                  )}
+                </FieldShell>
+              </View>
             </View>
-            {numericLike && form.hasMinMax ? (
-              <View style={styles.formSplitRow}>
-                <View style={styles.formSplitCell}>
-                  <FieldShell label="Min Diizinkan">
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={minAllowed =>
-                        controller.onChangeForm({ minAllowed })
-                      }
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={form.minAllowed}
-                    />
-                  </FieldShell>
-                </View>
-                <View style={styles.formSplitCell}>
-                  <FieldShell label="Max Diizinkan">
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={maxAllowed =>
-                        controller.onChangeForm({ maxAllowed })
-                      }
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={form.maxAllowed}
-                    />
-                  </FieldShell>
-                </View>
-              </View>
-            ) : null}
           </>
-          <FieldShell label="Nilai Default">
-            {form.fieldType === 'boolean' ? (
-              <View style={styles.segmentRow}>
-                <KolamButton
-                  intent={form.defaultBoolean ? 'primary' : 'outline'}
-                  label="Ya"
-                  onPress={() =>
-                    controller.onChangeForm({ defaultBoolean: true })
-                  }
-                />
-                <KolamButton
-                  intent={!form.defaultBoolean ? 'primary' : 'outline'}
-                  label="Tidak"
-                  onPress={() =>
-                    controller.onChangeForm({ defaultBoolean: false })
-                  }
-                />
-              </View>
-            ) : (
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType={numericLike ? 'numeric' : 'default'}
-                onChangeText={defaultValueText =>
-                  controller.onChangeForm({ defaultValueText })
-                }
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.defaultValueText}
-              />
-            )}
-          </FieldShell>
           <View style={styles.customFieldAssetSettingsCard}>
             <KolamSettingsWebFileField
               accessibilityLabel="Icon field kustom"
