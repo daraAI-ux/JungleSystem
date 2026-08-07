@@ -32,6 +32,40 @@ These pilot routes must return `false` from `isCatalogTableListRoute`:
 - `/finance/bonus`
 - `/media`
 
+Additional audited mapped-table/detail routes that also stay on shell `ScrollView`:
+
+- `/stock-transaction?productId=abc`
+- `/stock-transaction/tx-1`
+- `/suppliers`
+- `/purchase-order`
+- `/purchase-order/create`
+- `/purchase-order/po-1`
+- `/production`
+- `/production/create`
+- `/production/prod-1`
+- `/product-serials`
+- `/sales`
+- `/raw-materials`
+- `/raw-materials/create`
+- `/stock-opname`
+- `/finance`
+- `/finance/abc123`
+- `/wallet`
+- `/wallet/w1`
+- `/routine-expenses`
+- `/unexpected-expense`
+- `/unexpected-income`
+- `/asset-purchase`
+- `/finance/tax`
+- `/finance/settings/tax-profile`
+- `/finance/payroll/2026-08`
+- `/payable/p1`
+- `/cashflow-session/create`
+- `/cashflow-session/session-1`
+- `/pengaturan`
+- `/teranura`
+- `/packing-materials`
+
 ## Verification
 
 Primary guards:
