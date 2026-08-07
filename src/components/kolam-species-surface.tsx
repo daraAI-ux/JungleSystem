@@ -1214,28 +1214,28 @@ function KolamSpeciesForm({
                     />
                   </FieldShell>
                 </View>
+                <FieldShell label="Taksonomi Genus" required>
+                  <KolamDropdownSelect
+                    accessibilityLabel="Pilih taksonomi genus"
+                    label="Taksonomi Genus"
+                    menuStyle={styles.longDropdownMenu}
+                    onChange={taxonomyId =>
+                      controller.onChangeForm({ taxonomyId })
+                    }
+                    options={[
+                      { label: 'Pilih genus', value: '' },
+                      ...controller.taxonomies.map(taxonomy => ({
+                        label: taxonomy.name,
+                        value: taxonomy.id,
+                      })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari genus..."
+                    showLabelInTrigger={false}
+                    value={form.taxonomyId}
+                  />
+                </FieldShell>
                 <View style={styles.twoColumnGrid}>
-                  <FieldShell label="Taksonomi Genus" required>
-                    <KolamDropdownSelect
-                      accessibilityLabel="Pilih taksonomi genus"
-                      label="Taksonomi Genus"
-                      menuStyle={styles.longDropdownMenu}
-                      onChange={taxonomyId =>
-                        controller.onChangeForm({ taxonomyId })
-                      }
-                      options={[
-                        { label: 'Pilih genus', value: '' },
-                        ...controller.taxonomies.map(taxonomy => ({
-                          label: taxonomy.name,
-                          value: taxonomy.id,
-                        })),
-                      ]}
-                      searchable
-                      searchPlaceholder="Cari genus..."
-                      showLabelInTrigger={false}
-                      value={form.taxonomyId}
-                    />
-                  </FieldShell>
                   <FieldShell label="Status">
                     <KolamDropdownSelect<KolamSpeciesStatus>
                       label="Status"
@@ -1249,66 +1249,66 @@ function KolamSpeciesForm({
                       value={form.status}
                     />
                   </FieldShell>
-                </View>
-                <FieldShell label="Kategori" required>
-                  <View style={styles.categoryPickerStack}>
-                    <KolamDropdownSelect
-                      accessibilityLabel="Tambah kategori spesies"
-                      label="Tambah Kategori"
-                      menuStyle={styles.longDropdownMenu}
-                      onChange={categoryId => {
-                        if (
-                          !categoryId ||
-                          form.categoryIds.includes(categoryId)
-                        ) {
-                          return;
-                        }
+                  <FieldShell label="Kategori" required>
+                    <View style={styles.categoryPickerStack}>
+                      <KolamDropdownSelect
+                        accessibilityLabel="Tambah kategori spesies"
+                        label="Tambah Kategori"
+                        menuStyle={styles.longDropdownMenu}
+                        onChange={categoryId => {
+                          if (
+                            !categoryId ||
+                            form.categoryIds.includes(categoryId)
+                          ) {
+                            return;
+                          }
 
-                        controller.onChangeForm({
-                          categoryIds: [...form.categoryIds, categoryId],
-                        });
-                      }}
-                      options={[
-                        { label: 'Tambah kategori', value: '' },
-                        ...categoryOptions.map(category => ({
-                          label: `${'  '.repeat(category.level)}${category.name}`,
-                          value: category.id,
-                        })),
-                      ]}
-                      searchable
-                      searchPlaceholder="Cari kategori..."
-                      showLabelInTrigger={false}
-                      value=""
-                    />
-                    <View style={styles.selectedCategoryRow}>
-                      {selectedCategories.length ? (
-                        selectedCategories.map(category => (
-                          <KolamCategoryLabel
-                            key={category.id}
-                            label={`${category.name} x`}
-                            onPress={() =>
-                              controller.onChangeForm({
-                                categoryIds: form.categoryIds.filter(
-                                  categoryId => categoryId !== category.id,
-                                ),
-                              })
-                            }
+                          controller.onChangeForm({
+                            categoryIds: [...form.categoryIds, categoryId],
+                          });
+                        }}
+                        options={[
+                          { label: 'Tambah kategori', value: '' },
+                          ...categoryOptions.map(category => ({
+                            label: `${'  '.repeat(category.level)}${category.name}`,
+                            value: category.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari kategori..."
+                        showLabelInTrigger={false}
+                        value=""
+                      />
+                      <View style={styles.selectedCategoryRow}>
+                        {selectedCategories.length ? (
+                          selectedCategories.map(category => (
+                            <KolamCategoryLabel
+                              key={category.id}
+                              label={`${category.name} x`}
+                              onPress={() =>
+                                controller.onChangeForm({
+                                  categoryIds: form.categoryIds.filter(
+                                    categoryId => categoryId !== category.id,
+                                  ),
+                                })
+                              }
+                            />
+                          ))
+                        ) : (
+                          <KolamCopyStack
+                            items={[
+                              {
+                                id: 'empty-category',
+                                text: 'Belum ada kategori dipilih.',
+                                style: styles.fieldHint,
+                              },
+                            ]}
                           />
-                        ))
-                      ) : (
-                        <KolamCopyStack
-                          items={[
-                            {
-                              id: 'empty-category',
-                              text: 'Belum ada kategori dipilih.',
-                              style: styles.fieldHint,
-                            },
-                          ]}
-                        />
-                      )}
+                        )}
+                      </View>
                     </View>
-                  </View>
-                </FieldShell>
+                  </FieldShell>
+                </View>
               </View>
             </SpeciesEditSection>
 
