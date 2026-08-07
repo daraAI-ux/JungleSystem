@@ -46,6 +46,7 @@ import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -105,18 +106,36 @@ function KolamCategoryShell({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/label-dan-field/kategori');
-              }}
-            />
             {controller.mode === 'detail' ? (
-              <KolamEditButton
-                intent="primary"
-                onPress={controller.onEdit}
-              />
-            ) : null}
+              <>
+                <KolamDaftarButton
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.('/label-dan-field/kategori');
+                  }}
+                />
+                <KolamEditButton
+                  intent="primary"
+                  onPress={controller.onEdit}
+                />
+              </>
+            ) : (
+              <>
+                <KolamButton
+                  disabled={controller.saving}
+                  label="Batal"
+                  onPress={controller.onBackToList}
+                />
+                <KolamButton
+                  disabled={controller.saving}
+                  intent="primary"
+                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                  onPress={() => {
+                    void controller.onSave();
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -849,17 +868,6 @@ function KolamCategoryForm({
               value={form.parentId}
             />
           </FieldShell>
-          <KolamCatalogTranslationsEditor
-            editable={!controller.saving}
-            kind="category"
-            onChange={translations => controller.onChangeForm({ translations })}
-            primary={{
-              name: form.name,
-              description: form.description,
-              onChange: patch => controller.onChangeForm(patch),
-            }}
-            translations={form.translations}
-          />
           <FieldShell label="Tampil di Marketplace">
             <View style={styles.segmentRow}>
               <KolamButton
@@ -891,44 +899,29 @@ function KolamCategoryForm({
               />
             </View>
           </FieldShell>
-          <FieldShell label="Icon lokal">
-            <View style={styles.iconPickerRow}>
-              <KolamFormTextField
-                editable={!controller.saving}
-                mode="url"
-                onChangeText={iconLocalUri =>
-                  controller.onChangeForm({ iconLocalUri })
-                }
-                placeholder="Pilih file icon dari komputer"
-                style={[
-                  settingsWebFormStyles.settingsWebFormFieldValue,
-                  styles.iconPickerInput,
-                ]}
-                value={form.iconLocalUri}
-              />
-              <KolamButton
-                disabled={controller.saving}
-                label="Pilih Icon"
-                onPress={() => {
-                  void controller.onPickIcon();
-                }}
-              />
-            </View>
-          </FieldShell>
-        </View>
-        <View style={styles.formActions}>
-          <KolamButton
-            disabled={controller.saving}
-            label="Batal"
-            onPress={controller.onBackToList}
-          />
-          <KolamButton
-            disabled={controller.saving}
-            intent="primary"
-            label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave();
+          <KolamSettingsWebFileField
+            accessibilityLabel="Icon kategori"
+            actionLabel="Pilih file"
+            emptyLabel="Icon belum diatur"
+            onLocalValueChange={iconLocalUri =>
+              controller.onChangeForm({ iconLocalUri })
+            }
+            onUpload={() => {
+              void controller.onPickIcon();
             }}
+            scope="category-icon"
+            value={form.iconLocalUri}
+          />
+          <KolamCatalogTranslationsEditor
+            editable={!controller.saving}
+            kind="category"
+            onChange={translations => controller.onChangeForm({ translations })}
+            primary={{
+              name: form.name,
+              description: form.description,
+              onChange: patch => controller.onChangeForm(patch),
+            }}
+            translations={form.translations}
           />
         </View>
       </View>
@@ -1299,22 +1292,5 @@ const styles = StyleSheet.create({
   },
   orderInput: {
     width: 110,
-  },
-  iconPickerRow: {
-    minHeight: V.control.inputHeight,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconPickerInput: {
-    flex: 1,
-    minWidth: 0,
-  },
-  formActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingTop: 8,
   },
 });
