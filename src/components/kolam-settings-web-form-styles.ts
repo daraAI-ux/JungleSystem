@@ -111,7 +111,7 @@ export const settingsWebFormStyles = StyleSheet.create({
     gap: 12,
   },
   settingsWebUploadStack: {
-    gap: 10,
+    gap: 8,
     width: '100%',
   },
   settingsWebUploadTitleRow: {
@@ -145,22 +145,22 @@ export const settingsWebFormStyles = StyleSheet.create({
     borderWidth: 1,
     gap: 8,
     justifyContent: 'center',
-    minHeight: 106,
+    minHeight: 92,
     width: '100%',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
   },
   settingsWebUploadPreviewButton: {
     alignItems: 'center',
     gap: 8,
     justifyContent: 'center',
-    minHeight: 82,
+    minHeight: 68,
     width: '100%',
   },
   settingsWebUploadArrow: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
   },
   settingsWebUploadPromptRow: {
@@ -195,9 +195,9 @@ export const settingsWebFormStyles = StyleSheet.create({
     borderRadius: V.radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: 10,
-    minHeight: 66,
-    padding: 8,
+    gap: 9,
+    minHeight: 56,
+    padding: 7,
     width: '100%',
   },
   settingsWebUploadFileCopy: {
@@ -218,8 +218,8 @@ export const settingsWebFormStyles = StyleSheet.create({
     marginTop: 2,
   },
   settingsWebLogoPreview: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: V.radius.lg,
     backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
@@ -229,8 +229,8 @@ export const settingsWebFormStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   settingsWebLogoImage: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
   },
   settingsWebLogoFallback: {
     color: V.colors.mutedFg,
