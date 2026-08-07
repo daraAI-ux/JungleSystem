@@ -37,6 +37,7 @@ import {
   useKolamSpeciesController,
   type KolamSpeciesController,
 } from '../hooks/use-kolam-species-controller';
+import {KolamBarcodePrintButton} from './kolam-barcode-print-button';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
@@ -432,7 +433,7 @@ function KolamSpeciesList({
                 label="Export"
                 onPress={() => setExportDialogOpen(true)}
               />
-              <KolamButton
+              <KolamBarcodePrintButton
                 disabled={!barcodeItemCount}
                 label={`Cetak barcode (${barcodeItemCount})`}
                 onPress={() => {
