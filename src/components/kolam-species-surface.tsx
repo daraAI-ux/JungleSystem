@@ -2968,41 +2968,64 @@ function renderSpeciesCustomFieldRowsInput(
   }
 
   if (field.fieldType === 'range') {
+    const unitLabel =
+      field.unitId && field.unitLabel ? 'Satuan (tetap)' : 'Satuan';
     return (
       <View style={styles.twoColumnGrid}>
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={minValue => update({ minValue })}
-          placeholder="Nilai minimum"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={getCustomFieldNumberText(raw.minValue)}
-        />
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={maxValue => update({ maxValue })}
-          placeholder="Nilai maksimum"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={getCustomFieldNumberText(raw.maxValue)}
-        />
-        {unitSelector}
+        {renderSpeciesCustomFieldLabeledControl(
+          'Min',
+          <KolamFormTextField
+            editable={!disabled}
+            keyboardType="numeric"
+            onChangeText={minValue => update({ minValue })}
+            placeholder="Nilai minimum"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={getCustomFieldNumberText(raw.minValue)}
+          />,
+        )}
+        {renderSpeciesCustomFieldLabeledControl(
+          'Maks',
+          <KolamFormTextField
+            editable={!disabled}
+            keyboardType="numeric"
+            onChangeText={maxValue => update({ maxValue })}
+            placeholder="Nilai maksimum"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={getCustomFieldNumberText(raw.maxValue)}
+          />,
+        )}
+        {unitSelector
+          ? renderSpeciesCustomFieldLabeledControl(unitLabel, unitSelector)
+          : null}
       </View>
     );
   }
 
   if (field.fieldType === 'number') {
+    const numberInput = (
+      <KolamFormTextField
+        editable={!disabled}
+        keyboardType="numeric"
+        onChangeText={value => update({ value })}
+        placeholder="Masukkan angka"
+        style={settingsWebFormStyles.settingsWebFormFieldValue}
+        value={getCustomFieldStringValue(raw)}
+      />
+    );
+
+    if (!field.requiresUnit) {
+      return numberInput;
+    }
+
     return (
-      <View style={field.requiresUnit ? styles.twoColumnGrid : undefined}>
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={value => update({ value })}
-          placeholder="Masukkan angka"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={getCustomFieldStringValue(raw)}
-        />
-        {unitSelector}
+      <View style={styles.twoColumnGrid}>
+        {renderSpeciesCustomFieldLabeledControl('Nilai', numberInput)}
+        {unitSelector
+          ? renderSpeciesCustomFieldLabeledControl(
+              field.unitId && field.unitLabel ? 'Satuan (tetap)' : 'Satuan',
+              unitSelector,
+            )
+          : null}
       </View>
     );
   }
@@ -3042,7 +3065,6 @@ function renderSpeciesCustomFieldUnitSelector(
       <View style={styles.customFieldFixedUnitBox}>
         <KolamCopyStack
           items={[
-            { id: 'label', text: 'Satuan tetap', style: styles.fieldHint },
             { id: 'value', text: field.unitLabel, style: styles.rowText },
           ]}
         />
@@ -3066,8 +3088,29 @@ function renderSpeciesCustomFieldUnitSelector(
       ]}
       searchable
       searchPlaceholder="Cari satuan..."
+      showLabelInTrigger={false}
       value={getStringFromRecord(getPlainRecord(raw), 'unit')}
     />
+  );
+}
+
+function renderSpeciesCustomFieldLabeledControl(
+  label: string,
+  children: React.ReactNode,
+) {
+  return (
+    <View style={styles.customFieldLabeledControl}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'label',
+            text: label,
+            style: styles.customFieldControlLabel,
+          },
+        ]}
+      />
+      {children}
+    </View>
   );
 }
 
@@ -7561,6 +7604,18 @@ const styles = StyleSheet.create({
     minHeight: 42,
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  customFieldLabeledControl: {
+    flexBasis: 180,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 150,
+  },
+  customFieldControlLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
   },
   customFieldEditorRow: {
     gap: 8,
