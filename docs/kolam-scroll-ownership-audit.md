@@ -96,6 +96,20 @@ Runtime confirmation:
   `E:\Data\Dunia-Anura\temp.script\scroll-runtime\species-small-before.png`
   and
   `E:\Data\Dunia-Anura\temp.script\scroll-runtime\species-small-after.png`.
+- `/products` - confirmed in the running Windows app after navigating through
+  the sidebar, resizing the JungleSystem window to force vertical overflow, and
+  sending wheel scroll over the workspace. Screenshot diff sampled 22,781
+  pixels with 1,579 changed pixels (6.93%). Evidence images:
+  `E:\Data\Dunia-Anura\temp.script\scroll-runtime\product-small-before.png`
+  and
+  `E:\Data\Dunia-Anura\temp.script\scroll-runtime\product-small-after.png`.
+- `/stock-transaction` - confirmed in the running Windows app after navigating
+  through the sidebar, resizing the JungleSystem window to force vertical
+  overflow, and sending wheel scroll over the workspace. Screenshot diff
+  sampled 22,781 pixels with 2,080 changed pixels (9.13%). Evidence images:
+  `E:\Data\Dunia-Anura\temp.script\scroll-runtime\stock-transaction-small-before.png`
+  and
+  `E:\Data\Dunia-Anura\temp.script\scroll-runtime\stock-transaction-small-after.png`.
 
 Runtime confirmation after app reload is still required for the other pilot
 pages.
