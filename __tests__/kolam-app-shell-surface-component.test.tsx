@@ -701,6 +701,7 @@ describe('KolamAppShellSurface', () => {
       expect.objectContaining({
         flexShrink: 0,
         overflow: 'hidden',
+        width: 360,
       }),
     );
   });
