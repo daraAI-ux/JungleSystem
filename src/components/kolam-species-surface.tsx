@@ -44,7 +44,6 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamComponentOverridesEditor } from './kolam-component-overrides-editor';
@@ -200,31 +199,43 @@ function KolamSpeciesShell({
       {controller.mode !== 'list' ? (
         <View style={styles.header}>
           <View style={styles.headerActions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             {controller.mode === 'detail' ? (
-              <KolamEditButton
-                intent="primary"
-                onPress={() => {
-                  controller.onEdit();
-                  const selectedItem = controller.selectedSpecies;
-                  if (selectedItem) {
-                    onRouteChange?.(`${getSpeciesRoute(selectedItem)}/edit`);
-                  }
-                }}
-              />
-            ) : null}
-            <KolamDaftarButton
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/species');
-              }}
-            />
+              <>
+                <KolamEditButton
+                  intent="primary"
+                  onPress={() => {
+                    controller.onEdit();
+                    const selectedItem = controller.selectedSpecies;
+                    if (selectedItem) {
+                      onRouteChange?.(`${getSpeciesRoute(selectedItem)}/edit`);
+                    }
+                  }}
+                />
+                <KolamDaftarButton
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.('/species');
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <KolamCancelButton
+                  disabled={controller.saving}
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.('/species');
+                  }}
+                />
+                <KolamSaveButton
+                  disabled={controller.saving}
+                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                  onPress={() => {
+                    void controller.onSave();
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       ) : null}
@@ -1607,22 +1618,6 @@ function KolamSpeciesForm({
             >
               <SpeciesPackingLinksPanel controller={controller} />
             </SpeciesEditSection>
-          </View>
-          <View style={styles.formActions}>
-            <KolamCancelButton
-              disabled={controller.saving}
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/species');
-              }}
-            />
-            <KolamSaveButton
-              disabled={controller.saving}
-              label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-              onPress={() => {
-                void controller.onSave();
-              }}
-            />
           </View>
         </View>
       </KolamNativeFormSection>
