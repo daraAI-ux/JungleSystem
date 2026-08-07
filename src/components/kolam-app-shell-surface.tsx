@@ -112,7 +112,10 @@ function isKolamCenteredRoute(route?: string | null) {
   );
 }
 
-/** Routes that own workspace scrolling; disable shell ScrollView nesting. */
+/**
+ * Routes that own workspace scrolling; disable shell ScrollView nesting.
+ * Keep mapped-table pages out of this list: they rely on the shell ScrollView.
+ */
 export function isCatalogTableListRoute(route?: string | null) {
   const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
 
