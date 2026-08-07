@@ -8,10 +8,16 @@ export function KolamBrandLogo({
   variant = 'list',
 }: {
   brand: KolamBrand;
-  variant?: 'list' | 'detail';
+  variant?: 'list' | 'detail' | 'summary';
 }) {
   return (
-    <View style={[styles.logo, variant === 'detail' && styles.logoDetail]}>
+    <View
+      style={[
+        styles.logo,
+        variant === 'detail' && styles.logoDetail,
+        variant === 'summary' && styles.logoSummary,
+      ]}
+    >
       <KolamLocalAssetImage
         accessibilityLabel={`${brand.name} logo`}
         resizeMode="contain"
@@ -38,6 +44,10 @@ const styles = StyleSheet.create({
   logoDetail: {
     width: 158,
     height: 84,
+  },
+  logoSummary: {
+    height: '100%',
+    width: '100%',
   },
   image: {
     width: '100%',

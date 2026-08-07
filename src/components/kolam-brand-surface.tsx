@@ -578,67 +578,67 @@ function KolamBrandDetail({
     <View style={styles.stack}>
       {!editable && brand ? (
         <>
-          <View style={styles.brandSummaryHeaderRow}>
-            <View style={styles.brandSummaryLogoPanel}>
-              <KolamBrandLogo brand={brand} variant="detail" />
-            </View>
-            <KolamDetailSummaryCard
-              body={
-                brand.description ? (
-                  <Text style={styles.brandSummaryDescription}>
-                    {stripHtmlForDetail(brand.description)}
-                  </Text>
-                ) : undefined
-              }
-              bodyTitle={brand.description ? 'Deskripsi' : undefined}
-              fieldColumns={3}
-              fields={[
-                {
-                  id: 'status',
-                  label: 'Status',
-                  value: (
-                    <KolamStatusBadge
-                      intent={getBrandStatusIntent(brand.status)}
-                      label={getBrandStatusLabel(brand.status)}
+          <KolamDetailSummaryCard
+            body={
+              brand.description ? (
+                <Text style={styles.brandSummaryDescription}>
+                  {stripHtmlForDetail(brand.description)}
+                </Text>
+              ) : undefined
+            }
+            bodyTitle={brand.description ? 'Deskripsi' : undefined}
+            fieldColumns={3}
+            fields={[
+              {
+                id: 'status',
+                label: 'Status',
+                value: (
+                  <KolamStatusBadge
+                    intent={getBrandStatusIntent(brand.status)}
+                    label={getBrandStatusLabel(brand.status)}
+                  />
+                ),
+              },
+              {
+                id: 'origin',
+                label: 'Asal',
+                value: (
+                  <View style={styles.brandSummaryCountry}>
+                    <KolamFlagIcon
+                      option={getKolamBrandFlagByCountry(brand.originCountry)}
                     />
-                  ),
-                },
-                {
-                  id: 'origin',
-                  label: 'Asal',
-                  value: (
-                    <View style={styles.brandSummaryCountry}>
-                      <KolamFlagIcon
-                        option={getKolamBrandFlagByCountry(brand.originCountry)}
-                      />
-                      <Text style={styles.brandSummaryFieldText}>
-                        {brand.originCountry}
-                      </Text>
-                    </View>
-                  ),
-                },
-                { id: 'products', label: 'Produk', value: brand.productCount },
-                {
-                  id: 'raws',
-                  label: 'Bahan Baku',
-                  value: brand.rawMaterialCount,
-                },
-                { id: 'services', label: 'Layanan', value: brand.serviceCount },
-                { id: 'species', label: 'Species', value: brand.speciesCount },
-                ...(brand.links.length
-                  ? [
-                      {
-                        id: 'links',
-                        label: 'Link',
-                        value: <BrandSummaryLinks links={brand.links} />,
-                      },
-                    ]
-                  : []),
-              ]}
-              style={styles.brandSummaryMainCard}
-              title="Ringkasan merek"
-            />
-          </View>
+                    <Text style={styles.brandSummaryFieldText}>
+                      {brand.originCountry}
+                    </Text>
+                  </View>
+                ),
+              },
+              { id: 'products', label: 'Produk', value: brand.productCount },
+              {
+                id: 'raws',
+                label: 'Bahan Baku',
+                value: brand.rawMaterialCount,
+              },
+              { id: 'services', label: 'Layanan', value: brand.serviceCount },
+              { id: 'species', label: 'Species', value: brand.speciesCount },
+              ...(brand.links.length
+                ? [
+                    {
+                      id: 'links',
+                      label: 'Link',
+                      value: <BrandSummaryLinks links={brand.links} />,
+                    },
+                  ]
+                : []),
+            ]}
+            leading={
+              <View style={styles.brandSummaryLogoInCard}>
+                <KolamBrandLogo brand={brand} variant="summary" />
+              </View>
+            }
+            leadingStyle={styles.brandSummaryLeadingSlot}
+            title="Ringkasan merek"
+          />
 
           <View style={styles.brandSummaryGrid}>
             <BrandLinkedItemsSummaryCard
@@ -1076,30 +1076,15 @@ const styles = StyleSheet.create({
   stack: {
     gap: 14,
   },
-  brandSummaryHeaderRow: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-    width: '100%',
+  brandSummaryLeadingSlot: {
+    minHeight: 172,
   },
-  brandSummaryLogoPanel: {
+  brandSummaryLogoInCard: {
     alignItems: 'center',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexBasis: '24%',
-    flexGrow: 1,
+    height: '100%',
     justifyContent: 'center',
-    minHeight: 170,
-    minWidth: 220,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  brandSummaryMainCard: {
-    flexBasis: '72%',
-    flexGrow: 3,
-    minWidth: 420,
+    minHeight: 154,
+    width: '100%',
   },
   brandSummaryCountry: {
     alignItems: 'center',

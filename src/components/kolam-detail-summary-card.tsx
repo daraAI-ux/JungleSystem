@@ -29,6 +29,9 @@ export type KolamDetailSummaryCardProps = {
   description?: string;
   fieldColumns?: 2 | 3;
   fields: KolamDetailSummaryField[];
+  /** Optional visual slot inside the card, before the field grid. */
+  leading?: React.ReactNode;
+  leadingStyle?: StyleProp<ViewStyle>;
   /** Extra soft panels under the field grid (after `body` when both set). */
   sections?: KolamDetailSummarySection[];
   style?: StyleProp<ViewStyle>;
@@ -60,10 +63,41 @@ export function KolamDetailSummaryCard({
   description,
   fieldColumns = 2,
   fields,
+  leading,
+  leadingStyle,
   sections,
   style,
   title,
 }: KolamDetailSummaryCardProps) {
+  const fieldGrid =
+    fields.length > 0 ? (
+      <View style={styles.fieldGrid}>
+        {fields.map(field => (
+          <View
+            key={field.id}
+            style={[
+              styles.fieldCell,
+              fieldColumns === 3 && styles.fieldCellThreeColumns,
+            ]}
+          >
+            <Text style={styles.fieldLabel}>{field.label}</Text>
+            <View style={styles.fieldValue}>
+              {typeof field.value === 'string' ||
+              typeof field.value === 'number' ? (
+                <Text style={styles.fieldValueText}>
+                  {field.value === '' || field.value == null
+                    ? '—'
+                    : String(field.value)}
+                </Text>
+              ) : (
+                field.value ?? <Text style={styles.fieldValueText}>—</Text>
+              )}
+            </View>
+          </View>
+        ))}
+      </View>
+    ) : null;
+
   return (
     <KolamCardFrame
       accessibilityLabel={title}
@@ -77,33 +111,14 @@ export function KolamDetailSummaryCard({
         ) : null}
       </View>
 
-      {fields.length > 0 ? (
-        <View style={styles.fieldGrid}>
-          {fields.map(field => (
-            <View
-              key={field.id}
-              style={[
-                styles.fieldCell,
-                fieldColumns === 3 && styles.fieldCellThreeColumns,
-              ]}
-            >
-              <Text style={styles.fieldLabel}>{field.label}</Text>
-              <View style={styles.fieldValue}>
-                {typeof field.value === 'string' ||
-                typeof field.value === 'number' ? (
-                  <Text style={styles.fieldValueText}>
-                    {field.value === '' || field.value == null
-                      ? '—'
-                      : String(field.value)}
-                  </Text>
-                ) : (
-                  field.value ?? <Text style={styles.fieldValueText}>—</Text>
-                )}
-              </View>
-            </View>
-          ))}
+      {leading ? (
+        <View style={styles.leadingRow}>
+          <View style={[styles.leadingSlot, leadingStyle]}>{leading}</View>
+          <View style={styles.leadingContent}>{fieldGrid}</View>
         </View>
-      ) : null}
+      ) : (
+        fieldGrid
+      )}
 
       {body ? (
         <SummaryBodyPanel title={bodyTitle}>{body}</SummaryBodyPanel>
@@ -143,6 +158,25 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     marginHorizontal: -4,
+  },
+  leadingRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  leadingSlot: {
+    alignItems: 'center',
+    flexBasis: '24%',
+    flexGrow: 1,
+    justifyContent: 'center',
+    minHeight: 152,
+    minWidth: 180,
+  },
+  leadingContent: {
+    flexBasis: '72%',
+    flexGrow: 3,
+    minWidth: 360,
   },
   fieldCell: {
     flexBasis: '46%',
