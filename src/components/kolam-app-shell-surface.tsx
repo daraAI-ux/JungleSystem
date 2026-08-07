@@ -74,6 +74,7 @@ function KolamAppShellSurfaceComponent({
     styles.mainContent,
     workspaceScrollPolicy.layout === 'centered' && styles.dashboardPageContent,
   ];
+  const shellScrollKey = rightRail ? 'right-rail-open' : 'right-rail-closed';
 
   return (
     <KolamShellFrame variant="appShell">
@@ -99,6 +100,7 @@ function KolamAppShellSurfaceComponent({
             </View>
           ) : (
             <ScrollView
+              key={shellScrollKey}
               ref={shellScrollRef}
               keyboardShouldPersistTaps="handled"
               style={styles.mainScroll}
