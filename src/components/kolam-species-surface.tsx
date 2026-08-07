@@ -1012,6 +1012,7 @@ function KolamSpeciesActionsMenu({
     <View style={actionMenuOpen ? styles.speciesActionMenuRaised : null}>
       <KolamOverflowMenuButton
         accessibilityLabel={`Menu ${item.displayName}`}
+        floating
         onOpenChange={setActionMenuOpen}
         actions={[
           { label: 'Lihat', onPress: onSelect },

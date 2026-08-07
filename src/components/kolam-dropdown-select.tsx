@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -276,6 +277,7 @@ function normalizeDropdownSearch(value: string) {
 export function KolamOverflowMenuButton({
   actions,
   accessibilityLabel = 'Menu aksi',
+  floating = false,
   onOpenChange,
 }: {
   accessibilityLabel?: string;
@@ -285,10 +287,15 @@ export function KolamOverflowMenuButton({
     onPress: () => void;
     tone?: 'default' | 'danger';
   }>;
+  floating?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [placement, setPlacement] = React.useState<'bottom' | 'top'>('bottom');
+  const [floatingPosition, setFloatingPosition] = React.useState({
+    left: 0,
+    top: 0,
+  });
   const rootRef = React.useRef<View>(null);
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
@@ -323,14 +330,14 @@ export function KolamOverflowMenuButton({
     onOpenChange?.(next);
   };
   const measureAndOpen = () => {
-    setMenuOpen(true);
-
     const root = rootRef.current;
     if (!root || typeof root.measureInWindow !== 'function') {
+      setMenuOpen(true);
       return;
     }
 
     root.measureInWindow((_x, y, _width, height) => {
+      const menuWidth = 220;
       const estimatedMenuHeight = Math.max(48, actions.length * 35 + 14);
       const availableAbove = y;
       const availableBelow = viewport.height - (y + height);
@@ -339,6 +346,21 @@ export function KolamOverflowMenuButton({
         availableAbove > availableBelow;
 
       setPlacement(shouldOpenUp ? 'top' : 'bottom');
+      if (floating) {
+        const left = Math.min(
+          Math.max(8, _x + _width - menuWidth),
+          Math.max(8, viewport.width - menuWidth - 8),
+        );
+        const top = shouldOpenUp
+          ? Math.max(8, y - estimatedMenuHeight - 4)
+          : Math.min(
+              y + height + 4,
+              Math.max(8, viewport.height - estimatedMenuHeight - 8),
+            );
+
+        setFloatingPosition({ left, top });
+      }
+      setMenuOpen(true);
     });
   };
   const toggleMenu = () => {
@@ -350,6 +372,38 @@ export function KolamOverflowMenuButton({
     requestAnimationFrame(measureAndOpen);
   };
 
+  const menu = (
+    <View
+      style={[
+        styles.overflowMenu,
+        floating
+          ? [styles.overflowMenuFloating, floatingPosition]
+          : placement === 'top'
+            ? styles.overflowMenuUp
+            : styles.overflowMenuDown,
+      ]}
+    >
+      {actions.map(action => (
+        <KolamButton
+          disabled={action.disabled}
+          intent={action.tone === 'danger' ? 'danger' : 'plain'}
+          key={action.label}
+          label={action.label}
+          onPress={() => {
+            if (action.disabled) {
+              return;
+            }
+
+            setMenuOpen(false);
+            action.onPress();
+          }}
+          style={styles.overflowOption}
+          textStyle={styles.overflowOptionText}
+        />
+      ))}
+    </View>
+  );
+
   return (
     <View ref={rootRef} style={styles.overflowRoot}>
       <KolamButton
@@ -360,35 +414,23 @@ export function KolamOverflowMenuButton({
         style={styles.overflowButton}
         textStyle={styles.overflowText}
       />
-      {open ? (
-        <View
-          style={[
-            styles.overflowMenu,
-            placement === 'top'
-              ? styles.overflowMenuUp
-              : styles.overflowMenuDown,
-          ]}
+      {open && floating ? (
+        <Modal
+          animationType="none"
+          onRequestClose={() => setMenuOpen(false)}
+          transparent
+          visible
         >
-          {actions.map(action => (
-            <KolamButton
-              disabled={action.disabled}
-              intent={action.tone === 'danger' ? 'danger' : 'plain'}
-              key={action.label}
-              label={action.label}
-              onPress={() => {
-                if (action.disabled) {
-                  return;
-                }
-
-                setMenuOpen(false);
-                action.onPress();
-              }}
-              style={styles.overflowOption}
-              textStyle={styles.overflowOptionText}
-            />
-          ))}
-        </View>
+          <Pressable
+            accessibilityLabel="Tutup menu aksi"
+            accessibilityRole="button"
+            onPress={() => setMenuOpen(false)}
+            style={styles.overflowModalDismiss}
+          />
+          {menu}
+        </Modal>
       ) : null}
+      {open && !floating ? menu : null}
     </View>
   );
 }
@@ -559,6 +601,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 16,
   },
+  overflowMenuFloating: {
+    elevation: 2000000,
+    minWidth: 220,
+    zIndex: 2000000,
+  },
   overflowMenuDown: {
     top: 34,
     right: 42,
@@ -578,5 +625,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
     textAlign: 'left',
+  },
+  overflowModalDismiss: {
+    ...StyleSheet.absoluteFillObject,
   },
 });
