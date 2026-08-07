@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -58,7 +57,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
   accessibilityLabel,
   label,
   menuPlacement = 'overlay',
-  menuPortal = false,
   menuStyle,
   onChange,
   onOpenChange,
@@ -74,7 +72,6 @@ export function KolamDropdownSelect<TValue extends string = string>({
   accessibilityLabel?: string;
   label: string;
   menuPlacement?: 'overlay' | 'inline';
-  menuPortal?: boolean;
   menuStyle?: StyleProp<ViewStyle>;
   onChange: (value: TValue) => void;
   onOpenChange?: (open: boolean) => void;
@@ -88,19 +85,10 @@ export function KolamDropdownSelect<TValue extends string = string>({
   value: TValue;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [portalFrame, setPortalFrame] = React.useState<{
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  } | null>(null);
   const [query, setQuery] = React.useState('');
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
-  const rootRef = React.useRef<View>(null);
-  const viewport = useWindowDimensions();
   const rowLayer = useKolamListTableRowLayer();
   const inlineMenu = menuPlacement === 'inline';
-  const portalMenu = menuPortal && !inlineMenu;
   const selected = options.find(option => option.value === value) ?? options[0];
   const selectedLabel = selected?.label ?? '-';
   const triggerLabel = showLabelInTrigger
@@ -144,36 +132,25 @@ export function KolamDropdownSelect<TValue extends string = string>({
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
-    setPortalFrame(null);
     if (!inlineMenu) {
       clearActiveOpenMenu(openMenuIdRef.current);
     }
     onOpenChange?.(false);
   };
-  const measurePortalFrame = React.useCallback(() => {
-    const root = rootRef.current;
-    if (!root || typeof root.measureInWindow !== 'function') {
-      return;
-    }
-
-    root.measureInWindow((x, y, width, height) => {
-      setPortalFrame({ height, width, x, y });
-    });
-  }, []);
   const toggleOpen = () => {
-    if (open) {
-      closeMenu();
-      return;
-    }
-
-    if (!inlineMenu) {
-      setActiveOpenMenu(openMenuIdRef.current);
-    }
-    if (portalMenu) {
-      requestAnimationFrame(measurePortalFrame);
-    }
-    setOpen(true);
-    onOpenChange?.(true);
+    setOpen(current => {
+      const next = !current;
+      if (!next) {
+        setQuery('');
+        if (!inlineMenu) {
+          clearActiveOpenMenu(openMenuIdRef.current);
+        }
+      } else if (!inlineMenu) {
+        setActiveOpenMenu(openMenuIdRef.current);
+      }
+      onOpenChange?.(next);
+      return next;
+    });
   };
 
   React.useEffect(() => {
@@ -190,27 +167,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
     <View
       style={[
         styles.menu,
-        inlineMenu
-          ? styles.inlineMenu
-          : portalMenu
-            ? [
-                styles.portalMenu,
-                {
-                  left: Math.max(
-                    12,
-                    Math.min(
-                      portalFrame?.x ?? 12,
-                      viewport.width - Math.max(portalFrame?.width ?? 260, 260) - 12,
-                    ),
-                  ),
-                  minWidth: Math.max(portalFrame?.width ?? 260, 260),
-                  top: Math.min(
-                    (portalFrame?.y ?? 0) + (portalFrame?.height ?? V.control.inputHeight) + 4,
-                    viewport.height - 280,
-                  ),
-                },
-              ]
-            : styles.anchoredMenu,
+        inlineMenu ? styles.inlineMenu : styles.anchoredMenu,
         menuStyle,
       ]}
     >
@@ -270,7 +227,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
   );
 
   return (
-    <View ref={rootRef} style={[styles.root, style, open && styles.rootOpen]}>
+    <View style={[styles.root, style, open && styles.rootOpen]}>
       <KolamInteractionFrame
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ expanded: open }}
@@ -295,7 +252,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
           <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
         </View>
       </KolamInteractionFrame>
-      {open && !inlineMenu && !portalMenu ? (
+      {open && !inlineMenu ? (
         <Pressable
           accessibilityLabel="Tutup dropdown"
           accessibilityRole="button"
@@ -303,26 +260,7 @@ export function KolamDropdownSelect<TValue extends string = string>({
           style={styles.dismissLayer}
         />
       ) : null}
-      {open && portalMenu ? (
-        <Modal
-          animationType="none"
-          onRequestClose={closeMenu}
-          transparent
-          visible={open}
-        >
-          <View style={styles.portalLayer}>
-            <Pressable
-              accessibilityLabel="Tutup dropdown"
-              accessibilityRole="button"
-              onPress={closeMenu}
-              style={styles.portalDismissLayer}
-            />
-            {menu}
-          </View>
-        </Modal>
-      ) : open ? (
-        menu
-      ) : null}
+      {open ? menu : null}
     </View>
   );
 }
@@ -540,22 +478,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     top: 0,
     width: '100%',
-  },
-  portalLayer: {
-    flex: 1,
-  },
-  portalDismissLayer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
-  portalMenu: {
-    position: 'absolute',
-    right: undefined,
-    zIndex: 3000000,
-    elevation: 3000000,
   },
   searchRow: {
     minHeight: 42,
