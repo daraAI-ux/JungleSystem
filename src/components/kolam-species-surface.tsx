@@ -1168,7 +1168,11 @@ function KolamSpeciesForm({
             >
               <View style={styles.speciesBasicInfoCard}>
                 <View style={styles.twoColumnGrid}>
-                  <FieldShell label="Nama Ilmiah" required>
+                  <FieldShell
+                    label="Nama Ilmiah"
+                    required
+                    style={styles.speciesBasicInfoHalfField}
+                  >
                     <KolamFormTextField
                       editable={!controller.saving}
                       onChangeText={scientificName =>
@@ -1179,7 +1183,10 @@ function KolamSpeciesForm({
                       value={form.scientificName}
                     />
                   </FieldShell>
-                  <FieldShell label="Judul Katalog">
+                  <FieldShell
+                    label="Judul Katalog"
+                    style={styles.speciesBasicInfoHalfField}
+                  >
                     <KolamFormTextField
                       editable={!controller.saving}
                       onChangeText={displayName =>
@@ -1192,7 +1199,10 @@ function KolamSpeciesForm({
                   </FieldShell>
                 </View>
                 <View style={styles.twoColumnGrid}>
-                  <FieldShell label="Nama Umum">
+                  <FieldShell
+                    label="Nama Umum"
+                    style={styles.speciesBasicInfoHalfField}
+                  >
                     <KolamFormTextField
                       editable={!controller.saving}
                       onChangeText={commonName =>
@@ -1203,7 +1213,10 @@ function KolamSpeciesForm({
                       value={form.commonName}
                     />
                   </FieldShell>
-                  <FieldShell label="Nama Lokal">
+                  <FieldShell
+                    label="Nama Lokal"
+                    style={styles.speciesBasicInfoHalfField}
+                  >
                     <KolamFormTextField
                       editable={!controller.saving}
                       onChangeText={localName =>
@@ -1237,7 +1250,10 @@ function KolamSpeciesForm({
                   />
                 </FieldShell>
                 <View style={styles.twoColumnGrid}>
-                  <FieldShell label="Status">
+                  <FieldShell
+                    label="Status"
+                    style={styles.speciesBasicInfoHalfField}
+                  >
                     <KolamDropdownSelect<KolamSpeciesStatus>
                       label="Status"
                       onChange={status => controller.onChangeForm({ status })}
@@ -1250,7 +1266,11 @@ function KolamSpeciesForm({
                       value={form.status}
                     />
                   </FieldShell>
-                  <FieldShell label="Kategori" required>
+                  <FieldShell
+                    label="Kategori"
+                    required
+                    style={styles.speciesBasicInfoHalfField}
+                  >
                     <View style={styles.categoryPickerStack}>
                       <KolamDropdownSelect
                         accessibilityLabel="Tambah kategori spesies"
@@ -5030,13 +5050,15 @@ function FieldShell({
   children,
   label,
   required = false,
+  style,
 }: {
   children: React.ReactNode;
   label: string;
   required?: boolean;
+  style?: React.ComponentProps<typeof View>['style'];
 }) {
   return (
-    <View style={settingsWebFormStyles.settingsWebFormField}>
+    <View style={[settingsWebFormStyles.settingsWebFormField, style]}>
       <KolamCopyStack
         items={[
           {
@@ -6735,6 +6757,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 12,
     padding: 12,
+  },
+  speciesBasicInfoHalfField: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 240,
   },
   summaryGrid: {
     flexDirection: 'row',
