@@ -30,6 +30,7 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
@@ -984,9 +985,10 @@ function KolamStockTransactionList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamExportXlsButton
                 disabled={controller.exporting || controller.loading}
-                label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+                label="Ekspor"
+                loading={controller.exporting}
                 onPress={() => {
                   void controller.onExport();
                 }}

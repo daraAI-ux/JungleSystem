@@ -53,6 +53,7 @@ import {
   KolamOverflowMenuButton,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import {
@@ -206,9 +207,10 @@ function KolamProductionList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamExportXlsButton
                 disabled={controller.exporting || controller.loading}
-                label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+                label="Ekspor"
+                loading={controller.exporting}
                 onPress={() => void controller.onExportList()}
                 style={styles.toolbarButton}
               />

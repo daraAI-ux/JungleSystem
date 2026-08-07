@@ -24,6 +24,7 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDateField } from './kolam-date-field';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
@@ -302,9 +303,10 @@ function KolamStockOpnameList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamExportXlsButton
                 disabled={controller.exporting || controller.loading}
-                label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
+                label="Ekspor"
+                loading={controller.exporting}
                 onPress={() => {
                   void controller.onExport();
                 }}

@@ -62,6 +62,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { openKolamImagePreview } from './kolam-image-preview-dialog';
@@ -194,8 +195,7 @@ function KolamProyekList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              intent="outline"
+            <KolamExportXlsButton
               label="Export XLSX"
               onPress={() => setExportDialogOpen(true)}
             />

@@ -39,6 +39,7 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamPayableFormSurface } from './kolam-payable-form-surface';
@@ -367,8 +368,7 @@ function PayableToolbar({
               ) : null}
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
-                intent="secondary"
+              <KolamExportXlsButton
                 label="Export XLS"
                 onPress={() => {
                   closePanels();

@@ -44,6 +44,7 @@ import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
@@ -352,7 +353,7 @@ export function KolamStockOpnameDetail({
               onPress={() => setDeleteOpen(true)}
             />
           ) : null}
-          <KolamButton
+          <KolamExportXlsButton
             disabled={controller.acting}
             label="Ekspor XLSX"
             onPress={() => {

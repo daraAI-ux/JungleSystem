@@ -14,6 +14,7 @@ import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 
 interface KolamExportDialogProps {
@@ -295,9 +296,8 @@ export function KolamExportDialog({
             ]}
           />
           <KolamCancelButton disabled={downloading} onPress={close} />
-          <KolamButton
+          <KolamExportXlsButton
             disabled={downloading || loading || !validSelectedFields.length}
-            intent="primary"
             label={downloading ? 'Mengekspor...' : 'Export XLSX'}
             onPress={() => {
               void handleExport();

@@ -54,6 +54,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -346,9 +347,10 @@ function KolamSalesOpsList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamExportXlsButton
                 disabled={controller.exporting}
-                label={controller.exporting ? 'Mengekspor…' : 'Export'}
+                label="Export"
+                loading={controller.exporting}
                 onPress={() => {
                   void controller.onExportList();
                 }}

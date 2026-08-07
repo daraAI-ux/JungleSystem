@@ -65,6 +65,7 @@ import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -407,7 +408,7 @@ export function KolamProductSurface({
                 ) : null}
               </View>
               <View style={kolamTableToolbarStyles.actions}>
-                <KolamButton
+                <KolamExportXlsButton
                   label="Ekspor"
                   onPress={() => setExportOpen(true)}
                 />

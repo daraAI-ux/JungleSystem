@@ -57,6 +57,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { type KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import { KolamListTableComposition } from './kolam-list-table-composition';
@@ -1262,9 +1263,8 @@ function WalletTransactionPanel({
             onRouteChange={onRouteChange}
             showCreate={showCreateButton && controller.mode === 'list'}
             trailing={[
-              <KolamButton
+              <KolamExportXlsButton
                 key="export"
-                intent="secondary"
                 label="Ekspor"
                 onPress={() => setExportOpen(true)}
                 style={styles.filterTrigger}

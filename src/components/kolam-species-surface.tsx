@@ -63,6 +63,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -416,7 +417,7 @@ function KolamSpeciesList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
+              <KolamExportXlsButton
                 label="Export"
                 onPress={() => setExportDialogOpen(true)}
               />

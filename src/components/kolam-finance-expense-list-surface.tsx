@@ -49,6 +49,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
+import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
@@ -761,8 +762,7 @@ function FinanceExpenseListBody({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             {hasExport ? (
-              <KolamButton
-                intent="secondary"
+              <KolamExportXlsButton
                 label="Ekspor"
                 onPress={() => setExportOpen(true)}
               />
