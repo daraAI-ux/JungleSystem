@@ -1374,11 +1374,18 @@ function KolamSpeciesForm({
               description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
               title="Varian"
             >
-              <SpeciesVariantEditorPanel
-                controller={controller}
-                onDeleteMedia={setDeleteMediaTarget}
-                onDeleteVariant={setDeleteVariantTarget}
-              />
+              <View
+                style={[
+                  styles.speciesBasicInfoCard,
+                  styles.customFieldSettingsCard,
+                ]}
+              >
+                <SpeciesVariantEditorPanel
+                  controller={controller}
+                  onDeleteMedia={setDeleteMediaTarget}
+                  onDeleteVariant={setDeleteVariantTarget}
+                />
+              </View>
             </SpeciesEditSection>
 
             {showRootOnlySections ? (
