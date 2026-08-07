@@ -6,6 +6,8 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import {SvgXml} from 'react-native-svg';
+import {KOLAM_NEW_BUTTON_ICON_SVG} from '../assets/icons/new-button-icon-svg';
 import {
   getKolamButtonVisualContract,
   type KolamButtonIntent,
@@ -17,6 +19,7 @@ import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 
 const KOLAM_BUTTON_VISUAL = getKolamButtonVisualContract();
+const KOLAM_NEW_BUTTON_LABEL = 'Baru';
 
 export interface KolamButtonProps {
   label: string;
@@ -46,6 +49,11 @@ export function KolamButton({
   accessibilityLabel,
 }: KolamButtonProps) {
   const unavailable = disabled || muted;
+  const resolvedIcon =
+    icon ??
+    (label === KOLAM_NEW_BUTTON_LABEL ? (
+      <SvgXml height="100%" width="100%" xml={KOLAM_NEW_BUTTON_ICON_SVG} />
+    ) : null);
 
   return (
     <KolamInteractionFrame
@@ -60,7 +68,7 @@ export function KolamButton({
         style,
         unavailable && styles.buttonMuted,
       ]}>
-      {icon ? <View style={styles.icon}>{icon}</View> : null}
+      {resolvedIcon ? <View style={styles.icon}>{resolvedIcon}</View> : null}
       <KolamCopyStack
         items={[
           {
