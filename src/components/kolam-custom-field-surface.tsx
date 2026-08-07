@@ -780,26 +780,25 @@ function KolamCustomFieldForm({
                 </FieldShell>
               </View>
             </View>
-            <View style={styles.formSplitCell}>
-              <View style={styles.customFieldDropdownSettingsCard}>
-                <View style={styles.customFieldSwitchRow}>
-                  <Text style={styles.customFieldSwitchLabel}>Field Wajib</Text>
-                  <KolamSwitch
-                    accessibilityLabel="Field Wajib"
-                    active={form.required}
-                    disabled={controller.saving}
-                    onPress={() =>
-                      controller.onChangeForm({
-                        required: !form.required,
-                      })
-                    }
-                  />
-                </View>
+          </View>
+          <View style={styles.customFieldDropdownSettingsCard}>
+            <Text style={styles.customFieldRulesTitle}>Aturan Validasi</Text>
+            <View style={styles.customFieldRulesSection}>
+              <View style={styles.customFieldSwitchRow}>
+                <Text style={styles.customFieldSwitchLabel}>Field Wajib</Text>
+                <KolamSwitch
+                  accessibilityLabel="Field Wajib"
+                  active={form.required}
+                  disabled={controller.saving}
+                  onPress={() =>
+                    controller.onChangeForm({
+                      required: !form.required,
+                    })
+                  }
+                />
               </View>
             </View>
-          </View>
-          <>
-            <View style={styles.customFieldDropdownSettingsCard}>
+            <View style={styles.customFieldRulesSection}>
               <View style={styles.customFieldSwitchRow}>
                 <Text style={styles.customFieldSwitchLabel}>
                   Memerlukan Satuan (hanya angka/rentang)
@@ -840,7 +839,7 @@ function KolamCustomFieldForm({
                 </View>
               ) : null}
             </View>
-            <View style={styles.customFieldDropdownSettingsCard}>
+            <View style={styles.customFieldRulesSection}>
               <View style={styles.customFieldSwitchRow}>
                 <Text style={styles.customFieldSwitchLabel}>
                   Aktifkan Min/Max (hanya angka/rentang)
@@ -927,7 +926,7 @@ function KolamCustomFieldForm({
                 </FieldShell>
               </View>
             </View>
-          </>
+          </View>
           <View style={styles.customFieldAssetSettingsCard}>
             <KolamSettingsWebFileField
               accessibilityLabel="Icon field kustom"
@@ -1697,6 +1696,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     padding: 10,
+  },
+  customFieldRulesTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  customFieldRulesSection: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    marginTop: 10,
+    paddingTop: 10,
   },
   customFieldSwitchRow: {
     alignItems: 'center',
