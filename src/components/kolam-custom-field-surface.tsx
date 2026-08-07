@@ -781,166 +781,188 @@ function KolamCustomFieldForm({
               </View>
             </View>
           </View>
-          <View style={styles.customFieldDropdownSettingsCard}>
-            <Text style={styles.customFieldRulesTitle}>Aturan Validasi</Text>
-            <View style={styles.customFieldRulesSection}>
-              <View style={styles.customFieldSwitchRow}>
-                <Text style={styles.customFieldSwitchLabel}>Field Wajib</Text>
-                <KolamSwitch
-                  accessibilityLabel="Field Wajib"
-                  active={form.required}
-                  disabled={controller.saving}
-                  onPress={() =>
-                    controller.onChangeForm({
-                      required: !form.required,
-                    })
-                  }
-                />
-              </View>
-            </View>
-            <View style={styles.customFieldRulesSection}>
-              <View style={styles.customFieldSwitchRow}>
-                <Text style={styles.customFieldSwitchLabel}>
-                  Memerlukan Satuan (hanya angka/rentang)
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <View style={styles.customFieldDropdownSettingsCard}>
+                <Text style={styles.customFieldRulesTitle}>
+                  Aturan Validasi
                 </Text>
-                <KolamSwitch
-                  accessibilityLabel="Memerlukan Satuan"
-                  active={numericLike && form.requiresUnit}
-                  disabled={controller.saving || !numericLike}
-                  onPress={() => {
-                    const nextRequiresUnit = !form.requiresUnit;
-                    if (nextRequiresUnit) {
-                      controller.onChangeForm({ requiresUnit: true });
-                      return;
-                    }
-
-                    controller.onChangeForm({
-                      requiresUnit: false,
-                      unitId: '',
-                    });
-                  }}
-                />
-              </View>
-              {numericLike && form.requiresUnit ? (
-                <View style={styles.customFieldNestedField}>
-                  <FieldShell label="Satuan" required>
-                    <KolamDropdownSelect<string>
-                      label="Satuan"
-                      onChange={unitId => controller.onChangeForm({ unitId })}
-                      options={controller.units.map(unit => ({
-                        label: unit.initial
-                          ? `${unit.name} (${unit.initial})`
-                          : unit.name,
-                        value: unit.id,
-                      }))}
-                      value={form.unitId}
-                    />
-                  </FieldShell>
-                </View>
-              ) : null}
-            </View>
-            <View style={styles.customFieldRulesSection}>
-              <View style={styles.customFieldSwitchRow}>
-                <Text style={styles.customFieldSwitchLabel}>
-                  Aktifkan Min/Max (hanya angka/rentang)
-                </Text>
-                <KolamSwitch
-                  accessibilityLabel="Aktifkan Min/Max"
-                  active={numericLike && form.hasMinMax}
-                  disabled={controller.saving || !numericLike}
-                  onPress={() => {
-                    const nextHasMinMax = !form.hasMinMax;
-                    if (nextHasMinMax) {
-                      controller.onChangeForm({ hasMinMax: true });
-                      return;
-                    }
-
-                    controller.onChangeForm({
-                      hasMinMax: false,
-                      maxAllowed: '',
-                      minAllowed: '',
-                    });
-                  }}
-                />
-              </View>
-              {numericLike && form.hasMinMax ? (
-                <View style={[styles.formSplitRow, styles.customFieldNestedField]}>
-                  <View style={styles.formSplitCell}>
-                    <FieldShell label="Min Diizinkan">
-                      <KolamFormTextField
-                        editable={!controller.saving}
-                        keyboardType="numeric"
-                        onChangeText={minAllowed =>
-                          controller.onChangeForm({ minAllowed })
-                        }
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.minAllowed}
-                      />
-                    </FieldShell>
-                  </View>
-                  <View style={styles.formSplitCell}>
-                    <FieldShell label="Max Diizinkan">
-                      <KolamFormTextField
-                        editable={!controller.saving}
-                        keyboardType="numeric"
-                        onChangeText={maxAllowed =>
-                          controller.onChangeForm({ maxAllowed })
-                        }
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.maxAllowed}
-                      />
-                    </FieldShell>
-                  </View>
-                </View>
-              ) : null}
-              <View style={styles.customFieldNestedField}>
-                <FieldShell label="Nilai Default">
-                  {form.fieldType === 'boolean' ? (
-                    <View style={styles.segmentRow}>
-                      <KolamButton
-                        intent={form.defaultBoolean ? 'primary' : 'outline'}
-                        label="Ya"
-                        onPress={() =>
-                          controller.onChangeForm({ defaultBoolean: true })
-                        }
-                      />
-                      <KolamButton
-                        intent={!form.defaultBoolean ? 'primary' : 'outline'}
-                        label="Tidak"
-                        onPress={() =>
-                          controller.onChangeForm({ defaultBoolean: false })
-                        }
-                      />
-                    </View>
-                  ) : (
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType={numericLike ? 'numeric' : 'default'}
-                      onChangeText={defaultValueText =>
-                        controller.onChangeForm({ defaultValueText })
+                <View style={styles.customFieldRulesSection}>
+                  <View style={styles.customFieldSwitchRow}>
+                    <Text style={styles.customFieldSwitchLabel}>
+                      Field Wajib
+                    </Text>
+                    <KolamSwitch
+                      accessibilityLabel="Field Wajib"
+                      active={form.required}
+                      disabled={controller.saving}
+                      onPress={() =>
+                        controller.onChangeForm({
+                          required: !form.required,
+                        })
                       }
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={form.defaultValueText}
                     />
-                  )}
-                </FieldShell>
+                  </View>
+                </View>
+                <View style={styles.customFieldRulesSection}>
+                  <View style={styles.customFieldSwitchRow}>
+                    <Text style={styles.customFieldSwitchLabel}>
+                      Memerlukan Satuan (hanya angka/rentang)
+                    </Text>
+                    <KolamSwitch
+                      accessibilityLabel="Memerlukan Satuan"
+                      active={numericLike && form.requiresUnit}
+                      disabled={controller.saving || !numericLike}
+                      onPress={() => {
+                        const nextRequiresUnit = !form.requiresUnit;
+                        if (nextRequiresUnit) {
+                          controller.onChangeForm({ requiresUnit: true });
+                          return;
+                        }
+
+                        controller.onChangeForm({
+                          requiresUnit: false,
+                          unitId: '',
+                        });
+                      }}
+                    />
+                  </View>
+                  {numericLike && form.requiresUnit ? (
+                    <View style={styles.customFieldNestedField}>
+                      <FieldShell label="Satuan" required>
+                        <KolamDropdownSelect<string>
+                          label="Satuan"
+                          onChange={unitId =>
+                            controller.onChangeForm({ unitId })
+                          }
+                          options={controller.units.map(unit => ({
+                            label: unit.initial
+                              ? `${unit.name} (${unit.initial})`
+                              : unit.name,
+                            value: unit.id,
+                          }))}
+                          value={form.unitId}
+                        />
+                      </FieldShell>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.customFieldRulesSection}>
+                  <View style={styles.customFieldSwitchRow}>
+                    <Text style={styles.customFieldSwitchLabel}>
+                      Aktifkan Min/Max (hanya angka/rentang)
+                    </Text>
+                    <KolamSwitch
+                      accessibilityLabel="Aktifkan Min/Max"
+                      active={numericLike && form.hasMinMax}
+                      disabled={controller.saving || !numericLike}
+                      onPress={() => {
+                        const nextHasMinMax = !form.hasMinMax;
+                        if (nextHasMinMax) {
+                          controller.onChangeForm({ hasMinMax: true });
+                          return;
+                        }
+
+                        controller.onChangeForm({
+                          hasMinMax: false,
+                          maxAllowed: '',
+                          minAllowed: '',
+                        });
+                      }}
+                    />
+                  </View>
+                  {numericLike && form.hasMinMax ? (
+                    <View
+                      style={[
+                        styles.formSplitRow,
+                        styles.customFieldNestedField,
+                      ]}>
+                      <View style={styles.formSplitCell}>
+                        <FieldShell label="Min Diizinkan">
+                          <KolamFormTextField
+                            editable={!controller.saving}
+                            keyboardType="numeric"
+                            onChangeText={minAllowed =>
+                              controller.onChangeForm({ minAllowed })
+                            }
+                            style={
+                              settingsWebFormStyles.settingsWebFormFieldValue
+                            }
+                            value={form.minAllowed}
+                          />
+                        </FieldShell>
+                      </View>
+                      <View style={styles.formSplitCell}>
+                        <FieldShell label="Max Diizinkan">
+                          <KolamFormTextField
+                            editable={!controller.saving}
+                            keyboardType="numeric"
+                            onChangeText={maxAllowed =>
+                              controller.onChangeForm({ maxAllowed })
+                            }
+                            style={
+                              settingsWebFormStyles.settingsWebFormFieldValue
+                            }
+                            value={form.maxAllowed}
+                          />
+                        </FieldShell>
+                      </View>
+                    </View>
+                  ) : null}
+                  <View style={styles.customFieldNestedField}>
+                    <FieldShell label="Nilai Default">
+                      {form.fieldType === 'boolean' ? (
+                        <View style={styles.segmentRow}>
+                          <KolamButton
+                            intent={form.defaultBoolean ? 'primary' : 'outline'}
+                            label="Ya"
+                            onPress={() =>
+                              controller.onChangeForm({ defaultBoolean: true })
+                            }
+                          />
+                          <KolamButton
+                            intent={
+                              !form.defaultBoolean ? 'primary' : 'outline'
+                            }
+                            label="Tidak"
+                            onPress={() =>
+                              controller.onChangeForm({ defaultBoolean: false })
+                            }
+                          />
+                        </View>
+                      ) : (
+                        <KolamFormTextField
+                          editable={!controller.saving}
+                          keyboardType={numericLike ? 'numeric' : 'default'}
+                          onChangeText={defaultValueText =>
+                            controller.onChangeForm({ defaultValueText })
+                          }
+                          style={settingsWebFormStyles.settingsWebFormFieldValue}
+                          value={form.defaultValueText}
+                        />
+                      )}
+                    </FieldShell>
+                  </View>
+                </View>
               </View>
             </View>
-          </View>
-          <View style={styles.customFieldAssetSettingsCard}>
-            <KolamSettingsWebFileField
-              accessibilityLabel="Icon field kustom"
-              actionLabel="Pilih file"
-              emptyLabel="Icon belum diatur"
-              onLocalValueChange={iconLocalUri =>
-                controller.onChangeForm({ iconLocalUri })
-              }
-              onUpload={() => {
-                void controller.onPickIcon();
-              }}
-              scope="custom-field-icon"
-              value={form.iconLocalUri || form.iconRemoteUrl}
-            />
+            <View style={styles.formSplitCell}>
+              <View style={styles.customFieldAssetSettingsCard}>
+                <KolamSettingsWebFileField
+                  accessibilityLabel="Icon field kustom"
+                  actionLabel="Pilih file"
+                  emptyLabel="Icon belum diatur"
+                  onLocalValueChange={iconLocalUri =>
+                    controller.onChangeForm({ iconLocalUri })
+                  }
+                  onUpload={() => {
+                    void controller.onPickIcon();
+                  }}
+                  scope="custom-field-icon"
+                  value={form.iconLocalUri || form.iconRemoteUrl}
+                />
+              </View>
+            </View>
           </View>
           <KolamCatalogTranslationsEditor
             editable={!controller.saving}
