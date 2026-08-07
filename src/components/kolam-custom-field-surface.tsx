@@ -822,22 +822,24 @@ function KolamCustomFieldForm({
                   }}
                 />
               </View>
+              {numericLike && form.requiresUnit ? (
+                <View style={styles.customFieldNestedField}>
+                  <FieldShell label="Satuan" required>
+                    <KolamDropdownSelect<string>
+                      label="Satuan"
+                      onChange={unitId => controller.onChangeForm({ unitId })}
+                      options={controller.units.map(unit => ({
+                        label: unit.initial
+                          ? `${unit.name} (${unit.initial})`
+                          : unit.name,
+                        value: unit.id,
+                      }))}
+                      value={form.unitId}
+                    />
+                  </FieldShell>
+                </View>
+              ) : null}
             </View>
-            {numericLike && form.requiresUnit ? (
-              <FieldShell label="Satuan" required>
-                <KolamDropdownSelect<string>
-                  label="Satuan"
-                  onChange={unitId => controller.onChangeForm({ unitId })}
-                  options={controller.units.map(unit => ({
-                    label: unit.initial
-                      ? `${unit.name} (${unit.initial})`
-                      : unit.name,
-                    value: unit.id,
-                  }))}
-                  value={form.unitId}
-                />
-              </FieldShell>
-            ) : null}
             <View style={styles.customFieldDropdownSettingsCard}>
               <View style={styles.customFieldSwitchRow}>
                 <Text style={styles.customFieldSwitchLabel}>
@@ -1707,6 +1709,9 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
+  },
+  customFieldNestedField: {
+    marginTop: 10,
   },
   textArea: {
     minHeight: 96,
