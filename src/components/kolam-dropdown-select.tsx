@@ -302,15 +302,9 @@ export function KolamOverflowMenuButton({
         return;
       }
 
-      setOpen(current => {
-        if (!current) {
-          return current;
-        }
-
-        onOpenChange?.(false);
-        rowLayer?.setMenuOpen(false);
-        return false;
-      });
+      setOpen(false);
+      onOpenChange?.(false);
+      rowLayer?.setMenuOpen(false);
     });
   }, [onOpenChange, rowLayer]);
 

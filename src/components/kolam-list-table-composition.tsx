@@ -152,7 +152,12 @@ function KolamListTableRow<TRow>({
     <KolamListTableRowLayerContext.Provider value={layerContext}>
       <View
         key={getRowKey(row, index)}
-        style={[styles.row, menuOpen ? styles.rowRaised : null, rowStyle]}
+        style={[
+          styles.row,
+          menuOpen ? styles.rowRaised : null,
+          menuOpen ? styles.rowMenuOpenSpace : null,
+          rowStyle,
+        ]}
       >
         {columns.map(column => (
           <View
@@ -458,6 +463,9 @@ const styles = StyleSheet.create({
   rowRaised: {
     elevation: 2000,
     zIndex: 2000,
+  },
+  rowMenuOpenSpace: {
+    paddingBottom: 500,
   },
   cell: kolamListTableCompositionStyles.cell,
   cellCenter: {
