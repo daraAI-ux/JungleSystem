@@ -87,4 +87,15 @@ Pilot domain/API tests used during the audit:
 - `__tests__/kolam-media-domain.test.ts`
 - `__tests__/kolam-media-api.test.ts`
 
-Runtime confirmation after app reload is still required for each pilot page.
+Runtime confirmation:
+
+- `/species` - confirmed in the running Windows app after resizing the
+  JungleSystem window to force vertical overflow. Wheel scroll moved the list
+  from top rows to lower rows; screenshot diff sampled 22,781 pixels with
+  1,802 changed pixels (7.91%). Evidence images:
+  `E:\Data\Dunia-Anura\temp.script\scroll-runtime\species-small-before.png`
+  and
+  `E:\Data\Dunia-Anura\temp.script\scroll-runtime\species-small-after.png`.
+
+Runtime confirmation after app reload is still required for the other pilot
+pages.
