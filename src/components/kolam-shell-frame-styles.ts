@@ -11,10 +11,12 @@ export const shellFrameStyles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: V.colors.bg,
+    position: 'relative',
   },
   appMain: {
     flex: 1,
     backgroundColor: V.colors.mainSurface,
+    minWidth: 0,
   },
   commandPaletteOverlay: {
     position: 'absolute',
