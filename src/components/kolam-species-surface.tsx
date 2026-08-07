@@ -1357,291 +1357,287 @@ function KolamSpeciesForm({
               ) : null}
             </SpeciesEditSection>
 
-            <SpeciesEditSection title="Lanjutan">
-              <View style={styles.speciesEditGroupedSections}>
-                <SpeciesEditSubSection
-                  description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
-                  title="Varian"
-                >
-                  <SpeciesVariantEditorPanel
-                    controller={controller}
-                    onDeleteMedia={setDeleteMediaTarget}
-                    onDeleteVariant={setDeleteVariantTarget}
-                  />
-                </SpeciesEditSubSection>
+            <SpeciesEditSection
+              description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
+              title="Varian"
+            >
+              <SpeciesVariantEditorPanel
+                controller={controller}
+                onDeleteMedia={setDeleteMediaTarget}
+                onDeleteVariant={setDeleteVariantTarget}
+              />
+            </SpeciesEditSection>
 
-                {showRootOnlySections ? (
-                  <SpeciesEditSubSection
-                    description="Komponen produksi untuk spesies tanpa varian."
-                    title="Bahan Penyusun"
-                  >
-                    <SpeciesRootComponentsPanel controller={controller} />
-                  </SpeciesEditSubSection>
-                ) : null}
+            {showRootOnlySections ? (
+              <SpeciesEditSection
+                description="Komponen produksi untuk spesies tanpa varian."
+                title="Bahan Penyusun"
+              >
+                <SpeciesRootComponentsPanel controller={controller} />
+              </SpeciesEditSection>
+            ) : null}
 
-                {showRootPricingSections ? (
-                  <SpeciesEditSubSection
-                    description="Harga jual dan harga bertingkat untuk spesies tanpa varian."
-                    title="Harga"
-                  >
-                    <SpeciesRootPricingPanel controller={controller} />
-                    <SpeciesGrocerPricingPanel
-                      disabled={controller.saving}
-                      hint="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk spesies tanpa varian; jika varian aktif, harga bertingkat diatur per varian."
-                      onChange={grocerPricingTiers =>
-                        controller.onChangeForm({ grocerPricingTiers })
-                      }
-                      rows={form.grocerPricingTiers}
-                      title="Harga Bertingkat / Grosir Spesies"
-                    />
-                  </SpeciesEditSubSection>
-                ) : null}
-
-                <SpeciesEditSubSection
-                  description={
-                    form.sellable && !hasVariants
-                      ? 'Poin anggota dan komisi transaksi spesies.'
-                      : 'Komisi transaksi spesies.'
+            {showRootPricingSections ? (
+              <SpeciesEditSection
+                description="Harga jual dan harga bertingkat untuk spesies tanpa varian."
+                title="Harga"
+              >
+                <SpeciesRootPricingPanel controller={controller} />
+                <SpeciesGrocerPricingPanel
+                  disabled={controller.saving}
+                  hint="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk spesies tanpa varian; jika varian aktif, harga bertingkat diatur per varian."
+                  onChange={grocerPricingTiers =>
+                    controller.onChangeForm({ grocerPricingTiers })
                   }
-                  title={
-                    form.sellable && !hasVariants
-                      ? 'Komisi dan Poin Anggota'
-                      : 'Komisi'
-                  }
-                >
-                  <SpeciesCommercialPolicyPanel
-                    disabled={controller.saving}
-                    memberPointsDisabled={!form.sellable || hasVariants}
-                    memberPointsHint={
-                      hasVariants
-                        ? 'Spesies ini memakai varian. Poin anggota diatur di tiap varian.'
-                        : form.sellable
-                        ? 'Poin yang didapat pelanggan per unit spesies.'
-                        : 'Aktifkan penjualan untuk mengatur poin anggota.'
+                  rows={form.grocerPricingTiers}
+                  title="Harga Bertingkat / Grosir Spesies"
+                />
+              </SpeciesEditSection>
+            ) : null}
+
+            <SpeciesEditSection
+              description={
+                form.sellable && !hasVariants
+                  ? 'Poin anggota dan komisi transaksi spesies.'
+                  : 'Komisi transaksi spesies.'
+              }
+              title={
+                form.sellable && !hasVariants
+                  ? 'Komisi dan Poin Anggota'
+                  : 'Komisi'
+              }
+            >
+              <SpeciesCommercialPolicyPanel
+                disabled={controller.saving}
+                memberPointsDisabled={!form.sellable || hasVariants}
+                memberPointsHint={
+                  hasVariants
+                    ? 'Spesies ini memakai varian. Poin anggota diatur di tiap varian.'
+                    : form.sellable
+                    ? 'Poin yang didapat pelanggan per unit spesies.'
+                    : 'Aktifkan penjualan untuk mengatur poin anggota.'
+                }
+                onChange={value =>
+                  controller.onChangeForm({
+                    commissionEnabled: value.commissionEnabled,
+                    commissionType: value.commissionType,
+                    commissionValue: value.commissionValue,
+                    memberPointsEnabled: value.memberPointsEnabled,
+                    memberPoints: value.memberPoints,
+                  })
+                }
+                title={
+                  form.sellable && !hasVariants
+                    ? 'Komisi dan Poin Anggota Spesies'
+                    : 'Komisi Spesies'
+                }
+                value={{
+                  commissionEnabled: form.commissionEnabled,
+                  commissionType: form.commissionType,
+                  commissionValue: form.commissionValue,
+                  memberPointsEnabled: form.memberPointsEnabled,
+                  memberPoints: form.memberPoints,
+                }}
+              />
+            </SpeciesEditSection>
+
+            {showRootOnlySections ? (
+              <SpeciesEditSection
+                description="Harga beli pemasok, ongkir, dan total HPP."
+                title="Harga Supplier"
+              >
+                <SpeciesRootVendorPricesEditor controller={controller} />
+              </SpeciesEditSection>
+            ) : null}
+
+            {showRootOnlySections ? (
+              <SpeciesEditSection
+                description="Berat, dimensi, dan informasi logistik spesies tanpa varian."
+                title="Logistik"
+              >
+                <SpeciesRootLogisticsPanel controller={controller} />
+              </SpeciesEditSection>
+            ) : null}
+
+            <SpeciesEditSection
+              description="Opsional: tautan marketplace, website, POS, atau referensi."
+              title="Tautan Eksternal"
+            >
+              <SpeciesExternalLinksEditor controller={controller} />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Terjemahan katalog untuk webstore dan audit konten."
+              title="Terjemahan"
+            >
+              <KolamCatalogTranslationsEditor
+                editable={!controller.saving}
+                kind="species"
+                onChange={translations =>
+                  controller.onChangeForm({ translations })
+                }
+                primarySpeciesLocale={{
+                  commonName: form.commonName,
+                  localName: form.localName,
+                  shortDescription: form.shortDescription,
+                  description: form.description,
+                  morfologis: form.morfologis,
+                  habitat: form.habitat,
+                  distribution: form.distribution,
+                  onChange: patch => controller.onChangeForm(patch),
+                }}
+                translations={form.translations}
+              />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Judul, kata kunci, dan deskripsi SEO Google."
+              title="SEO Google"
+            >
+              <SpeciesSeoEditPanel controller={controller} />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Foto, video, thumbnail, audio, dan media per varian."
+              title="Media"
+            >
+              <SpeciesMediaEditPanel
+                controller={controller}
+                onDelete={setDeleteMediaTarget}
+              />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Status konservasi Daftar Merah IUCN dan tautannya."
+              title="Konservasi"
+            >
+              <View style={styles.twoColumnGrid}>
+                <FieldShell label="IUCN">
+                  <KolamDropdownSelect
+                    accessibilityLabel="Pilih status IUCN"
+                    label="IUCN"
+                    menuStyle={styles.longDropdownMenu}
+                    onChange={iucnStatusId =>
+                      controller.onChangeForm({ iucnStatusId })
                     }
-                    onChange={value =>
-                      controller.onChangeForm({
-                        commissionEnabled: value.commissionEnabled,
-                        commissionType: value.commissionType,
-                        commissionValue: value.commissionValue,
-                        memberPointsEnabled: value.memberPointsEnabled,
-                        memberPoints: value.memberPoints,
-                      })
-                    }
-                    title={
-                      form.sellable && !hasVariants
-                        ? 'Komisi dan Poin Anggota Spesies'
-                        : 'Komisi Spesies'
-                    }
-                    value={{
-                      commissionEnabled: form.commissionEnabled,
-                      commissionType: form.commissionType,
-                      commissionValue: form.commissionValue,
-                      memberPointsEnabled: form.memberPointsEnabled,
-                      memberPoints: form.memberPoints,
-                    }}
+                    options={[
+                      { label: 'Tanpa IUCN', value: '' },
+                      ...controller.iucnStatuses.map(status => ({
+                        label: `${status.abbreviation} - ${status.name}`,
+                        value: status.id,
+                      })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari IUCN..."
+                    showLabelInTrigger={false}
+                    value={form.iucnStatusId}
                   />
-                </SpeciesEditSubSection>
-
-                {showRootOnlySections ? (
-                  <SpeciesEditSubSection
-                    description="Harga beli pemasok, ongkir, dan total HPP."
-                    title="Harga Supplier"
-                  >
-                    <SpeciesRootVendorPricesEditor controller={controller} />
-                  </SpeciesEditSubSection>
-                ) : null}
-
-                {showRootOnlySections ? (
-                  <SpeciesEditSubSection
-                    description="Berat, dimensi, dan informasi logistik spesies tanpa varian."
-                    title="Logistik"
-                  >
-                    <SpeciesRootLogisticsPanel controller={controller} />
-                  </SpeciesEditSubSection>
-                ) : null}
-
-                <SpeciesEditSubSection
-                  description="Opsional: tautan marketplace, website, POS, atau referensi."
-                  title="Tautan Eksternal"
-                >
-                  <SpeciesExternalLinksEditor controller={controller} />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Terjemahan katalog untuk webstore dan audit konten."
-                  title="Terjemahan"
-                >
-                  <KolamCatalogTranslationsEditor
+                </FieldShell>
+                <FieldShell label="Tautan IUCN">
+                  <KolamFormTextField
                     editable={!controller.saving}
-                    kind="species"
-                    onChange={translations =>
-                      controller.onChangeForm({ translations })
+                    mode="url"
+                    onChangeText={iucnLink =>
+                      controller.onChangeForm({ iucnLink })
                     }
-                    primarySpeciesLocale={{
-                      commonName: form.commonName,
-                      localName: form.localName,
-                      shortDescription: form.shortDescription,
-                      description: form.description,
-                      morfologis: form.morfologis,
-                      habitat: form.habitat,
-                      distribution: form.distribution,
-                      onChange: patch => controller.onChangeForm(patch),
-                    }}
-                    translations={form.translations}
+                    placeholder="Tautan IUCN"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.iucnLink}
                   />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Judul, kata kunci, dan deskripsi SEO Google."
-                  title="SEO Google"
-                >
-                  <SpeciesSeoEditPanel controller={controller} />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Foto, video, thumbnail, audio, dan media per varian."
-                  title="Media"
-                >
-                  <SpeciesMediaEditPanel
-                    controller={controller}
-                    onDelete={setDeleteMediaTarget}
-                  />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Status konservasi Daftar Merah IUCN dan tautannya."
-                  title="Konservasi"
-                >
-                  <View style={styles.twoColumnGrid}>
-                    <FieldShell label="IUCN">
-                      <KolamDropdownSelect
-                        accessibilityLabel="Pilih status IUCN"
-                        label="IUCN"
-                        menuStyle={styles.longDropdownMenu}
-                        onChange={iucnStatusId =>
-                          controller.onChangeForm({ iucnStatusId })
-                        }
-                        options={[
-                          { label: 'Tanpa IUCN', value: '' },
-                          ...controller.iucnStatuses.map(status => ({
-                            label: `${status.abbreviation} - ${status.name}`,
-                            value: status.id,
-                          })),
-                        ]}
-                        searchable
-                        searchPlaceholder="Cari IUCN..."
-                        showLabelInTrigger={false}
-                        value={form.iucnStatusId}
-                      />
-                    </FieldShell>
-                    <FieldShell label="Tautan IUCN">
-                      <KolamFormTextField
-                        editable={!controller.saving}
-                        mode="url"
-                        onChangeText={iucnLink =>
-                          controller.onChangeForm({ iucnLink })
-                        }
-                        placeholder="Tautan IUCN"
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.iucnLink}
-                      />
-                    </FieldShell>
-                  </View>
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Tag untuk filter internal, pengelompokan, dan SEO."
-                  title="Informasi Tambahan"
-                >
-                  <FieldShell label="Tag">
-                    <View style={styles.categoryPickerStack}>
-                      <KolamDropdownSelect
-                        accessibilityLabel="Tambah tag spesies"
-                        label="Tambah Tag"
-                        menuStyle={styles.longDropdownMenu}
-                        onChange={tagId => {
-                          if (!tagId || form.tagIds.includes(tagId)) {
-                            return;
-                          }
-
-                          controller.onChangeForm({
-                            tagIds: [...form.tagIds, tagId],
-                          });
-                        }}
-                        options={[
-                          { label: 'Tambah tag', value: '' },
-                          ...tagOptions.map(tag => ({
-                            label: tag.name,
-                            value: tag.id,
-                          })),
-                        ]}
-                        searchable
-                        searchPlaceholder="Cari tag..."
-                        showLabelInTrigger={false}
-                        value=""
-                      />
-                      <View style={styles.selectedCategoryRow}>
-                        {selectedTags.length ? (
-                          selectedTags.map(tag => (
-                            <KolamButton
-                              intent="outline"
-                              key={tag.id}
-                              label={`${tag.name} x`}
-                              onPress={() =>
-                                controller.onChangeForm({
-                                  tagIds: form.tagIds.filter(
-                                    tagId => tagId !== tag.id,
-                                  ),
-                                })
-                              }
-                              style={styles.selectedCategoryButton}
-                            />
-                          ))
-                        ) : (
-                          <KolamCopyStack
-                            items={[
-                              {
-                                id: 'empty-tag',
-                                text: 'Belum ada tag dipilih.',
-                                style: styles.fieldHint,
-                              },
-                            ]}
-                          />
-                        )}
-                      </View>
-                    </View>
-                  </FieldShell>
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Template syarat dan ketentuan aktif untuk spesies."
-                  title="Syarat dan Ketentuan"
-                >
-                  <SpeciesTermsTemplatesSummaryPanel controller={controller} />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Produk atau spesies yang terhubung sebagai informasi tambahan."
-                  title="Item Terlampir"
-                >
-                  <SpeciesAttachedItemsEditPanel controller={controller} />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Dokumen dan file pendukung spesies."
-                  title="Aset"
-                >
-                  <SpeciesEditAssetsPanel controller={controller} />
-                </SpeciesEditSubSection>
-
-                <SpeciesEditSubSection
-                  description="Bahan kemasan yang terhubung ke spesies atau varian."
-                  title="Bahan Kemasan"
-                >
-                  <SpeciesPackingLinksPanel controller={controller} />
-                </SpeciesEditSubSection>
+                </FieldShell>
               </View>
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Tag untuk filter internal, pengelompokan, dan SEO."
+              title="Informasi Tambahan"
+            >
+              <FieldShell label="Tag">
+                <View style={styles.categoryPickerStack}>
+                  <KolamDropdownSelect
+                    accessibilityLabel="Tambah tag spesies"
+                    label="Tambah Tag"
+                    menuStyle={styles.longDropdownMenu}
+                    onChange={tagId => {
+                      if (!tagId || form.tagIds.includes(tagId)) {
+                        return;
+                      }
+
+                      controller.onChangeForm({
+                        tagIds: [...form.tagIds, tagId],
+                      });
+                    }}
+                    options={[
+                      { label: 'Tambah tag', value: '' },
+                      ...tagOptions.map(tag => ({
+                        label: tag.name,
+                        value: tag.id,
+                      })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari tag..."
+                    showLabelInTrigger={false}
+                    value=""
+                  />
+                  <View style={styles.selectedCategoryRow}>
+                    {selectedTags.length ? (
+                      selectedTags.map(tag => (
+                        <KolamButton
+                          intent="outline"
+                          key={tag.id}
+                          label={`${tag.name} x`}
+                          onPress={() =>
+                            controller.onChangeForm({
+                              tagIds: form.tagIds.filter(
+                                tagId => tagId !== tag.id,
+                              ),
+                            })
+                          }
+                          style={styles.selectedCategoryButton}
+                        />
+                      ))
+                    ) : (
+                      <KolamCopyStack
+                        items={[
+                          {
+                            id: 'empty-tag',
+                            text: 'Belum ada tag dipilih.',
+                            style: styles.fieldHint,
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </View>
+              </FieldShell>
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Template syarat dan ketentuan aktif untuk spesies."
+              title="Syarat dan Ketentuan"
+            >
+              <SpeciesTermsTemplatesSummaryPanel controller={controller} />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Produk atau spesies yang terhubung sebagai informasi tambahan."
+              title="Item Terlampir"
+            >
+              <SpeciesAttachedItemsEditPanel controller={controller} />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Dokumen dan file pendukung spesies."
+              title="Aset"
+            >
+              <SpeciesEditAssetsPanel controller={controller} />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Bahan kemasan yang terhubung ke spesies atau varian."
+              title="Bahan Kemasan"
+            >
+              <SpeciesPackingLinksPanel controller={controller} />
             </SpeciesEditSection>
           </View>
         </View>
@@ -1715,37 +1711,6 @@ function SpeciesEditSection({
       />
       <View style={styles.speciesEditSectionBody}>{children}</View>
     </KolamContentFrame>
-  );
-}
-
-function SpeciesEditSubSection({
-  children,
-  description,
-  title,
-}: {
-  children: React.ReactNode;
-  description?: string;
-  title: string;
-}) {
-  return (
-    <View style={styles.speciesEditSubSection}>
-      <KolamCopyStack
-        containerStyle={styles.speciesEditSubSectionHeader}
-        items={[
-          { id: 'title', text: title, style: styles.speciesEditSectionTitle },
-          ...(description
-            ? [
-                {
-                  id: 'description',
-                  text: description,
-                  style: styles.speciesEditSectionDescription,
-                },
-              ]
-            : []),
-        ]}
-      />
-      <View style={styles.speciesEditSubSectionBody}>{children}</View>
-    </View>
   );
 }
 
@@ -3609,7 +3574,10 @@ function SpeciesAttachedItemsEditPanel({
               value={note}
             />
             <View style={styles.formActions}>
-              <KolamCancelButton intent="secondary" onPress={resetForm} />
+              <KolamCancelButton
+                intent="secondary"
+                onPress={resetForm}
+              />
               <KolamButton
                 disabled={controller.saving || !targetId}
                 intent="primary"
@@ -6899,26 +6867,6 @@ const styles = StyleSheet.create({
   speciesEditSectionBody: {
     gap: 12,
     padding: 14,
-  },
-  speciesEditGroupedSections: {
-    gap: 12,
-  },
-  speciesEditSubSection: {
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  speciesEditSubSectionHeader: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  speciesEditSubSectionBody: {
-    gap: 12,
-    padding: 12,
   },
   speciesBasicInfoCard: {
     backgroundColor: '#f9fafb',
