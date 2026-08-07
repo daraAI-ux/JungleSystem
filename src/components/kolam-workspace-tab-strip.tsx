@@ -1,12 +1,17 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
+import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamWorkspaceTab} from '../domain/kolam-workspace-tabs';
 import {KolamActionGlyph} from './kolam-action-glyph';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
+import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamPressable} from './kolam-pressable';
 import {KolamXIcon} from './kolam-x-icon';
+
+const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
 
 export interface KolamWorkspaceTabStripProps {
   activeTabId: string;
@@ -25,30 +30,33 @@ export function KolamWorkspaceTabStrip({
 }: KolamWorkspaceTabStripProps) {
   return (
     <View accessibilityRole="tablist" style={styles.shell}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.list}>
-        {tabs.map(tab => (
-          <WorkspaceTabButton
-            key={tab.id}
-            active={tab.id === activeTabId}
-            closable={tabs.length > 1}
-            label={tab.label}
-            onClose={() => onTabClose(tab.id)}
-            onPress={() => onTabSelect(tab.id)}
-          />
-        ))}
-      </ScrollView>
-      <KolamIconButton
-        accessibilityLabel="Tab baru"
-        onPress={onCreateTab}
-        size={28}
-        radius="md"
-        variant="ghost"
-        style={styles.addButton}>
-        <KolamActionGlyph variant="plus" />
-      </KolamIconButton>
+      <View style={styles.inner}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.list}>
+          {tabs.map(tab => (
+            <WorkspaceTabButton
+              key={tab.id}
+              active={tab.id === activeTabId}
+              closable={tabs.length > 1}
+              label={tab.label}
+              moduleIcon={tab.snapshot.activeNavigationItem?.moduleIcon}
+              onClose={() => onTabClose(tab.id)}
+              onPress={() => onTabSelect(tab.id)}
+            />
+          ))}
+        </ScrollView>
+        <KolamIconButton
+          accessibilityLabel="Tab baru"
+          onPress={onCreateTab}
+          size={28}
+          radius="md"
+          variant="ghost"
+          style={styles.addButton}>
+          <KolamActionGlyph variant="plus" />
+        </KolamIconButton>
+      </View>
     </View>
   );
 }
@@ -57,12 +65,14 @@ function WorkspaceTabButton({
   active,
   closable,
   label,
+  moduleIcon,
   onClose,
   onPress,
 }: {
   active: boolean;
   closable: boolean;
   label: string;
+  moduleIcon?: KolamNavigationModuleIcon;
   onClose: () => void;
   onPress: () => void;
 }) {
@@ -74,6 +84,7 @@ function WorkspaceTabButton({
       accessibilityState={{selected: active}}
       onPress={onPress}
       style={[styles.tab, active && styles.activeTab]}>
+      {moduleIcon ? <KolamModuleIcon kind={moduleIcon} /> : null}
       <Text
         numberOfLines={1}
         style={[styles.tabLabel, active && styles.activeTabLabel]}>
@@ -101,13 +112,16 @@ function WorkspaceTabButton({
 const styles = StyleSheet.create({
   shell: {
     minHeight: 38,
+    justifyContent: 'center',
+  },
+  inner: {
+    width: '100%',
+    maxWidth: DASHBOARD_LAYOUT_VISUAL.page.maxWidthPx,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: V.colors.border,
-    backgroundColor: V.colors.navbar,
+    paddingHorizontal: DASHBOARD_LAYOUT_VISUAL.page.paddingX,
   },
   list: {
     alignItems: 'center',
