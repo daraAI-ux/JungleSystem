@@ -1,11 +1,11 @@
 import React from 'react';
 import {StyleSheet, View, type StyleProp, type ViewStyle} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KolamButton} from './kolam-button';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {settingsWebFormStyles} from './kolam-settings-web-form-styles';
+import {KolamSwitch} from './kolam-switch';
 
 export type KolamCommissionType = 'percentage' | 'fixed';
 
@@ -49,20 +49,14 @@ export function KolamCommercialPolicyEditor({
               },
             ]}
           />
-          <View style={styles.toggleRow}>
-            <KolamButton
-              disabled={disabled}
-              intent={value.commissionEnabled ? 'primary' : 'outline'}
-              label="Aktif"
-              onPress={() => patch({commissionEnabled: true})}
-            />
-            <KolamButton
-              disabled={disabled}
-              intent={!value.commissionEnabled ? 'primary' : 'outline'}
-              label="Nonaktif"
-              onPress={() => patch({commissionEnabled: false})}
-            />
-          </View>
+          <KolamSwitch
+            accessibilityLabel="Aktifkan komisi"
+            active={value.commissionEnabled}
+            disabled={disabled}
+            onPress={() =>
+              patch({commissionEnabled: !value.commissionEnabled})
+            }
+          />
         </View>
         {value.commissionEnabled ? (
           <View style={styles.fieldGrid}>
@@ -100,20 +94,18 @@ export function KolamCommercialPolicyEditor({
                 },
               ]}
             />
-            <View style={styles.toggleRow}>
-              <KolamButton
-                disabled={disabled}
-                intent={value.memberPointsEnabled ? 'primary' : 'outline'}
-                label="Aktif"
-                onPress={() => patch({memberPointsEnabled: true})}
-              />
-              <KolamButton
-                disabled={disabled}
-                intent={!value.memberPointsEnabled ? 'primary' : 'outline'}
-                label="Nonaktif"
-                onPress={() => patch({memberPointsEnabled: false, memberPoints: '0'})}
-              />
-            </View>
+            <KolamSwitch
+              accessibilityLabel="Aktifkan poin anggota"
+              active={value.memberPointsEnabled}
+              disabled={disabled}
+              onPress={() =>
+                patch(
+                  value.memberPointsEnabled
+                    ? {memberPointsEnabled: false, memberPoints: '0'}
+                    : {memberPointsEnabled: true},
+                )
+              }
+            />
           </View>
           {value.memberPointsEnabled ? (
             <KolamFormTextField
@@ -161,12 +153,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 17,
-  },
-  toggleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
   },
   fieldGrid: {
     flexDirection: 'row',
