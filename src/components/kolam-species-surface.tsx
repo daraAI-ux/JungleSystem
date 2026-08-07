@@ -2036,6 +2036,15 @@ function SpeciesRootSalesPanel({
               showLabelInTrigger={false}
               value={form.unitId}
             />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'unit-hint',
+                  text: 'Satuan stok dan harga spesies.',
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
           </View>
         </View>
         <KolamDropdownSelect
