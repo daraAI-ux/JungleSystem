@@ -28,6 +28,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -542,9 +543,8 @@ function RejectModal({
             value={controller.rejectNote}
           />
           <View style={styles.dialogActions}>
-            <KolamButton
+            <KolamCancelButton
               intent="secondary"
-              label="Batal"
               onPress={controller.onCloseReject}
             />
             <KolamButton

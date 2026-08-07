@@ -34,6 +34,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -565,8 +566,7 @@ export function KolamStockOpnameDetail({
               value={reviewReason}
             />
             <View style={styles.modalActions}>
-              <KolamButton
-                label="Batal"
+              <KolamCancelButton
                 muted
                 onPress={() => {
                   setReviewTarget(null);
@@ -652,8 +652,7 @@ export function KolamStockOpnameDetail({
               value={editNote}
             />
             <View style={styles.modalActions}>
-              <KolamButton
-                label="Batal"
+              <KolamCancelButton
                 muted
                 onPress={() => setEditLine(null)}
               />

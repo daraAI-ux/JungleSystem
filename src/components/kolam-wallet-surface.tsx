@@ -45,6 +45,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -727,9 +728,8 @@ function WalletListPanel({
                 dapat dibatalkan.
               </Text>
               <View style={styles.formActions}>
-                <KolamButton
+                <KolamCancelButton
                   intent="secondary"
-                  label="Batal"
                   onPress={() => setDeleteTarget(null)}
                 />
                 <KolamButton
@@ -781,9 +781,8 @@ function WalletCreateMode({
   return (
     <View style={styles.listRoot}>
       <View style={styles.detailHeader}>
-        <KolamButton
+        <KolamCancelButton
           intent="secondary"
-          label="Batal"
           onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
           style={styles.filterTrigger}
         />
@@ -880,9 +879,8 @@ function WalletCreateMode({
           </View>
 
           <View style={styles.formActions}>
-            <KolamButton
+            <KolamCancelButton
               intent="secondary"
-              label="Batal"
               onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
             />
             <KolamButton
@@ -970,9 +968,8 @@ function WalletEditMode({
   return (
     <View style={styles.listRoot}>
       <View style={styles.detailHeader}>
-        <KolamButton
+        <KolamCancelButton
           intent="secondary"
-          label="Batal"
           onPress={() =>
             onRouteChange?.(
               wallet
@@ -1056,9 +1053,8 @@ function WalletEditMode({
             </View>
 
             <View style={styles.formActions}>
-              <KolamButton
+              <KolamCancelButton
                 intent="secondary"
-                label="Batal"
                 onPress={() =>
                   onRouteChange?.(getKolamWalletDetailRoute(wallet.id))
                 }
@@ -2052,7 +2048,7 @@ function WalletFormShell({
         {children}
       </ScrollView>
       <View style={styles.actionFormActions}>
-        <KolamButton intent="secondary" label="Batal" onPress={onClose} />
+        <KolamCancelButton intent="secondary" onPress={onClose} />
         <KolamButton
           disabled={submitDisabled}
           intent="primary"

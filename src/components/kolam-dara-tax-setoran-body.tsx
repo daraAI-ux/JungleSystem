@@ -25,6 +25,7 @@ import {
   verifyKolamDaraTaxSettlement,
 } from '../services/kolam-dara-tax-settlement-api';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
@@ -278,10 +279,9 @@ export function KolamDaraTaxSetoranBody() {
               />
             </KolamDetailScrollSurface>
             <View style={styles.modalFooter}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
                 intent="secondary"
-                label="Batal"
                 onPress={() => setOpen(false)}
                 size="sm"
               />

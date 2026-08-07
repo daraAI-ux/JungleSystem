@@ -8,6 +8,7 @@ import {
 } from '../hooks/use-kolam-unexpected-income-form-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -102,10 +103,9 @@ function UnexpectedIncomeFormBody({
             : 'Ubah Pemasukan Tak Terduga'}
         </Text>
         <View style={styles.headerActions}>
-          <KolamButton
+          <KolamCancelButton
             disabled={controller.submitting}
             intent="secondary"
-            label="Batal"
             onPress={controller.onCancel}
           />
           <KolamSaveButton

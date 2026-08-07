@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-brand-controller';
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -123,9 +124,8 @@ function KolamModuleShell({
               </>
             ) : (
               <>
-                <KolamButton
+                <KolamCancelButton
                   disabled={controller.saving}
-                  label="Batal"
                   onPress={controller.onBackToList}
                 />
                 <KolamSaveButton

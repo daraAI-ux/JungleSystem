@@ -37,6 +37,7 @@ import {
   type KolamProductionController,
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -842,8 +843,7 @@ function KolamProductionForm({
         ) : null}
 
         <View style={styles.formActions}>
-          <KolamButton
-            label="Batal"
+          <KolamCancelButton
             onPress={() => {
               if (isEdit && controller.selectedProduction) {
                 onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${controller.selectedProduction.id}`);
@@ -1652,7 +1652,7 @@ function KolamProductionSubmitCheckPanel({
             })
           }
         />
-        <KolamButton label="Batal" onPress={onClose} />
+        <KolamCancelButton onPress={onClose} />
         <KolamButton
           disabled={mutating}
           intent="primary"
@@ -1721,7 +1721,7 @@ function KolamProductionFinalizePanel({
         <KolamFormTextField multiline onChangeText={setNote} placeholder="Alasan penolakan" value={note} />
       ) : null}
       <View style={styles.formActions}>
-        <KolamButton label="Batal" onPress={onClose} />
+        <KolamCancelButton onPress={onClose} />
         <KolamButton
           disabled={mutating || (decision === 'reject' && !note.trim())}
           intent="primary"

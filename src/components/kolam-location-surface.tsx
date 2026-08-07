@@ -33,6 +33,7 @@ import {
 } from '../services/kolam-location-api';
 import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
@@ -506,9 +507,8 @@ function KolamLocationForm({
           </KolamContentFrame>
 
           <View style={styles.formActions}>
-            <KolamButton
+            <KolamCancelButton
               disabled={saving}
-              label="Batal"
               onPress={() =>
                 onRouteChange?.(isEdit ? `/locations/${locationId}` : '/locations')
               }

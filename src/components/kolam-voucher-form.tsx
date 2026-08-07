@@ -11,6 +11,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamVoucherController } from '../hooks/use-kolam-voucher-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
@@ -72,9 +73,7 @@ export function KolamVoucherForm({
             {isEdit ? 'Ubah Voucher' : 'Buat Voucher Baru'}
           </Text>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              intent="outline"
-              label="Batal"
+            <KolamCancelButton
               onPress={() => {
                 if (isEdit && controller.selectedVoucher) {
                   onRouteChange?.(

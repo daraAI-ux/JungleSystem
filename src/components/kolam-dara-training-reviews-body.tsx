@@ -18,6 +18,7 @@ import {
   listKolamDaraTrainingConversationReviews,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamStatusBadge} from './kolam-status-badge';
 
@@ -260,10 +261,9 @@ export function KolamDaraTrainingReviewsBody({
               value={notes}
             />
             <View style={styles.modalFooter}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
                 intent="secondary"
-                label="Batal"
                 onPress={() => setActive(null)}
                 size="sm"
               />

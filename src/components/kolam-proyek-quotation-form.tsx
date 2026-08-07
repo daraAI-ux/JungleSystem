@@ -4,6 +4,7 @@ import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamProyekController } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -100,9 +101,7 @@ export function KolamProyekQuotationForm({
             {isEdit ? 'Edit surat penawaran' : 'Surat penawaran baru'}
           </Text>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              intent="outline"
-              label="Batal"
+            <KolamCancelButton
               onPress={controller.onBackToList}
             />
             <KolamSaveButton

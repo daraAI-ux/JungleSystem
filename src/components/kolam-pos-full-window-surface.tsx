@@ -24,6 +24,7 @@ import type {WorkflowStep} from '../lib/workflow';
 import type {CreateCustomerBody} from '../services/pos-api';
 import {KolamShellChromeContext} from '../context/kolam-app-contexts';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDashboardHeader} from './kolam-dashboard-header';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -2179,7 +2180,7 @@ function PosPaymentModal({
         </View>
 
         <View style={styles.paymentFooter}>
-          <KolamButton label="Batal" intent="outline" onPress={onClose} />
+          <KolamCancelButton onPress={onClose} />
           <KolamButton
             label={confirmLabel}
             intent="primary"

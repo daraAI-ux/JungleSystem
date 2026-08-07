@@ -28,6 +28,7 @@ import type { KolamLayananController } from '../hooks/use-kolam-layanan-controll
 import { spawnKolamLayananServiceTask } from '../services/kolam-layanan-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -800,9 +801,8 @@ function ServiceTasksPanel({
             </FieldShell>
             {error ? <Text style={styles.spawnError}>{error}</Text> : null}
             <View style={styles.spawnActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                label="Batal"
                 onPress={closeModal}
               />
               <KolamSaveButton

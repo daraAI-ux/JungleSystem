@@ -48,6 +48,7 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -1732,9 +1733,7 @@ function KolamProyekDetailRead({
               value={startWorkNote}
             />
             <View style={styles.dialogActions}>
-              <KolamButton
-                intent="outline"
-                label="Batal"
+              <KolamCancelButton
                 onPress={() => setStartWorkOpen(false)}
               />
               <KolamButton
@@ -1774,9 +1773,7 @@ function KolamProyekDetailRead({
               value={resendNote}
             />
             <View style={styles.dialogActions}>
-              <KolamButton
-                intent="outline"
-                label="Batal"
+              <KolamCancelButton
                 onPress={() => setResendOpen(false)}
               />
               <KolamButton

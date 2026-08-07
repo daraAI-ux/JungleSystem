@@ -49,6 +49,7 @@ import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCategoryLabel } from './kolam-category-label';
@@ -1383,7 +1384,7 @@ function ProductEditFormPage({
                 : shellLabels.emptyForm}
             </Text>
           </View>
-          <KolamButton label="Batal" onPress={onCancel} />
+          <KolamCancelButton onPress={onCancel} />
         </View>
       </KolamDetailScrollSurface>
     );
@@ -1428,7 +1429,7 @@ function ProductEditFormPage({
             <Text style={styles.title}>{formTitle}</Text>
           </View>
           <View style={styles.detailHeaderActions}>
-            <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
+            <KolamCancelButton disabled={disabled} onPress={onCancel} />
             <KolamButton
               disabled={disabled}
               intent="primary"
@@ -1771,9 +1772,8 @@ function ProductEditFormPage({
               </ProductEditSection>
             </View>
             <View style={styles.formActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={disabled}
-                label="Batal"
                 onPress={onCancel}
               />
               <KolamButton
@@ -1818,7 +1818,7 @@ function ProductEditFormPage({
           <Text style={styles.title}>{formTitle}</Text>
         </View>
         <View style={styles.detailHeaderActions}>
-          <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
+          <KolamCancelButton disabled={disabled} onPress={onCancel} />
           <KolamButton
             disabled={disabled}
             intent="primary"
@@ -2195,7 +2195,7 @@ function ProductEditFormPage({
             </ProductEditSection>
           </View>
           <View style={styles.formActions}>
-            <KolamButton disabled={disabled} label="Batal" onPress={onCancel} />
+            <KolamCancelButton disabled={disabled} onPress={onCancel} />
             <KolamButton
               disabled={disabled}
               intent="primary"
@@ -5322,9 +5322,8 @@ function ProductAttachedItemsEditPanel({
               value={note}
             />
             <View style={styles.formActions}>
-              <KolamButton
+              <KolamCancelButton
                 intent="secondary"
-                label="Batal"
                 onPress={resetForm}
               />
               <KolamButton

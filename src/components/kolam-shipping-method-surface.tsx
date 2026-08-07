@@ -27,6 +27,7 @@ import {
 } from '../hooks/use-kolam-shipping-method-controller';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -1292,8 +1293,7 @@ function KolamShippingMethodForm({
       </ShippingMethodFormSection>
 
       <View style={styles.detailActions}>
-        <KolamButton
-          label="Batal"
+        <KolamCancelButton
           onPress={() => {
             if (controller.mode === 'edit' && controller.selectedMethod) {
               controller.onCancelForm();

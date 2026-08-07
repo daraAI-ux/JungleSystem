@@ -28,6 +28,7 @@ import {
   getKolamSalesList,
 } from '../services/kolam-sales-api';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -508,8 +509,7 @@ export function KolamComplaintCreateForm({
       </KolamCardFrame>
 
       <View style={styles.actions}>
-        <KolamButton
-          label="Batal"
+        <KolamCancelButton
           onPress={() => onRouteChange?.(KOLAM_COMPLAINT_ROOT)}
         />
         <KolamButton

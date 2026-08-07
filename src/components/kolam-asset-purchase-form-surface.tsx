@@ -18,6 +18,7 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -188,10 +189,9 @@ function AssetPurchaseFormBody({
             : 'Ubah Pembelian Aset'}
         </Text>
         <View style={styles.headerActions}>
-          <KolamButton
+          <KolamCancelButton
             disabled={controller.submitting}
             intent="secondary"
-            label="Batal"
             onPress={controller.onCancel}
           />
           <KolamSaveButton

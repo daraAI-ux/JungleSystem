@@ -8,6 +8,7 @@ import {
 } from '../hooks/use-kolam-payable-form-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -91,10 +92,9 @@ function PayableFormBody({
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Hutang Baru</Text>
         <View style={styles.headerActions}>
-          <KolamButton
+          <KolamCancelButton
             disabled={controller.submitting}
             intent="secondary"
-            label="Batal"
             onPress={controller.onCancel}
           />
           <KolamButton

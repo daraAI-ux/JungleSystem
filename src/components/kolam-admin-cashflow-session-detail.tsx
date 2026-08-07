@@ -34,6 +34,7 @@ import {
 } from '../hooks/use-kolam-admin-cashflow-session-detail-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -217,8 +218,7 @@ export function KolamAdminCashflowSessionDetail({
               {voidReason.trim().length}/10 karakter
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
-                label="Batal"
+              <KolamCancelButton
                 muted
                 onPress={() => {
                   setVoidOpen(false);
@@ -266,8 +266,7 @@ export function KolamAdminCashflowSessionDetail({
               value={rejectNote}
             />
             <View style={styles.modalActions}>
-              <KolamButton
-                label="Batal"
+              <KolamCancelButton
                 muted
                 onPress={() => setRejectTarget(null)}
               />
@@ -858,7 +857,7 @@ function DepositSubmitModal({
           </ScrollView>
 
           <View style={styles.modalActions}>
-            <KolamButton label="Batal" muted onPress={onClose} />
+            <KolamCancelButton muted onPress={onClose} />
             <KolamButton
               disabled={
                 controller.acting ||

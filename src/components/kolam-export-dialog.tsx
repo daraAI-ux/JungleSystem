@@ -12,6 +12,7 @@ import {
 import { getLocalDataStore } from '../services/local-data-store';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 
@@ -293,7 +294,7 @@ export function KolamExportDialog({
               },
             ]}
           />
-          <KolamButton disabled={downloading} label="Batal" onPress={close} />
+          <KolamCancelButton disabled={downloading} onPress={close} />
           <KolamButton
             disabled={downloading || loading || !validSelectedFields.length}
             intent="primary"

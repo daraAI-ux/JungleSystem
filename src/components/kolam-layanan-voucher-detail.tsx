@@ -35,6 +35,7 @@ import {
   type KolamLayananVoucherController,
 } from '../hooks/use-kolam-layanan-voucher-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -549,8 +550,7 @@ function VoucherExecutionHistorySection({
                         void controller.onConfirmRejectExecution();
                       }}
                     />
-                    <KolamButton
-                      label="Batal"
+                    <KolamCancelButton
                       onPress={controller.onCancelRejectExecution}
                     />
                   </View>

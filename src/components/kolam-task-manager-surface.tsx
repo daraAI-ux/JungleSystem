@@ -32,6 +32,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -2527,10 +2528,8 @@ function KolamTaskFormModal({
               {controller.formMode === 'edit' ? 'Ubah tugas' : 'Tugas baru'}
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseForm}
               />
               <KolamSaveButton
@@ -2774,10 +2773,8 @@ function KolamTaskOvertimeRequestModal({
               Ajukan lembur
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseOvertimeRequest}
               />
               <KolamButton
@@ -2844,10 +2841,8 @@ function KolamTaskDeleteConfirmModal({
               Hapus task
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={deleting}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseDeleteTaskConfirm}
               />
               <KolamButton
@@ -2894,10 +2889,8 @@ function KolamTaskTypeDeleteConfirmModal({
               Hapus tipe task
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={deleting}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseDeleteTaskTypeConfirm}
               />
               <KolamButton
@@ -3024,10 +3017,8 @@ function KolamTaskCategoryFormModal({
               {controller.categoryFormMode === 'edit' ? 'Edit kategori' : 'Baru kategori'}
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseCategoryForm}
               />
               <KolamSaveButton
@@ -3119,10 +3110,8 @@ function KolamTaskRecurringBulkEnrollmentModal({
               Bulk enrollment kandang
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseRecurringBulkForm}
               />
               <KolamSaveButton
@@ -3302,10 +3291,8 @@ function KolamTaskTypeFormModal({
               {controller.taskTypeFormMode === 'edit' ? 'Edit tipe task' : 'Tambah tipe task'}
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseTaskTypeForm}
               />
               <KolamSaveButton
@@ -3483,10 +3470,8 @@ function KolamTaskRecurringTemplateFormModal({
               Template tugas terjadwal
             </Text>
             <View style={styles.modalActions}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
-                intent="outline"
-                label="Batal"
                 onPress={controller.onCloseRecurringTemplateForm}
               />
               <KolamSaveButton

@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-admin-cashflow-session-controller';
 import { KolamAdminCashflowSessionDetail } from './kolam-admin-cashflow-session-detail';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -380,8 +381,7 @@ function AdminCashflowCreateForm({
         />
 
         <View style={styles.formActions}>
-          <KolamButton
-            label="Batal"
+          <KolamCancelButton
             muted
             onPress={() => onRouteChange?.(KOLAM_ADMIN_CASHFLOW_SESSION_ROOT)}
           />

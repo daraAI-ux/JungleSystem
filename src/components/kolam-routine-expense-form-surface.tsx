@@ -8,6 +8,7 @@ import {
 } from '../hooks/use-kolam-routine-expense-form-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
@@ -94,10 +95,9 @@ function RoutineExpenseFormBody({
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Pengeluaran Rutin Baru</Text>
         <View style={styles.headerActions}>
-          <KolamButton
+          <KolamCancelButton
             disabled={controller.submitting}
             intent="secondary"
-            label="Batal"
             onPress={controller.onCancel}
           />
           <KolamButton

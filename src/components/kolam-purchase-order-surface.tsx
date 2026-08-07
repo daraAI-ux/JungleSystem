@@ -36,6 +36,7 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -688,9 +689,8 @@ function KolamPurchaseOrderForm({
       </KolamContentFrame>
 
       <View style={styles.formActions}>
-        <KolamButton
+        <KolamCancelButton
           disabled={controller.mutating}
-          label="Batal"
           onPress={() => {
             controller.onBackToList();
             onRouteChange?.(
@@ -938,7 +938,7 @@ function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderContr
               style={styles.filterPanelOption}
             />
           ))}
-          <KolamButton label="Batal" onPress={() => setPendingVariantItem(null)} />
+          <KolamCancelButton onPress={() => setPendingVariantItem(null)} />
         </View>
       ) : null}
     </View>
@@ -1984,7 +1984,7 @@ function KolamPOReceiveDialog({
         </View>
       ) : null}
       <View style={styles.headerActions}>
-        <KolamButton label="Batal" onPress={onClose} />
+        <KolamCancelButton onPress={onClose} />
         <KolamButton
           disabled={controller.mutating}
           intent="primary"
@@ -2109,7 +2109,7 @@ function KolamPOCheckDialog({
       ) : null}
 
       <View style={styles.headerActions}>
-        <KolamButton label="Batal" onPress={onClose} />
+        <KolamCancelButton onPress={onClose} />
         <KolamButton
           disabled={controller.mutating}
           intent="primary"
@@ -2218,7 +2218,7 @@ function KolamPOEditCheckItemsDialog({
         </View>
       ) : null}
       <View style={styles.headerActions}>
-        <KolamButton label="Batal" onPress={onClose} />
+        <KolamCancelButton onPress={onClose} />
         <KolamButton
           disabled={controller.mutating || !editReason.trim()}
           intent="primary"
@@ -2282,7 +2282,7 @@ function KolamPOMarketplaceSyncPanel({
         ))}
       </View>
       <View style={styles.headerActions}>
-        <KolamButton label="Batal" onPress={onClose} />
+        <KolamCancelButton onPress={onClose} />
         <KolamButton
           disabled={!platforms.length || controller.mutating}
           intent="primary"

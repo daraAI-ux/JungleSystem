@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-stock-opname-controller';
 import { pickNativeAssetFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDateField } from './kolam-date-field';
@@ -168,8 +169,7 @@ function KolamStockOpnameCreateForm({
           value={note}
         />
         <View style={styles.createActions}>
-          <KolamButton
-            label="Batal"
+          <KolamCancelButton
             muted
             onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
           />
@@ -668,7 +668,7 @@ function StockOpnameImportDialog({
           ) : null}
 
           <View style={styles.importActions}>
-            <KolamButton label="Batal" onPress={() => onOpenChange(false)} />
+            <KolamCancelButton onPress={() => onOpenChange(false)} />
             <KolamButton
               disabled={!fileUri || importing}
               intent="primary"

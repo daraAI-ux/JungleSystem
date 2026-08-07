@@ -115,6 +115,7 @@ import {
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
@@ -6113,11 +6114,9 @@ function AmActivityLogPage() {
           </Text>
           <Text style={styles.warningText}>{total} entri akan dihapus.</Text>
           <View style={styles.inlineActions}>
-            <KolamButton
+            <KolamCancelButton
               accessibilityLabel="AM Activity Logs Cancel Delete Filter"
               disabled={isDeleting}
-              label="Batal"
-              intent="outline"
               size="sm"
               onPress={() => setShowDeleteFilterConfirm(false)}
             />
@@ -6248,11 +6247,9 @@ function AmActivityLogPage() {
           </Text>
           <Text style={styles.warningText}>{selectedDeleteCount} entri akan dihapus.</Text>
           <View style={styles.inlineActions}>
-            <KolamButton
+            <KolamCancelButton
               accessibilityLabel="AM Activity Logs Cancel Delete Selected"
               disabled={isDeleting}
-              label="Batal"
-              intent="outline"
               size="sm"
               onPress={() => setShowDeleteSelectedConfirm(false)}
             />

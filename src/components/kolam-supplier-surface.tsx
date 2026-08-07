@@ -36,6 +36,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -2001,9 +2002,8 @@ function KolamSupplierForm({
         </View>
 
         <View style={styles.formActions}>
-          <KolamButton
+          <KolamCancelButton
             disabled={controller.saving}
-            label="Batal"
             onPress={() => {
               controller.onBackToList();
               onRouteChange?.(KOLAM_SUPPLIER_ROOT);

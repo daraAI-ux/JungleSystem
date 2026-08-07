@@ -20,6 +20,7 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -184,8 +185,7 @@ function KolamStockTransactionOpname({
           ]}
         />
         <View style={styles.headerActions}>
-          <KolamButton
-            label="Batal"
+          <KolamCancelButton
             onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
           />
           <KolamSaveButton
@@ -370,8 +370,7 @@ function KolamStockTransactionOpname({
             value={form.walletId || ''}
           />
           <View style={styles.headerActions}>
-            <KolamButton
-              label="Batal"
+            <KolamCancelButton
               onPress={() => setWalletModalOpen(false)}
             />
             <KolamButton

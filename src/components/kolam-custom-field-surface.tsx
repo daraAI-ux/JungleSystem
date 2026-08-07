@@ -17,6 +17,7 @@ import {
   type KolamCustomFieldController,
 } from '../hooks/use-kolam-custom-field-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -912,9 +913,8 @@ function KolamCustomFieldForm({
           />
         </View>
         <View style={styles.formActions}>
-          <KolamButton
+          <KolamCancelButton
             disabled={controller.saving}
-            label="Batal"
             onPress={controller.onBackToList}
           />
           <KolamSaveButton

@@ -22,6 +22,7 @@ import {
   updateKolamDaraTrainingPhrase,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
@@ -337,10 +338,9 @@ export function KolamDaraTrainingPhrasesBody({
               />
             </KolamDetailScrollSurface>
             <View style={styles.modalFooter}>
-              <KolamButton
+              <KolamCancelButton
                 disabled={saving}
                 intent="secondary"
-                label="Batal"
                 onPress={() => setOpen(false)}
                 size="sm"
               />

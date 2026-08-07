@@ -58,6 +58,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamCasesReportedIcon} from './kolam-cases-reported-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
@@ -264,8 +265,7 @@ function KolamEnclosureEditSurface({
           title="Gagal memuat data kandang"
         />
         <View style={styles.detailActions}>
-          <KolamButton
-            label="Batal"
+          <KolamCancelButton
             onPress={() => onRouteChange?.(detailRoute)}
           />
           <KolamRefreshButton
@@ -286,8 +286,7 @@ function KolamEnclosureEditSurface({
           title="Kandang tidak ditemukan"
         />
         <View style={styles.detailActions}>
-          <KolamButton
-            label="Batal"
+          <KolamCancelButton
             onPress={() => onRouteChange?.(detailRoute)}
           />
         </View>
@@ -787,9 +786,8 @@ function KolamEnclosureEditSurface({
           disabled={controller.operationLoading}
           onPress={() => void onSave()}
         />
-        <KolamButton
+        <KolamCancelButton
           disabled={controller.operationLoading}
-          label="Batal"
           onPress={() => onRouteChange?.(detailRoute)}
         />
       </View>

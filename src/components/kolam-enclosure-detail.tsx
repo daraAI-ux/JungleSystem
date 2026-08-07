@@ -46,6 +46,7 @@ import type {KolamEnclosureController} from '../hooks/use-kolam-enclosure-contro
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -783,8 +784,7 @@ function KolamEnclosureDetailTasksTab({
               onPress={() => void onCreate()}
               style={styles.toolbarButton}
             />
-            <KolamButton
-              label="Batal"
+            <KolamCancelButton
               onPress={() => {
                 setCreateOpen(false);
                 setTitle('');
@@ -1695,8 +1695,7 @@ function EnclosureCommentItem({
               }
               style={styles.toolbarButton}
             />
-            <KolamButton
-              label="Batal"
+            <KolamCancelButton
               onPress={() => {
                 setEditOpen(false);
                 setEditText(comment.comment);

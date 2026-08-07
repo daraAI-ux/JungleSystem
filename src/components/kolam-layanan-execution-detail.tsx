@@ -13,6 +13,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamLayananExecutionController } from '../hooks/use-kolam-layanan-execution-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -316,8 +317,7 @@ export function KolamLayananExecutionDetail({
                       value={controller.rejectDecision}
                     />
                     <View style={styles.actionRow}>
-                      <KolamButton
-                        label="Batal"
+                      <KolamCancelButton
                         onPress={() => controller.onSetRejectOpen(false)}
                       />
                       <KolamButton

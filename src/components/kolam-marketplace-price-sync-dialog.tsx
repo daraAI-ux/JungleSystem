@@ -15,6 +15,7 @@ import {
   type KolamMarketplaceTaskStatus,
 } from '../services/kolam-marketplace-sync-api';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 
 type MarketplaceSyncKind = 'price' | 'stock';
@@ -392,9 +393,8 @@ function PriceSyncProgressCard({
             {getStatusLabel(state.status)}
           </Text>
           {isRunning && state.taskId ? (
-            <KolamButton
+            <KolamCancelButton
               intent="danger"
-              label="Batal"
               onPress={onCancel}
               style={styles.cancelButton}
             />

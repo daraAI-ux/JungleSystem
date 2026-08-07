@@ -42,6 +42,7 @@ import {
   type KolamSalesController,
 } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -671,8 +672,7 @@ function KolamSalesOpsCreateForm({
                 />
               ) : null}
             </View>
-            <KolamButton
-              label="Batal"
+            <KolamCancelButton
               onPress={() => onRouteChange?.(backRoute)}
               style={styles.toolbarButton}
             />
