@@ -63,7 +63,6 @@ export function KolamCustomFieldSurface({
   route: string;
 }) {
   const controller = useKolamCustomFieldController(route);
-
   return (
     <KolamCustomFieldShell
       controller={controller}
@@ -106,39 +105,41 @@ function KolamCustomFieldShell({
     );
   }
 
-  const contextLabel =
-    controller.mode === 'new'
-      ? 'Field kustom baru'
-      : controller.mode === 'edit'
-      ? `Edit · ${
-          controller.selectedField?.fieldLabel ||
-          controller.form.fieldLabel ||
-          'Field Kustom'
-        }`
-      : controller.selectedField?.fieldLabel || 'Detail field kustom';
 
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/custom-fields');
-              }}
-            />
             {controller.mode === 'detail' ? (
-              <KolamEditButton
-                intent="primary"
-                onPress={controller.onEdit}
-              />
-            ) : null}
+              <>
+                <KolamDaftarButton
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.('/custom-fields');
+                  }}
+                />
+                <KolamEditButton
+                  intent="primary"
+                  onPress={controller.onEdit}
+                />
+              </>
+            ) : (
+              <>
+                <KolamCancelButton
+                  disabled={controller.saving}
+                  onPress={controller.onBackToList}
+                />
+                <KolamSaveButton
+                  disabled={controller.saving}
+                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                  onPress={() => {
+                    void controller.onSave();
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -927,19 +928,6 @@ function KolamCustomFieldForm({
             translations={form.translations}
           />
         </View>
-        <View style={styles.formActions}>
-          <KolamCancelButton
-            disabled={controller.saving}
-            onPress={controller.onBackToList}
-          />
-          <KolamSaveButton
-            disabled={controller.saving}
-            label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave();
-            }}
-          />
-        </View>
       </View>
     </KolamNativeFormSection>
   );
@@ -1400,16 +1388,6 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
   errorBadge: {
     alignSelf: 'flex-start',
     maxWidth: 760,
@@ -1687,11 +1665,5 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 96,
     textAlignVertical: 'top',
-  },
-  formActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingTop: 16,
   },
 });
