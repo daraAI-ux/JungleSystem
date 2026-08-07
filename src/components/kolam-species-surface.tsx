@@ -1409,16 +1409,23 @@ function KolamSpeciesForm({
                 description="Harga jual dan harga bertingkat untuk spesies tanpa varian."
                 title="Harga"
               >
-                <SpeciesRootPricingPanel controller={controller} />
-                <SpeciesGrocerPricingPanel
-                  disabled={controller.saving}
-                  hint="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk spesies tanpa varian; jika varian aktif, harga bertingkat diatur per varian."
-                  onChange={grocerPricingTiers =>
-                    controller.onChangeForm({ grocerPricingTiers })
-                  }
-                  rows={form.grocerPricingTiers}
-                  title="Harga Bertingkat / Grosir Spesies"
-                />
+                <View
+                  style={[
+                    styles.speciesBasicInfoCard,
+                    styles.customFieldSettingsCard,
+                  ]}
+                >
+                  <SpeciesRootPricingPanel controller={controller} />
+                  <SpeciesGrocerPricingPanel
+                    disabled={controller.saving}
+                    hint="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk spesies tanpa varian; jika varian aktif, harga bertingkat diatur per varian."
+                    onChange={grocerPricingTiers =>
+                      controller.onChangeForm({ grocerPricingTiers })
+                    }
+                    rows={form.grocerPricingTiers}
+                    title="Harga Bertingkat / Grosir Spesies"
+                  />
+                </View>
               </SpeciesEditSection>
             ) : null}
 
