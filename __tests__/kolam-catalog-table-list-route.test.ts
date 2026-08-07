@@ -6,16 +6,16 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('')).toBe(true);
   });
 
-  it('matches species/product/raw list roots only', () => {
-    expect(isCatalogTableListRoute('/species')).toBe(true);
-    expect(isCatalogTableListRoute('/products')).toBe(true);
-    expect(isCatalogTableListRoute('/products/archive')).toBe(true);
-    expect(isCatalogTableListRoute('/stock-transaction')).toBe(true);
+  it('keeps mapped-table catalog roots on shell ScrollView', () => {
+    expect(isCatalogTableListRoute('/species')).toBe(false);
+    expect(isCatalogTableListRoute('/products')).toBe(false);
+    expect(isCatalogTableListRoute('/products/archive')).toBe(false);
+    expect(isCatalogTableListRoute('/stock-transaction')).toBe(false);
     expect(isCatalogTableListRoute('/stock-transaction?productId=abc')).toBe(
-      true,
+      false,
     );
     expect(isCatalogTableListRoute('/suppliers')).toBe(false);
-    expect(isCatalogTableListRoute('/customers')).toBe(true);
+    expect(isCatalogTableListRoute('/customers')).toBe(false);
     expect(isCatalogTableListRoute('/purchase-order')).toBe(false);
     // Mapped-row Produksi uses shell ScrollView (same as supplier/PO) so header height stays compact.
     expect(isCatalogTableListRoute('/production')).toBe(false);
@@ -25,27 +25,28 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('/stock-opname')).toBe(false);
   });
 
-  it('matches Keuangan FlatList list roots', () => {
+  it('keeps mapped-table Keuangan roots on shell ScrollView', () => {
     expect(isCatalogTableListRoute('/finance')).toBe(false);
     expect(isCatalogTableListRoute('/finance/abc123')).toBe(false);
     // Dompet uses shell ScrollView (card grid + mapped TX); owned FlatList scroll would clip.
     expect(isCatalogTableListRoute('/wallet')).toBe(false);
-    expect(isCatalogTableListRoute('/payable')).toBe(true);
-    expect(isCatalogTableListRoute('/receivable')).toBe(true);
+    expect(isCatalogTableListRoute('/payable')).toBe(false);
+    expect(isCatalogTableListRoute('/receivable')).toBe(false);
     // Mapped-row expense/income lists use shell ScrollView (same as /finance).
     expect(isCatalogTableListRoute('/routine-expenses')).toBe(false);
     expect(isCatalogTableListRoute('/unexpected-expense')).toBe(false);
     expect(isCatalogTableListRoute('/unexpected-income')).toBe(false);
     expect(isCatalogTableListRoute('/asset-purchase')).toBe(false);
-    expect(isCatalogTableListRoute('/commissions')).toBe(true);
-    expect(isCatalogTableListRoute('/finance/payroll')).toBe(true);
-    expect(isCatalogTableListRoute('/finance/bonus')).toBe(true);
+    expect(isCatalogTableListRoute('/commissions')).toBe(false);
+    expect(isCatalogTableListRoute('/finance/payroll')).toBe(false);
+    expect(isCatalogTableListRoute('/finance/bonus')).toBe(false);
     expect(isCatalogTableListRoute('/cashflow-session')).toBe(true);
     expect(isCatalogTableListRoute('/finance/tax')).toBe(false);
     expect(isCatalogTableListRoute('/finance/settings/tax-profile')).toBe(false);
     expect(isCatalogTableListRoute('/finance/payroll/2026-08')).toBe(false);
     expect(isCatalogTableListRoute('/wallet/w1')).toBe(false);
     expect(isCatalogTableListRoute('/payable/p1')).toBe(false);
+    expect(isCatalogTableListRoute('/media')).toBe(false);
   });
 
   it('keeps detail and edit routes on shell ScrollView', () => {

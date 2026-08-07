@@ -118,19 +118,7 @@ export function isCatalogTableListRoute(route?: string | null) {
 
   return (
     routePath === '/' ||
-    routePath === '/species' ||
-    routePath === '/products' ||
-    routePath === '/products/archive' ||
-    routePath === '/stock-transaction' ||
-    routePath === '/customers' ||
-    routePath === '/list-of-users' ||
-    routePath === '/payable' ||
-    routePath === '/receivable' ||
-    routePath === '/commissions' ||
-    routePath === '/finance/payroll' ||
-    routePath === '/finance/bonus' ||
-    routePath === '/cashflow-session' ||
-    routePath === '/media'
+    routePath === '/cashflow-session'
   );
 }
 
