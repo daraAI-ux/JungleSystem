@@ -37,6 +37,7 @@ import {
   type KolamProductionController,
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -581,8 +582,7 @@ function KolamProductionForm({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 if (isEdit && controller.selectedProduction) {
                   onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${controller.selectedProduction.id}`);
@@ -912,8 +912,7 @@ function KolamProductionDetail({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               muted
               onPress={() => {
                 controller.onBackToList();

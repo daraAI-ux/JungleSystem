@@ -23,6 +23,7 @@ import {
   type KolamSourceController,
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -174,8 +175,7 @@ function KolamSourceShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_SOURCE_ROOT);

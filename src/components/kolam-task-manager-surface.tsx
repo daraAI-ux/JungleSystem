@@ -32,6 +32,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDateField } from './kolam-date-field';
@@ -264,7 +265,7 @@ function KolamTaskManagerDetail({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton label="Daftar" onPress={controller.onBackToList} />
+            <KolamDaftarButton onPress={controller.onBackToList} />
             {controller.isTaskAdmin ? (
               <KolamEditButton
                 disabled={controller.mutatingTaskId === task.id}

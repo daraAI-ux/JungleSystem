@@ -49,6 +49,7 @@ import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
@@ -1212,7 +1213,7 @@ function KolamProductDetailView({
                 : shellLabels.emptyDetail}
             </Text>
           </View>
-          <KolamButton label="Daftar" onPress={onBack} />
+          <KolamDaftarButton onPress={onBack} />
         </View>
       </KolamDetailScrollSurface>
     );
@@ -1275,7 +1276,7 @@ function KolamProductDetailView({
           </Text>
         </View>
         <View style={styles.detailHeaderActions}>
-          <KolamButton label="Daftar" onPress={onBack} />
+          <KolamDaftarButton onPress={onBack} />
           {isRawDetail && onRouteChange ? (
             <KolamButton
               label="Transaksi Stok"

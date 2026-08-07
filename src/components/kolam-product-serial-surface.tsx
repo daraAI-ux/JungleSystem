@@ -21,6 +21,7 @@ import {
   type KolamProductSerialOpnameSessionItem,
 } from '../hooks/use-kolam-product-serial-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -538,8 +539,7 @@ function KolamProductSerialOpname({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               muted
               onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
               style={styles.toolbarButton}

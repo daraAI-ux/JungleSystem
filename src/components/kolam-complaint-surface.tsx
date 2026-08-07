@@ -62,6 +62,7 @@ import {
   type KolamComplaintController,
 } from '../hooks/use-kolam-complaint-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
 import { KolamDescriptionList } from './kolam-description-list';
@@ -172,8 +173,7 @@ function KolamComplaintShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_COMPLAINT_ROOT);

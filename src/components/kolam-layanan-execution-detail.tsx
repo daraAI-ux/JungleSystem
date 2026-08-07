@@ -13,6 +13,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamLayananExecutionController } from '../hooks/use-kolam-layanan-execution-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -104,8 +105,7 @@ export function KolamLayananExecutionDetail({
                 void controller.onRefresh();
               }}
             />
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => onRouteChange?.(KOLAM_LAYANAN_ROOT)}
             />
             {voucher?.id ? (

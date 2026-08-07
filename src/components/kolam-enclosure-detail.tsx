@@ -46,6 +46,7 @@ import type {KolamEnclosureController} from '../hooks/use-kolam-enclosure-contro
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
@@ -133,8 +134,7 @@ export function KolamEnclosureDetailSurface({
           title="Gagal memuat detail kandang"
         />
         <View style={styles.detailActions}>
-          <KolamButton
-            label="Daftar"
+          <KolamDaftarButton
             onPress={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)}
           />
           <KolamRefreshButton
@@ -180,8 +180,7 @@ export function KolamEnclosureDetailSurface({
                 style={styles.toolbarButton}
               />
             ))}
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() =>
                 onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}?scope=dashboard`)
               }

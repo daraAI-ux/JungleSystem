@@ -36,6 +36,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -505,8 +506,7 @@ function KolamSupplierDetail({
               </Text>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
-                label="Daftar"
+              <KolamDaftarButton
                 onPress={() => {
                   controller.onBackToList();
                   onRouteChange?.(KOLAM_SUPPLIER_ROOT);
@@ -626,8 +626,7 @@ function KolamSupplierDetail({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
-                label="Daftar"
+              <KolamDaftarButton
                 onPress={() => {
                   controller.onBackToList();
                   onRouteChange?.(KOLAM_SUPPLIER_ROOT);

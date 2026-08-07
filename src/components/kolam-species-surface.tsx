@@ -40,6 +40,7 @@ import {
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
@@ -215,8 +216,7 @@ function KolamSpeciesShell({
                 }}
               />
             ) : null}
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.('/species');

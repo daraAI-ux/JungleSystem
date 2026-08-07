@@ -13,6 +13,7 @@ import {
   type KolamTagController,
 } from '../hooks/use-kolam-tag-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamColorSwatchPicker } from './kolam-color-swatch-picker';
@@ -110,8 +111,7 @@ function KolamTagShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.('/tags');

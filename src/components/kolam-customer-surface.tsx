@@ -24,6 +24,7 @@ import type {
   KolamCustomerSurfaceProps,
 } from './kolam-workspace-module-surface-types';
 import {KolamButton} from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
@@ -355,8 +356,7 @@ function KolamCustomerDetailSurface({
           message={error || 'Pelanggan tidak ditemukan.'}
           title="Detail pelanggan belum tersedia"
         />
-        <KolamButton
-          label="Daftar"
+        <KolamDaftarButton
           onPress={() => onRouteChange?.('/customers')}
           style={styles.detailBackButton}
         />
@@ -451,8 +451,7 @@ function KolamCustomerDetailSurface({
             intent="primary"
             onPress={() => onRouteChange?.(`/customers/${customer.id}/edit`)}
           />
-          <KolamButton
-            label="Daftar"
+          <KolamDaftarButton
             onPress={() => onRouteChange?.('/customers')}
           />
         </View>

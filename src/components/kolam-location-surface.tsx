@@ -33,6 +33,7 @@ import {
 } from '../services/kolam-location-api';
 import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -346,8 +347,7 @@ function KolamLocationForm({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => onRouteChange?.('/locations')}
             />
           </View>
@@ -605,8 +605,7 @@ function KolamLocationDetail({
               </Text>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamButton
-                label="Daftar"
+              <KolamDaftarButton
                 onPress={() => onRouteChange?.('/locations')}
               />
             </View>
@@ -632,8 +631,7 @@ function KolamLocationDetail({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => onRouteChange?.('/locations')}
             />
             <KolamEditButton

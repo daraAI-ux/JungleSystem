@@ -20,6 +20,7 @@ import {
   type KolamTaxonomyController,
 } from '../hooks/use-kolam-taxonomy-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
@@ -126,8 +127,7 @@ function KolamTaxonomyShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.('/taxonomy');

@@ -27,6 +27,7 @@ import {
 } from '../hooks/use-kolam-shipping-method-controller';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -181,8 +182,7 @@ function KolamShippingMethodShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(controller.getListRoute());

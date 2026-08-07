@@ -54,6 +54,7 @@ import {
 } from '../services/kolam-user-api';
 import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -387,9 +388,8 @@ function KolamUserCreateSurface({
   return (
     <View style={styles.detailSurface}>
       <View style={styles.detailActionRow}>
-        <KolamButton
+        <KolamDaftarButton
           disabled={saving}
-          label="Daftar"
           onPress={() => onRouteChange?.('/list-of-users')}
         />
         <KolamButton
@@ -1066,8 +1066,7 @@ function KolamUserDetailSurface({
   return (
     <View style={styles.detailSurface}>
       <View style={styles.detailActionRow}>
-        <KolamButton
-          label="Daftar"
+        <KolamDaftarButton
           onPress={() => onRouteChange?.('/list-of-users')}
         />
         <KolamEditButton
@@ -2103,9 +2102,8 @@ function KolamUserEditSurface({
   return (
     <View style={styles.detailSurface}>
       <View style={styles.detailActionRow}>
-        <KolamButton
+        <KolamDaftarButton
           disabled={saving}
-          label="Daftar"
           onPress={() => onRouteChange?.('/list-of-users')}
         />
         <KolamButton

@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-brand-controller';
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
@@ -108,8 +109,7 @@ function KolamModuleShell({
           <View style={kolamTableToolbarStyles.actions}>
             {controller.mode === 'detail' ? (
               <>
-                <KolamButton
-                  label="Daftar"
+                <KolamDaftarButton
                   onPress={() => {
                     controller.onBackToList();
                     onRouteChange?.('/label-dan-field/merek');

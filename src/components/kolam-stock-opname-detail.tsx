@@ -34,6 +34,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -251,8 +252,7 @@ export function KolamStockOpnameDetail({
         </View>
 
         <View style={styles.actionWrap}>
-          <KolamButton
-            label="Daftar"
+          <KolamDaftarButton
             muted
             onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
           />

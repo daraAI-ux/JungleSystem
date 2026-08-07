@@ -20,6 +20,7 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -620,8 +621,7 @@ function KolamStockTransactionDetail({
       <View style={styles.toolbarWrap}>
         <View style={styles.toolbarShell}>
           <View style={styles.detailActionRow}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               muted
               onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
               style={styles.toolbarButton}

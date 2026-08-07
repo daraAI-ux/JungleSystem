@@ -28,6 +28,7 @@ import type { KolamLayananController } from '../hooks/use-kolam-layanan-controll
 import { spawnKolamLayananServiceTask } from '../services/kolam-layanan-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -144,8 +145,7 @@ export function KolamLayananServiceEditor({
                 void controller.onRefresh();
               }}
             />
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_LAYANAN_ROOT);
@@ -234,8 +234,7 @@ function KolamLayananDeferredPlaceholder({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => onRouteChange?.(KOLAM_LAYANAN_ROOT)}
             />
           </View>

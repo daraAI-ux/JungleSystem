@@ -66,6 +66,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
@@ -200,8 +201,7 @@ export function KolamSalesOpsDetail({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
               style={styles.toolbarButton}
             />
