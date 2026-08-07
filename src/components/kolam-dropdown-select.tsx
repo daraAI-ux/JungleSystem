@@ -17,6 +17,10 @@ import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { kolamFormControlStyles } from './kolam-form-control-styles';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
+import {
+  hideKolamOverflowMenuOverlay,
+  showKolamOverflowMenuOverlay,
+} from './kolam-overflow-menu-overlay-host';
 
 export interface KolamDropdownOption<TValue extends string = string> {
   icon?: React.ReactNode;
@@ -295,7 +299,6 @@ export function KolamOverflowMenuButton({
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
   const rowLayer = useKolamListTableRowLayer();
-  const canUseTableOverlay = floating && Boolean(rowLayer?.openFloatingMenu);
   const overlayMenuWidth = 220;
 
   React.useEffect(() => {
@@ -307,7 +310,7 @@ export function KolamOverflowMenuButton({
       setOpen(false);
       onOpenChange?.(false);
       rowLayer?.setMenuOpen(false);
-      rowLayer?.closeFloatingMenu?.(openMenuIdRef.current);
+      hideKolamOverflowMenuOverlay(openMenuIdRef.current);
     });
   }, [onOpenChange, rowLayer]);
 
@@ -320,7 +323,7 @@ export function KolamOverflowMenuButton({
     setOpen(next);
     rowLayer?.setMenuOpen(next);
     if (!next) {
-      rowLayer?.closeFloatingMenu?.(openMenuIdRef.current);
+      hideKolamOverflowMenuOverlay(openMenuIdRef.current);
     }
     onOpenChange?.(next);
   };
@@ -339,18 +342,33 @@ export function KolamOverflowMenuButton({
         availableBelow < estimatedMenuHeight + 12 &&
         availableAbove > availableBelow;
       const nextPlacement = shouldOpenUp ? 'top' : 'bottom';
+      const nextLeft = Math.min(
+        Math.max(8, _x + _width - overlayMenuWidth),
+        Math.max(8, viewport.width - overlayMenuWidth - 8),
+      );
+      const nextTop =
+        nextPlacement === 'top'
+          ? Math.max(8, y - estimatedMenuHeight - 4)
+          : Math.min(
+              y + height + 4,
+              Math.max(8, viewport.height - estimatedMenuHeight - 8),
+            );
 
       setPlacement(nextPlacement);
-      if (canUseTableOverlay) {
-        rowLayer?.openFloatingMenu?.({
-          anchor: { height, width: _width, x: _x, y },
+      if (floating) {
+        showKolamOverflowMenuOverlay({
           content: renderOverflowMenu([
             styles.overflowMenu,
-            styles.overflowMenuTableOverlay,
+            styles.overflowMenuGlobalOverlay,
           ]),
-          estimatedHeight: estimatedMenuHeight,
           id: openMenuIdRef.current,
-          placement: nextPlacement,
+          left: nextLeft,
+          onClose: () => {
+            setOpen(false);
+            rowLayer?.setMenuOpen(false);
+            onOpenChange?.(false);
+          },
+          top: nextTop,
           width: overlayMenuWidth,
         });
       }
@@ -412,7 +430,7 @@ export function KolamOverflowMenuButton({
         style={styles.overflowButton}
         textStyle={styles.overflowText}
       />
-      {open && !canUseTableOverlay ? menu : null}
+      {open && !floating ? menu : null}
     </View>
   );
 }
@@ -596,7 +614,7 @@ const styles = StyleSheet.create({
     bottom: 34,
     right: 0,
   },
-  overflowMenuTableOverlay: {
+  overflowMenuGlobalOverlay: {
     bottom: undefined,
     minWidth: 220,
     position: 'relative',

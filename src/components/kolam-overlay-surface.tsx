@@ -7,6 +7,7 @@ import {
   type KolamCommandPaletteOverlayProps,
   type KolamUserMenuPanelProps,
 } from './kolam-overlay-panel-surfaces';
+import { KolamOverflowMenuOverlayHost } from './kolam-overflow-menu-overlay-host';
 
 export interface KolamOverlaySurfaceProps {
   attention: KolamAttentionPanelProps;
@@ -27,6 +28,7 @@ export function KolamOverlaySurface({
 }: KolamOverlaySurfaceProps) {
   return (
     <>
+      <KolamOverflowMenuOverlayHost />
       <KolamUserMenuSurface open={isUserMenuOpen} userMenu={userMenu} />
       <KolamAttentionSurface open={isAttentionOpen} attention={attention} />
       <KolamCommandPaletteSurface

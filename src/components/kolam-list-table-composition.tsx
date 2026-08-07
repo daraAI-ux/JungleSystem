@@ -12,10 +12,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamCatalogListTableShell } from './kolam-catalog-list-table-shell';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import {
-  KolamListTableRowLayerContext,
-  type KolamListTableFloatingMenuRequest,
-} from './kolam-list-table-row-layer-context';
+import { KolamListTableRowLayerContext } from './kolam-list-table-row-layer-context';
 
 export type KolamListTableColumn<TRow> = {
   align?: 'left' | 'center' | 'right';
@@ -65,57 +62,14 @@ export function KolamListTableComposition<TRow>({
   style?: StyleProp<ViewStyle>;
 }) {
   const shouldRenderActionsColumn = actionsColumn || Boolean(renderActions);
-  const rootRef = React.useRef<View>(null);
-  const [floatingMenu, setFloatingMenu] = React.useState<{
-    content: React.ReactNode;
-    id: string;
-    left: number;
-    top: number;
-    width: number;
-  } | null>(null);
   const resolvedFooter = pagination ? (
     <KolamListTablePaginationFooter {...pagination} />
   ) : (
     footer ?? null
   );
-  const openFloatingMenu = React.useCallback(
-    (menu: KolamListTableFloatingMenuRequest) => {
-      const root = rootRef.current;
-      if (!root || typeof root.measureInWindow !== 'function') {
-        return;
-      }
-
-      root.measureInWindow((rootX, rootY, rootWidth) => {
-        const rawLeft = menu.anchor.x - rootX + menu.anchor.width - menu.width;
-        const maxLeft = Math.max(8, rootWidth - menu.width - 8);
-        const left = Math.min(Math.max(8, rawLeft), maxLeft);
-        const top =
-          menu.placement === 'top'
-            ? Math.max(8, menu.anchor.y - rootY - menu.estimatedHeight - 4)
-            : menu.anchor.y - rootY + menu.anchor.height + 4;
-
-        setFloatingMenu({
-          content: menu.content,
-          id: menu.id,
-          left,
-          top,
-          width: menu.width,
-        });
-      });
-    },
-    [],
-  );
-  const closeFloatingMenu = React.useCallback((id?: string) => {
-    setFloatingMenu(current => {
-      if (id && current?.id !== id) {
-        return current;
-      }
-      return null;
-    });
-  }, []);
 
   return (
-    <View ref={rootRef} style={[styles.root, fill ? styles.rootFill : null]}>
+    <View style={[styles.root, fill ? styles.rootFill : null]}>
       <KolamCatalogListTableShell
         fill={fill}
         footer={resolvedFooter}
@@ -162,8 +116,6 @@ export function KolamListTableComposition<TRow>({
               getRowKey={getRowKey}
               index={index}
               key={getRowKey(row, index)}
-              closeFloatingMenu={closeFloatingMenu}
-              openFloatingMenu={openFloatingMenu}
               renderActions={renderActions}
               row={row}
               rowStyle={rowStyle}
@@ -172,20 +124,6 @@ export function KolamListTableComposition<TRow>({
           ))
         )}
       </KolamCatalogListTableShell>
-      {floatingMenu ? (
-        <View
-          style={[
-            styles.floatingMenuLayer,
-            {
-              left: floatingMenu.left,
-              top: floatingMenu.top,
-              width: floatingMenu.width,
-            },
-          ]}
-        >
-          {floatingMenu.content}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -194,28 +132,21 @@ function KolamListTableRow<TRow>({
   columns,
   getRowKey,
   index,
-  closeFloatingMenu,
-  openFloatingMenu,
   renderActions,
   row,
   rowStyle,
   shouldRenderActionsColumn,
 }: {
   columns: Array<KolamListTableColumn<TRow>>;
-  closeFloatingMenu: (id?: string) => void;
   getRowKey: (row: TRow, index: number) => string;
   index: number;
-  openFloatingMenu: (menu: KolamListTableFloatingMenuRequest) => void;
   renderActions?: (row: TRow) => React.ReactNode;
   row: TRow;
   rowStyle?: StyleProp<ViewStyle>;
   shouldRenderActionsColumn: boolean;
 }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const layerContext = React.useMemo(
-    () => ({ closeFloatingMenu, openFloatingMenu, setMenuOpen }),
-    [closeFloatingMenu, openFloatingMenu],
-  );
+  const layerContext = React.useMemo(() => ({ setMenuOpen }), []);
 
   return (
     <KolamListTableRowLayerContext.Provider value={layerContext}>
@@ -531,11 +462,6 @@ const styles = StyleSheet.create({
   rowRaised: {
     elevation: 2000,
     zIndex: 2000,
-  },
-  floatingMenuLayer: {
-    position: 'absolute',
-    zIndex: 2000000,
-    elevation: 2000000,
   },
   cell: kolamListTableCompositionStyles.cell,
   cellCenter: {
