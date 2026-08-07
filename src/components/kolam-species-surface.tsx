@@ -2040,7 +2040,7 @@ function SpeciesRootSalesPanel({
               items={[
                 {
                   id: 'unit-hint',
-                  text: 'Satuan stok dan harga spesies.',
+                  text: 'Satuan.',
                   style: styles.fieldHint,
                 },
               ]}
