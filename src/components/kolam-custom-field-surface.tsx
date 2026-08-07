@@ -26,6 +26,7 @@ import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -33,7 +34,6 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -602,62 +602,83 @@ function KolamCustomFieldDetail({
     <View style={styles.stack}>
       {!editable && field ? (
         <>
-          <KolamLabelFieldDetailOverview
-            hero={<KolamCustomFieldIcon field={field} variant="detail" />}
-            meta={[
-              { label: 'Kunci', value: field.fieldKey },
+          <KolamDetailSummaryCard
+            body={
+              field.description ? (
+                <Text style={styles.customFieldSummaryDescription}>
+                  {stripHtmlForDetail(field.description)}
+                </Text>
+              ) : undefined
+            }
+            bodyTitle={field.description ? 'Deskripsi' : undefined}
+            fieldColumns={3}
+            fields={[
               {
+                id: 'status',
+                label: 'Status',
+                value: (
+                  <KolamStatusBadge
+                    intent={field.status === 'active' ? 'success' : 'warning'}
+                    label={getFieldStatusLabel(field.status)}
+                  />
+                ),
+              },
+              { id: 'key', label: 'Kunci', value: field.fieldKey },
+              {
+                id: 'type',
                 label: 'Tipe',
                 value: getCustomFieldTypeLabel(field.fieldType),
               },
-              { label: 'Aturan', value: getFieldRulesLabel(field) },
-
+              { id: 'order', label: 'Urutan', value: field.order },
+              { id: 'options', label: 'Opsi', value: field.options.length },
+              {
+                id: 'required',
+                label: 'Wajib',
+                value: field.required ? 'Ya' : 'Tidak',
+              },
+              { id: 'rules', label: 'Aturan', value: getFieldRulesLabel(field) },
               ...(field.updatedAt
                 ? [
                     {
+                      id: 'updated',
                       label: 'Diperbarui',
                       value: formatDateTime(field.updatedAt),
                     },
                   ]
                 : []),
             ]}
-            metrics={[
-              { label: 'Urutan', value: field.order },
-              { label: 'Opsi', value: field.options.length },
-              { label: 'Wajib', value: field.required ? 1 : 0 },
-            ]}
-            sections={[
-              {
-                accordion: true,
-                description:
-                  'Audit isi locale field kustom yang tersimpan lokal dan siap dikirim ke backend.',
-                emptyText: 'Belum ada data locale untuk diaudit.',
-                items: localeAuditItems,
-                title: 'Terjemahan',
-                total: countActiveLocaleAuditItems(localeAuditItems),
-              },
-              {
-                description: 'Nilai yang tersedia untuk tipe pilihan',
-                emptyText: 'Tidak ada opsi khusus',
-                items: field.options.map(option => ({
-                  title: option,
-                })),
-                title: 'Opsi',
-                total: field.options.length,
-              },
-              {
-                description: 'Konfigurasi teknis field kustom',
-                emptyText: 'Belum ada aturan tambahan',
-                items: getFieldRuleItems(field),
-                title: 'Aturan',
-                total: getFieldRuleItems(field).length,
-              },
-            ]}
-            status={{
-              intent: field.status === 'active' ? 'success' : 'warning',
-              label: getFieldStatusLabel(field.status),
-            }}
+            leading={
+              <View style={styles.customFieldSummaryIconInCard}>
+                <KolamCustomFieldIcon field={field} variant="detail" />
+              </View>
+            }
+            leadingStyle={styles.customFieldSummaryLeadingSlot}
+            title="Ringkasan field kustom"
           />
+
+          <View style={styles.customFieldSummaryGrid}>
+            <CustomFieldSummarySectionCard
+              description="Audit isi locale field kustom yang tersimpan lokal."
+              emptyText="Belum ada data locale untuk diaudit."
+              items={localeAuditItems}
+              title="Terjemahan"
+              total={countActiveLocaleAuditItems(localeAuditItems)}
+            />
+            <CustomFieldSummarySectionCard
+              description="Nilai yang tersedia untuk tipe pilihan"
+              emptyText="Tidak ada opsi khusus"
+              items={field.options.map(option => ({ title: option }))}
+              title="Opsi"
+              total={field.options.length}
+            />
+            <CustomFieldSummarySectionCard
+              description="Konfigurasi teknis field kustom"
+              emptyText="Belum ada aturan tambahan"
+              items={getFieldRuleItems(field)}
+              title="Aturan"
+              total={getFieldRuleItems(field).length}
+            />
+          </View>
         </>
       ) : (
         <KolamCustomFieldForm controller={controller} />
@@ -930,6 +951,108 @@ function KolamCustomFieldForm({
   );
 }
 
+type CustomFieldSummarySectionItem = {
+  badge?: string;
+  fields?: { label: string; value?: string | null }[];
+  meta?: string;
+  title: string;
+  value?: string;
+};
+
+function CustomFieldSummarySectionCard({
+  description,
+  emptyText,
+  items,
+  title,
+  total,
+}: {
+  description: string;
+  emptyText: string;
+  items: CustomFieldSummarySectionItem[];
+  title: string;
+  total: number;
+}) {
+  return (
+    <KolamDetailSummaryCard
+      body={<CustomFieldSummarySectionList emptyText={emptyText} items={items} />}
+      description={description}
+      fields={[{ id: 'total', label: 'Total', value: total }]}
+      style={styles.customFieldSummaryGridCard}
+      title={title}
+    />
+  );
+}
+
+function CustomFieldSummarySectionList({
+  emptyText,
+  items,
+}: {
+  emptyText: string;
+  items: CustomFieldSummarySectionItem[];
+}) {
+  if (!items.length) {
+    return (
+      <Text style={styles.customFieldSummaryEmptyText}>{emptyText}</Text>
+    );
+  }
+
+  return (
+    <View style={styles.customFieldSummaryItemList}>
+      {items.map((item, index) => (
+        <View
+          key={`${item.title}-${index}`}
+          style={styles.customFieldSummaryItemRow}
+        >
+          <View style={styles.customFieldSummaryItemCopy}>
+            <Text
+              numberOfLines={1}
+              style={styles.customFieldSummaryItemTitle}
+            >
+              {item.title}
+            </Text>
+            {item.meta ? (
+              <Text
+                numberOfLines={1}
+                style={styles.customFieldSummaryItemMeta}
+              >
+                {item.meta}
+              </Text>
+            ) : null}
+            {item.fields?.length ? (
+              <View style={styles.customFieldSummaryItemFields}>
+                {item.fields.map(field => (
+                  <Text
+                    key={`${item.title}-${field.label}`}
+                    numberOfLines={1}
+                    style={styles.customFieldSummaryItemMeta}
+                  >
+                    {field.label}: {field.value || '-'}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+          </View>
+          {item.value || item.badge ? (
+            <View style={styles.customFieldSummaryItemMetrics}>
+              {item.value ? (
+                <Text
+                  numberOfLines={1}
+                  style={styles.customFieldSummaryItemValue}
+                >
+                  {item.value}
+                </Text>
+              ) : null}
+              {item.badge ? (
+                <KolamStatusBadge intent="secondary" label={item.badge} />
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function FieldShell({
   children,
   label,
@@ -1169,6 +1292,86 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 14,
+  },
+  customFieldSummaryIconInCard: {
+    alignItems: 'center',
+    height: 154,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  customFieldSummaryLeadingSlot: {
+    flexBasis: '24%',
+    minWidth: 180,
+  },
+  customFieldSummaryDescription: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  customFieldSummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  customFieldSummaryGridCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 320,
+  },
+  customFieldSummaryItemList: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  customFieldSummaryItemRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 42,
+    paddingVertical: 8,
+  },
+  customFieldSummaryItemCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customFieldSummaryItemTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  customFieldSummaryItemMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  customFieldSummaryItemFields: {
+    gap: 2,
+    marginTop: 4,
+  },
+  customFieldSummaryItemMetrics: {
+    alignItems: 'flex-end',
+    gap: 4,
+    maxWidth: 130,
+  },
+  customFieldSummaryItemValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  customFieldSummaryEmptyText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   customFieldTableIdentityCell: {
     alignItems: 'center',
