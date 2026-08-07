@@ -113,11 +113,7 @@ function KolamModuleShell({
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
             <KolamRefreshButton
               accessibilityLabel="Refresh"
