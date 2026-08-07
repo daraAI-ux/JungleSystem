@@ -26,7 +26,6 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -243,43 +242,14 @@ function KolamVoucherList({
         actionsColumn
         columns={columns}
         emptyTitle={controller.loading ? 'Memuat voucher...' : 'Voucher kosong'}
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1 || controller.loading}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={
-                    controller.page >= controller.totalPages ||
-                    controller.loading
-                  }
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
         getRowKey={voucher => voucher.id}
         loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
         renderActions={voucher => (
           <KolamOverflowMenuButton
             accessibilityLabel={`Menu ${voucher.code}`}
@@ -508,16 +478,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 14,
     fontWeight: '700',
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
   cellPressable: {
     alignSelf: 'stretch',
