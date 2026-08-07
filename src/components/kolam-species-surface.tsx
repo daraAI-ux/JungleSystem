@@ -1334,6 +1334,16 @@ function KolamSpeciesForm({
             </SpeciesEditSection>
 
             <SpeciesEditSection
+              description="Foto, video, thumbnail, audio, dan media per varian."
+              title="Media"
+            >
+              <SpeciesMediaEditPanel
+                controller={controller}
+                onDelete={setDeleteMediaTarget}
+              />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
               description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
               title="Varian"
             >
@@ -1530,16 +1540,6 @@ function KolamSpeciesForm({
               title="SEO Google"
             >
               <SpeciesSeoEditPanel controller={controller} />
-            </SpeciesEditSection>
-
-            <SpeciesEditSection
-              description="Foto, video, thumbnail, audio, dan media per varian."
-              title="Media"
-            >
-              <SpeciesMediaEditPanel
-                controller={controller}
-                onDelete={setDeleteMediaTarget}
-              />
             </SpeciesEditSection>
 
             <SpeciesEditSection
