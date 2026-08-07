@@ -35,7 +35,6 @@ import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -439,39 +438,14 @@ function KolamShippingMethodMethodsTable({
       actionsColumn
       columns={columns}
       emptyTitle={controller.loading ? 'Memuat' : 'Kosong'}
-      footer={
-        <KolamTableFooterControls
-          onPageSizeChange={controller.onSetPageSize}
-          page={controller.page}
-          pageSize={controller.pageSize}
-          total={controller.total}>
-          {controller.totalPages > 1 ? (
-            <View style={styles.paginationRow}>
-              <KolamButton
-                disabled={controller.page <= 1}
-                label="Sebelumnya"
-                onPress={() =>
-                  controller.onSetPage(Math.max(1, controller.page - 1))
-                }
-              />
-              <Text style={styles.pageLabel}>
-                {controller.page} / {controller.totalPages}
-              </Text>
-              <KolamButton
-                disabled={controller.page >= controller.totalPages}
-                label="Berikutnya"
-                onPress={() =>
-                  controller.onSetPage(
-                    Math.min(controller.totalPages, controller.page + 1),
-                  )
-                }
-              />
-            </View>
-          ) : null}
-        </KolamTableFooterControls>
-      }
       getRowKey={method => method.id}
       loading={controller.loading}
+      pagination={{
+        onPageChange: controller.onSetPage,
+        page: controller.page,
+        pageSize: controller.pageSize,
+        total: controller.total,
+      }}
       renderActions={method => (
         <KolamOverflowMenuButton
           accessibilityLabel={`Menu ${method.displayName}`}
@@ -679,17 +653,10 @@ function KolamShippingMethodCatalogTable({
       <KolamListTableComposition
         columns={columns}
         emptyTitle={controller.catalogLoading ? 'Memuat' : 'Kosong'}
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={() => {}}
-            page={1}
-            pageSize={controller.catalogItems.length || 1}
-            total={controller.catalogItems.length}
-          />
-        }
         getRowKey={item => item.id}
         loading={controller.catalogLoading}
         rows={controller.catalogItems}
+        showFooter={false}
       />
     </View>
   );
@@ -1468,15 +1435,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     paddingHorizontal: 8,
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
   },
   emptyWrap: {
     paddingHorizontal: 12,
