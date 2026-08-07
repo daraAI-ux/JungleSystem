@@ -20,11 +20,11 @@ import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -541,50 +541,53 @@ function KolamUnitDetail({ controller }: { controller: KolamUnitController }) {
   return (
     <View style={styles.stack}>
       {!editable && unit ? (
-        <KolamLabelFieldDetailOverview
-          hero={<UnitHero unit={unit} />}
-          meta={[
-            { label: 'Nama', value: unit.name },
-            { label: 'Simbol/Inisial', value: unit.initial || '-' },
-            { label: 'Tipe', value: getUnitTypeLabel(unit.type) },
-            { label: 'Kategori', value: unit.category || '-' },
-            { label: 'Satuan Dasar', value: unit.isBase ? 'Ya' : 'Tidak' },
+        <KolamDetailSummaryCard
+          fields={[
+            {
+              id: 'status',
+              label: 'Status',
+              value: (
+                <KolamStatusBadge
+                  intent={unit.status === 'active' ? 'success' : 'warning'}
+                  label={getUnitStatusLabel(unit.status)}
+                />
+              ),
+            },
+            { id: 'name', label: 'Nama', value: unit.name },
+            {
+              id: 'initial',
+              label: 'Simbol/Inisial',
+              value: unit.initial || '-',
+            },
+            { id: 'type', label: 'Tipe', value: getUnitTypeLabel(unit.type) },
+            { id: 'category', label: 'Kategori', value: unit.category || '-' },
+            {
+              id: 'base',
+              label: 'Satuan Dasar',
+              value: unit.isBase ? 'Ya' : 'Tidak',
+            },
+            { id: 'id', label: 'ID', value: unit.id },
             ...(unit.createdAt
-              ? [{ label: 'Dibuat', value: formatDateTime(unit.createdAt) }]
+              ? [
+                  {
+                    id: 'created',
+                    label: 'Dibuat',
+                    value: formatDateTime(unit.createdAt),
+                  },
+                ]
               : []),
             ...(unit.updatedAt
               ? [
                   {
+                    id: 'updated',
                     label: 'Diperbarui',
                     value: formatDateTime(unit.updatedAt),
                   },
                 ]
               : []),
           ]}
-          metrics={[
-            { label: 'Inisial', value: unit.initial || '-' },
-            { label: 'Tipe', value: getUnitTypeLabel(unit.type) },
-            { label: 'Dasar', value: unit.isBase ? 1 : 0 },
-          ]}
-          sections={[
-            {
-              description: 'Metadata satuan dari backend Kolam',
-              emptyText: 'Tidak ada metadata tambahan',
-              items: [
-                { title: `ID: ${unit.id}` },
-                { title: `Status: ${getUnitStatusLabel(unit.status)}` },
-                ...(unit.category
-                  ? [{ title: `Kategori: ${unit.category}` }]
-                  : []),
-              ],
-              title: 'Metadata',
-              total: unit.category ? 3 : 2,
-            },
-          ]}
-          status={{
-            intent: unit.status === 'active' ? 'success' : 'warning',
-            label: getUnitStatusLabel(unit.status),
-          }}
+          leading={<UnitHero unit={unit} />}
+          title="Ringkasan satuan"
         />
       ) : (
         <KolamUnitForm controller={controller} />
