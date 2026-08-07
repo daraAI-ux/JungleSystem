@@ -16,14 +16,12 @@ import {
   isKolamPOStatus,
   isKolamPurchaseOrderListRoute,
   type KolamPOCheckItemInput,
+  type KolamPOFormLineItem,
   type KolamPOStatus,
   type KolamPurchaseOrder,
   type KolamPurchaseOrderItem,
 } from '../domain/kolam-purchase-order';
 import { KOLAM_SUPPLIER_ROOT } from '../domain/kolam-vendor';
-import {
-  getKolamTableColumns,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import { getKolamFileUrl } from '../lib/file-url';
@@ -43,8 +41,6 @@ import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -976,73 +972,127 @@ function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderContr
 }
 
 function KolamPOItemLinesTable({ controller }: { controller: KolamPurchaseOrderController }) {
-  return (
-    <View style={styles.catalogTable}>
-      <KolamDataTableHeader columns={getKolamTableColumns('purchase-order-form-items')} />
-      {controller.form.items.length ? (
-        controller.form.items.map(item => (
-          <KolamDataTableRowFrame key={item.key}>
-            <View style={[styles.cell, styles.primaryCell]}>
-              <Text numberOfLines={2} style={styles.rowTitle}>
-                {item.title || '—'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 110 }]}>
-              <Text numberOfLines={2} style={styles.cellText}>
-                {item.sku || '—'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 110 }]}>
-              <Text numberOfLines={2} style={styles.cellText}>
-                {item.variantLabel || '—'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 90 }]}>
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={quantity =>
-                  controller.onChangeItemLine(item.key, { quantity })
-                }
-                style={styles.qtyInput}
-                value={item.quantity}
-              />
-            </View>
-            <View style={[styles.cell, { width: 80 }]}>
-              <Text style={styles.cellText}>{item.unitLabel || '—'}</Text>
-            </View>
-            <View style={[styles.cell, { width: 120 }]}>
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  controller.onChangeItemLine(item.key, {
-                    unitPrice: Number(value) || 0,
-                  })
-                }
-                style={styles.priceInput}
-                value={String(item.unitPrice)}
-              />
-            </View>
-            <View style={[styles.cell, { width: 120 }]}>
-              <Text style={styles.numText}>
-                {formatRupiah((Number(item.quantity) || 0) * item.unitPrice)}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 72 }]}>
-              <KolamButton
-                intent="danger"
-                label="Hapus"
-                onPress={() => controller.onRemoveItemLine(item.key)}
-              />
-            </View>
-          </KolamDataTableRowFrame>
-        ))
-      ) : (
-        <View style={styles.emptyWrap}>
-          <Text style={styles.metaText}>Belum ada item ditambahkan.</Text>
-        </View>
-      )}
-    </View>
+  const columns = React.useMemo(
+    () => buildPOFormItemColumns(controller),
+    [controller],
   );
+
+  return (
+    <KolamListTableComposition
+      columns={columns}
+      emptyTitle="Belum ada item ditambahkan."
+      getRowKey={item => item.key}
+      rows={controller.form.items}
+      showFooter={false}
+      style={styles.poItemsTable}
+    />
+  );
+}
+
+function buildPOFormItemColumns(
+  controller: KolamPurchaseOrderController,
+): Array<KolamListTableColumn<KolamPOFormLineItem>> {
+  return [
+    {
+      flex: 1.3,
+      id: 'item',
+      label: 'Item',
+      render: item => (
+        <View style={styles.identityCell}>
+          <Text numberOfLines={2} style={styles.rowTitle}>
+            {item.title || '—'}
+          </Text>
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'sku',
+      label: 'SKU',
+      render: item => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {item.sku || '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'variant',
+      label: 'Varian',
+      render: item => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {item.variantLabel || '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.74,
+      id: 'quantity',
+      label: 'Qty',
+      render: item => (
+        <KolamFormTextField
+          mode="numeric"
+          onChangeText={quantity =>
+            controller.onChangeItemLine(item.key, { quantity })
+          }
+          style={styles.qtyInput}
+          value={item.quantity}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.62,
+      id: 'unit',
+      label: 'Satuan',
+      render: item => <Text style={styles.cellText}>{item.unitLabel || '—'}</Text>,
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'unitPrice',
+      label: 'Harga Satuan',
+      render: item => (
+        <KolamFormTextField
+          mode="numeric"
+          onChangeText={value =>
+            controller.onChangeItemLine(item.key, {
+              unitPrice: Number(value) || 0,
+            })
+          }
+          style={styles.priceInput}
+          value={String(item.unitPrice)}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'subtotal',
+      label: 'Subtotal',
+      render: item => (
+        <Text style={styles.numText}>
+          {formatRupiah((Number(item.quantity) || 0) * item.unitPrice)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.62,
+      id: 'actions',
+      label: 'Aksi',
+      render: item => (
+        <KolamButton
+          intent="danger"
+          label="Hapus"
+          onPress={() => controller.onRemoveItemLine(item.key)}
+        />
+      ),
+    },
+  ];
 }
 
 /* ──────────────────────────────────────────
@@ -1064,6 +1114,10 @@ function KolamPurchaseOrderDetail({
   const [pendingSimpleTransition, setPendingSimpleTransition] = React.useState<
     Exclude<KolamPOStatus, 'received' | 'on_check' | 'sent'> | null
   >(null);
+  const itemColumns = React.useMemo(
+    () => buildPODetailItemColumns({ onRouteChange }),
+    [onRouteChange],
+  );
 
   if (!po && controller.loading) {
     return (
@@ -1341,72 +1395,16 @@ function KolamPurchaseOrderDetail({
             />
           ) : null}
         </View>
-        {po.items.length ? (
-          <View style={styles.catalogTable}>
-            <KolamDataTableHeader
-              columns={getKolamTableColumns('purchase-order-items')}
-            />
-            {po.items.map((item, index) => {
-              const href = getKolamPOItemHref(item);
-              return (
-                <KolamDataTableRowFrame
-                  key={item.id || `${item.itemType}-${item.refId}-${index}`}
-                >
-                  <Pressable
-                    disabled={!href}
-                    onPress={() => {
-                      if (href) {
-                        onRouteChange?.(href);
-                      }
-                    }}
-                    style={[styles.cell, styles.primaryCell]}
-                  >
-                    <Text numberOfLines={2} style={styles.rowTitle}>
-                      {getKolamPOItemDisplayTitle(item)}
-                    </Text>
-                  </Pressable>
-                  <View style={[styles.cell, { width: 120 }]}>
-                    <Text numberOfLines={2} style={styles.cellText}>
-                      {getKolamPOItemCode(item)}
-                    </Text>
-                  </View>
-                  <View style={[styles.cell, { width: 120 }]}>
-                    <Text numberOfLines={2} style={styles.cellText}>
-                      {getKolamPOItemVariantLabel(item.variant)}
-                    </Text>
-                  </View>
-                  <View style={[styles.cell, { width: 80 }]}>
-                    <Text style={styles.numText}>{item.quantity}</Text>
-                  </View>
-                  <View style={[styles.cell, { width: 80 }]}>
-                    <Text style={styles.cellText}>
-                      {getKolamPOItemUnitLabel(item)}
-                    </Text>
-                  </View>
-                  <View style={[styles.cell, { width: 120 }]}>
-                    <Text style={styles.numText}>
-                      {formatRupiah(item.unitPrice)}
-                    </Text>
-                  </View>
-                  <View style={[styles.cell, { width: 90 }]}>
-                    <Text style={styles.numText}>
-                      {item.receivedQuantity != null
-                        ? item.receivedQuantity
-                        : '—'}
-                    </Text>
-                  </View>
-                  <View style={[styles.cell, { width: 130 }]}>
-                    <Text style={styles.numText}>
-                      {formatRupiah(item.lineTotal)}
-                    </Text>
-                  </View>
-                </KolamDataTableRowFrame>
-              );
-            })}
-          </View>
-        ) : (
-          <Text style={styles.metaText}>Belum ada item pada purchase order ini.</Text>
-        )}
+        <KolamListTableComposition
+          columns={itemColumns}
+          emptyTitle="Belum ada item pada purchase order ini."
+          getRowKey={(item, index) =>
+            item.id || `${item.itemType}-${item.refId}-${index}`
+          }
+          rows={po.items}
+          showFooter={false}
+          style={styles.poItemsTable}
+        />
       </KolamContentFrame>
 
       <KolamPOProofsCard po={po} />
@@ -1458,6 +1456,101 @@ function KolamPurchaseOrderDetail({
       />
     </View>
   );
+}
+
+function buildPODetailItemColumns({
+  onRouteChange,
+}: {
+  onRouteChange?: (route: string) => void;
+}): Array<KolamListTableColumn<KolamPurchaseOrderItem>> {
+  return [
+    {
+      flex: 1.25,
+      id: 'item',
+      label: 'Produk',
+      render: item => {
+        const href = getKolamPOItemHref(item);
+        return (
+          <Pressable
+            disabled={!href}
+            onPress={() => {
+              if (href) {
+                onRouteChange?.(href);
+              }
+            }}
+            style={styles.identityCell}
+          >
+            <Text numberOfLines={2} style={styles.rowTitle}>
+              {getKolamPOItemDisplayTitle(item)}
+            </Text>
+          </Pressable>
+        );
+      },
+    },
+    {
+      align: 'center',
+      flex: 0.85,
+      id: 'code',
+      label: 'SKU / Kode',
+      render: item => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {getKolamPOItemCode(item)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'variant',
+      label: 'Varian',
+      render: item => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {getKolamPOItemVariantLabel(item.variant)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.62,
+      id: 'quantity',
+      label: 'Jumlah',
+      render: item => <Text style={styles.numText}>{item.quantity}</Text>,
+    },
+    {
+      align: 'center',
+      flex: 0.62,
+      id: 'unit',
+      label: 'Satuan',
+      render: item => (
+        <Text style={styles.cellText}>{getKolamPOItemUnitLabel(item)}</Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'unitPrice',
+      label: 'Harga Satuan',
+      render: item => <Text style={styles.numText}>{formatRupiah(item.unitPrice)}</Text>,
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'received',
+      label: 'Diterima',
+      render: item => (
+        <Text style={styles.numText}>
+          {item.receivedQuantity != null ? item.receivedQuantity : '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'total',
+      label: 'Total',
+      render: item => <Text style={styles.numText}>{formatRupiah(item.lineTotal)}</Text>,
+    },
+  ];
 }
 
 function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
@@ -2482,9 +2575,7 @@ const styles = StyleSheet.create({
   emptyWrap: {
     padding: 16,
   },
-  catalogTable: {
-    gap: 0,
-    overflow: 'visible',
+  poItemsTable: {
     width: '100%',
   },
   listCell: {
@@ -2503,15 +2594,6 @@ const styles = StyleSheet.create({
   },
   actionsTrack: {
     alignItems: 'center',
-  },
-  cell: {
-    justifyContent: 'center',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  primaryCell: {
-    flex: 1,
   },
   statusCell: {
     gap: 4,
