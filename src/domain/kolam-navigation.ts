@@ -777,7 +777,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Status IUCN',
         moduleIcon: 'iucn',
       }),
-      sidebarItem('/products', { group: 'Produk', label: 'Produk' }),
+      sidebarItem('/products', { group: 'Produk', label: 'Daftar Produk' }),
       sidebarItem('/products/archive', { group: 'Produk', label: 'Arsip' }),
       sidebarItem('/raw-materials', { group: 'Produk', label: 'Bahan Baku' }),
       sidebarItem('/packing-materials', {
