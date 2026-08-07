@@ -1929,44 +1929,43 @@ function SpeciesMediaEditPanel({
             value={controller.form.photoLocalUri}
           />
         </View>
-        <View style={styles.mediaUploadCell}>
-          <KolamSettingsWebFileField
-            accessibilityLabel="Video spesies"
-            actionLabel="Pilih file"
-            disabled={controller.saving}
-            emptyLabel="Video belum dipilih"
-            fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
-            onLocalValueChange={videoLocalUri =>
-              controller.onChangeForm({ videoLocalUri })
-            }
-            onUpload={() => {
-              void controller.onPickVideo();
-            }}
-            previewKind="file"
-            scope="species-video"
-            title="Video"
-            value={controller.form.videoLocalUri}
+      </View>
+      <KolamSettingsWebFileField
+        accessibilityLabel="Video spesies"
+        actionLabel="Pilih file"
+        disabled={controller.saving}
+        emptyLabel="Video belum dipilih"
+        fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
+        onLocalValueChange={videoLocalUri =>
+          controller.onChangeForm({ videoLocalUri })
+        }
+        onUpload={() => {
+          void controller.onPickVideo();
+        }}
+        previewKind="file"
+        scope="species-video"
+        title="Video"
+        value={controller.form.videoLocalUri}
+      />
+      <View style={styles.mediaAudioUploadRow}>
+        <KolamButton
+          disabled={controller.saving}
+          label="Upload Audio"
+          onPress={() => {
+            void controller.onPickVoice();
+          }}
+        />
+        {controller.form.voiceLocalUri ? (
+          <KolamCopyStack
+            items={[
+              {
+                id: 'voice-local-uri',
+                text: getUploadFileDisplayName(controller.form.voiceLocalUri),
+                style: styles.fieldHint,
+              },
+            ]}
           />
-        </View>
-        <View style={styles.mediaUploadCell}>
-          <KolamSettingsWebFileField
-            accessibilityLabel="Audio spesies"
-            actionLabel="Pilih file"
-            disabled={controller.saving}
-            emptyLabel="Audio belum dipilih"
-            fileTypeLabel="Tipe file yang diterima: MP3, WAV, M4A"
-            onLocalValueChange={voiceLocalUri =>
-              controller.onChangeForm({ voiceLocalUri })
-            }
-            onUpload={() => {
-              void controller.onPickVoice();
-            }}
-            previewKind="file"
-            scope="species-audio"
-            title="Audio"
-            value={controller.form.voiceLocalUri}
-          />
-        </View>
+        ) : null}
       </View>
       {selectedSpecies?.thumbnailUri || selectedSpecies?.photoUris.length ? (
         <View style={styles.existingMediaGrid}>
@@ -2027,6 +2026,17 @@ function SpeciesMediaEditPanel({
     </View>
   );
 }
+
+function getUploadFileDisplayName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const withoutQuery = trimmed.split(/[?#]/)[0] ?? trimmed;
+  return withoutQuery.split(/[\\/]/).filter(Boolean).pop() ?? trimmed;
+}
+
 function SpeciesRootSalesPanel({
   controller,
 }: {
@@ -8142,9 +8152,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   mediaUploadCell: {
-    flexBasis: 260,
+    flexBasis: 360,
     flexGrow: 1,
     minWidth: 240,
+  },
+  mediaAudioUploadRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   mediaPickerRow: {
     alignItems: 'center',
