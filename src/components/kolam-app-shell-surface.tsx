@@ -1,6 +1,10 @@
 import React from 'react';
 import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { getDashboardLayoutVisualContract } from '../domain/dashboard-layout';
+import {
+  getKolamWorkspaceScrollPolicy,
+  isCatalogTableListRoute,
+} from '../domain/kolam-workspace-scroll';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamOverlaySurface } from './kolam-overlay-surface';
 import { KolamShellFrame } from './kolam-shell-frame';
@@ -9,6 +13,7 @@ import {
   KolamSidebar,
   KolamTopNavigation,
 } from './kolam-shell-widgets';
+import { KolamWorkspaceScrollProvider } from './kolam-workspace-scroll-context';
 
 type KolamDashboardHeaderProps = React.ComponentProps<
   typeof KolamDashboardHeader
@@ -53,14 +58,21 @@ function KolamAppShellSurfaceComponent({
     );
   }
 
-  const isKolamDashboard =
-    sidebar.activeModule === 'kolam' ||
-    sidebar.activeModule === 'am' ||
-    isKolamCenteredRoute(sidebar.activeRoute);
-  const ownsWorkspaceScroll = isCatalogTableListRoute(sidebar.activeRoute);
+  const workspaceScrollPolicy = getKolamWorkspaceScrollPolicy({
+    activeModule: sidebar.activeModule,
+    route: sidebar.activeRoute,
+  });
+  const shellScrollRef = React.useRef<ScrollView>(null);
+  const scrollShellTo = React.useCallback(
+    (options: {animated?: boolean; x?: number; y?: number}) => {
+      shellScrollRef.current?.scrollTo(options);
+    },
+    [],
+  );
+  const ownsWorkspaceScroll = workspaceScrollPolicy.scrollOwner === 'workspace';
   const pageContentStyle = [
     styles.mainContent,
-    isKolamDashboard && styles.dashboardPageContent,
+    workspaceScrollPolicy.layout === 'centered' && styles.dashboardPageContent,
   ];
 
   return (
@@ -74,23 +86,29 @@ function KolamAppShellSurfaceComponent({
         {workspaceTabs}
         <MemoKolamOverlaySurface {...overlay} />
 
-        {ownsWorkspaceScroll ? (
-          <View
-            style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}
-          >
-            <MemoKolamDashboardHeader {...dashboardHeader} />
-            <View style={styles.ownedListWorkspace}>{children}</View>
-          </View>
-        ) : (
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            style={styles.mainScroll}
-            contentContainerStyle={[pageContentStyle, styles.scrollContent]}
-          >
-            <MemoKolamDashboardHeader {...dashboardHeader} />
-            {children}
-          </ScrollView>
-        )}
+        <KolamWorkspaceScrollProvider
+          policy={workspaceScrollPolicy}
+          scrollTo={scrollShellTo}
+        >
+          {ownsWorkspaceScroll ? (
+            <View
+              style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}
+            >
+              <MemoKolamDashboardHeader {...dashboardHeader} />
+              <View style={styles.ownedListWorkspace}>{children}</View>
+            </View>
+          ) : (
+            <ScrollView
+              ref={shellScrollRef}
+              keyboardShouldPersistTaps="handled"
+              style={styles.mainScroll}
+              contentContainerStyle={[pageContentStyle, styles.scrollContent]}
+            >
+              <MemoKolamDashboardHeader {...dashboardHeader} />
+              {children}
+            </ScrollView>
+          )}
+        </KolamWorkspaceScrollProvider>
       </KolamShellFrame>
 
       {rightRail}
@@ -101,61 +119,11 @@ function KolamAppShellSurfaceComponent({
 export const KolamAppShellSurface = React.memo(KolamAppShellSurfaceComponent);
 KolamAppShellSurface.displayName = 'KolamAppShellSurface';
 
-function isKolamCenteredRoute(route?: string | null) {
-  const routePath = route?.split('?')[0] ?? '';
-
-  return (
-    KOLAM_CENTERED_EXACT_ROUTES.includes(routePath) ||
-    KOLAM_CENTERED_ROUTE_PREFIXES.some(
-      prefix => routePath === prefix || routePath.startsWith(`${prefix}/`),
-    )
-  );
-}
-
 /**
  * Routes that own workspace scrolling; disable shell ScrollView nesting.
  * Keep mapped-table pages out of this list: they rely on the shell ScrollView.
  */
-export function isCatalogTableListRoute(route?: string | null) {
-  const routePath = (route?.split('?')[0] ?? '').replace(/\/+$/, '') || '/';
-
-  return (
-    routePath === '/' ||
-    routePath === '/cashflow-session'
-  );
-}
-
-const KOLAM_CENTERED_EXACT_ROUTES = ['/list-of-users'];
-
-const KOLAM_CENTERED_ROUTE_PREFIXES = [
-  '/am',
-  '/pengaturan',
-  '/label-dan-field',
-  '/merek',
-  '/kategori',
-  '/tag',
-  '/tags',
-  '/field-kustom',
-  '/custom-fields',
-  '/satuan',
-  '/units',
-  '/species',
-  '/taxonomy',
-  '/iucn-status',
-  '/products',
-  '/archive',
-  '/raw-materials',
-  '/packing-materials',
-  '/teranura',
-  '/stock-transaction',
-  '/stock-opname',
-  '/sales',
-  '/locations',
-  '/suppliers',
-  '/customers',
-  '/purchase-order',
-  '/production',
-];
+export { isCatalogTableListRoute };
 const styles = StyleSheet.create({
   mainScroll: {
     flex: 1,

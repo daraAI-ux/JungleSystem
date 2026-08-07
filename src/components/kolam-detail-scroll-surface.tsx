@@ -2,10 +2,12 @@ import React from 'react';
 import {
   ScrollView,
   StyleSheet,
+  View,
   type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useKolamWorkspaceScrollContext } from './kolam-workspace-scroll-context';
 
 type KolamDetailScrollSurfaceProps = {
   children: React.ReactNode;
@@ -26,10 +28,44 @@ export const KolamDetailScrollSurface = React.forwardRef<
   },
   ref,
 ) {
+  const workspaceScroll = useKolamWorkspaceScrollContext();
+  const localScrollRef = React.useRef<ScrollView>(null);
+
+  React.useImperativeHandle(
+    ref,
+    () => {
+      if (workspaceScroll.scrollOwner === 'shell') {
+        return {
+          scrollTo: (options: {animated?: boolean; x?: number; y?: number}) =>
+            workspaceScroll.scrollTo?.(options),
+          scrollToEnd: (options?: {animated?: boolean}) =>
+            workspaceScroll.scrollTo?.({
+              animated: options?.animated,
+              y: Number.MAX_SAFE_INTEGER,
+            }),
+        } as React.ElementRef<typeof ScrollView>;
+      }
+
+      return (localScrollRef.current ?? {
+        scrollTo: () => undefined,
+        scrollToEnd: () => undefined,
+      }) as React.ElementRef<typeof ScrollView>;
+    },
+    [workspaceScroll],
+  );
+
+  if (workspaceScroll.scrollOwner === 'shell') {
+    return (
+      <View style={[styles.scroll, style]}>
+        <View style={[styles.content, contentContainerStyle]}>{children}</View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       {...scrollViewProps}
-      ref={ref}
+      ref={localScrollRef}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       style={[styles.scroll, style]}
       contentContainerStyle={[styles.content, contentContainerStyle]}

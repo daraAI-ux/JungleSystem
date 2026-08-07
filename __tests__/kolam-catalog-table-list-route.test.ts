@@ -1,4 +1,4 @@
-import { isCatalogTableListRoute } from '../src/components/kolam-app-shell-surface';
+import { isCatalogTableListRoute } from '../src/domain/kolam-workspace-scroll';
 
 describe('isCatalogTableListRoute', () => {
   it('matches overview root because Beranda owns its page scroll', () => {

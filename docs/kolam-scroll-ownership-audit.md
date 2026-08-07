@@ -4,9 +4,16 @@ Date: 2026-08-07
 
 ## Rule
 
-Only routes with their own bounded page scroll may disable the shell `ScrollView`.
-Mapped-table pages must stay on the shell `ScrollView` because `KolamListTableComposition`
-renders rows directly with `rows.map(...)` and is not a page scroll owner.
+`src/domain/kolam-workspace-scroll.ts` is the source of truth for workspace
+scroll policy. Only routes with their own bounded page scroll may disable the
+shell `ScrollView`. Mapped-table pages must stay on the shell `ScrollView`
+because `KolamListTableComposition` renders rows directly with `rows.map(...)`
+and is not a page scroll owner.
+
+`KolamAppShellSurface` provides this policy to workspace content.
+`KolamDetailScrollSurface` follows the policy: when the shell owns page
+scrolling, detail/form pages render a native content wrapper instead of nesting
+another page `ScrollView`.
 
 ## Owned-Scroll Routes
 
