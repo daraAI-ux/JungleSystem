@@ -1,17 +1,8 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
-import Svg, {Path, SvgXml} from 'react-native-svg';
+import Svg, {Path} from 'react-native-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
-import {KOLAM_CATEGORY_MODULE_ICON_SVG} from '../assets/icons/category-module-icon-svg';
-import {KOLAM_TAG_MODULE_ICON_SVG} from '../assets/icons/tag-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
-
-const MODULE_ICON_XML: Record<
-  Exclude<KolamNavigationModuleIcon, 'category' | 'fieldcustom' | 'tag'>,
-  string
-> = {
-  brand: KOLAM_BRAND_MODULE_ICON_SVG,
-};
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   brand: 'Icon Merek',
@@ -30,6 +21,7 @@ const FIELDCUSTOM_ICON_PATHS = [
   'M 414.492188 441.339844 L 414.492188 558.679688 C 414.492188 563.933594 410.109375 568.3125 404.855469 568.3125 C 399.601562 568.3125 395.222656 563.933594 395.222656 558.679688 L 395.222656 441.339844 C 388.652344 439.589844 382.960938 436.085938 378.582031 431.707031 C 372.011719 425.140625 367.632812 415.507812 367.632812 405.4375 C 367.632812 395.367188 372.011719 385.734375 378.582031 379.167969 C 382.960938 374.789062 389.089844 371.285156 395.222656 369.535156 L 395.222656 252.195312 C 395.222656 246.941406 399.601562 242.5625 404.855469 242.5625 C 410.109375 242.5625 414.492188 246.941406 414.492188 252.195312 L 414.492188 369.535156 C 421.058594 371.285156 426.753906 374.789062 431.132812 379.167969 C 437.699219 385.734375 442.078125 395.367188 442.078125 405.4375 C 442.078125 415.507812 437.699219 425.140625 431.132812 431.707031 C 426.753906 436.085938 420.621094 439.589844 414.492188 441.339844 Z M 414.492188 441.339844',
   'M 535.796875 319.183594 C 535.796875 329.691406 531.414062 338.886719 524.847656 345.453125 C 520.46875 349.832031 514.335938 353.335938 508.207031 355.085938 L 508.207031 558.242188 C 508.207031 563.496094 503.828125 567.875 498.570312 567.875 C 493.316406 567.875 488.9375 563.496094 488.9375 558.242188 L 488.9375 355.085938 C 482.367188 353.335938 476.675781 349.832031 472.296875 345.453125 C 465.726562 338.886719 461.347656 329.253906 461.347656 319.183594 C 461.347656 309.113281 465.726562 299.480469 472.296875 292.914062 C 476.675781 288.535156 482.804688 285.03125 488.9375 283.28125 L 488.9375 252.195312 C 488.9375 246.941406 493.316406 242.5625 498.570312 242.5625 C 503.828125 242.5625 508.207031 246.941406 508.207031 252.195312 L 508.207031 283.28125 C 514.773438 285.03125 520.46875 288.535156 524.847656 292.914062 C 531.414062 299.480469 535.796875 309.113281 535.796875 319.183594 Z M 535.796875 319.183594',
 ] as const;
+const BRAND_ICON_PATHS = getSvgPathData(KOLAM_BRAND_MODULE_ICON_SVG);
 
 const MODULE_ICON_SIZE = {
   header: 64,
@@ -49,7 +41,13 @@ export function KolamModuleIcon({
     <View
       accessibilityLabel={MODULE_ICON_LABEL[kind]}
       style={[styles.root, {height: dimension, width: dimension}]}>
-      {kind === 'category' ? (
+      {kind === 'brand' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {BRAND_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'category' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={CATEGORY_ICON_PATH} fill="#1a1a1a" fillRule="evenodd" />
         </Svg>
@@ -64,10 +62,24 @@ export function KolamModuleIcon({
           ))}
         </Svg>
       ) : (
-        <SvgXml height="100%" width="100%" xml={MODULE_ICON_XML[kind]} />
+        null
       )}
     </View>
   );
+}
+
+function getSvgPathData(svg: string) {
+  const paths: string[] = [];
+  const pattern = /\sd="([^"]+)"/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(svg)) !== null) {
+    if (match[1]) {
+      paths.push(match[1]);
+    }
+  }
+
+  return paths;
 }
 
 const styles = StyleSheet.create({
