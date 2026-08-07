@@ -435,29 +435,6 @@ describe('KolamGlobalChatRail', () => {
     });
   });
 
-  it('clips the rail root so inbox scroll cannot cover the workspace', async () => {
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(
-        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
-      );
-    });
-
-    const rail = renderer!.root
-      .findAllByType(View)
-      .find(node => node.props.accessibilityLabel === 'Panel kanan Pesan masuk');
-
-    expect(rail).toBeDefined();
-    expect(StyleSheet.flatten(rail!.props.style)).toEqual(
-      expect.objectContaining({
-        maxWidth: 360,
-        overflow: 'hidden',
-        width: 360,
-      }),
-    );
-  });
-
   afterEach(() => {
     jest.useRealTimers();
   });

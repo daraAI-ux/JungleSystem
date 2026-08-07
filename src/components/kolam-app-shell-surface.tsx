@@ -111,14 +111,7 @@ function KolamAppShellSurfaceComponent({
         </KolamWorkspaceScrollProvider>
       </KolamShellFrame>
 
-      {rightRail ? (
-        <View
-          accessibilityLabel="Kolam right rail host"
-          style={styles.rightRailHost}
-        >
-          {rightRail}
-        </View>
-      ) : null}
+      {rightRail}
     </KolamShellFrame>
   );
 }
@@ -155,10 +148,5 @@ const styles = StyleSheet.create({
   ownedListWorkspace: {
     flex: 1,
     minHeight: 0,
-  },
-  rightRailHost: {
-    flexShrink: 0,
-    minHeight: 0,
-    overflow: 'hidden',
   },
 });
