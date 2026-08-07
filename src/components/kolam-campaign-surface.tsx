@@ -28,7 +28,6 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -244,40 +243,14 @@ function KolamCampaignList({
         emptyTitle={
           controller.loading ? 'Memuat kampanye...' : 'Kampanye kosong'
         }
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
         getRowKey={campaign => campaign.id}
         loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
         renderActions={campaign => (
           <KolamOverflowMenuButton
             accessibilityLabel={`Menu ${campaign.title}`}
@@ -574,15 +547,5 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '600',
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
   },
 });

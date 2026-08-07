@@ -57,7 +57,6 @@ import { kolamDetailMetaStripStyles } from './kolam-detail-meta-strip';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -223,42 +222,14 @@ function KolamProyekList({
         actionsColumn
         columns={columns}
         emptyTitle={controller.loading ? 'Memuat' : 'Kosong'}
-        footer={
-          <KolamTableFooterControls
-            onPageSizeChange={controller.onSetPageSize}
-            page={controller.page}
-            pageSize={controller.pageSize}
-            total={controller.total}
-          >
-            {controller.totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                <KolamButton
-                  disabled={controller.page <= 1}
-                  intent="outline"
-                  label="Sebelumnya"
-                  onPress={() =>
-                    controller.onSetPage(Math.max(1, controller.page - 1))
-                  }
-                />
-                <Text style={styles.pageLabel}>
-                  {controller.page} / {controller.totalPages}
-                </Text>
-                <KolamButton
-                  disabled={controller.page >= controller.totalPages}
-                  intent="outline"
-                  label="Berikutnya"
-                  onPress={() =>
-                    controller.onSetPage(
-                      Math.min(controller.totalPages, controller.page + 1),
-                    )
-                  }
-                />
-              </View>
-            ) : null}
-          </KolamTableFooterControls>
-        }
         getRowKey={item => item.id}
         loading={controller.loading}
+        pagination={{
+          onPageChange: controller.onSetPage,
+          page: controller.page,
+          pageSize: controller.pageSize,
+          total: controller.total,
+        }}
         renderActions={item => {
           const label = item.quotationNumber || item.id;
           return (
@@ -3069,15 +3040,6 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     paddingVertical: 24,
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
   },
   cellPressable: {
     alignSelf: 'stretch',
