@@ -37,6 +37,7 @@ export function KolamMenuSectionItems({
                   <KolamMenuItem
                     active={isMenuItemActive(item, activeRoute)}
                     label={item.label}
+                    moduleIcon={item.moduleIcon}
                     onPress={() => onSelectItem(item)}
                   />
                 )}
@@ -75,6 +76,7 @@ export function KolamMenuSectionItems({
                     active={isMenuItemActive(item, activeRoute)}
                     grouped
                     label={item.label}
+                    moduleIcon={item.moduleIcon}
                     onPress={() => onSelectItem(item)}
                   />
                 )}

@@ -75,6 +75,7 @@ export function useKolamDashboardHeaderController({
         (activeModule === 'kolam'
           ? getDashboardTitle(displayName, undefined, timezone)
           : activeTitle),
+      moduleIcon: routeContext?.moduleIcon,
       subtitle: routeContext?.subtitle ?? getDashboardSubtitle(activeTitle),
       syncIndicator: getDashboardHeaderSyncIndicator({
         activeModule,

@@ -4,6 +4,7 @@ import {
   type DashboardHeaderAction,
   type DashboardHeaderSyncIndicator,
 } from '../domain/dashboard-header';
+import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 import { KolamDashboardHeaderActions } from './kolam-dashboard-header-actions';
 import { KolamDashboardHeaderCopy } from './kolam-dashboard-header-copy';
 import { KolamDashboardSyncIndicatorBadge } from './kolam-dashboard-sync-indicator-badge';
@@ -13,6 +14,7 @@ import { dashboardHeaderStyles as styles } from './kolam-dashboard-header-styles
 export function KolamDashboardHeader({
   actions,
   eyebrow,
+  moduleIcon,
   onSelectModule,
   subtitle,
   syncIndicator,
@@ -20,6 +22,7 @@ export function KolamDashboardHeader({
 }: {
   actions: DashboardHeaderAction[];
   eyebrow?: string;
+  moduleIcon?: KolamNavigationModuleIcon;
   onSelectModule: (action: DashboardHeaderAction) => void;
   subtitle: string;
   syncIndicator: DashboardHeaderSyncIndicator;
@@ -29,6 +32,7 @@ export function KolamDashboardHeader({
     <KolamHeaderFrame variant="dashboardHeader">
       <KolamDashboardHeaderCopy
         eyebrow={eyebrow}
+        moduleIcon={moduleIcon}
         subtitle={subtitle}
         title={title}
       />

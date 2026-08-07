@@ -17,6 +17,15 @@ export const dashboardHeaderStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  headerCopyWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerCopyText: {
+    flex: 1,
+    minWidth: 0,
+  },
   eyebrow: {
     marginBottom: DASHBOARD_HEADER_VISUAL.eyebrow.marginBottom,
     color: V.colors.mutedFg,

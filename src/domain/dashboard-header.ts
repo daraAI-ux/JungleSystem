@@ -31,6 +31,7 @@ export interface DashboardHeaderAction {
 
 export interface DashboardHeaderRouteContext {
   eyebrow?: string;
+  moduleIcon?: KolamNavigationItem['moduleIcon'];
   route: string;
   subtitle: string;
   title: string;
@@ -296,6 +297,7 @@ export function getDashboardHeaderRouteContext({
         activeNavigationItem.group ??
         getKolamNavigationSectionTitleForRoute(activeNavigationItem.route) ??
         undefined,
+      moduleIcon: activeNavigationItem.moduleIcon,
       route: activeNavigationItem.route,
       title: getDashboardRouteTitle(activeNavigationItem),
       subtitle: activeNavigationItem.description ?? '',

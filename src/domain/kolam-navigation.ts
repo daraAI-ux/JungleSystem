@@ -7,8 +7,11 @@ export interface KolamNavigationItem {
   route: string;
   description: string;
   group?: string;
+  moduleIcon?: KolamNavigationModuleIcon;
   requiredAccess: Array<keyof AccessScope>;
 }
+
+export type KolamNavigationModuleIcon = 'brand';
 
 export interface KolamNavigationSection {
   id: string;
@@ -134,6 +137,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Merek',
         route: '/brands',
         description: 'Kelola merek produk',
+        moduleIcon: 'brand',
         requiredAccess: ['kolam'],
       },
       {
