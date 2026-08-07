@@ -654,8 +654,9 @@ function KolamCustomFieldDetail({
             title="Ringkasan field kustom"
           />
 
+          <CustomFieldLocaleSummaryCard items={localeAuditItems} />
+
           <View style={styles.customFieldSummaryGrid}>
-            <CustomFieldLocaleSummaryCard items={localeAuditItems} />
             <CustomFieldSummarySectionCard
               description="Nilai yang tersedia untuk tipe pilihan"
               emptyText="Tidak ada opsi khusus"
