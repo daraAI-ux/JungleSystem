@@ -7,10 +7,7 @@ import {
   type KolamCustomFieldType,
 } from '../domain/kolam-custom-field';
 import { getKolamFormSection } from '../domain/kolam-form';
-import {
-  countActiveLocaleAuditItems,
-  createCustomFieldLocaleAuditItems,
-} from '../domain/kolam-locale-audit';
+import { createCustomFieldLocaleAuditItems } from '../domain/kolam-locale-audit';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   useKolamCustomFieldController,
@@ -658,13 +655,7 @@ function KolamCustomFieldDetail({
           />
 
           <View style={styles.customFieldSummaryGrid}>
-            <CustomFieldSummarySectionCard
-              description="Audit isi locale field kustom yang tersimpan lokal."
-              emptyText="Belum ada data locale untuk diaudit."
-              items={localeAuditItems}
-              title="Terjemahan"
-              total={countActiveLocaleAuditItems(localeAuditItems)}
-            />
+            <CustomFieldLocaleSummaryCard items={localeAuditItems} />
             <CustomFieldSummarySectionCard
               description="Nilai yang tersedia untuk tipe pilihan"
               emptyText="Tidak ada opsi khusus"
@@ -961,6 +952,27 @@ type CustomFieldSummarySectionItem = {
   value?: string;
 };
 
+function CustomFieldLocaleSummaryCard({
+  items,
+}: {
+  items: CustomFieldSummarySectionItem[];
+}) {
+  return (
+    <KolamDetailSummaryCard
+      body={
+        <CustomFieldLocaleAccordionList
+          emptyText="Belum ada data locale untuk diaudit."
+          items={items}
+        />
+      }
+      description="Audit isi locale field kustom."
+      fields={[]}
+      style={styles.customFieldSummaryGridCard}
+      title="Terjemahan"
+    />
+  );
+}
+
 function CustomFieldSummarySectionCard({
   description,
   emptyText,
@@ -982,6 +994,108 @@ function CustomFieldSummarySectionCard({
       style={styles.customFieldSummaryGridCard}
       title={title}
     />
+  );
+}
+
+function CustomFieldLocaleAccordionList({
+  emptyText,
+  items,
+}: {
+  emptyText: string;
+  items: CustomFieldSummarySectionItem[];
+}) {
+  const [openKey, setOpenKey] = React.useState<string | null>(
+    items.length ? getCustomFieldSummarySectionItemKey(items[0], 0) : null,
+  );
+
+  React.useEffect(() => {
+    if (!items.length) {
+      setOpenKey(null);
+      return;
+    }
+
+    const keys = items.map(getCustomFieldSummarySectionItemKey);
+    if (!openKey || !keys.includes(openKey)) {
+      setOpenKey(keys[0]);
+    }
+  }, [items, openKey]);
+
+  if (!items.length) {
+    return (
+      <Text style={styles.customFieldSummaryEmptyText}>{emptyText}</Text>
+    );
+  }
+
+  return (
+    <View style={styles.customFieldLocaleAccordionList}>
+      {items.map((item, index) => {
+        const key = getCustomFieldSummarySectionItemKey(item, index);
+        const isOpen = openKey === key;
+
+        return (
+          <View key={key} style={styles.customFieldLocaleAccordionItem}>
+            <KolamInteractionFrame
+              accessibilityLabel={`${isOpen ? 'Tutup' : 'Buka'} ${item.title}`}
+              accessibilityState={{ expanded: isOpen }}
+              onPress={() => setOpenKey(isOpen ? null : key)}
+              style={styles.customFieldLocaleAccordionHeader}
+            >
+              <View style={styles.customFieldLocaleAccordionCopy}>
+                <Text
+                  numberOfLines={1}
+                  style={styles.customFieldSummaryItemTitle}
+                >
+                  {item.title}
+                </Text>
+                {item.value ? (
+                  <Text
+                    numberOfLines={1}
+                    style={styles.customFieldLocaleAccordionSummary}
+                  >
+                    {item.value}
+                  </Text>
+                ) : null}
+              </View>
+              {item.badge ? (
+                <KolamStatusBadge
+                  intent={item.badge === 'Aktif' ? 'success' : 'muted'}
+                  label={item.badge}
+                />
+              ) : null}
+              <Text style={styles.customFieldLocaleAccordionChevron}>
+                {isOpen ? '^' : 'v'}
+              </Text>
+            </KolamInteractionFrame>
+            {isOpen ? (
+              <View style={styles.customFieldLocaleAccordionContent}>
+                {item.meta ? (
+                  <Text style={styles.customFieldSummaryItemMeta}>
+                    {item.meta}
+                  </Text>
+                ) : null}
+                {item.value ? (
+                  <Text style={styles.customFieldSummaryItemValue}>
+                    {item.value}
+                  </Text>
+                ) : null}
+                {item.fields?.length ? (
+                  <View style={styles.customFieldSummaryItemFields}>
+                    {item.fields.map(field => (
+                      <Text
+                        key={`${item.title}-${field.label}`}
+                        style={styles.customFieldSummaryItemMeta}
+                      >
+                        {field.label}: {field.value || '-'}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -1053,6 +1167,13 @@ function CustomFieldSummarySectionList({
       ))}
     </View>
   );
+}
+
+function getCustomFieldSummarySectionItemKey(
+  item: CustomFieldSummarySectionItem,
+  index: number,
+) {
+  return `${item.title}-${item.badge ?? ''}-${index}`;
 }
 
 function FieldShell({
@@ -1367,6 +1488,49 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '800',
+  },
+  customFieldLocaleAccordionList: {
+    gap: 8,
+  },
+  customFieldLocaleAccordionItem: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  customFieldLocaleAccordionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  customFieldLocaleAccordionCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  customFieldLocaleAccordionSummary: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  customFieldLocaleAccordionChevron: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+    width: 18,
+  },
+  customFieldLocaleAccordionContent: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
   },
   customFieldSummaryEmptyText: {
     color: V.colors.mutedFg,
