@@ -5,6 +5,7 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
+import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
 
 export function KolamSettingsWebFileField({
   accessibilityLabel = 'Logo',
@@ -52,7 +53,7 @@ export function KolamSettingsWebFileField({
   return (
     <View style={styles.settingsWebUploadStack}>
       <View style={styles.settingsWebUploadTitleRow}>
-        <Text style={styles.settingsWebUploadIcon}>▣</Text>
+        <KolamUploadCameraIcon />
         <Text style={styles.settingsWebUploadTitle}>{title}</Text>
         {fileLimitLabel ? (
           <Text style={styles.settingsWebUploadCount}>{fileLimitLabel}</Text>
