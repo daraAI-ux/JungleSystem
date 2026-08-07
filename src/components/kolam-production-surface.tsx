@@ -28,9 +28,6 @@ import {
   type KolamProductForProduction,
   type KolamSubmitCheckBreakdownEntry,
 } from '../domain/kolam-production';
-import {
-  getKolamTableColumns,
-} from '../domain/kolam-table';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { formatRupiah } from '../lib/money';
@@ -44,8 +41,6 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -1344,7 +1339,14 @@ function KolamProductionMaterialsSection({
   onRouteChange?: (route: string) => void;
 }) {
   const showStock = production.status === 'waiting_for_po';
-  const columns = getKolamTableColumns('production-materials');
+  const columns = React.useMemo(
+    () => buildProductionMaterialColumns({ onRouteChange, showStock }),
+    [onRouteChange, showStock],
+  );
+  const totalSubtotal = production.componentsUsed.reduce(
+    (sum, line) => sum + line.unitPrice * line.quantity,
+    0,
+  );
 
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1353,64 +1355,147 @@ function KolamProductionMaterialsSection({
       {production.status === 'completed' ? (
         <Text style={styles.helperText}>Biaya aktual: {formatRupiah(production.actualCost)}</Text>
       ) : null}
-      <View style={styles.catalogTable}>
-        <KolamDataTableHeader columns={columns} />
-        {production.componentsUsed.map(line => (
-          <KolamDataTableRowFrame key={line.id}>
-            <Pressable
-              onPress={() => line.productId && onRouteChange?.(`/products/${line.productId}`)}
-              style={[styles.cell, styles.primaryCell]}
-            >
-              <Text numberOfLines={2} style={styles.rowTitle}>
-                {line.productName}
-              </Text>
-            </Pressable>
-            <View style={[styles.cell, { width: 120 }]}>
-              <Text numberOfLines={2} style={styles.cellText}>
-                {getKolamProductionVariantLabel(line.variant)}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 120 }]}>
-              <Text numberOfLines={2} style={styles.cellText}>
-                {line.productSku || line.productCode || '—'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 80 }]}>
-              <Text style={styles.cellText}>
-                {line.unit?.initial || line.unit?.name || '—'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 100 }]}>
-              <Text style={styles.numText}>{line.quantity}</Text>
-            </View>
-            <View style={[styles.cell, { width: 100 }]}>
-              <Text style={styles.numText}>
-                {showStock ? String(line.currentStock ?? line.available ?? '—') : 'Ter-reserve'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 100 }]}>
-              <Text style={styles.cellText}>
-                {showStock
-                  ? line.sufficient === false
-                    ? 'Kurang'
-                    : line.sufficient
-                    ? 'Cukup'
-                    : '—'
-                  : 'Dialokasikan'}
-              </Text>
-            </View>
-            <View style={[styles.cell, { width: 120 }]}>
-              <Text style={styles.numText}>{formatRupiah(line.unitPrice)}</Text>
-            </View>
-            <View style={[styles.cell, { width: 130 }]}>
-              <Text style={styles.numText}>
-                {formatRupiah(line.unitPrice * line.quantity)}
-              </Text>
-            </View>
-          </KolamDataTableRowFrame>
-        ))}
-      </View>
+      <KolamListTableComposition
+        columns={columns}
+        emptyTitle="Belum ada bahan"
+        footer={
+          <ProductionMaterialsFooter
+            count={production.componentsUsed.length}
+            total={totalSubtotal}
+          />
+        }
+        getRowKey={line => line.id}
+        rows={production.componentsUsed}
+        showFooter={production.componentsUsed.length > 0}
+        style={styles.materialsTable}
+      />
     </KolamContentFrame>
+  );
+}
+
+function buildProductionMaterialColumns({
+  onRouteChange,
+  showStock,
+}: {
+  onRouteChange?: (route: string) => void;
+  showStock: boolean;
+}): Array<KolamListTableColumn<KolamProductionComponentUsed>> {
+  return [
+    {
+      flex: 1.3,
+      id: 'component',
+      label: 'Komponen',
+      render: line => (
+        <Pressable
+          onPress={() => line.productId && onRouteChange?.(`/products/${line.productId}`)}
+          style={styles.identityCell}
+        >
+          <Text numberOfLines={2} style={styles.rowTitle}>
+            {line.productName}
+          </Text>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'variant',
+      label: 'Varian',
+      render: line => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {getKolamProductionVariantLabel(line.variant)}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'code',
+      label: 'SKU / Kode',
+      render: line => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {line.productSku || line.productCode || '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.58,
+      id: 'unit',
+      label: 'Satuan',
+      render: line => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {line.unit?.initial || line.unit?.name || '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'quantity',
+      label: 'Qty Dibutuhkan',
+      render: line => <Text style={styles.numText}>{line.quantity}</Text>,
+    },
+    {
+      align: 'center',
+      flex: 0.8,
+      id: 'stock',
+      label: 'Stok Tersedia',
+      render: line => (
+        <Text style={styles.numText}>
+          {showStock ? String(line.currentStock ?? line.available ?? '—') : 'Ter-reserve'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'sufficiency',
+      label: 'Kecukupan',
+      render: line =>
+        showStock ? (
+          line.sufficient === false ? (
+            <KolamStatusBadge intent="danger" label="Kurang" style={styles.centerBadge} />
+          ) : line.sufficient ? (
+            <KolamStatusBadge intent="success" label="Cukup" style={styles.centerBadge} />
+          ) : (
+            <Text style={styles.cellText}>—</Text>
+          )
+        ) : (
+          <KolamStatusBadge intent="muted" label="Dialokasikan" style={styles.centerBadge} />
+        ),
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'unitPrice',
+      label: 'Harga / Satuan',
+      render: line => <Text style={styles.numText}>{formatRupiah(line.unitPrice)}</Text>,
+    },
+    {
+      align: 'center',
+      flex: 0.95,
+      id: 'subtotal',
+      label: 'Subtotal',
+      render: line => (
+        <Text style={styles.numText}>{formatRupiah(line.unitPrice * line.quantity)}</Text>
+      ),
+    },
+  ];
+}
+
+function ProductionMaterialsFooter({
+  count,
+  total,
+}: {
+  count: number;
+  total: number;
+}) {
+  return (
+    <View style={styles.materialsFooter}>
+      <Text style={styles.materialsFooterLabel}>Total material ({count} komponen)</Text>
+      <Text style={styles.materialsFooterTotal}>{formatRupiah(total)}</Text>
+    </View>
   );
 }
 
@@ -1765,12 +1850,6 @@ const styles = StyleSheet.create({
   emptyWrap: { padding: 16 },
   paginationRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   pageLabel: { color: V.colors.mutedFg, fontSize: 12, fontWeight: '600' },
-  cell: {
-    justifyContent: 'center',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
   listCell: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1781,10 +1860,6 @@ const styles = StyleSheet.create({
   identityCell: {
     alignItems: 'flex-start',
     justifyContent: 'center',
-  },
-  primaryCell: {
-    minWidth: 0,
-    width: 96,
   },
   statusCell: {
     alignItems: 'center',
@@ -1906,10 +1981,26 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   photoEditCell: { gap: 6 },
-  catalogTable: {
-    gap: 0,
-    overflow: 'visible',
+  materialsTable: {
     width: '100%',
+  },
+  materialsFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  materialsFooterLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  materialsFooterTotal: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
   },
   formActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   detailScroll: { gap: 12, paddingBottom: 24 },
