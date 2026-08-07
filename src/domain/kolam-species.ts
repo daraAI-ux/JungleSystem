@@ -1452,10 +1452,7 @@ export function normalizeKolamSpecies(payload: unknown): KolamSpecies {
   const videos = normalizeMediaList(record.videos);
   const variants = normalizeVariantMediaList(record.variants);
   const links = normalizeSpeciesLinks(record.link);
-  const thumbnail =
-    getKolamFileUrl(getNullableString(record, 'thumbnailImage')) ??
-    photos[0] ??
-    null;
+  const thumbnail = normalizeSpeciesThumbnailUri(record);
   const translationsFromRecord =
     normalizeKolamTranslationsFromRecord<KolamSpeciesLocaleFields>(
       record.translations,
@@ -2333,6 +2330,26 @@ function normalizeVariantMediaList(value: unknown): KolamSpeciesVariantMedia[] {
     };
   });
 }
+
+function normalizeSpeciesThumbnailUri(record: Record<string, unknown>) {
+  const keys = [
+    'thumbnailUri',
+    'thumbnailUrl',
+    'thumbnail',
+    'thumbnailImage',
+    'thumbnailPath',
+  ];
+
+  for (const key of keys) {
+    const uri = getKolamFileUrl(getNullableString(record, key));
+    if (uri) {
+      return uri;
+    }
+  }
+
+  return null;
+}
+
 function normalizeTaxonomyPath(value: unknown) {
   const record = asRecord(value);
   const ancestry = Array.isArray(record.ancestors)
