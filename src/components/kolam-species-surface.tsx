@@ -1498,7 +1498,14 @@ function KolamSpeciesForm({
                 description="Berat, dimensi, dan informasi logistik spesies tanpa varian."
                 title="Logistik"
               >
-                <SpeciesRootLogisticsPanel controller={controller} />
+                <View
+                  style={[
+                    styles.speciesBasicInfoCard,
+                    styles.customFieldSettingsCard,
+                  ]}
+                >
+                  <SpeciesRootLogisticsPanel controller={controller} />
+                </View>
               </SpeciesEditSection>
             ) : null}
 
@@ -2499,84 +2506,121 @@ function SpeciesRootLogisticsPanel({
       value: unit.id,
     })),
   ];
+  const weightUnitOptions = [
+    { label: 'Pilih satuan berat', value: '' },
+    ...controller.units.filter(isSpeciesWeightUnit).map(unit => ({
+      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
+      value: unit.id,
+    })),
+  ];
+  const dimensionUnitOptions = [
+    { label: 'Pilih satuan dimensi', value: '' },
+    ...controller.units.filter(isSpeciesDimensionUnit).map(unit => ({
+      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
+      value: unit.id,
+    })),
+  ];
 
   return (
-    <FieldShell label="Berat dan Dimensi Root">
-      <View style={styles.grocerPricingPanel}>
+    <View style={styles.pricingPanelStack}>
+      <SpeciesVariantFieldPanel
+        description="Opsional untuk pengiriman dan logistik."
+        title="Berat"
+      >
         <View style={styles.twoColumnGrid}>
-          <View style={styles.inlineFieldGroup}>
+          <VariantCompactField label="Nilai berat">
             <KolamFormTextField
               editable={!controller.saving}
               keyboardType="numeric"
               onChangeText={weightValue =>
                 controller.onChangeForm({ weightValue })
               }
-              placeholder="Berat"
+              placeholder="Nilai berat"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.weightValue}
             />
+          </VariantCompactField>
+          <VariantCompactField label="Satuan berat">
             <KolamDropdownSelect
               label="Satuan berat"
               menuStyle={styles.longDropdownMenu}
               onChange={weightUnitId =>
                 controller.onChangeForm({ weightUnitId })
               }
-              options={unitOptions}
+              options={
+                weightUnitOptions.length > 1 ? weightUnitOptions : unitOptions
+              }
               searchable
               searchPlaceholder="Cari satuan..."
               showLabelInTrigger={false}
               value={form.weightUnitId}
             />
-          </View>
-          <View style={styles.inlineFieldGroup}>
-            <View style={styles.dimensionTriplet}>
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={dimensionLength =>
-                  controller.onChangeForm({ dimensionLength })
-                }
-                placeholder="P"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.dimensionLength}
-              />
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={dimensionWidth =>
-                  controller.onChangeForm({ dimensionWidth })
-                }
-                placeholder="L"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.dimensionWidth}
-              />
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={dimensionHeight =>
-                  controller.onChangeForm({ dimensionHeight })
-                }
-                placeholder="T"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.dimensionHeight}
-              />
-            </View>
+          </VariantCompactField>
+        </View>
+      </SpeciesVariantFieldPanel>
+
+      <SpeciesVariantFieldPanel
+        description="Opsional untuk kemasan dan penyimpanan."
+        title="Dimensi"
+      >
+        <View style={styles.logisticsDimensionGrid}>
+          <VariantCompactField label="Panjang">
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={dimensionLength =>
+                controller.onChangeForm({ dimensionLength })
+              }
+              placeholder="Panjang"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.dimensionLength}
+            />
+          </VariantCompactField>
+          <VariantCompactField label="Lebar">
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={dimensionWidth =>
+                controller.onChangeForm({ dimensionWidth })
+              }
+              placeholder="Lebar"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.dimensionWidth}
+            />
+          </VariantCompactField>
+          <VariantCompactField label="Tinggi">
+            <KolamFormTextField
+              editable={!controller.saving}
+              keyboardType="numeric"
+              onChangeText={dimensionHeight =>
+                controller.onChangeForm({ dimensionHeight })
+              }
+              placeholder="Tinggi"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.dimensionHeight}
+            />
+          </VariantCompactField>
+          <VariantCompactField label="Satuan dimensi">
             <KolamDropdownSelect
               label="Satuan dimensi"
               menuStyle={styles.longDropdownMenu}
               onChange={dimensionUnitId =>
                 controller.onChangeForm({ dimensionUnitId })
               }
-              options={unitOptions}
+              options={
+                dimensionUnitOptions.length > 1
+                  ? dimensionUnitOptions
+                  : unitOptions
+              }
               searchable
               searchPlaceholder="Cari satuan..."
               showLabelInTrigger={false}
               value={form.dimensionUnitId}
             />
-          </View>
+          </VariantCompactField>
         </View>
-      </View>
-    </FieldShell>
+      </SpeciesVariantFieldPanel>
+    </View>
   );
 }
 
@@ -4516,113 +4560,109 @@ function SpeciesVariantFormCard({
             <View style={styles.variantTabContent}>
               <View style={styles.variantSpecsGrid}>
                 <View style={styles.variantSpecsGroup}>
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: 'label',
-                        text: 'Berat',
-                        style: styles.variantSpecsLabel,
-                      },
-                    ]}
-                  />
+                  <Text style={styles.variantSpecsLabel}>Berat</Text>
                   <View style={styles.variantSpecsTwoGrid}>
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={weightValue =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          weightValue,
-                        })
-                      }
-                      placeholder="Nilai"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={variant.weightValue}
-                    />
-                    <KolamDropdownSelect
-                      label="Satuan"
-                      menuStyle={styles.longDropdownMenu}
-                      onChange={weightUnitId =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          weightUnitId,
-                        })
-                      }
-                      options={
-                        weightUnitOptions.length > 1
-                          ? weightUnitOptions
-                          : unitOptions
-                      }
-                      searchable
-                      searchPlaceholder="Cari satuan..."
-                      showLabelInTrigger={false}
-                      value={variant.weightUnitId}
-                    />
+                    <VariantCompactField label="Nilai berat">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        keyboardType="numeric"
+                        onChangeText={weightValue =>
+                          updateSpeciesVariantRow(controller, variant.id, {
+                            weightValue,
+                          })
+                        }
+                        placeholder="Nilai berat"
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={variant.weightValue}
+                      />
+                    </VariantCompactField>
+                    <VariantCompactField label="Satuan berat">
+                      <KolamDropdownSelect
+                        label="Satuan berat"
+                        menuStyle={styles.longDropdownMenu}
+                        onChange={weightUnitId =>
+                          updateSpeciesVariantRow(controller, variant.id, {
+                            weightUnitId,
+                          })
+                        }
+                        options={
+                          weightUnitOptions.length > 1
+                            ? weightUnitOptions
+                            : unitOptions
+                        }
+                        searchable
+                        searchPlaceholder="Cari satuan..."
+                        showLabelInTrigger={false}
+                        value={variant.weightUnitId}
+                      />
+                    </VariantCompactField>
                   </View>
                 </View>
                 <View style={styles.variantSpecsGroup}>
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: 'label',
-                        text: 'Dimensi (P x L x T)',
-                        style: styles.variantSpecsLabel,
-                      },
-                    ]}
-                  />
+                  <Text style={styles.variantSpecsLabel}>Dimensi</Text>
                   <View style={styles.variantSpecsFourGrid}>
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={dimensionLength =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          dimensionLength,
-                        })
-                      }
-                      placeholder="P"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={variant.dimensionLength}
-                    />
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={dimensionWidth =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          dimensionWidth,
-                        })
-                      }
-                      placeholder="L"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={variant.dimensionWidth}
-                    />
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={dimensionHeight =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          dimensionHeight,
-                        })
-                      }
-                      placeholder="T"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={variant.dimensionHeight}
-                    />
-                    <KolamDropdownSelect
-                      label="Satuan"
-                      menuStyle={styles.longDropdownMenu}
-                      onChange={dimensionUnitId =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          dimensionUnitId,
-                        })
-                      }
-                      options={
-                        dimensionUnitOptions.length > 1
-                          ? dimensionUnitOptions
-                          : unitOptions
-                      }
-                      searchable
-                      searchPlaceholder="Cari satuan..."
-                      showLabelInTrigger={false}
-                      value={variant.dimensionUnitId}
-                    />
+                    <VariantCompactField label="Panjang">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        keyboardType="numeric"
+                        onChangeText={dimensionLength =>
+                          updateSpeciesVariantRow(controller, variant.id, {
+                            dimensionLength,
+                          })
+                        }
+                        placeholder="Panjang"
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={variant.dimensionLength}
+                      />
+                    </VariantCompactField>
+                    <VariantCompactField label="Lebar">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        keyboardType="numeric"
+                        onChangeText={dimensionWidth =>
+                          updateSpeciesVariantRow(controller, variant.id, {
+                            dimensionWidth,
+                          })
+                        }
+                        placeholder="Lebar"
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={variant.dimensionWidth}
+                      />
+                    </VariantCompactField>
+                    <VariantCompactField label="Tinggi">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        keyboardType="numeric"
+                        onChangeText={dimensionHeight =>
+                          updateSpeciesVariantRow(controller, variant.id, {
+                            dimensionHeight,
+                          })
+                        }
+                        placeholder="Tinggi"
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={variant.dimensionHeight}
+                      />
+                    </VariantCompactField>
+                    <VariantCompactField label="Satuan dimensi">
+                      <KolamDropdownSelect
+                        label="Satuan dimensi"
+                        menuStyle={styles.longDropdownMenu}
+                        onChange={dimensionUnitId =>
+                          updateSpeciesVariantRow(controller, variant.id, {
+                            dimensionUnitId,
+                          })
+                        }
+                        options={
+                          dimensionUnitOptions.length > 1
+                            ? dimensionUnitOptions
+                            : unitOptions
+                        }
+                        searchable
+                        searchPlaceholder="Cari satuan..."
+                        showLabelInTrigger={false}
+                        value={variant.dimensionUnitId}
+                      />
+                    </VariantCompactField>
                   </View>
                 </View>
               </View>
@@ -7830,10 +7870,12 @@ const styles = StyleSheet.create({
   },
   variantSpecsTwoGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   variantSpecsFourGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   variantMemberPointsRow: {
@@ -7953,6 +7995,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     lineHeight: 15,
+  },
+  logisticsDimensionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   grocerPricingPanel: {
     backgroundColor: V.colors.bg,
