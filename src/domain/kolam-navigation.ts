@@ -15,6 +15,7 @@ export type KolamNavigationModuleIcon =
   | 'brand'
   | 'category'
   | 'fieldcustom'
+  | 'iucn'
   | 'species'
   | 'tag'
   | 'taxonomy'
@@ -223,6 +224,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/iucn-status',
         description: 'Badge status konservasi',
         group: 'Stok Hidup',
+        moduleIcon: 'iucn',
         requiredAccess: ['kolam'],
       },
       {
@@ -773,6 +775,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/iucn-status', {
         group: 'Stok Hidup',
         label: 'Status IUCN',
+        moduleIcon: 'iucn',
       }),
       sidebarItem('/products', { group: 'Produk', label: 'Produk' }),
       sidebarItem('/products/archive', { group: 'Produk', label: 'Arsip' }),
