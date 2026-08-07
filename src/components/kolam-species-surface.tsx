@@ -3052,6 +3052,18 @@ function renderSpeciesCustomFieldRowsInput(
     );
   }
 
+  if (field.fieldType === 'string') {
+    return (
+      <KolamFormTextField
+        editable={!disabled}
+        onChangeText={value => update({ value })}
+        placeholder="Masukkan nilai"
+        style={settingsWebFormStyles.settingsWebFormFieldValue}
+        value={getCustomFieldStringValue(raw)}
+      />
+    );
+  }
+
   return (
     <KolamFormTextField
       editable={!disabled}
