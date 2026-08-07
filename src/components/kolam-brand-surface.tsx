@@ -865,43 +865,51 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               value={form.notes}
             />
           </FieldShell>
-          <FieldShell label="Link">
-            <KolamFormTextField
-              editable={!controller.saving}
-              multiline
-              onChangeText={linkText => controller.onChangeForm({ linkText })}
-              placeholder="Satu link per baris"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              ]}
-              value={form.linkText}
-            />
-          </FieldShell>
-          <FieldShell label="Logo lokal">
-            <View style={styles.logoPickerRow}>
-              <KolamFormTextField
-                editable={!controller.saving}
-                mode="url"
-                onChangeText={logoLocalUri =>
-                  controller.onChangeForm({ logoLocalUri })
-                }
-                placeholder="Pilih file logo dari komputer"
-                style={[
-                  settingsWebFormStyles.settingsWebFormFieldValue,
-                  styles.logoPickerInput,
-                ]}
-                value={form.logoLocalUri}
-              />
-              <KolamButton
-                disabled={controller.saving}
-                label="Pilih Logo"
-                onPress={() => {
-                  void controller.onPickLogo();
-                }}
-              />
+          <View style={styles.brandAssetSettingsCard}>
+            <View style={styles.brandAssetSettingsRow}>
+              <FieldShell label="Link">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  multiline
+                  onChangeText={linkText =>
+                    controller.onChangeForm({ linkText })
+                  }
+                  placeholder="Satu link per baris"
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                  ]}
+                  value={form.linkText}
+                />
+              </FieldShell>
             </View>
-          </FieldShell>
+            <View style={styles.brandAssetSettingsRow}>
+              <FieldShell label="Logo">
+                <View style={styles.logoPickerRow}>
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    mode="url"
+                    onChangeText={logoLocalUri =>
+                      controller.onChangeForm({ logoLocalUri })
+                    }
+                    placeholder="Pilih file logo dari komputer"
+                    style={[
+                      settingsWebFormStyles.settingsWebFormFieldValue,
+                      styles.logoPickerInput,
+                    ]}
+                    value={form.logoLocalUri}
+                  />
+                  <KolamButton
+                    disabled={controller.saving}
+                    label="Pilih Logo"
+                    onPress={() => {
+                      void controller.onPickLogo();
+                    }}
+                  />
+                </View>
+              </FieldShell>
+            </View>
+          </View>
         </View>
         <View style={styles.formActions}>
           <KolamButton
@@ -1303,6 +1311,17 @@ const styles = StyleSheet.create({
   countryDropdownMenu: {
     maxHeight: 260,
     minWidth: 360,
+  },
+  brandAssetSettingsCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+  },
+  brandAssetSettingsRow: {
+    width: '100%',
   },
   logoPickerRow: {
     minHeight: V.control.inputHeight,
