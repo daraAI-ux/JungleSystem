@@ -63,6 +63,7 @@ import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
+import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -450,9 +451,8 @@ function KolamSpeciesList({
                   setSyncPriceDialogOpen(true);
                 }}
               />
-              <KolamButton
+              <KolamStockSyncButton
                 disabled={!syncPriceItemCount || controller.loading}
-                label="Sinkron Stok"
                 onPress={() => {
                   setSyncStockSelection(null);
                   setSyncStockDialogOpen(true);

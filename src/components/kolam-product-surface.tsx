@@ -68,6 +68,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
+import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {
@@ -427,8 +428,7 @@ export function KolamProductSurface({
                       label="Sinkron Harga"
                       onPress={() => setSyncPriceOpen(true)}
                     />
-                    <KolamButton
-                      label="Sinkron Stok"
+                    <KolamStockSyncButton
                       onPress={() => {
                         setSyncStockSelection({
                           ids: productIds,
