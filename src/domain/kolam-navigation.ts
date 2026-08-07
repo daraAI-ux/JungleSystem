@@ -15,6 +15,7 @@ export type KolamNavigationModuleIcon =
   | 'brand'
   | 'category'
   | 'fieldcustom'
+  | 'species'
   | 'tag'
   | 'unit';
 
@@ -205,6 +206,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Kelola data spesies untuk livestock, POS, dan marketplace',
         group: 'Stok Hidup',
+        moduleIcon: 'species',
         requiredAccess: ['kolam', 'pos'],
       },
       {
@@ -756,7 +758,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Satuan',
         moduleIcon: 'unit',
       }),
-      sidebarItem('/species', { group: 'Stok Hidup', label: 'Spesies' }),
+      sidebarItem('/species', {
+        group: 'Stok Hidup',
+        label: 'Spesies',
+        moduleIcon: 'species',
+      }),
       sidebarItem('/taxonomy', { group: 'Stok Hidup', label: 'Taksonomi' }),
       sidebarItem('/iucn-status', {
         group: 'Stok Hidup',
