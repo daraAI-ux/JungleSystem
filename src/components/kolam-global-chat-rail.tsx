@@ -7470,7 +7470,7 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
-    overflow: 'visible',
+    overflow: 'hidden',
     position: 'relative',
     zIndex: 500,
     elevation: 50,
