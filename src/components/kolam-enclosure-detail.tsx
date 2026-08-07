@@ -46,6 +46,7 @@ import type {KolamEnclosureController} from '../hooks/use-kolam-enclosure-contro
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
@@ -193,8 +194,7 @@ export function KolamEnclosureDetailSurface({
               onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />
-            <KolamButton
-              label="Ubah"
+            <KolamEditButton
               onPress={() =>
                 onRouteChange?.(
                   `${KOLAM_ENCLOSURE_ROOT}/${enclosure.id}/edit`,
@@ -1726,8 +1726,7 @@ function EnclosureCommentItem({
         ) : null}
         {comment.isMyOwn && !editOpen ? (
           <>
-            <KolamButton
-              label="Ubah"
+            <KolamEditButton
               onPress={() => setEditOpen(true)}
               style={styles.toolbarButton}
             />

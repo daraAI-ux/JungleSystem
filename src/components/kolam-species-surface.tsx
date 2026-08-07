@@ -40,6 +40,7 @@ import {
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryLabel } from './kolam-category-label';
@@ -203,9 +204,8 @@ function KolamSpeciesShell({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Rubah"
                 onPress={() => {
                   controller.onEdit();
                   const selectedItem = controller.selectedSpecies;

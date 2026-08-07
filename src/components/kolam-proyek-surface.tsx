@@ -48,6 +48,7 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -614,7 +615,7 @@ function KolamProyekDetailRead({
               />
             ) : null}
             {controller.canEdit ? (
-              <KolamButton label="Ubah" onPress={controller.onEdit} />
+              <KolamEditButton onPress={controller.onEdit} />
             ) : null}
             {controller.canSend ? (
               <KolamButton

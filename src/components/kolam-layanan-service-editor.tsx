@@ -28,6 +28,7 @@ import type { KolamLayananController } from '../hooks/use-kolam-layanan-controll
 import { spawnKolamLayananServiceTask } from '../services/kolam-layanan-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -151,9 +152,8 @@ export function KolamLayananServiceEditor({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Ubah"
                 onPress={() => {
                   controller.onEdit();
                   if (controller.selectedService?.id) {

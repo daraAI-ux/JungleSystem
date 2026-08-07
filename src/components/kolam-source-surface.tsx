@@ -23,6 +23,7 @@ import {
   type KolamSourceController,
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -181,9 +182,8 @@ function KolamSourceShell({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Ubah"
                 onPress={() => {
                   controller.onEdit();
                   if (controller.selectedSource) {

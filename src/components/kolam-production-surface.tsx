@@ -37,6 +37,7 @@ import {
   type KolamProductionController,
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -921,8 +922,7 @@ function KolamProductionDetail({
               style={styles.toolbarButton}
             />
             {canEditKolamProduction(production.status) && canUpdate ? (
-              <KolamButton
-                label="Edit"
+              <KolamEditButton
                 onPress={() => {
                   controller.onEdit();
                   onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${production.id}/edit`);

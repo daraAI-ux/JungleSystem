@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-brand-controller';
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -114,9 +115,8 @@ function KolamModuleShell({
                     onRouteChange?.('/label-dan-field/merek');
                   }}
                 />
-                <KolamButton
+                <KolamEditButton
                   intent="primary"
-                  label="Edit"
                   onPress={controller.onEdit}
                 />
               </>

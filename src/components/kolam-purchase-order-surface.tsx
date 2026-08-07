@@ -36,6 +36,7 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -1175,8 +1176,7 @@ function KolamPurchaseOrderDetail({
               style={styles.toolbarButton}
             />
             {canEdit ? (
-              <KolamButton
-                label="Edit"
+              <KolamEditButton
                 onPress={() => {
                   if (controller.onEdit()) {
                     onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${po.id}/edit`);

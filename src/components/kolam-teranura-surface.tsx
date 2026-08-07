@@ -10,6 +10,7 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -93,9 +94,8 @@ function KolamTeranuraShell({
               onPress={() => onRouteChange?.('/teranura')}
             />
             {item ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Edit"
                 onPress={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
               />
             ) : null}

@@ -20,6 +20,7 @@ import {
   type KolamPackingMaterialController,
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -710,9 +711,8 @@ function KolamPackingMaterialDetail({
         </View>
         <View style={styles.detailTopActions}>
           <KolamButton label="Daftar" onPress={goBackToList} />
-          <KolamButton
+          <KolamEditButton
             intent="primary"
-            label="Edit"
             onPress={controller.onEdit}
           />
           <KolamButton

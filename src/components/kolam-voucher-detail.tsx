@@ -17,6 +17,7 @@ import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 import type { KolamVoucherController } from '../hooks/use-kolam-voucher-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
@@ -101,8 +102,7 @@ export function KolamVoucherDetail({
               onPress={() => onRouteChange?.(KOLAM_VOUCHER_ROOT)}
             />
             {controller.canUpdate ? (
-              <KolamButton
-                label="Ubah"
+              <KolamEditButton
                 onPress={() => {
                   const next = controller.onEdit();
                   if (next) {

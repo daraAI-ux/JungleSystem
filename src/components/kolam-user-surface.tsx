@@ -54,6 +54,7 @@ import {
 } from '../services/kolam-user-api';
 import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
@@ -1069,9 +1070,8 @@ function KolamUserDetailSurface({
           label="Daftar"
           onPress={() => onRouteChange?.('/list-of-users')}
         />
-        <KolamButton
+        <KolamEditButton
           intent="primary"
-          label="Rubah"
           onPress={() =>
             onRouteChange?.(`/list-of-users/users/${encodedUserId}/edit`)
           }

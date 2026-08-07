@@ -32,6 +32,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDateField } from './kolam-date-field';
 import {
@@ -265,9 +266,8 @@ function KolamTaskManagerDetail({
           <View style={kolamTableToolbarStyles.actions}>
             <KolamButton label="Daftar" onPress={controller.onBackToList} />
             {controller.isTaskAdmin ? (
-              <KolamButton
+              <KolamEditButton
                 disabled={controller.mutatingTaskId === task.id}
-                label="Ubah"
                 onPress={() => controller.onEditTask(task)}
               />
             ) : null}
@@ -2972,9 +2972,8 @@ function KolamTaskCategorySettingsPanel({
                 style={styles.categorySmallCell}
               />
               <View style={styles.categoryActionsCell}>
-                <KolamButton
+                <KolamEditButton
                   disabled={controller.mutatingTaskId === `category:${category.id}`}
-                  label="Edit"
                   onPress={() => controller.onEditCategory(category)}
                 />
                 <KolamButton
@@ -3251,9 +3250,8 @@ function KolamTaskTypeSettingsPanel({
                 </Text>
               </View>
               <View style={styles.categoryActionsCell}>
-                <KolamButton
+                <KolamEditButton
                   disabled={controller.mutatingTaskId === `task-type:${row.id}`}
-                  label="Edit"
                   onPress={() => controller.onEditTaskType(row)}
                 />
                 {!row.isSystem ? (

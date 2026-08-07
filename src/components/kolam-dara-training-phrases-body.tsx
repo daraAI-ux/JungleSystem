@@ -22,6 +22,7 @@ import {
   updateKolamDaraTrainingPhrase,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
@@ -237,9 +238,8 @@ export function KolamDaraTrainingPhrasesBody({
                 </View>
                 {canManage ? (
                   <View style={styles.colAction}>
-                    <KolamButton
+                    <KolamEditButton
                       intent="plain"
-                      label="Edit"
                       onPress={() => openEdit(row)}
                       size="sm"
                     />

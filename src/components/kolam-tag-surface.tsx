@@ -13,6 +13,7 @@ import {
   type KolamTagController,
 } from '../hooks/use-kolam-tag-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamColorSwatchPicker } from './kolam-color-swatch-picker';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -117,9 +118,8 @@ function KolamTagShell({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Edit"
                 onPress={controller.onEdit}
               />
             ) : null}

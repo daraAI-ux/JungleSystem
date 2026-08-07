@@ -23,6 +23,7 @@ import {
   type KolamCategoryController,
 } from '../hooks/use-kolam-category-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryIcon } from './kolam-category-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -124,9 +125,8 @@ function KolamCategoryShell({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Edit"
                 onPress={controller.onEdit}
               />
             ) : null}

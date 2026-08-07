@@ -12,6 +12,7 @@ import {
 } from '../hooks/use-kolam-unexpected-income-detail-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import type { KolamDescriptionListRow } from './kolam-description-list-types';
@@ -206,9 +207,8 @@ function UnexpectedIncomeDetailBody({
               />
             ) : null}
             {controller.canUpdate ? (
-              <KolamButton
+              <KolamEditButton
                 intent="secondary"
-                label="Ubah"
                 onPress={controller.onEdit}
               />
             ) : null}

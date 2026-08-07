@@ -36,6 +36,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
@@ -633,9 +634,8 @@ function KolamSupplierDetail({
                 }}
                 style={styles.toolbarButton}
               />
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Edit"
                 onPress={() => {
                   controller.onEdit();
                   onRouteChange?.(

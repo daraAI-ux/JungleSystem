@@ -20,6 +20,7 @@ import {
   type KolamTaxonomyController,
 } from '../hooks/use-kolam-taxonomy-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -133,9 +134,8 @@ function KolamTaxonomyShell({
               }}
             />
             {controller.mode === 'detail' ? (
-              <KolamButton
+              <KolamEditButton
                 intent="primary"
-                label="Edit"
                 onPress={controller.onEdit}
               />
             ) : null}

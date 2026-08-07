@@ -34,6 +34,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -994,7 +995,7 @@ function LineCard({
       ) : null}
       <View style={styles.actionWrap}>
         {canEdit ? (
-          <KolamButton label="Edit" onPress={onEdit} />
+          <KolamEditButton onPress={onEdit} />
         ) : null}
         {canRemove ? (
           <KolamButton intent="danger" label="Hapus" onPress={onRemove} />

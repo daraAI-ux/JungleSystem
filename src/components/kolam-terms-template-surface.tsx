@@ -20,6 +20,7 @@ import {
   type KolamTermsTemplateController,
 } from '../hooks/use-kolam-terms-template-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -422,8 +423,7 @@ function KolamTermsTemplateFormShell({
               />
             ) : null}
             {controller.mode === 'detail' && editable ? (
-              <KolamButton
-                label="Ubah"
+              <KolamEditButton
                 onPress={() => controller.onEdit()}
                 intent="secondary"
               />

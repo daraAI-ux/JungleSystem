@@ -115,6 +115,7 @@ import {
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
@@ -3234,9 +3235,7 @@ function AmHardwareRackGrid({
             <Text style={styles.rowMeta}>Added By {formatRackAddedBy(rack)}</Text>
             <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
             <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel={`AM Hardware Edit Rack ${rack._id}`}
-                label="Edit"
+              <KolamEditButton
                 intent="outline"
                 size="sm"
                 onPress={() => onEditRack(rack)}
@@ -3291,9 +3290,7 @@ function AmHardwareBoxGrid({
             <Text style={styles.rowMeta}>Device {box.deviceCount ?? 0} / 24</Text>
             <AmStatusChip label={box.status} tone={box.status === 'active' ? 'success' : 'muted'} />
             <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel={`AM Hardware Edit Box ${box._id}`}
-                label="Edit"
+              <KolamEditButton
                 intent="outline"
                 size="sm"
                 onPress={() => onEditBox(box)}
@@ -3360,9 +3357,7 @@ function AmHardwareDeviceList({
           </View>
           <View style={styles.actionCol}>
             <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel={`AM Hardware Edit Device ${device._id}`}
-                label="Edit"
+              <KolamEditButton
                 intent="outline"
                 size="sm"
                 onPress={() => onEditDevice(device)}
@@ -3843,11 +3838,9 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               <View style={styles.statusCol}>
                 <View style={styles.statusActionStack}>
                   <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
-                  <KolamButton
-                    accessibilityLabel={`AM Device Edit Service Account ${account._id}`}
+                  <KolamEditButton
                     disabled={isSubmittingService || actingDeviceServiceId === account._id}
                     intent="outline"
-                    label="Edit"
                     muted={isSubmittingService || actingDeviceServiceId === account._id}
                     size="sm"
                     onPress={() => editDeviceServiceAccount(account)}
@@ -5338,7 +5331,7 @@ function AmWebhooksPage() {
               </Text>
               <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
               <View style={styles.inlineActions}>
-                <KolamButton accessibilityLabel={`AM Webhook Edit ${config._id}`} disabled={isWebhookActionLocked} label="Edit" intent="outline" muted={isWebhookActionLocked} size="sm" onPress={() => editWebhook(config)} />
+                <KolamEditButton disabled={isWebhookActionLocked} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={() => editWebhook(config)} />
                 <KolamButton
                   accessibilityLabel={`AM Webhook Toggle ${config._id}`}
                   disabled={isWebhookActionLocked}
@@ -5801,9 +5794,7 @@ function AmUsersPage() {
             <View style={styles.actionCol}>
               <View style={styles.inlineActions}>
                 {canUpdateUser ? (
-                  <KolamButton
-                    accessibilityLabel={`AM User Edit ${user._id}`}
-                    label="Edit"
+                  <KolamEditButton
                     intent="outline"
                     size="sm"
                     onPress={() => editUser(user)}

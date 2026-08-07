@@ -33,6 +33,7 @@ import {
 } from '../services/kolam-location-api';
 import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
@@ -635,9 +636,8 @@ function KolamLocationDetail({
               label="Daftar"
               onPress={() => onRouteChange?.('/locations')}
             />
-            <KolamButton
+            <KolamEditButton
               intent="primary"
-              label="Edit"
               onPress={() =>
                 onRouteChange?.(`/locations/${location.id}/edit`)
               }

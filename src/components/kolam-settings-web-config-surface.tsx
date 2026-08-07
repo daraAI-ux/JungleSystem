@@ -18,6 +18,7 @@ import type {
 } from '../domain/settings-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
@@ -7127,9 +7128,8 @@ function MarketplaceAssetRows<Item>({
               />
               <View style={styles.marketplaceAssetActions}>
                 {onEdit ? (
-                  <KolamActionControlButton
+                  <KolamEditButton
                     disabled={disabled}
-                    label="Edit"
                     onPress={() => onEdit(item)}
                   />
                 ) : null}
@@ -7839,9 +7839,8 @@ function MarketplaceLandingControlsPanel({
                     ]}
                   />
                   <View style={styles.notificationSoundActions}>
-                    <KolamActionControlButton
+                    <KolamEditButton
                       disabled={disabled}
-                      label="Edit"
                       onPress={() => onEditNotice(notice)}
                     />
                     <KolamActionControlButton
@@ -8214,9 +8213,8 @@ function FinancialSettingsPanel({
                     ]}
                   />
                   <View style={styles.financialActions}>
-                    <KolamActionControlButton
+                    <KolamEditButton
                       disabled={disabled || busy}
-                      label="Edit"
                       onPress={() => {
                         onEditPaymentMethod(method);
                         setPaymentMethodFormOpen(true);

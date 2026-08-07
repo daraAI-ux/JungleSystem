@@ -27,6 +27,7 @@ import {
 } from '../hooks/use-kolam-shipping-method-controller';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -189,9 +190,8 @@ function KolamShippingMethodShell({
             />
             {controller.mode === 'detail' ? (
               <>
-                <KolamButton
+                <KolamEditButton
                   intent="primary"
-                  label="Ubah"
                   onPress={() => {
                     controller.onEdit();
                     if (controller.selectedMethod) {

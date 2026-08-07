@@ -24,6 +24,7 @@ import type {
   KolamCustomerSurfaceProps,
 } from './kolam-workspace-module-surface-types';
 import {KolamButton} from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
   KolamDetailMediaPreview,
@@ -446,9 +447,8 @@ function KolamCustomerDetailSurface({
           ) : null}
         </View>
         <View style={styles.detailActions}>
-          <KolamButton
+          <KolamEditButton
             intent="primary"
-            label="Rubah"
             onPress={() => onRouteChange?.(`/customers/${customer.id}/edit`)}
           />
           <KolamButton

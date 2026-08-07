@@ -21,6 +21,7 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamAssetPurchaseDepreciationTab } from './kolam-asset-purchase-depreciation-tab';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
@@ -255,9 +256,8 @@ function AssetPurchaseDetailBody({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamButton
+            <KolamEditButton
               intent="secondary"
-              label="Ubah"
               onPress={controller.onEdit}
               style={styles.toolbarButton}
             />

@@ -66,6 +66,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { formatRupiah } from '../lib/money';
 import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import {
@@ -214,8 +215,7 @@ export function KolamSalesOpsDetail({
               style={styles.toolbarButton}
             />
             {canShowKolamSaleEditAction(sale) ? (
-              <KolamButton
-                label="Ubah"
+              <KolamEditButton
                 onPress={() =>
                   onRouteChange?.(`${KOLAM_SALES_ROOT}/${sale.id}/edit`)
                 }

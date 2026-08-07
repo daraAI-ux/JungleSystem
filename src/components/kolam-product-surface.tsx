@@ -49,6 +49,7 @@ import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
@@ -1283,9 +1284,8 @@ function KolamProductDetailView({
               }
             />
           ) : null}
-          <KolamButton
+          <KolamEditButton
             intent="primary"
-            label="Rubah"
             onPress={() => onEdit(product)}
           />
           {controller.filters.archived ? (

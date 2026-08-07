@@ -45,6 +45,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -189,9 +190,8 @@ function WalletDetailMode({
           </View>
         ) : null}
         {wallet && controller.canEdit ? (
-          <KolamButton
+          <KolamEditButton
             intent="secondary"
-            label="Ubah"
             onPress={() => onRouteChange?.(getKolamWalletEditRoute(wallet.id))}
             style={styles.filterTrigger}
           />
