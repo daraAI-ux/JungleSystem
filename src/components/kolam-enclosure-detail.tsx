@@ -46,6 +46,7 @@ import type {KolamEnclosureController} from '../hooks/use-kolam-enclosure-contro
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
@@ -777,9 +778,8 @@ function KolamEnclosureDetailTasksTab({
               style={styles.operationInput}
               value={taskTypeId}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.operationLoading}
-              label="Simpan"
               onPress={() => void onCreate()}
               style={styles.toolbarButton}
             />
@@ -1686,9 +1686,8 @@ function EnclosureCommentItem({
             value={editText}
           />
           <View style={styles.detailActions}>
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.operationLoading || !canSaveEdit}
-              label="Simpan"
               onPress={() =>
                 void controller
                   .onEditComment(comment.id, editText)

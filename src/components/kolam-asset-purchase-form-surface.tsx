@@ -18,6 +18,7 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
@@ -193,7 +194,7 @@ function AssetPurchaseFormBody({
             label="Batal"
             onPress={controller.onCancel}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={!controller.canSubmit}
             label={
               controller.submitting

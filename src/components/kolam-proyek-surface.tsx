@@ -48,6 +48,7 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -1245,7 +1246,7 @@ function KolamProyekDetailRead({
                       value={progressNoteText}
                     />
                   </View>
-                  <KolamButton
+                  <KolamSaveButton
                     disabled={controller.acting}
                     label={controller.acting ? 'Menyimpan…' : 'Simpan'}
                     onPress={() => {

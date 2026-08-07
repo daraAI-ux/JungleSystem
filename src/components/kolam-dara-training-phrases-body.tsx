@@ -22,6 +22,7 @@ import {
   updateKolamDaraTrainingPhrase,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
@@ -343,7 +344,7 @@ export function KolamDaraTrainingPhrasesBody({
                 onPress={() => setOpen(false)}
                 size="sm"
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan…' : 'Simpan'}
                 onPress={() => {

@@ -25,6 +25,7 @@ import {
   verifyKolamDaraTaxSettlement,
 } from '../services/kolam-dara-tax-settlement-api';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
@@ -284,7 +285,7 @@ export function KolamDaraTaxSetoranBody() {
                 onPress={() => setOpen(false)}
                 size="sm"
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan…' : 'Simpan'}
                 onPress={() => {

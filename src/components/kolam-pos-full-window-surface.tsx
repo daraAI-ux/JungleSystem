@@ -24,6 +24,7 @@ import type {WorkflowStep} from '../lib/workflow';
 import type {CreateCustomerBody} from '../services/pos-api';
 import {KolamShellChromeContext} from '../context/kolam-app-contexts';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDashboardHeader} from './kolam-dashboard-header';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamNavItem} from './kolam-nav-item';
@@ -530,8 +531,7 @@ export function KolamPosFullWindowSurface({
               style={styles.payButton}
             />
             <View style={styles.savedOrderActions}>
-              <KolamButton
-                label="Simpan"
+              <KolamSaveButton
                 intent="outline"
                 size="sm"
                 disabled={!checkout.cart.length}

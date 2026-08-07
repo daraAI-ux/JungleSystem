@@ -20,6 +20,7 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -187,9 +188,8 @@ function KolamStockTransactionOpname({
             label="Batal"
             onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={!canSave}
-            intent="primary"
             label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
             onPress={() => {
               void controller.onSubmitOpname().then(result => {

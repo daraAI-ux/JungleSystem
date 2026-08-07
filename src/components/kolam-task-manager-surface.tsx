@@ -32,6 +32,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
@@ -2532,7 +2533,7 @@ function KolamTaskFormModal({
                 label="Batal"
                 onPress={controller.onCloseForm}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan...' : 'Simpan'}
                 onPress={() => {
@@ -3029,7 +3030,7 @@ function KolamTaskCategoryFormModal({
                 label="Batal"
                 onPress={controller.onCloseCategoryForm}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan...' : 'Simpan'}
                 onPress={() => {
@@ -3124,7 +3125,7 @@ function KolamTaskRecurringBulkEnrollmentModal({
                 label="Batal"
                 onPress={controller.onCloseRecurringBulkForm}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving || !controller.recurringBulkForm.taskTypeId}
                 label={saving ? 'Menyimpan...' : 'Simpan'}
                 onPress={() => {
@@ -3307,7 +3308,7 @@ function KolamTaskTypeFormModal({
                 label="Batal"
                 onPress={controller.onCloseTaskTypeForm}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan...' : 'Simpan'}
                 onPress={() => {
@@ -3488,7 +3489,7 @@ function KolamTaskRecurringTemplateFormModal({
                 label="Batal"
                 onPress={controller.onCloseRecurringTemplateForm}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan...' : 'Simpan'}
                 onPress={() => {

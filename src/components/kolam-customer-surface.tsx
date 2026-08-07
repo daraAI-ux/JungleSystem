@@ -24,6 +24,7 @@ import type {
   KolamCustomerSurfaceProps,
 } from './kolam-workspace-module-surface-types';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -756,9 +757,8 @@ function KolamCustomerFormSurface({
         </View>
         <View style={styles.detailActions}>
           <KolamButton disabled={saving} label="Batal" onPress={handleCancel} />
-          <KolamButton
+          <KolamSaveButton
             disabled={saving}
-            intent="primary"
             label={saving ? 'Menyimpan...' : 'Simpan'}
             onPress={handleSave}
           />

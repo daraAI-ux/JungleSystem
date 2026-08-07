@@ -45,6 +45,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDateField } from './kolam-date-field';
@@ -1062,9 +1063,8 @@ function WalletEditMode({
                   onRouteChange?.(getKolamWalletDetailRoute(wallet.id))
                 }
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={controller.submitting || !name.trim()}
-                intent="primary"
                 label={controller.submitting ? 'Menyimpan…' : 'Simpan'}
                 onPress={() => {
                   setFormError('');

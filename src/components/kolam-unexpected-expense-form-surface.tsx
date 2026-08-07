@@ -8,6 +8,7 @@ import {
 } from '../hooks/use-kolam-unexpected-expense-form-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
@@ -107,9 +108,8 @@ function UnexpectedExpenseFormBody({
             label="Batal"
             onPress={controller.onCancel}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={!controller.canSubmit}
-            intent="primary"
             label={
               controller.submitting
                 ? controller.mode === 'create'

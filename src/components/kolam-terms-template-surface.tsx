@@ -20,6 +20,7 @@ import {
   type KolamTermsTemplateController,
 } from '../hooks/use-kolam-terms-template-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -432,7 +433,7 @@ function KolamTermsTemplateFormShell({
               controller.mode === 'edit' ||
               (controller.mode === 'detail' && editable)) &&
             editable ? (
-              <KolamButton
+              <KolamSaveButton
                 disabled={controller.mutating}
                 label={
                   controller.mutating

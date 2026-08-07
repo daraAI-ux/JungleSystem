@@ -28,6 +28,7 @@ import type { KolamLayananController } from '../hooks/use-kolam-layanan-controll
 import { spawnKolamLayananServiceTask } from '../services/kolam-layanan-api';
 import { getKolamUserList } from '../services/kolam-user-api';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
@@ -165,9 +166,8 @@ export function KolamLayananServiceEditor({
               />
             ) : null}
             {controller.mode === 'create' || controller.mode === 'edit' ? (
-              <KolamButton
+              <KolamSaveButton
                 disabled={controller.saving}
-                intent="primary"
                 label={controller.saving ? 'Menyimpan…' : 'Simpan'}
                 onPress={() => {
                   void controller.onSave().then(id => {
@@ -805,9 +805,8 @@ function ServiceTasksPanel({
                 label="Batal"
                 onPress={closeModal}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving || staffLoading}
-                intent="primary"
                 label={saving ? 'Menyimpan…' : 'Simpan'}
                 onPress={() => {
                   void onCreate();

@@ -23,6 +23,7 @@ import {
   type KolamSourceController,
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -989,9 +990,8 @@ function KolamSourceForm({
             onRouteChange?.(KOLAM_SOURCE_ROOT);
           }}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.saving}
-          intent="primary"
           label={controller.saving ? 'Menyimpan…' : 'Simpan'}
           onPress={() => {
             void controller.onSave().then(id => {

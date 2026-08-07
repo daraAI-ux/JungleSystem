@@ -34,6 +34,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
@@ -656,7 +657,7 @@ export function KolamStockOpnameDetail({
                 muted
                 onPress={() => setEditLine(null)}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={
                   controller.acting ||
                   (editLine != null &&
@@ -674,8 +675,6 @@ export function KolamStockOpnameDetail({
                     ) &&
                     !editMinus)
                 }
-                intent="primary"
-                label="Simpan"
                 onPress={() => {
                   if (!editLine) {
                     return;

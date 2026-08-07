@@ -4,6 +4,7 @@ import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamProyekController } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -104,7 +105,7 @@ export function KolamProyekQuotationForm({
               label="Batal"
               onPress={controller.onBackToList}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.saving || !canSubmit}
               label={
                 controller.saving

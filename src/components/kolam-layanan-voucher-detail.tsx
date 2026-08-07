@@ -35,6 +35,7 @@ import {
   type KolamLayananVoucherController,
 } from '../hooks/use-kolam-layanan-voucher-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -954,9 +955,8 @@ function VoucherSubscriptionSection({
               value={controller.transportDraft}
             />
           </FieldShell>
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
-            label="Simpan"
             onPress={() => {
               void controller.onSaveTransport();
             }}

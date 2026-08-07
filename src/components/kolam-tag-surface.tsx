@@ -13,6 +13,7 @@ import {
   type KolamTagController,
 } from '../hooks/use-kolam-tag-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
@@ -663,9 +664,8 @@ function KolamTagForm({ controller }: { controller: KolamTagController }) {
             label="Batal"
             onPress={controller.onBackToList}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
-            intent="primary"
             label={controller.saving ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
               void controller.onSave();

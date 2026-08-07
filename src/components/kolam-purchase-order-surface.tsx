@@ -36,6 +36,7 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -699,9 +700,8 @@ function KolamPurchaseOrderForm({
             );
           }}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.mutating}
-          intent="primary"
           label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
           onPress={() => {
             void controller.onSave().then(id => {

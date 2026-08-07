@@ -40,6 +40,7 @@ import {
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
@@ -1614,9 +1615,8 @@ function KolamSpeciesForm({
                 onRouteChange?.('/species');
               }}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.saving}
-              intent="primary"
               label={controller.saving ? 'Menyimpan...' : 'Simpan'}
               onPress={() => {
                 void controller.onSave();

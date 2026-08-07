@@ -14,6 +14,7 @@ import {
   type KolamIucnStatusController,
 } from '../hooks/use-kolam-iucn-status-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
@@ -759,9 +760,8 @@ function KolamIucnForm({
             label="Batal"
             onPress={controller.onBackToList}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
-            intent="primary"
             label={controller.saving ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
               void controller.onSave();

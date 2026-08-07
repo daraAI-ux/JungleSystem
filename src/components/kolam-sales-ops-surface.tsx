@@ -42,6 +42,7 @@ import {
   type KolamSalesController,
 } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDateField } from './kolam-date-field';
@@ -675,9 +676,8 @@ function KolamSalesOpsCreateForm({
               onPress={() => onRouteChange?.(backRoute)}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.mutating || controller.optionsLoading}
-              intent="primary"
               label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
               onPress={() => {
                 void controller.onSave().then(id => {

@@ -17,6 +17,7 @@ import {
   type KolamCustomFieldController,
 } from '../hooks/use-kolam-custom-field-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
@@ -916,9 +917,8 @@ function KolamCustomFieldForm({
             label="Batal"
             onPress={controller.onBackToList}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
-            intent="primary"
             label={controller.saving ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
               void controller.onSave();

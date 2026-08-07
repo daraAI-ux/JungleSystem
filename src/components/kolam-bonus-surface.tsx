@@ -13,6 +13,7 @@ import {
 } from '../hooks/use-kolam-bonus-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -313,9 +314,8 @@ function BonusCreatePage({
           label="Batal"
           onPress={controller.onCancelCreate}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={!canSubmit}
-          intent="primary"
           label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
           onPress={() => {
             void controller.onCreateBonus();

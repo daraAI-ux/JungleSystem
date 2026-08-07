@@ -9,6 +9,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamLayananSubscriptionController } from '../hooks/use-kolam-layanan-subscription-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -172,9 +173,8 @@ export function KolamLayananSubscriptionDetail({
                 }}
               />
             ) : null}
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.saving || !subscription}
-              intent="primary"
               label={controller.saving ? 'Menyimpan…' : 'Simpan'}
               onPress={() => {
                 void controller.onSaveContract();

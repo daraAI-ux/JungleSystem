@@ -19,6 +19,7 @@ import {
 } from '../hooks/use-kolam-brand-controller';
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -127,9 +128,8 @@ function KolamModuleShell({
                   label="Batal"
                   onPress={controller.onBackToList}
                 />
-                <KolamButton
+                <KolamSaveButton
                   disabled={controller.saving}
-                  intent="primary"
                   label={controller.saving ? 'Menyimpan...' : 'Simpan'}
                   onPress={() => {
                     void controller.onSave();

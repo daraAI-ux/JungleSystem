@@ -54,6 +54,7 @@ import {
 } from '../services/kolam-user-api';
 import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
@@ -2113,9 +2114,8 @@ function KolamUserEditSurface({
             onRouteChange?.(`/list-of-users/users/${encodedUserId}`)
           }
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={formDisabled}
-          intent="primary"
           label={saving ? 'Menyimpan...' : 'Simpan'}
           onPress={handleSubmit}
         />

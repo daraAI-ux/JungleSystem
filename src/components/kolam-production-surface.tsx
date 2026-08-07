@@ -37,6 +37,7 @@ import {
   type KolamProductionController,
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
@@ -852,9 +853,8 @@ function KolamProductionForm({
               onRouteChange?.(KOLAM_PRODUCTION_ROOT);
             }}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.mutating}
-            intent="primary"
             label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
             onPress={() =>
               void controller.onSave().then(id => {

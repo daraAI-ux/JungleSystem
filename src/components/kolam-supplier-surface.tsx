@@ -36,6 +36,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -2008,9 +2009,8 @@ function KolamSupplierForm({
               onRouteChange?.(KOLAM_SUPPLIER_ROOT);
             }}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
-            intent="primary"
             label={controller.saving ? 'Menyimpan…' : 'Simpan'}
             onPress={() => {
               void controller.onSave().then(id => {

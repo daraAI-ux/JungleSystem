@@ -58,6 +58,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamCasesReportedIcon} from './kolam-cases-reported-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
@@ -782,9 +783,8 @@ function KolamEnclosureEditSurface({
       </DetailSection>
 
       <View style={styles.detailActions}>
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.operationLoading}
-          label="Simpan"
           onPress={() => void onSave()}
         />
         <KolamButton
