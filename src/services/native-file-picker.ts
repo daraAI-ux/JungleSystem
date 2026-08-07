@@ -10,6 +10,7 @@ export interface NativeImagePickerResult {
 }
 
 export interface NativeFilePickerBridge {
+  consumeDroppedImage?(): Promise<NativeImagePickerResult>;
   pickAudio?(): Promise<NativeImagePickerResult>;
   pickFile?(): Promise<NativeImagePickerResult>;
   pickImage(): Promise<NativeImagePickerResult>;
@@ -27,6 +28,19 @@ export async function pickNativeImageFile(): Promise<NativeImagePickerResult> {
   }
 
   return bridge.pickImage();
+}
+
+export async function consumeNativeDroppedImage(): Promise<NativeImagePickerResult> {
+  if (Platform.OS !== 'windows') {
+    return { cancelled: true };
+  }
+
+  const bridge = getNativeFilePickerBridge();
+  if (!bridge?.consumeDroppedImage) {
+    return { cancelled: true };
+  }
+
+  return bridge.consumeDroppedImage();
 }
 
 export async function pickNativeVideoFile(): Promise<NativeImagePickerResult> {

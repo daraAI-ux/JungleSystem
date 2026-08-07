@@ -13,6 +13,57 @@
 
 #include "NativeModules.h"
 
+#include <shellapi.h>
+
+namespace {
+
+WNDPROC g_kolamPreviousWndProc = nullptr;
+
+LRESULT CALLBACK KolamWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+  if (message == WM_DROPFILES) {
+    auto drop = reinterpret_cast<HDROP>(wParam);
+    WCHAR path[MAX_PATH]{};
+    if (DragQueryFileW(drop, 0, path, MAX_PATH) > 0) {
+      KolamWindows::SetKolamDroppedFilePath(path);
+    }
+    DragFinish(drop);
+    return 0;
+  }
+
+  return CallWindowProc(g_kolamPreviousWndProc, hwnd, message, wParam, lParam);
+}
+
+BOOL CALLBACK FindCurrentProcessWindow(HWND hwnd, LPARAM lParam) {
+  DWORD windowProcessId = 0;
+  GetWindowThreadProcessId(hwnd, &windowProcessId);
+  if (windowProcessId != GetCurrentProcessId() || !IsWindowVisible(hwnd)) {
+    return TRUE;
+  }
+
+  auto result = reinterpret_cast<HWND *>(lParam);
+  *result = hwnd;
+  return FALSE;
+}
+
+HWND GetKolamMainWindow() {
+  HWND hwnd = nullptr;
+  EnumWindows(FindCurrentProcessWindow, reinterpret_cast<LPARAM>(&hwnd));
+  return hwnd;
+}
+
+void EnableKolamFileDrop() {
+  auto hwnd = GetKolamMainWindow();
+  if (!hwnd || g_kolamPreviousWndProc) {
+    return;
+  }
+
+  DragAcceptFiles(hwnd, TRUE);
+  g_kolamPreviousWndProc =
+      reinterpret_cast<WNDPROC>(SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(KolamWindowProc)));
+}
+
+} // namespace
+
 // A PackageProvider containing any turbo modules you define within this app project
 struct CompReactPackageProvider
     : winrt::implements<CompReactPackageProvider, winrt::Microsoft::ReactNative::IReactPackageProvider> {
@@ -80,6 +131,7 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   if (auto presenter = appWindow.Presenter().try_as<winrt::Microsoft::UI::Windowing::OverlappedPresenter>()) {
     presenter.Maximize();
   }
+  EnableKolamFileDrop();
 
   // Get the ReactViewOptions so we can set the initial RN component to load
   auto viewOptions{reactNativeWin32App.ReactViewOptions()};

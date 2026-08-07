@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { getKolamFileUrl } from '../lib/file-url';
+import { consumeNativeDroppedImage } from '../services/native-file-picker';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -34,6 +35,27 @@ export function KolamSettingsWebFileField({
   const logoUri = getLogoPreviewUri(value);
   const displayName = getUploadDisplayName(value);
   const disabled = !onUpload && !onLocalValueChange;
+  React.useEffect(() => {
+    if (!onLocalValueChange) {
+      return undefined;
+    }
+
+    let disposed = false;
+    const timer = setInterval(() => {
+      void consumeNativeDroppedImage().then(dropped => {
+        const droppedUri = dropped.uri ?? dropped.path ?? '';
+        if (!disposed && !dropped.cancelled && droppedUri) {
+          onLocalValueChange(droppedUri);
+        }
+      });
+    }, 500);
+
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+    };
+  }, [onLocalValueChange]);
+
   const handleDrop = React.useCallback(
     (event: unknown) => {
       preventDefaultDropEvent(event);

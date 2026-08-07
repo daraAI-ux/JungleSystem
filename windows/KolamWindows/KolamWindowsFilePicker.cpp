@@ -4,6 +4,7 @@
 #include <Shobjidl.h>
 #include <algorithm>
 #include <cstdint>
+#include <mutex>
 #include <vector>
 #include <string>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -12,6 +13,9 @@
 
 namespace KolamWindows {
 namespace {
+
+std::mutex g_droppedFileMutex;
+std::string g_droppedFilePath;
 
 std::string GetExtension(std::string fileName) {
   const auto separator = fileName.find_last_of('.');
@@ -70,6 +74,29 @@ HWND GetCurrentProcessWindow() {
 
 ::React::JSValueObject CancelledResult() {
   return ::React::JSValueObject{{"cancelled", true}};
+}
+
+::React::JSValueObject FileResult(std::string const &path) {
+  const auto slash = path.find_last_of("\\/");
+  const auto name = slash == std::string::npos ? path : path.substr(slash + 1);
+  const auto extension = GetExtension(name);
+
+  return ::React::JSValueObject{
+      {"cancelled", false},
+      {"path", path},
+      {"uri", ToFileUri(path)},
+      {"name", name},
+      {"extension", extension},
+      {"mimeType", GetMimeType(extension)},
+  };
+}
+
+bool IsImageExtension(std::string const &extension) {
+  return extension == ".png" ||
+      extension == ".jpg" ||
+      extension == ".jpeg" ||
+      extension == ".webp" ||
+      extension == ".gif";
 }
 
 std::vector<uint8_t> DecodeBase64(std::string const &input) {
@@ -387,18 +414,7 @@ void PickFileWithTypes(
             return;
           }
 
-          const auto path = winrt::to_string(file.Path());
-          const auto name = winrt::to_string(file.Name());
-          const auto extension = GetExtension(name);
-
-          result.Resolve(::React::JSValueObject{
-              {"cancelled", false},
-              {"path", path},
-              {"uri", ToFileUri(path)},
-              {"name", name},
-              {"extension", extension},
-              {"mimeType", GetMimeType(extension)},
-          });
+          result.Resolve(FileResult(winrt::to_string(file.Path())));
         });
   } catch (winrt::hresult_error const &error) {
     result.Reject(winrt::to_string(error.message()).c_str());
@@ -407,6 +423,17 @@ void PickFileWithTypes(
   }
 }
 } // namespace
+
+void SetKolamDroppedFilePath(std::wstring path) noexcept {
+  const auto nativePath = winrt::to_string(path);
+  const auto extension = GetExtension(nativePath);
+  if (!IsImageExtension(extension)) {
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(g_droppedFileMutex);
+  g_droppedFilePath = nativePath;
+}
 
 void KolamWindowsFilePicker::Initialize(
     winrt::Microsoft::ReactNative::ReactContext const &reactContext) noexcept {
@@ -469,6 +496,25 @@ void KolamWindowsFilePicker::pickFile(
             L".m4a",
             L".aac",
         });
+  });
+}
+
+void KolamWindowsFilePicker::consumeDroppedImage(
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([result = std::move(result)]() mutable {
+    std::string path;
+    {
+      std::lock_guard<std::mutex> lock(g_droppedFileMutex);
+      path = std::move(g_droppedFilePath);
+      g_droppedFilePath.clear();
+    }
+
+    if (path.empty()) {
+      result.Resolve(CancelledResult());
+      return;
+    }
+
+    result.Resolve(FileResult(path));
   });
 }
 
