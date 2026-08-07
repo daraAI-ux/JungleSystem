@@ -877,50 +877,56 @@ function KolamCategoryForm({
               value={form.parentId}
             />
           </FieldShell>
-          <FieldShell label="Tampil di Marketplace">
-            <View style={styles.segmentRow}>
-              <KolamButton
-                intent={form.showInMarketplace ? 'primary' : 'outline'}
-                label="Tampil"
-                onPress={() =>
-                  controller.onChangeForm({ showInMarketplace: true })
+          <View style={styles.categoryAssetSettingsGrid}>
+            <View style={styles.categoryAssetSettingsCard}>
+              <FieldShell label="Tampil di Marketplace">
+                <View style={styles.segmentRow}>
+                  <KolamButton
+                    intent={form.showInMarketplace ? 'primary' : 'outline'}
+                    label="Tampil"
+                    onPress={() =>
+                      controller.onChangeForm({ showInMarketplace: true })
+                    }
+                  />
+                  <KolamButton
+                    intent={!form.showInMarketplace ? 'primary' : 'outline'}
+                    label="Sembunyi"
+                    onPress={() =>
+                      controller.onChangeForm({ showInMarketplace: false })
+                    }
+                  />
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    keyboardType="numeric"
+                    onChangeText={marketplaceOrder =>
+                      controller.onChangeForm({ marketplaceOrder })
+                    }
+                    placeholder="Urutan tampil"
+                    style={[
+                      settingsWebFormStyles.settingsWebFormFieldValue,
+                      styles.orderInput,
+                    ]}
+                    value={form.marketplaceOrder}
+                  />
+                </View>
+              </FieldShell>
+            </View>
+            <View style={styles.categoryAssetSettingsCard}>
+              <KolamSettingsWebFileField
+                accessibilityLabel="Icon kategori"
+                actionLabel="Pilih file"
+                emptyLabel="Icon belum diatur"
+                onLocalValueChange={iconLocalUri =>
+                  controller.onChangeForm({ iconLocalUri })
                 }
-              />
-              <KolamButton
-                intent={!form.showInMarketplace ? 'primary' : 'outline'}
-                label="Sembunyi"
-                onPress={() =>
-                  controller.onChangeForm({ showInMarketplace: false })
-                }
-              />
-              <KolamFormTextField
-                editable={!controller.saving}
-                keyboardType="numeric"
-                onChangeText={marketplaceOrder =>
-                  controller.onChangeForm({ marketplaceOrder })
-                }
-                placeholder="Urutan tampil"
-                style={[
-                  settingsWebFormStyles.settingsWebFormFieldValue,
-                  styles.orderInput,
-                ]}
-                value={form.marketplaceOrder}
+                onUpload={() => {
+                  void controller.onPickIcon();
+                }}
+                scope="category-icon"
+                value={form.iconLocalUri || form.iconRemoteUrl}
               />
             </View>
-          </FieldShell>
-          <KolamSettingsWebFileField
-            accessibilityLabel="Icon kategori"
-            actionLabel="Pilih file"
-            emptyLabel="Icon belum diatur"
-            onLocalValueChange={iconLocalUri =>
-              controller.onChangeForm({ iconLocalUri })
-            }
-            onUpload={() => {
-              void controller.onPickIcon();
-            }}
-            scope="category-icon"
-            value={form.iconLocalUri}
-          />
+          </View>
           <KolamCatalogTranslationsEditor
             editable={!controller.saving}
             kind="category"
@@ -1291,6 +1297,22 @@ const styles = StyleSheet.create({
   longDropdownMenu: {
     maxHeight: 280,
     minWidth: 360,
+  },
+  categoryAssetSettingsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  categoryAssetSettingsCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexBasis: 320,
+    gap: 10,
+    minWidth: 280,
+    padding: 10,
   },
   segmentRow: {
     minHeight: V.control.inputHeight,
