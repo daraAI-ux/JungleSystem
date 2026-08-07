@@ -845,7 +845,7 @@ function KolamCategoryForm({
   );
 
   return (
-    <KolamNativeFormSection section={getKolamFormSection('brand-detail')}>
+    <KolamNativeFormSection section={getKolamFormSection('category-detail')}>
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
           <FieldShell label="Pilih Induk">

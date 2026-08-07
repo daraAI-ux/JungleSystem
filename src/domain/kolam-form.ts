@@ -1,5 +1,6 @@
 export type KolamFormSectionId =
   | 'brand-detail'
+  | 'category-detail'
   | 'catalog-translations'
   | 'cashflow-open'
   | 'customer-create'
@@ -77,6 +78,11 @@ const kolamFormSections: Record<KolamFormSectionId, KolamFormSection> = {
     title: 'Data Merek',
     description:
       'Kelola nama, negara asal, status, tautan, dan logo utama merek.',
+  },
+  'category-detail': {
+    id: 'category-detail',
+    title: 'Data Kategori',
+    description: 'Kelola induk, marketplace, icon, dan terjemahan kategori.',
   },
   'catalog-translations': {
     id: 'catalog-translations',
