@@ -754,13 +754,17 @@ function BrandLinkedItemsList({
               </Text>
             ) : null}
           </View>
-          {item.value ? (
-            <Text numberOfLines={1} style={styles.brandSummaryItemValue}>
-              {item.value}
-            </Text>
-          ) : null}
-          {item.badge ? (
-            <KolamStatusBadge intent="muted" label={item.badge} />
+          {item.value || item.badge ? (
+            <View style={styles.brandSummaryItemMetrics}>
+              {item.value ? (
+                <Text numberOfLines={1} style={styles.brandSummaryItemValue}>
+                  {item.value}
+                </Text>
+              ) : null}
+              {item.badge ? (
+                <KolamStatusBadge intent="muted" label={item.badge} />
+              ) : null}
+            </View>
           ) : null}
         </View>
       ))}
@@ -1110,6 +1114,12 @@ const styles = StyleSheet.create({
   brandSummaryItemCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  brandSummaryItemMetrics: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
   },
   brandSummaryItemTitle: {
     color: V.colors.fg,
