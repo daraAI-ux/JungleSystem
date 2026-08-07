@@ -108,7 +108,7 @@ export function KolamSettingsWebFileField({
         </KolamInteractionFrame>
       </View>
       <Text style={styles.settingsWebUploadHint}>
-        Tipe file yang diterima: JPG, PNG, GIF, WEBP
+        Tipe file yang diterima: JPG, PNG, GIF, WEBP, SVG
       </Text>
       {logoUri ? (
         <View style={styles.settingsWebUploadFileRow}>
@@ -183,6 +183,13 @@ async function getDroppedImageValue(event: unknown) {
     getRecord(event).dataTransfer ?? getRecord(getRecord(event).nativeEvent).dataTransfer;
   const files = getRecord(dataTransfer).files;
   const first = getArrayLikeFirst(files);
+
+  if (isSvgDropFile(first)) {
+    const dataUrl = await readDroppedFileAsDataUrl(first);
+    if (dataUrl) {
+      return dataUrl;
+    }
+  }
 
   const filePath =
     getString(first, 'path') ||
@@ -272,6 +279,12 @@ function getArrayLikeFirst(value: unknown) {
 function getString(value: unknown, key: string) {
   const raw = getRecord(value)[key];
   return typeof raw === 'string' ? raw.trim() : '';
+}
+
+function isSvgDropFile(file: unknown) {
+  const name = getString(file, 'name');
+  const type = getString(file, 'type');
+  return /\.svg$/i.test(name) || /^image\/svg\+xml$/i.test(type);
 }
 
 function getRecord(value: unknown): Record<string, unknown> {

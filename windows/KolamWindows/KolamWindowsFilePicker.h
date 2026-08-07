@@ -23,6 +23,11 @@ struct KolamWindowsFilePicker {
   REACT_METHOD(pickFile)
   void pickFile(::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
 
+  REACT_METHOD(readSvgPreviewFile)
+  void readSvgPreviewFile(
+      std::string pathOrUri,
+      ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
   REACT_METHOD(consumeDroppedImage)
   void consumeDroppedImage(::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
 

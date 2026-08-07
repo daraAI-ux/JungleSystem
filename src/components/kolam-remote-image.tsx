@@ -13,6 +13,7 @@ import {
   getRenderableKolamImageUri,
   syncKolamImageCache,
 } from '../services/kolam-image-local-cache';
+import { readNativeSvgPreviewFile } from '../services/native-file-picker';
 import {
   openKolamImagePreview,
   type KolamImagePreviewItem,
@@ -161,8 +162,11 @@ function useKolamSvgXml(sourceUri: string | null | undefined) {
       };
     }
 
-    fetch(sourceUri)
-      .then(response => (response.ok ? response.text() : ''))
+    const svgTextPromise = isLocalFileUri(sourceUri)
+      ? readNativeSvgPreviewFile(sourceUri)
+      : fetch(sourceUri).then(response => (response.ok ? response.text() : ''));
+
+    svgTextPromise
       .then(svg => {
         if (!cancelled && svg.trim()) {
           setSvgXml(svg);
@@ -188,6 +192,10 @@ function isSvgUri(uri: string) {
 
 function isSvgDataUri(uri: string) {
   return /^data:image\/svg\+xml/i.test(uri);
+}
+
+function isLocalFileUri(uri: string) {
+  return /^file:/i.test(uri);
 }
 
 function decodeSvgDataUri(uri: string) {

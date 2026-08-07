@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Storage.FileProperties.h>
 #include <winrt/Windows.Storage.Pickers.h>
 #include <winrt/Windows.Storage.h>
 
@@ -16,6 +17,7 @@ namespace {
 
 std::mutex g_droppedFileMutex;
 std::string g_droppedFilePath;
+constexpr uint64_t kMaxSvgPreviewBytes = 512 * 1024;
 
 std::string GetExtension(std::string fileName) {
   const auto separator = fileName.find_last_of('.');
@@ -33,6 +35,7 @@ std::string GetMimeType(std::string const &extension) {
   if (extension == ".jpg" || extension == ".jpeg") return "image/jpeg";
   if (extension == ".webp") return "image/webp";
   if (extension == ".gif") return "image/gif";
+  if (extension == ".svg") return "image/svg+xml";
   if (extension == ".mp4") return "video/mp4";
   if (extension == ".mov") return "video/quicktime";
   if (extension == ".webm") return "video/webm";
@@ -96,7 +99,23 @@ bool IsImageExtension(std::string const &extension) {
       extension == ".jpg" ||
       extension == ".jpeg" ||
       extension == ".webp" ||
-      extension == ".gif";
+      extension == ".gif" ||
+      extension == ".svg";
+}
+
+bool IsSvgExtension(std::string const &extension) {
+  return extension == ".svg";
+}
+
+std::string DecodeFileUri(std::string value) {
+  if (value.rfind("file:///", 0) == 0) {
+    value = value.substr(8);
+  } else if (value.rfind("file://", 0) == 0) {
+    value = value.substr(7);
+  }
+
+  std::replace(value.begin(), value.end(), '/', '\\');
+  return value;
 }
 
 std::vector<uint8_t> DecodeBase64(std::string const &input) {
@@ -446,7 +465,7 @@ void KolamWindowsFilePicker::pickImage(
     PickFileWithTypes(std::move(result),
         winrt::Windows::Storage::Pickers::PickerLocationId::PicturesLibrary,
         winrt::Windows::Storage::Pickers::PickerViewMode::Thumbnail,
-        {L".png", L".jpg", L".jpeg", L".webp", L".gif"});
+        {L".png", L".jpg", L".jpeg", L".webp", L".gif", L".svg"});
   });
 }
 
@@ -488,6 +507,7 @@ void KolamWindowsFilePicker::pickFile(
             L".jpeg",
             L".webp",
             L".gif",
+            L".svg",
             L".mp4",
             L".mov",
             L".webm",
@@ -496,6 +516,72 @@ void KolamWindowsFilePicker::pickFile(
             L".m4a",
             L".aac",
         });
+  });
+}
+
+void KolamWindowsFilePicker::readSvgPreviewFile(
+    std::string pathOrUri,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([
+      pathOrUri = std::move(pathOrUri),
+      result = std::move(result)]() mutable {
+    try {
+      const auto nativePath = DecodeFileUri(pathOrUri);
+      if (!IsSvgExtension(GetExtension(nativePath))) {
+        result.Resolve(::React::JSValueObject{{"ok", false}});
+        return;
+      }
+
+      auto fileOperation = winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(
+          winrt::to_hstring(nativePath));
+      fileOperation.Completed([
+          result = std::move(result)](
+          winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::StorageFile> const &operation,
+          winrt::Windows::Foundation::AsyncStatus status) mutable {
+        if (status != winrt::Windows::Foundation::AsyncStatus::Completed) {
+          result.Resolve(::React::JSValueObject{{"ok", false}});
+          return;
+        }
+
+        auto file = operation.GetResults();
+        auto propsOperation = file.GetBasicPropertiesAsync();
+        propsOperation.Completed([
+            file,
+            result = std::move(result)](
+            winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::FileProperties::BasicProperties> const &props,
+            winrt::Windows::Foundation::AsyncStatus propsStatus) mutable {
+          if (propsStatus != winrt::Windows::Foundation::AsyncStatus::Completed ||
+              props.GetResults().Size() > kMaxSvgPreviewBytes) {
+            result.Resolve(::React::JSValueObject{{"ok", false}});
+            return;
+          }
+
+          auto readOperation = winrt::Windows::Storage::FileIO::ReadTextAsync(file);
+          readOperation.Completed([
+              result = std::move(result)](
+              winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> const &read,
+              winrt::Windows::Foundation::AsyncStatus readStatus) mutable {
+            if (readStatus != winrt::Windows::Foundation::AsyncStatus::Completed) {
+              result.Resolve(::React::JSValueObject{{"ok", false}});
+              return;
+            }
+
+            const auto text = winrt::to_string(read.GetResults());
+            if (text.find("<svg") == std::string::npos) {
+              result.Resolve(::React::JSValueObject{{"ok", false}});
+              return;
+            }
+
+            result.Resolve(::React::JSValueObject{
+                {"ok", true},
+                {"text", text},
+            });
+          });
+        });
+      });
+    } catch (...) {
+      result.Resolve(::React::JSValueObject{{"ok", false}});
+    }
   });
 }
 

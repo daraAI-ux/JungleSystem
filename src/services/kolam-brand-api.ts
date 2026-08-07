@@ -113,6 +113,8 @@ function inferLogoMimeType(fileName: string) {
       return 'image/webp';
     case 'gif':
       return 'image/gif';
+    case 'svg':
+      return 'image/svg+xml';
     case 'jpg':
     case 'jpeg':
     default:

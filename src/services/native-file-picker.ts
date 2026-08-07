@@ -15,6 +15,7 @@ export interface NativeFilePickerBridge {
   pickFile?(): Promise<NativeImagePickerResult>;
   pickImage(): Promise<NativeImagePickerResult>;
   pickVideo?(): Promise<NativeImagePickerResult>;
+  readSvgPreviewFile?(pathOrUri: string): Promise<{ ok: boolean; text?: string }>;
 }
 
 export async function pickNativeImageFile(): Promise<NativeImagePickerResult> {
@@ -80,6 +81,20 @@ export async function pickNativeAssetFile(): Promise<NativeImagePickerResult> {
   }
 
   return bridge.pickFile();
+}
+
+export async function readNativeSvgPreviewFile(pathOrUri: string): Promise<string> {
+  if (Platform.OS !== 'windows') {
+    return '';
+  }
+
+  const bridge = getNativeFilePickerBridge();
+  if (!bridge?.readSvgPreviewFile) {
+    return '';
+  }
+
+  const result = await bridge.readSvgPreviewFile(pathOrUri);
+  return result.ok && typeof result.text === 'string' ? result.text : '';
 }
 
 export function getNativeFilePickerBridge(): NativeFilePickerBridge | null {
