@@ -96,6 +96,7 @@ import {
 } from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 type SpeciesListFilterPanel = 'taxonomy' | 'category' | 'stock';
@@ -2002,31 +2003,7 @@ function SpeciesMediaEditPanel({
         />
       </View>
       <View style={styles.mediaUploadSection}>
-        <View style={styles.mediaAudioUploadRow}>
-          <KolamButton
-            disabled={controller.saving}
-            label="Upload Audio"
-            onPress={() => {
-              void controller.onPickVoice();
-            }}
-          />
-          {controller.form.voiceLocalUri ? (
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'voice-local-uri',
-                  text: getUploadFileDisplayName(controller.form.voiceLocalUri),
-                  style: styles.fieldHint,
-                },
-              ]}
-            />
-          ) : null}
-        </View>
-        <SpeciesVideoVoiceMediaPanel
-          controller={controller}
-          kind="voice"
-          onDelete={onDelete}
-        />
+        <SpeciesVoiceUploadPanel controller={controller} onDelete={onDelete} />
       </View>
     </View>
   );
@@ -5388,6 +5365,139 @@ function SpeciesVideoVoiceMediaPanel({
   );
 }
 
+function SpeciesVoiceUploadPanel({
+  controller,
+  onDelete,
+}: {
+  controller: KolamSpeciesController;
+  onDelete: (target: SpeciesDeleteMediaTarget) => void;
+}) {
+  const selectedItem = controller.selectedSpecies
+    ? normalizeSpeciesDetailItem(controller.selectedSpecies)
+    : null;
+  const existingVoiceUri = selectedItem?.voiceUri ?? '';
+  const pendingVoiceUri = controller.form.voiceLocalUri;
+  const uploadLabel = existingVoiceUri || pendingVoiceUri ? 'Ganti' : 'Unggah';
+
+  return (
+    <View style={styles.voiceUploadStack}>
+      <View style={styles.voiceUploadHeader}>
+        <View style={styles.voiceUploadTitleGroup}>
+          <Text style={styles.voiceUploadBadge}>MP3</Text>
+          <Text style={styles.voiceUploadTitle}>Voice (MP3)</Text>
+        </View>
+        <KolamButton
+          disabled={controller.saving}
+          icon={<KolamUploadArrowIcon size={14} />}
+          label={uploadLabel}
+          onPress={() => {
+            void controller.onPickVoice();
+          }}
+        />
+      </View>
+      <Text style={styles.voiceUploadHint}>
+        Optional. File will be uploaded after you click Save.
+      </Text>
+      <View style={styles.voiceUploadDropzone}>
+        {pendingVoiceUri ? (
+          <SpeciesVoiceFileRow
+            disabled={controller.saving}
+            label={getUploadFileDisplayName(pendingVoiceUri) || 'Audio pending'}
+            meta="Menunggu simpan"
+            onDelete={() => controller.onChangeForm({ voiceLocalUri: '' })}
+          />
+        ) : existingVoiceUri ? (
+          <SpeciesVoiceFileRow
+            disabled={controller.saving}
+            label={getUploadFileDisplayName(existingVoiceUri) || 'Audio spesies'}
+            meta="Terunggah"
+            onDelete={() => onDelete({ type: 'voice', label: 'audio spesies' })}
+            onOpen={() => {
+              void Linking.openURL(
+                getKolamFileUrl(existingVoiceUri) ?? existingVoiceUri,
+              );
+            }}
+          />
+        ) : (
+          <KolamInteractionFrame
+            accessibilityLabel="Unggah audio MP3"
+            disabled={controller.saving}
+            onPress={() => {
+              void controller.onPickVoice();
+            }}
+            style={styles.voiceUploadEmptyRow}
+          >
+            <Text style={styles.voiceUploadEmptyText}>
+              Drag & drop MP3 here, or use Upload.
+            </Text>
+            <Text style={styles.voiceUploadLimit}>Max 50 MB</Text>
+          </KolamInteractionFrame>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function SpeciesVoiceFileRow({
+  disabled,
+  label,
+  meta,
+  onDelete,
+  onOpen,
+}: {
+  disabled: boolean;
+  label: string;
+  meta: string;
+  onDelete: () => void;
+  onOpen?: () => void;
+}) {
+  const content = (
+    <>
+      <KolamCardFrame variant="settingsWebLogoPreview">
+        <Text style={settingsWebFormStyles.settingsWebFilePreviewLabel}>
+          MP3
+        </Text>
+      </KolamCardFrame>
+      <View style={settingsWebFormStyles.settingsWebUploadFileCopy}>
+        <Text
+          numberOfLines={1}
+          style={settingsWebFormStyles.settingsWebUploadFileName}
+        >
+          {label}
+        </Text>
+        <Text style={settingsWebFormStyles.settingsWebUploadFileStatus}>
+          {meta}
+        </Text>
+      </View>
+    </>
+  );
+
+  return (
+    <View style={settingsWebFormStyles.settingsWebUploadFileRow}>
+      {onOpen ? (
+        <KolamInteractionFrame
+          accessibilityLabel={label}
+          disabled={disabled}
+          onPress={onOpen}
+          style={styles.voiceUploadFileOpen}
+        >
+          {content}
+        </KolamInteractionFrame>
+      ) : (
+        <View style={styles.voiceUploadFileOpen}>{content}</View>
+      )}
+      <KolamInteractionFrame
+        accessibilityLabel="Hapus audio"
+        disabled={disabled}
+        onPress={onDelete}
+        style={settingsWebFormStyles.settingsWebUploadDeleteButton}
+      >
+        <KolamUploadDeleteIcon />
+      </KolamInteractionFrame>
+    </View>
+  );
+}
+
 function SpeciesVariantMediaPanel({
   controller,
   onDelete,
@@ -8200,11 +8310,74 @@ const styles = StyleSheet.create({
   mediaUploadSection: {
     gap: 8,
   },
-  mediaAudioUploadRow: {
+  voiceUploadStack: {
+    gap: 8,
+  },
+  voiceUploadHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    justifyContent: 'space-between',
+  },
+  voiceUploadTitleGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  voiceUploadBadge: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  voiceUploadTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  voiceUploadHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  voiceUploadDropzone: {
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    minHeight: 54,
+    padding: 8,
+  },
+  voiceUploadEmptyRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
+  },
+  voiceUploadEmptyText: {
+    color: V.colors.mutedFg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    minWidth: 0,
+  },
+  voiceUploadLimit: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  voiceUploadFileOpen: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 9,
+    minWidth: 0,
   },
   mediaPickerRow: {
     alignItems: 'center',
