@@ -683,16 +683,18 @@ function createEditorHtml({
 
 const styles = StyleSheet.create({
   editor: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.input,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
     minHeight: 388,
     overflow: 'hidden',
-    borderRadius: V.radius.lg,
-    backgroundColor: V.colors.bg,
   },
   webViewContainer: {
     backgroundColor: V.colors.bg,
   },
   webViewHost: {
-    minHeight: 388,
+    minHeight: 386,
     overflow: 'hidden',
     backgroundColor: V.colors.bg,
   },
@@ -704,7 +706,7 @@ const styles = StyleSheet.create({
     height: 388,
   },
   webView: {
-    minHeight: 388,
+    minHeight: 386,
     backgroundColor: V.colors.bg,
   },
   loadingCover: {
