@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import {
   createKolamDetailItemsFromRawArray,
   getKolamRawArray,
+  type KolamDetailListItem,
 } from '../domain/kolam-detail-list';
 import {
   filterKolamCategoryTree,
@@ -34,7 +35,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -492,83 +493,228 @@ function KolamCategoryDetail({
     <View style={styles.stack}>
       {!editable && category ? (
         <>
-          <KolamLabelFieldDetailOverview
-            hero={<KolamCategoryIcon category={category} variant="detail" />}
-            status={{
-              intent: category.status === 'active' ? 'success' : 'warning',
-              label: category.status === 'active' ? 'Aktif' : 'Nonaktif',
-            }}
-            metrics={[
-              { label: 'Produk', value: category.productCount },
-              { label: 'Layanan', value: category.serviceCount },
-              { label: 'Species', value: category.speciesCount },
-            ]}
-            meta={[
+          <KolamDetailSummaryCard
+            body={
+              category.description ? (
+                <Text style={styles.categorySummaryDescription}>
+                  {category.description}
+                </Text>
+              ) : undefined
+            }
+            bodyTitle={category.description ? 'Deskripsi' : undefined}
+            fieldColumns={3}
+            fields={[
               {
+                id: 'status',
+                label: 'Status',
+                value: (
+                  <KolamStatusBadge
+                    intent={category.status === 'active' ? 'success' : 'warning'}
+                    label={category.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                  />
+                ),
+              },
+              {
+                id: 'parent',
                 label: 'Induk',
                 value: category.parentName ?? 'Kategori akar',
               },
               {
+                id: 'marketplace',
                 label: 'Marketplace',
                 value: category.showInMarketplace
                   ? `Tampil, urutan ${category.marketplaceOrder}`
                   : 'Tidak tampil',
               },
+              { id: 'products', label: 'Produk', value: category.productCount },
+              { id: 'services', label: 'Layanan', value: category.serviceCount },
+              { id: 'species', label: 'Species', value: category.speciesCount },
             ]}
-            sections={[
-              {
-                accordion: true,
-                title: 'Terjemahan',
-                total: countActiveLocaleAuditItems(localeAuditItems),
-                description:
-                  'Audit isi locale kategori yang tersimpan lokal dan siap dikirim ke backend.',
-                items: localeAuditItems,
-                emptyText: 'Belum ada data locale untuk diaudit.',
-              },
-              {
-                title: 'Produk',
-                total: category.productCount,
-                description: 'Produk yang menggunakan kategori ini',
-                items: detailLists?.products,
-                emptyText: category.productCount
-                  ? 'Daftar produk belum tersedia dari cache lokal.'
-                  : 'Tidak ada produk yang menggunakan kategori ini',
-              },
-              {
-                title: 'Bahan Baku',
-                total: detailLists?.raws.length ?? 0,
-                description: 'Bahan baku yang menggunakan kategori ini',
-                items: detailLists?.raws,
-                emptyText: detailLists?.raws.length
-                  ? 'Daftar bahan baku belum tersedia dari cache lokal.'
-                  : 'Tidak ada bahan baku yang menggunakan kategori ini',
-              },
-              {
-                title: 'Layanan',
-                total: category.serviceCount,
-                description: 'Layanan yang menggunakan kategori ini',
-                items: detailLists?.services,
-                emptyText: category.serviceCount
-                  ? 'Daftar layanan belum tersedia dari cache lokal.'
-                  : 'Tidak ada layanan yang menggunakan kategori ini',
-              },
-              {
-                title: 'Species',
-                total: category.speciesCount,
-                description: 'Species yang menggunakan kategori ini',
-                items: detailLists?.species,
-                emptyText: category.speciesCount
-                  ? 'Daftar species belum tersedia dari cache lokal.'
-                  : 'Tidak ada species yang menggunakan kategori ini',
-              },
-            ]}
+            leading={
+              <View style={styles.categorySummaryIconInCard}>
+                <KolamCategoryIcon category={category} variant="detail" />
+              </View>
+            }
+            leadingStyle={styles.categorySummaryLeadingSlot}
+            title="Ringkasan kategori"
           />
+
+          <View style={styles.categorySummaryGrid}>
+            <CategoryLocaleSummaryCard
+              items={localeAuditItems}
+              total={countActiveLocaleAuditItems(localeAuditItems)}
+            />
+            <CategoryLinkedItemsSummaryCard
+              description="Produk yang menggunakan kategori ini"
+              emptyText={
+                category.productCount
+                  ? 'Daftar produk belum tersedia dari cache lokal.'
+                  : 'Tidak ada produk yang menggunakan kategori ini'
+              }
+              items={detailLists?.products}
+              title="Produk"
+              total={category.productCount}
+            />
+            <CategoryLinkedItemsSummaryCard
+              description="Bahan baku yang menggunakan kategori ini"
+              emptyText={
+                detailLists?.raws.length
+                  ? 'Daftar bahan baku belum tersedia dari cache lokal.'
+                  : 'Tidak ada bahan baku yang menggunakan kategori ini'
+              }
+              items={detailLists?.raws}
+              title="Bahan Baku"
+              total={detailLists?.raws.length ?? 0}
+            />
+            <CategoryLinkedItemsSummaryCard
+              description="Layanan yang menggunakan kategori ini"
+              emptyText={
+                category.serviceCount
+                  ? 'Daftar layanan belum tersedia dari cache lokal.'
+                  : 'Tidak ada layanan yang menggunakan kategori ini'
+              }
+              items={detailLists?.services}
+              title="Layanan"
+              total={category.serviceCount}
+            />
+            <CategoryLinkedItemsSummaryCard
+              description="Species yang menggunakan kategori ini"
+              emptyText={
+                category.speciesCount
+                  ? 'Daftar species belum tersedia dari cache lokal.'
+                  : 'Tidak ada species yang menggunakan kategori ini'
+              }
+              items={detailLists?.species}
+              title="Species"
+              total={category.speciesCount}
+            />
+          </View>
         </>
       ) : (
         <KolamCategoryForm controller={controller} />
       )}
     </View>
   );
+}
+
+type CategoryDetailListItem = KolamDetailListItem & {
+  fields?: { label: string; value?: string | null }[];
+  thumbnail?: React.ReactNode;
+};
+
+function CategoryLocaleSummaryCard({
+  items,
+  total,
+}: {
+  items: CategoryDetailListItem[];
+  total: number;
+}) {
+  return (
+    <KolamDetailSummaryCard
+      body={
+        <CategoryLinkedItemsList
+          emptyText="Belum ada data locale untuk diaudit."
+          items={items}
+        />
+      }
+      description="Audit isi locale kategori."
+      fields={[{ id: 'total', label: 'Total', value: total }]}
+      style={styles.categorySummaryGridCard}
+      title="Terjemahan"
+    />
+  );
+}
+
+function CategoryLinkedItemsSummaryCard({
+  description,
+  emptyText,
+  items,
+  title,
+  total,
+}: {
+  description: string;
+  emptyText: string;
+  items?: CategoryDetailListItem[];
+  title: string;
+  total: number;
+}) {
+  return (
+    <KolamDetailSummaryCard
+      body={<CategoryLinkedItemsList emptyText={emptyText} items={items} />}
+      description={description}
+      fields={[{ id: 'total', label: 'Total', value: total }]}
+      style={styles.categorySummaryGridCard}
+      title={title}
+    />
+  );
+}
+
+function CategoryLinkedItemsList({
+  emptyText,
+  items,
+}: {
+  emptyText: string;
+  items?: CategoryDetailListItem[];
+}) {
+  if (!items?.length) {
+    return <Text style={styles.categorySummaryEmptyText}>{emptyText}</Text>;
+  }
+
+  return (
+    <View style={styles.categorySummaryItemList}>
+      {items.map((item, index) => (
+        <View
+          key={getCategoryDetailItemKey(item, index)}
+          style={styles.categorySummaryItemRow}
+        >
+          {item.thumbnail ? (
+            <View style={styles.categorySummaryItemThumbnail}>
+              {item.thumbnail}
+            </View>
+          ) : null}
+          <View style={styles.categorySummaryItemCopy}>
+            <Text numberOfLines={1} style={styles.categorySummaryItemTitle}>
+              {item.title}
+            </Text>
+            {item.meta ? (
+              <Text numberOfLines={1} style={styles.categorySummaryItemMeta}>
+                {item.meta}
+              </Text>
+            ) : null}
+            {item.fields?.length ? (
+              <View style={styles.categorySummaryItemFields}>
+                {item.fields.map(field => (
+                  <Text
+                    key={`${item.title}-${field.label}`}
+                    numberOfLines={1}
+                    style={styles.categorySummaryItemMeta}
+                  >
+                    {field.label}: {field.value || '-'}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+          </View>
+          {item.value || item.badge ? (
+            <View style={styles.categorySummaryItemMetrics}>
+              {item.value ? (
+                <Text numberOfLines={1} style={styles.categorySummaryItemValue}>
+                  {item.value}
+                </Text>
+              ) : null}
+              {item.badge ? (
+                <KolamStatusBadge intent="muted" label={item.badge} />
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function getCategoryDetailItemKey(item: CategoryDetailListItem, index: number) {
+  return `${item.title}-${item.value ?? ''}-${index}`;
 }
 
 function KolamCategoryForm({
@@ -848,6 +994,90 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 14,
+  },
+  categorySummaryLeadingSlot: {
+    minHeight: 172,
+  },
+  categorySummaryIconInCard: {
+    alignItems: 'center',
+    height: 154,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  categorySummaryDescription: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  categorySummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  categorySummaryGridCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 320,
+  },
+  categorySummaryItemList: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  categorySummaryItemRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 54,
+    paddingVertical: 9,
+  },
+  categorySummaryItemThumbnail: {
+    flexShrink: 0,
+  },
+  categorySummaryItemCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  categorySummaryItemFields: {
+    gap: 2,
+    marginTop: 5,
+  },
+  categorySummaryItemMetrics: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  categorySummaryItemTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  categorySummaryItemMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 3,
+  },
+  categorySummaryItemValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    maxWidth: 100,
+    textAlign: 'right',
+  },
+  categorySummaryEmptyText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   categoryTableIdentityCell: {
     alignItems: 'center',
