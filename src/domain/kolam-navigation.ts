@@ -17,6 +17,7 @@ export type KolamNavigationModuleIcon =
   | 'fieldcustom'
   | 'species'
   | 'tag'
+  | 'taxonomy'
   | 'unit';
 
 export interface KolamNavigationSection {
@@ -214,6 +215,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/taxonomy',
         description: 'Klasifikasi dan hierarki taksonomi',
         group: 'Stok Hidup',
+        moduleIcon: 'taxonomy',
         requiredAccess: ['kolam'],
       },
       {
@@ -763,7 +765,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Spesies',
         moduleIcon: 'species',
       }),
-      sidebarItem('/taxonomy', { group: 'Stok Hidup', label: 'Taksonomi' }),
+      sidebarItem('/taxonomy', {
+        group: 'Stok Hidup',
+        label: 'Taksonomi',
+        moduleIcon: 'taxonomy',
+      }),
       sidebarItem('/iucn-status', {
         group: 'Stok Hidup',
         label: 'Status IUCN',

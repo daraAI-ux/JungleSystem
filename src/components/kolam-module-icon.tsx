@@ -3,6 +3,7 @@ import {StyleSheet, View} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
+import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 
@@ -12,6 +13,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   fieldcustom: 'Icon Field Kustom',
   species: 'Icon Spesies',
   tag: 'Icon Tag',
+  taxonomy: 'Icon Taksonomi',
   unit: 'Icon Satuan',
 };
 
@@ -27,6 +29,7 @@ const FIELDCUSTOM_ICON_PATHS = [
 ] as const;
 const BRAND_ICON_PATHS = getSvgPathData(KOLAM_BRAND_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
+const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
 
 const MODULE_ICON_SIZE = {
@@ -60,6 +63,12 @@ export function KolamModuleIcon({
       ) : kind === 'tag' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={TAG_ICON_PATH} fill="#1a1a1a" fillRule="nonzero" />
+        </Svg>
+      ) : kind === 'taxonomy' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {TAXONOMY_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
         </Svg>
       ) : kind === 'fieldcustom' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
