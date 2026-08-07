@@ -68,7 +68,7 @@ export const listFrameStyles = StyleSheet.create({
     alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: DASHBOARD_STATS_VISUAL.grid.gap,
+    gap: 0,
     marginBottom: V.layout.cardSpacing,
     width: '100%',
   },

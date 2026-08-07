@@ -18,6 +18,8 @@ export const dashboardStatCardStyles = StyleSheet.create({
     flexShrink: 1,
     minWidth: DASHBOARD_STATS_VISUAL.card.minWidth,
     minHeight: DASHBOARD_STATS_VISUAL.card.dashboardMinHeight,
+    marginRight: DASHBOARD_STATS_VISUAL.grid.gap,
+    marginBottom: DASHBOARD_STATS_VISUAL.grid.gap,
     padding: DASHBOARD_STATS_VISUAL.card.spacing,
   },
   metricCardHeader: {
