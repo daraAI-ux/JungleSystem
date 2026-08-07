@@ -1342,19 +1342,26 @@ function KolamSpeciesForm({
               description="Aktifkan penjualan, isi SKU, satuan, dan metode pengiriman."
               title="Penjualan dan Inventori"
             >
-              <FieldShell label="SKU">
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  onChangeText={sku => controller.onChangeForm({ sku })}
-                  placeholder="SKU"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.sku}
-                />
-              </FieldShell>
-              <SpeciesRootSalesPanel controller={controller} />
-              {showRootOnlySections ? (
-                <SpeciesRootInventoryPanel controller={controller} />
-              ) : null}
+              <View
+                style={[
+                  styles.speciesBasicInfoCard,
+                  styles.customFieldSettingsCard,
+                ]}
+              >
+                <FieldShell label="SKU">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    onChangeText={sku => controller.onChangeForm({ sku })}
+                    placeholder="SKU"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.sku}
+                  />
+                </FieldShell>
+                <SpeciesRootSalesPanel controller={controller} />
+                {showRootOnlySections ? (
+                  <SpeciesRootInventoryPanel controller={controller} />
+                ) : null}
+              </View>
             </SpeciesEditSection>
 
             <SpeciesEditSection
