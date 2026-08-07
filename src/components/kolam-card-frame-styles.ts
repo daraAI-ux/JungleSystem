@@ -297,8 +297,8 @@ export const cardFrameStyles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   settingsWebLogoPreview: {
-    width: 80,
-    height: 80,
+    width: 40,
+    height: 40,
     borderRadius: V.radius.lg,
     backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
