@@ -2004,25 +2004,23 @@ function SpeciesRootSalesPanel({
       <View style={styles.grocerPricingPanel}>
         <View style={styles.twoColumnGrid}>
           <View style={styles.inlineFieldGroup}>
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'label',
-                  text: 'Status Penjualan',
-                  style: styles.variantTitle,
-                },
-              ]}
-            />
-            <View style={styles.segmentRow}>
-              <KolamButton
-                intent={form.sellable ? 'primary' : 'outline'}
-                label="Dijual"
-                onPress={() => controller.onChangeForm({ sellable: true })}
+            <View style={styles.sellableSwitchRow}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'label',
+                    text: 'Spesies dijual',
+                    style: styles.variantTitle,
+                  },
+                ]}
               />
-              <KolamButton
-                intent={!form.sellable ? 'primary' : 'outline'}
-                label="Tidak dijual"
-                onPress={() => controller.onChangeForm({ sellable: false })}
+              <KolamSwitch
+                accessibilityLabel="Spesies dijual"
+                active={form.sellable}
+                disabled={controller.saving}
+                onPress={() =>
+                  controller.onChangeForm({ sellable: !form.sellable })
+                }
               />
             </View>
           </View>
@@ -7490,6 +7488,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  sellableSwitchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 38,
   },
   formActions: {
     flexDirection: 'row',
