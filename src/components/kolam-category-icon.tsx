@@ -12,7 +12,7 @@ export function KolamCategoryIcon({
   variant = 'list',
 }: {
   category: KolamCategory;
-  variant?: 'list' | 'detail';
+  variant?: 'list' | 'detail' | 'summary';
 }) {
   const sourceUri =
     variant === 'list'
@@ -20,7 +20,11 @@ export function KolamCategoryIcon({
       : category.iconUrl;
   const svgXml = useCategorySvgXml(sourceUri);
   const usesSvg = Boolean(sourceUri && isSvgUri(sourceUri));
-  const iconStyle = [styles.icon, variant === 'detail' && styles.iconDetail];
+  const iconStyle = [
+    styles.icon,
+    variant === 'detail' && styles.iconDetail,
+    variant === 'summary' && styles.iconSummary,
+  ];
 
   if (usesSvg) {
     return (
@@ -41,10 +45,14 @@ export function KolamCategoryIcon({
         style={iconStyle}
       >
         <View style={styles.placeholder}>
-          {variant === 'detail' ? (
+          {variant !== 'list' ? (
             <Text
               numberOfLines={1}
-              style={[styles.placeholderText, styles.placeholderTextDetail]}>
+              style={[
+                styles.placeholderText,
+                variant === 'detail' && styles.placeholderTextDetail,
+                variant === 'summary' && styles.placeholderTextSummary,
+              ]}>
               {getCategoryInitial(category.name)}
             </Text>
           ) : null}
@@ -61,10 +69,14 @@ export function KolamCategoryIcon({
   return (
     <View style={iconStyle}>
       <View style={styles.placeholder}>
-        {variant === 'detail' ? (
+        {variant !== 'list' ? (
           <Text
             numberOfLines={1}
-            style={[styles.placeholderText, styles.placeholderTextDetail]}>
+            style={[
+              styles.placeholderText,
+              variant === 'detail' && styles.placeholderTextDetail,
+              variant === 'summary' && styles.placeholderTextSummary,
+            ]}>
             {getCategoryInitial(category.name)}
           </Text>
         ) : null}
@@ -171,6 +183,11 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 14,
   },
+  iconSummary: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
   image: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
@@ -190,5 +207,8 @@ const styles = StyleSheet.create({
   },
   placeholderTextDetail: {
     fontSize: 28,
+  },
+  placeholderTextSummary: {
+    fontSize: 42,
   },
 });
