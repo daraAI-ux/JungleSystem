@@ -1,11 +1,5 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import {
-  fitKolamDataTableColumns,
-  getKolamTableColumns,
-  getKolamTableVisualContract,
-  type KolamTableColumn,
-} from '../domain/kolam-table';
 import { type KolamTeranura } from '../domain/kolam-teranura';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -21,16 +15,6 @@ import { KolamResetButton } from './kolam-reset-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
-import {
-  getKolamDataTableColumnStyle,
-  KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-  KOLAM_DATA_TABLE_COLUMN_GAP,
-} from './kolam-data-table-column-style';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
-import {
-  KolamDataTableActionsTrack,
-  KolamDataTableMainTrack,
-} from './kolam-data-table-tracks';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -652,187 +636,6 @@ function TeranuraActionsMenu({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function TeranuraRow({
-  columns,
-  item,
-  onEdit,
-  onSelect,
-}: {
-  columns: KolamTableColumn[];
-  item: KolamTeranura;
-  onEdit: () => void;
-  onSelect: () => void;
-}) {
-  const code = item.sku || item.productCode || '-';
-  const variantLabel = item.variants.length
-    ? 'Produk varian'
-    : 'Produk standar';
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-  const columnOf = React.useCallback(
-    (id: KolamTableColumn['id']) => columns.find(column => column.id === id),
-    [columns],
-  );
-  const primaryColumn = columnOf('primary');
-  const skuColumn = columnOf('meta');
-  const brandColumn = columnOf('price');
-  const variantColumn = columnOf('children');
-  const priceColumn = columnOf('amount');
-  const stockColumn = columnOf('products');
-  const statusColumn = columnOf('status');
-  const actionsColumn = columnOf('actions');
-
-  return (
-    <KolamDataTableRowFrame
-      style={actionMenuOpen ? styles.activeActionRow : undefined}
-    >
-      <KolamDataTableMainTrack>
-        <View
-          style={[
-            styles.listCell,
-            styles.identityCell,
-            primaryColumn ? getKolamDataTableColumnStyle(primaryColumn) : null,
-          ]}
-        >
-          <View style={styles.primaryCell}>
-            <View style={styles.photoBox}>
-              <KolamRemoteImage
-                accessibilityLabel={item.name}
-                scope="teranura"
-                sourceUri={item.photoUrl}
-                style={styles.photo}
-              />
-            </View>
-            <View style={styles.primaryTextWrap}>
-              <View style={styles.nameRow}>
-                <Text numberOfLines={2} style={styles.nameText}>
-                  {item.name}
-                </Text>
-                {item.deviceLine === 'freyer' ? (
-                  <KolamBadge intent="info" label="Freyer" />
-                ) : null}
-              </View>
-              <Text numberOfLines={1} style={styles.metaText}>
-                {item.category?.name ?? 'Tanpa kategori'}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            skuColumn ? getKolamDataTableColumnStyle(skuColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} selectable style={styles.cellText}>
-            {code}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            brandColumn ? getKolamDataTableColumnStyle(brandColumn) : null,
-          ]}
-        >
-          <View style={styles.brandCell}>
-            {item.brand?.logoUrl ? (
-              <KolamRemoteImage
-                accessibilityLabel={item.brand.name}
-                scope="brand"
-                sourceUri={item.brand.logoUrl}
-                style={styles.brandLogo}
-              />
-            ) : null}
-            <Text numberOfLines={1} style={styles.cellText}>
-              {item.brand?.name ?? '-'}
-            </Text>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            variantColumn ? getKolamDataTableColumnStyle(variantColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {variantLabel}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            priceColumn ? getKolamDataTableColumnStyle(priceColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {item.priceToSell > 0 ? formatRupiah(item.priceToSell) : '-'}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            stockColumn ? getKolamDataTableColumnStyle(stockColumn) : null,
-          ]}
-        >
-          <Text numberOfLines={1} style={styles.cellText}>
-            {formatNumber(item.stock)}
-            {item.unitLabel ? ` ${item.unitLabel}` : ''}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.listCell,
-            statusColumn ? getKolamDataTableColumnStyle(statusColumn) : null,
-          ]}
-        >
-          <KolamBadge
-            intent={item.sellable ? 'success' : 'secondary'}
-            label={item.sellable ? 'Dapat dijual' : 'Tidak dijual'}
-            style={styles.centerBadge}
-          />
-        </View>
-      </KolamDataTableMainTrack>
-      <KolamDataTableActionsTrack
-        style={styles.actionsTrack}
-        width={Math.max(
-          actionsColumn?.width ?? KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-          KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-        )}
-      >
-        <KolamOverflowMenuButton
-          accessibilityLabel={`Menu ${item.name}`}
-          onOpenChange={setActionMenuOpen}
-          actions={[
-            { label: 'Lihat', onPress: onSelect },
-            { label: 'Rubah', onPress: onEdit },
-            {
-              disabled: true,
-              label: 'Hapus',
-              onPress: () => undefined,
-              tone: 'danger',
-            },
-          ]}
-        />
-      </KolamDataTableActionsTrack>
-    </KolamDataTableRowFrame>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function fitTeranuraListColumns(containerWidth: number): KolamTableColumn[] {
-  return fitKolamDataTableColumns(
-    getKolamTableColumns('teranura'),
-    containerWidth,
-    {
-      actionsMinWidth: KOLAM_DATA_TABLE_ACTIONS_MIN_WIDTH,
-      gap: KOLAM_DATA_TABLE_COLUMN_GAP,
-      paddingX: getKolamTableVisualContract().body.cellPaddingX * 2,
-      primaryMinWidth: 200,
-      secondaryMinWidth: 64,
-    },
-  );
-}
-
 function TeranuraFilterOverlayPanel({
   activePanel,
   brandOptions,
@@ -1089,17 +892,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 1000,
   },
-  listCell: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 0,
-    overflow: 'hidden',
-    paddingVertical: 4,
-  },
-  identityCell: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
   primaryCell: {
     flex: 1,
     minWidth: 0,
@@ -1172,9 +964,6 @@ const styles = StyleSheet.create({
   },
   centerBadge: {
     alignSelf: 'center',
-  },
-  actionsTrack: {
-    alignItems: 'center',
   },
   paginationBar: {
     flexDirection: 'row',
