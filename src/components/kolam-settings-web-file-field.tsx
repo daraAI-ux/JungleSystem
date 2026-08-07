@@ -34,21 +34,29 @@ export function KolamSettingsWebFileField({
   const logoUri = getLogoPreviewUri(value);
   const displayName = getUploadDisplayName(value);
   const disabled = !onUpload && !onLocalValueChange;
+  const handleDrop = React.useCallback(
+    (event: unknown) => {
+      preventDefaultDropEvent(event);
+      void getDroppedImageValue(event).then(dropped => {
+        if (dropped) {
+          onLocalValueChange?.(dropped);
+        }
+      });
+    },
+    [onLocalValueChange],
+  );
   const dropzoneProps = React.useMemo(
     () =>
       ({
+        onDragEnter: (event: unknown) => {
+          preventDefaultDropEvent(event);
+        },
         onDragOver: (event: unknown) => {
           preventDefaultDropEvent(event);
         },
-        onDrop: (event: unknown) => {
-          preventDefaultDropEvent(event);
-          const dropped = getDroppedImageValue(event);
-          if (dropped) {
-            onLocalValueChange?.(dropped);
-          }
-        },
+        onDrop: handleDrop,
       }) as object,
-    [onLocalValueChange],
+    [handleDrop],
   );
 
   return (
@@ -62,6 +70,7 @@ export function KolamSettingsWebFileField({
       </View>
       <View {...dropzoneProps} style={styles.settingsWebUploadDropzone}>
         <KolamInteractionFrame
+          {...dropzoneProps}
           accessibilityLabel={hint}
           disabled={disabled}
           onPress={onUpload}
@@ -137,7 +146,7 @@ function preventDefaultDropEvent(event: unknown) {
   record.preventDefault?.();
 }
 
-function getDroppedImageValue(event: unknown) {
+async function getDroppedImageValue(event: unknown) {
   const dataTransfer =
     getRecord(event).dataTransfer ?? getRecord(getRecord(event).nativeEvent).dataTransfer;
   const files = getRecord(dataTransfer).files;
@@ -145,11 +154,20 @@ function getDroppedImageValue(event: unknown) {
 
   const filePath =
     getString(first, 'path') ||
-    getString(first, 'uri') ||
-    getString(first, 'name');
+    getString(first, 'uri');
 
   if (filePath) {
     return filePath;
+  }
+
+  const objectUrl = createDroppedFileObjectUrl(first);
+  if (objectUrl) {
+    return objectUrl;
+  }
+
+  const dataUrl = await readDroppedFileAsDataUrl(first);
+  if (dataUrl) {
+    return dataUrl;
   }
 
   const uriList = callGetData(dataTransfer, 'text/uri-list');
@@ -158,6 +176,47 @@ function getDroppedImageValue(event: unknown) {
   }
 
   return callGetData(dataTransfer, 'text/plain');
+}
+
+function createDroppedFileObjectUrl(file: unknown) {
+  const createObjectURL = getRecord(getRecord(globalThis).URL).createObjectURL;
+  if (typeof createObjectURL !== 'function') {
+    return '';
+  }
+
+  try {
+    return String(createObjectURL.call(getRecord(globalThis).URL, file));
+  } catch (_error) {
+    return '';
+  }
+}
+
+function readDroppedFileAsDataUrl(file: unknown) {
+  const FileReaderCtor = getRecord(globalThis).FileReader as
+    | (new () => {
+        error?: unknown;
+        onerror?: () => void;
+        onload?: () => void;
+        readAsDataURL?: (value: unknown) => void;
+        result?: unknown;
+      })
+    | undefined;
+  if (typeof FileReaderCtor !== 'function' || !file) {
+    return Promise.resolve('');
+  }
+
+  return new Promise<string>(resolve => {
+    try {
+      const reader = new FileReaderCtor();
+
+      reader.onerror = () => resolve('');
+      reader.onload = () =>
+        resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.readAsDataURL?.(file);
+    } catch (_error) {
+      resolve('');
+    }
+  });
 }
 
 function callGetData(target: unknown, type: string) {
