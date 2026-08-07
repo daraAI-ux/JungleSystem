@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -292,10 +291,6 @@ export function KolamOverflowMenuButton({
 }) {
   const [open, setOpen] = React.useState(false);
   const [placement, setPlacement] = React.useState<'bottom' | 'top'>('bottom');
-  const [floatingPosition, setFloatingPosition] = React.useState({
-    left: 0,
-    top: 0,
-  });
   const rootRef = React.useRef<View>(null);
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
@@ -337,7 +332,6 @@ export function KolamOverflowMenuButton({
     }
 
     root.measureInWindow((_x, y, _width, height) => {
-      const menuWidth = 220;
       const estimatedMenuHeight = Math.max(48, actions.length * 35 + 14);
       const availableAbove = y;
       const availableBelow = viewport.height - (y + height);
@@ -346,20 +340,6 @@ export function KolamOverflowMenuButton({
         availableAbove > availableBelow;
 
       setPlacement(shouldOpenUp ? 'top' : 'bottom');
-      if (floating) {
-        const left = Math.min(
-          Math.max(8, _x + _width - menuWidth),
-          Math.max(8, viewport.width - menuWidth - 8),
-        );
-        const top = shouldOpenUp
-          ? Math.max(8, y - estimatedMenuHeight - 4)
-          : Math.min(
-              y + height + 4,
-              Math.max(8, viewport.height - estimatedMenuHeight - 8),
-            );
-
-        setFloatingPosition({ left, top });
-      }
       setMenuOpen(true);
     });
   };
@@ -376,8 +356,11 @@ export function KolamOverflowMenuButton({
     <View
       style={[
         styles.overflowMenu,
+        floating ? styles.overflowMenuFloating : null,
         floating
-          ? [styles.overflowMenuFloating, floatingPosition]
+          ? placement === 'top'
+            ? styles.overflowMenuFloatingUp
+            : styles.overflowMenuFloatingDown
           : placement === 'top'
             ? styles.overflowMenuUp
             : styles.overflowMenuDown,
@@ -414,19 +397,7 @@ export function KolamOverflowMenuButton({
         style={styles.overflowButton}
         textStyle={styles.overflowText}
       />
-      {open && floating ? (
-        <Modal
-          animationType="none"
-          onRequestClose={() => setMenuOpen(false)}
-          transparent
-          visible
-        >
-          <View pointerEvents="box-none" style={styles.overflowModalRoot}>
-            {menu}
-          </View>
-        </Modal>
-      ) : null}
-      {open && !floating ? menu : null}
+      {open ? menu : null}
     </View>
   );
 }
@@ -602,6 +573,14 @@ const styles = StyleSheet.create({
     minWidth: 220,
     zIndex: 2000000,
   },
+  overflowMenuFloatingDown: {
+    top: 34,
+    right: 0,
+  },
+  overflowMenuFloatingUp: {
+    bottom: 34,
+    right: 0,
+  },
   overflowMenuDown: {
     top: 34,
     right: 42,
@@ -621,8 +600,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
     textAlign: 'left',
-  },
-  overflowModalRoot: {
-    ...StyleSheet.absoluteFillObject,
   },
 });
