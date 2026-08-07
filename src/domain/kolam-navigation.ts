@@ -730,6 +730,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/label-dan-field/merek', {
         group: 'Label dan Field',
         label: 'Merek',
+        moduleIcon: 'brand',
       }),
       sidebarItem('/label-dan-field/kategori', {
         group: 'Label dan Field',
@@ -2156,6 +2157,7 @@ function getLabelAndFieldsBrandNavigationItem(
       description: 'Kelola merek produk dari Label dan Field Kolam',
       group: 'Label dan Field',
       label: 'Merek',
+      moduleIcon: 'brand',
       requiredAccess: ['kolam'],
       route: normalizedRoute,
     };
@@ -2174,6 +2176,7 @@ function getLabelAndFieldsBrandNavigationItem(
       description: 'Buat merek baru dari Label dan Field Kolam',
       group: 'Label dan Field',
       label: 'Buat Merek Baru',
+      moduleIcon: 'brand',
       requiredAccess: ['kolam'],
       route: normalizedRoute,
     };
@@ -2183,6 +2186,7 @@ function getLabelAndFieldsBrandNavigationItem(
     description: 'Detail merek dari Label dan Field Kolam',
     group: 'Label dan Field',
     label: decodeURIComponent(brandDetail[1]).replace(/-/g, ' '),
+    moduleIcon: 'brand',
     requiredAccess: ['kolam'],
     route: normalizedRoute,
   };
