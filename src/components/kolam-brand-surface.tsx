@@ -865,8 +865,8 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               value={form.notes}
             />
           </FieldShell>
-          <View style={styles.brandAssetSettingsCard}>
-            <View style={styles.brandAssetSettingsRow}>
+          <View style={styles.brandAssetSettingsGrid}>
+            <View style={styles.brandAssetSettingsCard}>
               <FieldShell label="Link">
                 <KolamFormTextField
                   editable={!controller.saving}
@@ -883,7 +883,7 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
                 />
               </FieldShell>
             </View>
-            <View style={styles.brandAssetSettingsRow}>
+            <View style={styles.brandAssetSettingsCard}>
               <FieldShell label="Logo">
                 <View style={styles.logoPickerRow}>
                   <KolamFormTextField
@@ -1312,16 +1312,21 @@ const styles = StyleSheet.create({
     maxHeight: 260,
     minWidth: 360,
   },
+  brandAssetSettingsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   brandAssetSettingsCard: {
     backgroundColor: '#f9fafb',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    flex: 1,
+    flexBasis: 320,
     gap: 10,
+    minWidth: 280,
     padding: 10,
-  },
-  brandAssetSettingsRow: {
-    width: '100%',
   },
   logoPickerRow: {
     minHeight: V.control.inputHeight,
