@@ -8,6 +8,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
 import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
+import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 export function KolamSettingsWebFileField({
   accessibilityLabel = 'Logo',
@@ -133,7 +134,7 @@ export function KolamSettingsWebFileField({
               onPress={() => onLocalValueChange('')}
               style={styles.settingsWebUploadDeleteButton}
             >
-              <Text style={styles.settingsWebUploadDeleteText}>x</Text>
+              <KolamUploadDeleteIcon />
             </KolamInteractionFrame>
           ) : null}
         </View>
