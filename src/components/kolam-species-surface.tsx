@@ -3749,11 +3749,36 @@ function SpeciesVariantEditorPanel({
   onDeleteVariant: (target: { id: string; label: string }) => void;
 }) {
   const form = controller.form;
+  const [variantsEnabled, setVariantsEnabled] = React.useState(
+    form.variants.length > 0,
+  );
   const [expandedVariantId, setExpandedVariantId] = React.useState<
     string | null
   >(form.variants[0]?.id ?? null);
+  const [newTier1Value, setNewTier1Value] = React.useState('');
+  const [newTier2Value, setNewTier2Value] = React.useState('');
+  const primaryValues = React.useMemo(
+    () =>
+      uniqueStrings(
+        form.variants.map(variant => variant.tier1Value.trim()).filter(Boolean),
+      ),
+    [form.variants],
+  );
+  const secondaryValues = React.useMemo(
+    () =>
+      uniqueStrings(
+        form.variants.map(variant => variant.tier2Value.trim()).filter(Boolean),
+      ),
+    [form.variants],
+  );
+  const secondaryEnabled =
+    Boolean(form.variantConfigTier2Name.trim()) || secondaryValues.length > 0;
 
   React.useEffect(() => {
+    if (form.variants.length > 0) {
+      setVariantsEnabled(true);
+    }
+
     if (!form.variants.length) {
       setExpandedVariantId(null);
       return;
@@ -3767,73 +3792,438 @@ function SpeciesVariantEditorPanel({
     }
   }, [expandedVariantId, form.variants]);
 
+  const applyVariantValues = React.useCallback(
+    (tier1Values: string[], tier2Values: string[]) => {
+      controller.onChangeForm({
+        variants: createSpeciesVariantCombinationRows({
+          baseSku: form.sku,
+          currentRows: form.variants,
+          tier1Values,
+          tier2Values,
+        }),
+        variantsTouched: true,
+      });
+    },
+    [controller, form.sku, form.variants],
+  );
+
+  const addPrimaryValue = React.useCallback(() => {
+    const value = newTier1Value.trim();
+    if (!value || primaryValues.includes(value)) {
+      return;
+    }
+
+    applyVariantValues([...primaryValues, value], secondaryValues);
+    setNewTier1Value('');
+  }, [applyVariantValues, newTier1Value, primaryValues, secondaryValues]);
+
+  const addSecondaryValue = React.useCallback(() => {
+    const value = newTier2Value.trim();
+    if (!value || secondaryValues.includes(value)) {
+      return;
+    }
+
+    applyVariantValues(primaryValues, [...secondaryValues, value]);
+    setNewTier2Value('');
+  }, [applyVariantValues, newTier2Value, primaryValues, secondaryValues]);
+
+  const removePrimaryValue = React.useCallback(
+    (value: string) => {
+      applyVariantValues(
+        primaryValues.filter(item => item !== value),
+        secondaryValues,
+      );
+    },
+    [applyVariantValues, primaryValues, secondaryValues],
+  );
+
+  const removeSecondaryValue = React.useCallback(
+    (value: string) => {
+      applyVariantValues(
+        primaryValues,
+        secondaryValues.filter(item => item !== value),
+      );
+    },
+    [applyVariantValues, primaryValues, secondaryValues],
+  );
+
+  const resetVariants = React.useCallback(() => {
+    setNewTier1Value('');
+    setNewTier2Value('');
+    setVariantsEnabled(false);
+    controller.onChangeForm({
+      selectedVariantId: '',
+      variantConfigTier1Name: 'Varian',
+      variantConfigTier2Name: '',
+      variants: [],
+      variantsTouched: true,
+    });
+  }, [controller]);
+
   return (
     <FieldShell label="Varian Spesies">
       <View style={styles.variantEditorPanel}>
-        <View style={styles.twoColumnGrid}>
-          <KolamFormTextField
-            editable={!controller.saving}
-            onChangeText={variantConfigTier1Name =>
-              controller.onChangeForm({
-                variantConfigTier1Name,
-                variantsTouched: true,
-              })
-            }
-            placeholder="Contoh: Ukuran"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.variantConfigTier1Name}
-          />
-          <KolamFormTextField
-            editable={!controller.saving}
-            onChangeText={variantConfigTier2Name =>
-              controller.onChangeForm({
-                variantConfigTier2Name,
-                variantsTouched: true,
-              })
-            }
-            placeholder="Contoh: Jenis kelamin / fase"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.variantConfigTier2Name}
-          />
-        </View>
-        <View style={styles.variantEditorHeader}>
+        <View style={styles.variantSwitchPanel}>
           <KolamCopyStack
+            containerStyle={styles.variantSwitchCopy}
             items={[
               {
-                id: 'summary',
-                text: form.variants.length
-                  ? `${form.variants.length} varian disiapkan`
-                  : 'Belum ada varian',
+                id: 'label',
+                text: 'Spesies ini memiliki varian',
+                style: styles.variantTitle,
+              },
+              {
+                id: 'hint',
+                text: 'Beberapa SKU untuk ukuran, warna, grade, atau fase berbeda.',
                 style: styles.fieldHint,
               },
             ]}
           />
-          <KolamButton
+          <KolamSwitch
+            accessibilityLabel="Aktifkan varian spesies"
+            active={variantsEnabled}
             disabled={controller.saving}
-            intent="primary"
-            label="Tambah Varian"
-            onPress={() => addSpeciesVariantRow(controller)}
+            onPress={() => {
+              if (variantsEnabled) {
+                resetVariants();
+                return;
+              }
+
+              setVariantsEnabled(true);
+            }}
           />
         </View>
-        {form.variants.map((variant, index) => (
-          <SpeciesVariantFormCard
-            controller={controller}
-            expanded={expandedVariantId === variant.id}
-            index={index}
-            key={variant.id}
-            onDeleteMedia={onDeleteMedia}
-            onDeleteVariant={onDeleteVariant}
-            onToggle={() =>
-              setExpandedVariantId(current =>
-                current === variant.id ? null : variant.id,
-              )
-            }
-            variant={variant}
-          />
-        ))}
+        {variantsEnabled ? (
+          <View style={styles.variantInfoPanel}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'title',
+                  text: 'Harga dikelola oleh varian',
+                  style: styles.variantInfoTitle,
+                },
+                {
+                  id: 'hint',
+                  text: 'Saat varian aktif, harga root dan pemasok root disembunyikan. Atur harga dan pemasok per varian di bawah.',
+                  style: styles.variantInfoHint,
+                },
+              ]}
+            />
+          </View>
+        ) : null}
+
+        {variantsEnabled ? (
+          <View style={styles.variantConfiguratorCard}>
+            <View style={styles.variantConfiguratorHeader}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'title',
+                    text: 'Konfigurasi Varian',
+                    style: styles.variantFieldPanelTitle,
+                  },
+                  {
+                    id: 'hint',
+                    text: 'Tentukan struktur varian.',
+                    style: styles.fieldHint,
+                  },
+                ]}
+              />
+              <KolamButton
+                disabled={controller.saving}
+                intent="outline"
+                label="Reset"
+                onPress={resetVariants}
+                style={styles.variantHeaderButton}
+              />
+            </View>
+            <View style={styles.variantConfiguratorSection}>
+              <View style={styles.variantConfiguratorTitleRow}>
+                <Text style={styles.variantSpecsLabel}>Varian Utama</Text>
+                <KolamStatusBadge
+                  intent="primary"
+                  label="Wajib"
+                  style={styles.variantMetaBadge}
+                />
+              </View>
+              <KolamFormTextField
+                editable={!controller.saving}
+                onChangeText={variantConfigTier1Name =>
+                  controller.onChangeForm({
+                    variantConfigTier1Name,
+                    variantsTouched: true,
+                  })
+                }
+                placeholder="Contoh: Ukuran"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.variantConfigTier1Name}
+              />
+              <SpeciesVariantValueChips
+                emptyText="Belum ada nilai varian utama."
+                onRemove={removePrimaryValue}
+                values={primaryValues}
+              />
+              <View style={styles.variantValueInputRow}>
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={setNewTier1Value}
+                  placeholder="Tambah nilai varian"
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    styles.variantValueInput,
+                  ]}
+                  value={newTier1Value}
+                />
+                <KolamButton
+                  disabled={controller.saving || !newTier1Value.trim()}
+                  intent="primary"
+                  label="Tambah"
+                  onPress={addPrimaryValue}
+                  style={styles.variantHeaderButton}
+                />
+              </View>
+            </View>
+            <View style={styles.variantConfiguratorSection}>
+              <View style={styles.variantSecondaryHeader}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'title',
+                      text: 'Varian Kedua',
+                      style: styles.variantSpecsLabel,
+                    },
+                    {
+                      id: 'hint',
+                      text: 'Opsional untuk kombinasi seperti ukuran dan fase.',
+                      style: styles.fieldHint,
+                    },
+                  ]}
+                />
+                <KolamSwitch
+                  accessibilityLabel="Aktifkan varian kedua"
+                  active={secondaryEnabled}
+                  disabled={controller.saving}
+                  onPress={() => {
+                    if (secondaryEnabled) {
+                      controller.onChangeForm({
+                        variantConfigTier2Name: '',
+                        variants: createSpeciesVariantCombinationRows({
+                          baseSku: form.sku,
+                          currentRows: form.variants,
+                          tier1Values: primaryValues,
+                          tier2Values: [],
+                        }),
+                        variantsTouched: true,
+                      });
+                      return;
+                    }
+
+                    controller.onChangeForm({
+                      variantConfigTier2Name: 'Tipe',
+                      variantsTouched: true,
+                    });
+                  }}
+                />
+              </View>
+              {secondaryEnabled ? (
+                <>
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    onChangeText={variantConfigTier2Name =>
+                      controller.onChangeForm({
+                        variantConfigTier2Name,
+                        variantsTouched: true,
+                      })
+                    }
+                    placeholder="Contoh: Fase"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.variantConfigTier2Name}
+                  />
+                  <SpeciesVariantValueChips
+                    emptyText="Belum ada nilai varian kedua."
+                    onRemove={removeSecondaryValue}
+                    values={secondaryValues}
+                  />
+                  <View style={styles.variantValueInputRow}>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={setNewTier2Value}
+                      placeholder="Tambah nilai varian kedua"
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        styles.variantValueInput,
+                      ]}
+                      value={newTier2Value}
+                    />
+                    <KolamButton
+                      disabled={controller.saving || !newTier2Value.trim()}
+                      intent="primary"
+                      label="Tambah"
+                      onPress={addSecondaryValue}
+                      style={styles.variantHeaderButton}
+                    />
+                  </View>
+                </>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        {variantsEnabled && form.variants.length > 0 ? (
+          <View style={styles.variantManagerShell}>
+            <View style={styles.variantManagerHeader}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'title',
+                    text: 'Daftar Varian',
+                    style: styles.variantFieldPanelTitle,
+                  },
+                  {
+                    id: 'hint',
+                    text: 'Konfigurasi harga, pemasok, spesifikasi, media, dan lanjutan per varian.',
+                    style: styles.fieldHint,
+                  },
+                ]}
+              />
+              <KolamStatusBadge
+                intent="primary"
+                label={`${form.variants.length} varian`}
+                style={styles.variantMetaBadge}
+              />
+            </View>
+            <View style={styles.variantListShell}>
+              {form.variants.map((variant, index) => (
+                <SpeciesVariantFormCard
+                  controller={controller}
+                  expanded={expandedVariantId === variant.id}
+                  index={index}
+                  key={variant.id}
+                  onDeleteMedia={onDeleteMedia}
+                  onDeleteVariant={onDeleteVariant}
+                  onToggle={() =>
+                    setExpandedVariantId(current =>
+                      current === variant.id ? null : variant.id,
+                    )
+                  }
+                  variant={variant}
+                />
+              ))}
+            </View>
+          </View>
+        ) : variantsEnabled ? (
+          <View style={styles.variantEmptyPanel}>
+            <Text style={styles.fieldHint}>
+              Tambahkan nilai varian utama untuk membuat daftar varian.
+            </Text>
+          </View>
+        ) : null}
       </View>
     </FieldShell>
   );
+}
+
+function SpeciesVariantValueChips({
+  emptyText,
+  onRemove,
+  values,
+}: {
+  emptyText: string;
+  onRemove: (value: string) => void;
+  values: string[];
+}) {
+  if (!values.length) {
+    return (
+      <View style={styles.variantValueChipBox}>
+        <Text style={styles.fieldHint}>{emptyText}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.variantValueChipBox}>
+      {values.map(value => (
+        <Pressable
+          accessibilityRole="button"
+          key={value}
+          onPress={() => onRemove(value)}
+          style={styles.variantValueChip}
+        >
+          <Text style={styles.variantValueChipText}>{value}</Text>
+          <Text style={styles.variantValueChipRemove}>x</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function createSpeciesVariantCombinationRows({
+  baseSku,
+  currentRows,
+  tier1Values,
+  tier2Values,
+}: {
+  baseSku: string;
+  currentRows: KolamSpeciesVariantFormRow[];
+  tier1Values: string[];
+  tier2Values: string[];
+}) {
+  const cleanTier1Values = uniqueStrings(
+    tier1Values.map(value => value.trim()).filter(Boolean),
+  );
+  const cleanTier2Values = uniqueStrings(
+    tier2Values.map(value => value.trim()).filter(Boolean),
+  );
+  const combinations = cleanTier1Values.flatMap(tier1Value =>
+    cleanTier2Values.length
+      ? cleanTier2Values.map(tier2Value => ({ tier1Value, tier2Value }))
+      : [{ tier1Value, tier2Value: '' }],
+  );
+
+  return combinations.map(({ tier1Value, tier2Value }) => {
+    const existing = currentRows.find(
+      row =>
+        row.tier1Value.trim() === tier1Value &&
+        row.tier2Value.trim() === tier2Value,
+    );
+
+    if (existing) {
+      return existing;
+    }
+
+    return {
+      ...createEmptyKolamSpeciesVariantFormRow(),
+      sku: generateSpeciesVariantSku(baseSku, tier1Value, tier2Value),
+      tier1Value,
+      tier2Value,
+    };
+  });
+}
+
+function generateSpeciesVariantSku(
+  baseSku: string,
+  tier1Value: string,
+  tier2Value: string,
+) {
+  const cleanBase = baseSku.trim();
+  if (!cleanBase) {
+    return '';
+  }
+
+  const tier1Short = tier1Value
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 3);
+  const tier2Short = tier2Value
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 3);
+
+  return [cleanBase, tier1Short, tier2Short].filter(Boolean).join('-');
+}
+
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values));
 }
 
 function SpeciesVariantFieldPanel({
@@ -3938,41 +4328,31 @@ function SpeciesVariantFormCard({
           onPress={onToggle}
           style={styles.variantRowPressable}
         >
-          <KolamCopyStack
-            items={[
-              {
-                id: 'title',
-                text: `${expanded ? 'v' : '>'} ${variantLabel}`,
-                style: styles.variantTitle,
-              },
-            ]}
+          <Text style={styles.variantChevron}>{expanded ? 'v' : '>'}</Text>
+          <KolamStatusBadge
+            intent="primary"
+            label={variantLabel}
+            style={styles.variantNameBadge}
           />
           <View style={styles.variantHeaderMetaRow}>
-            <KolamStatusBadge
-              intent="primary"
-              label={skuLabel}
-              style={styles.variantMetaBadge}
-            />
-            <KolamStatusBadge
-              intent={stockValue > 0 ? 'success' : 'danger'}
-              label={`Stok ${formatNumber(stockValue)}`}
-              style={styles.variantMetaBadge}
-            />
-            <KolamStatusBadge
-              intent={vendorCount > 0 ? 'success' : 'muted'}
-              label={`Pemasok ${vendorCount}`}
-              style={styles.variantMetaBadge}
-            />
-            <KolamStatusBadge
-              intent={mediaCount > 0 ? 'success' : 'muted'}
-              label={`Media ${mediaCount}`}
-              style={styles.variantMetaBadge}
-            />
-            <KolamStatusBadge
-              intent="success"
-              label={priceLabel}
-              style={styles.variantMetaBadge}
-            />
+            {skuLabel !== '-' ? (
+              <Text style={styles.variantHeaderMetaStrong}>{skuLabel}</Text>
+            ) : null}
+            <Text style={styles.variantHeaderDivider}>|</Text>
+            <Text
+              style={[
+                styles.variantHeaderMeta,
+                stockValue <= 0 && styles.variantHeaderMetaDanger,
+              ]}
+            >
+              Stok {formatNumber(stockValue)}
+            </Text>
+            <Text style={styles.variantHeaderMeta}>
+              Pemasok {vendorCount}
+            </Text>
+            <Text style={styles.variantHeaderMeta}>Foto {mediaCount}</Text>
+            <Text style={styles.variantHeaderDivider}>|</Text>
+            <Text style={styles.variantHeaderMetaStrong}>{priceLabel}</Text>
           </View>
         </Pressable>
         <KolamButton
@@ -3987,7 +4367,7 @@ function SpeciesVariantFormCard({
       </View>
 
       {expanded ? (
-        <>
+        <View style={styles.variantExpandedContent}>
           <View style={styles.variantTabRow}>
             {SPECIES_VARIANT_EDIT_TABS.map(tab => (
               <KolamButton
@@ -4374,7 +4754,7 @@ function SpeciesVariantFormCard({
               </View>
             </View>
           ) : null}
-        </>
+        </View>
       ) : null}
     </View>
   );
@@ -7178,6 +7558,147 @@ const styles = StyleSheet.create({
   variantEditorPanel: {
     gap: 12,
   },
+  variantSwitchPanel: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantSwitchCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  variantInfoPanel: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#bfdbfe',
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
+  variantInfoTitle: {
+    color: '#1d4ed8',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  variantInfoHint: {
+    color: '#2563eb',
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  variantConfiguratorCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 16,
+    padding: 14,
+  },
+  variantConfiguratorHeader: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantConfiguratorSection: {
+    gap: 10,
+  },
+  variantConfiguratorTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  variantSecondaryHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  variantValueChipBox: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    minHeight: 44,
+    padding: 10,
+  },
+  variantValueChip: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 7,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  variantValueChipText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  variantValueChipRemove: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  variantValueInputRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  variantValueInput: {
+    flex: 1,
+    minWidth: 180,
+  },
+  variantManagerShell: {
+    gap: 12,
+  },
+  variantManagerHeader: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantListShell: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  variantEmptyPanel: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    padding: 16,
+  },
   variantEditorHeader: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -7188,13 +7709,11 @@ const styles = StyleSheet.create({
   variantRowHeader: {
     alignItems: 'center',
     backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
     flexDirection: 'row',
     gap: 10,
     justifyContent: 'space-between',
-    padding: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   variantRowPressable: {
     alignItems: 'center',
@@ -7212,6 +7731,37 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginLeft: 'auto',
   },
+  variantChevron: {
+    color: V.colors.mutedFg,
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 20,
+    width: 18,
+  },
+  variantNameBadge: {
+    minHeight: 24,
+  },
+  variantHeaderMeta: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  variantHeaderMetaStrong: {
+    color: V.colors.fg,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  variantHeaderMetaDanger: {
+    color: V.colors.danger,
+  },
+  variantHeaderDivider: {
+    color: V.colors.border,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
   variantMetaBadge: {
     minHeight: 24,
   },
@@ -7227,12 +7777,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   variantFormCard: {
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  variantExpandedContent: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
     gap: 12,
-    padding: 14,
+    padding: 12,
   },
   variantTitle: {
     color: V.colors.fg,
