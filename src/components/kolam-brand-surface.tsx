@@ -784,7 +784,6 @@ function getBrandDetailItemKey(item: KolamDetailListItem, index: number) {
 
 function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
   const form = controller.form;
-  const [countryDropdownOpen, setCountryDropdownOpen] = React.useState(false);
 
   return (
     <KolamNativeFormSection section={getKolamFormSection('brand-detail')}>
@@ -825,7 +824,6 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
                   onChange={originCountry =>
                     controller.onChangeForm({ originCountry })
                   }
-                  onOpenChange={setCountryDropdownOpen}
                   options={KOLAM_BRAND_FLAG_OPTIONS.map(option => ({
                     icon: <KolamFlagIcon option={option} />,
                     label: option.country,
@@ -839,20 +837,6 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               </FieldShell>
             </View>
           </View>
-          <FieldShell label="Deskripsi">
-            {countryDropdownOpen ? (
-              <View style={styles.editorDropdownSpacer} />
-            ) : (
-              <KolamTipTapRichTextEditor
-                editable={!controller.saving}
-                onChangeText={description =>
-                  controller.onChangeForm({ description })
-                }
-                placeholder="Deskripsi singkat"
-                value={form.description}
-              />
-            )}
-          </FieldShell>
           <FieldShell label="Catatan">
             <KolamFormTextField
               editable={!controller.saving}
@@ -900,6 +884,16 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               />
             </View>
           </View>
+          <FieldShell label="Deskripsi">
+            <KolamTipTapRichTextEditor
+              editable={!controller.saving}
+              onChangeText={description =>
+                controller.onChangeForm({ description })
+              }
+              placeholder="Deskripsi singkat"
+              value={form.description}
+            />
+          </FieldShell>
         </View>
         <View style={styles.formActions}>
           <KolamButton
@@ -1297,13 +1291,6 @@ const styles = StyleSheet.create({
   countryDropdownMenu: {
     maxHeight: 260,
     minWidth: 360,
-  },
-  editorDropdownSpacer: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.input,
-    borderRadius: V.radius.lg,
-    borderWidth: 1,
-    minHeight: 388,
   },
   brandAssetSettingsGrid: {
     flexDirection: 'row',
