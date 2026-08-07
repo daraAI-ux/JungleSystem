@@ -87,6 +87,10 @@ export const settingsWebFormStyles = StyleSheet.create({
     minHeight: 68,
     lineHeight: 17,
   },
+  settingsWebFormFieldValueNote: {
+    backgroundColor: '#fffbeb',
+    borderColor: '#fde68a',
+  },
   settingsWebFormFieldHint: {
     flex: 1,
     minWidth: 0,

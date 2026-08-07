@@ -797,18 +797,20 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
               <FieldShell label="Status" required>
-                <View style={styles.segmentRow}>
-                  {(
+                <KolamDropdownSelect<KolamBrandStatus>
+                  accessibilityLabel="Pilih status merek"
+                  label="Status"
+                  menuStyle={styles.longDropdownMenu}
+                  onChange={status => controller.onChangeForm({ status })}
+                  options={(
                     ['active', 'inactive', 'blacklisted'] as KolamBrandStatus[]
-                  ).map(status => (
-                    <KolamButton
-                      intent={form.status === status ? 'primary' : 'outline'}
-                      key={status}
-                      label={getBrandStatusLabel(status)}
-                      onPress={() => controller.onChangeForm({ status })}
-                    />
-                  ))}
-                </View>
+                  ).map(status => ({
+                    label: getBrandStatusLabel(status),
+                    value: status,
+                  }))}
+                  showLabelInTrigger={false}
+                  value={form.status}
+                />
               </FieldShell>
             </View>
             <View style={[styles.formSplitCell, styles.countryDropdownCell]}>
@@ -842,6 +844,7 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               style={[
                 settingsWebFormStyles.settingsWebFormFieldValue,
                 settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                settingsWebFormStyles.settingsWebFormFieldValueNote,
               ]}
               value={form.notes}
             />
