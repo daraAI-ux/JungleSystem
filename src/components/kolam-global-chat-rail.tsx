@@ -7464,8 +7464,6 @@ function formatRelativeTime(iso?: string | null) {
 
 const styles = StyleSheet.create({
   rail: {
-    flex: 1,
-    minHeight: 0,
     width: 360,
     minWidth: 360,
     maxWidth: 360,
