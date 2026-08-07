@@ -20,7 +20,6 @@ import {
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -281,13 +280,6 @@ function KolamBrandList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -295,6 +287,13 @@ function KolamBrandList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/label-dan-field/merek/baru');
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
               />
             </View>
@@ -354,11 +353,6 @@ function KolamBrandList({
                   >
                     {option.label}
                   </Text>
-                  {selected ? (
-                    <KolamCheckmarkIcon color={V.colors.primary} size="sm" />
-                  ) : (
-                    <View style={styles.filterMenuItemCheckSpacer} />
-                  )}
                 </KolamInteractionFrame>
               );
             })}
@@ -1271,10 +1265,6 @@ const styles = StyleSheet.create({
   filterMenuItemLabelSelected: {
     color: V.colors.primary,
     fontWeight: '800',
-  },
-  filterMenuItemCheckSpacer: {
-    height: 14,
-    width: 14,
   },
   fieldWide: {
     flexBasis: '100%',
