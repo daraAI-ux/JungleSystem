@@ -449,7 +449,7 @@ function buildCustomFieldListColumns(): Array<
     {
       flex: 1.22,
       id: 'primary',
-      label: 'Field',
+      label: 'Label Field',
       render: field => <KolamCustomFieldIdentityCell field={field} />,
     },
     {
@@ -709,6 +709,17 @@ function KolamCustomFieldForm({
               placeholder="contoh: panjang_tubuh"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.fieldKey}
+            />
+          </FieldShell>
+          <FieldShell label="Label Field" required>
+            <KolamFormTextField
+              editable={!controller.saving}
+              onChangeText={fieldLabel =>
+                controller.onChangeForm({ fieldLabel })
+              }
+              placeholder="contoh: Diameter"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.fieldLabel}
             />
           </FieldShell>
           <FieldShell label="Tipe Field" required>
