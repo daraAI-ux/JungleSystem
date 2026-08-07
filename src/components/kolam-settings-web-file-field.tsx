@@ -5,6 +5,7 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
+import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
 
 export function KolamSettingsWebFileField({
@@ -66,7 +67,7 @@ export function KolamSettingsWebFileField({
           onPress={onUpload}
           style={styles.settingsWebUploadPreviewButton}
         >
-          <Text style={styles.settingsWebUploadArrow}>⇧</Text>
+          <KolamUploadArrowIcon />
           <View style={styles.settingsWebUploadPromptRow}>
             <Text style={styles.settingsWebUploadPrompt}>{hint}</Text>
             <Text style={styles.settingsWebUploadLink}>{actionLabel}</Text>
