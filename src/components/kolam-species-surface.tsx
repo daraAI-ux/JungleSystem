@@ -84,6 +84,7 @@ import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamPackingLinksEditor } from './kolam-packing-links-editor';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -1337,10 +1338,17 @@ function KolamSpeciesForm({
               description="Foto, video, thumbnail, audio, dan media per varian."
               title="Media"
             >
-              <SpeciesMediaEditPanel
-                controller={controller}
-                onDelete={setDeleteMediaTarget}
-              />
+              <View
+                style={[
+                  styles.speciesBasicInfoCard,
+                  styles.customFieldSettingsCard,
+                ]}
+              >
+                <SpeciesMediaEditPanel
+                  controller={controller}
+                  onDelete={setDeleteMediaTarget}
+                />
+              </View>
             </SpeciesEditSection>
 
             <SpeciesEditSection
@@ -1885,154 +1893,138 @@ function SpeciesMediaEditPanel({
   const selectedSpecies = controller.selectedSpecies;
 
   return (
-    <FieldShell label="Media Spesies">
-      <View style={styles.mediaPickerStack}>
-        <View style={styles.mediaPickerRow}>
-          <KolamFormTextField
-            editable={false}
-            mode="url"
-            placeholder="Pilih thumbnail dari komputer"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.mediaPickerInput,
-            ]}
-            value={controller.form.thumbnailLocalUri}
-          />
-          <KolamButton
+    <View style={styles.mediaPickerStack}>
+      <View style={styles.mediaUploadGrid}>
+        <View style={styles.mediaUploadCell}>
+          <KolamSettingsWebFileField
+            accessibilityLabel="Thumbnail spesies"
+            actionLabel="Pilih file"
             disabled={controller.saving}
-            label="Pilih Thumbnail"
-            onPress={() => {
+            emptyLabel="Thumbnail belum dipilih"
+            onLocalValueChange={thumbnailLocalUri =>
+              controller.onChangeForm({ thumbnailLocalUri })
+            }
+            onUpload={() => {
               void controller.onPickThumbnail();
             }}
+            scope="species-thumbnail"
+            title="Thumbnail"
+            value={controller.form.thumbnailLocalUri}
           />
         </View>
-        <View style={styles.mediaPickerRow}>
-          <KolamFormTextField
-            editable={false}
-            mode="url"
-            placeholder="Pilih foto untuk ditambahkan"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.mediaPickerInput,
-            ]}
-            value={controller.form.photoLocalUri}
-          />
-          <KolamButton
+        <View style={styles.mediaUploadCell}>
+          <KolamSettingsWebFileField
+            accessibilityLabel="Foto spesies"
+            actionLabel="Pilih file"
             disabled={controller.saving}
-            label="Tambah Foto"
-            onPress={() => {
+            emptyLabel="Foto belum dipilih"
+            onLocalValueChange={photoLocalUri =>
+              controller.onChangeForm({ photoLocalUri })
+            }
+            onUpload={() => {
               void controller.onPickPhoto();
             }}
+            scope="species-photo"
+            title="Foto"
+            value={controller.form.photoLocalUri}
           />
         </View>
-        <View style={styles.mediaPickerRow}>
-          <KolamFormTextField
-            editable={false}
-            mode="url"
-            placeholder="Pilih video untuk ditambahkan"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.mediaPickerInput,
-            ]}
-            value={controller.form.videoLocalUri}
-          />
-          <KolamButton
+        <View style={styles.mediaUploadCell}>
+          <KolamSettingsWebFileField
+            accessibilityLabel="Video spesies"
+            actionLabel="Pilih file"
             disabled={controller.saving}
-            label="Tambah Video"
-            onPress={() => {
+            emptyLabel="Video belum dipilih"
+            fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
+            onLocalValueChange={videoLocalUri =>
+              controller.onChangeForm({ videoLocalUri })
+            }
+            onUpload={() => {
               void controller.onPickVideo();
             }}
+            previewKind="file"
+            scope="species-video"
+            title="Video"
+            value={controller.form.videoLocalUri}
           />
         </View>
-        <View style={styles.mediaPickerRow}>
-          <KolamFormTextField
-            editable={false}
-            mode="url"
-            placeholder="Pilih audio spesies"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.mediaPickerInput,
-            ]}
-            value={controller.form.voiceLocalUri}
-          />
-          <KolamButton
+        <View style={styles.mediaUploadCell}>
+          <KolamSettingsWebFileField
+            accessibilityLabel="Audio spesies"
+            actionLabel="Pilih file"
             disabled={controller.saving}
-            label="Pilih Audio"
-            onPress={() => {
+            emptyLabel="Audio belum dipilih"
+            fileTypeLabel="Tipe file yang diterima: MP3, WAV, M4A"
+            onLocalValueChange={voiceLocalUri =>
+              controller.onChangeForm({ voiceLocalUri })
+            }
+            onUpload={() => {
               void controller.onPickVoice();
             }}
+            previewKind="file"
+            scope="species-audio"
+            title="Audio"
+            value={controller.form.voiceLocalUri}
           />
         </View>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'media-note',
-              text: 'Media dikirim ke backend saat Simpan, lalu detail dan cache lokal diperbarui.',
-              style: styles.fieldHint,
-            },
-          ]}
-        />
-        {selectedSpecies?.thumbnailUri || selectedSpecies?.photoUris.length ? (
-          <View style={styles.existingMediaGrid}>
-            {selectedSpecies.thumbnailUri ? (
-              <View style={styles.existingMediaItem}>
-                <KolamRemoteImage
-                  accessibilityLabel="Thumbnail spesies"
-                  resizeMode="cover"
-                  revision={
-                    selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
-                  }
-                  scope="species"
-                  sourceUri={selectedSpecies.thumbnailUri}
-                  style={styles.existingMediaImage}
-                />
-                <KolamButton
-                  disabled={controller.saving}
-                  intent="danger"
-                  label="Hapus Thumbnail"
-                  onPress={() =>
-                    onDelete({
-                      type: 'thumbnail',
-                      label: 'thumbnail spesies',
-                    })
-                  }
-                  style={styles.mediaDeleteButton}
-                />
-              </View>
-            ) : null}
-            {selectedSpecies.photoUris.map((photoUri, index) => (
-              <SpeciesImageMediaCard
-                accessibilityLabel={`Foto spesies ${index + 1}`}
+      </View>
+      {selectedSpecies?.thumbnailUri || selectedSpecies?.photoUris.length ? (
+        <View style={styles.existingMediaGrid}>
+          {selectedSpecies.thumbnailUri ? (
+            <View style={styles.existingMediaItem}>
+              <KolamRemoteImage
+                accessibilityLabel="Thumbnail spesies"
+                resizeMode="cover"
+                revision={
+                  selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
+                }
+                scope="species"
+                sourceUri={selectedSpecies.thumbnailUri}
+                style={styles.existingMediaImage}
+              />
+              <KolamButton
                 disabled={controller.saving}
-                key={`${photoUri}-${index}`}
-                onDelete={() =>
+                intent="danger"
+                label="Hapus Thumbnail"
+                onPress={() =>
                   onDelete({
-                    type: 'photo',
-                    index,
-                    label: `foto ${index + 1}`,
+                    type: 'thumbnail',
+                    label: 'thumbnail spesies',
                   })
                 }
-                onMoveDown={() => {
-                  void controller.onReorderPhoto(index, 'down');
-                }}
-                onMoveUp={() => {
-                  void controller.onReorderPhoto(index, 'up');
-                }}
-                revision={`${selectedSpecies.updatedAt ?? ''}-${index}`}
-                showMoveDown={index < selectedSpecies.photoUris.length - 1}
-                showMoveUp={index > 0}
-                sourceUri={photoUri}
-                deleteLabel={`Hapus Foto ${index + 1}`}
+                style={styles.mediaDeleteButton}
               />
-            ))}
-          </View>
-        ) : null}
-        <SpeciesVideoVoiceMediaPanel
-          controller={controller}
-          onDelete={onDelete}
-        />
-      </View>
-    </FieldShell>
+            </View>
+          ) : null}
+          {selectedSpecies.photoUris.map((photoUri, index) => (
+            <SpeciesImageMediaCard
+              accessibilityLabel={`Foto spesies ${index + 1}`}
+              disabled={controller.saving}
+              key={`${photoUri}-${index}`}
+              onDelete={() =>
+                onDelete({
+                  type: 'photo',
+                  index,
+                  label: `foto ${index + 1}`,
+                })
+              }
+              onMoveDown={() => {
+                void controller.onReorderPhoto(index, 'down');
+              }}
+              onMoveUp={() => {
+                void controller.onReorderPhoto(index, 'up');
+              }}
+              revision={`${selectedSpecies.updatedAt ?? ''}-${index}`}
+              showMoveDown={index < selectedSpecies.photoUris.length - 1}
+              showMoveUp={index > 0}
+              sourceUri={photoUri}
+              deleteLabel={`Hapus Foto ${index + 1}`}
+            />
+          ))}
+        </View>
+      ) : null}
+      <SpeciesVideoVoiceMediaPanel controller={controller} onDelete={onDelete} />
+    </View>
   );
 }
 function SpeciesRootSalesPanel({
@@ -8143,6 +8135,16 @@ const styles = StyleSheet.create({
   },
   mediaPickerStack: {
     gap: 10,
+  },
+  mediaUploadGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  mediaUploadCell: {
+    flexBasis: 260,
+    flexGrow: 1,
+    minWidth: 240,
   },
   mediaPickerRow: {
     alignItems: 'center',

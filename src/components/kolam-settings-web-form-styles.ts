@@ -250,4 +250,10 @@ export const settingsWebFormStyles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
+  settingsWebFilePreviewLabel: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '800',
+  },
 });

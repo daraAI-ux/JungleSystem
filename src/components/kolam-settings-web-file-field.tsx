@@ -13,31 +13,37 @@ import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 export function KolamSettingsWebFileField({
   accessibilityLabel = 'Logo',
   actionLabel = 'Unggah logo',
+  disabled: disabledProp = false,
   emptyLabel = 'Logo belum diatur',
+  fileTypeLabel = 'Tipe file yang diterima: JPG, PNG, GIF, WEBP, SVG',
   fileLimitLabel,
   hint = 'Seret dan lepas untuk mengunggah atau',
   onLocalValueChange,
   onUpload,
+  previewKind = 'image',
   scope = 'websetting-logo',
   title = 'Logo',
   value,
 }: {
   accessibilityLabel?: string;
   actionLabel?: string;
+  disabled?: boolean;
   emptyLabel?: string;
+  fileTypeLabel?: string;
   fileLimitLabel?: string;
   hint?: string;
   onLocalValueChange?: (value: string) => void;
   onUpload?: () => void;
+  previewKind?: 'file' | 'image';
   scope?: string;
   title?: string;
   value: string;
 }) {
   const logoUri = getLogoPreviewUri(value);
   const displayName = getUploadDisplayName(value);
-  const disabled = !onUpload && !onLocalValueChange;
+  const disabled = disabledProp || (!onUpload && !onLocalValueChange);
   React.useEffect(() => {
-    if (!onLocalValueChange) {
+    if (disabled || !onLocalValueChange) {
       return undefined;
     }
 
@@ -55,7 +61,7 @@ export function KolamSettingsWebFileField({
       disposed = true;
       clearInterval(timer);
     };
-  }, [onLocalValueChange]);
+  }, [disabled, onLocalValueChange]);
 
   const handleDrop = React.useCallback(
     (event: unknown) => {
@@ -107,20 +113,24 @@ export function KolamSettingsWebFileField({
           </View>
         </KolamInteractionFrame>
       </View>
-      <Text style={styles.settingsWebUploadHint}>
-        Tipe file yang diterima: JPG, PNG, GIF, WEBP, SVG
-      </Text>
+      <Text style={styles.settingsWebUploadHint}>{fileTypeLabel}</Text>
       {logoUri ? (
         <View style={styles.settingsWebUploadFileRow}>
           <KolamCardFrame variant="settingsWebLogoPreview">
-            <KolamRemoteImage
-              accessibilityLabel={accessibilityLabel}
-              resizeMode="contain"
-              revision={logoUri}
-              scope={scope}
-              sourceUri={logoUri}
-              style={styles.settingsWebLogoImage}
-            />
+            {previewKind === 'image' ? (
+              <KolamRemoteImage
+                accessibilityLabel={accessibilityLabel}
+                resizeMode="contain"
+                revision={logoUri}
+                scope={scope}
+                sourceUri={logoUri}
+                style={styles.settingsWebLogoImage}
+              />
+            ) : (
+              <Text style={styles.settingsWebFilePreviewLabel}>
+                {getUploadFileExtension(displayName)}
+              </Text>
+            )}
           </KolamCardFrame>
           <View style={styles.settingsWebUploadFileCopy}>
             <Text numberOfLines={1} style={styles.settingsWebUploadFileName}>
@@ -171,6 +181,11 @@ function getUploadDisplayName(value: string) {
 
   const withoutQuery = trimmed.split(/[?#]/)[0] ?? trimmed;
   return withoutQuery.split(/[\\/]/).filter(Boolean).pop() ?? trimmed;
+}
+
+function getUploadFileExtension(fileName: string) {
+  const extension = fileName.split('.').pop()?.trim().slice(0, 4).toUpperCase();
+  return extension || 'FILE';
 }
 
 function preventDefaultDropEvent(event: unknown) {
