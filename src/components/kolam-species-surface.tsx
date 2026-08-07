@@ -6005,10 +6005,18 @@ function createSpeciesDetailMediaItems(
     mediaItems.push(entry);
   };
 
-  const rootPhotos = item.photoUris.length
-    ? item.photoUris
-    : [item.thumbnailUri];
-  rootPhotos
+  if (item.thumbnailUri) {
+    addMediaItem({
+      id: 'species-thumbnail',
+      label: 'Thumbnail',
+      revision: `${item.updatedAt ?? item.id}-thumbnail`,
+      scope: 'species',
+      type: 'image',
+      uri: item.thumbnailUri,
+    });
+  }
+
+  item.photoUris
     .filter(
       (uri): uri is string => typeof uri === 'string' && uri.trim().length > 0,
     )
@@ -6501,6 +6509,24 @@ function createMediaDetailItems(
   const photoUris = Array.isArray(item.photoUris) ? item.photoUris : [];
   const videoUris = Array.isArray(item.videoUris) ? item.videoUris : [];
   const variants = getSpeciesDetailVariants(item);
+  const thumbnailItems = item.thumbnailUri
+    ? [
+        {
+          thumbnail: (
+            <KolamRemoteImage
+              accessibilityLabel="Thumbnail spesies"
+              resizeMode="cover"
+              revision={`${item.updatedAt ?? item.id}-thumbnail`}
+              scope="species"
+              sourceUri={item.thumbnailUri}
+              style={styles.sectionThumb}
+            />
+          ),
+          title: 'Spesies - Thumbnail',
+          value: 'Thumbnail',
+        },
+      ]
+    : [];
   const rootPhotos = photoUris.map((uri, index) => ({
     thumbnail: (
       <KolamRemoteImage
@@ -6584,6 +6610,7 @@ function createMediaDetailItems(
     : [];
   return [
     ...manifestItems,
+    ...thumbnailItems,
     ...rootPhotos,
     ...rootVideos,
     ...rootVoice,
@@ -6598,6 +6625,7 @@ function getMediaDetailTotal(item: KolamSpecies) {
   const variants = getSpeciesDetailVariants(item);
 
   return (
+    (item.thumbnailUri ? 1 : 0) +
     photoUris.length +
     videoUris.length +
     (item.voiceUri ? 1 : 0) +
