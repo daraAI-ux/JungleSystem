@@ -21,7 +21,10 @@ import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamColorSwatchPicker } from './kolam-color-swatch-picker';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import {
+  KolamDropdownSelect,
+  KolamOverflowMenuButton,
+} from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -94,37 +97,40 @@ function KolamTagShell({
     );
   }
 
-  const contextLabel =
-    controller.mode === 'new'
-      ? 'Tag baru'
-      : controller.mode === 'edit'
-      ? `Edit · ${
-          controller.selectedTag?.name || controller.form.name || 'Tag'
-        }`
-      : controller.selectedTag?.name || 'Detail tag';
-
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/tags');
-              }}
-            />
             {controller.mode === 'detail' ? (
-              <KolamEditButton
-                intent="primary"
-                onPress={controller.onEdit}
-              />
-            ) : null}
+              <>
+                <KolamDaftarButton
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.('/tags');
+                  }}
+                />
+                <KolamEditButton
+                  intent="primary"
+                  onPress={controller.onEdit}
+                />
+              </>
+            ) : (
+              <>
+                <KolamCancelButton
+                  disabled={controller.saving}
+                  onPress={controller.onBackToList}
+                />
+                <KolamSaveButton
+                  disabled={controller.saving}
+                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                  onPress={() => {
+                    void controller.onSave();
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -626,16 +632,20 @@ function KolamTagForm({ controller }: { controller: KolamTagController }) {
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
               <FieldShell label="Status" required>
-                <View style={styles.segmentRow}>
-                  {(['active', 'inactive'] as KolamTagStatus[]).map(status => (
-                    <KolamButton
-                      intent={form.status === status ? 'primary' : 'outline'}
-                      key={status}
-                      label={getTagStatusLabel(status)}
-                      onPress={() => controller.onChangeForm({ status })}
-                    />
-                  ))}
-                </View>
+                <KolamDropdownSelect<KolamTagStatus>
+                  accessibilityLabel="Pilih status tag"
+                  label="Status"
+                  menuStyle={styles.longDropdownMenu}
+                  onChange={status => controller.onChangeForm({ status })}
+                  options={(['active', 'inactive'] as KolamTagStatus[]).map(
+                    status => ({
+                      label: getTagStatusLabel(status),
+                      value: status,
+                    }),
+                  )}
+                  showLabelInTrigger={false}
+                  value={form.status}
+                />
               </FieldShell>
             </View>
             <View style={styles.formSplitCell}>
@@ -658,19 +668,6 @@ function KolamTagForm({ controller }: { controller: KolamTagController }) {
               value={form.description}
             />
           </FieldShell>
-        </View>
-        <View style={styles.formActions}>
-          <KolamCancelButton
-            disabled={controller.saving}
-            onPress={controller.onBackToList}
-          />
-          <KolamSaveButton
-            disabled={controller.saving}
-            label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave();
-            }}
-          />
         </View>
       </View>
     </KolamNativeFormSection>
@@ -803,16 +800,6 @@ function stripHtmlForDetail(value: string) {
 const styles = StyleSheet.create({
   surface: {
     gap: 14,
-  },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
@@ -991,16 +978,7 @@ const styles = StyleSheet.create({
     minWidth: 260,
     flex: 1,
   },
-  segmentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  formActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingTop: 16,
+  longDropdownMenu: {
+    minWidth: 220,
   },
 });
