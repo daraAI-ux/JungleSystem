@@ -820,6 +820,7 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
                 <KolamDropdownSelect
                   accessibilityLabel="Pilih negara asal"
                   label="Negara Asal"
+                  menuPortal
                   menuStyle={styles.countryDropdownMenu}
                   onChange={originCountry =>
                     controller.onChangeForm({ originCountry })
