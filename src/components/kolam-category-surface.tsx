@@ -539,7 +539,6 @@ function KolamCategoryDetail({
               }
               items={detailLists?.products}
               title="Produk"
-              total={category.productCount}
             />
             <CategoryLinkedItemsSummaryCard
               description="Bahan baku yang menggunakan kategori ini"
@@ -550,7 +549,6 @@ function KolamCategoryDetail({
               }
               items={detailLists?.raws}
               title="Bahan Baku"
-              total={detailLists?.raws.length ?? 0}
             />
             <CategoryLinkedItemsSummaryCard
               description="Layanan yang menggunakan kategori ini"
@@ -561,7 +559,6 @@ function KolamCategoryDetail({
               }
               items={detailLists?.services}
               title="Layanan"
-              total={category.serviceCount}
             />
             <CategoryLinkedItemsSummaryCard
               description="Species yang menggunakan kategori ini"
@@ -572,7 +569,6 @@ function KolamCategoryDetail({
               }
               items={detailLists?.species}
               title="Species"
-              total={category.speciesCount}
             />
           </View>
         </>
@@ -614,19 +610,17 @@ function CategoryLinkedItemsSummaryCard({
   emptyText,
   items,
   title,
-  total,
 }: {
   description: string;
   emptyText: string;
   items?: CategoryDetailListItem[];
   title: string;
-  total: number;
 }) {
   return (
     <KolamDetailSummaryCard
       body={<CategoryLinkedItemsList emptyText={emptyText} items={items} />}
       description={description}
-      fields={[{ id: 'total', label: 'Total', value: total }]}
+      fields={[]}
       style={styles.categorySummaryGridCard}
       title={title}
     />
