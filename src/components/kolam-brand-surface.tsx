@@ -637,7 +637,6 @@ function KolamBrandDetail({
               }
               items={detailLists?.products}
               title="Produk"
-              total={brand.productCount}
             />
             <BrandLinkedItemsSummaryCard
               description="Bahan baku yang menggunakan merek ini"
@@ -648,7 +647,6 @@ function KolamBrandDetail({
               }
               items={detailLists?.raws}
               title="Bahan Baku"
-              total={brand.rawMaterialCount}
             />
             <BrandLinkedItemsSummaryCard
               description="Layanan yang menggunakan merek ini"
@@ -659,7 +657,6 @@ function KolamBrandDetail({
               }
               items={detailLists?.services}
               title="Layanan"
-              total={brand.serviceCount}
             />
             <BrandLinkedItemsSummaryCard
               description="Species yang menggunakan merek ini"
@@ -670,7 +667,6 @@ function KolamBrandDetail({
               }
               items={detailLists?.species}
               title="Species"
-              total={brand.speciesCount}
             />
           </View>
         </>
@@ -707,19 +703,17 @@ function BrandLinkedItemsSummaryCard({
   emptyText,
   items,
   title,
-  total,
 }: {
   description: string;
   emptyText: string;
   items?: KolamDetailListItem[];
   title: string;
-  total: number;
 }) {
   return (
     <KolamDetailSummaryCard
       body={<BrandLinkedItemsList emptyText={emptyText} items={items} />}
       description={description}
-      fields={[{ id: 'total', label: 'Total', value: total }]}
+      fields={[]}
       style={styles.brandSummaryGridCard}
       title={title}
     />
