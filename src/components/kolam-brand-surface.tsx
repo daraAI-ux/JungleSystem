@@ -3,6 +3,7 @@ import { Linking, StyleSheet, Text, View } from 'react-native';
 import {
   createKolamDetailItemsFromRawArray,
   getKolamRawArray,
+  type KolamDetailListItem,
 } from '../domain/kolam-detail-list';
 import {
   getKolamBrandFlagByCountry,
@@ -34,7 +35,7 @@ import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import {
@@ -577,88 +578,213 @@ function KolamBrandDetail({
     <View style={styles.stack}>
       {!editable && brand ? (
         <>
-          <KolamLabelFieldDetailOverview
-            hero={<KolamBrandLogo brand={brand} variant="detail" />}
-            status={{
-              intent: getBrandStatusIntent(brand.status),
-              label: getBrandStatusLabel(brand.status),
-            }}
-            metrics={[
-              { label: 'Produk', value: brand.productCount },
-              { label: 'Bahan Baku', value: brand.rawMaterialCount },
-              { label: 'Layanan', value: brand.serviceCount },
-            ]}
-            meta={[
+          <KolamDetailSummaryCard
+            body={
+              brand.description ? (
+                <Text style={styles.brandSummaryDescription}>
+                  {stripHtmlForDetail(brand.description)}
+                </Text>
+              ) : undefined
+            }
+            bodyTitle={brand.description ? 'Deskripsi' : undefined}
+            fieldColumns={3}
+            fields={[
               {
-                icon: (
-                  <KolamFlagIcon
-                    option={getKolamBrandFlagByCountry(brand.originCountry)}
+                id: 'logo',
+                label: 'Logo',
+                value: (
+                  <View style={styles.brandSummaryLogoSlot}>
+                    <KolamBrandLogo brand={brand} variant="detail" />
+                  </View>
+                ),
+              },
+              {
+                id: 'status',
+                label: 'Status',
+                value: (
+                  <KolamStatusBadge
+                    intent={getBrandStatusIntent(brand.status)}
+                    label={getBrandStatusLabel(brand.status)}
                   />
                 ),
-                label: 'Asal',
-                value: brand.originCountry,
               },
-              ...(brand.description
+              {
+                id: 'origin',
+                label: 'Asal',
+                value: (
+                  <View style={styles.brandSummaryCountry}>
+                    <KolamFlagIcon
+                      option={getKolamBrandFlagByCountry(brand.originCountry)}
+                    />
+                    <Text style={styles.brandSummaryFieldText}>
+                      {brand.originCountry}
+                    </Text>
+                  </View>
+                ),
+              },
+              { id: 'products', label: 'Produk', value: brand.productCount },
+              { id: 'raws', label: 'Bahan Baku', value: brand.rawMaterialCount },
+              { id: 'services', label: 'Layanan', value: brand.serviceCount },
+              { id: 'species', label: 'Species', value: brand.speciesCount },
+            ]}
+            sections={
+              brand.links.length
                 ? [
                     {
-                      label: 'Deskripsi',
-                      value: stripHtmlForDetail(brand.description),
+                      id: 'links',
+                      title: 'Link',
+                      content: (
+                        <View style={styles.brandSummaryLinkStack}>
+                          {brand.links.map((link, index) => (
+                            <KolamInteractionFrame
+                              accessibilityLabel={`Buka ${link}`}
+                              key={`${link}-${index}`}
+                              onPress={() => {
+                                void Linking.openURL(
+                                  normalizeExternalLink(link),
+                                );
+                              }}
+                              style={styles.brandSummaryLinkButton}
+                            >
+                              <Text
+                                numberOfLines={1}
+                                style={styles.brandSummaryLinkText}
+                              >
+                                {link}
+                              </Text>
+                            </KolamInteractionFrame>
+                          ))}
+                        </View>
+                      ),
                     },
                   ]
-                : []),
-              ...brand.links.map(link => ({
-                label: 'Link',
-                onPress: () => {
-                  void Linking.openURL(normalizeExternalLink(link));
-                },
-                value: link,
-              })),
-            ]}
-            sections={[
-              {
-                title: 'Produk',
-                total: brand.productCount,
-                description: 'Produk yang menggunakan merek ini',
-                items: detailLists?.products,
-                emptyText: brand.productCount
-                  ? 'Daftar produk belum tersedia dari cache lokal.'
-                  : 'Tidak ada produk yang menggunakan merek ini',
-              },
-              {
-                title: 'Bahan Baku',
-                total: brand.rawMaterialCount,
-                description: 'Bahan baku yang menggunakan merek ini',
-                items: detailLists?.raws,
-                emptyText: brand.rawMaterialCount
-                  ? 'Daftar bahan baku belum tersedia dari cache lokal.'
-                  : 'Tidak ada bahan baku yang menggunakan merek ini',
-              },
-              {
-                title: 'Layanan',
-                total: brand.serviceCount,
-                description: 'Layanan yang menggunakan merek ini',
-                items: detailLists?.services,
-                emptyText: brand.serviceCount
-                  ? 'Daftar layanan belum tersedia dari cache lokal.'
-                  : 'Tidak ada layanan yang menggunakan merek ini',
-              },
-              {
-                title: 'Species',
-                total: brand.speciesCount,
-                description: 'Species yang menggunakan merek ini',
-                items: detailLists?.species,
-                emptyText: brand.speciesCount
-                  ? 'Daftar species belum tersedia dari cache lokal.'
-                  : 'Tidak ada species yang menggunakan merek ini',
-              },
-            ]}
+                : undefined
+            }
+            title="Ringkasan merek"
           />
+
+          <View style={styles.brandSummaryGrid}>
+            <BrandLinkedItemsSummaryCard
+              description="Produk yang menggunakan merek ini"
+              emptyText={
+                brand.productCount
+                  ? 'Daftar produk belum tersedia dari cache lokal.'
+                  : 'Tidak ada produk yang menggunakan merek ini'
+              }
+              items={detailLists?.products}
+              title="Produk"
+              total={brand.productCount}
+            />
+            <BrandLinkedItemsSummaryCard
+              description="Bahan baku yang menggunakan merek ini"
+              emptyText={
+                brand.rawMaterialCount
+                  ? 'Daftar bahan baku belum tersedia dari cache lokal.'
+                  : 'Tidak ada bahan baku yang menggunakan merek ini'
+              }
+              items={detailLists?.raws}
+              title="Bahan Baku"
+              total={brand.rawMaterialCount}
+            />
+            <BrandLinkedItemsSummaryCard
+              description="Layanan yang menggunakan merek ini"
+              emptyText={
+                brand.serviceCount
+                  ? 'Daftar layanan belum tersedia dari cache lokal.'
+                  : 'Tidak ada layanan yang menggunakan merek ini'
+              }
+              items={detailLists?.services}
+              title="Layanan"
+              total={brand.serviceCount}
+            />
+            <BrandLinkedItemsSummaryCard
+              description="Species yang menggunakan merek ini"
+              emptyText={
+                brand.speciesCount
+                  ? 'Daftar species belum tersedia dari cache lokal.'
+                  : 'Tidak ada species yang menggunakan merek ini'
+              }
+              items={detailLists?.species}
+              title="Species"
+              total={brand.speciesCount}
+            />
+          </View>
         </>
       ) : (
         <KolamBrandForm controller={controller} />
       )}
     </View>
   );
+}
+
+function BrandLinkedItemsSummaryCard({
+  description,
+  emptyText,
+  items,
+  title,
+  total,
+}: {
+  description: string;
+  emptyText: string;
+  items?: KolamDetailListItem[];
+  title: string;
+  total: number;
+}) {
+  return (
+    <KolamDetailSummaryCard
+      body={<BrandLinkedItemsList emptyText={emptyText} items={items} />}
+      description={description}
+      fields={[{ id: 'total', label: 'Total', value: total }]}
+      style={styles.brandSummaryGridCard}
+      title={title}
+    />
+  );
+}
+
+function BrandLinkedItemsList({
+  emptyText,
+  items,
+}: {
+  emptyText: string;
+  items?: KolamDetailListItem[];
+}) {
+  if (!items?.length) {
+    return <Text style={styles.brandSummaryEmptyText}>{emptyText}</Text>;
+  }
+
+  return (
+    <View style={styles.brandSummaryItemList}>
+      {items.map((item, index) => (
+        <View
+          key={getBrandDetailItemKey(item, index)}
+          style={styles.brandSummaryItemRow}
+        >
+          <View style={styles.brandSummaryItemCopy}>
+            <Text numberOfLines={1} style={styles.brandSummaryItemTitle}>
+              {item.title}
+            </Text>
+            {item.meta ? (
+              <Text numberOfLines={1} style={styles.brandSummaryItemMeta}>
+                {item.meta}
+              </Text>
+            ) : null}
+          </View>
+          {item.value ? (
+            <Text numberOfLines={1} style={styles.brandSummaryItemValue}>
+              {item.value}
+            </Text>
+          ) : null}
+          {item.badge ? (
+            <KolamStatusBadge intent="muted" label={item.badge} />
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function getBrandDetailItemKey(item: KolamDetailListItem, index: number) {
+  return `${item.title}-${item.value ?? ''}-${index}`;
 }
 
 function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
@@ -951,6 +1077,108 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: 14,
+  },
+  brandSummaryLogoSlot: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 84,
+    width: '100%',
+  },
+  brandSummaryCountry: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 24,
+    minWidth: 0,
+  },
+  brandSummaryFieldText: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+  },
+  brandSummaryDescription: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  brandSummaryLinkStack: {
+    gap: 8,
+  },
+  brandSummaryLinkButton: {
+    alignItems: 'flex-start',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 38,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  brandSummaryLinkText: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    maxWidth: '100%',
+  },
+  brandSummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  brandSummaryGridCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 320,
+  },
+  brandSummaryItemList: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  brandSummaryItemRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 54,
+    paddingVertical: 9,
+  },
+  brandSummaryItemCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  brandSummaryItemTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  brandSummaryItemMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 3,
+  },
+  brandSummaryItemValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    maxWidth: 100,
+    textAlign: 'right',
+  },
+  brandSummaryEmptyText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   brandTableCell: {
     alignItems: 'center',
