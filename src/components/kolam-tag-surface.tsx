@@ -21,6 +21,7 @@ import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamColorSwatchPicker } from './kolam-color-swatch-picker';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -28,7 +29,6 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -541,70 +541,99 @@ function KolamTagDetail({ controller }: { controller: KolamTagController }) {
     <View style={styles.stack}>
       {!editable && tag ? (
         <>
-          <KolamLabelFieldDetailOverview
-            hero={<TagHero tag={tag} />}
-            status={{
-              intent: tag.status === 'active' ? 'success' : 'warning',
-              label: getTagStatusLabel(tag.status),
-            }}
-            metrics={[
-              { label: 'Produk', value: tag.usage.products.length },
-              { label: 'Bahan Baku', value: tag.usage.rawMaterials.length },
-              { label: 'Layanan', value: tag.usage.services.length },
-            ]}
-            meta={[
-              { label: 'Warna', value: tag.color },
-              { label: 'Pembuat', value: tag.createdBy || '-' },
-              ...(tag.description
-                ? [
-                    {
-                      label: 'Deskripsi',
-                      value: stripHtmlForDetail(tag.description),
-                    },
-                  ]
-                : []),
+          <KolamDetailSummaryCard
+            body={
+              tag.description ? (
+                <Text style={styles.tagSummaryDescription}>
+                  {stripHtmlForDetail(tag.description)}
+                </Text>
+              ) : undefined
+            }
+            bodyTitle={tag.description ? 'Deskripsi' : undefined}
+            fieldColumns={3}
+            fields={[
+              {
+                id: 'status',
+                label: 'Status',
+                value: (
+                  <KolamStatusBadge
+                    intent={tag.status === 'active' ? 'success' : 'warning'}
+                    label={getTagStatusLabel(tag.status)}
+                  />
+                ),
+              },
+              {
+                id: 'color',
+                label: 'Warna',
+                value: <TagSummaryColorValue tag={tag} />,
+              },
+              { id: 'creator', label: 'Pembuat', value: tag.createdBy || '-' },
+              { id: 'products', label: 'Produk', value: tag.usage.products.length },
+              {
+                id: 'raws',
+                label: 'Bahan Baku',
+                value: tag.usage.rawMaterials.length,
+              },
+              { id: 'services', label: 'Layanan', value: tag.usage.services.length },
               ...(tag.updatedAt
                 ? [
                     {
+                      id: 'updated',
                       label: 'Diperbarui',
                       value: formatDateTime(tag.updatedAt),
                     },
                   ]
                 : []),
             ]}
-            sections={[
-              createUsageSection(
+            leading={<TagHero tag={tag} />}
+            leadingStyle={styles.tagSummaryLeadingSlot}
+            title="Ringkasan tag"
+          />
+
+          <View style={styles.tagSummaryGrid}>
+            <TagLinkedItemsSummaryCard
+              section={createUsageSection(
                 'Produk',
                 'Produk yang menggunakan tag ini',
                 tag.usage.products,
-              ),
-              createUsageSection(
+              )}
+            />
+            <TagLinkedItemsSummaryCard
+              section={createUsageSection(
                 'Bahan Baku',
                 'Bahan baku yang menggunakan tag ini',
                 tag.usage.rawMaterials,
-              ),
-              createUsageSection(
+              )}
+            />
+            <TagLinkedItemsSummaryCard
+              section={createUsageSection(
                 'Layanan',
                 'Layanan yang menggunakan tag ini',
                 tag.usage.services,
-              ),
-              createUsageSection(
+              )}
+            />
+            <TagLinkedItemsSummaryCard
+              section={createUsageSection(
                 'Freyer',
                 'Data freyer yang menggunakan tag ini',
                 tag.usage.freyer,
-              ),
-              createUsageSection(
+              )}
+            />
+            <TagLinkedItemsSummaryCard
+              section={createUsageSection(
                 'Teranura',
                 'Data teranura yang menggunakan tag ini',
                 tag.usage.teranura,
-              ),
-              createUsageSection(
+              )}
+            />
+            <TagLinkedItemsSummaryCard
+              section={createUsageSection(
                 'Species',
                 'Species yang menggunakan tag ini',
                 tag.usage.species,
-              ),
-            ]}
-          />
+              )}
+            />
+          </View>
         </>
       ) : (
         <KolamTagForm controller={controller} />
@@ -703,6 +732,65 @@ function TagHero({ tag }: { tag: KolamTag }) {
           { id: 'name', text: tag.name, style: styles.tagHeroName },
         ]}
       />
+    </View>
+  );
+}
+
+function TagSummaryColorValue({ tag }: { tag: KolamTag }) {
+  const color = normalizeTagColor(tag.color);
+
+  return (
+    <View style={styles.tagSummaryColorValue}>
+      <View style={[styles.tagSummaryColorDot, { backgroundColor: color }]} />
+      <Text style={styles.tagSummaryFieldText}>{color}</Text>
+    </View>
+  );
+}
+
+function TagLinkedItemsSummaryCard({
+  section,
+}: {
+  section: ReturnType<typeof createUsageSection>;
+}) {
+  return (
+    <KolamDetailSummaryCard
+      body={<TagLinkedItemsList section={section} />}
+      description={section.description}
+      fields={[]}
+      style={styles.tagSummaryGridCard}
+      title={section.title}
+    />
+  );
+}
+
+function TagLinkedItemsList({
+  section,
+}: {
+  section: ReturnType<typeof createUsageSection>;
+}) {
+  if (!section.items.length) {
+    return <Text style={styles.tagSummaryEmptyText}>{section.emptyText}</Text>;
+  }
+
+  return (
+    <View style={styles.tagSummaryItemList}>
+      {section.items.slice(0, 5).map((item, index) => (
+        <View key={`${item.title}-${index}`} style={styles.tagSummaryItemRow}>
+          <View style={styles.tagSummaryItemCopy}>
+            <Text numberOfLines={1} style={styles.tagSummaryItemTitle}>
+              {item.title}
+            </Text>
+            {item.meta ? (
+              <Text numberOfLines={1} style={styles.tagSummaryItemMeta}>
+                {item.meta}
+              </Text>
+            ) : null}
+          </View>
+          {item.badge ? (
+            <KolamStatusBadge intent="secondary" label={item.badge} />
+          ) : null}
+        </View>
+      ))}
     </View>
   );
 }
@@ -967,6 +1055,87 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     lineHeight: 22,
+  },
+  tagSummaryLeadingSlot: {
+    flexBasis: '24%',
+    minWidth: 180,
+  },
+  tagSummaryColorValue: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 24,
+    minWidth: 0,
+  },
+  tagSummaryColorDot: {
+    borderColor: V.colors.border,
+    borderRadius: 7,
+    borderWidth: 1,
+    height: 14,
+    width: 14,
+  },
+  tagSummaryFieldText: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+  },
+  tagSummaryDescription: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  tagSummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  tagSummaryGridCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 320,
+  },
+  tagSummaryItemList: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+  },
+  tagSummaryItemRow: {
+    alignItems: 'center',
+    borderBottomColor: V.colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 42,
+    paddingVertical: 8,
+  },
+  tagSummaryItemCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  tagSummaryItemTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  tagSummaryItemMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  tagSummaryEmptyText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   formSplitRow: {
     flexDirection: 'row',
