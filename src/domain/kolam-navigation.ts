@@ -11,7 +11,7 @@ export interface KolamNavigationItem {
   requiredAccess: Array<keyof AccessScope>;
 }
 
-export type KolamNavigationModuleIcon = 'brand';
+export type KolamNavigationModuleIcon = 'brand' | 'category';
 
 export interface KolamNavigationSection {
   id: string;
@@ -146,6 +146,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Kelola kategori produk dan spesies dari Label dan Field Kolam',
         group: 'Label dan Field',
+        moduleIcon: 'category',
         requiredAccess: ['kolam'],
       },
       {
