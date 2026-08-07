@@ -2679,21 +2679,12 @@ function SpeciesCustomFieldRowsEditor({
 
       {enabled ? (
         <>
-          <View style={styles.selectedCategoryRow}>
-            {fields.map(field => {
-              const selected = selectedKeySet.has(field.fieldKey);
-              return (
-                <KolamButton
-                  disabled={disabled}
-                  intent={selected ? 'primary' : 'outline'}
-                  key={field.id || field.fieldKey}
-                  label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
-                  onPress={() => setFieldSelected(field, !selected)}
-                  style={styles.customFieldChoiceButton}
-                />
-              );
-            })}
-          </View>
+          <SpeciesCustomFieldMultiSelect
+            disabled={disabled || fields.length === 0}
+            fields={fields}
+            onToggleField={setFieldSelected}
+            selectedKeySet={selectedKeySet}
+          />
 
           {selectedFields.length ? (
             selectedFields.map(field => (
@@ -2736,6 +2727,61 @@ function SpeciesCustomFieldRowsEditor({
               })),
             ]}
           />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function SpeciesCustomFieldMultiSelect({
+  disabled,
+  fields,
+  onToggleField,
+  selectedKeySet,
+}: {
+  disabled: boolean;
+  fields: KolamCustomField[];
+  onToggleField: (field: KolamCustomField, nextSelected: boolean) => void;
+  selectedKeySet: Set<string>;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const selectedCount = selectedKeySet.size;
+  const triggerLabel = selectedCount
+    ? `${selectedCount} field dipilih`
+    : 'Pilih field kustom...';
+
+  return (
+    <View style={styles.customFieldMultiSelect}>
+      <KolamButton
+        disabled={disabled}
+        intent="outline"
+        label={triggerLabel}
+        onPress={() => setOpen(current => !current)}
+        style={styles.customFieldMultiSelectTrigger}
+        textStyle={styles.customFieldMultiSelectTriggerText}
+      />
+      {open ? (
+        <View style={styles.customFieldMultiSelectMenu}>
+          <ScrollView
+            nestedScrollEnabled
+            style={styles.customFieldMultiSelectScroll}
+            contentContainerStyle={styles.customFieldMultiSelectContent}
+          >
+            {fields.map(field => {
+              const selected = selectedKeySet.has(field.fieldKey);
+              return (
+                <KolamButton
+                  disabled={disabled}
+                  intent={selected ? 'primary' : 'plain'}
+                  key={field.id || field.fieldKey}
+                  label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
+                  onPress={() => onToggleField(field, !selected)}
+                  style={styles.customFieldMultiSelectOption}
+                  textStyle={styles.customFieldMultiSelectOptionText}
+                />
+              );
+            })}
+          </ScrollView>
         </View>
       ) : null}
     </View>
@@ -7348,8 +7394,41 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 18,
   },
-  customFieldChoiceButton: {
+  customFieldMultiSelect: {
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 1000,
+  },
+  customFieldMultiSelectTrigger: {
+    alignSelf: 'stretch',
+    justifyContent: 'flex-start',
+    minHeight: 38,
+  },
+  customFieldMultiSelectTriggerText: {
+    textAlign: 'left',
+  },
+  customFieldMultiSelectMenu: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 6,
+    maxHeight: 220,
+    overflow: 'hidden',
+  },
+  customFieldMultiSelectScroll: {
+    maxHeight: 220,
+  },
+  customFieldMultiSelectContent: {
+    gap: 4,
+    padding: 6,
+  },
+  customFieldMultiSelectOption: {
+    justifyContent: 'flex-start',
     minHeight: 32,
+  },
+  customFieldMultiSelectOptionText: {
+    textAlign: 'left',
   },
   customFieldFixedUnitBox: {
     backgroundColor: V.colors.mutedSoft,
