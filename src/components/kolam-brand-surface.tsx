@@ -888,7 +888,7 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               <FieldShell label="Logo">
                 <KolamSettingsWebFileField
                   accessibilityLabel="Logo merek"
-                  actionLabel="Pilih Logo"
+                  actionLabel="Pilih file"
                   emptyLabel="Logo belum diatur"
                   onLocalValueChange={logoLocalUri =>
                     controller.onChangeForm({ logoLocalUri })

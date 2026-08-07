@@ -1,10 +1,8 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { getKolamFileUrl } from '../lib/file-url';
-import { KolamActionControlButton } from './kolam-action-control-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
-import { KolamInlineFrame } from './kolam-inline-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
 
@@ -12,22 +10,27 @@ export function KolamSettingsWebFileField({
   accessibilityLabel = 'Logo',
   actionLabel = 'Unggah logo',
   emptyLabel = 'Logo belum diatur',
-  hint = 'Klik atau tarik gambar',
+  fileLimitLabel,
+  hint = 'Seret dan lepas untuk mengunggah atau',
   onLocalValueChange,
   onUpload,
   scope = 'websetting-logo',
+  title = 'Logo',
   value,
 }: {
   accessibilityLabel?: string;
   actionLabel?: string;
   emptyLabel?: string;
+  fileLimitLabel?: string;
   hint?: string;
   onLocalValueChange?: (value: string) => void;
   onUpload?: () => void;
   scope?: string;
+  title?: string;
   value: string;
 }) {
   const logoUri = getLogoPreviewUri(value);
+  const displayName = getUploadDisplayName(value);
   const disabled = !onUpload && !onLocalValueChange;
   const dropzoneProps = React.useMemo(
     () =>
@@ -47,7 +50,14 @@ export function KolamSettingsWebFileField({
   );
 
   return (
-    <KolamInlineFrame variant="settingsWebLogoRow">
+    <View style={styles.settingsWebUploadStack}>
+      <View style={styles.settingsWebUploadTitleRow}>
+        <Text style={styles.settingsWebUploadIcon}>▣</Text>
+        <Text style={styles.settingsWebUploadTitle}>{title}</Text>
+        {fileLimitLabel ? (
+          <Text style={styles.settingsWebUploadCount}>{fileLimitLabel}</Text>
+        ) : null}
+      </View>
       <View {...dropzoneProps} style={styles.settingsWebUploadDropzone}>
         <KolamInteractionFrame
           accessibilityLabel={hint}
@@ -55,29 +65,40 @@ export function KolamSettingsWebFileField({
           onPress={onUpload}
           style={styles.settingsWebUploadPreviewButton}
         >
-          <KolamCardFrame variant="settingsWebLogoPreview">
-            {logoUri ? (
-              <KolamRemoteImage
-                accessibilityLabel={accessibilityLabel}
-                resizeMode="contain"
-                revision={logoUri}
-                scope={scope}
-                sourceUri={logoUri}
-                style={styles.settingsWebLogoImage}
-              />
-            ) : (
-              <Text style={styles.settingsWebLogoFallback}>{emptyLabel}</Text>
-            )}
-          </KolamCardFrame>
+          <Text style={styles.settingsWebUploadArrow}>⇧</Text>
+          <View style={styles.settingsWebUploadPromptRow}>
+            <Text style={styles.settingsWebUploadPrompt}>{hint}</Text>
+            <Text style={styles.settingsWebUploadLink}>{actionLabel}</Text>
+            <Text style={styles.settingsWebUploadPrompt}> untuk mengunggah</Text>
+          </View>
         </KolamInteractionFrame>
-        <Text style={styles.settingsWebUploadHint}>{hint}</Text>
       </View>
-      <KolamActionControlButton
-        label={actionLabel}
-        intent="outline"
-        onPress={onUpload}
-      />
-    </KolamInlineFrame>
+      <Text style={styles.settingsWebUploadHint}>
+        Tipe file yang diterima: JPG, PNG, GIF, WEBP
+      </Text>
+      {logoUri ? (
+        <View style={styles.settingsWebUploadFileRow}>
+          <KolamCardFrame variant="settingsWebLogoPreview">
+            <KolamRemoteImage
+              accessibilityLabel={accessibilityLabel}
+              resizeMode="contain"
+              revision={logoUri}
+              scope={scope}
+              sourceUri={logoUri}
+              style={styles.settingsWebLogoImage}
+            />
+          </KolamCardFrame>
+          <View style={styles.settingsWebUploadFileCopy}>
+            <Text numberOfLines={1} style={styles.settingsWebUploadFileName}>
+              {displayName}
+            </Text>
+            <Text style={styles.settingsWebUploadFileStatus}>Terunggah</Text>
+          </View>
+        </View>
+      ) : (
+        <Text style={styles.settingsWebLogoFallback}>{emptyLabel}</Text>
+      )}
+    </View>
   );
 }
 
@@ -97,6 +118,16 @@ function getLogoPreviewUri(value: string) {
   }
 
   return getKolamFileUrl(trimmed) ?? trimmed;
+}
+
+function getUploadDisplayName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === 'Logo belum diatur') {
+    return '';
+  }
+
+  const withoutQuery = trimmed.split(/[?#]/)[0] ?? trimmed;
+  return withoutQuery.split(/[\\/]/).filter(Boolean).pop() ?? trimmed;
 }
 
 function preventDefaultDropEvent(event: unknown) {
