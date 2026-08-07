@@ -41,6 +41,7 @@ import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamSwitch } from './kolam-switch';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -725,10 +726,22 @@ function KolamCustomFieldForm({
                     fieldType === 'number' || fieldType === 'range'
                       ? form.hasMinMax
                       : false,
+                  maxAllowed:
+                    fieldType === 'number' || fieldType === 'range'
+                      ? form.maxAllowed
+                      : '',
+                  minAllowed:
+                    fieldType === 'number' || fieldType === 'range'
+                      ? form.minAllowed
+                      : '',
                   requiresUnit:
                     fieldType === 'number' || fieldType === 'range'
                       ? form.requiresUnit
                       : false,
+                  unitId:
+                    fieldType === 'number' || fieldType === 'range'
+                      ? form.unitId
+                      : '',
                 })
               }
               options={[
@@ -769,114 +782,118 @@ function KolamCustomFieldForm({
             </View>
             <View style={styles.formSplitCell}>
               <View style={styles.customFieldDropdownSettingsCard}>
-                <FieldShell label="Field Wajib">
-                  <KolamDropdownSelect<'yes' | 'no'>
-                    label="Field Wajib"
-                    onChange={requiredValue =>
+                <View style={styles.customFieldSwitchRow}>
+                  <Text style={styles.customFieldSwitchLabel}>Field Wajib</Text>
+                  <KolamSwitch
+                    accessibilityLabel="Field Wajib"
+                    active={form.required}
+                    disabled={controller.saving}
+                    onPress={() =>
                       controller.onChangeForm({
-                        required: requiredValue === 'yes',
+                        required: !form.required,
                       })
                     }
-                    options={[
-                      { label: 'Ya', value: 'yes' },
-                      { label: 'Tidak', value: 'no' },
-                    ]}
-                    value={form.required ? 'yes' : 'no'}
                   />
-                </FieldShell>
+                </View>
               </View>
             </View>
           </View>
-          {numericLike ? (
-            <>
-              <FieldShell label="Memerlukan Satuan">
-                <View style={styles.segmentRow}>
-                  <KolamButton
-                    intent={form.requiresUnit ? 'primary' : 'outline'}
-                    label="Ya"
-                    onPress={() =>
-                      controller.onChangeForm({ requiresUnit: true })
+          <>
+            <View style={styles.customFieldDropdownSettingsCard}>
+              <View style={styles.customFieldSwitchRow}>
+                <Text style={styles.customFieldSwitchLabel}>
+                  Memerlukan Satuan (hanya angka/rentang)
+                </Text>
+                <KolamSwitch
+                  accessibilityLabel="Memerlukan Satuan"
+                  active={numericLike && form.requiresUnit}
+                  disabled={controller.saving || !numericLike}
+                  onPress={() => {
+                    const nextRequiresUnit = !form.requiresUnit;
+                    if (nextRequiresUnit) {
+                      controller.onChangeForm({ requiresUnit: true });
+                      return;
                     }
-                  />
-                  <KolamButton
-                    intent={!form.requiresUnit ? 'primary' : 'outline'}
-                    label="Tidak"
-                    onPress={() =>
-                      controller.onChangeForm({
-                        requiresUnit: false,
-                        unitId: '',
-                      })
-                    }
-                  />
-                </View>
+
+                    controller.onChangeForm({
+                      requiresUnit: false,
+                      unitId: '',
+                    });
+                  }}
+                />
+              </View>
+            </View>
+            {numericLike && form.requiresUnit ? (
+              <FieldShell label="Satuan" required>
+                <KolamDropdownSelect<string>
+                  label="Satuan"
+                  onChange={unitId => controller.onChangeForm({ unitId })}
+                  options={controller.units.map(unit => ({
+                    label: unit.initial
+                      ? `${unit.name} (${unit.initial})`
+                      : unit.name,
+                    value: unit.id,
+                  }))}
+                  value={form.unitId}
+                />
               </FieldShell>
-              {form.requiresUnit ? (
-                <FieldShell label="Satuan" required>
-                  <KolamDropdownSelect<string>
-                    label="Satuan"
-                    onChange={unitId => controller.onChangeForm({ unitId })}
-                    options={controller.units.map(unit => ({
-                      label: unit.initial
-                        ? `${unit.name} (${unit.initial})`
-                        : unit.name,
-                      value: unit.id,
-                    }))}
-                    value={form.unitId}
-                  />
-                </FieldShell>
-              ) : null}
-              <FieldShell label="Aktifkan Min/Max">
-                <View style={styles.segmentRow}>
-                  <KolamButton
-                    intent={form.hasMinMax ? 'primary' : 'outline'}
-                    label="Ya"
-                    onPress={() => controller.onChangeForm({ hasMinMax: true })}
-                  />
-                  <KolamButton
-                    intent={!form.hasMinMax ? 'primary' : 'outline'}
-                    label="Tidak"
-                    onPress={() =>
-                      controller.onChangeForm({
-                        hasMinMax: false,
-                        maxAllowed: '',
-                        minAllowed: '',
-                      })
+            ) : null}
+            <View style={styles.customFieldDropdownSettingsCard}>
+              <View style={styles.customFieldSwitchRow}>
+                <Text style={styles.customFieldSwitchLabel}>
+                  Aktifkan Min/Max (hanya angka/rentang)
+                </Text>
+                <KolamSwitch
+                  accessibilityLabel="Aktifkan Min/Max"
+                  active={numericLike && form.hasMinMax}
+                  disabled={controller.saving || !numericLike}
+                  onPress={() => {
+                    const nextHasMinMax = !form.hasMinMax;
+                    if (nextHasMinMax) {
+                      controller.onChangeForm({ hasMinMax: true });
+                      return;
                     }
-                  />
+
+                    controller.onChangeForm({
+                      hasMinMax: false,
+                      maxAllowed: '',
+                      minAllowed: '',
+                    });
+                  }}
+                />
+              </View>
+            </View>
+            {numericLike && form.hasMinMax ? (
+              <View style={styles.formSplitRow}>
+                <View style={styles.formSplitCell}>
+                  <FieldShell label="Min Diizinkan">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={minAllowed =>
+                        controller.onChangeForm({ minAllowed })
+                      }
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.minAllowed}
+                    />
+                  </FieldShell>
                 </View>
-              </FieldShell>
-              {form.hasMinMax ? (
-                <View style={styles.formSplitRow}>
-                  <View style={styles.formSplitCell}>
-                    <FieldShell label="Min Diizinkan">
-                      <KolamFormTextField
-                        editable={!controller.saving}
-                        keyboardType="numeric"
-                        onChangeText={minAllowed =>
-                          controller.onChangeForm({ minAllowed })
-                        }
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.minAllowed}
-                      />
-                    </FieldShell>
-                  </View>
-                  <View style={styles.formSplitCell}>
-                    <FieldShell label="Max Diizinkan">
-                      <KolamFormTextField
-                        editable={!controller.saving}
-                        keyboardType="numeric"
-                        onChangeText={maxAllowed =>
-                          controller.onChangeForm({ maxAllowed })
-                        }
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.maxAllowed}
-                      />
-                    </FieldShell>
-                  </View>
+                <View style={styles.formSplitCell}>
+                  <FieldShell label="Max Diizinkan">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={maxAllowed =>
+                        controller.onChangeForm({ maxAllowed })
+                      }
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.maxAllowed}
+                    />
+                  </FieldShell>
                 </View>
-              ) : null}
-            </>
-          ) : null}
+              </View>
+            ) : null}
+          </>
           <FieldShell label="Nilai Default">
             {form.fieldType === 'boolean' ? (
               <View style={styles.segmentRow}>
@@ -1676,6 +1693,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     padding: 10,
+  },
+  customFieldSwitchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 38,
+  },
+  customFieldSwitchLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
   },
   textArea: {
     minHeight: 96,
