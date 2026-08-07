@@ -1331,38 +1331,44 @@ function KolamSpeciesForm({
               </View>
             </SpeciesEditSection>
 
-            <SpeciesEditSection
-              description="Pilih profil spesifikasi atau field manual untuk spesies ini."
-              title="Field Kustom"
-            >
-              <SpeciesCustomFieldEditorPanel controller={controller} />
-            </SpeciesEditSection>
-
-            <SpeciesEditSection
-              description="Aktifkan penjualan, isi SKU, satuan, dan metode pengiriman."
-              title="Penjualan dan Inventori"
-            >
-              <View
-                style={[
-                  styles.speciesBasicInfoCard,
-                  styles.customFieldSettingsCard,
-                ]}
-              >
-                <FieldShell label="SKU">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={sku => controller.onChangeForm({ sku })}
-                    placeholder="SKU"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.sku}
-                  />
-                </FieldShell>
-                <SpeciesRootSalesPanel controller={controller} />
-                {showRootOnlySections ? (
-                  <SpeciesRootInventoryPanel controller={controller} />
-                ) : null}
+            <View style={styles.speciesEditTwoColumnSections}>
+              <View style={styles.speciesEditTwoColumnSection}>
+                <SpeciesEditSection
+                  description="Pilih profil spesifikasi atau field manual untuk spesies ini."
+                  title="Field Kustom"
+                >
+                  <SpeciesCustomFieldEditorPanel controller={controller} />
+                </SpeciesEditSection>
               </View>
-            </SpeciesEditSection>
+
+              <View style={styles.speciesEditTwoColumnSection}>
+                <SpeciesEditSection
+                  description="Aktifkan penjualan, isi SKU, satuan, dan metode pengiriman."
+                  title="Penjualan dan Inventori"
+                >
+                  <View
+                    style={[
+                      styles.speciesBasicInfoCard,
+                      styles.customFieldSettingsCard,
+                    ]}
+                  >
+                    <FieldShell label="SKU">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        onChangeText={sku => controller.onChangeForm({ sku })}
+                        placeholder="SKU"
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={form.sku}
+                      />
+                    </FieldShell>
+                    <SpeciesRootSalesPanel controller={controller} />
+                    {showRootOnlySections ? (
+                      <SpeciesRootInventoryPanel controller={controller} />
+                    ) : null}
+                  </View>
+                </SpeciesEditSection>
+              </View>
+            </View>
 
             <SpeciesEditSection
               description="Aktifkan varian jika spesies memiliki variasi ukuran, warna, grade, atau beberapa SKU."
@@ -6874,6 +6880,16 @@ const styles = StyleSheet.create({
   speciesEditSectionBody: {
     gap: 12,
     padding: 14,
+  },
+  speciesEditTwoColumnSections: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  speciesEditTwoColumnSection: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 360,
   },
   speciesBasicInfoCard: {
     backgroundColor: '#f9fafb',
