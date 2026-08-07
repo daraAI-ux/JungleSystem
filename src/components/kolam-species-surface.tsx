@@ -5334,13 +5334,19 @@ function SpeciesVideoVoiceMediaPanel({
     <View style={styles.mediaLinkStack}>
       {kind !== 'voice'
         ? item.videoUris.map((videoUri, index) => (
-            <SpeciesLinkMediaRow
+            <SpeciesMediaFileRow
               disabled={controller.saving}
+              deleteLabel={`Hapus Video ${index + 1}`}
+              fileTypeLabel="MP4"
               key={`${videoUri}-${index}`}
-              label={`Video ${index + 1}`}
+              label={getUploadFileDisplayName(videoUri) || `Video ${index + 1}`}
+              meta="Terunggah"
               onDelete={() =>
                 onDelete({ type: 'video', index, label: `video ${index + 1}` })
               }
+              onOpen={() => {
+                void Linking.openURL(getKolamFileUrl(videoUri) ?? videoUri);
+              }}
               onMoveDown={() => {
                 void controller.onReorderVideo(index, 'down');
               }}
@@ -5349,7 +5355,6 @@ function SpeciesVideoVoiceMediaPanel({
               }}
               showMoveDown={index < item.videoUris.length - 1}
               showMoveUp={index > 0}
-              uri={videoUri}
             />
           ))
         : null}
@@ -5400,15 +5405,19 @@ function SpeciesVoiceUploadPanel({
       </Text>
       <View style={styles.voiceUploadDropzone}>
         {pendingVoiceUri ? (
-          <SpeciesVoiceFileRow
+          <SpeciesMediaFileRow
             disabled={controller.saving}
+            deleteLabel="Hapus audio"
+            fileTypeLabel="MP3"
             label={getUploadFileDisplayName(pendingVoiceUri) || 'Audio pending'}
             meta="Menunggu simpan"
             onDelete={() => controller.onChangeForm({ voiceLocalUri: '' })}
           />
         ) : existingVoiceUri ? (
-          <SpeciesVoiceFileRow
+          <SpeciesMediaFileRow
             disabled={controller.saving}
+            deleteLabel="Hapus audio"
+            fileTypeLabel="MP3"
             label={getUploadFileDisplayName(existingVoiceUri) || 'Audio spesies'}
             meta="Terunggah"
             onDelete={() => onDelete({ type: 'voice', label: 'audio spesies' })}
@@ -5438,24 +5447,36 @@ function SpeciesVoiceUploadPanel({
   );
 }
 
-function SpeciesVoiceFileRow({
+function SpeciesMediaFileRow({
+  deleteLabel,
   disabled,
+  fileTypeLabel,
   label,
   meta,
   onDelete,
+  onMoveDown,
+  onMoveUp,
   onOpen,
+  showMoveDown = false,
+  showMoveUp = false,
 }: {
+  deleteLabel: string;
   disabled: boolean;
+  fileTypeLabel: string;
   label: string;
   meta: string;
   onDelete: () => void;
+  onMoveDown?: () => void;
+  onMoveUp?: () => void;
   onOpen?: () => void;
+  showMoveDown?: boolean;
+  showMoveUp?: boolean;
 }) {
   const content = (
     <>
       <KolamCardFrame variant="settingsWebLogoPreview">
         <Text style={settingsWebFormStyles.settingsWebFilePreviewLabel}>
-          MP3
+          {fileTypeLabel}
         </Text>
       </KolamCardFrame>
       <View style={settingsWebFormStyles.settingsWebUploadFileCopy}>
@@ -5486,8 +5507,22 @@ function SpeciesVoiceFileRow({
       ) : (
         <View style={styles.voiceUploadFileOpen}>{content}</View>
       )}
+      {onMoveUp || onMoveDown ? (
+        <View style={styles.existingMediaMoveRow}>
+          <KolamButton
+            disabled={disabled || !showMoveUp}
+            label="Naik"
+            onPress={onMoveUp ?? (() => undefined)}
+          />
+          <KolamButton
+            disabled={disabled || !showMoveDown}
+            label="Turun"
+            onPress={onMoveDown ?? (() => undefined)}
+          />
+        </View>
+      ) : null}
       <KolamInteractionFrame
-        accessibilityLabel="Hapus audio"
+        accessibilityLabel={deleteLabel}
         disabled={disabled}
         onPress={onDelete}
         style={settingsWebFormStyles.settingsWebUploadDeleteButton}
