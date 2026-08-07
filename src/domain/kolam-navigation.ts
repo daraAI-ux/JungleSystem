@@ -11,7 +11,11 @@ export interface KolamNavigationItem {
   requiredAccess: Array<keyof AccessScope>;
 }
 
-export type KolamNavigationModuleIcon = 'brand' | 'category' | 'tag';
+export type KolamNavigationModuleIcon =
+  | 'brand'
+  | 'category'
+  | 'fieldcustom'
+  | 'tag';
 
 export interface KolamNavigationSection {
   id: string;
@@ -162,6 +166,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/custom-fields',
         description: 'Kelola field tambahan untuk data produk dan katalog.',
         group: 'Label dan Field',
+        moduleIcon: 'fieldcustom',
         requiredAccess: ['kolam'],
       },
       {
@@ -742,6 +747,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/custom-fields', {
         group: 'Label dan Field',
         label: 'Field Kustom',
+        moduleIcon: 'fieldcustom',
       }),
       sidebarItem('/units', { group: 'Label dan Field', label: 'Satuan' }),
       sidebarItem('/species', { group: 'Stok Hidup', label: 'Spesies' }),

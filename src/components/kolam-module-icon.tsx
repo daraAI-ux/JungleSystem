@@ -3,18 +3,21 @@ import {StyleSheet, View} from 'react-native';
 import Svg, {Path, SvgXml} from 'react-native-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CATEGORY_MODULE_ICON_SVG} from '../assets/icons/category-module-icon-svg';
+import {KOLAM_FIELDCUSTOM_MODULE_ICON_SVG} from '../assets/icons/fieldcustom-module-icon-svg';
 import {KOLAM_TAG_MODULE_ICON_SVG} from '../assets/icons/tag-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 
 const MODULE_ICON_XML: Record<KolamNavigationModuleIcon, string> = {
   brand: KOLAM_BRAND_MODULE_ICON_SVG,
   category: KOLAM_CATEGORY_MODULE_ICON_SVG,
+  fieldcustom: KOLAM_FIELDCUSTOM_MODULE_ICON_SVG,
   tag: KOLAM_TAG_MODULE_ICON_SVG,
 };
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   brand: 'Icon Merek',
   category: 'Icon Kategori',
+  fieldcustom: 'Icon Field Kustom',
   tag: 'Icon Tag',
 };
 
