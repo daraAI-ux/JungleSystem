@@ -48,7 +48,6 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -206,14 +205,6 @@ function KolamProyekList({
                 }}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="outline"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
           </View>
         </View>
       </View>
@@ -605,14 +596,6 @@ function KolamProyekDetailRead({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="outline"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               intent="outline"
               label="Kembali ke daftar"

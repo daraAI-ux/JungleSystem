@@ -20,7 +20,6 @@ import {
   type KolamTermsTemplateController,
 } from '../hooks/use-kolam-terms-template-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -179,14 +178,6 @@ function KolamTermsTemplateList({
                 controller.onCreateNew();
                 onRouteChange?.(KOLAM_TERMS_TEMPLATE_NEW_ROUTE);
               }}
-            />
-            <KolamRefreshButton
-  accessibilityLabel="Muat ulang"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              intent="secondary"
             />
           </View>
         </View>

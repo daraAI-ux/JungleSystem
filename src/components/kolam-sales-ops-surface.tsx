@@ -42,8 +42,6 @@ import {
   type KolamSalesController,
 } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDateField } from './kolam-date-field';
@@ -184,15 +182,6 @@ function KolamSalesOpsList({
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.status,
-    controller.filters.deliveryStatus,
-    controller.filters.needsAction ? '1' : '',
-    controller.filters.lifecycle !== 'active' ? controller.filters.lifecycle : '',
-    controller.filters.startDate,
-    controller.filters.endDate,
-  ].filter(Boolean).length;
   const listColumns = useMemo(
     () =>
       buildSalesOpsListColumns({
@@ -355,18 +344,6 @@ function KolamSalesOpsList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearchInput('');
-                    setActiveFilterPanel(null);
-                    setPanelAnchor(null);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
               <KolamButton
                 disabled={controller.exporting}
                 label={controller.exporting ? 'Mengekspor…' : 'Export'}
@@ -380,15 +357,6 @@ function KolamSalesOpsList({
                 label="Baru"
                 tone="positive"
                 onPress={() => onRouteChange?.(`${KOLAM_SALES_ROOT}/create`)}
-                style={styles.toolbarButton}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
                 style={styles.toolbarButton}
               />
             </View>
@@ -1659,15 +1627,6 @@ function KolamSalesOpsApproval({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
           </View>
         </View>
       </View>

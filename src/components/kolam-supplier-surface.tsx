@@ -36,8 +36,6 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
@@ -143,11 +141,6 @@ function KolamSupplierList({
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, pageCount);
   const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const filtersAppliedCount =
-    Number(Boolean(search.trim())) +
-    Number(statusFilter !== 'all') +
-    Number(sortMode !== 'name-asc');
-
   const statusFilterLabel =
     statusFilter === 'all'
       ? 'Status'
@@ -201,19 +194,6 @@ function KolamSupplierList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearch('');
-                    setStatusFilter('all');
-                    setSortMode('name-asc');
-                    setActiveFilterPanel(null);
-                    setPage(1);
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -221,15 +201,6 @@ function KolamSupplierList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
-                }}
-                style={styles.toolbarButton}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  void controller.onRefresh();
                 }}
                 style={styles.toolbarButton}
               />
@@ -581,11 +552,6 @@ function KolamSupplierDetail({
       ? analyticsMonths.find(month => month.id === analyticsFilters.month)
           ?.name ?? `Bln ${analyticsFilters.month}`
       : 'Semua bulan';
-  const analyticsFiltersApplied =
-    Boolean(analyticsFilters.filterType) ||
-    Boolean(analyticsFilters.year) ||
-    Boolean(analyticsFilters.month);
-
   const patchAnalyticsFilters = (patch: KolamSupplierAnalyticsFilters) => {
     const next: KolamSupplierAnalyticsFilters = {
       ...analyticsFilters,
@@ -659,25 +625,6 @@ function KolamSupplierDetail({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {analyticsFiltersApplied ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setActiveAnalyticsFilter(null);
-                    void controller.onChangeAnalyticsFilters({});
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  void controller.onSelectVendor(vendor);
-                }}
-                style={styles.toolbarButton}
-              />
               <KolamButton
                 label="Daftar"
                 onPress={() => {

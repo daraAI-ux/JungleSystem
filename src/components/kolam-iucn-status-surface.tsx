@@ -14,7 +14,6 @@ import {
   type KolamIucnStatusController,
 } from '../hooks/use-kolam-iucn-status-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -110,13 +109,6 @@ function KolamIucnShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -310,13 +302,6 @@ function KolamIucnList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/iucn-status/baru');
-                }}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
                 }}
               />
             </View>

@@ -13,7 +13,6 @@ import {
   type KolamUnitController,
 } from '../hooks/use-kolam-unit-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -109,13 +108,6 @@ function KolamUnitShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -305,13 +297,6 @@ function KolamUnitList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/units/baru');
-                }}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
                 }}
               />
             </View>

@@ -33,8 +33,6 @@ import {
 } from '../services/kolam-location-api';
 import {getKolamFileUrl} from '../lib/file-url';
 import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
-import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
@@ -633,12 +631,6 @@ function KolamLocationDetail({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={loading}
-
-              onPress={() => setRefreshKey(current => current + 1)}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => onRouteChange?.('/locations')}
@@ -1081,7 +1073,6 @@ function KolamLocationList({
   const pageCount = clientSearchActive ? 1 : Math.max(1, pagination.totalPages);
   const safePage = Math.min(page, pageCount);
   const searchEmpty = Boolean(normalizedSearch) && !loading && !visibleItems.length;
-  const filtersAppliedCount = Number(Boolean(search)) + Number(Boolean(typeFilter));
   const typeFilterLabel = typeFilter
     ? getKolamLocationTypeLabel(typeFilter)
     : 'Tipe';
@@ -1141,19 +1132,6 @@ function KolamLocationList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearch('');
-                    setTypeFilter('');
-                    setShouldSearchApi(false);
-                    setActiveFilterPanel(null);
-                    setPage(1);
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
               <KolamButton
                 intent="primary"
                 label="Baru"

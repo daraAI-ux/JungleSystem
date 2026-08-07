@@ -20,8 +20,6 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -622,14 +620,6 @@ function KolamStockTransactionDetail({
       <View style={styles.toolbarWrap}>
         <View style={styles.toolbarShell}>
           <View style={styles.detailActionRow}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading || controller.mutating}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
             <KolamButton
               label="Daftar"
               muted
@@ -864,16 +854,6 @@ function KolamStockTransactionList({
       ),
     [onRouteChange],
   );
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.status,
-    controller.filters.productId,
-    controller.filters.speciesId,
-    controller.filters.stockOpnameId,
-    controller.filters.startDate,
-    controller.filters.endDate,
-  ].filter(Boolean).length;
-
   React.useEffect(() => {
     setSearchInput(controller.filters.search);
   }, [controller.filters.search]);
@@ -1005,25 +985,6 @@ function KolamStockTransactionList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearchInput('');
-                    setActiveFilterPanel(null);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-                style={styles.toolbarButton}
-              />
               <KolamButton
                 disabled={controller.exporting || controller.loading}
                 label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}

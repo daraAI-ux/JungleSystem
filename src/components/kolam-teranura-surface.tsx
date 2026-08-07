@@ -10,8 +10,6 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -90,13 +88,6 @@ function KolamTeranuraShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => onRouteChange?.('/teranura')}
@@ -183,11 +174,6 @@ function KolamTeranuraList({
     controller.filters.sellable,
     'Status',
   );
-  const hasActiveFilters =
-    Boolean(controller.filters.search.trim()) ||
-    selectedCategory !== 'all' ||
-    selectedBrand !== 'all' ||
-    controller.filters.sellable !== 'all';
   const getFilterTriggerRef = (panel: TeranuraFilterPanel) => {
     switch (panel) {
       case 'category':
@@ -303,32 +289,11 @@ function KolamTeranuraList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {hasActiveFilters ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    closeFilterPanel();
-                    controller.onChangeFilters({
-                      brandIds: [],
-                      categoryIds: [],
-                      search: '',
-                      sellable: 'all',
-                    });
-                  }}
-                />
-              ) : null}
               <KolamButton
                 intent="primary"
                 label="Baru"
                 tone="positive"
                 onPress={() => onRouteChange?.('/teranura/create')}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
               />
             </View>
           </View>

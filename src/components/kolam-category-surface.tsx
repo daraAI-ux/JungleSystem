@@ -23,7 +23,6 @@ import {
   type KolamCategoryController,
 } from '../hooks/use-kolam-category-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryIcon } from './kolam-category-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -117,13 +116,6 @@ function KolamCategoryShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -243,13 +235,6 @@ function KolamCategoryList({
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.('/label-dan-field/kategori/baru');
-              }}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
               }}
             />
           </View>

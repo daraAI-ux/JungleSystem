@@ -13,7 +13,6 @@ import {
   type KolamTagController,
 } from '../hooks/use-kolam-tag-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamColorSwatchPicker } from './kolam-color-swatch-picker';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -110,13 +109,6 @@ function KolamTagShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -285,13 +277,6 @@ function KolamTagList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/tags/baru');
-                }}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
                 }}
               />
             </View>

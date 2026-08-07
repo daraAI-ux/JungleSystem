@@ -17,7 +17,6 @@ import {
 } from '../hooks/use-kolam-receivable-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -171,15 +170,6 @@ function ReceivableToolbar({
           />
         </View>
         <View style={kolamTableToolbarStyles.actions}>
-          <KolamRefreshButton
-            accessibilityLabel="Muat ulang"
-            intent="secondary"
-
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-            style={styles.filterTrigger}
-          />
         </View>
       </View>
 

@@ -21,8 +21,6 @@ import {
   type KolamProductSerialOpnameSessionItem,
 } from '../hooks/use-kolam-product-serial-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -132,12 +130,6 @@ function KolamProductSerialList({
   const statusFilterLabel = controller.filters.status
     ? getKolamProductSerialStatusLabel(controller.filters.status)
     : 'Status';
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.productType,
-    controller.filters.status,
-    controller.filters.productId,
-  ].filter(Boolean).length;
   const listColumns = React.useMemo(
     () => buildProductSerialListColumns(),
     [],
@@ -242,25 +234,6 @@ function KolamProductSerialList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearchInput('');
-                    setActiveFilterPanel(null);
-                    setPanelAnchor(null);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => void controller.onRefresh()}
-                style={styles.toolbarButton}
-              />
               {canOpname ? (
                 <KolamButton
                   intent="primary"

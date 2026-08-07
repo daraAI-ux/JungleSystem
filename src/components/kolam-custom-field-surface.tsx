@@ -17,7 +17,6 @@ import {
   type KolamCustomFieldController,
 } from '../hooks/use-kolam-custom-field-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -126,13 +125,6 @@ function KolamCustomFieldShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -326,13 +318,6 @@ function KolamCustomFieldList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/custom-fields/baru');
-                }}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
                 }}
               />
             </View>

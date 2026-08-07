@@ -45,8 +45,6 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -668,18 +666,6 @@ function WalletListPanel({
           <WalletToolbarActions
             controller={controller}
             onRouteChange={onRouteChange}
-            trailing={[
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                key="reload-wallets"
-                intent="secondary"
-
-                onPress={() => {
-                  void controller.onRefreshWallets();
-                }}
-                style={styles.filterTrigger}
-              />,
-            ]}
           />
         </View>
         {typeOpen ? (
@@ -1285,22 +1271,6 @@ function WalletTransactionPanel({
                 intent="secondary"
                 label="Ekspor"
                 onPress={() => setExportOpen(true)}
-                style={styles.filterTrigger}
-              />,
-              <KolamResetButton
-                key="reset"
-                intent="secondary"
-                onPress={controller.onClearTxFilters}
-                style={styles.filterTrigger}
-              />,
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                key="reload-tx"
-                intent="secondary"
-
-                onPress={() => {
-                  void controller.onRefreshTransactions();
-                }}
                 style={styles.filterTrigger}
               />,
             ]}

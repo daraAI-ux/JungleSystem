@@ -19,7 +19,6 @@ import {
 import { formatRupiah } from '../lib/money';
 import { buildKolamDaraTaxRoute } from '../domain/kolam-finance-tax';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
@@ -211,14 +210,6 @@ function PayrollListBody({
             ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="secondary"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
             {controller.canCreate ? (
               <KolamButton
                 disabled={controller.mutating}

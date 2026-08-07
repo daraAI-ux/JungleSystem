@@ -19,7 +19,6 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamListTableComposition } from './kolam-list-table-composition';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -118,14 +117,6 @@ function BonusToolbar({
           />
         </View>
         <View style={kolamTableToolbarStyles.actions}>
-          <KolamRefreshButton
-            accessibilityLabel="Muat ulang"
-            intent="secondary"
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-            style={styles.toolbarButton}
-          />
           {controller.canCreate ? (
             <KolamButton
               intent="primary"

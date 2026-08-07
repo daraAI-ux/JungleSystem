@@ -36,8 +36,6 @@ import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamAssetPurchaseDetailSurface } from './kolam-asset-purchase-detail-surface';
 import { KolamAssetPurchaseFormSurface } from './kolam-asset-purchase-form-surface';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamUnexpectedExpenseDetailSurface } from './kolam-unexpected-expense-detail-surface';
 import { KolamUnexpectedExpenseFormSurface } from './kolam-unexpected-expense-form-surface';
 import { KolamUnexpectedIncomeDetailSurface } from './kolam-unexpected-income-detail-surface';
@@ -762,12 +760,6 @@ function FinanceExpenseListBody({
             ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            {hasPeriodFilters && filtersApplied ? (
-              <KolamResetButton
-                intent="secondary"
-                onPress={controller.onClearFilters}
-              />
-            ) : null}
             {hasExport ? (
               <KolamButton
                 intent="secondary"
@@ -775,14 +767,6 @@ function FinanceExpenseListBody({
                 onPress={() => setExportOpen(true)}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="secondary"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             {showPosRutin ? (
               <KolamButton
                 intent="secondary"

@@ -19,8 +19,6 @@ import {
 } from '../hooks/use-kolam-stock-opname-controller';
 import { pickNativeAssetFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDateField } from './kolam-date-field';
@@ -224,12 +222,6 @@ function KolamStockOpnameList({
   );
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.status,
-    controller.filters.startDate,
-    controller.filters.endDate,
-  ].filter(Boolean).length;
   const listColumns = React.useMemo(() => buildStockOpnameListColumns(), []);
 
   React.useEffect(() => {
@@ -310,17 +302,6 @@ function KolamStockOpnameList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearchInput('');
-                    setStatusPanelOpen(false);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
               <KolamButton
                 disabled={controller.exporting || controller.loading}
                 label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
@@ -351,14 +332,6 @@ function KolamStockOpnameList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-                style={styles.toolbarButton}
-              />
             </View>
           </View>
         </View>

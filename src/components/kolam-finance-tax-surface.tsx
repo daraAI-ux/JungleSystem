@@ -92,15 +92,6 @@ export function KolamFinanceTaxSurface({
                     size="sm"
                   />
                 ) : null}
-                <KolamRefreshButton
-                  accessibilityLabel="Muat ulang"
-                  disabled={controller.loading}
-
-                  onPress={() => {
-                    void controller.onRefresh();
-                  }}
-                  size="sm"
-                />
               </View>
             </View>
           </View>

@@ -34,7 +34,6 @@ import {
 } from '../hooks/use-kolam-payable-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDateField } from './kolam-date-field';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
@@ -218,16 +217,6 @@ function PayableToolbar({
       : KOLAM_PAYABLE_SORT_OPTIONS.find(
           option => option.value === controller.filters.sort,
         )?.label ?? 'Sort';
-  const hasFilters =
-    Boolean(controller.filters.search.trim()) ||
-    controller.filters.status !== '' ||
-    controller.filters.sourceModel !== '' ||
-    controller.filters.overdue ||
-    controller.filters.installmentDue !== 'all' ||
-    controller.filters.period !== 'all' ||
-    controller.filters.startDate !== '' ||
-    controller.filters.endDate !== '' ||
-    controller.filters.sort !== 'newest';
   const closePanels = () => {
     setStatusOpen(false);
     setSourceOpen(false);
@@ -398,25 +387,6 @@ function PayableToolbar({
                   style={styles.filterTrigger}
                 />
               ) : null}
-              {hasFilters ? (
-                <KolamButton
-                  intent="secondary"
-                  label="Reset"
-                  onPress={() => {
-                    closePanels();
-                    controller.onClearFilters();
-                  }}
-                  style={styles.filterTrigger}
-                />
-              ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                intent="secondary"
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-                style={styles.filterTrigger}
-              />
             </View>
           </View>
         </View>

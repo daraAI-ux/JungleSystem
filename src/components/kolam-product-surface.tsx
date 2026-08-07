@@ -49,8 +49,6 @@ import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
@@ -194,13 +192,6 @@ export function KolamProductSurface({
     ? 'export.raw-materials.v1'
     : 'export.products.v1';
   const exportFilenameHint = isRawCatalog ? 'raw-materials' : 'products';
-  const hasActiveListFilters = Boolean(
-    controller.filters.search.trim() ||
-      controller.filters.categoryIds.length ||
-      controller.filters.brandIds.length ||
-      controller.filters.stockStatus ||
-      controller.filters.sortBy,
-  );
   const [exportOpen, setExportOpen] = React.useState(false);
   const [barcodeOpen, setBarcodeOpen] = React.useState(false);
   const [syncPriceOpen, setSyncPriceOpen] = React.useState(false);
@@ -325,19 +316,6 @@ export function KolamProductSurface({
   }, [activeFilterPanel, anchorFilterPanel]);
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-  const resetListFilters = () => {
-    controller.onChangeFilters({
-      search: '',
-      categoryIds: [],
-      brandIds: [],
-      stockStatus: '',
-      sortBy: '',
-      sortOrder: 'desc',
-      page: 1,
-    });
-    closeFilterPanel();
-  };
-
   if (controller.mode !== 'list') {
     return (
       <KolamProductDetailView
@@ -426,16 +404,6 @@ export function KolamProductSurface({
                 ) : null}
               </View>
               <View style={kolamTableToolbarStyles.actions}>
-                <KolamRefreshButton
-                  accessibilityLabel="Refresh"
-                  disabled={controller.loading}
-                  onPress={() => {
-                    void controller.onRefresh();
-                  }}
-                />
-                {hasActiveListFilters ? (
-                  <KolamResetButton muted onPress={resetListFilters} />
-                ) : null}
                 <KolamButton
                   label="Ekspor"
                   onPress={() => setExportOpen(true)}

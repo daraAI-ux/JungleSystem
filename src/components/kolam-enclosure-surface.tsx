@@ -60,7 +60,6 @@ import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
 import {KolamCasesReportedIcon} from './kolam-cases-reported-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
-import {KolamResetButton} from './kolam-reset-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
@@ -928,15 +927,6 @@ function KolamEnclosureList({
   const listTabActive =
     controller.activeTab === 'internal' ||
     controller.activeTab === 'client_linked';
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.enclosureType !== 'all'
-      ? controller.filters.enclosureType
-      : '',
-    controller.filters.livestockPurpose !== 'all'
-      ? controller.filters.livestockPurpose
-      : '',
-  ].filter(Boolean).length;
   const typeFilterLabel =
     controller.filters.enclosureType === 'all'
       ? 'Tipe'
@@ -1036,25 +1026,6 @@ function KolamEnclosureList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted={!listTabActive}
-                  onPress={() => {
-                    setSearchInput('');
-                    setActiveFilterPanel(null);
-                    setPanelAnchor(null);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => void controller.onRefresh()}
-                style={styles.toolbarButton}
-              />
             </View>
           </View>
         </View>

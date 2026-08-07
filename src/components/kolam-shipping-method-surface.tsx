@@ -27,7 +27,6 @@ import {
 } from '../hooks/use-kolam-shipping-method-controller';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -181,13 +180,6 @@ function KolamShippingMethodShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -323,21 +315,6 @@ function KolamShippingMethodList({
                 }}
               />
             )}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={
-                controller.listTab === 'catalog'
-                  ? controller.catalogLoading
-                  : controller.loading
-              }
-              onPress={() => {
-                if (controller.listTab === 'catalog') {
-                  void controller.onRefreshCatalog();
-                } else {
-                  void controller.onRefresh();
-                }
-              }}
-            />
           </View>
         </View>
       </View>

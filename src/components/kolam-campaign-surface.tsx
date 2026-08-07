@@ -21,7 +21,6 @@ import {
   type KolamCampaignController,
 } from '../hooks/use-kolam-campaign-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCampaignDetail } from './kolam-campaign-detail';
 import { KolamCampaignForm } from './kolam-campaign-form';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
@@ -173,16 +172,6 @@ function KolamCampaignList({
               style={styles.statusFilter}
               value={controller.statusFilter}
             />
-            {filtersApplied ? (
-              <KolamButton
-                intent="plain"
-                label="Hapus"
-                onPress={() => {
-                  setSearchInput('');
-                  controller.onClearFilters();
-                }}
-              />
-            ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             {controller.canCreate ? (
@@ -196,13 +185,6 @@ function KolamCampaignList({
                 }}
               />
             ) : null}
-            <KolamRefreshButton
-  accessibilityLabel="Muat ulang"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
           </View>
         </View>
 

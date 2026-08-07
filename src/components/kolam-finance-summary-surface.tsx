@@ -24,7 +24,6 @@ import {
 } from '../hooks/use-kolam-finance-summary-controller';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import {
@@ -251,16 +250,6 @@ function FinanceSummaryToolbar({
               onPress={() => {
                 closeFilterPanel();
                 void controller.onDownloadLedger();
-              }}
-              style={styles.actionButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="secondary"
-
-              onPress={() => {
-                closeFilterPanel();
-                void controller.onRefresh();
               }}
               style={styles.actionButton}
             />

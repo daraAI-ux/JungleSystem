@@ -36,8 +36,6 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -159,13 +157,6 @@ function KolamPurchaseOrderList({
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.status,
-    controller.filters.paymentStatus,
-    controller.filters.startDate,
-    controller.filters.endDate,
-  ].filter(Boolean).length;
   const statusFilterLabel = controller.filters.status
     ? getKolamPOStatusLabel(controller.filters.status)
     : 'Status';
@@ -239,17 +230,6 @@ function KolamPurchaseOrderList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearchInput('');
-                    setActiveFilterPanel(null);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
               <KolamButton
                 disabled={controller.exporting || controller.loading}
                 label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
@@ -268,13 +248,6 @@ function KolamPurchaseOrderList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => void controller.onRefresh()}
-                style={styles.toolbarButton}
-              />
             </View>
           </View>
         </View>
@@ -1199,13 +1172,6 @@ function KolamPurchaseOrderDetail({
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
               }}
-              style={styles.toolbarButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              disabled={controller.loading || controller.mutating}
-
-              onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />
             {canEdit ? (

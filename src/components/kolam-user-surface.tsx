@@ -54,7 +54,6 @@ import {
 } from '../services/kolam-user-api';
 import {pickNativeImageFile} from '../services/native-file-picker';
 import {KolamButton} from './kolam-button';
-import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
@@ -617,8 +616,6 @@ function KolamUserListSurface({
   const employeeFilterLabel =
     EMPLOYEE_FILTER_OPTIONS.find(option => option.value === employeeFilter)
       ?.label ?? 'Semua Status Karyawan';
-  const filtersAppliedCount =
-    Number(Boolean(search.trim())) + Number(employeeFilter !== 'all');
   const safePage = Math.min(page, Math.max(1, pagination.totalPages));
   const userTableColumns = React.useMemo(
     () => createUserListColumns(kasbonPendingSummary),
@@ -678,19 +675,6 @@ function KolamUserListSurface({
                 label={`${kasbonPendingSummary.total} kasbon`}
                 numberOfLines={1}
                 style={styles.kasbonSummaryBadge}
-              />
-            ) : null}
-            {filtersAppliedCount > 0 ? (
-              <KolamResetButton
-                muted
-                onPress={() => {
-                  setSearch('');
-                  setDebouncedSearch('');
-                  setEmployeeFilter('all');
-                  setActiveFilterPanel(null);
-                  setPage(1);
-                }}
-                style={styles.toolbarButton}
               />
             ) : null}
             <KolamButton

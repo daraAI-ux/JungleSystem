@@ -38,7 +38,6 @@ import {
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDateField } from './kolam-date-field';
@@ -147,12 +146,6 @@ function KolamProductionList({
 
   const pageCount = Math.max(1, controller.pagination.totalPages);
   const safePage = Math.min(Math.max(controller.pagination.page, 1), pageCount);
-  const filtersAppliedCount = [
-    controller.filters.search,
-    controller.filters.status,
-    controller.filters.startDate,
-    controller.filters.endDate,
-  ].filter(Boolean).length;
   const statusFilterLabel = controller.filters.status
     ? getKolamProductionStatusLabel(controller.filters.status)
     : 'Status';
@@ -209,17 +202,6 @@ function KolamProductionList({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              {filtersAppliedCount > 0 ? (
-                <KolamResetButton
-                  muted
-                  onPress={() => {
-                    setSearchInput('');
-                    setActiveFilterPanel(null);
-                    controller.onClearFilters();
-                  }}
-                  style={styles.toolbarButton}
-                />
-              ) : null}
               <KolamButton
                 disabled={controller.exporting || controller.loading}
                 label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
@@ -238,13 +220,6 @@ function KolamProductionList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => void controller.onRefresh()}
-                style={styles.toolbarButton}
-              />
             </View>
           </View>
         </View>
@@ -943,13 +918,6 @@ function KolamProductionDetail({
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_PRODUCTION_ROOT);
               }}
-              style={styles.toolbarButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              disabled={controller.loading || controller.mutating}
-
-              onPress={() => void controller.onRefresh()}
               style={styles.toolbarButton}
             />
             {canEditKolamProduction(production.status) && canUpdate ? (

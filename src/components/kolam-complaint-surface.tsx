@@ -62,7 +62,6 @@ import {
   type KolamComplaintController,
 } from '../hooks/use-kolam-complaint-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
 import { KolamDescriptionList } from './kolam-description-list';
@@ -178,15 +177,6 @@ function KolamComplaintShell({
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_COMPLAINT_ROOT);
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
               }}
               style={styles.toolbarButton}
             />
@@ -455,15 +445,6 @@ function KolamComplaintList({
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/create`);
-              }}
-              style={styles.toolbarButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
               }}
               style={styles.toolbarButton}
             />

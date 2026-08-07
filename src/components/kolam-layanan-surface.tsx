@@ -25,7 +25,6 @@ import {
   type KolamLayananController,
 } from '../hooks/use-kolam-layanan-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
@@ -208,14 +207,6 @@ function KolamLayananList({
                 }}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading || controller.opsLoading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
           </View>
         </View>
       </View>

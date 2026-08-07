@@ -23,7 +23,6 @@ import {
   type KolamSourceController,
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -174,14 +173,6 @@ function KolamSourceShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               label="Daftar"
               onPress={() => {
@@ -259,14 +250,6 @@ function KolamSourceList({
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_SOURCE_ROOT}/create`);
-              }}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
               }}
             />
           </View>

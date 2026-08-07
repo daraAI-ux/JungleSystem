@@ -218,7 +218,6 @@ function KolamCustomerListSurface({
   const pageCount = clientSearchActive ? 1 : Math.max(1, pagination.totalPages);
   const safePage = Math.min(page, pageCount);
   const searchEmpty = Boolean(normalizedSearch) && !loading && !visibleItems.length;
-  const filtersAppliedCount = Number(Boolean(search));
   const customerTableColumns = React.useMemo(
     () => createCustomerListColumns(),
     [],
@@ -248,18 +247,6 @@ function KolamCustomerListSurface({
             />
           </View>
           <View style={styles.actionRow}>
-            {filtersAppliedCount > 0 ? (
-              <KolamButton
-                label="Hapus filter"
-                muted
-                onPress={() => {
-                  setSearch('');
-                  setShouldSearchApi(false);
-                  setPage(1);
-                }}
-                style={styles.toolbarButton}
-              />
-            ) : null}
             <KolamButton
               intent="primary"
               label="Baru"

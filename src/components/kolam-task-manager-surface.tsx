@@ -33,8 +33,6 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
-import { KolamRefreshButton } from './kolam-refresh-button';
-import { KolamResetButton } from './kolam-reset-button';
 import { KolamDateField } from './kolam-date-field';
 import {
   KolamDropdownSelect,
@@ -289,14 +287,6 @@ function KolamTaskManagerDetail({
                 onPress={() => controller.onRequestDeleteTask(task)}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
           </View>
         </View>
       </View>
@@ -1313,14 +1303,6 @@ function KolamTaskToolbar({
                   }}
                 />
               </View>
-              <KolamResetButton
-                disabled={controller.loading}
-                onPress={() => {
-                  closePanels();
-                  controller.onResetFilters();
-                }}
-                style={styles.taskToolbarButton}
-              />
               {controller.isTaskAdmin ? (
                 <KolamButton
                   intent="primary"
@@ -1333,16 +1315,6 @@ function KolamTaskToolbar({
                   style={styles.taskToolbarButton}
                 />
               ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  closePanels();
-                  void controller.onRefresh();
-                }}
-                style={styles.taskToolbarButton}
-              />
             </View>
           </View>
         </View>
@@ -1991,14 +1963,6 @@ function KolamTaskRecurringPanel({
                 />
               </View>
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             {controller.isTaskAdmin ? (
               <KolamButton
                 disabled={controller.loading}
@@ -2968,14 +2932,6 @@ function KolamTaskCategorySettingsPanel({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               intent="primary"
               label="Kategori"
@@ -3254,14 +3210,6 @@ function KolamTaskTypeSettingsPanel({
             <Text numberOfLines={1} style={styles.detailContext}>Tipe Task</Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               intent="primary"
               label="Tambah tipe"

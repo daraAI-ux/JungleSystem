@@ -20,7 +20,6 @@ import {
   type KolamPackingMaterialController,
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -364,13 +363,6 @@ function KolamPackingMaterialList({
                   onRouteChange?.('/packing-materials/baru');
                 }}
               />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
             </View>
           </View>
         </View>
@@ -672,9 +664,6 @@ function KolamPackingMaterialDetail({
     controller.onBackToList();
     onRouteChange?.('/packing-materials');
   }, [controller, onRouteChange]);
-  const refreshDetail = React.useCallback(() => {
-    void controller.onRefresh();
-  }, [controller]);
 
   if (!item && controller.mode !== 'new') {
     return (
@@ -702,11 +691,6 @@ function KolamPackingMaterialDetail({
             <Text style={styles.detailPageTitle}>{formTitle}</Text>
           </View>
           <View style={styles.detailTopActions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={refreshDetail}
-            />
             <KolamButton label="Daftar" onPress={goBackToList} />
           </View>
         </View>
@@ -725,11 +709,6 @@ function KolamPackingMaterialDetail({
           </Text>
         </View>
         <View style={styles.detailTopActions}>
-          <KolamRefreshButton
-            accessibilityLabel="Refresh"
-            disabled={controller.loading}
-            onPress={refreshDetail}
-          />
           <KolamButton label="Daftar" onPress={goBackToList} />
           <KolamButton
             intent="primary"
