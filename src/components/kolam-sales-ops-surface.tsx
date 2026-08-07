@@ -51,7 +51,6 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -1705,40 +1704,18 @@ function KolamSalesOpsApproval({
             ? 'Memuat...'
             : 'Semua invoice sudah diproses'
         }
-        footer={
-          sales.length > 0 || controller.pagination.total > 0 ? (
-            <KolamTableFooterControls
-              onPageSizeChange={controller.onLimitChange}
-              page={safePage}
-              pageSize={controller.filters.limit}
-              total={controller.pagination.total}
-            >
-              {pageCount > 1 ? (
-                <View style={styles.paginationRow}>
-                  <KolamButton
-                    disabled={safePage <= 1 || controller.loading}
-                    label="Sebelumnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.max(1, safePage - 1))
-                    }
-                  />
-                  <Text style={styles.pageLabel}>
-                    {safePage} / {pageCount}
-                  </Text>
-                  <KolamButton
-                    disabled={safePage >= pageCount || controller.loading}
-                    label="Berikutnya"
-                    onPress={() =>
-                      controller.onPageChange(Math.min(pageCount, safePage + 1))
-                    }
-                  />
-                </View>
-              ) : null}
-            </KolamTableFooterControls>
-          ) : null
-        }
         getRowKey={sale => sale.id}
         loading={controller.loading}
+        pagination={
+          sales.length > 0 || controller.pagination.total > 0
+            ? {
+                onPageChange: controller.onPageChange,
+                page: safePage,
+                pageSize: controller.filters.limit,
+                total: controller.pagination.total,
+              }
+            : undefined
+        }
         rows={sales}
       />
       <KolamConfirmDialog
@@ -2276,10 +2253,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-  },
   detailRoot: {
     flex: 1,
   },
@@ -2690,11 +2663,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
-  },
-  paginationRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
   },
   itemGrid: {
     alignSelf: 'stretch',
