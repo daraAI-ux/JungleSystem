@@ -31,6 +31,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   KolamListTableComposition,
+  KolamListTablePaginationFooter,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
@@ -768,29 +769,55 @@ function TagLinkedItemsList({
 }: {
   section: ReturnType<typeof createUsageSection>;
 }) {
+  const pageSize = 5;
+  const total = section.items.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const [page, setPage] = React.useState(1);
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const startIndex = (safePage - 1) * pageSize;
+  const visibleItems = section.items.slice(startIndex, startIndex + pageSize);
+
+  React.useEffect(() => {
+    if (page !== safePage) {
+      setPage(safePage);
+    }
+  }, [page, safePage]);
+
   if (!section.items.length) {
     return <Text style={styles.tagSummaryEmptyText}>{section.emptyText}</Text>;
   }
 
   return (
-    <View style={styles.tagSummaryItemList}>
-      {section.items.slice(0, 5).map((item, index) => (
-        <View key={`${item.title}-${index}`} style={styles.tagSummaryItemRow}>
-          <View style={styles.tagSummaryItemCopy}>
-            <Text numberOfLines={1} style={styles.tagSummaryItemTitle}>
-              {item.title}
-            </Text>
-            {item.meta ? (
-              <Text numberOfLines={1} style={styles.tagSummaryItemMeta}>
-                {item.meta}
+    <View style={styles.tagSummaryListBlock}>
+      <View style={styles.tagSummaryItemList}>
+        {visibleItems.map((item, index) => (
+          <View
+            key={`${item.title}-${startIndex + index}`}
+            style={styles.tagSummaryItemRow}
+          >
+            <View style={styles.tagSummaryItemCopy}>
+              <Text numberOfLines={1} style={styles.tagSummaryItemTitle}>
+                {item.title}
               </Text>
+              {item.meta ? (
+                <Text numberOfLines={1} style={styles.tagSummaryItemMeta}>
+                  {item.meta}
+                </Text>
+              ) : null}
+            </View>
+            {item.badge ? (
+              <KolamStatusBadge intent="secondary" label={item.badge} />
             ) : null}
           </View>
-          {item.badge ? (
-            <KolamStatusBadge intent="secondary" label={item.badge} />
-          ) : null}
-        </View>
-      ))}
+        ))}
+      </View>
+      <KolamListTablePaginationFooter
+        onPageChange={setPage}
+        page={safePage}
+        pageSize={pageSize}
+        siblingCount={0}
+        total={total}
+      />
     </View>
   );
 }
@@ -1098,6 +1125,9 @@ const styles = StyleSheet.create({
     flexBasis: '48%',
     flexGrow: 1,
     minWidth: 320,
+  },
+  tagSummaryListBlock: {
+    gap: 8,
   },
   tagSummaryItemList: {
     borderTopColor: V.colors.border,
