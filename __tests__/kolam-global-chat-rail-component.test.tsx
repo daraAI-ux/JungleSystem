@@ -435,7 +435,7 @@ describe('KolamGlobalChatRail', () => {
     });
   });
 
-  it('keeps the rail root bounded without clipping header controls', async () => {
+  it('clips the rail root so inbox scroll cannot cover the workspace', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -451,9 +451,8 @@ describe('KolamGlobalChatRail', () => {
     expect(rail).toBeDefined();
     expect(StyleSheet.flatten(rail!.props.style)).toEqual(
       expect.objectContaining({
-        alignSelf: 'stretch',
         maxWidth: 360,
-        overflow: 'visible',
+        overflow: 'hidden',
         width: 360,
       }),
     );

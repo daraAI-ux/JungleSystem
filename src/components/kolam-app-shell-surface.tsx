@@ -160,6 +160,5 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 0,
     overflow: 'hidden',
-    width: 360,
   },
 });
