@@ -2169,6 +2169,7 @@ function SpeciesRootSalesPanel({
 }
 
 function SpeciesPriceInput({
+  currency,
   disabled,
   hint,
   label,
@@ -2177,6 +2178,7 @@ function SpeciesPriceInput({
   unitLabel,
   value,
 }: {
+  currency?: boolean;
   disabled: boolean;
   hint?: string;
   label: string;
@@ -2196,17 +2198,26 @@ function SpeciesPriceInput({
         ]}
       />
       <View style={styles.priceInputRow}>
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={onChangeText}
-          placeholder={placeholder ?? label}
-          style={[
-            settingsWebFormStyles.settingsWebFormFieldValue,
-            styles.priceInputControl,
-          ]}
-          value={value}
-        />
+        {currency ? (
+          <SpeciesCurrencyTextField
+            disabled={disabled}
+            onChangeText={onChangeText}
+            placeholder={placeholder ?? label}
+            value={value}
+          />
+        ) : (
+          <KolamFormTextField
+            editable={!disabled}
+            keyboardType="numeric"
+            onChangeText={onChangeText}
+            placeholder={placeholder ?? label}
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.priceInputControl,
+            ]}
+            value={value}
+          />
+        )}
         {unitLabel ? (
           <View style={styles.priceUnitBadge}>
             <KolamCopyStack
@@ -2221,6 +2232,35 @@ function SpeciesPriceInput({
           </View>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+function SpeciesCurrencyTextField({
+  disabled,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  disabled: boolean;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.currencyInputShell}>
+      <Text style={styles.currencyInputPrefix}>Rp</Text>
+      <KolamFormTextField
+        editable={!disabled}
+        keyboardType="numeric"
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        style={[
+          settingsWebFormStyles.settingsWebFormFieldValue,
+          styles.currencyInputControl,
+        ]}
+        value={value}
+      />
     </View>
   );
 }
@@ -2243,6 +2283,7 @@ function SpeciesRootPricingPanel({
         >
           <View style={styles.twoColumnGrid}>
             <SpeciesPriceInput
+              currency
               disabled={controller.saving}
               hint="Harga utama yang tampil di katalog dan POS."
               label="Harga Jual"
@@ -2253,6 +2294,7 @@ function SpeciesRootPricingPanel({
               value={form.priceToSell}
             />
             <SpeciesPriceInput
+              currency
               disabled={controller.saving}
               hint="Harga daring untuk toko daring atau kanal digital."
               label="Harga Daring"
@@ -2263,6 +2305,7 @@ function SpeciesRootPricingPanel({
               value={form.onlinePrice}
             />
             <SpeciesPriceInput
+              currency
               disabled={controller.saving}
               hint="Harga pembanding pasar, bukan harga jual utama."
               label="Harga Pasar"
@@ -2273,6 +2316,7 @@ function SpeciesRootPricingPanel({
               value={form.marketPrice}
             />
             <SpeciesPriceInput
+              currency
               disabled={controller.saving}
               hint="Batas harga terendah yang masih boleh dijual."
               label="Harga Minimum"
@@ -2478,20 +2522,16 @@ function SpeciesRootVendorPriceRow({
         />
       </View>
       <View style={styles.threeColumnGrid}>
-        <KolamFormTextField
-          editable={!controller.saving}
-          keyboardType="numeric"
+        <SpeciesCurrencyTextField
+          disabled={controller.saving}
           onChangeText={price => patchRow({ price })}
           placeholder="Harga beli pemasok"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
           value={row.price}
         />
-        <KolamFormTextField
-          editable={!controller.saving}
-          keyboardType="numeric"
+        <SpeciesCurrencyTextField
+          disabled={controller.saving}
           onChangeText={shippingCost => patchRow({ shippingCost })}
           placeholder="Ongkir / unit"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
           value={row.shippingCost}
         />
         <KolamFormTextField
@@ -4427,15 +4467,16 @@ function SpeciesVariantFormCard({
             <Text style={styles.variantHeaderMetaStrong}>{priceLabel}</Text>
           </View>
         </Pressable>
-        <KolamButton
+        <KolamInteractionFrame
+          accessibilityLabel={`Hapus ${variantLabel}`}
           disabled={controller.saving}
-          intent="danger"
-          label="Hapus"
           onPress={() =>
             onDeleteVariant({ id: variant.id, label: variantLabel })
           }
-          style={styles.variantHeaderButton}
-        />
+          style={settingsWebFormStyles.settingsWebUploadDeleteButton}
+        >
+          <KolamUploadDeleteIcon />
+        </KolamInteractionFrame>
       </View>
 
       {expanded ? (
@@ -4475,58 +4516,50 @@ function SpeciesVariantFormCard({
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Jual">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    keyboardType="numeric"
+                  <SpeciesCurrencyTextField
+                    disabled={controller.saving}
                     onChangeText={priceToSell =>
                       updateSpeciesVariantRow(controller, variant.id, {
                         priceToSell,
                       })
                     }
                     placeholder="Harga jual"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
                     value={variant.priceToSell}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Pasar">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    keyboardType="numeric"
+                  <SpeciesCurrencyTextField
+                    disabled={controller.saving}
                     onChangeText={marketPrice =>
                       updateSpeciesVariantRow(controller, variant.id, {
                         marketPrice,
                       })
                     }
                     placeholder="Harga pasar"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
                     value={variant.marketPrice}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Daring">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    keyboardType="numeric"
+                  <SpeciesCurrencyTextField
+                    disabled={controller.saving}
                     onChangeText={onlinePrice =>
                       updateSpeciesVariantRow(controller, variant.id, {
                         onlinePrice,
                       })
                     }
                     placeholder="Harga daring"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
                     value={variant.onlinePrice}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Minimum">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    keyboardType="numeric"
+                  <SpeciesCurrencyTextField
+                    disabled={controller.saving}
                     onChangeText={minimumPriceToSales =>
                       updateSpeciesVariantRow(controller, variant.id, {
                         minimumPriceToSales,
                       })
                     }
                     placeholder="Harga minimum"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
                     value={variant.minimumPriceToSales}
                   />
                 </VariantCompactField>
@@ -5191,16 +5224,14 @@ function SpeciesVariantVendorPriceRow({
         />
       </View>
       <View style={styles.threeColumnGrid}>
-        <KolamFormTextField
-          editable={!controller.saving}
-          keyboardType="numeric"
+        <SpeciesCurrencyTextField
+          disabled={controller.saving}
           onChangeText={price =>
             updateSpeciesVariantVendorPriceRow(controller, variant.id, row.id, {
               price,
             })
           }
           placeholder="Harga beli pemasok"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
           value={row.price}
         />
         <KolamFormTextField
@@ -8215,6 +8246,31 @@ const styles = StyleSheet.create({
   priceInputControl: {
     flex: 1,
     minWidth: 0,
+  },
+  currencyInputShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  currencyInputPrefix: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+    paddingLeft: 12,
+    paddingRight: 8,
+  },
+  currencyInputControl: {
+    borderWidth: 0,
+    flex: 1,
+    minWidth: 0,
+    paddingLeft: 0,
   },
   priceUnitBadge: {
     alignItems: 'center',
