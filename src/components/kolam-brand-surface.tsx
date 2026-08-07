@@ -885,21 +885,19 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               </FieldShell>
             </View>
             <View style={styles.brandAssetSettingsCard}>
-              <FieldShell label="Logo">
-                <KolamSettingsWebFileField
-                  accessibilityLabel="Logo merek"
-                  actionLabel="Pilih file"
-                  emptyLabel="Logo belum diatur"
-                  onLocalValueChange={logoLocalUri =>
-                    controller.onChangeForm({ logoLocalUri })
-                  }
-                  onUpload={() => {
-                    void controller.onPickLogo();
-                  }}
-                  scope="brand-logo"
-                  value={form.logoLocalUri || form.logoRemoteUrl}
-                />
-              </FieldShell>
+              <KolamSettingsWebFileField
+                accessibilityLabel="Logo merek"
+                actionLabel="Pilih file"
+                emptyLabel="Logo belum diatur"
+                onLocalValueChange={logoLocalUri =>
+                  controller.onChangeForm({ logoLocalUri })
+                }
+                onUpload={() => {
+                  void controller.onPickLogo();
+                }}
+                scope="brand-logo"
+                value={form.logoLocalUri || form.logoRemoteUrl}
+              />
             </View>
           </View>
         </View>
