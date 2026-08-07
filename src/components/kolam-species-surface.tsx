@@ -61,11 +61,11 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
-import { KolamActionGlyph } from './kolam-action-glyph';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -93,6 +93,7 @@ import {
 } from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 type SpeciesListFilterPanel = 'taxonomy' | 'category' | 'stock';
 
@@ -1824,19 +1825,17 @@ function SpeciesExternalLinksRowsEditor({
               ]}
               value={link.value}
             />
-            <Pressable
+            <KolamInteractionFrame
               accessibilityLabel="Hapus tautan"
-              accessibilityRole="button"
               disabled={disabled}
               onPress={() => removeRow(index)}
-              style={({ pressed }) => [
+              style={[
+                settingsWebFormStyles.settingsWebUploadDeleteButton,
                 styles.externalLinkRemoveButton,
-                disabled ? styles.externalLinkRemoveButtonDisabled : null,
-                pressed ? styles.externalLinkRemoveButtonPressed : null,
               ]}
             >
-              <KolamActionGlyph tone="danger" variant="delete" />
-            </Pressable>
+              <KolamUploadDeleteIcon />
+            </KolamInteractionFrame>
           </View>
         ))
       ) : (
@@ -8079,18 +8078,7 @@ const styles = StyleSheet.create({
     minWidth: 220,
   },
   externalLinkRemoveButton: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    height: 38,
-    justifyContent: 'center',
-    width: 38,
-  },
-  externalLinkRemoveButtonDisabled: {
-    opacity: 0.35,
-  },
-  externalLinkRemoveButtonPressed: {
-    opacity: 0.72,
+    marginLeft: 0,
   },
   externalLinkAddButton: {
     alignSelf: 'flex-start',
