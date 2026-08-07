@@ -20,6 +20,10 @@ import {KolamInteractionFrame} from './kolam-interaction-frame';
 
 const KOLAM_BUTTON_VISUAL = getKolamButtonVisualContract();
 const KOLAM_NEW_BUTTON_LABEL = 'Baru';
+const KOLAM_NEW_BUTTON_ICON_XML = KOLAM_NEW_BUTTON_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.success,
+);
 
 export interface KolamButtonProps {
   label: string;
@@ -52,7 +56,7 @@ export function KolamButton({
   const resolvedIcon =
     icon ??
     (label === KOLAM_NEW_BUTTON_LABEL ? (
-      <SvgXml height="100%" width="100%" xml={KOLAM_NEW_BUTTON_ICON_SVG} />
+      <SvgXml height="100%" width="100%" xml={KOLAM_NEW_BUTTON_ICON_XML} />
     ) : null);
 
   return (
