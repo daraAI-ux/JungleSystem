@@ -632,9 +632,11 @@ function KolamBrandDetail({
                 : []),
             ]}
             leading={
-              <View style={styles.brandSummaryLogoInCard}>
-                <KolamBrandLogo brand={brand} variant="summary" />
-              </View>
+              brand.logoUrl ? (
+                <View style={styles.brandSummaryLogoInCard}>
+                  <KolamBrandLogo brand={brand} variant="summary" />
+                </View>
+              ) : undefined
             }
             leadingStyle={styles.brandSummaryLeadingSlot}
             title="Ringkasan merek"
@@ -1081,9 +1083,8 @@ const styles = StyleSheet.create({
   },
   brandSummaryLogoInCard: {
     alignItems: 'center',
-    height: '100%',
+    height: 154,
     justifyContent: 'center',
-    minHeight: 154,
     width: '100%',
   },
   brandSummaryCountry: {
