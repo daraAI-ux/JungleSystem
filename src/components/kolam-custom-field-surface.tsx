@@ -716,44 +716,6 @@ function KolamCustomFieldForm({
               value={form.fieldLabel}
             />
           </FieldShell>
-          <FieldShell label="Tipe Field" required>
-            <KolamDropdownSelect<KolamCustomFieldType>
-              label="Tipe"
-              onChange={fieldType =>
-                controller.onChangeForm({
-                  fieldType,
-                  hasMinMax:
-                    fieldType === 'number' || fieldType === 'range'
-                      ? form.hasMinMax
-                      : false,
-                  maxAllowed:
-                    fieldType === 'number' || fieldType === 'range'
-                      ? form.maxAllowed
-                      : '',
-                  minAllowed:
-                    fieldType === 'number' || fieldType === 'range'
-                      ? form.minAllowed
-                      : '',
-                  requiresUnit:
-                    fieldType === 'number' || fieldType === 'range'
-                      ? form.requiresUnit
-                      : false,
-                  unitId:
-                    fieldType === 'number' || fieldType === 'range'
-                      ? form.unitId
-                      : '',
-                })
-              }
-              options={[
-                { label: 'Teks', value: 'string' },
-                { label: 'Angka', value: 'number' },
-                { label: 'Ya/Tidak', value: 'boolean' },
-                { label: 'Rentang', value: 'range' },
-                { label: 'Pilihan', value: 'select' },
-              ]}
-              value={form.fieldType}
-            />
-          </FieldShell>
           <FieldShell label="Urutan">
             <KolamFormTextField
               editable={!controller.saving}
@@ -765,6 +727,48 @@ function KolamCustomFieldForm({
             />
           </FieldShell>
           <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <View style={styles.customFieldDropdownSettingsCard}>
+                <FieldShell label="Tipe Field" required>
+                  <KolamDropdownSelect<KolamCustomFieldType>
+                    label="Tipe"
+                    onChange={fieldType =>
+                      controller.onChangeForm({
+                        fieldType,
+                        hasMinMax:
+                          fieldType === 'number' || fieldType === 'range'
+                            ? form.hasMinMax
+                            : false,
+                        maxAllowed:
+                          fieldType === 'number' || fieldType === 'range'
+                            ? form.maxAllowed
+                            : '',
+                        minAllowed:
+                          fieldType === 'number' || fieldType === 'range'
+                            ? form.minAllowed
+                            : '',
+                        requiresUnit:
+                          fieldType === 'number' || fieldType === 'range'
+                            ? form.requiresUnit
+                            : false,
+                        unitId:
+                          fieldType === 'number' || fieldType === 'range'
+                            ? form.unitId
+                            : '',
+                      })
+                    }
+                    options={[
+                      { label: 'Teks', value: 'string' },
+                      { label: 'Angka', value: 'number' },
+                      { label: 'Ya/Tidak', value: 'boolean' },
+                      { label: 'Rentang', value: 'range' },
+                      { label: 'Pilihan', value: 'select' },
+                    ]}
+                    value={form.fieldType}
+                  />
+                </FieldShell>
+              </View>
+            </View>
             <View style={styles.formSplitCell}>
               <View style={styles.customFieldDropdownSettingsCard}>
                 <FieldShell label="Status" required>
