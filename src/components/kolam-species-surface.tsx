@@ -49,6 +49,7 @@ import {
   KolamCommercialPolicyEditor,
   type KolamCommercialPolicyEditorValue,
 } from './kolam-commercial-policy-editor';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -1970,36 +1971,29 @@ function SpeciesMediaEditPanel({
       {selectedSpecies?.thumbnailUri || selectedSpecies?.photoUris.length ? (
         <View style={styles.existingMediaGrid}>
           {selectedSpecies.thumbnailUri ? (
-            <View style={styles.existingMediaItem}>
-              <KolamRemoteImage
-                accessibilityLabel="Thumbnail spesies"
-                resizeMode="cover"
-                revision={
-                  selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
-                }
-                scope="species"
-                sourceUri={selectedSpecies.thumbnailUri}
-                style={styles.existingMediaImage}
-              />
-              <KolamButton
-                disabled={controller.saving}
-                intent="danger"
-                label="Hapus Thumbnail"
-                onPress={() =>
-                  onDelete({
-                    type: 'thumbnail',
-                    label: 'thumbnail spesies',
-                  })
-                }
-                style={styles.mediaDeleteButton}
-              />
-            </View>
+            <SpeciesImageMediaCard
+              accessibilityLabel="Thumbnail spesies"
+              deleteLabel="Hapus Thumbnail"
+              disabled={controller.saving}
+              label="Thumbnail"
+              onDelete={() =>
+                onDelete({
+                  type: 'thumbnail',
+                  label: 'thumbnail spesies',
+                })
+              }
+              revision={
+                selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
+              }
+              sourceUri={selectedSpecies.thumbnailUri}
+            />
           ) : null}
           {selectedSpecies.photoUris.map((photoUri, index) => (
             <SpeciesImageMediaCard
               accessibilityLabel={`Foto spesies ${index + 1}`}
               disabled={controller.saving}
               key={`${photoUri}-${index}`}
+              label={`Foto ${index + 1}`}
               onDelete={() =>
                 onDelete({
                   type: 'photo',
@@ -5488,6 +5482,7 @@ function SpeciesVariantMediaPanel({
               accessibilityLabel={`Foto varian ${index + 1}`}
               disabled={controller.saving}
               key={`${selectedVariant.id}-photo-${index}`}
+              label={`Foto ${index + 1}`}
               onDelete={() =>
                 onDelete({
                   type: 'variant-photo',
@@ -5511,6 +5506,7 @@ function SpeciesImageMediaCard({
   accessibilityLabel,
   deleteLabel,
   disabled,
+  label,
   onDelete,
   onMoveDown,
   onMoveUp,
@@ -5522,6 +5518,7 @@ function SpeciesImageMediaCard({
   accessibilityLabel: string;
   deleteLabel: string;
   disabled: boolean;
+  label: string;
   onDelete: () => void;
   onMoveDown?: () => void;
   onMoveUp?: () => void;
@@ -5530,18 +5527,38 @@ function SpeciesImageMediaCard({
   showMoveUp?: boolean;
   sourceUri: string;
 }) {
+  const displayName = getUploadFileDisplayName(sourceUri) || label;
+
   return (
-    <View style={styles.existingMediaItem}>
-      <KolamRemoteImage
-        accessibilityLabel={accessibilityLabel}
-        resizeMode="cover"
-        revision={revision}
-        scope="species"
-        sourceUri={sourceUri}
-        style={styles.existingMediaImage}
-      />
+    <View
+      style={[
+        settingsWebFormStyles.settingsWebUploadFileRow,
+        styles.existingMediaItem,
+      ]}
+    >
+      <KolamCardFrame variant="settingsWebLogoPreview">
+        <KolamRemoteImage
+          accessibilityLabel={accessibilityLabel}
+          resizeMode="contain"
+          revision={revision}
+          scope="species"
+          sourceUri={sourceUri}
+          style={settingsWebFormStyles.settingsWebLogoImage}
+        />
+      </KolamCardFrame>
+      <View style={settingsWebFormStyles.settingsWebUploadFileCopy}>
+        <Text
+          numberOfLines={1}
+          style={settingsWebFormStyles.settingsWebUploadFileName}
+        >
+          {displayName}
+        </Text>
+        <Text style={settingsWebFormStyles.settingsWebUploadFileStatus}>
+          Terunggah
+        </Text>
+      </View>
       {onMoveUp || onMoveDown ? (
-        <View style={styles.mediaLinkRow}>
+        <View style={styles.existingMediaMoveRow}>
           <KolamButton
             disabled={disabled || !showMoveUp}
             label="Naik"
@@ -5554,13 +5571,14 @@ function SpeciesImageMediaCard({
           />
         </View>
       ) : null}
-      <KolamButton
+      <KolamInteractionFrame
+        accessibilityLabel={deleteLabel}
         disabled={disabled}
-        intent="danger"
-        label={deleteLabel}
         onPress={onDelete}
-        style={styles.mediaDeleteButton}
-      />
+        style={settingsWebFormStyles.settingsWebUploadDeleteButton}
+      >
+        <KolamUploadDeleteIcon />
+      </KolamInteractionFrame>
     </View>
   );
 }
@@ -8123,25 +8141,15 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   existingMediaGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   existingMediaItem: {
+    width: '100%',
+  },
+  existingMediaMoveRow: {
     alignItems: 'center',
-    backgroundColor: V.colors.secondary,
-    borderRadius: 6,
-    gap: 8,
-    padding: 8,
-    width: 132,
-  },
-  existingMediaImage: {
-    borderRadius: 6,
-    height: 72,
-    width: 116,
-  },
-  mediaDeleteButton: {
-    minHeight: 30,
+    flexDirection: 'row',
+    gap: 6,
   },
   mediaPickerStack: {
     gap: 10,
