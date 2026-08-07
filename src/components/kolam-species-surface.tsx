@@ -1482,7 +1482,14 @@ function KolamSpeciesForm({
                 description="Harga beli pemasok, ongkir, dan total HPP."
                 title="Harga Supplier"
               >
-                <SpeciesRootVendorPricesEditor controller={controller} />
+                <View
+                  style={[
+                    styles.speciesBasicInfoCard,
+                    styles.customFieldSettingsCard,
+                  ]}
+                >
+                  <SpeciesRootVendorPricesEditor controller={controller} />
+                </View>
               </SpeciesEditSection>
             ) : null}
 
