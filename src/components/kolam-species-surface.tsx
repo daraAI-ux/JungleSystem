@@ -2564,6 +2564,7 @@ function SpeciesCustomFieldEditorPanel({
       disabled={controller.saving}
       emptyText="Belum ada definisi field kustom aktif."
       fields={fields}
+      profiles={controller.customFieldProfiles}
       rows={controller.form.customFieldValues}
       units={controller.units}
       onChange={customFieldValues =>
@@ -2602,6 +2603,7 @@ function SpeciesCustomFieldRowsEditor({
   emptyText,
   fields,
   onChange,
+  profiles = [],
   rows,
   units,
 }: {
@@ -2609,6 +2611,7 @@ function SpeciesCustomFieldRowsEditor({
   emptyText: string;
   fields: KolamCustomField[];
   onChange: (rows: KolamSpeciesCustomFieldValue[]) => void;
+  profiles?: KolamSpeciesController['customFieldProfiles'];
   rows: KolamSpeciesCustomFieldValue[];
   units: SpeciesCustomFieldUnitOption[];
 }) {
@@ -2656,6 +2659,27 @@ function SpeciesCustomFieldRowsEditor({
       onChange([]);
     }
   };
+  const applyProfile = (profileId: string) => {
+    const profile = profiles.find(item => item.id === profileId);
+    if (!profile) {
+      return;
+    }
+
+    const nextKeys = profile.fields
+      .filter(field => field.status !== 'inactive')
+      .map(field => field.fieldKey)
+      .filter(Boolean);
+    const nextKeySet = new Set(nextKeys);
+
+    setEnabled(true);
+    setSelectedKeys(nextKeys);
+    onChange(
+      rows.filter(row => {
+        const key = getCustomFieldRowKey(row, fields);
+        return key && nextKeySet.has(key);
+      }),
+    );
+  };
 
   return (
     <View style={styles.customFieldFormStack}>
@@ -2679,6 +2703,27 @@ function SpeciesCustomFieldRowsEditor({
 
       {enabled ? (
         <>
+          {profiles.length ? (
+            <FieldShell
+              label="Profil spesifikasi"
+              style={styles.customFieldCompactField}
+            >
+              <KolamDropdownSelect
+                label="Profil spesifikasi"
+                menuStyle={styles.longDropdownMenu}
+                onChange={applyProfile}
+                options={[
+                  { label: 'Pilih profil (opsional)...', value: '' },
+                  ...profiles.map(profile => ({
+                    label: profile.name,
+                    value: profile.id,
+                  })),
+                ]}
+                showLabelInTrigger={false}
+                value=""
+              />
+            </FieldShell>
+          ) : null}
           <SpeciesCustomFieldMultiSelect
             disabled={disabled || fields.length === 0}
             fields={fields}
@@ -2745,21 +2790,54 @@ function SpeciesCustomFieldMultiSelect({
   selectedKeySet: Set<string>;
 }) {
   const [open, setOpen] = React.useState(false);
-  const selectedCount = selectedKeySet.size;
-  const triggerLabel = selectedCount
-    ? `${selectedCount} field dipilih`
-    : 'Pilih field kustom...';
+  const selectedFields = fields.filter(field =>
+    selectedKeySet.has(field.fieldKey),
+  );
 
   return (
     <View style={styles.customFieldMultiSelect}>
-      <KolamButton
+      <Pressable
+        accessibilityLabel="Pilih field kustom"
+        accessibilityRole="button"
+        accessibilityState={{ disabled, expanded: open }}
         disabled={disabled}
-        intent="outline"
-        label={triggerLabel}
         onPress={() => setOpen(current => !current)}
         style={styles.customFieldMultiSelectTrigger}
-        textStyle={styles.customFieldMultiSelectTriggerText}
-      />
+      >
+        <View style={styles.customFieldSelectedChips}>
+          {selectedFields.map(field => (
+            <KolamButton
+              disabled={disabled}
+              intent="secondary"
+              key={field.id || field.fieldKey}
+              label={`${field.fieldLabel} x`}
+              onPress={() => onToggleField(field, false)}
+              style={styles.customFieldSelectedChip}
+              textStyle={styles.customFieldSelectedChipText}
+            />
+          ))}
+          <KolamCopyStack
+            items={[
+              {
+                id: 'placeholder',
+                text: 'Pilih field kustom...',
+                style: selectedFields.length
+                  ? styles.customFieldMultiSelectPlaceholderMuted
+                  : styles.customFieldMultiSelectPlaceholder,
+              },
+            ]}
+          />
+        </View>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'chevron',
+              text: open ? '^' : 'v',
+              style: styles.customFieldMultiSelectChevron,
+            },
+          ]}
+        />
+      </Pressable>
       {open ? (
         <View style={styles.customFieldMultiSelectMenu}>
           <ScrollView
@@ -7381,6 +7459,9 @@ const styles = StyleSheet.create({
   customFieldFormStack: {
     gap: 14,
   },
+  customFieldCompactField: {
+    gap: 8,
+  },
   customFieldSwitchRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -7400,12 +7481,51 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   customFieldMultiSelectTrigger: {
-    alignSelf: 'stretch',
-    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
     minHeight: 38,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  customFieldMultiSelectTriggerText: {
-    textAlign: 'left',
+  customFieldSelectedChips: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    minWidth: 0,
+  },
+  customFieldSelectedChip: {
+    minHeight: 26,
+    paddingHorizontal: 8,
+  },
+  customFieldSelectedChipText: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  customFieldMultiSelectPlaceholder: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  customFieldMultiSelectPlaceholderMuted: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 15,
+  },
+  customFieldMultiSelectChevron: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   customFieldMultiSelectMenu: {
     backgroundColor: V.colors.bg,

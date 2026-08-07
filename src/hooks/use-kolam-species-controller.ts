@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { KolamCategory } from '../domain/kolam-category';
+import type { KolamCustomFieldProfile } from '../domain/kolam-custom-field-profile';
 import type { KolamCustomField } from '../domain/kolam-custom-field';
 import type { KolamIucnStatus } from '../domain/kolam-iucn-status';
 import type { KolamPackingOption } from '../domain/kolam-packing-option';
@@ -24,6 +25,7 @@ import type { KolamUnit } from '../domain/kolam-unit';
 import type { KolamVendor } from '../domain/kolam-vendor';
 import { getKolamCategories } from '../services/kolam-category-api';
 import { getKolamCustomFields } from '../services/kolam-custom-field-api';
+import { getKolamCustomFieldProfiles } from '../services/kolam-custom-field-profile-api';
 import {
   readKolamCustomFieldListCache,
   writeKolamCustomFieldListCache,
@@ -121,6 +123,7 @@ export interface KolamSpeciesListFilters {
 export interface KolamSpeciesController {
   breadcrumbPath: string;
   categories: KolamCategory[];
+  customFieldProfiles: KolamCustomFieldProfile[];
   customFields: KolamCustomField[];
   dataSource: KolamSpeciesDataSource;
   error: string | null;
@@ -208,6 +211,9 @@ export function useKolamSpeciesController(
     createEmptyKolamSpeciesFormState(),
   );
   const [categories, setCategories] = useState<KolamCategory[]>([]);
+  const [customFieldProfiles, setCustomFieldProfiles] = useState<
+    KolamCustomFieldProfile[]
+  >([]);
   const [customFields, setCustomFields] = useState<KolamCustomField[]>([]);
   const [taxonomies, setTaxonomies] = useState<KolamTaxonomy[]>([]);
   const [units, setUnits] = useState<KolamUnit[]>([]);
@@ -277,6 +283,7 @@ export function useKolamSpeciesController(
       shippingMethodResult,
       packingResult,
       customFieldResult,
+      customFieldProfileResult,
     ] = await Promise.allSettled([
       getKolamCategories(),
       getKolamTaxonomies({ level: 'Genus', limit: 1000 }),
@@ -289,6 +296,7 @@ export function useKolamSpeciesController(
       getKolamActiveShippingMethods(),
       getKolamPackingOptions(),
       getKolamCustomFields(),
+      getKolamCustomFieldProfiles({ scope: 'species', status: 'active' }),
     ]);
 
     if (categoryResult.status === 'fulfilled') {
@@ -330,6 +338,9 @@ export function useKolamSpeciesController(
     if (customFieldResult.status === 'fulfilled') {
       setCustomFields(customFieldResult.value);
       await writeKolamCustomFieldListCache(customFieldResult.value);
+    }
+    if (customFieldProfileResult.status === 'fulfilled') {
+      setCustomFieldProfiles(customFieldProfileResult.value);
     }
   }, []);
 
@@ -1080,6 +1091,7 @@ export function useKolamSpeciesController(
   return {
     breadcrumbPath,
     categories,
+    customFieldProfiles,
     customFields,
     dataSource,
     error,
