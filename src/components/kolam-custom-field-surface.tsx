@@ -741,20 +741,6 @@ function KolamCustomFieldForm({
               value={form.fieldType}
             />
           </FieldShell>
-          <FieldShell label="Status" required>
-            <View style={styles.segmentRow}>
-              {(['active', 'inactive'] as KolamCustomFieldStatus[]).map(
-                status => (
-                  <KolamButton
-                    intent={form.status === status ? 'primary' : 'outline'}
-                    key={status}
-                    label={getFieldStatusLabel(status)}
-                    onPress={() => controller.onChangeForm({ status })}
-                  />
-                ),
-              )}
-            </View>
-          </FieldShell>
           <FieldShell label="Urutan">
             <KolamFormTextField
               editable={!controller.saving}
@@ -765,20 +751,42 @@ function KolamCustomFieldForm({
               value={form.order}
             />
           </FieldShell>
-          <FieldShell label="Field Wajib">
-            <View style={styles.segmentRow}>
-              <KolamButton
-                intent={form.required ? 'primary' : 'outline'}
-                label="Ya"
-                onPress={() => controller.onChangeForm({ required: true })}
-              />
-              <KolamButton
-                intent={!form.required ? 'primary' : 'outline'}
-                label="Tidak"
-                onPress={() => controller.onChangeForm({ required: false })}
-              />
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <View style={styles.customFieldDropdownSettingsCard}>
+                <FieldShell label="Status" required>
+                  <KolamDropdownSelect<KolamCustomFieldStatus>
+                    label="Status"
+                    onChange={status => controller.onChangeForm({ status })}
+                    options={[
+                      { label: 'Aktif', value: 'active' },
+                      { label: 'Nonaktif', value: 'inactive' },
+                    ]}
+                    value={form.status}
+                  />
+                </FieldShell>
+              </View>
             </View>
-          </FieldShell>
+            <View style={styles.formSplitCell}>
+              <View style={styles.customFieldDropdownSettingsCard}>
+                <FieldShell label="Field Wajib">
+                  <KolamDropdownSelect<'yes' | 'no'>
+                    label="Field Wajib"
+                    onChange={requiredValue =>
+                      controller.onChangeForm({
+                        required: requiredValue === 'yes',
+                      })
+                    }
+                    options={[
+                      { label: 'Ya', value: 'yes' },
+                      { label: 'Tidak', value: 'no' },
+                    ]}
+                    value={form.required ? 'yes' : 'no'}
+                  />
+                </FieldShell>
+              </View>
+            </View>
+          </View>
           {numericLike ? (
             <>
               <FieldShell label="Memerlukan Satuan">
@@ -1660,6 +1668,13 @@ const styles = StyleSheet.create({
     flexBasis: 320,
     gap: 10,
     minWidth: 280,
+    padding: 10,
+  },
+  customFieldDropdownSettingsCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
     padding: 10,
   },
   textArea: {
