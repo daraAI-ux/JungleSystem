@@ -424,7 +424,7 @@ export function KolamProductSurface({
                       }}
                     />
                     <KolamButton label="SEO audit" muted />
-                    <KolamButton
+                    <KolamStockSyncButton
                       label="Sinkron Harga"
                       onPress={() => setSyncPriceOpen(true)}
                     />

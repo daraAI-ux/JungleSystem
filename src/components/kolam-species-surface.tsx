@@ -444,7 +444,7 @@ function KolamSpeciesList({
                   setBarcodeDialogOpen(true);
                 }}
               />
-              <KolamButton
+              <KolamStockSyncButton
                 disabled={!syncPriceItemCount || controller.loading}
                 label="Sinkron Harga"
                 onPress={() => {
