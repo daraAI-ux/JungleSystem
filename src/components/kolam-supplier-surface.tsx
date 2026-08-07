@@ -9,9 +9,6 @@ import {
 } from 'react-native';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
-  getKolamTableColumns,
-} from '../domain/kolam-table';
-import {
   buildKolamSupplierMonthlyTrendGraphItems,
   flattenKolamSupplierProductRows,
   flattenKolamSupplierSpeciesRows,
@@ -44,14 +41,11 @@ import { KolamResetButton } from './kolam-reset-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
-import { KolamDataTableHeader } from './kolam-data-table-header';
-import { KolamDataTableRowFrame } from './kolam-data-table-row-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
-  KolamTableFooterControls,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -74,6 +68,7 @@ type SupplierSortMode = 'name-asc' | 'name-desc' | 'po-desc' | 'newest';
 type SupplierStatusFilter = 'all' | 'active' | 'inactive' | 'blacklisted';
 type SupplierFilterPanel = 'status' | 'sort' | null;
 type SupplierAnalyticsFilterPanel = 'period' | 'year' | 'month' | null;
+const SUPPLIER_CATALOG_PAGE_SIZE = 10;
 
 export function KolamSupplierSurface({
   onRouteChange,
@@ -1161,7 +1156,6 @@ function KolamSupplierCatalogTabs({
     [onRouteChange, packings, purchaseStats],
   );
 
-  const [catalogPageSize, setCatalogPageSize] = React.useState(10);
   const [catalogPage, setCatalogPage] = React.useState(1);
   const activeCatalogRows =
     tab === 'products'
@@ -1174,21 +1168,25 @@ function KolamSupplierCatalogTabs({
   const catalogTotal = activeCatalogRows?.length ?? 0;
   const catalogPageCount = Math.max(
     1,
-    Math.ceil(catalogTotal / catalogPageSize),
+    Math.ceil(catalogTotal / SUPPLIER_CATALOG_PAGE_SIZE),
   );
   const safeCatalogPage = Math.min(catalogPage, catalogPageCount);
   const pagedCatalogRows = activeCatalogRows
     ? activeCatalogRows.slice(
-        (safeCatalogPage - 1) * catalogPageSize,
-        safeCatalogPage * catalogPageSize,
+        (safeCatalogPage - 1) * SUPPLIER_CATALOG_PAGE_SIZE,
+        safeCatalogPage * SUPPLIER_CATALOG_PAGE_SIZE,
       )
     : [];
   const catalogRowScope: 'product' | 'species' =
     tab === 'species' ? 'species' : 'product';
+  const catalogColumns = React.useMemo(
+    () => buildSupplierCatalogColumns(catalogRowScope),
+    [catalogRowScope],
+  );
 
   React.useEffect(() => {
     setCatalogPage(1);
-  }, [tab, catalogPageSize, vendor.id]);
+  }, [tab, vendor.id]);
 
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1237,56 +1235,19 @@ function KolamSupplierCatalogTabs({
 
       {activeCatalogRows ? (
         catalogTotal ? (
-          <View style={styles.catalogTableBlock}>
-            <View style={styles.catalogTable}>
-              <KolamDataTableHeader
-                columns={getKolamTableColumns('supplier-catalog')}
-              />
-              {pagedCatalogRows.map(row => (
-                <SupplierCatalogPurchaseRow
-                  key={row.key}
-                  row={row}
-                  scope={catalogRowScope}
-                />
-              ))}
-            </View>
-            <KolamTableFooterControls
-              onPageSizeChange={setCatalogPageSize}
-              page={safeCatalogPage}
-              pageSize={catalogPageSize}
-              total={catalogTotal}
-            >
-              {catalogPageCount > 1 ? (
-                <View style={styles.paginationRow}>
-                  <KolamButton
-                    disabled={safeCatalogPage <= 1}
-                    label="Sebelumnya"
-                    onPress={() =>
-                      setCatalogPage(current => Math.max(1, current - 1))
-                    }
-                  />
-                  <KolamCopyStack
-                    items={[
-                      {
-                        id: 'catalog-page',
-                        text: `${safeCatalogPage} / ${catalogPageCount}`,
-                        style: styles.pageLabel,
-                      },
-                    ]}
-                  />
-                  <KolamButton
-                    disabled={safeCatalogPage >= catalogPageCount}
-                    label="Berikutnya"
-                    onPress={() =>
-                      setCatalogPage(current =>
-                        Math.min(catalogPageCount, current + 1),
-                      )
-                    }
-                  />
-                </View>
-              ) : null}
-            </KolamTableFooterControls>
-          </View>
+          <KolamListTableComposition
+            columns={catalogColumns}
+            emptyTitle="Tidak ada katalog"
+            getRowKey={row => row.key}
+            pagination={{
+              onPageChange: setCatalogPage,
+              page: safeCatalogPage,
+              pageSize: SUPPLIER_CATALOG_PAGE_SIZE,
+              total: catalogTotal,
+            }}
+            rows={pagedCatalogRows}
+            style={styles.supplierCatalogTable}
+          />
         ) : (
           <KolamEmptyState
             compact
@@ -1629,96 +1590,112 @@ function findPurchaseStatForCatalogRow(
   );
 }
 
-function SupplierCatalogPurchaseRow({
-  row,
-  scope,
-}: {
-  row: SupplierCatalogPurchaseRowData;
-  scope: 'product' | 'species';
-}) {
-  const harga =
-    row.price != null
-      ? formatRupiah(row.price)
-      : row.purchase?.averagePrice
-      ? formatRupiah(row.purchase.averagePrice)
-      : '—';
-  const totalOrder = row.purchase
-    ? String(row.purchase.orderCount)
-    : '—';
-  const totalValue = row.purchase
-    ? formatRupiah(row.purchase.totalValue)
-    : '—';
-  const lastPurchase = row.purchase?.lastPurchase
-    ? formatSupplierDateTime(row.purchase.lastPurchase)
-    : '—';
-
-  return (
-    <KolamDataTableRowFrame
-      style={row.isVariantRow ? styles.catalogTableRowVariant : undefined}
-    >
-      <Pressable
-        onPress={row.onPress}
-        style={[styles.cell, styles.primaryCell]}
-      >
-        <View style={styles.identity}>
-          {row.isVariantRow ? (
-            <Text style={styles.catalogVariantMark}>↳</Text>
-          ) : row.photoUrl ? (
-            <KolamRemoteImage
-              accessibilityLabel={row.title}
-              resizeMode="cover"
-              scope={scope}
-              sourceUri={row.photoUrl}
-              style={styles.thumb}
+function buildSupplierCatalogColumns(
+  scope: 'product' | 'species',
+): Array<KolamListTableColumn<SupplierCatalogPurchaseRowData>> {
+  return [
+    {
+      flex: 1.35,
+      id: 'name',
+      label: 'Nama',
+      render: row => (
+        <Pressable onPress={row.onPress} style={styles.identityCell}>
+          <View style={styles.identity}>
+            {row.isVariantRow ? (
+              <Text style={styles.catalogVariantMark}>↳</Text>
+            ) : row.photoUrl ? (
+              <KolamRemoteImage
+                accessibilityLabel={row.title}
+                resizeMode="cover"
+                scope={scope}
+                sourceUri={row.photoUrl}
+                style={styles.thumb}
+              />
+            ) : (
+              <View style={styles.thumbFallback}>
+                <Text style={styles.thumbFallbackText}>
+                  {row.title.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <KolamCopyStack
+              containerStyle={styles.identityCopy}
+              items={[
+                {
+                  id: 'name',
+                  text: row.title,
+                  style: [
+                    styles.rowTitle,
+                    row.isVariantRow ? styles.catalogVariantTitle : null,
+                    row.italic ? styles.catalogItalic : null,
+                  ],
+                },
+                ...(row.meta
+                  ? [
+                      {
+                        id: 'meta',
+                        text: row.meta,
+                        style: styles.rowMeta,
+                      },
+                    ]
+                  : []),
+              ]}
             />
-          ) : (
-            <View style={styles.thumbFallback}>
-              <Text style={styles.thumbFallbackText}>
-                {row.title.slice(0, 1).toUpperCase()}
-              </Text>
-            </View>
-          )}
-          <KolamCopyStack
-            containerStyle={styles.identityCopy}
-            items={[
-              {
-                id: 'name',
-                text: row.title,
-                style: [
-                  styles.rowTitle,
-                  row.isVariantRow ? styles.catalogVariantTitle : null,
-                  row.italic ? styles.catalogItalic : null,
-                ],
-              },
-              ...(row.meta
-                ? [
-                    {
-                      id: 'meta',
-                      text: row.meta,
-                      style: styles.rowMeta,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </View>
-      </Pressable>
-      <View style={[styles.cell, { width: 120 }]}>
-        <Text style={styles.numText}>{harga}</Text>
-      </View>
-      <View style={[styles.cell, { width: 110 }]}>
-        <Text style={styles.numText}>{totalOrder}</Text>
-      </View>
-      <View style={[styles.cell, { width: 140 }]}>
-        <Text style={styles.numText}>{totalValue}</Text>
-      </View>
-      <View style={[styles.cell, { width: 140 }]}>
-        <Text numberOfLines={2} style={styles.cellText}>
-          {lastPurchase}
+          </View>
+        </Pressable>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.75,
+      id: 'price',
+      label: 'Harga',
+      render: row => (
+        <Text style={styles.numText}>
+          {row.price != null
+            ? formatRupiah(row.price)
+            : row.purchase?.averagePrice
+              ? formatRupiah(row.purchase.averagePrice)
+              : '—'}
         </Text>
-      </View>
-    </KolamDataTableRowFrame>
-  );
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'totalOrder',
+      label: 'Total order',
+      render: row => (
+        <Text style={styles.numText}>
+          {row.purchase ? String(row.purchase.orderCount) : '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'totalValue',
+      label: 'Total value order',
+      render: row => (
+        <Text style={styles.numText}>
+          {row.purchase ? formatRupiah(row.purchase.totalValue) : '—'}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.9,
+      id: 'lastPurchase',
+      label: 'Terakhir purchase',
+      render: row => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {row.purchase?.lastPurchase
+            ? formatSupplierDateTime(row.purchase.lastPurchase)
+            : '—'}
+        </Text>
+      ),
+    },
+  ];
 }
 
 function KolamSupplierForm({
@@ -2283,15 +2260,6 @@ const styles = StyleSheet.create({
   actionsTrack: {
     alignItems: 'center',
   },
-  cell: {
-    justifyContent: 'center',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  primaryCell: {
-    flex: 1,
-  },
   identity: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -2408,17 +2376,8 @@ const styles = StyleSheet.create({
   catalogList: {
     gap: 6,
   },
-  catalogTable: {
-    gap: 0,
-    overflow: 'visible',
+  supplierCatalogTable: {
     width: '100%',
-  },
-  catalogTableBlock: {
-    gap: 8,
-    width: '100%',
-  },
-  catalogTableRowVariant: {
-    backgroundColor: V.colors.muted,
   },
   catalogRow: {
     alignItems: 'center',
