@@ -8,10 +8,7 @@ import {
   View,
 } from 'react-native';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
-import {
-  getCustomFieldTypeLabel,
-  type KolamCustomField,
-} from '../domain/kolam-custom-field';
+import type { KolamCustomField } from '../domain/kolam-custom-field';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
   createEmptyKolamSpeciesVariantFormRow,
@@ -88,6 +85,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamSwitch } from './kolam-switch';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -2562,23 +2560,16 @@ function SpeciesCustomFieldEditorPanel({
   );
 
   return (
-    <FieldShell label="Field Kustom">
-      <SpeciesCustomFieldRowsEditor
-        disabled={controller.saving}
-        emptyText="Belum ada definisi field kustom aktif dari modul Field Kustom."
-        fields={fields}
-        rows={controller.form.customFieldValues}
-        units={controller.units}
-        summaryText={
-          fields.length
-            ? `${fields.length} field aktif tersedia untuk spesies ini.`
-            : 'Belum ada definisi field kustom aktif dari modul Field Kustom.'
-        }
-        onChange={customFieldValues =>
-          controller.onChangeForm({ customFieldValues })
-        }
-      />
-    </FieldShell>
+    <SpeciesCustomFieldRowsEditor
+      disabled={controller.saving}
+      emptyText="Belum ada definisi field kustom aktif."
+      fields={fields}
+      rows={controller.form.customFieldValues}
+      units={controller.units}
+      onChange={customFieldValues =>
+        controller.onChangeForm({ customFieldValues })
+      }
+    />
   );
 }
 
@@ -2612,7 +2603,6 @@ function SpeciesCustomFieldRowsEditor({
   fields,
   onChange,
   rows,
-  summaryText,
   units,
 }: {
   disabled: boolean;
@@ -2620,7 +2610,6 @@ function SpeciesCustomFieldRowsEditor({
   fields: KolamCustomField[];
   onChange: (rows: KolamSpeciesCustomFieldValue[]) => void;
   rows: KolamSpeciesCustomFieldValue[];
-  summaryText: string;
   units: SpeciesCustomFieldUnitOption[];
 }) {
   const knownKeys = React.useMemo(
@@ -2669,59 +2658,41 @@ function SpeciesCustomFieldRowsEditor({
   };
 
   return (
-    <View style={styles.grocerPricingPanel}>
-      <View style={styles.variantEditorHeader}>
+    <View style={styles.customFieldFormStack}>
+      <View style={styles.customFieldSwitchRow}>
         <KolamCopyStack
           items={[
             {
-              id: 'summary',
-              text: summaryText || emptyText,
-              style: styles.fieldHint,
+              id: 'label',
+              text: 'Gunakan Field Kustom',
+              style: styles.customFieldSwitchLabel,
             },
           ]}
         />
-        <KolamButton
+        <KolamSwitch
+          accessibilityLabel="Gunakan Field Kustom"
+          active={enabled}
           disabled={disabled || fields.length === 0}
-          intent={enabled ? 'primary' : 'secondary'}
-          label={enabled ? 'Field Kustom Aktif' : 'Gunakan Field Kustom'}
           onPress={() => setUseCustomFields(!enabled)}
         />
       </View>
 
       {enabled ? (
         <>
-          <View style={styles.customFieldPickerPanel}>
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'picker-title',
-                  text: 'Pilih field yang digunakan',
-                  style: styles.variantTitle,
-                },
-                {
-                  id: 'picker-hint',
-                  text: fields.length
-                    ? 'Hanya field yang dipilih yang muncul dan dikirim ke backend.'
-                    : emptyText,
-                  style: styles.fieldHint,
-                },
-              ]}
-            />
-            <View style={styles.selectedCategoryRow}>
-              {fields.map(field => {
-                const selected = selectedKeySet.has(field.fieldKey);
-                return (
-                  <KolamButton
-                    disabled={disabled}
-                    intent={selected ? 'primary' : 'outline'}
-                    key={field.id || field.fieldKey}
-                    label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
-                    onPress={() => setFieldSelected(field, !selected)}
-                    style={styles.selectedCategoryButton}
-                  />
-                );
-              })}
-            </View>
+          <View style={styles.selectedCategoryRow}>
+            {fields.map(field => {
+              const selected = selectedKeySet.has(field.fieldKey);
+              return (
+                <KolamButton
+                  disabled={disabled}
+                  intent={selected ? 'primary' : 'outline'}
+                  key={field.id || field.fieldKey}
+                  label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
+                  onPress={() => setFieldSelected(field, !selected)}
+                  style={styles.customFieldChoiceButton}
+                />
+              );
+            })}
           </View>
 
           {selectedFields.length ? (
@@ -2740,7 +2711,7 @@ function SpeciesCustomFieldRowsEditor({
               items={[
                 {
                   id: 'empty-selected-fields',
-                  text: 'Pilih minimal satu field kustom untuk mengisi nilai.',
+                  text: fields.length ? 'Pilih field kustom.' : emptyText,
                   style: styles.fieldHint,
                 },
               ]}
@@ -2786,37 +2757,18 @@ function SpeciesCustomFieldRowsEditorRow({
 }) {
   const row = findCustomFieldValueRow(rows, field);
   const raw = getCustomFieldValueRecord(row);
-  const unitLabel = field.unitLabel || row?.unitLabel || '';
-  const fieldTypeLabel = getCustomFieldTypeLabel(field.fieldType);
 
   return (
     <View style={styles.customFieldEditorRow}>
-      <View style={styles.variantEditorHeader}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'label',
-              text: `${field.fieldLabel}${field.required ? ' *' : ''}`,
-              style: styles.variantTitle,
-            },
-            {
-              id: 'meta',
-              text: [fieldTypeLabel, unitLabel ? `Satuan: ${unitLabel}` : '']
-                .filter(Boolean)
-                .join(' - '),
-              style: styles.fieldHint,
-            },
-          ]}
-        />
-        <KolamButton
-          disabled={disabled || !row}
-          intent="secondary"
-          label="Kosongkan"
-          onPress={() =>
-            updateSpeciesCustomFieldRows(rows, onChange, field, null)
-          }
-        />
-      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'label',
+            text: `${field.fieldLabel}${field.required ? ' *' : ''}`,
+            style: styles.customFieldInputLabel,
+          },
+        ]}
+      />
       {renderSpeciesCustomFieldRowsInput(
         disabled,
         rows,
@@ -4201,11 +4153,6 @@ function SpeciesVariantFormCard({
                       })
                     }
                     rows={variant.customFieldValues}
-                    summaryText={
-                      activeCustomFields.length
-                        ? `${activeCustomFields.length} field aktif tersedia.`
-                        : 'Belum ada field kustom aktif.'
-                    }
                     units={controller.units}
                   />
                 </View>
@@ -4332,11 +4279,6 @@ function SpeciesVariantAdvancedPanel({
           fields={fields}
           rows={variant.customFieldValues}
           units={controller.units}
-          summaryText={
-            fields.length
-              ? `${fields.length} field aktif tersedia untuk varian ini.`
-              : 'Belum ada field kustom aktif untuk varian.'
-          }
           onChange={customFieldValues =>
             updateSpeciesVariantRow(controller, variant.id, {
               customFieldValues,
@@ -7390,13 +7332,24 @@ const styles = StyleSheet.create({
     maxHeight: 320,
     minWidth: 280,
   },
-  customFieldPickerPanel: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    padding: 10,
+  customFieldFormStack: {
+    gap: 14,
+  },
+  customFieldSwitchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 34,
+  },
+  customFieldSwitchLabel: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  customFieldChoiceButton: {
+    minHeight: 32,
   },
   customFieldFixedUnitBox: {
     backgroundColor: V.colors.mutedSoft,
@@ -7411,12 +7364,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   customFieldEditorRow: {
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    gap: 10,
-    padding: 10,
+    gap: 8,
+  },
+  customFieldInputLabel: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   customFieldTextArea: {
     minHeight: 88,
