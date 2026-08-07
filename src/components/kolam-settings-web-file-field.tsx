@@ -15,8 +15,10 @@ export function KolamSettingsWebFileField({
   actionLabel = 'Unggah logo',
   disabled: disabledProp = false,
   emptyLabel = 'Logo belum diatur',
+  fileCount,
   fileTypeLabel = 'Tipe file yang diterima: JPG, PNG, GIF, WEBP, SVG',
   fileLimitLabel,
+  fileMax,
   hint = 'Seret dan lepas untuk mengunggah atau',
   onLocalValueChange,
   onUpload,
@@ -29,8 +31,10 @@ export function KolamSettingsWebFileField({
   actionLabel?: string;
   disabled?: boolean;
   emptyLabel?: string;
+  fileCount?: number;
   fileTypeLabel?: string;
   fileLimitLabel?: string;
+  fileMax?: number;
   hint?: string;
   onLocalValueChange?: (value: string) => void;
   onUpload?: () => void;
@@ -42,6 +46,11 @@ export function KolamSettingsWebFileField({
   const logoUri = getLogoPreviewUri(value);
   const displayName = getUploadDisplayName(value);
   const disabled = disabledProp || (!onUpload && !onLocalValueChange);
+  const resolvedFileLimitLabel =
+    fileLimitLabel ??
+    (Number.isFinite(fileCount) && Number.isFinite(fileMax)
+      ? `(${Math.max(0, fileCount ?? 0)}/${Math.max(0, fileMax ?? 0)})`
+      : '');
   React.useEffect(() => {
     if (disabled || !onLocalValueChange) {
       return undefined;
@@ -93,8 +102,10 @@ export function KolamSettingsWebFileField({
       <View style={styles.settingsWebUploadTitleRow}>
         <KolamUploadCameraIcon />
         <Text style={styles.settingsWebUploadTitle}>{title}</Text>
-        {fileLimitLabel ? (
-          <Text style={styles.settingsWebUploadCount}>{fileLimitLabel}</Text>
+        {resolvedFileLimitLabel ? (
+          <Text style={styles.settingsWebUploadCount}>
+            {resolvedFileLimitLabel}
+          </Text>
         ) : null}
       </View>
       <View {...dropzoneProps} style={styles.settingsWebUploadDropzone}>

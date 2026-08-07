@@ -1893,6 +1893,15 @@ function SpeciesMediaEditPanel({
   onDelete: (target: SpeciesDeleteMediaTarget) => void;
 }) {
   const selectedSpecies = controller.selectedSpecies;
+  const thumbnailCount =
+    (selectedSpecies?.thumbnailUri ? 1 : 0) +
+    (controller.form.thumbnailLocalUri.trim() ? 1 : 0);
+  const photoCount =
+    (selectedSpecies?.photoUris.length ?? 0) +
+    (controller.form.photoLocalUri.trim() ? 1 : 0);
+  const videoCount =
+    (selectedSpecies?.videoUris.length ?? 0) +
+    (controller.form.videoLocalUri.trim() ? 1 : 0);
 
   return (
     <View style={styles.mediaPickerStack}>
@@ -1902,6 +1911,8 @@ function SpeciesMediaEditPanel({
           actionLabel="Pilih file"
           disabled={controller.saving}
           emptyLabel="Thumbnail belum dipilih"
+          fileCount={Math.min(thumbnailCount, 1)}
+          fileMax={1}
           onLocalValueChange={thumbnailLocalUri =>
             controller.onChangeForm({ thumbnailLocalUri })
           }
@@ -1937,6 +1948,8 @@ function SpeciesMediaEditPanel({
           actionLabel="Pilih file"
           disabled={controller.saving}
           emptyLabel="Foto belum dipilih"
+          fileCount={Math.min(photoCount, 10)}
+          fileMax={10}
           onLocalValueChange={photoLocalUri =>
             controller.onChangeForm({ photoLocalUri })
           }
@@ -1984,6 +1997,8 @@ function SpeciesMediaEditPanel({
           actionLabel="Pilih file"
           disabled={controller.saving}
           emptyLabel="Video belum dipilih"
+          fileCount={Math.min(videoCount, 1)}
+          fileMax={1}
           fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
           onLocalValueChange={videoLocalUri =>
             controller.onChangeForm({ videoLocalUri })
