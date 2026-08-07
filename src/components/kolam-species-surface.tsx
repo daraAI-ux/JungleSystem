@@ -1165,149 +1165,151 @@ function KolamSpeciesForm({
               description="Masukkan informasi dasar tentang spesies."
               title="Informasi Dasar"
             >
-              <View style={styles.twoColumnGrid}>
-                <FieldShell label="Nama Ilmiah" required>
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={scientificName =>
-                      controller.onChangeForm({ scientificName })
-                    }
-                    placeholder="Contoh: Dendrobates tinctorius"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.scientificName}
-                  />
-                </FieldShell>
-                <FieldShell label="Judul Katalog">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={displayName =>
-                      controller.onChangeForm({ displayName })
-                    }
-                    placeholder="Judul yang tampil di katalog"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.displayName}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.twoColumnGrid}>
-                <FieldShell label="Nama Umum">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={commonName =>
-                      controller.onChangeForm({ commonName })
-                    }
-                    placeholder="Nama umum"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.commonName}
-                  />
-                </FieldShell>
-                <FieldShell label="Nama Lokal">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={localName =>
-                      controller.onChangeForm({ localName })
-                    }
-                    placeholder="Nama lokal"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.localName}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.twoColumnGrid}>
-                <FieldShell label="Taksonomi Genus" required>
-                  <KolamDropdownSelect
-                    accessibilityLabel="Pilih taksonomi genus"
-                    label="Taksonomi Genus"
-                    menuStyle={styles.longDropdownMenu}
-                    onChange={taxonomyId =>
-                      controller.onChangeForm({ taxonomyId })
-                    }
-                    options={[
-                      { label: 'Pilih genus', value: '' },
-                      ...controller.taxonomies.map(taxonomy => ({
-                        label: taxonomy.name,
-                        value: taxonomy.id,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari genus..."
-                    showLabelInTrigger={false}
-                    value={form.taxonomyId}
-                  />
-                </FieldShell>
-                <FieldShell label="Status">
-                  <KolamDropdownSelect<KolamSpeciesStatus>
-                    label="Status"
-                    onChange={status => controller.onChangeForm({ status })}
-                    options={[
-                      { label: 'Aktif', value: 'active' },
-                      { label: 'Nonaktif', value: 'inactive' },
-                      { label: 'Draft', value: 'draft' },
-                    ]}
-                    showLabelInTrigger={false}
-                    value={form.status}
-                  />
-                </FieldShell>
-              </View>
-              <FieldShell label="Kategori" required>
-                <View style={styles.categoryPickerStack}>
-                  <KolamDropdownSelect
-                    accessibilityLabel="Tambah kategori spesies"
-                    label="Tambah Kategori"
-                    menuStyle={styles.longDropdownMenu}
-                    onChange={categoryId => {
-                      if (
-                        !categoryId ||
-                        form.categoryIds.includes(categoryId)
-                      ) {
-                        return;
+              <View style={styles.speciesBasicInfoCard}>
+                <View style={styles.twoColumnGrid}>
+                  <FieldShell label="Nama Ilmiah" required>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={scientificName =>
+                        controller.onChangeForm({ scientificName })
                       }
-
-                      controller.onChangeForm({
-                        categoryIds: [...form.categoryIds, categoryId],
-                      });
-                    }}
-                    options={[
-                      { label: 'Tambah kategori', value: '' },
-                      ...categoryOptions.map(category => ({
-                        label: `${'  '.repeat(category.level)}${category.name}`,
-                        value: category.id,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari kategori..."
-                    showLabelInTrigger={false}
-                    value=""
-                  />
-                  <View style={styles.selectedCategoryRow}>
-                    {selectedCategories.length ? (
-                      selectedCategories.map(category => (
-                        <KolamCategoryLabel
-                          key={category.id}
-                          label={`${category.name} x`}
-                          onPress={() =>
-                            controller.onChangeForm({
-                              categoryIds: form.categoryIds.filter(
-                                categoryId => categoryId !== category.id,
-                              ),
-                            })
-                          }
-                        />
-                      ))
-                    ) : (
-                      <KolamCopyStack
-                        items={[
-                          {
-                            id: 'empty-category',
-                            text: 'Belum ada kategori dipilih.',
-                            style: styles.fieldHint,
-                          },
-                        ]}
-                      />
-                    )}
-                  </View>
+                      placeholder="Contoh: Dendrobates tinctorius"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.scientificName}
+                    />
+                  </FieldShell>
+                  <FieldShell label="Judul Katalog">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={displayName =>
+                        controller.onChangeForm({ displayName })
+                      }
+                      placeholder="Judul yang tampil di katalog"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.displayName}
+                    />
+                  </FieldShell>
                 </View>
-              </FieldShell>
+                <View style={styles.twoColumnGrid}>
+                  <FieldShell label="Nama Umum">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={commonName =>
+                        controller.onChangeForm({ commonName })
+                      }
+                      placeholder="Nama umum"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.commonName}
+                    />
+                  </FieldShell>
+                  <FieldShell label="Nama Lokal">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={localName =>
+                        controller.onChangeForm({ localName })
+                      }
+                      placeholder="Nama lokal"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.localName}
+                    />
+                  </FieldShell>
+                </View>
+                <View style={styles.twoColumnGrid}>
+                  <FieldShell label="Taksonomi Genus" required>
+                    <KolamDropdownSelect
+                      accessibilityLabel="Pilih taksonomi genus"
+                      label="Taksonomi Genus"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={taxonomyId =>
+                        controller.onChangeForm({ taxonomyId })
+                      }
+                      options={[
+                        { label: 'Pilih genus', value: '' },
+                        ...controller.taxonomies.map(taxonomy => ({
+                          label: taxonomy.name,
+                          value: taxonomy.id,
+                        })),
+                      ]}
+                      searchable
+                      searchPlaceholder="Cari genus..."
+                      showLabelInTrigger={false}
+                      value={form.taxonomyId}
+                    />
+                  </FieldShell>
+                  <FieldShell label="Status">
+                    <KolamDropdownSelect<KolamSpeciesStatus>
+                      label="Status"
+                      onChange={status => controller.onChangeForm({ status })}
+                      options={[
+                        { label: 'Aktif', value: 'active' },
+                        { label: 'Nonaktif', value: 'inactive' },
+                        { label: 'Draft', value: 'draft' },
+                      ]}
+                      showLabelInTrigger={false}
+                      value={form.status}
+                    />
+                  </FieldShell>
+                </View>
+                <FieldShell label="Kategori" required>
+                  <View style={styles.categoryPickerStack}>
+                    <KolamDropdownSelect
+                      accessibilityLabel="Tambah kategori spesies"
+                      label="Tambah Kategori"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={categoryId => {
+                        if (
+                          !categoryId ||
+                          form.categoryIds.includes(categoryId)
+                        ) {
+                          return;
+                        }
+
+                        controller.onChangeForm({
+                          categoryIds: [...form.categoryIds, categoryId],
+                        });
+                      }}
+                      options={[
+                        { label: 'Tambah kategori', value: '' },
+                        ...categoryOptions.map(category => ({
+                          label: `${'  '.repeat(category.level)}${category.name}`,
+                          value: category.id,
+                        })),
+                      ]}
+                      searchable
+                      searchPlaceholder="Cari kategori..."
+                      showLabelInTrigger={false}
+                      value=""
+                    />
+                    <View style={styles.selectedCategoryRow}>
+                      {selectedCategories.length ? (
+                        selectedCategories.map(category => (
+                          <KolamCategoryLabel
+                            key={category.id}
+                            label={`${category.name} x`}
+                            onPress={() =>
+                              controller.onChangeForm({
+                                categoryIds: form.categoryIds.filter(
+                                  categoryId => categoryId !== category.id,
+                                ),
+                              })
+                            }
+                          />
+                        ))
+                      ) : (
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'empty-category',
+                              text: 'Belum ada kategori dipilih.',
+                              style: styles.fieldHint,
+                            },
+                          ]}
+                        />
+                      )}
+                    </View>
+                  </View>
+                </FieldShell>
+              </View>
             </SpeciesEditSection>
 
             <SpeciesEditSection
@@ -6724,6 +6726,14 @@ const styles = StyleSheet.create({
   speciesEditSectionBody: {
     gap: 12,
     padding: 14,
+  },
+  speciesBasicInfoCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
   },
   summaryGrid: {
     flexDirection: 'row',
