@@ -295,6 +295,8 @@ export function KolamOverflowMenuButton({
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
   const rowLayer = useKolamListTableRowLayer();
+  const canUseTableOverlay = floating && Boolean(rowLayer?.openFloatingMenu);
+  const overlayMenuWidth = 220;
 
   React.useEffect(() => {
     return subscribeOpenMenu(activeId => {
@@ -305,6 +307,7 @@ export function KolamOverflowMenuButton({
       setOpen(false);
       onOpenChange?.(false);
       rowLayer?.setMenuOpen(false);
+      rowLayer?.closeFloatingMenu?.(openMenuIdRef.current);
     });
   }, [onOpenChange, rowLayer]);
 
@@ -316,6 +319,9 @@ export function KolamOverflowMenuButton({
     }
     setOpen(next);
     rowLayer?.setMenuOpen(next);
+    if (!next) {
+      rowLayer?.closeFloatingMenu?.(openMenuIdRef.current);
+    }
     onOpenChange?.(next);
   };
   const measureAndOpen = () => {
@@ -332,8 +338,22 @@ export function KolamOverflowMenuButton({
       const shouldOpenUp =
         availableBelow < estimatedMenuHeight + 12 &&
         availableAbove > availableBelow;
+      const nextPlacement = shouldOpenUp ? 'top' : 'bottom';
 
-      setPlacement(shouldOpenUp ? 'top' : 'bottom');
+      setPlacement(nextPlacement);
+      if (canUseTableOverlay) {
+        rowLayer?.openFloatingMenu?.({
+          anchor: { height, width: _width, x: _x, y },
+          content: renderOverflowMenu([
+            styles.overflowMenu,
+            styles.overflowMenuTableOverlay,
+          ]),
+          estimatedHeight: estimatedMenuHeight,
+          id: openMenuIdRef.current,
+          placement: nextPlacement,
+          width: overlayMenuWidth,
+        });
+      }
       setMenuOpen(true);
     });
   };
@@ -346,19 +366,9 @@ export function KolamOverflowMenuButton({
     requestAnimationFrame(measureAndOpen);
   };
 
-  const menu = (
+  const renderOverflowMenu = (menuStyle: StyleProp<ViewStyle>) => (
     <View
-      style={[
-        styles.overflowMenu,
-        floating ? styles.overflowMenuFloating : null,
-        floating
-          ? placement === 'top'
-            ? styles.overflowMenuFloatingUp
-            : styles.overflowMenuFloatingDown
-          : placement === 'top'
-            ? styles.overflowMenuUp
-            : styles.overflowMenuDown,
-      ]}
+      style={menuStyle}
     >
       {actions.map(action => (
         <KolamButton
@@ -380,6 +390,17 @@ export function KolamOverflowMenuButton({
       ))}
     </View>
   );
+  const menu = renderOverflowMenu([
+    styles.overflowMenu,
+    floating ? styles.overflowMenuFloating : null,
+    floating
+      ? placement === 'top'
+        ? styles.overflowMenuFloatingUp
+        : styles.overflowMenuFloatingDown
+      : placement === 'top'
+        ? styles.overflowMenuUp
+        : styles.overflowMenuDown,
+  ]);
 
   return (
     <View ref={rootRef} style={styles.overflowRoot}>
@@ -391,7 +412,7 @@ export function KolamOverflowMenuButton({
         style={styles.overflowButton}
         textStyle={styles.overflowText}
       />
-      {open ? menu : null}
+      {open && !canUseTableOverlay ? menu : null}
     </View>
   );
 }
@@ -574,6 +595,14 @@ const styles = StyleSheet.create({
   overflowMenuFloatingUp: {
     bottom: 34,
     right: 0,
+  },
+  overflowMenuTableOverlay: {
+    bottom: undefined,
+    minWidth: 220,
+    position: 'relative',
+    right: undefined,
+    top: undefined,
+    width: '100%',
   },
   overflowMenuDown: {
     top: 34,
