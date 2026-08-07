@@ -12,6 +12,7 @@ export interface KolamNavigationItem {
 }
 
 export type KolamNavigationModuleIcon =
+  | 'archive'
   | 'brand'
   | 'category'
   | 'fieldcustom'
@@ -783,7 +784,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Daftar Produk',
         moduleIcon: 'product',
       }),
-      sidebarItem('/products/archive', { group: 'Produk', label: 'Arsip' }),
+      sidebarItem('/products/archive', {
+        group: 'Produk',
+        label: 'Arsip',
+        moduleIcon: 'archive',
+      }),
       sidebarItem('/raw-materials', { group: 'Produk', label: 'Bahan Baku' }),
       sidebarItem('/packing-materials', {
         group: 'Produk',
