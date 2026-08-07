@@ -1895,128 +1895,139 @@ function SpeciesMediaEditPanel({
 
   return (
     <View style={styles.mediaPickerStack}>
-      <View style={styles.mediaUploadGrid}>
-        <View style={styles.mediaUploadCell}>
-          <KolamSettingsWebFileField
-            accessibilityLabel="Thumbnail spesies"
-            actionLabel="Pilih file"
-            disabled={controller.saving}
-            emptyLabel="Thumbnail belum dipilih"
-            onLocalValueChange={thumbnailLocalUri =>
-              controller.onChangeForm({ thumbnailLocalUri })
-            }
-            onUpload={() => {
-              void controller.onPickThumbnail();
-            }}
-            scope="species-thumbnail"
-            title="Thumbnail"
-            value={controller.form.thumbnailLocalUri}
-          />
-        </View>
-        <View style={styles.mediaUploadCell}>
-          <KolamSettingsWebFileField
-            accessibilityLabel="Foto spesies"
-            actionLabel="Pilih file"
-            disabled={controller.saving}
-            emptyLabel="Foto belum dipilih"
-            onLocalValueChange={photoLocalUri =>
-              controller.onChangeForm({ photoLocalUri })
-            }
-            onUpload={() => {
-              void controller.onPickPhoto();
-            }}
-            scope="species-photo"
-            title="Foto"
-            value={controller.form.photoLocalUri}
-          />
-        </View>
-      </View>
-      <KolamSettingsWebFileField
-        accessibilityLabel="Video spesies"
-        actionLabel="Pilih file"
-        disabled={controller.saving}
-        emptyLabel="Video belum dipilih"
-        fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
-        onLocalValueChange={videoLocalUri =>
-          controller.onChangeForm({ videoLocalUri })
-        }
-        onUpload={() => {
-          void controller.onPickVideo();
-        }}
-        previewKind="file"
-        scope="species-video"
-        title="Video"
-        value={controller.form.videoLocalUri}
-      />
-      <View style={styles.mediaAudioUploadRow}>
-        <KolamButton
+      <View style={styles.mediaUploadSection}>
+        <KolamSettingsWebFileField
+          accessibilityLabel="Thumbnail spesies"
+          actionLabel="Pilih file"
           disabled={controller.saving}
-          label="Upload Audio"
-          onPress={() => {
-            void controller.onPickVoice();
+          emptyLabel="Thumbnail belum dipilih"
+          onLocalValueChange={thumbnailLocalUri =>
+            controller.onChangeForm({ thumbnailLocalUri })
+          }
+          onUpload={() => {
+            void controller.onPickThumbnail();
           }}
+          scope="species-thumbnail"
+          title="Thumbnail"
+          value={controller.form.thumbnailLocalUri}
         />
-        {controller.form.voiceLocalUri ? (
-          <KolamCopyStack
-            items={[
-              {
-                id: 'voice-local-uri',
-                text: getUploadFileDisplayName(controller.form.voiceLocalUri),
-                style: styles.fieldHint,
-              },
-            ]}
+        {selectedSpecies?.thumbnailUri ? (
+          <SpeciesImageMediaCard
+            accessibilityLabel="Thumbnail spesies"
+            deleteLabel="Hapus Thumbnail"
+            disabled={controller.saving}
+            label="Thumbnail"
+            onDelete={() =>
+              onDelete({
+                type: 'thumbnail',
+                label: 'thumbnail spesies',
+              })
+            }
+            revision={
+              selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
+            }
+            sourceUri={selectedSpecies.thumbnailUri}
           />
         ) : null}
       </View>
-      {selectedSpecies?.thumbnailUri || selectedSpecies?.photoUris.length ? (
-        <View style={styles.existingMediaGrid}>
-          {selectedSpecies.thumbnailUri ? (
-            <SpeciesImageMediaCard
-              accessibilityLabel="Thumbnail spesies"
-              deleteLabel="Hapus Thumbnail"
-              disabled={controller.saving}
-              label="Thumbnail"
-              onDelete={() =>
-                onDelete({
-                  type: 'thumbnail',
-                  label: 'thumbnail spesies',
-                })
-              }
-              revision={
-                selectedSpecies.updatedAt ?? selectedSpecies.thumbnailUri
-              }
-              sourceUri={selectedSpecies.thumbnailUri}
+      <View style={styles.mediaUploadSection}>
+        <KolamSettingsWebFileField
+          accessibilityLabel="Foto spesies"
+          actionLabel="Pilih file"
+          disabled={controller.saving}
+          emptyLabel="Foto belum dipilih"
+          onLocalValueChange={photoLocalUri =>
+            controller.onChangeForm({ photoLocalUri })
+          }
+          onUpload={() => {
+            void controller.onPickPhoto();
+          }}
+          scope="species-photo"
+          title="Foto"
+          value={controller.form.photoLocalUri}
+        />
+        {selectedSpecies?.photoUris.length ? (
+          <View style={styles.existingMediaGrid}>
+            {selectedSpecies.photoUris.map((photoUri, index) => (
+              <SpeciesImageMediaCard
+                accessibilityLabel={`Foto spesies ${index + 1}`}
+                disabled={controller.saving}
+                key={`${photoUri}-${index}`}
+                label={`Foto ${index + 1}`}
+                onDelete={() =>
+                  onDelete({
+                    type: 'photo',
+                    index,
+                    label: `foto ${index + 1}`,
+                  })
+                }
+                onMoveDown={() => {
+                  void controller.onReorderPhoto(index, 'down');
+                }}
+                onMoveUp={() => {
+                  void controller.onReorderPhoto(index, 'up');
+                }}
+                revision={`${selectedSpecies.updatedAt ?? ''}-${index}`}
+                showMoveDown={index < selectedSpecies.photoUris.length - 1}
+                showMoveUp={index > 0}
+                sourceUri={photoUri}
+                deleteLabel={`Hapus Foto ${index + 1}`}
+              />
+            ))}
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.mediaUploadSection}>
+        <KolamSettingsWebFileField
+          accessibilityLabel="Video spesies"
+          actionLabel="Pilih file"
+          disabled={controller.saving}
+          emptyLabel="Video belum dipilih"
+          fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
+          onLocalValueChange={videoLocalUri =>
+            controller.onChangeForm({ videoLocalUri })
+          }
+          onUpload={() => {
+            void controller.onPickVideo();
+          }}
+          previewKind="file"
+          scope="species-video"
+          title="Video"
+          value={controller.form.videoLocalUri}
+        />
+        <SpeciesVideoVoiceMediaPanel
+          controller={controller}
+          kind="video"
+          onDelete={onDelete}
+        />
+      </View>
+      <View style={styles.mediaUploadSection}>
+        <View style={styles.mediaAudioUploadRow}>
+          <KolamButton
+            disabled={controller.saving}
+            label="Upload Audio"
+            onPress={() => {
+              void controller.onPickVoice();
+            }}
+          />
+          {controller.form.voiceLocalUri ? (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'voice-local-uri',
+                  text: getUploadFileDisplayName(controller.form.voiceLocalUri),
+                  style: styles.fieldHint,
+                },
+              ]}
             />
           ) : null}
-          {selectedSpecies.photoUris.map((photoUri, index) => (
-            <SpeciesImageMediaCard
-              accessibilityLabel={`Foto spesies ${index + 1}`}
-              disabled={controller.saving}
-              key={`${photoUri}-${index}`}
-              label={`Foto ${index + 1}`}
-              onDelete={() =>
-                onDelete({
-                  type: 'photo',
-                  index,
-                  label: `foto ${index + 1}`,
-                })
-              }
-              onMoveDown={() => {
-                void controller.onReorderPhoto(index, 'down');
-              }}
-              onMoveUp={() => {
-                void controller.onReorderPhoto(index, 'up');
-              }}
-              revision={`${selectedSpecies.updatedAt ?? ''}-${index}`}
-              showMoveDown={index < selectedSpecies.photoUris.length - 1}
-              showMoveUp={index > 0}
-              sourceUri={photoUri}
-              deleteLabel={`Hapus Foto ${index + 1}`}
-            />
-          ))}
         </View>
-      ) : null}
-      <SpeciesVideoVoiceMediaPanel controller={controller} onDelete={onDelete} />
+        <SpeciesVideoVoiceMediaPanel
+          controller={controller}
+          kind="voice"
+          onDelete={onDelete}
+        />
+      </View>
     </View>
   );
 }
@@ -5328,9 +5339,11 @@ function removeSpeciesVariantRow(
 }
 function SpeciesVideoVoiceMediaPanel({
   controller,
+  kind = 'all',
   onDelete,
 }: {
   controller: KolamSpeciesController;
+  kind?: 'all' | 'video' | 'voice';
   onDelete: (target: SpeciesDeleteMediaTarget) => void;
 }) {
   const selectedItem = controller.selectedSpecies;
@@ -5342,26 +5355,28 @@ function SpeciesVideoVoiceMediaPanel({
 
   return (
     <View style={styles.mediaLinkStack}>
-      {item.videoUris.map((videoUri, index) => (
-        <SpeciesLinkMediaRow
-          disabled={controller.saving}
-          key={`${videoUri}-${index}`}
-          label={`Video ${index + 1}`}
-          onDelete={() =>
-            onDelete({ type: 'video', index, label: `video ${index + 1}` })
-          }
-          onMoveDown={() => {
-            void controller.onReorderVideo(index, 'down');
-          }}
-          onMoveUp={() => {
-            void controller.onReorderVideo(index, 'up');
-          }}
-          showMoveDown={index < item.videoUris.length - 1}
-          showMoveUp={index > 0}
-          uri={videoUri}
-        />
-      ))}
-      {item.voiceUri ? (
+      {kind !== 'voice'
+        ? item.videoUris.map((videoUri, index) => (
+            <SpeciesLinkMediaRow
+              disabled={controller.saving}
+              key={`${videoUri}-${index}`}
+              label={`Video ${index + 1}`}
+              onDelete={() =>
+                onDelete({ type: 'video', index, label: `video ${index + 1}` })
+              }
+              onMoveDown={() => {
+                void controller.onReorderVideo(index, 'down');
+              }}
+              onMoveUp={() => {
+                void controller.onReorderVideo(index, 'up');
+              }}
+              showMoveDown={index < item.videoUris.length - 1}
+              showMoveUp={index > 0}
+              uri={videoUri}
+            />
+          ))
+        : null}
+      {kind !== 'video' && item.voiceUri ? (
         <SpeciesLinkMediaRow
           disabled={controller.saving}
           label="Audio Spesies"
@@ -8152,17 +8167,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   mediaPickerStack: {
-    gap: 10,
+    gap: 14,
   },
-  mediaUploadGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  mediaUploadCell: {
-    flexBasis: 360,
-    flexGrow: 1,
-    minWidth: 240,
+  mediaUploadSection: {
+    gap: 8,
   },
   mediaAudioUploadRow: {
     alignItems: 'center',
