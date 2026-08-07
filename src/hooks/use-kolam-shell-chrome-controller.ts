@@ -52,6 +52,8 @@ export function useKolamShellChromeController({
   onMoveMenuSection,
   onModuleRouteSelect,
   onNotificationPress,
+  onRefreshDataset,
+  refreshLoading,
   notificationUnreadCount,
   onQuickSearch,
   onRouteContext,
@@ -104,6 +106,8 @@ export function useKolamShellChromeController({
   onMoveMenuSection: (sectionId: string, direction: 'up' | 'down') => void;
   onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
   onNotificationPress: () => void;
+  onRefreshDataset?: () => void;
+  refreshLoading?: boolean;
   notificationUnreadCount?: number;
   onQuickSearch: () => void;
   onRouteContext?: (route: string) => void;
@@ -135,8 +139,10 @@ export function useKolamShellChromeController({
       dataset,
       displayName,
       onMessage,
+      onRefresh: onRefreshDataset,
       onRouteContext,
       onSelectModule,
+      refreshLoading,
       timezone,
     });
   const { attentionCount, topNavigation } = useKolamTopNavigationController({

@@ -275,6 +275,10 @@ export function KolamAppStateProvider({
       },
     });
 
+  const handleHeaderRefresh = React.useCallback(() => {
+    void refreshDataset(true, accessScope, kolamDashboardRange);
+  }, [accessScope, kolamDashboardRange, refreshDataset]);
+
   React.useEffect(() => {
     const cacheOwnerId = getCacheOwnerId(authUser);
 
@@ -479,6 +483,8 @@ export function KolamAppStateProvider({
       onMoveMenuSection: handleMoveKolamMenuSection,
       onModuleRouteSelect: handleModuleRouteSelect,
       onNotificationPress: toggleAttentionPanel,
+      onRefreshDataset: handleHeaderRefresh,
+      refreshLoading: isLoadingDataset,
       notificationUnreadCount,
       onQuickSearch: openQuickSearch,
       onRouteContext: handleDashboardRouteContext,

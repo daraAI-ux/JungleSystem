@@ -9,6 +9,7 @@ import { KolamDashboardHeaderActions } from './kolam-dashboard-header-actions';
 import { KolamDashboardHeaderCopy } from './kolam-dashboard-header-copy';
 import { KolamDashboardSyncIndicatorBadge } from './kolam-dashboard-sync-indicator-badge';
 import { KolamHeaderFrame } from './kolam-header-frame';
+import {KolamRefreshButton} from './kolam-refresh-button';
 import { dashboardHeaderStyles as styles } from './kolam-dashboard-header-styles';
 
 export function KolamDashboardHeader({
@@ -16,6 +17,8 @@ export function KolamDashboardHeader({
   eyebrow,
   moduleIcon,
   onSelectModule,
+  onRefresh,
+  refreshLoading = false,
   subtitle,
   syncIndicator,
   title,
@@ -24,6 +27,8 @@ export function KolamDashboardHeader({
   eyebrow?: string;
   moduleIcon?: KolamNavigationModuleIcon;
   onSelectModule: (action: DashboardHeaderAction) => void;
+  onRefresh?: () => void;
+  refreshLoading?: boolean;
   subtitle: string;
   syncIndicator: DashboardHeaderSyncIndicator;
   title: string;
@@ -42,6 +47,15 @@ export function KolamDashboardHeader({
           actions={actions}
           onSelectModule={onSelectModule}
         />
+        {onRefresh ? (
+          <KolamRefreshButton
+            accessibilityLabel="Refresh"
+            disabled={refreshLoading}
+            loading={refreshLoading}
+            loadingLabel="Refreshing..."
+            onPress={onRefresh}
+          />
+        ) : null}
       </View>
     </KolamHeaderFrame>
   );

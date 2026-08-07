@@ -908,7 +908,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
 function sidebarItem(
   route: string,
   overrides: Partial<
-    Pick<KolamNavigationItem, 'description' | 'group' | 'label'>
+    Pick<KolamNavigationItem, 'description' | 'group' | 'label' | 'moduleIcon'>
   > = {},
 ): KolamNavigationItem {
   const base = getKolamNavigationItemByRoute(route) ?? {

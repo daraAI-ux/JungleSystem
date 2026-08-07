@@ -28,8 +28,10 @@ export function useKolamDashboardHeaderController({
   displayName,
   dataset,
   onMessage,
+  onRefresh,
   onRouteContext,
   onSelectModule,
+  refreshLoading,
   timezone,
 }: {
   accessScope: Pick<AccessScope, 'kolam' | 'pos'>;
@@ -42,8 +44,10 @@ export function useKolamDashboardHeaderController({
   displayName: string;
   dataset: UnifiedDataset;
   onMessage: (message: string) => void;
+  onRefresh?: () => void;
   onRouteContext?: (route: string) => void;
   onSelectModule: (module: AppModule) => void;
+  refreshLoading?: boolean;
   timezone?: string;
 }) {
   const displayInitials = useMemo(
@@ -76,6 +80,8 @@ export function useKolamDashboardHeaderController({
           ? getDashboardTitle(displayName, undefined, timezone)
           : activeTitle),
       moduleIcon: routeContext?.moduleIcon,
+      onRefresh,
+      refreshLoading,
       subtitle: routeContext?.subtitle ?? getDashboardSubtitle(activeTitle),
       syncIndicator: getDashboardHeaderSyncIndicator({
         activeModule,
@@ -98,8 +104,10 @@ export function useKolamDashboardHeaderController({
     dataset,
     displayName,
     onMessage,
+    onRefresh,
     onRouteContext,
     onSelectModule,
+    refreshLoading,
     timezone,
   ]);
 
