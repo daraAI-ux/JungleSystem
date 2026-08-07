@@ -625,40 +625,16 @@ function KolamBrandDetail({
                 },
                 { id: 'services', label: 'Layanan', value: brand.serviceCount },
                 { id: 'species', label: 'Species', value: brand.speciesCount },
-              ]}
-              sections={
-                brand.links.length
+                ...(brand.links.length
                   ? [
                       {
                         id: 'links',
-                        title: 'Link',
-                        content: (
-                          <View style={styles.brandSummaryLinkStack}>
-                            {brand.links.map((link, index) => (
-                              <KolamInteractionFrame
-                                accessibilityLabel={`Buka ${link}`}
-                                key={`${link}-${index}`}
-                                onPress={() => {
-                                  void Linking.openURL(
-                                    normalizeExternalLink(link),
-                                  );
-                                }}
-                                style={styles.brandSummaryLinkButton}
-                              >
-                                <Text
-                                  numberOfLines={1}
-                                  style={styles.brandSummaryLinkText}
-                                >
-                                  {link}
-                                </Text>
-                              </KolamInteractionFrame>
-                            ))}
-                          </View>
-                        ),
+                        label: 'Link',
+                        value: <BrandSummaryLinks links={brand.links} />,
                       },
                     ]
-                  : undefined
-              }
+                  : []),
+              ]}
               style={styles.brandSummaryMainCard}
               title="Ringkasan merek"
             />
@@ -714,6 +690,27 @@ function KolamBrandDetail({
       ) : (
         <KolamBrandForm controller={controller} />
       )}
+    </View>
+  );
+}
+
+function BrandSummaryLinks({ links }: { links: string[] }) {
+  return (
+    <View style={styles.brandSummaryFieldStack}>
+      {links.map((link, index) => (
+        <KolamInteractionFrame
+          accessibilityLabel={`Buka ${link}`}
+          key={`${link}-${index}`}
+          onPress={() => {
+            void Linking.openURL(normalizeExternalLink(link));
+          }}
+          style={styles.brandSummaryLinkValue}
+        >
+          <Text numberOfLines={1} style={styles.brandSummaryLinkText}>
+            {link}
+          </Text>
+        </KolamInteractionFrame>
+      ))}
     </View>
   );
 }
@@ -1126,17 +1123,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 19,
   },
-  brandSummaryLinkStack: {
+  brandSummaryFieldStack: {
     gap: 8,
   },
-  brandSummaryLinkButton: {
+  brandSummaryLinkValue: {
     alignItems: 'flex-start',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 38,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    minHeight: 20,
+    paddingVertical: 1,
   },
   brandSummaryLinkText: {
     color: V.colors.primary,
