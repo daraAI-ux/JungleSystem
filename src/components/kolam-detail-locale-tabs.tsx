@@ -1,8 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import type { KolamCountryFlagOption } from '../domain/kolam-country-flags';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamLabelFieldDetailSectionItem } from './kolam-label-field-detail-overview';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
+import { KolamFlagIcon } from './kolam-flag-icon';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamStatusBadge } from './kolam-status-badge';
 
@@ -47,6 +49,7 @@ export function KolamDetailLocaleTabs({
   );
   const activeItem = items[activeIndex] ?? items[0];
   const localeFields = activeItem.fields?.filter(field => field.label) ?? [];
+  const activeLocaleFlag = getLocaleFlagOption(activeItem.badge);
 
   return (
     <View style={styles.stack}>
@@ -74,7 +77,9 @@ export function KolamDetailLocaleTabs({
       <View style={styles.panel}>
         <View style={styles.panelHeader}>
           <Text style={styles.title}>{activeItem.title}</Text>
-          {activeItem.badge ? (
+          {activeLocaleFlag ? (
+            <KolamFlagIcon option={activeLocaleFlag} size="md" />
+          ) : activeItem.badge ? (
             <KolamStatusBadge intent="success" label={activeItem.badge} />
           ) : null}
         </View>
@@ -181,6 +186,52 @@ function getLocaleItemKey(
   index: number,
 ) {
   return item ? `${item.badge ?? item.title}-${index}` : '';
+}
+
+function getLocaleFlagOption(
+  value: string | undefined,
+): KolamCountryFlagOption | null {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  if (
+    normalized === 'id' ||
+    normalized === 'id-id' ||
+    normalized === 'indonesia' ||
+    normalized === 'indonesian' ||
+    normalized === 'bahasa indonesia'
+  ) {
+    return createLocaleFlagOption('ID', 'Indonesia');
+  }
+
+  if (
+    normalized === 'en' ||
+    normalized === 'en-us' ||
+    normalized === 'english' ||
+    normalized === 'inggris'
+  ) {
+    return createLocaleFlagOption('US', 'English');
+  }
+
+  if (normalized === 'en-gb' || normalized === 'gb' || normalized === 'uk') {
+    return createLocaleFlagOption('GB', 'English');
+  }
+
+  return null;
+}
+
+function createLocaleFlagOption(
+  code: string,
+  country: string,
+): KolamCountryFlagOption {
+  return {
+    code,
+    country,
+    flag: code,
+    imageUrl: null,
+  };
 }
 
 const styles = StyleSheet.create({
