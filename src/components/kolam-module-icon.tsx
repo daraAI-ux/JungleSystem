@@ -2,6 +2,7 @@ import React from 'react';
 import {Image, StyleSheet, View} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
+import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
@@ -14,6 +15,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   category: 'Icon Kategori',
   fieldcustom: 'Icon Field Kustom',
   iucn: 'Icon Status IUCN',
+  product: 'Icon Produk',
   species: 'Icon Spesies',
   tag: 'Icon Tag',
   taxonomy: 'Icon Taksonomi',
@@ -31,6 +33,7 @@ const FIELDCUSTOM_ICON_PATHS = [
   'M 535.796875 319.183594 C 535.796875 329.691406 531.414062 338.886719 524.847656 345.453125 C 520.46875 349.832031 514.335938 353.335938 508.207031 355.085938 L 508.207031 558.242188 C 508.207031 563.496094 503.828125 567.875 498.570312 567.875 C 493.316406 567.875 488.9375 563.496094 488.9375 558.242188 L 488.9375 355.085938 C 482.367188 353.335938 476.675781 349.832031 472.296875 345.453125 C 465.726562 338.886719 461.347656 329.253906 461.347656 319.183594 C 461.347656 309.113281 465.726562 299.480469 472.296875 292.914062 C 476.675781 288.535156 482.804688 285.03125 488.9375 283.28125 L 488.9375 252.195312 C 488.9375 246.941406 493.316406 242.5625 498.570312 242.5625 C 503.828125 242.5625 508.207031 246.941406 508.207031 252.195312 L 508.207031 283.28125 C 514.773438 285.03125 520.46875 288.535156 524.847656 292.914062 C 531.414062 299.480469 535.796875 309.113281 535.796875 319.183594 Z M 535.796875 319.183594',
 ] as const;
 const BRAND_ICON_PATHS = getSvgPathData(KOLAM_BRAND_MODULE_ICON_SVG);
+const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
 const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
@@ -85,6 +88,12 @@ export function KolamModuleIcon({
           source={IUCN_MODULE_ICON_SOURCE}
           style={styles.imageIcon}
         />
+      ) : kind === 'product' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {PRODUCT_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
       ) : kind === 'species' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {SPECIES_ICON_PATHS.map(path => (
