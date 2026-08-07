@@ -93,24 +93,11 @@ function KolamUnitShell({
     );
   }
 
-  const contextLabel =
-    controller.mode === 'new'
-      ? 'Satuan baru'
-      : controller.mode === 'edit'
-      ? `Edit · ${
-          controller.selectedUnit?.name || controller.form.name || 'Satuan'
-        }`
-      : controller.selectedUnit?.name || 'Detail satuan';
-
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
               onPress={() => {
@@ -848,16 +835,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: 14,
     minHeight: 0,
-  },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
