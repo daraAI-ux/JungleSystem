@@ -19,7 +19,6 @@ import {
 } from '../hooks/use-kolam-brand-controller';
 import { KolamBrandLogo } from './kolam-brand-logo';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -100,42 +99,44 @@ function KolamModuleShell({
     );
   }
 
-  const contextLabel =
-    controller.mode === 'new'
-      ? 'Merek baru'
-      : controller.mode === 'edit'
-      ? `Edit · ${
-          controller.selectedBrand?.name || controller.form.name || 'Merek'
-        }`
-      : controller.selectedBrand?.name || 'Detail merek';
-
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
-            <KolamButton
-              label="Daftar"
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.('/label-dan-field/merek');
-              }}
-            />
             {controller.mode === 'detail' ? (
-              <KolamButton
-                intent="primary"
-                label="Edit"
-                onPress={controller.onEdit}
-              />
-            ) : null}
+              <>
+                <KolamButton
+                  label="Daftar"
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.('/label-dan-field/merek');
+                  }}
+                />
+                <KolamButton
+                  intent="primary"
+                  label="Edit"
+                  onPress={controller.onEdit}
+                />
+              </>
+            ) : (
+              <>
+                <KolamButton
+                  disabled={controller.saving}
+                  label="Batal"
+                  onPress={controller.onBackToList}
+                />
+                <KolamButton
+                  disabled={controller.saving}
+                  intent="primary"
+                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                  onPress={() => {
+                    void controller.onSave();
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -283,13 +284,6 @@ function KolamBrandList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/label-dan-field/merek/baru');
-                }}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
                 }}
               />
             </View>
@@ -894,21 +888,6 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
             />
           </FieldShell>
         </View>
-        <View style={styles.formActions}>
-          <KolamButton
-            disabled={controller.saving}
-            label="Batal"
-            onPress={controller.onBackToList}
-          />
-          <KolamButton
-            disabled={controller.saving}
-            intent="primary"
-            label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave();
-            }}
-          />
-        </View>
       </View>
     </KolamNativeFormSection>
   );
@@ -1051,16 +1030,6 @@ function stripHtmlForDetail(value: string) {
 const styles = StyleSheet.create({
   surface: {
     gap: 14,
-  },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
   },
   errorBadge: {
     alignSelf: 'flex-start',
@@ -1313,12 +1282,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  formActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingTop: 8,
   },
 });
