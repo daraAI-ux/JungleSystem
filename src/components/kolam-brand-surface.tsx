@@ -32,6 +32,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamTipTapRichTextEditor } from './kolam-tiptap-rich-text-editor';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -885,28 +886,19 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
             </View>
             <View style={styles.brandAssetSettingsCard}>
               <FieldShell label="Logo">
-                <View style={styles.logoPickerRow}>
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    mode="url"
-                    onChangeText={logoLocalUri =>
-                      controller.onChangeForm({ logoLocalUri })
-                    }
-                    placeholder="Pilih file logo dari komputer"
-                    style={[
-                      settingsWebFormStyles.settingsWebFormFieldValue,
-                      styles.logoPickerInput,
-                    ]}
-                    value={form.logoLocalUri}
-                  />
-                  <KolamButton
-                    disabled={controller.saving}
-                    label="Pilih Logo"
-                    onPress={() => {
-                      void controller.onPickLogo();
-                    }}
-                  />
-                </View>
+                <KolamSettingsWebFileField
+                  accessibilityLabel="Logo merek"
+                  actionLabel="Pilih Logo"
+                  emptyLabel="Logo belum diatur"
+                  onLocalValueChange={logoLocalUri =>
+                    controller.onChangeForm({ logoLocalUri })
+                  }
+                  onUpload={() => {
+                    void controller.onPickLogo();
+                  }}
+                  scope="brand-logo"
+                  value={form.logoLocalUri || form.logoRemoteUrl}
+                />
               </FieldShell>
             </View>
           </View>
@@ -1327,16 +1319,6 @@ const styles = StyleSheet.create({
     gap: 10,
     minWidth: 280,
     padding: 10,
-  },
-  logoPickerRow: {
-    minHeight: V.control.inputHeight,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logoPickerInput: {
-    flex: 1,
-    minWidth: 0,
   },
   segmentRow: {
     minHeight: V.control.inputHeight,

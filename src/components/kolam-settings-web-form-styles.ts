@@ -107,7 +107,32 @@ export const settingsWebFormStyles = StyleSheet.create({
   settingsWebLogoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 12,
+  },
+  settingsWebUploadDropzone: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    gap: 8,
+    justifyContent: 'center',
+    minHeight: 120,
+    minWidth: 180,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  settingsWebUploadPreviewButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsWebUploadHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   settingsWebLogoPreview: {
     width: 80,
