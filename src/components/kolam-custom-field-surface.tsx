@@ -40,6 +40,7 @@ import {
 } from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -894,31 +895,21 @@ function KolamCustomFieldForm({
               />
             )}
           </FieldShell>
-          <FieldShell label="Icon">
-            <View style={styles.iconPickerRow}>
-              <KolamButton
-                disabled={controller.saving}
-                label="Pilih Icon"
-                onPress={() => {
-                  void controller.onPickIcon();
-                }}
-              />
-              <KolamCopyStack
-                containerStyle={styles.iconPathCopy}
-                items={[
-                  {
-                    id: 'path',
-                    text:
-                      form.iconLocalUri ||
-                      form.iconRemoteUrl ||
-                      'Belum ada icon dipilih',
-                    style: styles.iconPathText,
-                    textProps: { numberOfLines: 1 },
-                  },
-                ]}
-              />
-            </View>
-          </FieldShell>
+          <View style={styles.customFieldAssetSettingsCard}>
+            <KolamSettingsWebFileField
+              accessibilityLabel="Icon field kustom"
+              actionLabel="Pilih file"
+              emptyLabel="Icon belum diatur"
+              onLocalValueChange={iconLocalUri =>
+                controller.onChangeForm({ iconLocalUri })
+              }
+              onUpload={() => {
+                void controller.onPickIcon();
+              }}
+              scope="custom-field-icon"
+              value={form.iconLocalUri || form.iconRemoteUrl}
+            />
+          </View>
           <KolamCatalogTranslationsEditor
             editable={!controller.saving}
             kind="custom-field"
@@ -1506,25 +1497,20 @@ const styles = StyleSheet.create({
     minWidth: 260,
     flex: 1,
   },
+  customFieldAssetSettingsCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexBasis: 320,
+    gap: 10,
+    minWidth: 280,
+    padding: 10,
+  },
   textArea: {
     minHeight: 96,
     textAlignVertical: 'top',
-  },
-  iconPickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  iconPathCopy: {
-    minWidth: 0,
-    flex: 1,
-  },
-  iconPathText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
   },
   formActions: {
     flexDirection: 'row',
