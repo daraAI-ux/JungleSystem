@@ -64,10 +64,13 @@ export const listFrameStyles = StyleSheet.create({
     marginBottom: V.layout.cardSpacing,
   },
   dashboardMetric: {
+    alignItems: 'stretch',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: DASHBOARD_STATS_VISUAL.grid.gap,
     marginBottom: V.layout.cardSpacing,
+    width: '100%',
   },
   runtimeActionGrid: {
     flexDirection: 'row',
