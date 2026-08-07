@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamAppShellSurface } from '../src/components/kolam-app-shell-surface';
 import { getDashboardLayoutVisualContract } from '../src/domain/dashboard-layout';
@@ -56,21 +56,43 @@ function flattenText(value: React.ReactNode): string[] {
 }
 
 function getMainContentStyle(renderer: ReactTestRenderer.ReactTestRenderer) {
+  const visual = getDashboardLayoutVisualContract();
   const scrollView = renderer.root.findAllByType(ScrollView).find(node => {
     const style = StyleSheet.flatten(node.props.contentContainerStyle);
 
-    return style?.padding === 16 || typeof style?.maxWidth === 'number';
+    return (
+      style?.padding === 16 ||
+      style?.maxWidth === visual.page.maxWidthPx ||
+      (typeof style?.paddingHorizontal === 'number' &&
+        typeof style?.paddingTop === 'number')
+    );
   });
 
-  if (!scrollView) {
-    throw new Error('Main content ScrollView was not rendered.');
+  if (scrollView) {
+    return StyleSheet.flatten(scrollView.props.contentContainerStyle);
   }
 
-  return StyleSheet.flatten(scrollView.props.contentContainerStyle);
+  const ownedPageView = renderer.root.findAllByType(View).find(node => {
+    const style = StyleSheet.flatten(node.props.style);
+
+    return (
+      style?.padding === 16 ||
+      style?.maxWidth === visual.page.maxWidthPx ||
+      (typeof style?.paddingHorizontal === 'number' &&
+        typeof style?.paddingTop === 'number')
+    );
+  });
+
+  if (!ownedPageView) {
+    throw new Error('Main content container was not rendered.');
+  }
+
+  return StyleSheet.flatten(ownedPageView.props.style);
 }
 
 describe('KolamAppShellSurface', () => {
   it('renders shell chrome and scroll content from shared layout boundary', async () => {
+    const visual = getDashboardLayoutVisualContract();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -78,7 +100,8 @@ describe('KolamAppShellSurface', () => {
         <KolamAppShellSurface
           sidebar={{
             accessScope: { am: true, kolam: true, pos: true },
-            activeModule: 'checkout',
+            activeModule: 'settings',
+            activeRoute: '/pengaturan',
             collapsed: false,
             expandedSections: {},
             filterMenuByAccess: false,
@@ -91,7 +114,7 @@ describe('KolamAppShellSurface', () => {
           }}
           topNavigation={{
             attentionCount: 0,
-            breadcrumbItems: getTopNavBreadcrumbItems('checkout'),
+            breadcrumbItems: getTopNavBreadcrumbItems('settings'),
             displayInitials: 'DA',
             profilePhotoUrl: 'https://amfibi.dunia-anura.com/media/avatar.jpg',
             rightControls: getTopNavRightControls(),
@@ -131,8 +154,8 @@ describe('KolamAppShellSurface', () => {
           }}
           dashboardHeader={{
             actions: getDashboardHeaderActions(),
-            title: 'Checkout',
-            subtitle: 'Native POS workspace',
+            title: 'Pengaturan',
+            subtitle: 'Settings produksi',
             syncIndicator: seedHeaderSyncIndicator,
             onSelectModule: () => undefined,
           }}
@@ -145,14 +168,19 @@ describe('KolamAppShellSurface', () => {
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
         'Dashboard',
-        'Checkout',
+        'Pengaturan',
         'CPU 12%',
         'RAM 34%',
         'Disk 56%',
         'Workspace child',
       ]),
     );
-    expect(getMainContentStyle(renderer!).maxWidth).toBeUndefined();
+    expect(getMainContentStyle(renderer!)).toEqual(
+      expect.objectContaining({
+        maxWidth: visual.page.maxWidthPx,
+        alignSelf: 'center',
+      }),
+    );
     const avatarImage = renderer!.root.findAllByType(Image).find(node => {
       const source = node.props.source;
       return source?.uri === 'https://amfibi.dunia-anura.com/media/avatar.jpg';
@@ -497,7 +525,7 @@ describe('KolamAppShellSurface', () => {
     );
   });
 
-  it('disables shell ScrollView on catalog table list routes so FlatList owns scroll', async () => {
+  it('keeps mapped-table catalog roots on shell ScrollView', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -567,11 +595,13 @@ describe('KolamAppShellSurface', () => {
       );
     });
 
-    const mainScrollViews = renderer!.root.findAllByType(ScrollView).filter(node => {
-      const style = StyleSheet.flatten(node.props.contentContainerStyle);
-      return style?.padding === 16 || typeof style?.maxWidth === 'number';
-    });
-    expect(mainScrollViews).toHaveLength(0);
+    const mainScrollViews = renderer!.root
+      .findAllByType(ScrollView)
+      .filter(node => {
+        const style = StyleSheet.flatten(node.props.contentContainerStyle);
+        return style?.padding === 16 || typeof style?.maxWidth === 'number';
+      });
+    expect(mainScrollViews).toHaveLength(1);
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining(['Species list child', 'Species']),
     );
