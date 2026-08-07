@@ -317,18 +317,18 @@ function KolamTeranuraList({
                   }}
                 />
               ) : null}
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                tone="positive"
+                onPress={() => onRouteChange?.('/teranura/create')}
+              />
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
                 onPress={() => {
                   void controller.onRefresh();
                 }}
-              />
-              <KolamButton
-                intent="primary"
-                label="Baru"
-                tone="positive"
-                onPress={() => onRouteChange?.('/teranura/create')}
               />
             </View>
           </View>

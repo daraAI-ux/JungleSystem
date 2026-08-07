@@ -167,15 +167,6 @@ function AdminCashflowList({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
             {canCreate ? (
               <KolamButton
                 intent="primary"
@@ -187,6 +178,15 @@ function AdminCashflowList({
                 style={styles.toolbarButton}
               />
             ) : null}
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
+              disabled={controller.loading}
+
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              style={styles.toolbarButton}
+            />
           </View>
         </View>
 

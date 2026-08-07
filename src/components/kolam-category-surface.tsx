@@ -236,13 +236,6 @@ function KolamCategoryList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               intent="primary"
               label="Baru"
@@ -250,6 +243,13 @@ function KolamCategoryList({
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.('/label-dan-field/kategori/baru');
+              }}
+            />
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={controller.loading}
+              onPress={() => {
+                void controller.onRefresh();
               }}
             />
           </View>

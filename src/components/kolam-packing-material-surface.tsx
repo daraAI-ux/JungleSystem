@@ -355,13 +355,6 @@ function KolamPackingMaterialList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -369,6 +362,13 @@ function KolamPackingMaterialList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/packing-materials/baru');
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
               />
             </View>

@@ -214,15 +214,6 @@ function KolamSupplierList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-                style={styles.toolbarButton}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -230,6 +221,15 @@ function KolamSupplierList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/create`);
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
+                disabled={controller.loading}
+
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
                 style={styles.toolbarButton}
               />

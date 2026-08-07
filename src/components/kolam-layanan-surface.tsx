@@ -197,14 +197,6 @@ function KolamLayananList({
                 />
               ))}
             </View>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading || controller.opsLoading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             {controller.activeTab === 'daftar' ? (
               <KolamButton
                 intent="primary"
@@ -216,6 +208,14 @@ function KolamLayananList({
                 }}
               />
             ) : null}
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={controller.loading || controller.opsLoading}
+
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
           </View>
         </View>
       </View>

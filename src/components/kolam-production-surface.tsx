@@ -220,13 +220,6 @@ function KolamProductionList({
                   style={styles.toolbarButton}
                 />
               ) : null}
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => void controller.onRefresh()}
-                style={styles.toolbarButton}
-              />
               <KolamButton
                 disabled={controller.exporting || controller.loading}
                 label={controller.exporting ? 'Mengekspor…' : 'Ekspor'}
@@ -245,6 +238,13 @@ function KolamProductionList({
                   style={styles.toolbarButton}
                 />
               ) : null}
+              <KolamRefreshButton
+                accessibilityLabel="Muat ulang"
+                disabled={controller.loading}
+
+                onPress={() => void controller.onRefresh()}
+                style={styles.toolbarButton}
+              />
             </View>
           </View>
         </View>

@@ -448,15 +448,6 @@ function KolamComplaintList({
                 }
               />
             </View>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
             <KolamButton
               intent="primary"
               label="Baru"
@@ -464,6 +455,15 @@ function KolamComplaintList({
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_COMPLAINT_ROOT}/create`);
+              }}
+              style={styles.toolbarButton}
+            />
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={controller.loading}
+
+              onPress={() => {
+                void controller.onRefresh();
               }}
               style={styles.toolbarButton}
             />

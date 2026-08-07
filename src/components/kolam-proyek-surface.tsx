@@ -192,14 +192,6 @@ function KolamProyekList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="outline"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               intent="outline"
               label="Export XLSX"
@@ -214,6 +206,14 @@ function KolamProyekList({
                 }}
               />
             ) : null}
+            <KolamRefreshButton
+              accessibilityLabel="Muat ulang"
+              intent="outline"
+
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+            />
           </View>
         </View>
       </View>

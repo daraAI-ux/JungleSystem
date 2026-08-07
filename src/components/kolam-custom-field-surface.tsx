@@ -319,13 +319,6 @@ function KolamCustomFieldList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -333,6 +326,13 @@ function KolamCustomFieldList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/custom-fields/baru');
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
               />
             </View>

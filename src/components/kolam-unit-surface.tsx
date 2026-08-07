@@ -298,13 +298,6 @@ function KolamUnitList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -312,6 +305,13 @@ function KolamUnitList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/units/baru');
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
               />
             </View>

@@ -295,21 +295,6 @@ function KolamShippingMethodList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={
-                controller.listTab === 'catalog'
-                  ? controller.catalogLoading
-                  : controller.loading
-              }
-              onPress={() => {
-                if (controller.listTab === 'catalog') {
-                  void controller.onRefreshCatalog();
-                } else {
-                  void controller.onRefresh();
-                }
-              }}
-            />
             {controller.listTab === 'methods' ? (
               <>
                 <KolamButton
@@ -338,6 +323,21 @@ function KolamShippingMethodList({
                 }}
               />
             )}
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={
+                controller.listTab === 'catalog'
+                  ? controller.catalogLoading
+                  : controller.loading
+              }
+              onPress={() => {
+                if (controller.listTab === 'catalog') {
+                  void controller.onRefreshCatalog();
+                } else {
+                  void controller.onRefresh();
+                }
+              }}
+            />
           </View>
         </View>
       </View>

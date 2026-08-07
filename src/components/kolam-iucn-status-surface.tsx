@@ -303,13 +303,6 @@ function KolamIucnList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -317,6 +310,13 @@ function KolamIucnList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/iucn-status/baru');
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
               />
             </View>

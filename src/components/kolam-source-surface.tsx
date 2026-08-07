@@ -252,14 +252,6 @@ function KolamSourceList({
             ) : null}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             <KolamButton
               intent="primary"
               label="Baru"
@@ -267,6 +259,14 @@ function KolamSourceList({
               onPress={() => {
                 controller.onCreateNew();
                 onRouteChange?.(`${KOLAM_SOURCE_ROOT}/create`);
+              }}
+            />
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={controller.loading}
+
+              onPress={() => {
+                void controller.onRefresh();
               }}
             />
           </View>

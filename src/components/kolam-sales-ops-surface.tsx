@@ -375,6 +375,13 @@ function KolamSalesOpsList({
                 }}
                 style={styles.toolbarButton}
               />
+              <KolamButton
+                intent="primary"
+                label="Baru"
+                tone="positive"
+                onPress={() => onRouteChange?.(`${KOLAM_SALES_ROOT}/create`)}
+                style={styles.toolbarButton}
+              />
               <KolamRefreshButton
                 accessibilityLabel="Refresh"
                 disabled={controller.loading}
@@ -382,13 +389,6 @@ function KolamSalesOpsList({
                 onPress={() => {
                   void controller.onRefresh();
                 }}
-                style={styles.toolbarButton}
-              />
-              <KolamButton
-                intent="primary"
-                label="Baru"
-                tone="positive"
-                onPress={() => onRouteChange?.(`${KOLAM_SALES_ROOT}/create`)}
                 style={styles.toolbarButton}
               />
             </View>

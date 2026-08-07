@@ -172,14 +172,6 @@ function KolamTermsTemplateList({
             />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-  accessibilityLabel="Muat ulang"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              intent="secondary"
-            />
             <KolamButton
               label="Baru"
               tone="positive"
@@ -187,6 +179,14 @@ function KolamTermsTemplateList({
                 controller.onCreateNew();
                 onRouteChange?.(KOLAM_TERMS_TEMPLATE_NEW_ROUTE);
               }}
+            />
+            <KolamRefreshButton
+  accessibilityLabel="Muat ulang"
+
+              onPress={() => {
+                void controller.onRefresh();
+              }}
+              intent="secondary"
             />
           </View>
         </View>

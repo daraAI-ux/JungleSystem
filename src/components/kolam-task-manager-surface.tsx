@@ -1321,16 +1321,6 @@ function KolamTaskToolbar({
                 }}
                 style={styles.taskToolbarButton}
               />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  closePanels();
-                  void controller.onRefresh();
-                }}
-                style={styles.taskToolbarButton}
-              />
               {controller.isTaskAdmin ? (
                 <KolamButton
                   intent="primary"
@@ -1343,6 +1333,16 @@ function KolamTaskToolbar({
                   style={styles.taskToolbarButton}
                 />
               ) : null}
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+
+                onPress={() => {
+                  closePanels();
+                  void controller.onRefresh();
+                }}
+                style={styles.taskToolbarButton}
+              />
             </View>
           </View>
         </View>

@@ -344,13 +344,6 @@ function KolamTaxonomyList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               <KolamButton
                 intent="primary"
                 label="Baru"
@@ -358,6 +351,13 @@ function KolamTaxonomyList({
                 onPress={() => {
                   controller.onCreateNew();
                   onRouteChange?.('/taxonomy/baru');
+                }}
+              />
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={controller.loading}
+                onPress={() => {
+                  void controller.onRefresh();
                 }}
               />
             </View>
