@@ -15,6 +15,7 @@ const KOLAM_STOCK_SYNC_BUTTON_ICON_XML = KOLAM_SINKRON_BUTTON_ICON_SVG.replace(
   /#000000/g,
   V.colors.primaryFg,
 );
+const KOLAM_ACTION_BUTTON_BG = '#374151';
 
 export function KolamStockSyncButton({
   accessibilityLabel,
@@ -42,8 +43,8 @@ export function KolamStockSyncButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: V.colors.fg,
-    borderColor: V.colors.fg,
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
   },
   text: {
     color: V.colors.primaryFg,

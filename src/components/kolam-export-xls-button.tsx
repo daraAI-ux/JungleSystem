@@ -16,6 +16,7 @@ const KOLAM_EXPORT_XLS_BUTTON_LABEL = 'Export XLS';
 const KOLAM_EXPORT_XLS_BUTTON_ICON_XML = KOLAM_EXEL_BUTTON_ICON_SVG
   .replace(/#000000/g, V.colors.primaryFg)
   .replace(/#ffffff/g, V.colors.primaryFg);
+const KOLAM_ACTION_BUTTON_BG = '#374151';
 
 export function KolamExportXlsButton({
   accessibilityLabel,
@@ -47,8 +48,8 @@ export function KolamExportXlsButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: V.colors.fg,
-    borderColor: V.colors.fg,
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
   },
   text: {
     color: V.colors.primaryFg,
