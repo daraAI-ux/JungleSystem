@@ -14,7 +14,6 @@ import {
 } from '../domain/kolam-category';
 import { getKolamFormSection } from '../domain/kolam-form';
 import {
-  countActiveLocaleAuditItems,
   createCategoryLocaleAuditItems,
 } from '../domain/kolam-locale-audit';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -24,6 +23,7 @@ import {
   type KolamCategoryController,
 } from '../hooks/use-kolam-category-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryIcon } from './kolam-category-icon';
@@ -39,6 +39,7 @@ import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamListTableComposition,
+  KolamListTablePaginationFooter,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
@@ -98,29 +99,13 @@ function KolamCategoryShell({
     );
   }
 
-  const contextLabel =
-    controller.mode === 'new'
-      ? 'Kategori baru'
-      : controller.mode === 'edit'
-      ? `Edit · ${
-          controller.selectedCategory?.name ||
-          controller.form.name ||
-          'Kategori'
-        }`
-      : controller.selectedCategory?.name || 'Detail kategori';
-
   return (
     <View style={styles.surface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamButton
-              label="Daftar"
+            <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.('/label-dan-field/kategori');
@@ -542,7 +527,6 @@ function KolamCategoryDetail({
 
           <CategoryLocaleSummaryCard
             items={localeAuditItems}
-            total={countActiveLocaleAuditItems(localeAuditItems)}
           />
 
           <View style={styles.categorySummaryGrid}>
@@ -606,10 +590,8 @@ type CategoryDetailListItem = KolamDetailListItem & {
 
 function CategoryLocaleSummaryCard({
   items,
-  total,
 }: {
   items: CategoryDetailListItem[];
-  total: number;
 }) {
   return (
     <KolamDetailSummaryCard
@@ -620,7 +602,7 @@ function CategoryLocaleSummaryCard({
         />
       }
       description="Audit isi locale kategori."
-      fields={[{ id: 'total', label: 'Total', value: total }]}
+      fields={[]}
       style={styles.categoryLocaleSummaryCard}
       title="Terjemahan"
     />
@@ -658,59 +640,82 @@ function CategoryLinkedItemsList({
   emptyText: string;
   items?: CategoryDetailListItem[];
 }) {
+  const pageSize = 5;
+  const total = items?.length ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const [page, setPage] = React.useState(1);
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const startIndex = (safePage - 1) * pageSize;
+  const visibleItems = items?.slice(startIndex, startIndex + pageSize) ?? [];
+
+  React.useEffect(() => {
+    if (page !== safePage) {
+      setPage(safePage);
+    }
+  }, [page, safePage]);
+
   if (!items?.length) {
     return <Text style={styles.categorySummaryEmptyText}>{emptyText}</Text>;
   }
 
   return (
-    <View style={styles.categorySummaryItemList}>
-      {items.map((item, index) => (
-        <View
-          key={getCategoryDetailItemKey(item, index)}
-          style={styles.categorySummaryItemRow}
-        >
-          {item.thumbnail ? (
-            <View style={styles.categorySummaryItemThumbnail}>
-              {item.thumbnail}
-            </View>
-          ) : null}
-          <View style={styles.categorySummaryItemCopy}>
-            <Text numberOfLines={1} style={styles.categorySummaryItemTitle}>
-              {item.title}
-            </Text>
-            {item.meta ? (
-              <Text numberOfLines={1} style={styles.categorySummaryItemMeta}>
-                {item.meta}
-              </Text>
+    <View style={styles.categorySummaryListBlock}>
+      <View style={styles.categorySummaryItemList}>
+        {visibleItems.map((item, index) => (
+          <View
+            key={getCategoryDetailItemKey(item, startIndex + index)}
+            style={styles.categorySummaryItemRow}
+          >
+            {item.thumbnail ? (
+              <View style={styles.categorySummaryItemThumbnail}>
+                {item.thumbnail}
+              </View>
             ) : null}
-            {item.fields?.length ? (
-              <View style={styles.categorySummaryItemFields}>
-                {item.fields.map(field => (
-                  <Text
-                    key={`${item.title}-${field.label}`}
-                    numberOfLines={1}
-                    style={styles.categorySummaryItemMeta}
-                  >
-                    {field.label}: {field.value || '-'}
+            <View style={styles.categorySummaryItemCopy}>
+              <Text numberOfLines={1} style={styles.categorySummaryItemTitle}>
+                {item.title}
+              </Text>
+              {item.meta ? (
+                <Text numberOfLines={1} style={styles.categorySummaryItemMeta}>
+                  {item.meta}
+                </Text>
+              ) : null}
+              {item.fields?.length ? (
+                <View style={styles.categorySummaryItemFields}>
+                  {item.fields.map(field => (
+                    <Text
+                      key={`${item.title}-${field.label}`}
+                      numberOfLines={1}
+                      style={styles.categorySummaryItemMeta}
+                    >
+                      {field.label}: {field.value || '-'}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+            {item.value || item.badge ? (
+              <View style={styles.categorySummaryItemMetrics}>
+                {item.value ? (
+                  <Text numberOfLines={1} style={styles.categorySummaryItemValue}>
+                    {item.value}
                   </Text>
-                ))}
+                ) : null}
+                {item.badge ? (
+                  <KolamStatusBadge intent="muted" label={item.badge} />
+                ) : null}
               </View>
             ) : null}
           </View>
-          {item.value || item.badge ? (
-            <View style={styles.categorySummaryItemMetrics}>
-              {item.value ? (
-                <Text numberOfLines={1} style={styles.categorySummaryItemValue}>
-                  {item.value}
-                </Text>
-              ) : null}
-              {item.badge ? (
-                <KolamStatusBadge intent="muted" label={item.badge} />
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-      ))}
+        ))}
+      </View>
+      <KolamListTablePaginationFooter
+        onPageChange={setPage}
+        page={safePage}
+        pageSize={pageSize}
+        siblingCount={0}
+        total={total}
+      />
     </View>
   );
 }
@@ -1077,16 +1082,6 @@ const styles = StyleSheet.create({
   surface: {
     gap: 14,
   },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
   errorBadge: {
     alignSelf: 'flex-start',
     maxWidth: 760,
@@ -1122,6 +1117,9 @@ const styles = StyleSheet.create({
     flexBasis: '48%',
     flexGrow: 1,
     minWidth: 320,
+  },
+  categorySummaryListBlock: {
+    gap: 8,
   },
   categorySummaryItemList: {
     borderTopColor: V.colors.border,
