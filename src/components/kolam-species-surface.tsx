@@ -1526,30 +1526,6 @@ function KolamSpeciesForm({
             </SpeciesEditSection>
 
             <SpeciesEditSection
-              description="Terjemahan katalog untuk webstore dan audit konten."
-              title="Terjemahan"
-            >
-              <KolamCatalogTranslationsEditor
-                editable={!controller.saving}
-                kind="species"
-                onChange={translations =>
-                  controller.onChangeForm({ translations })
-                }
-                primarySpeciesLocale={{
-                  commonName: form.commonName,
-                  localName: form.localName,
-                  shortDescription: form.shortDescription,
-                  description: form.description,
-                  morfologis: form.morfologis,
-                  habitat: form.habitat,
-                  distribution: form.distribution,
-                  onChange: patch => controller.onChangeForm(patch),
-                }}
-                translations={form.translations}
-              />
-            </SpeciesEditSection>
-
-            <SpeciesEditSection
               description="Judul, kata kunci, dan deskripsi SEO Google."
               title="SEO Google"
             >
@@ -1697,6 +1673,30 @@ function KolamSpeciesForm({
               title="Bahan Kemasan"
             >
               <SpeciesPackingLinksPanel controller={controller} />
+            </SpeciesEditSection>
+
+            <SpeciesEditSection
+              description="Terjemahan katalog untuk webstore dan audit konten."
+              title="Terjemahan"
+            >
+              <KolamCatalogTranslationsEditor
+                editable={!controller.saving}
+                kind="species"
+                onChange={translations =>
+                  controller.onChangeForm({ translations })
+                }
+                primarySpeciesLocale={{
+                  commonName: form.commonName,
+                  localName: form.localName,
+                  shortDescription: form.shortDescription,
+                  description: form.description,
+                  morfologis: form.morfologis,
+                  habitat: form.habitat,
+                  distribution: form.distribution,
+                  onChange: patch => controller.onChangeForm(patch),
+                }}
+                translations={form.translations}
+              />
             </SpeciesEditSection>
           </View>
         </View>
