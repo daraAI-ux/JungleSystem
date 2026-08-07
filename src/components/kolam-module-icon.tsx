@@ -1,12 +1,13 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
-import Svg, {Path, SvgXml} from 'react-native-svg';
+import {Image, StyleSheet, View} from 'react-native';
+import Svg, {Path} from 'react-native-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
-import {KOLAM_IUCN_MODULE_ICON_SVG} from '../assets/icons/iucn-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
+
+const IUCN_MODULE_ICON_SOURCE = require('../assets/icons/iucn-module-icon.png');
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   brand: 'Icon Merek',
@@ -79,10 +80,10 @@ export function KolamModuleIcon({
           ))}
         </Svg>
       ) : kind === 'iucn' ? (
-        <SvgXml
-          height="100%"
-          width="100%"
-          xml={KOLAM_IUCN_MODULE_ICON_SVG}
+        <Image
+          resizeMode="contain"
+          source={IUCN_MODULE_ICON_SOURCE}
+          style={styles.imageIcon}
         />
       ) : kind === 'species' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
@@ -121,5 +122,9 @@ function getSvgPathData(svg: string) {
 const styles = StyleSheet.create({
   root: {
     flexShrink: 0,
+  },
+  imageIcon: {
+    height: '100%',
+    width: '100%',
   },
 });
