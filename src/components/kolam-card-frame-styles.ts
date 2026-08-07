@@ -1,7 +1,6 @@
 ﻿import { StyleSheet } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { getDashboardCustomerVisitConfirmationsVisualContract } from '../domain/dashboard-customer-visit-confirmations';
-import { KOLAM_CUSTOMER_CARD_CHROME } from './kolam-customer-module-visual';
 import { DASHBOARD_COUNT_VISUAL } from './kolam-dashboard-metric-visual';
 import {
   DASHBOARD_RAIL_VISUAL,
@@ -217,10 +216,6 @@ export const cardFrameStyles = StyleSheet.create({
   catalogTable: {
     overflow: 'hidden',
     ...liveCardChrome,
-  },
-  customerTable: {
-    overflow: 'hidden',
-    ...KOLAM_CUSTOMER_CARD_CHROME,
   },
   menuDockItem: {
     width: 36,

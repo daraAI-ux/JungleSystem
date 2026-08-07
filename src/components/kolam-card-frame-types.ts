@@ -30,7 +30,6 @@ export type KolamCardFrameVariant =
   | 'checkoutAdjustment'
   | 'checkoutTotalBox'
   | 'catalogTable'
-  | 'customerTable'
   | 'menuDockItem'
   | 'runtimeIdentityStrip'
   | 'runtimeIdentityItem'

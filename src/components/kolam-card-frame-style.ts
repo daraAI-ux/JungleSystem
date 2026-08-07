@@ -47,8 +47,6 @@ export function getCardFrameStyle(variant: KolamCardFrameVariant) {
       return styles.checkoutTotalBox;
     case 'catalogTable':
       return styles.catalogTable;
-    case 'customerTable':
-      return styles.customerTable;
     case 'menuDockItem':
       return styles.menuDockItem;
     case 'runtimeIdentityStrip':
