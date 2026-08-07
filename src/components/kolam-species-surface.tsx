@@ -1466,11 +1466,6 @@ function KolamSpeciesForm({
                       memberPoints: value.memberPoints,
                     })
                   }
-                  title={
-                    form.sellable && !hasVariants
-                      ? 'Komisi dan Poin Anggota Spesies'
-                      : 'Komisi Spesies'
-                  }
                   value={{
                     commissionEnabled: form.commissionEnabled,
                     commissionType: form.commissionType,
@@ -4940,27 +4935,16 @@ function SpeciesCommercialPolicyPanel({
   memberPointsDisabled,
   memberPointsHint,
   onChange,
-  title,
   value,
 }: {
   disabled: boolean;
   memberPointsDisabled?: boolean;
   memberPointsHint: string;
   onChange: (value: KolamCommercialPolicyEditorValue) => void;
-  title: string;
   value: KolamCommercialPolicyEditorValue;
 }) {
   return (
     <View style={styles.grocerPricingPanel}>
-      <KolamCopyStack
-        items={[
-          {
-            id: 'title',
-            text: title,
-            style: styles.variantTitle,
-          },
-        ]}
-      />
       <KolamCommercialPolicyEditor
         disabled={disabled}
         memberPointsDisabled={memberPointsDisabled}
