@@ -15,7 +15,8 @@ export type KolamNavigationModuleIcon =
   | 'brand'
   | 'category'
   | 'fieldcustom'
-  | 'tag';
+  | 'tag'
+  | 'unit';
 
 export interface KolamNavigationSection {
   id: string;
@@ -181,6 +182,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/units',
         description: 'Kelola satuan pengukuran untuk produk dan spesies.',
         group: 'Label dan Field',
+        moduleIcon: 'unit',
         requiredAccess: ['kolam'],
       },
       {
@@ -749,7 +751,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Field Kustom',
         moduleIcon: 'fieldcustom',
       }),
-      sidebarItem('/units', { group: 'Label dan Field', label: 'Satuan' }),
+      sidebarItem('/units', {
+        group: 'Label dan Field',
+        label: 'Satuan',
+        moduleIcon: 'unit',
+      }),
       sidebarItem('/species', { group: 'Stok Hidup', label: 'Spesies' }),
       sidebarItem('/taxonomy', { group: 'Stok Hidup', label: 'Taksonomi' }),
       sidebarItem('/iucn-status', {
@@ -1013,19 +1019,19 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/tags',
     labelSuffix: 'Create',
     route: '/tags/create',
-    description: 'Create tag page from live Kolam',
+    description: 'Buat tag dari Kolam live',
   },
   {
     baseRoute: '/tags',
     labelSuffix: 'Detail',
     route: '/tags/:id',
-    description: 'Tag detail page from live Kolam',
+    description: 'Detail tag dari Kolam live',
   },
   {
     baseRoute: '/tags',
     labelSuffix: 'Edit',
     route: '/tags/:id/edit',
-    description: 'Edit tag page from live Kolam',
+    description: 'Edit tag dari Kolam live',
   },
   {
     baseRoute: '/custom-fields',
