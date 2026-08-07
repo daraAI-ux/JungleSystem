@@ -90,6 +90,13 @@ function getMainContentStyle(renderer: ReactTestRenderer.ReactTestRenderer) {
   return StyleSheet.flatten(ownedPageView.props.style);
 }
 
+function countMainShellScrollViews(renderer: ReactTestRenderer.ReactTestRenderer) {
+  return renderer.root.findAllByType(ScrollView).filter(node => {
+    const style = StyleSheet.flatten(node.props.contentContainerStyle);
+    return style?.padding === 16 || typeof style?.maxWidth === 'number';
+  }).length;
+}
+
 describe('KolamAppShellSurface', () => {
   it('renders shell chrome and scroll content from shared layout boundary', async () => {
     const visual = getDashboardLayoutVisualContract();
@@ -525,7 +532,20 @@ describe('KolamAppShellSurface', () => {
     );
   });
 
-  it('keeps mapped-table catalog roots on shell ScrollView', async () => {
+  it.each([
+    ['/species', 'Species'],
+    ['/products', 'Produk'],
+    ['/products/archive', 'Arsip Produk'],
+    ['/stock-transaction', 'Transaksi Stok'],
+    ['/customers', 'Pelanggan'],
+    ['/list-of-users', 'Pengguna'],
+    ['/payable', 'Hutang'],
+    ['/receivable', 'Piutang'],
+    ['/commissions', 'Komisi'],
+    ['/finance/payroll', 'Payroll'],
+    ['/finance/bonus', 'Bonus'],
+    ['/media', 'Media'],
+  ])('keeps mapped-table route %s on shell ScrollView', async (route, title) => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -534,7 +554,7 @@ describe('KolamAppShellSurface', () => {
           sidebar={{
             accessScope: { am: true, kolam: true, pos: true },
             activeModule: 'settings',
-            activeRoute: '/species',
+            activeRoute: route,
             collapsed: false,
             expandedSections: {},
             filterMenuByAccess: false,
@@ -584,26 +604,20 @@ describe('KolamAppShellSurface', () => {
           }}
           dashboardHeader={{
             actions: getDashboardHeaderActions(),
-            title: 'Species',
-            subtitle: 'Daftar spesies',
+            title,
+            subtitle: 'Daftar',
             syncIndicator: seedHeaderSyncIndicator,
             onSelectModule: () => undefined,
           }}
         >
-          <Text>Species list child</Text>
+          <Text>{`${title} list child`}</Text>
         </KolamAppShellSurface>,
       );
     });
 
-    const mainScrollViews = renderer!.root
-      .findAllByType(ScrollView)
-      .filter(node => {
-        const style = StyleSheet.flatten(node.props.contentContainerStyle);
-        return style?.padding === 16 || typeof style?.maxWidth === 'number';
-      });
-    expect(mainScrollViews).toHaveLength(1);
+    expect(countMainShellScrollViews(renderer!)).toBe(1);
     expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Species list child', 'Species']),
+      expect.arrayContaining([`${title} list child`, title]),
     );
   });
 });
