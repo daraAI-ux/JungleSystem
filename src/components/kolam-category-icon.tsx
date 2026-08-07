@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   iconSummary: {
-    width: '100%',
-    height: '100%',
+    width: 154,
+    height: 154,
     borderRadius: 16,
   },
   image: {

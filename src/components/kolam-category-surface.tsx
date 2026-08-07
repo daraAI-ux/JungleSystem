@@ -1081,13 +1081,8 @@ const styles = StyleSheet.create({
   },
   categorySummaryIconInCard: {
     alignItems: 'center',
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
     height: 154,
     justifyContent: 'center',
-    padding: 14,
     width: '100%',
   },
   categorySummaryDescription: {
