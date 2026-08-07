@@ -58,6 +58,17 @@ export const dashboardHeaderStyles = StyleSheet.create({
     flexShrink: DASHBOARD_HEADER_VISUAL.actions.flexShrink,
     gap: DASHBOARD_HEADER_VISUAL.actions.gapX,
   },
+  headerSyncControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerRefreshButton: {
+    minHeight: 22,
+    minWidth: 24,
+    paddingHorizontal: 0,
+    width: 24,
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: DASHBOARD_HEADER_VISUAL.actions.alignItems,

@@ -42,20 +42,23 @@ export function KolamDashboardHeader({
         title={title}
       />
       <View style={styles.headerControls}>
-        <KolamDashboardSyncIndicatorBadge indicator={syncIndicator} />
+        <View style={styles.headerSyncControls}>
+          <KolamDashboardSyncIndicatorBadge indicator={syncIndicator} />
+          {onRefresh ? (
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={refreshLoading}
+              loading={refreshLoading}
+              loadingLabel="Refreshing..."
+              onPress={onRefresh}
+              style={styles.headerRefreshButton}
+            />
+          ) : null}
+        </View>
         <KolamDashboardHeaderActions
           actions={actions}
           onSelectModule={onSelectModule}
         />
-        {onRefresh ? (
-          <KolamRefreshButton
-            accessibilityLabel="Refresh"
-            disabled={refreshLoading}
-            loading={refreshLoading}
-            loadingLabel="Refreshing..."
-            onPress={onRefresh}
-          />
-        ) : null}
       </View>
     </KolamHeaderFrame>
   );
