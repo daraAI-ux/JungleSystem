@@ -273,28 +273,6 @@ function normalizeDropdownSearch(value: string) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-export function KolamPaginationSizeControl({
-  onChange,
-  value,
-}: {
-  onChange: (value: number) => void;
-  value: number;
-}) {
-  return (
-    <KolamDropdownSelect
-      accessibilityLabel="Jumlah baris per halaman"
-      label="Tampil"
-      onChange={next => onChange(Number(next))}
-      options={[
-        { label: '10', value: '10' },
-        { label: '50', value: '50' },
-        { label: '100', value: '100' },
-      ]}
-      value={String(value)}
-    />
-  );
-}
-
 export function KolamOverflowMenuButton({
   actions,
   accessibilityLabel = 'Menu aksi',
@@ -415,63 +393,6 @@ export function KolamOverflowMenuButton({
   );
 }
 
-export function KolamPaginationSummaryLabel({
-  page,
-  pageSize,
-  total,
-}: {
-  page: number;
-  pageSize: number;
-  total: number;
-}) {
-  const from = total ? (page - 1) * pageSize + 1 : 0;
-  const to = Math.min(page * pageSize, total);
-
-  return (
-    <KolamCopyStack
-      items={[
-        {
-          id: 'summary',
-          text: `${from}-${to} dari ${total}`,
-          style: styles.summary,
-        },
-      ]}
-    />
-  );
-}
-
-export function KolamTableFooterControls({
-  children,
-  onPageSizeChange,
-  page,
-  pageSize,
-  total,
-}: {
-  children?: React.ReactNode;
-  onPageSizeChange: (value: number) => void;
-  page: number;
-  pageSize: number;
-  total: number;
-}) {
-  return (
-    <View style={styles.tableFooterControls}>
-      <View style={styles.tableFooterLeft}>
-        <KolamPaginationSizeControl
-          onChange={onPageSizeChange}
-          value={pageSize}
-        />
-        <KolamPaginationSummaryLabel
-          page={page}
-          pageSize={pageSize}
-          total={total}
-        />
-      </View>
-      {children ? (
-        <View style={styles.tableFooterRight}>{children}</View>
-      ) : null}
-    </View>
-  );
-}
 const styles = StyleSheet.create({
   root: {
     overflow: 'visible',
@@ -657,32 +578,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
     textAlign: 'left',
-  },
-  summary: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  tableFooterControls: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  tableFooterLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'flex-start',
-  },
-  tableFooterRight: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'flex-end',
   },
 });
