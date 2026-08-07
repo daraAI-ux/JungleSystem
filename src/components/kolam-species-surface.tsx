@@ -1393,7 +1393,14 @@ function KolamSpeciesForm({
                 description="Komponen produksi untuk spesies tanpa varian."
                 title="Bahan Penyusun"
               >
-                <SpeciesRootComponentsPanel controller={controller} />
+                <View
+                  style={[
+                    styles.speciesBasicInfoCard,
+                    styles.customFieldSettingsCard,
+                  ]}
+                >
+                  <SpeciesRootComponentsPanel controller={controller} />
+                </View>
               </SpeciesEditSection>
             ) : null}
 
