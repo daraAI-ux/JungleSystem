@@ -127,6 +127,15 @@ export function KolamSettingsWebFileField({
             </Text>
             <Text style={styles.settingsWebUploadFileStatus}>Terunggah</Text>
           </View>
+          {onLocalValueChange ? (
+            <KolamInteractionFrame
+              accessibilityLabel="Hapus logo"
+              onPress={() => onLocalValueChange('')}
+              style={styles.settingsWebUploadDeleteButton}
+            >
+              <Text style={styles.settingsWebUploadDeleteText}>x</Text>
+            </KolamInteractionFrame>
+          ) : null}
         </View>
       ) : (
         <Text style={styles.settingsWebLogoFallback}>{emptyLabel}</Text>

@@ -221,6 +221,23 @@ export const settingsWebFormStyles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
+  settingsWebUploadDeleteButton: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    marginLeft: 'auto',
+    width: 32,
+  },
+  settingsWebUploadDeleteText: {
+    color: V.colors.danger,
+    fontFamily: V.fontFamily,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
   settingsWebLogoPreview: {
     width: 40,
     height: 40,
