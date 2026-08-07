@@ -2560,17 +2560,19 @@ function SpeciesCustomFieldEditorPanel({
   );
 
   return (
-    <SpeciesCustomFieldRowsEditor
-      disabled={controller.saving}
-      emptyText="Belum ada definisi field kustom aktif."
-      fields={fields}
-      profiles={controller.customFieldProfiles}
-      rows={controller.form.customFieldValues}
-      units={controller.units}
-      onChange={customFieldValues =>
-        controller.onChangeForm({ customFieldValues })
-      }
-    />
+    <View style={[styles.speciesBasicInfoCard, styles.customFieldSettingsCard]}>
+      <SpeciesCustomFieldRowsEditor
+        disabled={controller.saving}
+        emptyText="Belum ada definisi field kustom aktif."
+        fields={fields}
+        profiles={controller.customFieldProfiles}
+        rows={controller.form.customFieldValues}
+        units={controller.units}
+        onChange={customFieldValues =>
+          controller.onChangeForm({ customFieldValues })
+        }
+      />
+    </View>
   );
 }
 
@@ -7501,6 +7503,9 @@ const styles = StyleSheet.create({
   },
   customFieldFormStack: {
     gap: 14,
+  },
+  customFieldSettingsCard: {
+    overflow: 'visible',
   },
   customFieldCompactField: {
     gap: 8,
