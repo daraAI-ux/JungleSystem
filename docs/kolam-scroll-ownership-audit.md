@@ -113,3 +113,17 @@ Runtime confirmation:
 
 Runtime confirmation after app reload is still required for the other pilot
 pages.
+
+Runtime gaps from the Windows app probe:
+
+- `/media` - navigation through the top-nav Media library button worked, but
+  two wheel/PageDown probes produced 0.00% screenshot diff. The captured page
+  did not visibly move, so this is inconclusive and is not counted as a pass.
+- `/customers` - sidebar text was visible during the probe, but UI Automation
+  click/selection and physical coordinate clicks did not reliably activate the
+  route from the current scrolled sidebar state.
+- Finance pilots (`/payable`, `/receivable`, `/commissions`,
+  `/finance/payroll`, `/finance/bonus`) - the visible runtime sidebar exposed
+  `Ringkasan Keuangan`, `Dompet`, `Pengeluaran & Pemasukan`, and
+  `Payroll & Tax`, but not the individual pilot routes as directly selectable
+  items during this probe.
