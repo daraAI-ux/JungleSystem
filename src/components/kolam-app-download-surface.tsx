@@ -825,12 +825,14 @@ function KolamAppDownloadArtifactRow({
     <View style={styles.artifactRow}>
       <PlatformBadge platform={artifact.platform} />
       <View style={styles.artifactMain}>
-        <Text style={styles.artifactTitle}>
-          {artifact.platformLabel || artifact.platform}
-          {artifact.fileKind ? (
-            <Text style={styles.artifactKind}> - {artifact.fileKind}</Text>
-          ) : null}
-        </Text>
+        <View style={styles.artifactHeaderLine}>
+          <Text style={styles.artifactTitle}>
+            {artifact.platformLabel || artifact.platform}
+            {artifact.fileKind ? (
+              <Text style={styles.artifactKind}> - {artifact.fileKind}</Text>
+            ) : null}
+          </Text>
+        </View>
         <Text numberOfLines={1} style={styles.artifactFilename}>
           {artifact.originalName}
         </Text>
@@ -838,20 +840,27 @@ function KolamAppDownloadArtifactRow({
           <Text numberOfLines={1} style={styles.md5Text}>
             MD5: {artifact.md5}
           </Text>
-          <KolamButton label="Salin" onPress={onCopyMd5} />
+          <KolamButton
+            label="Salin"
+            onPress={onCopyMd5}
+            style={styles.copyButton}
+          />
         </View>
       </View>
-      <Text style={styles.fileSize}>
-        {formatKolamAppDownloadFileSize(artifact.fileSize)}
-      </Text>
-      <KolamButton
-        disabled={downloading}
-        intent="primary"
-        label={downloading ? '...' : 'Unduh'}
-        onPress={() => {
-          handleDownload().catch(() => undefined);
-        }}
-      />
+      <View style={styles.artifactActions}>
+        <Text style={styles.fileSize}>
+          {formatKolamAppDownloadFileSize(artifact.fileSize)}
+        </Text>
+        <KolamButton
+          disabled={downloading}
+          intent="primary"
+          label={downloading ? '...' : 'Unduh'}
+          onPress={() => {
+            handleDownload().catch(() => undefined);
+          }}
+          style={styles.downloadButton}
+        />
+      </View>
     </View>
   );
 }
@@ -1029,6 +1038,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 17,
   },
+  artifactActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    gap: 12,
+    justifyContent: 'flex-end',
+    minWidth: 170,
+  },
+  artifactHeaderLine: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
+  },
   artifactKind: {
     color: V.colors.mutedFg,
     fontWeight: '600',
@@ -1107,7 +1130,7 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     fontWeight: '800',
-    minWidth: 64,
+    minWidth: 74,
     textAlign: 'right',
   },
   formActions: {
@@ -1129,6 +1152,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+    minWidth: 0,
   },
   md5Text: {
     color: V.colors.mutedFg,
@@ -1138,6 +1162,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 16,
     minWidth: 0,
+  },
+  copyButton: {
+    flexShrink: 0,
+  },
+  downloadButton: {
+    flexShrink: 0,
   },
   platformBadge: {
     alignItems: 'center',
