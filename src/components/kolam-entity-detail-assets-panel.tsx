@@ -20,7 +20,7 @@ export function KolamEntityDetailAssetsPanel({
   assets: initialAssets,
   deleteAsset,
   downloadAsset,
-  headerUploadActions = false,
+  inlineTitleUploadActions = false,
   itemType = 'aset',
   onAssetsChange,
   uploadAsset,
@@ -28,7 +28,7 @@ export function KolamEntityDetailAssetsPanel({
   assets: KolamEntityDetailAsset[];
   deleteAsset: (assetId: string) => Promise<KolamEntityDetailAsset[]>;
   downloadAsset: (asset: KolamEntityDetailAsset) => void;
-  headerUploadActions?: boolean;
+  inlineTitleUploadActions?: boolean;
   itemType?: string;
   onAssetsChange?: (assets: KolamEntityDetailAsset[]) => void;
   uploadAsset: (title: string, localUri: string) => Promise<KolamEntityDetailAsset[]>;
@@ -109,7 +109,7 @@ export function KolamEntityDetailAssetsPanel({
   }, [deleteAsset, deleteTarget, onAssetsChange]);
 
   const uploadActions = (
-    <View style={styles.assetUploadActions}>
+    <View style={[styles.assetUploadActions, inlineTitleUploadActions ? styles.assetUploadActionsInline : null]}>
       <KolamButton disabled={busy} label="Pilih file" onPress={chooseFile} />
       <KolamButton disabled={busy || !assetTitle.trim() || !assetFile} label={busy ? 'Mengunggah...' : 'Unggah file'} onPress={handleUpload} />
     </View>
@@ -122,22 +122,24 @@ export function KolamEntityDetailAssetsPanel({
           <Text style={styles.sectionTitle}>Aset</Text>
           <Text style={styles.sectionDescription}>Dokumen internal (PDF, Word, Excel, gambar). Tidak ditampilkan di webstore.</Text>
         </View>
-        {headerUploadActions ? uploadActions : null}
       </View>
 
       <View style={styles.assetUploadCard}>
-        <View style={styles.assetTitleInputWrap}>
-          <Text style={styles.assetLabel}>Judul</Text>
-          <KolamTextField
-            editable={!busy}
-            onChangeText={setAssetTitle}
-            placeholder="Judul aset"
-            style={styles.assetInput}
-            value={assetTitle}
-          />
-          <Text style={styles.assetHelp}>Tipe file: PDF, Word, Excel, PNG, JPG.</Text>
+        <View style={inlineTitleUploadActions ? styles.assetTitleUploadRow : styles.assetTitleInputWrap}>
+          <View style={[styles.assetTitleInputWrap, inlineTitleUploadActions ? styles.assetTitleInputInline : null]}>
+            <Text style={styles.assetLabel}>Judul</Text>
+            <KolamTextField
+              editable={!busy}
+              onChangeText={setAssetTitle}
+              placeholder="Judul aset"
+              style={styles.assetInput}
+              value={assetTitle}
+            />
+            <Text style={styles.assetHelp}>Tipe file: PDF, Word, Excel, PNG, JPG.</Text>
+          </View>
+          {inlineTitleUploadActions ? uploadActions : null}
         </View>
-        {headerUploadActions ? null : uploadActions}
+        {inlineTitleUploadActions ? null : uploadActions}
         {assetFile ? <Text style={styles.assetSelectedFile}>File dipilih: {assetFile.name ?? assetFile.path ?? assetFile.uri}</Text> : null}
         {error ? <Text style={styles.assetError}>{error}</Text> : null}
         {message ? <Text style={styles.assetSuccess}>{message}</Text> : null}
@@ -257,10 +259,23 @@ const styles = StyleSheet.create({
   assetTitleInputWrap: {
     gap: 6,
   },
+  assetTitleInputInline: {
+    flex: 1,
+    minWidth: 220,
+  },
+  assetTitleUploadRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
   assetUploadActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  assetUploadActionsInline: {
+    paddingTop: 22,
   },
   assetUploadCard: {
     borderBottomColor: V.colors.border,
