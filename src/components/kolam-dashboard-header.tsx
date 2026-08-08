@@ -34,17 +34,17 @@ export function KolamDashboardHeader({
 }) {
   const hasCopy = Boolean(moduleIcon || title.trim() || subtitle.trim());
 
-  if (!hasCopy && actions.length === 0) {
-    return null;
-  }
-
   return (
     <KolamHeaderFrame variant="dashboardHeader">
-      <KolamDashboardHeaderCopy
-        moduleIcon={moduleIcon}
-        subtitle={subtitle}
-        title={title}
-      />
+      {hasCopy ? (
+        <KolamDashboardHeaderCopy
+          moduleIcon={moduleIcon}
+          subtitle={subtitle}
+          title={title}
+        />
+      ) : (
+        <View style={styles.headerCopy} />
+      )}
       <View style={styles.headerControls}>
         <View style={styles.headerSyncControls}>
           <KolamDashboardSyncIndicatorBadge indicator={syncIndicator} />
