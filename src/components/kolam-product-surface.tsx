@@ -99,6 +99,7 @@ import {
   KolamPricingMetric,
   KolamPricingMetricsGrid,
 } from './kolam-pricing-metric-grid';
+import { KolamSwitch } from './kolam-switch';
 import { KolamToggleRow } from './kolam-toggle-row';
 import {
   KolamGrocerPricingCard,
@@ -1985,45 +1986,30 @@ function ProductEditFormPage({
               </View>
             </ProductEditSection>
 
-            <ProductEditSection
-              description="Satuan pengukuran dan penghitungan stok produk."
-              title="Satuan"
-            >
-              <ProductFieldShell label="Satuan" required>
-                <KolamDropdownSelect
-                  label="Satuan"
-                  menuStyle={styles.longDropdownMenu}
-                  onChange={unitId => controller.onChangeForm({ unitId })}
-                  options={[
-                    { label: 'Pilih satuan', value: '' },
-                    ...controller.units.map(unit => ({
-                      label: unit.initial
-                        ? `${unit.name} (${unit.initial})`
-                        : unit.name,
-                      value: unit.id,
-                    })),
-                  ]}
-                  searchable
-                  searchPlaceholder="Cari satuan..."
-                  showLabelInTrigger={false}
-                  value={form.unitId}
-                />
-              </ProductFieldShell>
-            </ProductEditSection>
+            <View style={styles.productEditTwoColumnSections}>
+              <View style={styles.productEditTwoColumnSection}>
+                <ProductEditSection
+                  description="Pilih profil spesifikasi atau field manual untuk produk ini."
+                  title="Field Kustom"
+                >
+                  <ProductCustomFieldEditorPanel controller={controller} />
+                </ProductEditSection>
+              </View>
 
-            <ProductEditSection
-              description="Metode pengiriman yang tersedia untuk produk ini."
-              title="Metode Pengiriman"
-            >
-              <ProductShippingMethodsPanel controller={controller} />
-            </ProductEditSection>
-
-            <ProductEditSection
-              description="Pilih profil spesifikasi atau field manual untuk produk ini."
-              title="Field Kustom"
-            >
-              <ProductCustomFieldEditorPanel controller={controller} />
-            </ProductEditSection>
+              <View style={styles.productEditTwoColumnSection}>
+                <ProductEditSection
+                  description="Aktifkan penjualan, pilih satuan, dan metode pengiriman."
+                  title="Penjualan dan Inventori"
+                >
+                  <View style={styles.productBasicInfoCard}>
+                    <ProductRootSalesPanel controller={controller} />
+                    {!hasVariants ? (
+                      <ProductRootInventoryPanel controller={controller} />
+                    ) : null}
+                  </View>
+                </ProductEditSection>
+              </View>
+            </View>
 
             {!hasVariants ? (
               <ProductEditSection
@@ -2508,6 +2494,181 @@ function ProductShippingMethodsPanel({
             />
           )}
         </View>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductRootSalesPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  const unitOptions = [
+    { label: 'Pilih satuan', value: '' },
+    ...controller.units.map(unit => ({
+      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
+      value: unit.id,
+    })),
+  ];
+  const shippingMethods = mergeProductShippingMethods(
+    controller.shippingMethods,
+    controller.selectedProduct?.logistics.shippingMethods ?? [],
+  );
+  const shippingOptions = [
+    { label: 'Tambah metode pengiriman', value: '' },
+    ...shippingMethods
+      .filter(method => !form.availableShippingMethodIds.includes(method.id))
+      .map(method => ({ label: method.displayName, value: method.id })),
+  ];
+  const selectedMethods = shippingMethods.filter(method =>
+    form.availableShippingMethodIds.includes(method.id),
+  );
+
+  return (
+    <ProductFieldShell label="Penjualan dan Satuan">
+      <View style={styles.grocerPricingPanel}>
+        <View style={styles.twoColumnGrid}>
+          <View style={styles.inlineFieldGroup}>
+            <View style={styles.sellableSwitchRow}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'label',
+                    text: 'Produk dijual',
+                    style: styles.variantTitle,
+                  },
+                ]}
+              />
+              <KolamSwitch
+                accessibilityLabel="Produk dijual"
+                active={form.sellable}
+                disabled={controller.saving}
+                onPress={() =>
+                  controller.onChangeForm({ sellable: !form.sellable })
+                }
+              />
+            </View>
+          </View>
+          <View style={styles.inlineFieldGroup}>
+            <KolamDropdownSelect
+              accessibilityLabel="Pilih satuan"
+              label="Satuan"
+              menuStyle={styles.longDropdownMenu}
+              onChange={unitId => controller.onChangeForm({ unitId })}
+              options={unitOptions}
+              searchable
+              searchPlaceholder="Cari satuan..."
+              showLabelInTrigger={false}
+              value={form.unitId}
+            />
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'unit-hint',
+                  text: 'Satuan.',
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+          </View>
+        </View>
+        <KolamDropdownSelect
+          accessibilityLabel="Tambah metode pengiriman"
+          label="Metode pengiriman tersedia"
+          menuStyle={styles.longDropdownMenu}
+          onChange={methodId => {
+            if (
+              !methodId ||
+              form.availableShippingMethodIds.includes(methodId)
+            ) {
+              return;
+            }
+            controller.onChangeForm({
+              availableShippingMethodIds: [
+                ...form.availableShippingMethodIds,
+                methodId,
+              ],
+            });
+          }}
+          options={shippingOptions}
+          searchable
+          searchPlaceholder="Cari metode pengiriman..."
+          showLabelInTrigger={false}
+          value=""
+        />
+        <View style={styles.selectedCategoryRow}>
+          {selectedMethods.length ? (
+            selectedMethods.map(method => (
+              <KolamButton
+                disabled={controller.saving}
+                intent="outline"
+                key={method.id}
+                label={`${method.displayName} x`}
+                onPress={() =>
+                  controller.onChangeForm({
+                    availableShippingMethodIds:
+                      form.availableShippingMethodIds.filter(
+                        methodId => methodId !== method.id,
+                      ),
+                  })
+                }
+                style={styles.selectedCategoryButton}
+              />
+            ))
+          ) : (
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'empty-shipping',
+                  text: 'Belum ada metode pengiriman dipilih atau daftar metode belum tersedia dari detail/cache.',
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+          )}
+        </View>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductRootInventoryPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  return (
+    <ProductFieldShell label="Inventori Produk">
+      <View style={styles.pricingPanelStack}>
+        <ProductPricingFieldPanel
+          description="Batas peringatan stok rendah untuk produk tanpa varian."
+          title="Stok dan Peringatan"
+        >
+          <View style={styles.twoColumnGrid}>
+            <ProductPriceInput
+              disabled={controller.saving}
+              hint="Aplikasi memberi tanda saat stok mencapai angka ini."
+              label="Ambang Stok Rendah"
+              onChangeText={lowStockThreshold =>
+                controller.onChangeForm({ lowStockThreshold })
+              }
+              value={form.lowStockThreshold}
+            />
+          </View>
+        </ProductPricingFieldPanel>
       </View>
     </ProductFieldShell>
   );
@@ -9280,6 +9441,16 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     minWidth: 240,
   },
+  productEditTwoColumnSections: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  productEditTwoColumnSection: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 360,
+  },
   twoColumnGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -9300,6 +9471,26 @@ const styles = StyleSheet.create({
   selectedCategoryButton: {
     minHeight: 30,
     paddingHorizontal: 10,
+  },
+  grocerPricingPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+  },
+  inlineFieldGroup: {
+    flexBasis: 320,
+    flexGrow: 1,
+    gap: 8,
+  },
+  sellableSwitchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 38,
   },
   fieldHint: {
     color: V.colors.mutedFg,
