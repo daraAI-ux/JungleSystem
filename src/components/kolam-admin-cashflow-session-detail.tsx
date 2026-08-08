@@ -36,7 +36,6 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamControlTabList } from './kolam-control-tab-list';
@@ -336,15 +335,7 @@ function DetailHeader({
           ) : null}
         </View>
         <View style={styles.headerActions}>
-          <KolamDaftarButton muted onPress={onBack} />
-          <KolamRefreshButton
-            accessibilityLabel="Muat ulang"
-            disabled={controller.loading || controller.acting}
-
-            onPress={() => {
-              void controller.onRefresh();
-            }}
-          />
+          <KolamDaftarButton onPress={onBack} />
           {controller.canClose ? (
             <KolamButton
               disabled={controller.acting}
