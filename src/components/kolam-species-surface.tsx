@@ -1391,7 +1391,10 @@ function KolamSpeciesForm({
                 <FieldShell label="Konservasi">
                   <View style={styles.grocerPricingPanel}>
                     <View style={styles.twoColumnGrid}>
-                      <FieldShell label="IUCN">
+                      <FieldShell
+                        label="IUCN"
+                        style={styles.speciesBasicInfoHalfField}
+                      >
                         <KolamDropdownSelect
                           accessibilityLabel="Pilih status IUCN"
                           label="IUCN"
@@ -1412,7 +1415,10 @@ function KolamSpeciesForm({
                           value={form.iucnStatusId}
                         />
                       </FieldShell>
-                      <FieldShell label="Tautan IUCN">
+                      <FieldShell
+                        label="Tautan IUCN"
+                        style={styles.speciesBasicInfoHalfField}
+                      >
                         <KolamFormTextField
                           editable={!controller.saving}
                           mode="url"
