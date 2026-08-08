@@ -1541,7 +1541,9 @@ function ProductEditFormPage({
                   description="Harga jual bahan baku tanpa varian."
                   title="Harga"
                 >
-                  <ProductRootPricingPanel controller={controller} />
+                  <View style={styles.productBasicInfoCard}>
+                    <ProductRootPricingPanel controller={controller} />
+                  </View>
                 </ProductEditSection>
               ) : null}
 
@@ -2067,19 +2069,21 @@ function ProductEditFormPage({
                 description="Harga jual, aturan pesanan, dan harga grosir untuk produk tanpa varian."
                 title="Harga"
               >
-                <ProductRootPricingPanel controller={controller} />
-                <ProductPricingFieldPanel
-                  description="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk produk tanpa varian."
-                  title="Harga Bertingkat / Grosir Produk"
-                >
-                  <KolamGrocerPricingTiersEditor
-                    disabled={controller.saving}
-                    onChange={grocerPricingTiers =>
-                      controller.onChangeForm({ grocerPricingTiers })
-                    }
-                    rows={form.grocerPricingTiers}
-                  />
-                </ProductPricingFieldPanel>
+                <View style={styles.productBasicInfoCard}>
+                  <ProductRootPricingPanel controller={controller} />
+                  <ProductPricingFieldPanel
+                    description="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk produk tanpa varian."
+                    title="Harga Bertingkat / Grosir Produk"
+                  >
+                    <KolamGrocerPricingTiersEditor
+                      disabled={controller.saving}
+                      onChange={grocerPricingTiers =>
+                        controller.onChangeForm({ grocerPricingTiers })
+                      }
+                      rows={form.grocerPricingTiers}
+                    />
+                  </ProductPricingFieldPanel>
+                </View>
               </ProductEditSection>
             ) : null}
 
@@ -2262,6 +2266,7 @@ function ProductRootPricingPanel({
         >
           <View style={styles.twoColumnGrid}>
             <ProductPriceInput
+              currency
               disabled={controller.saving}
               hint="Harga utama yang tampil di katalog dan POS."
               label="Harga Jual"
@@ -2272,6 +2277,7 @@ function ProductRootPricingPanel({
               value={form.priceToSell}
             />
             <ProductPriceInput
+              currency
               disabled={controller.saving}
               hint="Harga daring untuk toko daring atau kanal digital."
               label="Harga Daring"
@@ -2282,6 +2288,7 @@ function ProductRootPricingPanel({
               value={form.onlinePrice}
             />
             <ProductPriceInput
+              currency
               disabled={controller.saving}
               hint="Harga pembanding pasar, bukan harga jual utama."
               label="Harga Pasar"
@@ -2292,6 +2299,7 @@ function ProductRootPricingPanel({
               value={form.marketPrice}
             />
             <ProductPriceInput
+              currency
               disabled={controller.saving}
               hint="Batas harga terendah yang masih boleh dijual."
               label="Harga Minimum"
@@ -2356,6 +2364,7 @@ function ProductPricingFieldPanel({
 }
 
 function ProductPriceInput({
+  currency,
   disabled,
   hint,
   label,
@@ -2364,6 +2373,7 @@ function ProductPriceInput({
   unitLabel,
   value,
 }: {
+  currency?: boolean;
   disabled: boolean;
   hint?: string;
   label: string;
@@ -2383,17 +2393,26 @@ function ProductPriceInput({
         ]}
       />
       <View style={styles.priceInputRow}>
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={onChangeText}
-          placeholder={placeholder ?? label}
-          style={[
-            settingsWebFormStyles.settingsWebFormFieldValue,
-            styles.priceInputControl,
-          ]}
-          value={value}
-        />
+        {currency ? (
+          <ProductCurrencyTextField
+            disabled={disabled}
+            onChangeText={onChangeText}
+            placeholder={placeholder ?? label}
+            value={value}
+          />
+        ) : (
+          <KolamFormTextField
+            editable={!disabled}
+            keyboardType="numeric"
+            onChangeText={onChangeText}
+            placeholder={placeholder ?? label}
+            style={[
+              settingsWebFormStyles.settingsWebFormFieldValue,
+              styles.priceInputControl,
+            ]}
+            value={value}
+          />
+        )}
         {unitLabel ? (
           <View style={styles.priceUnitBadge}>
             <KolamCopyStack
@@ -2408,6 +2427,35 @@ function ProductPriceInput({
           </View>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+function ProductCurrencyTextField({
+  disabled,
+  onChangeText,
+  placeholder,
+  value,
+}: {
+  disabled: boolean;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.currencyInputShell}>
+      <Text style={styles.currencyInputPrefix}>Rp</Text>
+      <KolamFormTextField
+        editable={!disabled}
+        keyboardType="numeric"
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        style={[
+          settingsWebFormStyles.settingsWebFormFieldValue,
+          styles.currencyInputControl,
+        ]}
+        value={value}
+      />
     </View>
   );
 }
@@ -10363,6 +10411,31 @@ const styles = StyleSheet.create({
   priceInputControl: {
     flex: 1,
     minWidth: 0,
+  },
+  currencyInputShell: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  currencyInputPrefix: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+    paddingLeft: 12,
+    paddingRight: 8,
+  },
+  currencyInputControl: {
+    borderWidth: 0,
+    flex: 1,
+    minWidth: 0,
+    paddingLeft: 0,
   },
   priceUnitBadge: {
     alignItems: 'center',
