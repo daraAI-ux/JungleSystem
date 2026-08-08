@@ -1313,6 +1313,81 @@ function KolamSpeciesForm({
                     </View>
                   </FieldShell>
                 </View>
+                <View style={styles.twoColumnGrid}>
+                  <FieldShell
+                    label="Tag"
+                    style={styles.speciesBasicInfoHalfField}
+                  >
+                    <View style={styles.categoryPickerStack}>
+                      <KolamDropdownSelect
+                        accessibilityLabel="Tambah tag spesies"
+                        label="Tambah Tag"
+                        menuStyle={styles.longDropdownMenu}
+                        onChange={tagId => {
+                          if (!tagId || form.tagIds.includes(tagId)) {
+                            return;
+                          }
+
+                          controller.onChangeForm({
+                            tagIds: [...form.tagIds, tagId],
+                          });
+                        }}
+                        options={[
+                          { label: 'Tambah tag', value: '' },
+                          ...tagOptions.map(tag => ({
+                            label: tag.name,
+                            value: tag.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari tag..."
+                        showLabelInTrigger={false}
+                        value=""
+                      />
+                      <View style={styles.selectedCategoryRow}>
+                        {selectedTags.length ? (
+                          selectedTags.map(tag => (
+                            <KolamButton
+                              intent="outline"
+                              key={tag.id}
+                              label={`${tag.name} x`}
+                              onPress={() =>
+                                controller.onChangeForm({
+                                  tagIds: form.tagIds.filter(
+                                    tagId => tagId !== tag.id,
+                                  ),
+                                })
+                              }
+                              style={styles.selectedCategoryButton}
+                            />
+                          ))
+                        ) : (
+                          <KolamCopyStack
+                            items={[
+                              {
+                                id: 'empty-tag',
+                                text: 'Belum ada tag dipilih.',
+                                style: styles.fieldHint,
+                              },
+                            ]}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  </FieldShell>
+                  <FieldShell
+                    label="Tautan Eksternal"
+                    style={styles.speciesBasicInfoHalfField}
+                  >
+                    <SpeciesExternalLinksRowsEditor
+                      disabled={controller.saving}
+                      links={form.externalLinks}
+                      onChange={externalLinks =>
+                        controller.onChangeForm({ externalLinks })
+                      }
+                    />
+                  </FieldShell>
+                </View>
               </View>
             </SpeciesEditSection>
 
@@ -1512,20 +1587,6 @@ function KolamSpeciesForm({
             ) : null}
 
             <SpeciesEditSection
-              description="Opsional: tautan marketplace, website, POS, atau referensi."
-              title="Tautan Eksternal"
-            >
-              <View
-                style={[
-                  styles.speciesBasicInfoCard,
-                  styles.customFieldSettingsCard,
-                ]}
-              >
-                <SpeciesExternalLinksEditor controller={controller} />
-              </View>
-            </SpeciesEditSection>
-
-            <SpeciesEditSection
               description="Judul, kata kunci, dan deskripsi SEO Google."
               title="SEO Google"
             >
@@ -1571,70 +1632,6 @@ function KolamSpeciesForm({
                   />
                 </FieldShell>
               </View>
-            </SpeciesEditSection>
-
-            <SpeciesEditSection
-              description="Tag untuk filter internal, pengelompokan, dan SEO."
-              title="Informasi Tambahan"
-            >
-              <FieldShell label="Tag">
-                <View style={styles.categoryPickerStack}>
-                  <KolamDropdownSelect
-                    accessibilityLabel="Tambah tag spesies"
-                    label="Tambah Tag"
-                    menuStyle={styles.longDropdownMenu}
-                    onChange={tagId => {
-                      if (!tagId || form.tagIds.includes(tagId)) {
-                        return;
-                      }
-
-                      controller.onChangeForm({
-                        tagIds: [...form.tagIds, tagId],
-                      });
-                    }}
-                    options={[
-                      { label: 'Tambah tag', value: '' },
-                      ...tagOptions.map(tag => ({
-                        label: tag.name,
-                        value: tag.id,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari tag..."
-                    showLabelInTrigger={false}
-                    value=""
-                  />
-                  <View style={styles.selectedCategoryRow}>
-                    {selectedTags.length ? (
-                      selectedTags.map(tag => (
-                        <KolamButton
-                          intent="outline"
-                          key={tag.id}
-                          label={`${tag.name} x`}
-                          onPress={() =>
-                            controller.onChangeForm({
-                              tagIds: form.tagIds.filter(
-                                tagId => tagId !== tag.id,
-                              ),
-                            })
-                          }
-                          style={styles.selectedCategoryButton}
-                        />
-                      ))
-                    ) : (
-                      <KolamCopyStack
-                        items={[
-                          {
-                            id: 'empty-tag',
-                            text: 'Belum ada tag dipilih.',
-                            style: styles.fieldHint,
-                          },
-                        ]}
-                      />
-                    )}
-                  </View>
-                </View>
-              </FieldShell>
             </SpeciesEditSection>
 
             <SpeciesEditSection

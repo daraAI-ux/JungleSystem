@@ -1963,6 +1963,45 @@ function ProductEditFormPage({
                     />
                   </View>
                 </View>
+                <View style={styles.twoColumnGrid}>
+                  <View style={styles.productBasicInfoHalfField}>
+                    <ProductMultiSelectField
+                      disabled={disabled}
+                      emptyText="Belum ada tag dipilih."
+                      label="Tag"
+                      onAdd={tagId =>
+                        controller.onChangeForm({
+                          tagIds: [...form.tagIds, tagId],
+                        })
+                      }
+                      onRemove={tagId =>
+                        controller.onChangeForm({
+                          tagIds: form.tagIds.filter(id => id !== tagId),
+                        })
+                      }
+                      options={tagOptions.map(tag => ({
+                        id: tag.id,
+                        label: tag.name,
+                      }))}
+                      selected={selectedTags.map(tag => ({
+                        id: tag.id,
+                        label: tag.name,
+                      }))}
+                      triggerLabel="Tambah tag"
+                    />
+                  </View>
+                  <View style={styles.productBasicInfoHalfField}>
+                    <ProductFieldShell label="Tautan Eksternal">
+                      <ProductExternalLinksRowsEditor
+                        disabled={disabled}
+                        links={form.externalLinks}
+                        onChange={externalLinks =>
+                          controller.onChangeForm({ externalLinks })
+                        }
+                      />
+                    </ProductFieldShell>
+                  </View>
+                </View>
               </View>
             </ProductEditSection>
 
@@ -2100,47 +2139,6 @@ function ProductEditFormPage({
                 <ProductRootVendorPricesEditor controller={controller} />
               </ProductEditSection>
             ) : null}
-
-            <ProductEditSection
-              description="Tag untuk filter internal, pengelompokan, dan SEO."
-              title="Tag"
-            >
-              <ProductMultiSelectField
-                disabled={disabled}
-                emptyText="Belum ada tag dipilih."
-                label="Tag"
-                onAdd={tagId =>
-                  controller.onChangeForm({ tagIds: [...form.tagIds, tagId] })
-                }
-                onRemove={tagId =>
-                  controller.onChangeForm({
-                    tagIds: form.tagIds.filter(id => id !== tagId),
-                  })
-                }
-                options={tagOptions.map(tag => ({
-                  id: tag.id,
-                  label: tag.name,
-                }))}
-                selected={selectedTags.map(tag => ({
-                  id: tag.id,
-                  label: tag.name,
-                }))}
-                triggerLabel="Tambah tag"
-              />
-            </ProductEditSection>
-
-            <ProductEditSection
-              description="Link marketplace atau dokumentasi produk."
-              title="Tautan Eksternal"
-            >
-              <ProductExternalLinksRowsEditor
-                disabled={disabled}
-                links={form.externalLinks}
-                onChange={externalLinks =>
-                  controller.onChangeForm({ externalLinks })
-                }
-              />
-            </ProductEditSection>
 
             <ProductEditSection
               description="Judul, kata kunci, dan deskripsi SEO Google."
