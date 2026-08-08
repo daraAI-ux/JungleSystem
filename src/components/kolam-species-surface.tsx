@@ -1800,6 +1800,9 @@ function SpeciesExternalLinksRowsEditor({
                 onChange={name => updateRow(index, { name })}
                 options={SPECIES_EXTERNAL_LINK_OPTIONS}
                 showLabelInTrigger={false}
+                style={styles.externalLinkDropdown}
+                triggerStyle={styles.externalLinkDropdownTrigger}
+                triggerTextStyle={styles.externalLinkDropdownTriggerText}
                 value={link.name}
               />
             </View>
@@ -8359,6 +8362,21 @@ const styles = StyleSheet.create({
     flexBasis: 112,
     flexShrink: 0,
     minWidth: 104,
+  },
+  externalLinkDropdown: {
+    alignSelf: 'stretch',
+    maxWidth: '100%',
+    minWidth: 0,
+    width: '100%',
+  },
+  externalLinkDropdownTrigger: {
+    maxWidth: '100%',
+    minWidth: 0,
+    width: '100%',
+  },
+  externalLinkDropdownTriggerText: {
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   externalLinkInput: {
     flex: 1,
