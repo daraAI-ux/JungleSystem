@@ -150,6 +150,46 @@ describe('dashboard header copy', () => {
     );
   });
 
+  it('keeps product icon and copy on product create and edit routes', () => {
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'Produk',
+          route: '/products/create',
+          description: 'Create product page from live Kolam',
+          group: 'Produk',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Produk',
+        moduleIcon: 'product',
+        title: 'Produk Baru',
+        subtitle: 'Tambah produk baru.',
+      }),
+    );
+
+    expect(
+      getDashboardHeaderRouteContext({
+        activeNavigationItem: {
+          label: 'Produk Edit',
+          route: '/products/abc123/edit',
+          description: 'Edit product page from live Kolam',
+          group: 'Produk',
+          requiredAccess: ['kolam'],
+        },
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        eyebrow: 'Produk',
+        moduleIcon: 'product',
+        title: 'Edit Produk',
+        subtitle: 'Ubah data produk.',
+      }),
+    );
+  });
+
   it('re-resolves stale asset-purchase detail labels from the live catalog', () => {
     expect(
       getDashboardHeaderRouteContext({

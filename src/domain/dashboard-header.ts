@@ -280,6 +280,7 @@ export function getDashboardHeaderRouteContext({
     const routePath =
       activeNavigationItem.route.split('?')[0].replace(/\/+$/, '') || '/';
     const assetPurchaseHeader = getAssetPurchaseDashboardHeaderCopy(routePath);
+    const productHeader = getProductDashboardHeaderCopy(routePath);
     if (assetPurchaseHeader) {
       return {
         eyebrow:
@@ -289,6 +290,19 @@ export function getDashboardHeaderRouteContext({
         route: activeNavigationItem.route,
         title: assetPurchaseHeader.title,
         subtitle: assetPurchaseHeader.subtitle,
+      };
+    }
+
+    if (productHeader) {
+      return {
+        eyebrow:
+          activeNavigationItem.group ??
+          getKolamNavigationSectionTitleForRoute(routePath) ??
+          undefined,
+        moduleIcon: 'product',
+        route: activeNavigationItem.route,
+        title: productHeader.title,
+        subtitle: productHeader.subtitle,
       };
     }
 
@@ -304,6 +318,25 @@ export function getDashboardHeaderRouteContext({
     };
   }
 
+  return null;
+}
+
+function getProductDashboardHeaderCopy(routePath: string): {
+  title: string;
+  subtitle: string;
+} | null {
+  if (routePath === '/products/create' || routePath === '/products/baru') {
+    return {
+      title: 'Produk Baru',
+      subtitle: 'Tambah produk baru.',
+    };
+  }
+  if (/^\/products\/[^/]+\/edit$/.test(routePath)) {
+    return {
+      title: 'Edit Produk',
+      subtitle: 'Ubah data produk.',
+    };
+  }
   return null;
 }
 
