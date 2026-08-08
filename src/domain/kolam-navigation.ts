@@ -23,6 +23,7 @@ export type KolamNavigationModuleIcon =
   | 'species'
   | 'tag'
   | 'taxonomy'
+  | 'teranura'
   | 'unit';
 
 export interface KolamNavigationSection {
@@ -346,6 +347,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/teranura',
         description: 'Teranura animal records and statistics workspace',
         group: 'Stok Hidup',
+        moduleIcon: 'teranura',
         requiredAccess: ['kolam'],
       },
       {
@@ -803,7 +805,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Bahan Kemasan',
         moduleIcon: 'packing',
       }),
-      sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
+      sidebarItem('/teranura', {
+        group: 'Produk',
+        label: 'Teranura',
+        moduleIcon: 'teranura',
+      }),
       sidebarItem('/stock-transaction', {
         group: 'Stok',
         label: 'Transaksi Stok',

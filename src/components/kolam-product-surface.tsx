@@ -1968,10 +1968,12 @@ function ProductEditFormPage({
               description="Thumbnail, foto, dan video produk utama."
               title="Media"
             >
-              <ProductMediaEditPanel
-                controller={controller}
-                onDelete={setDeleteMediaTarget}
-              />
+              <View style={styles.productBasicInfoCard}>
+                <ProductMediaEditPanel
+                  controller={controller}
+                  onDelete={setDeleteMediaTarget}
+                />
+              </View>
             </ProductEditSection>
 
             <ProductEditSection
