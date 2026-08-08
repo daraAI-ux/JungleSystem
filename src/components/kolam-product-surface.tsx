@@ -2007,11 +2007,30 @@ function ProductEditFormPage({
                   </View>
                 </View>
                 {controller.mode !== 'new' ? (
-                  <ProductFieldShell label="Garansi Produk">
-                    <View style={styles.variantFieldPanel}>
-                      <ProductWarrantyPanel controller={controller} />
-                    </View>
-                  </ProductFieldShell>
+                  <View style={styles.twoColumnGrid}>
+                    <ProductFieldShell label="Garansi Produk">
+                      <View style={styles.variantFieldPanel}>
+                        <ProductWarrantyPanel controller={controller} />
+                      </View>
+                    </ProductFieldShell>
+                    <ProductFieldShell label="Lokasi">
+                      <KolamDropdownSelect
+                        label="Lokasi"
+                        menuStyle={styles.longDropdownMenu}
+                        onChange={locationId =>
+                          controller.onChangeForm({ locationId })
+                        }
+                        options={[
+                          { label: 'Pilih lokasi', value: '' },
+                          ...locationOptions,
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari lokasi..."
+                        showLabelInTrigger={false}
+                        value={form.locationId}
+                      />
+                    </ProductFieldShell>
+                  </View>
                 ) : null}
               </View>
             </ProductEditSection>
