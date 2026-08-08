@@ -20,7 +20,7 @@ export function KolamTopNavigationChatButton({
       <KolamIconButton
         accessibilityLabel={accessibilityLabel}
         onPress={onPress}
-        size={32}
+        size={28}
         radius="full"
         variant="ghost">
         <KolamTopNavigationChatIcon kind={kind} />

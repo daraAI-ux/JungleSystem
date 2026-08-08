@@ -41,7 +41,7 @@ export function KolamTopNavigationCashflowHost({
         accessibilityLabel={tooltip}
         onPress={() => onNavigate?.(getAdminCashflowHeaderRoute(session))}
         radius="full"
-        size={32}
+        size={28}
         variant="ghost">
         <CashflowSessionIcon />
       </KolamIconButton>
@@ -51,7 +51,7 @@ export function KolamTopNavigationCashflowHost({
 
 function CashflowSessionIcon() {
   return (
-    <Svg height={22} width={22} viewBox="0 0 810 809.999993">
+    <Svg height={20} width={20} viewBox="0 0 810 809.999993">
       {CASHFLOW_SESSION_ICON_PATHS.map(path => (
         <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
       ))}
@@ -77,8 +77,8 @@ function getSvgPathData(svg: string) {
 const styles = StyleSheet.create({
   wrap: {
     position: 'relative',
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },

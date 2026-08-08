@@ -62,7 +62,7 @@ export function KolamTopNavigationRightControl({
         <KolamIconButton
           accessibilityLabel={control.label}
           onPress={() => onCashflowNavigate?.('/task-manager')}
-          size={32}
+          size={28}
           radius="full"
           variant="ghost">
           <KolamTopNavigationTaskIcon />
@@ -77,7 +77,7 @@ export function KolamTopNavigationRightControl({
         <KolamIconButton
           accessibilityLabel={control.label}
           onPress={() => onCashflowNavigate?.('/app-downloads')}
-          size={32}
+          size={28}
           radius="full"
           variant="ghost">
           <KolamTopNavigationDownloadIcon />
@@ -92,7 +92,7 @@ export function KolamTopNavigationRightControl({
         <KolamIconButton
           accessibilityLabel={control.label}
           onPress={() => onCashflowNavigate?.('/media')}
-          size={32}
+          size={28}
           radius="full"
           variant="ghost">
           <KolamTopNavigationMediaIcon />
@@ -159,11 +159,11 @@ function KolamTopNavigationControlTooltip({
 const styles = StyleSheet.create({
   tooltipRoot: {
     alignItems: 'center',
-    height: 32,
+    height: 28,
     justifyContent: 'center',
     overflow: 'visible',
     position: 'relative',
-    width: 32,
+    width: 28,
   },
   tooltipRootOpen: {
     elevation: 120,
@@ -177,10 +177,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 130,
     justifyContent: 'center',
-    marginTop: 7,
-    minHeight: 28,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
+    marginTop: 5,
+    minHeight: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     position: 'absolute',
     top: '100%',
     zIndex: 13000,
@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
   tooltipText: {
     color: V.colors.bg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-    lineHeight: 16,
+    lineHeight: 14,
   },
 });

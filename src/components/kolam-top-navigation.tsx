@@ -18,6 +18,7 @@ export function KolamTopNavigation({
   onCashflowNavigate,
   onChatControlPress,
   onNotificationPress,
+  onQuickSearch,
   onToggleSidebar,
   profilePhotoUrl,
   rightControls,
@@ -28,6 +29,7 @@ export function KolamTopNavigation({
         breadcrumbItems={breadcrumbItems}
         onBreadcrumbPress={onBreadcrumbPress}
         onBreadcrumbDashboardPress={onBreadcrumbDashboardPress}
+        onQuickSearch={onQuickSearch}
         onToggleSidebar={onToggleSidebar}
       />
       <View style={styles.metricsHost}>

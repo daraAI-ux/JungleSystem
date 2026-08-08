@@ -15,7 +15,6 @@ import { dashboardHeaderStyles as styles } from './kolam-dashboard-header-styles
 export function KolamDashboardHeader({
   actions,
   moduleIcon,
-  onQuickSearch,
   onSelectModule,
   onRefresh,
   refreshLoading = false,
@@ -26,7 +25,6 @@ export function KolamDashboardHeader({
   actions: DashboardHeaderAction[];
   eyebrow?: string;
   moduleIcon?: KolamNavigationModuleIcon;
-  onQuickSearch?: () => void;
   onSelectModule: (action: DashboardHeaderAction) => void;
   onRefresh?: () => void;
   refreshLoading?: boolean;
@@ -38,7 +36,6 @@ export function KolamDashboardHeader({
     <KolamHeaderFrame variant="dashboardHeader">
       <KolamDashboardHeaderCopy
         moduleIcon={moduleIcon}
-        onQuickSearch={onQuickSearch}
         subtitle={subtitle}
         title={title}
       />

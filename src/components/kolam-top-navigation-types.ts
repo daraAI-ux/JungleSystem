@@ -15,6 +15,7 @@ export interface KolamTopNavigationProps {
   onCashflowNavigate?: (route: string) => void;
   onChatControlPress?: (control: TopNavRightControl) => void;
   onNotificationPress: () => void;
+  onQuickSearch?: () => void;
   onToggleSidebar: () => void;
   profilePhotoUrl?: string | null;
   rightControls: TopNavRightControl[];

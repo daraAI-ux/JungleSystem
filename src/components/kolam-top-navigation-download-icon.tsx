@@ -10,7 +10,7 @@ export function KolamTopNavigationDownloadIcon({
   color?: string;
 }) {
   return (
-    <Svg height={22} viewBox="0 0 810 809.999993" width={22}>
+    <Svg height={20} viewBox="0 0 810 809.999993" width={20}>
       {DOWNLOAD_ICON_PATHS.map(path => (
         <Path key={path} d={path} fill={color} fillRule="nonzero" />
       ))}

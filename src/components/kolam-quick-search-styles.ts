@@ -15,13 +15,13 @@ export const quickSearchStyles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
   },
-  quickSearchHeader: {
-    alignSelf: 'flex-start',
-    minHeight: 28,
-    marginBottom: 7,
+  quickSearchTopNav: {
+    minWidth: 176,
+    minHeight: 26,
+    marginBottom: 0,
     paddingHorizontal: 8,
     borderRadius: V.radius.md,
-    gap: 8,
+    gap: 7,
   },
   quickSearchCollapsed: {
     width: 36,

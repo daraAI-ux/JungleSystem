@@ -4,16 +4,13 @@ import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {dashboardHeaderStyles as styles} from './kolam-dashboard-header-styles';
 import {KolamModuleIcon} from './kolam-module-icon';
-import {KolamQuickSearch} from './kolam-quick-search';
 
 export function KolamDashboardHeaderCopy({
   moduleIcon,
-  onQuickSearch,
   subtitle,
   title,
 }: {
   moduleIcon?: KolamNavigationModuleIcon;
-  onQuickSearch?: () => void;
   subtitle?: string;
   title: string;
 }) {
@@ -32,9 +29,6 @@ export function KolamDashboardHeaderCopy({
       ]}>
       {moduleIcon ? <KolamModuleIcon kind={moduleIcon} size="header" /> : null}
       <View style={moduleIcon ? styles.headerCopyText : undefined}>
-        {onQuickSearch ? (
-          <KolamQuickSearch onPress={onQuickSearch} variant="header" />
-        ) : null}
         <KolamCopyStack items={items} />
       </View>
     </View>

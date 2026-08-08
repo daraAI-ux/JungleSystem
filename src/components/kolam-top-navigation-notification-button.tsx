@@ -28,9 +28,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderColor: 'transparent',
     borderWidth: 0,
-    height: 32,
+    height: 28,
     justifyContent: 'center',
     position: 'relative',
-    width: 32,
+    width: 28,
   },
 });

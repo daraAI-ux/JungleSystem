@@ -139,7 +139,6 @@ export function useKolamShellChromeController({
       dataset,
       displayName,
       onMessage,
-      onQuickSearch,
       onRefresh: onRefreshDataset,
       onRouteContext,
       onSelectModule,
@@ -165,6 +164,7 @@ export function useKolamShellChromeController({
     onCashflowNavigate: onRouteContext,
     onChatControlPress,
     onNotificationPress,
+    onQuickSearch,
     onToggleSidebar,
     profilePhotoUrl,
   });

@@ -3,5 +3,5 @@
   label?: string;
   onPress: () => void;
   shortcutLabel?: string;
-  variant?: 'sidebar' | 'header';
+  variant?: 'sidebar' | 'topNav';
 }

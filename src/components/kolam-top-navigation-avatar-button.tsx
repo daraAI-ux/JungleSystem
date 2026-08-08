@@ -14,7 +14,7 @@ export function KolamTopNavigationAvatarButton({
   return (
     <KolamIconButton
       onPress={onAvatarPress}
-      size={32}
+      size={28}
       radius="full"
       variant="ghost">
       <KolamTopNavigationAvatar

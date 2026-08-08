@@ -94,6 +94,7 @@ describe('shell Kolam widgets', () => {
             onAvatarPress={() => undefined}
             onBreadcrumbDashboardPress={() => undefined}
             onNotificationPress={() => undefined}
+            onQuickSearch={() => undefined}
             onToggleSidebar={() => undefined}
           />
           <KolamSidebar
@@ -146,7 +147,8 @@ describe('shell Kolam widgets', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Dashboard',
+        'Quick Search',
+        'Ctrl K',
         'Checkout',
         'CPU 12%',
         'RAM 34%',

@@ -104,7 +104,7 @@ export const kolamVisualTokens = {
   layout: {
     sidebarWidth: 272,
     sidebarDockWidth: 52,
-    topNavHeight: 52,
+    topNavHeight: 42,
     quickSearchHeight: 36,
     contentPadding: 16,
     cardSpacing: 24,

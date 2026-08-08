@@ -30,8 +30,8 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.sm,
   },
   icon: {
-    width: 17,
-    height: 15,
+    width: 15,
+    height: 13,
     flexDirection: 'row',
     overflow: 'hidden',
     borderRadius: 4,
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   rail: {
-    width: 6,
+    width: 5,
     backgroundColor: V.colors.mutedFg,
     opacity: 0.18,
     borderRightColor: V.colors.mutedFg,

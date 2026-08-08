@@ -212,13 +212,13 @@ export function getTopNavChromeContract(): TopNavChromeContract {
   return {
     sourceComponent:
       'E:\\Projects\\da-inventory-frontend\\src\\components\\app-sidebar-nav.tsx',
-    height: 52,
+    height: 42,
     backgroundColor: '#ffffff',
     borderBottomWidth: 0,
-    leftGap: 16,
-    triggerSize: 32,
-    separatorHeight: 24,
-    rightGap: 8,
+    leftGap: 10,
+    triggerSize: 28,
+    separatorHeight: 18,
+    rightGap: 5,
     menuMinWidth: 240,
     menuPlacement: 'bottom',
   };

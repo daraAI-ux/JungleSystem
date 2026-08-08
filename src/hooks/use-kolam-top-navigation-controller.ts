@@ -34,6 +34,7 @@ export function useKolamTopNavigationController({
   onCashflowNavigate,
   onChatControlPress,
   onNotificationPress,
+  onQuickSearch,
   onToggleSidebar,
   profilePhotoUrl,
 }: {
@@ -55,6 +56,7 @@ export function useKolamTopNavigationController({
   onCashflowNavigate?: TopNavigationProps['onCashflowNavigate'];
   onChatControlPress?: TopNavigationProps['onChatControlPress'];
   onNotificationPress: () => void;
+  onQuickSearch?: () => void;
   onToggleSidebar: () => void;
   profilePhotoUrl?: string | null;
 }) {
@@ -86,6 +88,7 @@ export function useKolamTopNavigationController({
       onCashflowNavigate,
       onChatControlPress,
       onNotificationPress,
+      onQuickSearch,
       onToggleSidebar,
       profilePhotoUrl,
     }),
@@ -107,6 +110,7 @@ export function useKolamTopNavigationController({
       onCashflowNavigate,
       onChatControlPress,
       onNotificationPress,
+      onQuickSearch,
       onToggleSidebar,
       profilePhotoUrl,
     ],
