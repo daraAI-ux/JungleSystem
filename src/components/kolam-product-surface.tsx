@@ -2053,6 +2053,17 @@ function ProductEditFormPage({
 
             {!hasVariants ? (
               <ProductEditSection
+                description="Komponen produksi untuk produk tanpa varian."
+                title="Bahan Penyusun"
+              >
+                <View style={styles.productBasicInfoCard}>
+                  <ProductRootComponentsPanel controller={controller} />
+                </View>
+              </ProductEditSection>
+            ) : null}
+
+            {!hasVariants ? (
+              <ProductEditSection
                 description="Harga jual, aturan pesanan, dan harga grosir untuk produk tanpa varian."
                 title="Harga"
               >
@@ -2668,6 +2679,31 @@ function ProductRootInventoryPanel({
             />
           </View>
         </ProductPricingFieldPanel>
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductRootComponentsPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  return (
+    <ProductFieldShell label="Bahan Penyusun Root">
+      <View style={styles.grocerPricingPanel}>
+        <KolamComponentOverridesEditor
+          disabled={controller.saving}
+          onChange={componentRows => controller.onChangeForm({ componentRows })}
+          products={controller.rawMaterialProducts}
+          rows={form.componentRows}
+        />
       </View>
     </ProductFieldShell>
   );
