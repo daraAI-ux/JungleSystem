@@ -351,6 +351,10 @@ export function useKolamProductController(
     if (packingResult.status === 'fulfilled') {
       await writeKolamPackingOptionListCache(packingResult.value);
       setPackingOptions(packingResult.value);
+    } else {
+      setError(
+        `Gagal memuat daftar bahan kemasan: ${getErrorMessage(packingResult.reason)}`,
+      );
     }
 
     if (shippingMethodResult.status === 'fulfilled') {
@@ -1153,6 +1157,10 @@ function validateKolamProductFormForSave(form: KolamProductFormState) {
 
   if (form.productType !== 'raw' && !form.sku.trim()) {
     return 'SKU wajib diisi untuk produk.';
+  }
+
+  if (form.packingLinks.some(row => !row.packingId.trim())) {
+    return 'Pilih kemasan di setiap baris, atau hapus baris kosong sebelum menyimpan.';
   }
 
   return null;

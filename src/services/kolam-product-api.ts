@@ -348,21 +348,13 @@ export async function linkKolamProductPackings(
   product: KolamProduct,
   form: KolamProductFormState,
 ): Promise<KolamProduct> {
-  if (form.productType === 'raw') {
-    return product;
-  }
-
-  const packings = createKolamProductPackingLinkPayload(form, product);
-  if (!packings.length && !product.packings.length) {
-    return product;
-  }
-
+  // FE always POSTs current picker selection (including empty clear).
   await kolamRequest<unknown>(
     `/products/${encodeURIComponent(product.id)}/link-packings`,
     {
       method: 'POST',
       body: {
-        packings,
+        packings: createKolamProductPackingLinkPayload(form, product),
       },
       headers: { [DETAIL_EDIT_HEADER]: DETAIL_EDIT_HEADER_VALUE },
     },

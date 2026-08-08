@@ -17,8 +17,10 @@ interface DataResponse<T> {
 }
 
 export async function getKolamPackingOptions(): Promise<KolamPackingOption[]> {
+  // Match FE PackingsPicker: load full catalog (not only enabled) so existing
+  // links to disabled packings still resolve in the edit picker.
   const response = await kolamRequest<unknown>('/packing', {
-    query: { enabled: true, limit: 1000, page: 1 },
+    query: { limit: 1000, page: 1 },
   });
   return normalizeKolamPackingOptionList(response);
 }

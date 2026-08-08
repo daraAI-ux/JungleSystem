@@ -334,6 +334,10 @@ export function useKolamSpeciesController(
     if (packingResult.status === 'fulfilled') {
       setPackingOptions(packingResult.value);
       await writeKolamPackingOptionListCache(packingResult.value);
+    } else {
+      setError(
+        `Gagal memuat daftar bahan kemasan: ${getErrorMessage(packingResult.reason)}`,
+      );
     }
     if (customFieldResult.status === 'fulfilled') {
       setCustomFields(customFieldResult.value);
@@ -1224,6 +1228,10 @@ function validateKolamSpeciesFormForSave(form: KolamSpeciesFormState) {
   const variantValidationError = validateKolamSpeciesVariantsForSave(form);
   if (variantValidationError) {
     return variantValidationError;
+  }
+
+  if (form.packingLinks.some(row => !row.packingId.trim())) {
+    return 'Pilih kemasan di setiap baris, atau hapus baris kosong sebelum menyimpan.';
   }
 
   return null;

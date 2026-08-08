@@ -134,6 +134,8 @@ export interface KolamProductComponentLine {
 
 export interface KolamProductPackingLine {
   id: string;
+  packingId: string;
+  variantId: string | null;
   name: string;
   sku: string;
   variantLabel: string;
@@ -561,6 +563,8 @@ export function createKolamProductDetailRevision(item: KolamProduct) {
     })),
     packings: item.packings.map(packing => ({
       id: packing.id,
+      packingId: packing.packingId,
+      variantId: packing.variantId,
       name: packing.name,
       quantity: packing.quantity,
       variantLabel: packing.variantLabel,
@@ -742,7 +746,7 @@ export function createKolamProductFormState(product: KolamProduct): KolamProduct
     variantConfigTier2Name: getString(variantConfig, 'tier2Name'),
     variants: variants.map(createKolamProductVariantFormRow),
     variantsTouched: false,
-    packingLinks: normalizeProductPackingLinkFormRows(raw.packings),
+    packingLinks: createProductPackingLinkFormRows(product, raw.packings),
     thumbnailLocalUri: '',
     photoLocalUri: '',
     videoLocalUri: '',
@@ -1040,17 +1044,53 @@ function createKolamProductExternalLinkPayload(rows: KolamProductExternalLinkFor
     .filter(row => row.name && row.value);
 }
 
+function createProductPackingLinkFormRows(
+  product: KolamProduct,
+  rawPackings: unknown,
+): KolamProductPackingLinkFormRow[] {
+  // Prefer normalized packings (species-style) so edit seed survives when
+  // raw.packings is missing/odd after list-cache or partial responses.
+  const normalizedRows = (Array.isArray(product.packings) ? product.packings : [])
+    .map((item, index) => {
+      const packingId = item.packingId.trim();
+      if (!packingId) {
+        return null;
+      }
+
+      return {
+        id: item.id || `packing-${index + 1}`,
+        packingId,
+        variantId: item.variantId?.trim() || '',
+        quantity: String(item.quantity ?? 1),
+      };
+    })
+    .filter(Boolean) as KolamProductPackingLinkFormRow[];
+
+  if (normalizedRows.length) {
+    return normalizedRows;
+  }
+
+  return normalizeProductPackingLinkFormRows(rawPackings);
+}
+
 function normalizeProductPackingLinkFormRows(value: unknown): KolamProductPackingLinkFormRow[] {
   const rows = Array.isArray(value) ? value : [];
-  return rows.map((entry, index) => {
-    const row = asRecord(entry);
-    return {
-      id: getString(row, '_id') || getString(row, 'id') || `packing-${index + 1}`,
-      packingId: getObjectIdString(row.packing),
-      variantId: getObjectIdString(row.variant),
-      quantity: String(getNumber(row, 'quantity') ?? 1),
-    };
-  });
+  return rows
+    .map((entry, index) => {
+      const row = asRecord(entry);
+      const packingId = getObjectIdString(row.packing);
+      if (!packingId) {
+        return null;
+      }
+
+      return {
+        id: getString(row, '_id') || getString(row, 'id') || `packing-${index + 1}`,
+        packingId,
+        variantId: getObjectIdString(row.variant),
+        quantity: String(getNumber(row, 'quantity') ?? 1),
+      };
+    })
+    .filter(Boolean) as KolamProductPackingLinkFormRow[];
 }
 
 export function createKolamProductPackingLinkPayload(
@@ -1785,13 +1825,17 @@ function normalizePackings(value: unknown): KolamProductPackingLine[] {
     const packing = asRecord(row.packing);
     const variant = asRecord(row.variant);
     const photos = normalizeFileUriList(packing.photos ?? packing.images);
+    const packingId = getObjectIdString(row.packing);
+    const variantId = getObjectIdString(row.variant) || null;
 
     return {
       id:
         getString(row, '_id') ||
         getString(row, 'id') ||
-        getString(packing, '_id') ||
+        packingId ||
         `packing-${index + 1}`,
+      packingId,
+      variantId,
       name:
         getString(packing, 'name') ||
         getString(packing, 'sku') ||
