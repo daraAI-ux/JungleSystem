@@ -20,6 +20,7 @@ export function KolamEntityDetailAssetsPanel({
   assets: initialAssets,
   deleteAsset,
   downloadAsset,
+  headerUploadActions = false,
   itemType = 'aset',
   onAssetsChange,
   uploadAsset,
@@ -27,6 +28,7 @@ export function KolamEntityDetailAssetsPanel({
   assets: KolamEntityDetailAsset[];
   deleteAsset: (assetId: string) => Promise<KolamEntityDetailAsset[]>;
   downloadAsset: (asset: KolamEntityDetailAsset) => void;
+  headerUploadActions?: boolean;
   itemType?: string;
   onAssetsChange?: (assets: KolamEntityDetailAsset[]) => void;
   uploadAsset: (title: string, localUri: string) => Promise<KolamEntityDetailAsset[]>;
@@ -106,6 +108,13 @@ export function KolamEntityDetailAssetsPanel({
     }
   }, [deleteAsset, deleteTarget, onAssetsChange]);
 
+  const uploadActions = (
+    <View style={styles.assetUploadActions}>
+      <KolamButton disabled={busy} label="Pilih file" onPress={chooseFile} />
+      <KolamButton disabled={busy || !assetTitle.trim() || !assetFile} label={busy ? 'Mengunggah...' : 'Unggah file'} onPress={handleUpload} />
+    </View>
+  );
+
   return (
     <KolamContentFrame style={styles.sectionCardFull} variant="settingsWebConfig">
       <View style={styles.sectionHeader}>
@@ -113,6 +122,7 @@ export function KolamEntityDetailAssetsPanel({
           <Text style={styles.sectionTitle}>Aset</Text>
           <Text style={styles.sectionDescription}>Dokumen internal (PDF, Word, Excel, gambar). Tidak ditampilkan di webstore.</Text>
         </View>
+        {headerUploadActions ? uploadActions : null}
       </View>
 
       <View style={styles.assetUploadCard}>
@@ -127,10 +137,7 @@ export function KolamEntityDetailAssetsPanel({
           />
           <Text style={styles.assetHelp}>Tipe file: PDF, Word, Excel, PNG, JPG.</Text>
         </View>
-        <View style={styles.assetUploadActions}>
-          <KolamButton disabled={busy} label="Pilih file" onPress={chooseFile} />
-          <KolamButton disabled={busy || !assetTitle.trim() || !assetFile} label={busy ? 'Mengunggah...' : 'Unggah file'} onPress={handleUpload} />
-        </View>
+        {headerUploadActions ? null : uploadActions}
         {assetFile ? <Text style={styles.assetSelectedFile}>File dipilih: {assetFile.name ?? assetFile.path ?? assetFile.uri}</Text> : null}
         {error ? <Text style={styles.assetError}>{error}</Text> : null}
         {message ? <Text style={styles.assetSuccess}>{message}</Text> : null}

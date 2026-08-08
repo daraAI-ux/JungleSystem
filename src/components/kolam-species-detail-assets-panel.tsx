@@ -37,6 +37,7 @@ export function KolamSpeciesDetailAssetsPanel({
       assets={species.assets}
       deleteAsset={handleDelete}
       downloadAsset={handleDownload}
+      headerUploadActions
       uploadAsset={handleUpload}
     />
   );
