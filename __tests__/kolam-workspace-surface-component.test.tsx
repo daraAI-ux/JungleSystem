@@ -1434,7 +1434,7 @@ describe('KolamWorkspaceSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Products Create',
+        'Produk Baru',
         '/products/create',
         'Route Pattern',
         'Base Route',

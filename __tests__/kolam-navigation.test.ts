@@ -485,13 +485,17 @@ describe('kolamNavigationSections', () => {
       expect.arrayContaining([
         expect.objectContaining({
           baseRoute: '/products',
-          label: 'Produk Create',
+          label: 'Produk Baru',
+          description: 'Tambah produk baru.',
+          moduleIcon: 'product',
           route: '/products/create',
           routePattern: '/products/create',
         }),
         expect.objectContaining({
           baseRoute: '/products',
-          label: 'Produk Edit',
+          label: 'Edit Produk',
+          description: 'Ubah data produk.',
+          moduleIcon: 'product',
           route: '/products/:id/edit',
           routePattern: '/products/:id/edit',
         }),
@@ -602,7 +606,8 @@ describe('kolamNavigationSections', () => {
     );
     expect(getKolamNavigationItemByRuntimeRoute('/products/create')).toEqual(
       expect.objectContaining({
-        label: 'Produk Create',
+        label: 'Produk Baru',
+        moduleIcon: 'product',
         route: '/products/create',
       }),
     );

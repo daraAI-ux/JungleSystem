@@ -201,6 +201,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/products',
         description: 'Daftar produk yang dijual',
         group: 'Produk',
+        moduleIcon: 'product',
         requiredAccess: ['kolam', 'pos'],
       },
       {
@@ -1134,9 +1135,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/products',
-    labelSuffix: 'Create',
+    labelSuffix: 'Baru',
+    label: 'Produk Baru',
     route: '/products/create',
-    description: 'Create product page from live Kolam',
+    description: 'Tambah produk baru.',
   },
   {
     baseRoute: '/products',
@@ -1147,8 +1149,9 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/products',
     labelSuffix: 'Edit',
+    label: 'Edit Produk',
     route: '/products/:id/edit',
-    description: 'Edit product page from live Kolam',
+    description: 'Ubah data produk.',
   },
   {
     baseRoute: '/products',
