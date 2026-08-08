@@ -8,11 +8,11 @@ import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
-import {KOLAM_TERANURA_MODULE_ICON_SVG} from '../assets/icons/teranura-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 
 const IUCN_MODULE_ICON_SOURCE = require('../assets/icons/iucn-module-icon.png');
+const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-icon.png');
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   archive: 'Icon Arsip',
@@ -47,7 +47,6 @@ const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
 const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
 const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
-const TERANURA_ICON_PATHS = getSvgPathData(KOLAM_TERANURA_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
 
 const MODULE_ICON_SIZE = {
@@ -95,11 +94,11 @@ export function KolamModuleIcon({
           ))}
         </Svg>
       ) : kind === 'teranura' ? (
-        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
-          {TERANURA_ICON_PATHS.map(path => (
-            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
-          ))}
-        </Svg>
+        <Image
+          resizeMode="contain"
+          source={TERANURA_MODULE_ICON_SOURCE}
+          style={styles.imageIcon}
+        />
       ) : kind === 'fieldcustom' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {FIELDCUSTOM_ICON_PATHS.map(path => (
