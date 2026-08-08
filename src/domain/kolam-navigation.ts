@@ -21,6 +21,7 @@ export type KolamNavigationModuleIcon =
   | 'product'
   | 'raw'
   | 'species'
+  | 'stockMovement'
   | 'tag'
   | 'taxonomy'
   | 'teranura'
@@ -268,6 +269,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/stock-transaction',
         description: 'Pergerakan ledger dan opname satu item',
         group: 'Stok',
+        moduleIcon: 'stockMovement',
         requiredAccess: ['kolam'],
       },
       {
@@ -813,6 +815,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/stock-transaction', {
         group: 'Stok',
         label: 'Transaksi Stok',
+        moduleIcon: 'stockMovement',
       }),
       sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),

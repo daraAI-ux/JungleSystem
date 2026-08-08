@@ -7,6 +7,7 @@ import {KOLAM_PACKING_MODULE_ICON_SVG} from '../assets/icons/packing-module-icon
 import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon-svg';
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
+import {KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG} from '../assets/icons/stock-movement-module-icon-svg';
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
@@ -24,6 +25,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   product: 'Icon Produk',
   raw: 'Icon Bahan Baku',
   species: 'Icon Spesies',
+  stockMovement: 'Icon Transaksi Stok',
   tag: 'Icon Tag',
   taxonomy: 'Icon Taksonomi',
   teranura: 'Icon Teranura',
@@ -46,6 +48,9 @@ const PACKING_ICON_PATHS = getSvgPathData(KOLAM_PACKING_MODULE_ICON_SVG);
 const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
 const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
+const STOCK_MOVEMENT_ICON_PATHS = getSvgPathData(
+  KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG,
+);
 const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
 
@@ -132,6 +137,12 @@ export function KolamModuleIcon({
       ) : kind === 'species' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {SPECIES_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'stockMovement' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {STOCK_MOVEMENT_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
           ))}
         </Svg>
