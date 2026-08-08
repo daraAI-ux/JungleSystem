@@ -13,6 +13,7 @@ import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon
 import {KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG} from '../assets/icons/stock-movement-module-icon-svg';
 import {KOLAM_STOCK_OPNAME_MODULE_ICON_SVG} from '../assets/icons/stock-opname-module-icon-svg';
 import {KOLAM_SUPPLIER_MODULE_ICON_SVG} from '../assets/icons/supplier-module-icon-svg';
+import {KOLAM_TASK_TOPBAR_ICON_SVG} from '../assets/icons/task-topbar-icon-svg';
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
@@ -37,6 +38,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   stockOpname: 'Icon Stock Opname',
   supplier: 'Icon Pemasok',
   tag: 'Icon Tag',
+  taskManager: 'Icon Manajemen Tugas',
   taxonomy: 'Icon Taksonomi',
   teranura: 'Icon Teranura',
   unit: 'Icon Satuan',
@@ -70,6 +72,7 @@ const STOCK_OPNAME_ICON_PATHS = getSvgPathData(
   KOLAM_STOCK_OPNAME_MODULE_ICON_SVG,
 );
 const SUPPLIER_ICON_PATHS = getSvgPathData(KOLAM_SUPPLIER_MODULE_ICON_SVG);
+const TASK_MANAGER_ICON_PATHS = getSvgPathData(KOLAM_TASK_TOPBAR_ICON_SVG);
 const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
 
@@ -122,6 +125,12 @@ export function KolamModuleIcon({
       ) : kind === 'tag' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={TAG_ICON_PATH} fill="#1a1a1a" fillRule="nonzero" />
+        </Svg>
+      ) : kind === 'taskManager' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {TASK_MANAGER_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
         </Svg>
       ) : kind === 'taxonomy' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">

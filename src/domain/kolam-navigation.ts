@@ -28,6 +28,7 @@ export type KolamNavigationModuleIcon =
   | 'stockOpname'
   | 'supplier'
   | 'tag'
+  | 'taskManager'
   | 'taxonomy'
   | 'teranura'
   | 'unit';
@@ -698,6 +699,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/task-manager',
         description: 'Kelola tugas, tugas terjadwal, dan pengaturan tugas',
         group: 'Staff',
+        moduleIcon: 'taskManager',
         requiredAccess: ['kolam'],
       },
     ],
@@ -968,6 +970,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/task-manager', {
         group: 'Manajemen Tugas',
         label: 'Daftar Tugas',
+        moduleIcon: 'taskManager',
       }),
       sidebarItem('/task-manager/settings/categories', {
         group: 'Manajemen Tugas',
