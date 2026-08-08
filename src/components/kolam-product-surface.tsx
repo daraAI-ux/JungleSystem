@@ -1998,6 +1998,13 @@ function ProductEditFormPage({
                     </ProductFieldShell>
                   </View>
                 </View>
+                {controller.mode !== 'new' ? (
+                  <ProductFieldShell label="Garansi Produk">
+                    <View style={styles.variantFieldPanel}>
+                      <ProductWarrantyPanel controller={controller} />
+                    </View>
+                  </ProductFieldShell>
+                ) : null}
               </View>
             </ProductEditSection>
 
@@ -2100,15 +2107,6 @@ function ProductEditFormPage({
                 title="Logistik"
               >
                 <ProductRootLogisticsPanel controller={controller} />
-              </ProductEditSection>
-            ) : null}
-
-            {controller.mode !== 'new' ? (
-              <ProductEditSection
-                description="Garansi distributor resmi atau DA. Terpisah dari komplain kedatangan dan garansi custom project."
-                title="Garansi Produk"
-              >
-                <ProductWarrantyPanel controller={controller} />
               </ProductEditSection>
             ) : null}
 

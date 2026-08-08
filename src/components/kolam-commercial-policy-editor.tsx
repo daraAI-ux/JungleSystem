@@ -125,14 +125,23 @@ export function KolamCommercialPolicyEditor({
 
 const styles = StyleSheet.create({
   root: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
+    minWidth: 0,
+    width: '100%',
   },
   policyPanel: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
     gap: 10,
+    minWidth: 320,
     padding: 12,
   },
   policyHeader: {
