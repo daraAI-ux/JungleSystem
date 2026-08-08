@@ -1680,8 +1680,14 @@ function KolamSpeciesForm({
                     />
                   </View>
                 </View>
-                <SpeciesPackingLinksPanel controller={controller} />
-                <SpeciesEditAssetsPanel controller={controller} />
+                <View style={styles.pricingHalfRow}>
+                  <View style={styles.pricingHalfColumn}>
+                    <SpeciesPackingLinksPanel controller={controller} />
+                  </View>
+                  <View style={styles.pricingHalfColumn}>
+                    <SpeciesEditAssetsPanel controller={controller} />
+                  </View>
+                </View>
               </View>
             </SpeciesEditSection>
 
