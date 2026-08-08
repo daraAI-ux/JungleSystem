@@ -1498,6 +1498,68 @@ function ProductEditFormPage({
         >
           <View style={settingsWebFormStyles.settingsWebFormFields}>
             <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+              <ProductEditSection title="Informasi Dasar">
+                <View style={styles.productBasicInfoCard}>
+                  <View style={styles.twoColumnGrid}>
+                    <View style={styles.productBasicInfoHalfField}>
+                      <ProductFieldShell label="Nama" required>
+                        <KolamFormTextField
+                          editable={!disabled}
+                          onChangeText={name =>
+                            controller.onChangeForm({ name })
+                          }
+                          placeholder="Nama bahan baku"
+                          style={settingsWebFormStyles.settingsWebFormFieldValue}
+                          value={form.name}
+                        />
+                      </ProductFieldShell>
+                    </View>
+                    <View style={styles.productBasicInfoHalfField}>
+                      <ProductFieldShell label="Kode Produk" required>
+                        <KolamFormTextField
+                          editable={!disabled}
+                          onChangeText={productCode =>
+                            controller.onChangeForm({ productCode })
+                          }
+                          placeholder="Kode produk"
+                          style={settingsWebFormStyles.settingsWebFormFieldValue}
+                          value={form.productCode}
+                        />
+                      </ProductFieldShell>
+                    </View>
+                  </View>
+                  <ProductFieldShell label="Kategori Produk">
+                    <ProductMultiSelectField
+                      disabled={disabled}
+                      emptyText="Belum ada kategori dipilih."
+                      label="Kategori Produk"
+                      onAdd={categoryId =>
+                        controller.onChangeForm({
+                          categoryIds: [...form.categoryIds, categoryId],
+                        })
+                      }
+                      onRemove={categoryId =>
+                        controller.onChangeForm({
+                          categoryIds: form.categoryIds.filter(
+                            id => id !== categoryId,
+                          ),
+                        })
+                      }
+                      options={categoryOptions.map(category => ({
+                        id: category.id,
+                        label: `${'  '.repeat(category.level)}${category.name}`,
+                      }))}
+                      selected={selectedCategories.map(category => ({
+                        id: category.id,
+                        label: category.name,
+                        tone: 'category' as const,
+                      }))}
+                      triggerLabel="Tambah kategori"
+                    />
+                  </ProductFieldShell>
+                </View>
+              </ProductEditSection>
+
               <ProductEditSection
                 description="Thumbnail, foto, dan video bahan baku."
                 title="Media"
@@ -1516,31 +1578,9 @@ function ProductEditFormPage({
               </ProductEditSection>
 
               <ProductEditSection
-                description="Nama, kode produk, dan deskripsi bahan baku."
+                description="Deskripsi bahan baku."
                 title="Detail bahan baku"
               >
-                <View style={styles.twoColumnGrid}>
-                  <ProductFieldShell label="Nama" required>
-                    <KolamFormTextField
-                      editable={!disabled}
-                      onChangeText={name => controller.onChangeForm({ name })}
-                      placeholder="Nama bahan baku"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={form.name}
-                    />
-                  </ProductFieldShell>
-                  <ProductFieldShell label="Kode Produk" required>
-                    <KolamFormTextField
-                      editable={!disabled}
-                      onChangeText={productCode =>
-                        controller.onChangeForm({ productCode })
-                      }
-                      placeholder="Kode produk"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={form.productCode}
-                    />
-                  </ProductFieldShell>
-                </View>
                 <ProductFieldShell label="Deskripsi">
                   <KolamFormTextField
                     editable={!disabled}
@@ -1669,39 +1709,6 @@ function ProductEditFormPage({
                   />
                 </ProductEditSection>
               ) : null}
-
-              <ProductEditSection
-                description="Pilih satu atau lebih kategori yang relevan."
-                title="Kategori"
-              >
-                <ProductMultiSelectField
-                  disabled={disabled}
-                  emptyText="Belum ada kategori dipilih."
-                  label="Kategori"
-                  onAdd={categoryId =>
-                    controller.onChangeForm({
-                      categoryIds: [...form.categoryIds, categoryId],
-                    })
-                  }
-                  onRemove={categoryId =>
-                    controller.onChangeForm({
-                      categoryIds: form.categoryIds.filter(
-                        id => id !== categoryId,
-                      ),
-                    })
-                  }
-                  options={categoryOptions.map(category => ({
-                    id: category.id,
-                    label: `${'  '.repeat(category.level)}${category.name}`,
-                  }))}
-                  selected={selectedCategories.map(category => ({
-                    id: category.id,
-                    label: category.name,
-                    tone: 'category' as const,
-                  }))}
-                  triggerLabel="Tambah kategori"
-                />
-              </ProductEditSection>
 
               <ProductEditSection
                 description="Hubungkan bahan baku dengan satu atau lebih merek."
