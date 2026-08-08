@@ -1437,21 +1437,24 @@ function ProductEditFormPage({
   if (isRawForm) {
     return (
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
-        <View style={styles.detailHeaderRow}>
-          <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
-            <Text style={styles.title}>{formTitle}</Text>
-          </View>
-          <View style={styles.detailHeaderActions}>
-            <KolamCancelButton disabled={disabled} onPress={onCancel} />
-            <KolamButton
-              disabled={disabled}
-              intent="primary"
-              label={disabled ? 'Menyimpan...' : saveLabel}
-              onPress={() => {
-                void controller.onSave();
-              }}
-            />
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <Text numberOfLines={1} style={styles.formToolbarTitle}>
+                {formTitle}
+              </Text>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamCancelButton disabled={disabled} onPress={onCancel} />
+              <KolamButton
+                disabled={disabled}
+                intent="primary"
+                label={disabled ? 'Menyimpan...' : saveLabel}
+                onPress={() => {
+                  void controller.onSave();
+                }}
+              />
+            </View>
           </View>
         </View>
 
@@ -1783,20 +1786,6 @@ function ProductEditFormPage({
                 />
               </ProductEditSection>
             </View>
-            <View style={styles.formActions}>
-              <KolamCancelButton
-                disabled={disabled}
-                onPress={onCancel}
-              />
-              <KolamButton
-                disabled={disabled}
-                intent="primary"
-                label={disabled ? 'Menyimpan...' : saveLabel}
-                onPress={() => {
-                  void controller.onSave();
-                }}
-              />
-            </View>
           </View>
         </KolamNativeFormSection>
         <KolamDeleteConfirmDialog
@@ -1824,17 +1813,23 @@ function ProductEditFormPage({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
-      <View style={styles.detailHeaderRow}>
-        <View />
-        <View style={styles.detailHeaderActions}>
-          <KolamCancelButton disabled={disabled} onPress={onCancel} />
-          <KolamSaveButton
-            disabled={disabled}
-            label={disabled ? 'Menyimpan...' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave();
-            }}
-          />
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text numberOfLines={1} style={styles.formToolbarTitle}>
+              {formTitle}
+            </Text>
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamCancelButton disabled={disabled} onPress={onCancel} />
+            <KolamSaveButton
+              disabled={disabled}
+              label={disabled ? 'Menyimpan...' : 'Simpan'}
+              onPress={() => {
+                void controller.onSave();
+              }}
+            />
+          </View>
         </View>
       </View>
 
@@ -2222,16 +2217,6 @@ function ProductEditFormPage({
                 translations={form.translations}
               />
             </ProductEditSection>
-          </View>
-          <View style={styles.formActions}>
-            <KolamCancelButton disabled={disabled} onPress={onCancel} />
-            <KolamSaveButton
-              disabled={disabled}
-              label={disabled ? 'Menyimpan...' : 'Simpan'}
-              onPress={() => {
-                void controller.onSave();
-              }}
-            />
           </View>
         </View>
       </KolamNativeFormSection>
@@ -10985,6 +10970,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'flex-end',
+  },
+  formToolbarTitle: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   activeActionRow: {
     elevation: 30,
