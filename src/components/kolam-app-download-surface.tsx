@@ -30,7 +30,6 @@ import {
   type KolamAppDownloadPickedFile,
 } from '../services/kolam-app-download-api';
 import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -211,30 +210,21 @@ export function KolamAppDownloadSurface() {
             <Text style={styles.summaryText}>
               {loading ? 'Memuat' : `${apps.length} aplikasi`}
             </Text>
-            {isAdmin ? (
-              <View style={styles.segment}>
-                <KolamButton
-                  intent={mode === 'catalog' ? 'primary' : 'outline'}
-                  label="Unduh"
-                  onPress={() => setMode('catalog')}
-                />
-                <KolamButton
-                  intent={mode === 'admin' ? 'primary' : 'outline'}
-                  label="Kelola"
-                  onPress={() => setMode('admin')}
-                />
-              </View>
-            ) : null}
           </View>
-          <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={loading}
-              onPress={() => {
-                refreshApps().catch(() => undefined);
-              }}
-            />
-          </View>
+          {isAdmin ? (
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                intent={mode === 'catalog' ? 'primary' : 'outline'}
+                label="Unduh"
+                onPress={() => setMode('catalog')}
+              />
+              <KolamButton
+                intent={mode === 'admin' ? 'primary' : 'outline'}
+                label="Kelola"
+                onPress={() => setMode('admin')}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
 
