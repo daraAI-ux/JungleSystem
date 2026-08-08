@@ -1294,30 +1294,36 @@ function KolamProductDetailView({
             </Text>
           </View>
         </View>
-        <View style={styles.detailHeaderActions}>
-          <KolamDaftarButton onPress={onBack} />
-          {isRawDetail && onRouteChange ? (
-            <KolamButton
-              label="Transaksi Stok"
-              onPress={() =>
-                onRouteChange(`/stock-transaction?productId=${product.id}`)
-              }
+      </View>
+
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters} />
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamDaftarButton onPress={onBack} />
+            {isRawDetail && onRouteChange ? (
+              <KolamButton
+                label="Transaksi Stok"
+                onPress={() =>
+                  onRouteChange(`/stock-transaction?productId=${product.id}`)
+                }
+              />
+            ) : null}
+            <KolamEditButton
+              intent="primary"
+              onPress={() => onEdit(product)}
             />
-          ) : null}
-          <KolamEditButton
-            intent="primary"
-            onPress={() => onEdit(product)}
-          />
-          {controller.filters.archived ? (
-            <KolamButton label="Pulihkan" onPress={() => onRestore(product)} />
-          ) : (
-            <KolamButton label="Arsipkan" onPress={() => onArchive(product)} />
-          )}
-          <KolamButton
-            intent="danger"
-            label="Hapus"
-            onPress={() => onDelete(product)}
-          />
+            {controller.filters.archived ? (
+              <KolamButton label="Pulihkan" onPress={() => onRestore(product)} />
+            ) : (
+              <KolamButton label="Arsipkan" onPress={() => onArchive(product)} />
+            )}
+            <KolamButton
+              intent="danger"
+              label="Hapus"
+              onPress={() => onDelete(product)}
+            />
+          </View>
         </View>
       </View>
 

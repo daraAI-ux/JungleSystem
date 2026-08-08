@@ -5959,20 +5959,25 @@ function KolamSpeciesDetail({
             </Text>
           </View>
         </View>
-        <View style={styles.detailHeaderActions}>
-          <KolamEditButton
-            intent="primary"
-            onPress={() => {
-              controller.onEdit();
-              onRouteChange?.(`${getSpeciesRoute(selectedItem)}/edit`);
-            }}
-          />
-          <KolamDaftarButton
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.('/species');
-            }}
-          />
+      </View>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters} />
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamEditButton
+              intent="primary"
+              onPress={() => {
+                controller.onEdit();
+                onRouteChange?.(`${getSpeciesRoute(selectedItem)}/edit`);
+              }}
+            />
+            <KolamDaftarButton
+              onPress={() => {
+                controller.onBackToList();
+                onRouteChange?.('/species');
+              }}
+            />
+          </View>
         </View>
       </View>
       <KolamSpeciesDetailOverview
