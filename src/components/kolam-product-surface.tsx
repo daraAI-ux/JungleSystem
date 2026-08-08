@@ -1586,6 +1586,15 @@ function ProductEditFormPage({
               </ProductEditSection>
 
               <ProductEditSection
+                description="Aktifkan varian jika bahan baku memiliki beberapa variasi."
+                title="Varian"
+              >
+                <View style={styles.productBasicInfoCard}>
+                  <ProductVariantEditorPanel controller={controller} />
+                </View>
+              </ProductEditSection>
+
+              <ProductEditSection
                 description="Pilih profil spesifikasi atau field manual untuk bahan baku ini."
                 title="Field Kustom / Spesifikasi"
               >
@@ -1643,13 +1652,6 @@ function ProductEditFormPage({
                   </ProductFieldShell>
                 </ProductEditSection>
               ) : null}
-
-              <ProductEditSection
-                description="Aktifkan varian jika bahan baku memiliki beberapa variasi."
-                title="Varian"
-              >
-                <ProductVariantEditorPanel controller={controller} />
-              </ProductEditSection>
 
               {!hasVariants ? (
                 <ProductEditSection
