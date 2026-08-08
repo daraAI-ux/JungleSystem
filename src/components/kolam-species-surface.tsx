@@ -1660,39 +1660,22 @@ function KolamSpeciesForm({
               </View>
             </SpeciesEditSection>
 
-            <View style={styles.speciesEditTwoColumnSections}>
-              <View style={styles.speciesEditTwoColumnSection}>
-                <SpeciesEditSection
-                  description="Produk atau spesies yang terhubung sebagai informasi tambahan."
-                  title="Item Terlampir"
-                >
-                  <SpeciesAttachedItemsEditPanel controller={controller} />
-                </SpeciesEditSection>
-
-                <SpeciesEditSection
-                  description="Bahan kemasan yang terhubung ke spesies atau varian."
-                  title="Bahan Kemasan"
-                >
-                  <SpeciesPackingLinksPanel controller={controller} />
-                </SpeciesEditSection>
+            <SpeciesEditSection
+              description="Item terlampir, kemasan, syarat ketentuan, dan aset spesies."
+              title="Keterangan tambahan"
+            >
+              <View
+                style={[
+                  styles.speciesBasicInfoCard,
+                  styles.customFieldSettingsCard,
+                ]}
+              >
+                <SpeciesAttachedItemsEditPanel controller={controller} />
+                <SpeciesPackingLinksPanel controller={controller} />
+                <SpeciesTermsTemplatesSummaryPanel controller={controller} />
+                <SpeciesEditAssetsPanel controller={controller} />
               </View>
-
-              <View style={styles.speciesEditTwoColumnSection}>
-                <SpeciesEditSection
-                  description="Template syarat dan ketentuan aktif untuk spesies."
-                  title="Syarat dan Ketentuan"
-                >
-                  <SpeciesTermsTemplatesSummaryPanel controller={controller} />
-                </SpeciesEditSection>
-
-                <SpeciesEditSection
-                  description="Dokumen dan file pendukung spesies."
-                  title="Aset"
-                >
-                  <SpeciesEditAssetsPanel controller={controller} />
-                </SpeciesEditSection>
-              </View>
-            </View>
+            </SpeciesEditSection>
 
             <SpeciesEditSection
               description="Terjemahan katalog untuk webstore dan audit konten."

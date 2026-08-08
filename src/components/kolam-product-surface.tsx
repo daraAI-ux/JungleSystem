@@ -1751,7 +1751,9 @@ function ProductEditFormPage({
                   description="Berat dan dimensi bahan baku tanpa varian."
                   title="Logistik"
                 >
-                  <ProductRootLogisticsPanel controller={controller} />
+                  <View style={styles.productBasicInfoCard}>
+                    <ProductRootLogisticsPanel controller={controller} />
+                  </View>
                 </ProductEditSection>
               ) : null}
 
@@ -2106,7 +2108,9 @@ function ProductEditFormPage({
                 description="Berat dan dimensi produk tanpa varian."
                 title="Logistik"
               >
-                <ProductRootLogisticsPanel controller={controller} />
+                <View style={styles.productBasicInfoCard}>
+                  <ProductRootLogisticsPanel controller={controller} />
+                </View>
               </ProductEditSection>
             ) : null}
 
@@ -2148,32 +2152,16 @@ function ProductEditFormPage({
               </View>
             </ProductEditSection>
 
-            <View style={styles.productEditTwoColumnSections}>
-              <View style={styles.productEditTwoColumnSection}>
-                <ProductEditSection
-                  description="Hubungkan produk kompatibel atau pengganti."
-                  title="Produk kompatibel"
-                >
-                  <ProductAttachedItemsEditPanel controller={controller} />
-                </ProductEditSection>
-
-                <ProductEditSection
-                  description="Material packing default untuk mengirim 1 unit produk."
-                  title="Bahan Kemasan"
-                >
-                  <ProductPackingLinksPanel controller={controller} />
-                </ProductEditSection>
+            <ProductEditSection
+              description="Item terlampir, kemasan, dan syarat ketentuan produk."
+              title="Keterangan tambahan"
+            >
+              <View style={styles.productBasicInfoCard}>
+                <ProductAttachedItemsEditPanel controller={controller} />
+                <ProductPackingLinksPanel controller={controller} />
+                <ProductTermsTemplatesSummaryPanel controller={controller} />
               </View>
-
-              <View style={styles.productEditTwoColumnSection}>
-                <ProductEditSection
-                  description="Template S&K yang berlaku untuk produk ini."
-                  title="Syarat dan Ketentuan"
-                >
-                  <ProductTermsTemplatesSummaryPanel controller={controller} />
-                </ProductEditSection>
-              </View>
-            </View>
+            </ProductEditSection>
 
             <ProductEditSection
               description="Terjemahan katalog untuk webstore dan marketplace."
@@ -2844,27 +2832,27 @@ function ProductRootLogisticsPanel({
   ];
 
   return (
-    <ProductFieldShell label="Berat dan Dimensi Root">
-      <View style={styles.variantSpecsGrid}>
-        <View style={styles.variantSpecsGroup}>
-          <KolamCopyStack
-            items={[
-              { id: 'label', text: 'Berat', style: styles.variantSpecsLabel },
-            ]}
-          />
-          <View style={styles.variantSpecsTwoGrid}>
+    <View style={styles.pricingPanelStack}>
+      <ProductPricingFieldPanel
+        description="Opsional untuk pengiriman dan logistik."
+        title="Berat"
+      >
+        <View style={styles.twoColumnGrid}>
+          <ProductCompactField label="Nilai berat">
             <KolamFormTextField
               editable={!controller.saving}
               keyboardType="numeric"
               onChangeText={weightValue =>
                 controller.onChangeForm({ weightValue })
               }
-              placeholder="Nilai"
+              placeholder="Nilai berat"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.weightValue}
             />
+          </ProductCompactField>
+          <ProductCompactField label="Satuan berat">
             <KolamDropdownSelect
-              label="Satuan"
+              label="Satuan berat"
               menuStyle={styles.longDropdownMenu}
               onChange={weightUnitId =>
                 controller.onChangeForm({ weightUnitId })
@@ -2875,51 +2863,54 @@ function ProductRootLogisticsPanel({
               showLabelInTrigger={false}
               value={form.weightUnitId}
             />
-          </View>
+          </ProductCompactField>
         </View>
-        <View style={styles.variantSpecsGroup}>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'label',
-                text: 'Dimensi (P x L x T)',
-                style: styles.variantSpecsLabel,
-              },
-            ]}
-          />
-          <View style={styles.variantSpecsFourGrid}>
+      </ProductPricingFieldPanel>
+
+      <ProductPricingFieldPanel
+        description="Opsional untuk kemasan dan penyimpanan."
+        title="Dimensi"
+      >
+        <View style={styles.logisticsDimensionGrid}>
+          <ProductCompactField label="Panjang">
             <KolamFormTextField
               editable={!controller.saving}
               keyboardType="numeric"
               onChangeText={dimensionLength =>
                 controller.onChangeForm({ dimensionLength })
               }
-              placeholder="P"
+              placeholder="Panjang"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.dimensionLength}
             />
+          </ProductCompactField>
+          <ProductCompactField label="Lebar">
             <KolamFormTextField
               editable={!controller.saving}
               keyboardType="numeric"
               onChangeText={dimensionWidth =>
                 controller.onChangeForm({ dimensionWidth })
               }
-              placeholder="L"
+              placeholder="Lebar"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.dimensionWidth}
             />
+          </ProductCompactField>
+          <ProductCompactField label="Tinggi">
             <KolamFormTextField
               editable={!controller.saving}
               keyboardType="numeric"
               onChangeText={dimensionHeight =>
                 controller.onChangeForm({ dimensionHeight })
               }
-              placeholder="T"
+              placeholder="Tinggi"
               style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={form.dimensionHeight}
             />
+          </ProductCompactField>
+          <ProductCompactField label="Satuan dimensi">
             <KolamDropdownSelect
-              label="Satuan"
+              label="Satuan dimensi"
               menuStyle={styles.longDropdownMenu}
               onChange={dimensionUnitId =>
                 controller.onChangeForm({ dimensionUnitId })
@@ -2930,10 +2921,10 @@ function ProductRootLogisticsPanel({
               showLabelInTrigger={false}
               value={form.dimensionUnitId}
             />
-          </View>
+          </ProductCompactField>
         </View>
-      </View>
-    </ProductFieldShell>
+      </ProductPricingFieldPanel>
+    </View>
   );
 }
 
@@ -10456,6 +10447,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 320,
+  },
+  logisticsDimensionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   priceInputBlock: {
     flexBasis: 320,
