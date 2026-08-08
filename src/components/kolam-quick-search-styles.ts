@@ -15,6 +15,14 @@ export const quickSearchStyles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
   },
+  quickSearchHeader: {
+    alignSelf: 'flex-start',
+    minHeight: 28,
+    marginBottom: 7,
+    paddingHorizontal: 8,
+    borderRadius: V.radius.md,
+    gap: 8,
+  },
   quickSearchCollapsed: {
     width: 36,
     minHeight: 36,

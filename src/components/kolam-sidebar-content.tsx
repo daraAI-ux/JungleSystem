@@ -20,7 +20,6 @@ import {
   type AmCurrentUser,
 } from '../services/am-api';
 import { KolamMappedList } from './kolam-mapped-list';
-import { KolamQuickSearch } from './kolam-quick-search';
 import { KolamNavItem } from './kolam-nav-item';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamSidebarNavGroup } from './kolam-sidebar-navigation-widgets';
@@ -53,7 +52,6 @@ export function KolamSidebarContent({
   filterMenuByAccess,
   onMoveMenuSection,
   onModuleRouteSelect,
-  onQuickSearch,
   onSelectMenuItem,
   onSelectModule,
   onToggleMenuSection,
@@ -80,7 +78,6 @@ export function KolamSidebarContent({
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <KolamQuickSearch collapsed={collapsed} onPress={onQuickSearch} />
       {activeArea === 'am' ? (
         <>
           <KolamAmSidebarMenu

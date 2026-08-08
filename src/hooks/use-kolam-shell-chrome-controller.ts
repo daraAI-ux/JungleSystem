@@ -139,6 +139,7 @@ export function useKolamShellChromeController({
       dataset,
       displayName,
       onMessage,
+      onQuickSearch,
       onRefresh: onRefreshDataset,
       onRouteContext,
       onSelectModule,

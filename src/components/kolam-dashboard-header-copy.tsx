@@ -4,22 +4,20 @@ import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {dashboardHeaderStyles as styles} from './kolam-dashboard-header-styles';
 import {KolamModuleIcon} from './kolam-module-icon';
+import {KolamQuickSearch} from './kolam-quick-search';
 
 export function KolamDashboardHeaderCopy({
-  eyebrow,
   moduleIcon,
+  onQuickSearch,
   subtitle,
   title,
 }: {
-  eyebrow?: string;
   moduleIcon?: KolamNavigationModuleIcon;
+  onQuickSearch?: () => void;
   subtitle?: string;
   title: string;
 }) {
   const items = [
-    ...(eyebrow
-      ? [{id: 'eyebrow', text: eyebrow, style: styles.eyebrow}]
-      : []),
     {id: 'title', text: title, style: styles.title},
     ...(subtitle
       ? [{id: 'subtitle', text: subtitle, style: styles.headerSubtitle}]
@@ -33,10 +31,12 @@ export function KolamDashboardHeaderCopy({
         moduleIcon ? styles.headerCopyWithIcon : null,
       ]}>
       {moduleIcon ? <KolamModuleIcon kind={moduleIcon} size="header" /> : null}
-      <KolamCopyStack
-        containerStyle={moduleIcon ? styles.headerCopyText : undefined}
-        items={items}
-      />
+      <View style={moduleIcon ? styles.headerCopyText : undefined}>
+        {onQuickSearch ? (
+          <KolamQuickSearch onPress={onQuickSearch} variant="header" />
+        ) : null}
+        <KolamCopyStack items={items} />
+      </View>
     </View>
   );
 }

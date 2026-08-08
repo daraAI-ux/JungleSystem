@@ -12,11 +12,18 @@ export function KolamQuickSearch({
   label = 'Quick Search',
   onPress,
   shortcutLabel = 'Ctrl K',
+  variant = 'sidebar',
 }: KolamQuickSearchProps) {
+  const headerVariant = variant === 'header';
+
   return (
     <KolamInteractionFrame
       onPress={onPress}
-      style={[styles.quickSearch, collapsed && styles.quickSearchCollapsed]}>
+      style={[
+        styles.quickSearch,
+        headerVariant && styles.quickSearchHeader,
+        collapsed && styles.quickSearchCollapsed,
+      ]}>
       <KolamQuickSearchIdentity collapsed={collapsed} label={label} />
       <KolamQuickSearchShortcut
         collapsed={collapsed}

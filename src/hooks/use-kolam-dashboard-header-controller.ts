@@ -28,6 +28,7 @@ export function useKolamDashboardHeaderController({
   displayName,
   dataset,
   onMessage,
+  onQuickSearch,
   onRefresh,
   onRouteContext,
   onSelectModule,
@@ -44,6 +45,7 @@ export function useKolamDashboardHeaderController({
   displayName: string;
   dataset: UnifiedDataset;
   onMessage: (message: string) => void;
+  onQuickSearch?: () => void;
   onRefresh?: () => void;
   onRouteContext?: (route: string) => void;
   onSelectModule: (module: AppModule) => void;
@@ -80,6 +82,7 @@ export function useKolamDashboardHeaderController({
           ? getDashboardTitle(displayName, undefined, timezone)
           : activeTitle),
       moduleIcon: routeContext?.moduleIcon,
+      onQuickSearch,
       onRefresh,
       refreshLoading,
       subtitle: routeContext?.subtitle ?? getDashboardSubtitle(activeTitle),
@@ -104,6 +107,7 @@ export function useKolamDashboardHeaderController({
     dataset,
     displayName,
     onMessage,
+    onQuickSearch,
     onRefresh,
     onRouteContext,
     onSelectModule,
