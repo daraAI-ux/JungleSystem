@@ -156,7 +156,12 @@ type ProductListFilterPanel = 'category' | 'brand' | 'stock';
 
 const PRODUCT_FILTER_PANEL_WIDTH = 320;
 
-type ProductVariantEditTab = 'pricing' | 'vendor' | 'specs' | 'media';
+type ProductVariantEditTab =
+  | 'pricing'
+  | 'vendor'
+  | 'specs'
+  | 'media'
+  | 'advanced';
 
 type ProductDeleteMediaTarget =
   | { type: 'thumbnail'; label: string }
@@ -3601,6 +3606,12 @@ function ProductVariantFormCard({
               onPress={() => setActiveTab('media')}
               style={styles.variantTabButton}
             />
+            <KolamButton
+              intent={activeTab === 'advanced' ? 'primary' : 'outline'}
+              label="Lebih lanjut"
+              onPress={() => setActiveTab('advanced')}
+              style={styles.variantTabButton}
+            />
           </View>
 
           {activeTab === 'pricing' ? (
@@ -3898,6 +3909,138 @@ function ProductVariantFormCard({
                 liveVariant={liveVariant}
                 variant={variant}
               />
+            </View>
+          ) : null}
+
+          {activeTab === 'advanced' ? (
+            <View style={styles.variantTabContent}>
+              <View style={styles.variantMemberPointsRow}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'title',
+                      text: 'Poin Anggota',
+                      style: styles.variantAdvancedTitle,
+                    },
+                    {
+                      id: 'hint',
+                      text: 'Poin yang didapat pelanggan per unit pembelian.',
+                      style: styles.variantCompactHint,
+                    },
+                  ]}
+                />
+                <View style={styles.variantAdvancedActions}>
+                  <KolamButton
+                    disabled={controller.saving}
+                    intent={variant.memberPointsEnabled ? 'primary' : 'outline'}
+                    label="Aktif"
+                    onPress={() =>
+                      updateProductVariantRow(controller, variant.id, {
+                        memberPointsEnabled: true,
+                      })
+                    }
+                  />
+                  <KolamButton
+                    disabled={controller.saving}
+                    intent={
+                      !variant.memberPointsEnabled ? 'primary' : 'outline'
+                    }
+                    label="Nonaktif"
+                    onPress={() =>
+                      updateProductVariantRow(controller, variant.id, {
+                        memberPoints: '0',
+                        memberPointsEnabled: false,
+                      })
+                    }
+                  />
+                  {variant.memberPointsEnabled ? (
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      keyboardType="numeric"
+                      onChangeText={memberPoints =>
+                        updateProductVariantRow(controller, variant.id, {
+                          memberPoints,
+                        })
+                      }
+                      placeholder="Poin"
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        styles.memberPointsInput,
+                      ]}
+                      value={variant.memberPoints}
+                    />
+                  ) : null}
+                </View>
+              </View>
+
+              <View style={styles.variantAdvancedGrid}>
+                <View style={styles.variantAdvancedCard}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Bahan Penyusun',
+                        style: styles.variantAdvancedTitle,
+                      },
+                    ]}
+                  />
+                  <KolamComponentOverridesEditor
+                    disabled={controller.saving}
+                    onChange={componentOverrides =>
+                      updateProductVariantRow(controller, variant.id, {
+                        componentOverrides,
+                      })
+                    }
+                    products={controller.rawMaterialProducts}
+                    rows={variant.componentOverrides}
+                  />
+                </View>
+
+                <View style={styles.variantAdvancedCard}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Tautan Eksternal',
+                        style: styles.variantAdvancedTitle,
+                      },
+                    ]}
+                  />
+                  <ProductExternalLinksRowsEditor
+                    disabled={controller.saving}
+                    links={variant.externalLinks}
+                    onChange={externalLinks =>
+                      updateProductVariantRow(controller, variant.id, {
+                        externalLinks,
+                      })
+                    }
+                  />
+                </View>
+
+                <View style={styles.variantAdvancedCard}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Field Kustom',
+                        style: styles.variantAdvancedTitle,
+                      },
+                    ]}
+                  />
+                  <ProductCustomFieldRowsEditor
+                    disabled={controller.saving}
+                    emptyText="Belum ada field kustom aktif untuk varian."
+                    fields={activeCustomFields}
+                    onChange={customFieldValues =>
+                      updateProductVariantRow(controller, variant.id, {
+                        customFieldValues,
+                      })
+                    }
+                    rows={variant.customFieldValues}
+                    units={controller.units}
+                  />
+                </View>
+              </View>
             </View>
           ) : null}
         </>
@@ -10396,6 +10539,49 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     lineHeight: 13,
+  },
+  variantMemberPointsRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantAdvancedActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  memberPointsInput: {
+    minWidth: 120,
+  },
+  variantAdvancedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  variantAdvancedCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 300,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 260,
+    padding: 12,
+  },
+  variantAdvancedTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
   },
   variantSpecsGrid: {
     alignSelf: 'stretch',

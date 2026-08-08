@@ -131,7 +131,7 @@ const SPECIES_VARIANT_EDIT_TABS: Array<{
   { id: 'vendor', label: 'Pemasok' },
   { id: 'specs', label: 'Spesifikasi' },
   { id: 'media', label: 'Media' },
-  { id: 'advanced', label: 'Lanjutan' },
+  { id: 'advanced', label: 'Lebih lanjut' },
 ];
 
 type SpeciesExternalLinkOption = {
