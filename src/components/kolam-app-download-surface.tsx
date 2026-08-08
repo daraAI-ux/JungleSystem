@@ -36,6 +36,7 @@ import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSettingsWebFieldLabel} from './kolam-settings-web-field-label';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 type DownloadSurfaceMode = 'catalog' | 'admin';
 
@@ -204,33 +205,36 @@ export function KolamAppDownloadSurface() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.toolbar}>
-        <Text style={styles.summaryText}>
-          {loading ? 'Memuat' : `${apps.length} aplikasi`}
-        </Text>
-        <View style={styles.toolbarActions}>
-          {isAdmin ? (
-            <View style={styles.segment}>
-              <KolamButton
-                intent={mode === 'catalog' ? 'primary' : 'outline'}
-                label="Unduh"
-                onPress={() => setMode('catalog')}
-              />
-              <KolamButton
-                intent={mode === 'admin' ? 'primary' : 'outline'}
-                label="Kelola"
-                onPress={() => setMode('admin')}
-              />
-            </View>
-          ) : null}
-          <KolamRefreshButton
-            accessibilityLabel="Refresh"
-            disabled={loading}
-
-            onPress={() => {
-              refreshApps().catch(() => undefined);
-            }}
-          />
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <Text style={styles.summaryText}>
+              {loading ? 'Memuat' : `${apps.length} aplikasi`}
+            </Text>
+            {isAdmin ? (
+              <View style={styles.segment}>
+                <KolamButton
+                  intent={mode === 'catalog' ? 'primary' : 'outline'}
+                  label="Unduh"
+                  onPress={() => setMode('catalog')}
+                />
+                <KolamButton
+                  intent={mode === 'admin' ? 'primary' : 'outline'}
+                  label="Kelola"
+                  onPress={() => setMode('admin')}
+                />
+              </View>
+            ) : null}
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamRefreshButton
+              accessibilityLabel="Refresh"
+              disabled={loading}
+              onPress={() => {
+                refreshApps().catch(() => undefined);
+              }}
+            />
+          </View>
         </View>
       </View>
 
@@ -1191,19 +1195,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-  },
-  toolbar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  toolbarActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
   uploadBox: {
     backgroundColor: '#f8fafc',
