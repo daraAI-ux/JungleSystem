@@ -8,7 +8,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import {SvgXml} from 'react-native-svg';
 import { appConfig } from '../config/app';
+import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
 import {
   getCustomFieldTypeLabel,
@@ -156,6 +158,11 @@ const STOCK_OPTIONS = [
 type ProductListFilterPanel = 'category' | 'brand' | 'stock';
 
 const PRODUCT_FILTER_PANEL_WIDTH = 320;
+const KOLAM_ACTION_BUTTON_BG = '#374151';
+const KOLAM_ARCHIVE_BUTTON_ICON_XML = KOLAM_ARCHIVE_MODULE_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.primaryFg,
+);
 
 type ProductVariantEditTab =
   | 'pricing'
@@ -1316,7 +1323,19 @@ function KolamProductDetailView({
             {controller.filters.archived ? (
               <KolamButton label="Pulihkan" onPress={() => onRestore(product)} />
             ) : (
-              <KolamButton label="Arsipkan" onPress={() => onArchive(product)} />
+              <KolamButton
+                icon={
+                  <SvgXml
+                    height="100%"
+                    width="100%"
+                    xml={KOLAM_ARCHIVE_BUTTON_ICON_XML}
+                  />
+                }
+                label="Arsipkan"
+                onPress={() => onArchive(product)}
+                style={styles.archiveButton}
+                textStyle={styles.archiveButtonText}
+              />
             )}
             <KolamButton
               intent="danger"
@@ -11175,6 +11194,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
+  },
+  archiveButton: {
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
+  },
+  archiveButtonText: {
+    color: V.colors.primaryFg,
   },
   detailHeaderRow: {
     alignItems: 'flex-start',
