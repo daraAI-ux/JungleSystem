@@ -4,6 +4,7 @@ import Svg, {Path} from 'react-native-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon-svg';
+import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
@@ -18,6 +19,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   fieldcustom: 'Icon Field Kustom',
   iucn: 'Icon Status IUCN',
   product: 'Icon Produk',
+  raw: 'Icon Bahan Baku',
   species: 'Icon Spesies',
   tag: 'Icon Tag',
   taxonomy: 'Icon Taksonomi',
@@ -37,6 +39,7 @@ const FIELDCUSTOM_ICON_PATHS = [
 const BRAND_ICON_PATHS = getSvgPathData(KOLAM_BRAND_MODULE_ICON_SVG);
 const ARCHIVE_ICON_PATHS = getSvgPathData(KOLAM_ARCHIVE_MODULE_ICON_SVG);
 const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
+const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
 const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
@@ -100,6 +103,12 @@ export function KolamModuleIcon({
       ) : kind === 'product' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {PRODUCT_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'raw' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {RAW_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
           ))}
         </Svg>

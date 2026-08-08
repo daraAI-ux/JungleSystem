@@ -18,6 +18,7 @@ export type KolamNavigationModuleIcon =
   | 'fieldcustom'
   | 'iucn'
   | 'product'
+  | 'raw'
   | 'species'
   | 'tag'
   | 'taxonomy'
@@ -202,6 +203,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/raw-materials',
         description: 'Bahan baku untuk produksi',
         group: 'Produk',
+        moduleIcon: 'raw',
         requiredAccess: ['kolam'],
       },
       {
@@ -789,7 +791,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Arsip',
         moduleIcon: 'archive',
       }),
-      sidebarItem('/raw-materials', { group: 'Produk', label: 'Bahan Baku' }),
+      sidebarItem('/raw-materials', {
+        group: 'Produk',
+        label: 'Bahan Baku',
+        moduleIcon: 'raw',
+      }),
       sidebarItem('/packing-materials', {
         group: 'Produk',
         label: 'Bahan Kemasan',
