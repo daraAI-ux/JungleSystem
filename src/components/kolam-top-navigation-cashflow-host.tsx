@@ -37,15 +37,6 @@ export function KolamTopNavigationCashflowHost({
 
   return (
     <View style={styles.wrap}>
-      {state === 'open' || state === 'locked' ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.glow,
-            state === 'open' ? styles.glowOpen : styles.glowLocked,
-          ]}
-        />
-      ) : null}
       <KolamIconButton
         accessibilityLabel={tooltip}
         onPress={() => onNavigate?.(getAdminCashflowHeaderRoute(session))}
@@ -90,23 +81,5 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glow: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    bottom: 2,
-    left: 2,
-    borderRadius: 999,
-  },
-  glowOpen: {
-    borderWidth: 1,
-    borderColor: 'rgba(111, 189, 130, 0.45)',
-    backgroundColor: 'rgba(111, 189, 130, 0.12)',
-  },
-  glowLocked: {
-    borderWidth: 1,
-    borderColor: 'rgba(216, 199, 160, 0.4)',
-    backgroundColor: 'rgba(216, 199, 160, 0.1)',
   },
 });
