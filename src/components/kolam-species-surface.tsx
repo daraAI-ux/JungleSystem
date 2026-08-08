@@ -1670,9 +1670,17 @@ function KolamSpeciesForm({
                   styles.customFieldSettingsCard,
                 ]}
               >
-                <SpeciesAttachedItemsEditPanel controller={controller} />
+                <View style={styles.pricingHalfRow}>
+                  <View style={styles.pricingHalfColumn}>
+                    <SpeciesAttachedItemsEditPanel controller={controller} />
+                  </View>
+                  <View style={styles.pricingHalfColumn}>
+                    <SpeciesTermsTemplatesSummaryPanel
+                      controller={controller}
+                    />
+                  </View>
+                </View>
                 <SpeciesPackingLinksPanel controller={controller} />
-                <SpeciesTermsTemplatesSummaryPanel controller={controller} />
                 <SpeciesEditAssetsPanel controller={controller} />
               </View>
             </SpeciesEditSection>

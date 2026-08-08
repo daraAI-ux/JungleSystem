@@ -2157,9 +2157,17 @@ function ProductEditFormPage({
               title="Keterangan tambahan"
             >
               <View style={styles.productBasicInfoCard}>
-                <ProductAttachedItemsEditPanel controller={controller} />
+                <View style={styles.pricingHalfRow}>
+                  <View style={styles.pricingHalfColumn}>
+                    <ProductAttachedItemsEditPanel controller={controller} />
+                  </View>
+                  <View style={styles.pricingHalfColumn}>
+                    <ProductTermsTemplatesSummaryPanel
+                      controller={controller}
+                    />
+                  </View>
+                </View>
                 <ProductPackingLinksPanel controller={controller} />
-                <ProductTermsTemplatesSummaryPanel controller={controller} />
               </View>
             </ProductEditSection>
 
