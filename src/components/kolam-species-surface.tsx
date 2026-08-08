@@ -912,15 +912,17 @@ function buildSpeciesListColumns(): Array<KolamListTableColumn<KolamSpecies>> {
 }
 
 function KolamSpeciesIdentityCell({ item }: { item: KolamSpecies }) {
+  const photoUri = item.photoUris[0] || item.thumbnailUri;
+
   return (
     <View style={styles.speciesTableIdentityCell}>
       <View style={styles.speciesThumb}>
         <KolamRemoteImage
           accessibilityLabel={`Foto ${item.displayName}`}
           resizeMode="cover"
-          revision={item.updatedAt ?? item.thumbnailUri ?? item.id}
+          revision={item.updatedAt ?? photoUri ?? item.id}
           scope="species"
-          sourceUri={item.thumbnailUri}
+          sourceUri={photoUri}
           style={styles.speciesThumbImage}
         />
       </View>
