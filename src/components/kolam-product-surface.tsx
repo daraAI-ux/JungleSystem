@@ -1111,6 +1111,7 @@ function ProductActionsMenu({
     <View style={actionMenuOpen ? styles.activeActionRow : null}>
       <KolamOverflowMenuButton
         accessibilityLabel={`Menu ${product.name}`}
+        floating
         onOpenChange={setActionMenuOpen}
         actions={
           isRawCatalog
