@@ -357,10 +357,13 @@ export function KolamOverflowMenuButton({
       setPlacement(nextPlacement);
       if (floating) {
         showKolamOverflowMenuOverlay({
+          anchorHeight: height,
+          anchorTop: y,
           content: renderOverflowMenu([
             styles.overflowMenu,
             styles.overflowMenuGlobalOverlay,
           ]),
+          estimatedHeight: estimatedMenuHeight,
           id: openMenuIdRef.current,
           left: nextLeft,
           onClose: () => {

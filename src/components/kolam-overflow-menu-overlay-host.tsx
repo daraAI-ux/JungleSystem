@@ -8,7 +8,10 @@ import {
 } from 'react-native';
 
 type KolamOverflowMenuOverlayRequest = {
+  anchorHeight: number;
+  anchorTop: number;
   content: React.ReactNode;
+  estimatedHeight: number;
   id: string;
   left: number;
   onClose?: () => void;
@@ -78,10 +81,18 @@ export function KolamOverflowMenuOverlayHost({
       return;
     }
 
-    host.measureInWindow((x, y) => {
+    host.measureInWindow((x, y, _width, height) => {
+      const localLeft = menu.left - x;
+      const requestedTop = menu.top - y;
+      const bottomLimit = Math.max(8, height - menu.estimatedHeight - 8);
+      const shouldOpenUp = requestedTop > bottomLimit;
+      const localTop = shouldOpenUp
+        ? Math.max(8, menu.anchorTop - y - menu.estimatedHeight - 4)
+        : Math.min(requestedTop, bottomLimit);
+
       setLocalPosition({
-        left: menu.left - x,
-        top: menu.top - y,
+        left: localLeft,
+        top: localTop,
       });
     });
   }, [menu]);
