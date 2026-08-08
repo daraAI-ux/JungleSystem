@@ -2166,6 +2166,13 @@ function ProductEditFormPage({
                 >
                   <ProductAttachedItemsEditPanel controller={controller} />
                 </ProductEditSection>
+
+                <ProductEditSection
+                  description="Material packing default untuk mengirim 1 unit produk."
+                  title="Bahan Kemasan"
+                >
+                  <ProductPackingLinksPanel controller={controller} />
+                </ProductEditSection>
               </View>
 
               <View style={styles.productEditTwoColumnSection}>
@@ -2177,13 +2184,6 @@ function ProductEditFormPage({
                 </ProductEditSection>
               </View>
             </View>
-
-            <ProductEditSection
-              description="Material packing default untuk mengirim 1 unit produk."
-              title="Bahan Kemasan"
-            >
-              <ProductPackingLinksPanel controller={controller} />
-            </ProductEditSection>
 
             <ProductEditSection
               description="Terjemahan katalog untuk webstore dan marketplace."
