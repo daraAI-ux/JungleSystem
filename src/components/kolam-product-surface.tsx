@@ -53,6 +53,7 @@ import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
@@ -1818,10 +1819,9 @@ function ProductEditFormPage({
         <View />
         <View style={styles.detailHeaderActions}>
           <KolamCancelButton disabled={disabled} onPress={onCancel} />
-          <KolamButton
+          <KolamSaveButton
             disabled={disabled}
-            intent="primary"
-            label={disabled ? 'Menyimpan...' : saveLabel}
+            label={disabled ? 'Menyimpan...' : 'Simpan'}
             onPress={() => {
               void controller.onSave();
             }}
@@ -1835,9 +1835,10 @@ function ProductEditFormPage({
 
       <KolamNativeFormSection
         section={{
-          description: '',
+          description:
+            'Kelola data utama, relasi master, penjualan, dan deskripsi produk.',
           id: 'catalog-translations',
-          title: formTitle,
+          title: 'Data Produk',
         }}
       >
         <View style={settingsWebFormStyles.settingsWebFormFields}>
@@ -2197,10 +2198,9 @@ function ProductEditFormPage({
           </View>
           <View style={styles.formActions}>
             <KolamCancelButton disabled={disabled} onPress={onCancel} />
-            <KolamButton
+            <KolamSaveButton
               disabled={disabled}
-              intent="primary"
-              label={disabled ? 'Menyimpan...' : saveLabel}
+              label={disabled ? 'Menyimpan...' : 'Simpan'}
               onPress={() => {
                 void controller.onSave();
               }}

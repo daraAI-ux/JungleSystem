@@ -5427,7 +5427,7 @@ function SpeciesVoiceUploadPanel({
         />
       </View>
       <Text style={styles.voiceUploadHint}>
-        Optional. File will be uploaded after you click Save.
+        Opsional. File diunggah setelah menekan Simpan.
       </Text>
       <View style={styles.voiceUploadDropzone}>
         {pendingVoiceUri ? (
