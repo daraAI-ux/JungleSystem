@@ -1594,26 +1594,55 @@ function ProductEditFormPage({
                 </View>
               </ProductEditSection>
 
-              <ProductEditSection
-                description="Pilih profil spesifikasi atau field manual untuk bahan baku ini."
-                title="Field Kustom / Spesifikasi"
-              >
-                <ProductCustomFieldEditorPanel controller={controller} />
-              </ProductEditSection>
+              <View style={styles.productEditTwoColumnSections}>
+                <View style={styles.productEditTwoColumnSection}>
+                  <ProductEditSection
+                    description="Pilih profil spesifikasi atau field manual untuk bahan baku ini."
+                    title="Field Kustom / Spesifikasi"
+                  >
+                    <ProductCustomFieldEditorPanel controller={controller} />
+                  </ProductEditSection>
+                </View>
 
-              <ProductEditSection
-                description="Atur apakah bahan baku ini tersedia untuk penjualan POS."
-                title="Penjualan POS"
-              >
-                <KolamToggleRow
-                  active={form.sellable}
-                  description="Aktifkan jika bahan baku dapat dijual langsung melalui POS."
-                  label="Bahan baku dijual"
-                  onPress={() =>
-                    controller.onChangeForm({ sellable: !form.sellable })
-                  }
-                />
-              </ProductEditSection>
+                <View style={styles.productEditTwoColumnSection}>
+                  <ProductEditSection
+                    description="Atur apakah bahan baku ini tersedia untuk penjualan POS."
+                    title="Penjualan dan Inventori"
+                  >
+                    <View style={styles.productBasicInfoCard}>
+                      <ProductFieldShell label="Penjualan dan Satuan">
+                        <View style={styles.grocerPricingPanel}>
+                          <View style={styles.twoColumnGrid}>
+                            <View style={styles.inlineFieldGroup}>
+                              <View style={styles.sellableSwitchRow}>
+                                <KolamCopyStack
+                                  items={[
+                                    {
+                                      id: 'label',
+                                      text: 'Bahan baku dijual',
+                                      style: styles.variantTitle,
+                                    },
+                                  ]}
+                                />
+                                <KolamSwitch
+                                  accessibilityLabel="Bahan baku dijual"
+                                  active={form.sellable}
+                                  disabled={controller.saving}
+                                  onPress={() =>
+                                    controller.onChangeForm({
+                                      sellable: !form.sellable,
+                                    })
+                                  }
+                                />
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      </ProductFieldShell>
+                    </View>
+                  </ProductEditSection>
+                </View>
+              </View>
 
               {!hasVariants ? (
                 <ProductEditSection
