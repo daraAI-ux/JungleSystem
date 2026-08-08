@@ -8356,13 +8356,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   externalLinkTypeSelect: {
-    flexBasis: 150,
+    flexBasis: 112,
     flexShrink: 0,
-    minWidth: 130,
+    minWidth: 104,
   },
   externalLinkInput: {
     flex: 1,
-    minWidth: 120,
+    minWidth: 80,
   },
   externalLinkRemoveButton: {
     flexShrink: 0,
