@@ -5927,7 +5927,7 @@ function KolamSpeciesDetail({
     <>
       <View style={styles.detailHeaderRow}>
         <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>SPESIES</Text>
+          <Text style={styles.eyebrow}>Spesies Detail Spesies</Text>
           <Text style={styles.title}>
             {item.scientificName || item.displayName}
           </Text>

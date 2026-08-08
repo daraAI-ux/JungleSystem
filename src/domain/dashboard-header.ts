@@ -248,6 +248,9 @@ export function getDashboardHeaderRouteContext({
     );
 
     if (navigationItem) {
+      const routePath = navigationItem.route.split('?')[0];
+      const isSpeciesDetail = /^\/species\/[^/]+$/.test(routePath);
+
       return {
         eyebrow:
           navigationItem.group ??
@@ -255,8 +258,8 @@ export function getDashboardHeaderRouteContext({
           undefined,
         moduleIcon: navigationItem.moduleIcon,
         route: navigationItem.route,
-        title: getDashboardRouteTitle(navigationItem),
-        subtitle: navigationItem.description ?? '',
+        title: isSpeciesDetail ? '' : getDashboardRouteTitle(navigationItem),
+        subtitle: isSpeciesDetail ? '' : navigationItem.description ?? '',
       };
     }
 
