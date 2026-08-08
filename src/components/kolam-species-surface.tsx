@@ -4906,7 +4906,7 @@ function SpeciesPackingLinksPanel({
             },
             {
               id: 'hint',
-              text: 'Kemasan default untuk checkout. Disimpan melalui endpoint bahan kemasan setelah spesies tersimpan.',
+              text: 'Kemasan default untuk checkout.',
               style: styles.fieldHint,
             },
           ]}

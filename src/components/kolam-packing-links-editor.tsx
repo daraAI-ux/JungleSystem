@@ -25,11 +25,13 @@ export function KolamPackingLinksEditor({
   onChange,
   packings,
   rows,
+  rootTargetLabel = 'Spesies utama',
   variants,
 }: {
   disabled?: boolean;
   onChange: (rows: KolamPackingLinkEditorRow[]) => void;
   packings: KolamPackingOption[];
+  rootTargetLabel?: string;
   rows: KolamPackingLinkEditorRow[];
   variants: KolamPackingLinkVariantOption[];
 }) {
@@ -47,10 +49,10 @@ export function KolamPackingLinksEditor({
   );
   const variantOptions = React.useMemo(
     () => [
-      { label: 'Spesies utama', value: '' },
+      { label: rootTargetLabel, value: '' },
       ...variants.map(variant => ({ label: variant.label, value: variant.id })),
     ],
-    [variants],
+    [rootTargetLabel, variants],
   );
 
   const patchRow = (rowId: string, patch: Partial<KolamPackingLinkEditorRow>) => {
@@ -65,8 +67,8 @@ export function KolamPackingLinksEditor({
             {
               id: 'hint',
               text: packings.length
-                ? 'Kemasan dihubungkan per satuan species atau varian.'
-                : 'Daftar kemasan belum tersedia dari cache atau backend.',
+                ? 'Pilih kemasan untuk item utama atau varian.'
+                : 'Belum ada bahan kemasan tersedia.',
               style: styles.hint,
             },
           ]}

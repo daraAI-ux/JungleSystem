@@ -5876,7 +5876,7 @@ function ProductAttachedItemsEditPanel({
   const [itemType, setItemType] = React.useState<'product' | 'species'>(
     'product',
   );
-  const [relationType, setRelationType] = React.useState('compatible_with');
+  const [relationType, setRelationType] = React.useState('feeding');
   const [targetId, setTargetId] = React.useState('');
   const [note, setNote] = React.useState('');
   const [deleteTarget, setDeleteTarget] = React.useState<{
@@ -5890,8 +5890,9 @@ function ProductAttachedItemsEditPanel({
     itemType,
   );
   const relationOptions = [
-    { label: 'Kompatibel', value: 'compatible_with' },
-    { label: 'Pengganti', value: 'replacement' },
+    { label: 'Pakan', value: 'feeding' },
+    { label: 'Suplemen', value: 'supplements' },
+    { label: 'Obat', value: 'medicine' },
   ];
 
   const resetForm = () => {
@@ -6118,7 +6119,7 @@ function ProductPackingLinksPanel({
           items={[
             {
               id: 'hint',
-              text: 'Kemasan default untuk checkout. Disimpan melalui endpoint bahan kemasan setelah produk tersimpan.',
+              text: 'Kemasan default untuk checkout.',
               style: styles.fieldHint,
             },
           ]}
@@ -6127,6 +6128,7 @@ function ProductPackingLinksPanel({
           disabled={controller.saving}
           onChange={packingLinks => controller.onChangeForm({ packingLinks })}
           packings={controller.packingOptions}
+          rootTargetLabel="Produk utama"
           rows={form.packingLinks}
           variants={variants}
         />
