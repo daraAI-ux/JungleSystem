@@ -16,6 +16,7 @@ export type KolamNavigationModuleIcon =
   | 'brand'
   | 'cashflowSession'
   | 'category'
+  | 'download'
   | 'fieldcustom'
   | 'iucn'
   | 'media'
@@ -142,6 +143,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/app-downloads',
         description: 'Unduh aplikasi pendukung desktop, mobile, dan installer.',
         group: 'Dukungan',
+        moduleIcon: 'download',
         requiredAccess: ['kolam'],
       },
     ],
