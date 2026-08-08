@@ -5927,35 +5927,37 @@ function KolamSpeciesDetail({
   return (
     <>
       <View style={styles.detailHeaderRow}>
-        <KolamModuleIcon kind="species" size="header" />
-        <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>Spesies Detail Spesies</Text>
-          <Text style={styles.title}>
-            {item.scientificName || item.displayName}
-          </Text>
-          {item.commonName || item.localName ? (
-            <View style={styles.nameLine}>
-              {item.commonName ? (
-                <Text style={styles.commonName}>{item.commonName}</Text>
-              ) : null}
-              {item.commonName && item.localName ? (
-                <Text style={styles.nameSeparator}>|</Text>
-              ) : null}
-              {item.localName ? (
-                <Text style={styles.localName}>{item.localName}</Text>
-              ) : null}
-            </View>
-          ) : null}
-          <Text style={styles.description}>
-            {[
-              item.createdAt ? `Dibuat ${formatShortDate(item.createdAt)}` : '',
-              item.updatedAt
-                ? `Diperbarui ${formatShortDate(item.updatedAt)}`
-                : '',
-            ]
-              .filter(Boolean)
-              .join(' | ')}
-          </Text>
+        <View style={styles.detailHeaderIdentity}>
+          <KolamModuleIcon kind="species" size="header" />
+          <View style={[styles.headingCopy, styles.detailHeaderCopy]}>
+            <Text style={styles.eyebrow}>Spesies Detail Spesies</Text>
+            <Text style={styles.title}>
+              {item.scientificName || item.displayName}
+            </Text>
+            {item.commonName || item.localName ? (
+              <View style={styles.nameLine}>
+                {item.commonName ? (
+                  <Text style={styles.commonName}>{item.commonName}</Text>
+                ) : null}
+                {item.commonName && item.localName ? (
+                  <Text style={styles.nameSeparator}>|</Text>
+                ) : null}
+                {item.localName ? (
+                  <Text style={styles.localName}>{item.localName}</Text>
+                ) : null}
+              </View>
+            ) : null}
+            <Text style={styles.description}>
+              {[
+                item.createdAt ? `Dibuat ${formatShortDate(item.createdAt)}` : '',
+                item.updatedAt
+                  ? `Diperbarui ${formatShortDate(item.updatedAt)}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' | ')}
+            </Text>
+          </View>
         </View>
         <View style={styles.detailHeaderActions}>
           <KolamEditButton
@@ -7492,6 +7494,13 @@ const styles = StyleSheet.create({
     gap: 16,
     justifyContent: 'space-between',
   },
+  detailHeaderIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    minWidth: 0,
+  },
   detailHeaderActions: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -7502,6 +7511,9 @@ const styles = StyleSheet.create({
   headingCopy: {
     flex: 1,
     minWidth: 260,
+  },
+  detailHeaderCopy: {
+    minWidth: 0,
   },
   eyebrow: {
     color: V.colors.mutedFg,

@@ -1283,14 +1283,16 @@ function KolamProductDetailView({
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
-        <KolamModuleIcon kind={isRawDetail ? 'raw' : 'product'} size="header" />
-        <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>{shellLabels.detailTitle}</Text>
-          <Text style={styles.title}>{product.name}</Text>
-          <Text style={styles.description}>
-            Dibuat {formatDateTime(product.createdAt)} | Diperbarui{' '}
-            {formatDateTime(product.updatedAt)}
-          </Text>
+        <View style={styles.detailHeaderIdentity}>
+          <KolamModuleIcon kind={isRawDetail ? 'raw' : 'product'} size="header" />
+          <View style={[styles.headingCopy, styles.detailHeaderCopy]}>
+            <Text style={styles.eyebrow}>{shellLabels.detailTitle}</Text>
+            <Text style={styles.title}>{product.name}</Text>
+            <Text style={styles.description}>
+              Dibuat {formatDateTime(product.createdAt)} | Diperbarui{' '}
+              {formatDateTime(product.updatedAt)}
+            </Text>
+          </View>
         </View>
         <View style={styles.detailHeaderActions}>
           <KolamDaftarButton onPress={onBack} />
@@ -9880,6 +9882,9 @@ const styles = StyleSheet.create({
   headingCopy: {
     flex: 1,
   },
+  detailHeaderCopy: {
+    minWidth: 0,
+  },
   eyebrow: {
     color: V.colors.mutedFg,
     fontSize: 11,
@@ -11173,6 +11178,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     minWidth: 0,
     width: '100%',
+  },
+  detailHeaderIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    minWidth: 0,
   },
   detailHeaderActions: {
     alignItems: 'center',
