@@ -1545,6 +1545,11 @@ function ProductEditFormPage({
                     <ProductRootPricingPanel controller={controller} />
                     <ProductRootOrderRulesPanel controller={controller} />
                     <ProductRootVendorPricesEditor controller={controller} />
+                    <ProductRootCommercialPolicyPanel
+                      controller={controller}
+                      disabled={disabled}
+                      hasVariants={hasVariants}
+                    />
                   </View>
                 </ProductEditSection>
               ) : null}
@@ -1596,42 +1601,38 @@ function ProductEditFormPage({
                 </ProductEditSection>
               ) : null}
 
-              <ProductEditSection
-                description={
-                  form.sellable
-                    ? 'Poin anggota dan komisi transaksi bahan baku.'
-                    : 'Komisi transaksi bahan baku.'
-                }
-                title="Komisi / Poin"
-              >
-                <KolamCommercialPolicyEditor
-                  disabled={disabled}
-                  memberPointsDisabled={!form.sellable || hasVariants}
-                  memberPointsHint={
-                    hasVariants
-                      ? 'Bahan baku ini memakai varian. Poin anggota diatur di tiap varian.'
-                      : form.sellable
-                      ? 'Poin yang didapat pelanggan per unit bahan baku.'
-                      : 'Aktifkan penjualan POS untuk mengatur poin anggota.'
+              {hasVariants ? (
+                <ProductEditSection
+                  description={
+                    form.sellable
+                      ? 'Poin anggota dan komisi transaksi bahan baku.'
+                      : 'Komisi transaksi bahan baku.'
                   }
-                  onChange={value =>
-                    controller.onChangeForm({
-                      commissionEnabled: value.commissionEnabled,
-                      commissionType: value.commissionType,
-                      commissionValue: value.commissionValue,
-                      memberPointsEnabled: value.memberPointsEnabled,
-                      memberPoints: value.memberPoints,
-                    })
-                  }
-                  value={{
-                    commissionEnabled: form.commissionEnabled,
-                    commissionType: form.commissionType,
-                    commissionValue: form.commissionValue,
-                    memberPointsEnabled: form.memberPointsEnabled,
-                    memberPoints: form.memberPoints,
-                  }}
-                />
-              </ProductEditSection>
+                  title="Komisi / Poin"
+                >
+                  <KolamCommercialPolicyEditor
+                    disabled={disabled}
+                    memberPointsDisabled={!form.sellable || hasVariants}
+                    memberPointsHint="Bahan baku ini memakai varian. Poin anggota diatur di tiap varian."
+                    onChange={value =>
+                      controller.onChangeForm({
+                        commissionEnabled: value.commissionEnabled,
+                        commissionType: value.commissionType,
+                        commissionValue: value.commissionValue,
+                        memberPointsEnabled: value.memberPointsEnabled,
+                        memberPoints: value.memberPoints,
+                      })
+                    }
+                    value={{
+                      commissionEnabled: form.commissionEnabled,
+                      commissionType: form.commissionType,
+                      commissionValue: form.commissionValue,
+                      memberPointsEnabled: form.memberPointsEnabled,
+                      memberPoints: form.memberPoints,
+                    }}
+                  />
+                </ProductEditSection>
+              ) : null}
 
               <ProductEditSection
                 description="Pilih satu atau lebih kategori yang relevan."
@@ -2084,6 +2085,11 @@ function ProductEditFormPage({
                     </View>
                   </View>
                   <ProductRootVendorPricesEditor controller={controller} />
+                  <ProductRootCommercialPolicyPanel
+                    controller={controller}
+                    disabled={disabled}
+                    hasVariants={hasVariants}
+                  />
                 </View>
               </ProductEditSection>
             ) : null}
@@ -2106,46 +2112,34 @@ function ProductEditFormPage({
               </ProductEditSection>
             ) : null}
 
-            <ProductEditSection
-              description={
-                form.sellable && !hasVariants
-                  ? 'Poin anggota dan komisi transaksi produk.'
-                  : 'Komisi transaksi produk.'
-              }
-              title={
-                form.sellable && !hasVariants
-                  ? 'Komisi dan Poin Anggota'
-                  : 'Komisi'
-              }
-            >
-              <KolamCommercialPolicyEditor
-                disabled={disabled}
-                memberPointsDisabled={!form.sellable || hasVariants}
-                memberPointsHint={
-                  hasVariants
-                    ? 'Produk ini memakai varian. Poin anggota diatur di tiap varian.'
-                    : form.sellable
-                    ? 'Poin yang didapat pelanggan per unit produk.'
-                    : 'Aktifkan penjualan untuk mengatur poin anggota.'
-                }
-                onChange={value =>
-                  controller.onChangeForm({
-                    commissionEnabled: value.commissionEnabled,
-                    commissionType: value.commissionType,
-                    commissionValue: value.commissionValue,
-                    memberPointsEnabled: value.memberPointsEnabled,
-                    memberPoints: value.memberPoints,
-                  })
-                }
-                value={{
-                  commissionEnabled: form.commissionEnabled,
-                  commissionType: form.commissionType,
-                  commissionValue: form.commissionValue,
-                  memberPointsEnabled: form.memberPointsEnabled,
-                  memberPoints: form.memberPoints,
-                }}
-              />
-            </ProductEditSection>
+            {hasVariants ? (
+              <ProductEditSection
+                description="Komisi transaksi produk."
+                title="Komisi"
+              >
+                <KolamCommercialPolicyEditor
+                  disabled={disabled}
+                  memberPointsDisabled={!form.sellable || hasVariants}
+                  memberPointsHint="Produk ini memakai varian. Poin anggota diatur di tiap varian."
+                  onChange={value =>
+                    controller.onChangeForm({
+                      commissionEnabled: value.commissionEnabled,
+                      commissionType: value.commissionType,
+                      commissionValue: value.commissionValue,
+                      memberPointsEnabled: value.memberPointsEnabled,
+                      memberPoints: value.memberPoints,
+                    })
+                  }
+                  value={{
+                    commissionEnabled: form.commissionEnabled,
+                    commissionType: form.commissionType,
+                    commissionValue: form.commissionValue,
+                    memberPointsEnabled: form.memberPointsEnabled,
+                    memberPoints: form.memberPoints,
+                  }}
+                />
+              </ProductEditSection>
+            ) : null}
 
             <ProductEditSection
               description="Judul, kata kunci, dan deskripsi SEO Google."
@@ -2339,6 +2333,66 @@ function ProductRootOrderRulesPanel({
         />
       </View>
     </ProductPricingFieldPanel>
+  );
+}
+
+function ProductRootCommercialPolicyPanel({
+  controller,
+  disabled,
+  hasVariants,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+  disabled: boolean;
+  hasVariants: boolean;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  const isRaw = form.productType === 'raw';
+  const label = isRaw
+    ? 'Komisi / Poin'
+    : form.sellable && !hasVariants
+    ? 'Komisi dan Poin Anggota'
+    : 'Komisi';
+  const memberPointsHint = hasVariants
+    ? isRaw
+      ? 'Bahan baku ini memakai varian. Poin anggota diatur di tiap varian.'
+      : 'Produk ini memakai varian. Poin anggota diatur di tiap varian.'
+    : form.sellable
+    ? isRaw
+      ? 'Poin yang didapat pelanggan per unit bahan baku.'
+      : 'Poin yang didapat pelanggan per unit produk.'
+    : isRaw
+    ? 'Aktifkan penjualan POS untuk mengatur poin anggota.'
+    : 'Aktifkan penjualan untuk mengatur poin anggota.';
+
+  return (
+    <ProductFieldShell label={label}>
+      <KolamCommercialPolicyEditor
+        disabled={disabled}
+        memberPointsDisabled={!form.sellable || hasVariants}
+        memberPointsHint={memberPointsHint}
+        onChange={value =>
+          controller.onChangeForm({
+            commissionEnabled: value.commissionEnabled,
+            commissionType: value.commissionType,
+            commissionValue: value.commissionValue,
+            memberPointsEnabled: value.memberPointsEnabled,
+            memberPoints: value.memberPoints,
+          })
+        }
+        value={{
+          commissionEnabled: form.commissionEnabled,
+          commissionType: form.commissionType,
+          commissionValue: form.commissionValue,
+          memberPointsEnabled: form.memberPointsEnabled,
+          memberPoints: form.memberPoints,
+        }}
+      />
+    </ProductFieldShell>
   );
 }
 

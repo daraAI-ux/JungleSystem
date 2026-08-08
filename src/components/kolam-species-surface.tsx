@@ -1555,57 +1555,80 @@ function KolamSpeciesForm({
                     </View>
                   </View>
                   <SpeciesRootVendorPricesEditor controller={controller} />
+                  <FieldShell
+                    label={
+                      form.sellable && !hasVariants
+                        ? 'Komisi dan Poin Anggota'
+                        : 'Komisi'
+                    }
+                  >
+                    <SpeciesCommercialPolicyPanel
+                      disabled={controller.saving}
+                      memberPointsDisabled={!form.sellable || hasVariants}
+                      memberPointsHint={
+                        hasVariants
+                          ? 'Spesies ini memakai varian. Poin anggota diatur di tiap varian.'
+                          : form.sellable
+                          ? 'Poin yang didapat pelanggan per unit spesies.'
+                          : 'Aktifkan penjualan untuk mengatur poin anggota.'
+                      }
+                      onChange={value =>
+                        controller.onChangeForm({
+                          commissionEnabled: value.commissionEnabled,
+                          commissionType: value.commissionType,
+                          commissionValue: value.commissionValue,
+                          memberPointsEnabled: value.memberPointsEnabled,
+                          memberPoints: value.memberPoints,
+                        })
+                      }
+                      value={{
+                        commissionEnabled: form.commissionEnabled,
+                        commissionType: form.commissionType,
+                        commissionValue: form.commissionValue,
+                        memberPointsEnabled: form.memberPointsEnabled,
+                        memberPoints: form.memberPoints,
+                      }}
+                    />
+                  </FieldShell>
                 </View>
               </SpeciesEditSection>
             ) : null}
 
-            <SpeciesEditSection
-              description={
-                form.sellable && !hasVariants
-                  ? 'Poin anggota dan komisi transaksi spesies.'
-                  : 'Komisi transaksi spesies.'
-              }
-              title={
-                form.sellable && !hasVariants
-                  ? 'Komisi dan Poin Anggota'
-                  : 'Komisi'
-              }
-            >
-              <View
-                style={[
-                  styles.speciesBasicInfoCard,
-                  styles.customFieldSettingsCard,
-                ]}
+            {hasVariants ? (
+              <SpeciesEditSection
+                description="Komisi transaksi spesies."
+                title="Komisi"
               >
-                <SpeciesCommercialPolicyPanel
-                  disabled={controller.saving}
-                  memberPointsDisabled={!form.sellable || hasVariants}
-                  memberPointsHint={
-                    hasVariants
-                      ? 'Spesies ini memakai varian. Poin anggota diatur di tiap varian.'
-                      : form.sellable
-                      ? 'Poin yang didapat pelanggan per unit spesies.'
-                      : 'Aktifkan penjualan untuk mengatur poin anggota.'
-                  }
-                  onChange={value =>
-                    controller.onChangeForm({
-                      commissionEnabled: value.commissionEnabled,
-                      commissionType: value.commissionType,
-                      commissionValue: value.commissionValue,
-                      memberPointsEnabled: value.memberPointsEnabled,
-                      memberPoints: value.memberPoints,
-                    })
-                  }
-                  value={{
-                    commissionEnabled: form.commissionEnabled,
-                    commissionType: form.commissionType,
-                    commissionValue: form.commissionValue,
-                    memberPointsEnabled: form.memberPointsEnabled,
-                    memberPoints: form.memberPoints,
-                  }}
-                />
-              </View>
-            </SpeciesEditSection>
+                <View
+                  style={[
+                    styles.speciesBasicInfoCard,
+                    styles.customFieldSettingsCard,
+                  ]}
+                >
+                  <SpeciesCommercialPolicyPanel
+                    disabled={controller.saving}
+                    memberPointsDisabled={!form.sellable || hasVariants}
+                    memberPointsHint="Spesies ini memakai varian. Poin anggota diatur di tiap varian."
+                    onChange={value =>
+                      controller.onChangeForm({
+                        commissionEnabled: value.commissionEnabled,
+                        commissionType: value.commissionType,
+                        commissionValue: value.commissionValue,
+                        memberPointsEnabled: value.memberPointsEnabled,
+                        memberPoints: value.memberPoints,
+                      })
+                    }
+                    value={{
+                      commissionEnabled: form.commissionEnabled,
+                      commissionType: form.commissionType,
+                      commissionValue: form.commissionValue,
+                      memberPointsEnabled: form.memberPointsEnabled,
+                      memberPoints: form.memberPoints,
+                    }}
+                  />
+                </View>
+              </SpeciesEditSection>
+            ) : null}
 
             {showRootOnlySections ? (
               <SpeciesEditSection
