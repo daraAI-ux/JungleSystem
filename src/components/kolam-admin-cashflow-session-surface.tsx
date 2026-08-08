@@ -415,13 +415,12 @@ function AdminCashflowCreateForm({
 
         <View style={styles.formActions}>
           <KolamCancelButton
-            muted
             onPress={() => onRouteChange?.(KOLAM_ADMIN_CASHFLOW_SESSION_ROOT)}
           />
           <KolamButton
             disabled={controller.opening || blockedByToday}
-            intent="primary"
             label={controller.opening ? 'Membuka…' : 'Buka sesi'}
+            tone="positive"
             onPress={() => {
               void controller
                 .onOpenSession({
