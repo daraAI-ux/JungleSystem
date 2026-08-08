@@ -1,31 +1,34 @@
-﻿import React from 'react';
-import Svg, {Circle, Path} from 'react-native-svg';
+import React from 'react';
+import Svg, {Path} from 'react-native-svg';
+import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
 
-export function KolamTopNavigationMediaIcon(_props: {color?: string}) {
+const MEDIA_CAMERA_ICON_PATHS = getSvgPathData(KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG);
+
+export function KolamTopNavigationMediaIcon({
+  color = '#1a1a1a',
+}: {
+  color?: string;
+}) {
   return (
-    <Svg height={22} viewBox="0 0 512 512" width={22}>
-      <Circle cx={256} cy={256} fill="#181818" r={256} />
-      <Path
-        d="M121 220C121 191 144 168 173 168H205L216 137C221 124 233 116 247 116H292C306 116 318 124 323 137L334 168H372C401 168 424 191 424 220V331C424 360 401 383 372 383H173C144 383 121 360 121 331V220Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinejoin="round"
-        strokeWidth={7}
-      />
-      <Path
-        d="M156 169V153C156 144 163 137 172 137H199C208 137 215 144 215 153V169H156Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinejoin="round"
-        strokeWidth={7}
-      />
-      <Path
-        d="M200 276C200 235 231 204 272 204C313 204 344 235 344 276C344 317 313 348 272 348C231 348 200 317 200 276Z"
-        fill="none"
-        stroke="#181818"
-        strokeLinejoin="round"
-        strokeWidth={7}
-      />
+    <Svg height={22} viewBox="0 0 810 809.999993" width={22}>
+      {MEDIA_CAMERA_ICON_PATHS.map(path => (
+        <Path key={path} d={path} fill={color} fillRule="nonzero" />
+      ))}
     </Svg>
   );
+}
+
+function getSvgPathData(svg: string) {
+  const paths: string[] = [];
+  const drawableSvg = svg.replace(/<defs[\s\S]*?<\/defs>/g, '');
+  const pattern = /\sd="([^"]+)"/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(drawableSvg)) !== null) {
+    if (match[1]) {
+      paths.push(match[1]);
+    }
+  }
+
+  return paths;
 }
