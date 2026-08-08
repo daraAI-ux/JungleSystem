@@ -49,7 +49,7 @@ function KolamAppShellSurfaceComponent({
   topNavigation,
   workspaceTabs,
 }: KolamAppShellSurfaceProps) {
-  if (sidebar.activeModule === 'checkout') {
+  if (isPosFullWindowShellRoute(sidebar)) {
     return (
       <KolamShellFrame variant="appShell">
         <StatusBar barStyle="dark-content" />
@@ -120,6 +120,39 @@ function KolamAppShellSurfaceComponent({
 
 export const KolamAppShellSurface = React.memo(KolamAppShellSurfaceComponent);
 KolamAppShellSurface.displayName = 'KolamAppShellSurface';
+
+function isPosFullWindowShellRoute(sidebar: KolamSidebarProps) {
+  if (sidebar.activeModule === 'checkout') {
+    return true;
+  }
+
+  if (sidebar.activeModuleRoute?.moduleId === 'checkout') {
+    return true;
+  }
+
+  const routePath = normalizeShellRoutePath(sidebar.activeRoute);
+
+  return POS_FULL_WINDOW_ROUTES.has(routePath);
+}
+
+function normalizeShellRoutePath(route?: string | null) {
+  const path = String(route ?? '').split('?')[0].replace(/\/+$/, '');
+
+  if (!path) {
+    return '/';
+  }
+
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+const POS_FULL_WINDOW_ROUTES = new Set([
+  '/checkout',
+  '/cart',
+  '/payment',
+  '/sale-draft',
+  '/pos',
+  '/pos/checkout',
+]);
 
 /**
  * Routes that own workspace scrolling; disable shell ScrollView nesting.
