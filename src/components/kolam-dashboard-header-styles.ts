@@ -64,6 +64,7 @@ export const dashboardHeaderStyles = StyleSheet.create({
     gap: 4,
   },
   headerRefreshButton: {
+    borderWidth: 0,
     minHeight: 22,
     minWidth: 24,
     paddingHorizontal: 0,
