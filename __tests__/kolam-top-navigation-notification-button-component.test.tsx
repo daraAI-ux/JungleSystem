@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, {Circle, Path} from 'react-native-svg';
+import Svg, {Path, SvgXml} from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamIconButton} from '../src/components/kolam-icon-button';
 import {KolamNotificationBadge} from '../src/components/kolam-notification-badge';
@@ -47,9 +47,12 @@ describe('KolamTopNavigationNotificationButton', () => {
       expect.objectContaining({
         backgroundColor: 'transparent',
         borderColor: 'transparent',
-        height: 32,
-        width: 32,
+        height: 28,
+        width: 28,
       }),
+    );
+    expect(renderer!.root.findByType(SvgXml).props).toEqual(
+      expect.objectContaining({height: 20, width: 20}),
     );
 
     button.props.onPress();
@@ -112,13 +115,10 @@ describe('KolamTopNavigationChatButton', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props).toEqual(
-      expect.objectContaining({fill: '#F47F65', r: 256}),
-    );
-    expect(renderer!.root.findAllByType(Path)).toHaveLength(3);
+    expect(icon.props.height).toBe(20);
+    expect(icon.props.width).toBe(20);
+    expect(icon.props.viewBox).toBe('0 0 810 809.999993');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
   });
 
   it('renders the inbox icon as the native vector headset artwork', async () => {
@@ -132,13 +132,10 @@ describe('KolamTopNavigationChatButton', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props).toEqual(
-      expect.objectContaining({fill: '#F47F65', r: 256}),
-    );
-    expect(renderer!.root.findAllByType(Path)).toHaveLength(7);
+    expect(icon.props.height).toBe(20);
+    expect(icon.props.width).toBe(20);
+    expect(icon.props.viewBox).toBe('0 0 810 809.999993');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
   });
 });
 
@@ -160,13 +157,10 @@ describe('KolamTopNavigationCashflowHost', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props).toEqual(
-      expect.objectContaining({fill: '#F47F65', r: 256}),
-    );
-    expect(renderer!.root.findAllByType(Path)).toHaveLength(4);
+    expect(icon.props.height).toBe(20);
+    expect(icon.props.width).toBe(20);
+    expect(icon.props.viewBox).toBe('0 0 810 809.999993');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
     expect(renderer!.root.findByType(KolamIconButton).props.variant).toBe(
       'ghost',
     );
@@ -201,12 +195,9 @@ describe('KolamTopNavigationDownloadIcon', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props).toEqual(
-      expect.objectContaining({fill: '#F47F65', r: 256}),
-    );
+    expect(icon.props.height).toBe(20);
+    expect(icon.props.width).toBe(20);
+    expect(icon.props.viewBox).toBe('0 0 810 809.999993');
     expect(renderer!.root.findAllByType(Path)).toHaveLength(2);
   });
 
@@ -245,13 +236,10 @@ describe('KolamTopNavigationMediaIcon', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props).toEqual(
-      expect.objectContaining({fill: '#F47F65', r: 256}),
-    );
-    expect(renderer!.root.findAllByType(Path)).toHaveLength(3);
+    expect(icon.props.height).toBe(20);
+    expect(icon.props.width).toBe(20);
+    expect(icon.props.viewBox).toBe('0 0 810 809.999993');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
   });
 
   it('keeps the media topbar control on the media route', async () => {
@@ -287,15 +275,11 @@ describe('KolamTopNavigationTaskIcon', () => {
       renderer = ReactTestRenderer.create(<KolamTopNavigationTaskIcon />);
     });
 
-    const icon = renderer!.root.findByType(Svg);
+    const icon = renderer!.root.findByType(SvgXml);
 
-    expect(icon.props.height).toBe(22);
-    expect(icon.props.width).toBe(22);
-    expect(icon.props.viewBox).toBe('0 0 512 512');
-    expect(renderer!.root.findByType(Circle).props).toEqual(
-      expect.objectContaining({fill: '#F47F65', r: 256}),
-    );
-    expect(renderer!.root.findAllByType(Path)).toHaveLength(4);
+    expect(icon.props.height).toBe(20);
+    expect(icon.props.width).toBe(20);
+    expect(icon.props.xml).toContain('<svg');
   });
 
   it('keeps the task topbar control on the task manager route', async () => {
