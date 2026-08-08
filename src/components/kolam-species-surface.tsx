@@ -4907,12 +4907,14 @@ function SpeciesEditAssetsPanel({
 
   return (
     <FieldShell label="Aset Spesies">
-      <KolamSpeciesDetailAssetsPanel
-        onSpeciesChange={species => {
-          void controller.onApplySpecies(species);
-        }}
-        species={controller.selectedSpecies}
-      />
+      <View style={styles.grocerPricingPanel}>
+        <KolamSpeciesDetailAssetsPanel
+          onSpeciesChange={species => {
+            void controller.onApplySpecies(species);
+          }}
+          species={controller.selectedSpecies}
+        />
+      </View>
     </FieldShell>
   );
 }
