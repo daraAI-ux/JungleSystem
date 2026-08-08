@@ -12,7 +12,7 @@ import {KolamPressable} from './kolam-pressable';
 import {KolamXIcon} from './kolam-x-icon';
 
 const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
-const KOLAM_WORKSPACE_TAB_STRIP_BG = '#374151';
+const KOLAM_WORKSPACE_TAB_STRIP_BG = '#F3F4F6';
 
 export interface KolamWorkspaceTabStripProps {
   activeTabId: string;
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     flexShrink: 1,
-    color: 'rgba(255,255,255,0.72)',
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '500',
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.32)',
+    backgroundColor: V.colors.mutedFg,
     borderRadius: 7.5,
     flexShrink: 0,
     height: 15,
@@ -184,9 +184,6 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.danger,
   },
   addButton: {
-    backgroundColor: V.colors.primaryFg,
-    borderColor: 'rgba(255,255,255,0.32)',
-    borderWidth: 1,
     flexShrink: 0,
   },
   indicator: {
@@ -196,6 +193,6 @@ const styles = StyleSheet.create({
     left: 8,
     height: 2,
     borderRadius: 999,
-    backgroundColor: V.colors.primaryFg,
+    backgroundColor: V.colors.primary,
   },
 });
