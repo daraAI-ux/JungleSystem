@@ -248,15 +248,22 @@ export function getDashboardHeaderRouteContext({
     );
 
     if (navigationItem) {
+      const routePath = navigationItem.route.split('?')[0];
+      const hasInlineDetailHeader = isInlineCatalogDetailHeaderRoute(routePath);
+
       return {
         eyebrow:
           navigationItem.group ??
           getKolamNavigationSectionTitleForRoute(navigationItem.route) ??
           undefined,
-        moduleIcon: navigationItem.moduleIcon,
+        moduleIcon: hasInlineDetailHeader
+          ? undefined
+          : navigationItem.moduleIcon,
         route: navigationItem.route,
-        title: getDashboardRouteTitle(navigationItem),
-        subtitle: navigationItem.description ?? '',
+        title: hasInlineDetailHeader
+          ? ''
+          : getDashboardRouteTitle(navigationItem),
+        subtitle: hasInlineDetailHeader ? '' : navigationItem.description ?? '',
       };
     }
 
@@ -299,6 +306,7 @@ export function getDashboardHeaderRouteContext({
       activeNavigationItem.route.split('?')[0].replace(/\/+$/, '') || '/';
     const assetPurchaseHeader = getAssetPurchaseDashboardHeaderCopy(routePath);
     const productHeader = getProductDashboardHeaderCopy(routePath);
+    const hasInlineDetailHeader = isInlineCatalogDetailHeaderRoute(routePath);
     if (assetPurchaseHeader) {
       return {
         eyebrow:
@@ -329,10 +337,16 @@ export function getDashboardHeaderRouteContext({
         activeNavigationItem.group ??
         getKolamNavigationSectionTitleForRoute(activeNavigationItem.route) ??
         undefined,
-      moduleIcon: activeNavigationItem.moduleIcon,
+      moduleIcon: hasInlineDetailHeader
+        ? undefined
+        : activeNavigationItem.moduleIcon,
       route: activeNavigationItem.route,
-      title: getDashboardRouteTitle(activeNavigationItem),
-      subtitle: activeNavigationItem.description ?? '',
+      title: hasInlineDetailHeader
+        ? ''
+        : getDashboardRouteTitle(activeNavigationItem),
+      subtitle: hasInlineDetailHeader
+        ? ''
+        : activeNavigationItem.description ?? '',
     };
   }
 
@@ -356,6 +370,14 @@ function getProductDashboardHeaderCopy(routePath: string): {
     };
   }
   return null;
+}
+
+function isInlineCatalogDetailHeaderRoute(routePath: string) {
+  return (
+    /^\/products\/[^/]+$/.test(routePath) ||
+    /^\/raw-materials\/[^/]+$/.test(routePath) ||
+    /^\/species\/[^/]+$/.test(routePath)
+  );
 }
 
 function getAssetPurchaseDashboardHeaderCopy(routePath: string): {

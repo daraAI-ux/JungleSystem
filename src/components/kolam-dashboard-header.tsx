@@ -32,6 +32,12 @@ export function KolamDashboardHeader({
   syncIndicator: DashboardHeaderSyncIndicator;
   title: string;
 }) {
+  const hasCopy = Boolean(moduleIcon || title.trim() || subtitle.trim());
+
+  if (!hasCopy && actions.length === 0) {
+    return null;
+  }
+
   return (
     <KolamHeaderFrame variant="dashboardHeader">
       <KolamDashboardHeaderCopy

@@ -65,6 +65,7 @@ import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
+import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
@@ -5926,8 +5927,9 @@ function KolamSpeciesDetail({
   return (
     <>
       <View style={styles.detailHeaderRow}>
+        <KolamModuleIcon kind="species" size="header" />
         <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>SPESIES</Text>
+          <Text style={styles.eyebrow}>Spesies Detail Spesies</Text>
           <Text style={styles.title}>
             {item.scientificName || item.displayName}
           </Text>

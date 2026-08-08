@@ -71,6 +71,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
+import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -1282,8 +1283,9 @@ function KolamProductDetailView({
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
+        <KolamModuleIcon kind={isRawDetail ? 'raw' : 'product'} size="header" />
         <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
+          <Text style={styles.eyebrow}>{shellLabels.detailTitle}</Text>
           <Text style={styles.title}>{product.name}</Text>
           <Text style={styles.description}>
             Dibuat {formatDateTime(product.createdAt)} | Diperbarui{' '}
