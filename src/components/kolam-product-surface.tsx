@@ -1439,11 +1439,7 @@ function ProductEditFormPage({
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
-            <View style={kolamTableToolbarStyles.filters}>
-              <Text numberOfLines={1} style={styles.formToolbarTitle}>
-                {formTitle}
-              </Text>
-            </View>
+            <View style={kolamTableToolbarStyles.filters} />
             <View style={kolamTableToolbarStyles.actions}>
               <KolamCancelButton disabled={disabled} onPress={onCancel} />
               <KolamButton
@@ -1815,11 +1811,7 @@ function ProductEditFormPage({
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.formToolbarTitle}>
-              {formTitle}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
             <KolamCancelButton disabled={disabled} onPress={onCancel} />
             <KolamSaveButton
@@ -10970,13 +10962,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'flex-end',
-  },
-  formToolbarTitle: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontSize: 14,
-    fontWeight: '800',
-    lineHeight: 20,
   },
   activeActionRow: {
     elevation: 30,

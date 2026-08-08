@@ -205,11 +205,7 @@ function KolamSpeciesShell({
       {controller.mode !== 'list' && controller.mode !== 'detail' ? (
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
-            <View style={kolamTableToolbarStyles.filters}>
-              <Text numberOfLines={1} style={styles.formToolbarTitle}>
-                {controller.mode === 'new' ? 'Spesies Baru' : 'Edit Spesies'}
-              </Text>
-            </View>
+            <View style={kolamTableToolbarStyles.filters} />
             <View style={kolamTableToolbarStyles.actions}>
               <KolamCancelButton
                 disabled={controller.saving}
@@ -8520,13 +8516,6 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
     paddingTop: 16,
-  },
-  formToolbarTitle: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontSize: 14,
-    fontWeight: '800',
-    lineHeight: 20,
   },
   longDropdownMenu: {
     maxHeight: 320,
