@@ -1899,26 +1899,6 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
-              description="Terjemahan katalog untuk webstore dan marketplace."
-              title="Konten marketplace"
-            >
-              <KolamCatalogTranslationsEditor
-                editable={!disabled}
-                kind="product"
-                onChange={translations =>
-                  controller.onChangeForm({ translations })
-                }
-                primaryProductLocale={{
-                  name: form.name,
-                  shortDescription: form.shortDescription,
-                  description: form.description,
-                  onChange: patch => controller.onChangeForm(patch),
-                }}
-                translations={form.translations}
-              />
-            </ProductEditSection>
-
-            <ProductEditSection
               description="Pilih satu atau lebih kategori yang relevan."
               title="Kategori Produk"
             >
@@ -2194,6 +2174,26 @@ function ProductEditFormPage({
               title="Bahan Kemasan"
             >
               <ProductPackingLinksPanel controller={controller} />
+            </ProductEditSection>
+
+            <ProductEditSection
+              description="Terjemahan katalog untuk webstore dan marketplace."
+              title="Konten marketplace"
+            >
+              <KolamCatalogTranslationsEditor
+                editable={!disabled}
+                kind="product"
+                onChange={translations =>
+                  controller.onChangeForm({ translations })
+                }
+                primaryProductLocale={{
+                  name: form.name,
+                  shortDescription: form.shortDescription,
+                  description: form.description,
+                  onChange: patch => controller.onChangeForm(patch),
+                }}
+                translations={form.translations}
+              />
             </ProductEditSection>
           </View>
           <View style={styles.formActions}>
