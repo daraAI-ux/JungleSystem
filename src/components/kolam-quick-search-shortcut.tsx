@@ -9,7 +9,7 @@ export function KolamQuickSearchShortcut({
   collapsed: boolean;
   shortcutLabel: string;
 }) {
-  if (collapsed) {
+  if (collapsed || !shortcutLabel) {
     return null;
   }
 

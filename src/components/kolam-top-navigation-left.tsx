@@ -21,7 +21,11 @@ export function KolamTopNavigationLeft({
       <KolamSidebarTrigger onPress={onToggleSidebar} />
       <View style={styles.topNavSeparator} />
       {onQuickSearch ? (
-        <KolamQuickSearch onPress={onQuickSearch} variant="topNav" />
+        <KolamQuickSearch
+          onPress={onQuickSearch}
+          shortcutLabel=""
+          variant="topNav"
+        />
       ) : null}
     </KolamListFrame>
   );
