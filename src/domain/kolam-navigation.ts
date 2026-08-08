@@ -18,6 +18,7 @@ export type KolamNavigationModuleIcon =
   | 'category'
   | 'fieldcustom'
   | 'iucn'
+  | 'media'
   | 'packing'
   | 'product'
   | 'raw'
@@ -311,6 +312,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Media',
         route: '/media',
         description: 'Browse all images and videos in the media folder',
+        moduleIcon: 'media',
         requiredAccess: ['kolam'],
       },
       {

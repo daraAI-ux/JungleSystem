@@ -26,7 +26,6 @@ import {
   type KolamMediaOrphanCleanupResult,
 } from '../services/kolam-media-api';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
@@ -299,10 +298,6 @@ export function KolamMediaLibrarySurface({
               <KolamButton
                 label="Cari"
                 onPress={() => setRoute({ page: 1, search: draftSearch })}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                onPress={() => setRoute({})}
               />
             </View>
           </View>
