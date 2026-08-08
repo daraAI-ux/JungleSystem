@@ -2167,7 +2167,14 @@ function ProductEditFormPage({
                     />
                   </View>
                 </View>
-                <ProductPackingLinksPanel controller={controller} />
+                <View style={styles.pricingHalfRow}>
+                  <View style={styles.pricingHalfColumn}>
+                    <ProductPackingLinksPanel controller={controller} />
+                  </View>
+                  <View style={styles.pricingHalfColumn}>
+                    <ProductEditAssetsPanel controller={controller} />
+                  </View>
+                </View>
               </View>
             </ProductEditSection>
 
@@ -6236,6 +6243,83 @@ function ProductPackingLinksPanel({
           rootTargetLabel="Produk utama"
           rows={form.packingLinks}
           variants={variants}
+        />
+      </View>
+    </ProductFieldShell>
+  );
+}
+
+function ProductEditAssetsPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const product = controller.selectedProduct;
+
+  const handleUpload = React.useCallback(
+    async (title: string, localUri: string) => {
+      if (!product) {
+        return [];
+      }
+      const updated = await uploadKolamProductAsset(product.id, title, localUri);
+      return updated.assets;
+    },
+    [product],
+  );
+
+  const handleDelete = React.useCallback(
+    async (assetId: string) => {
+      if (!product) {
+        return [];
+      }
+      const updated = await deleteKolamProductAsset(product.id, assetId);
+      return updated.assets;
+    },
+    [product],
+  );
+
+  const handleDownload = React.useCallback(
+    (asset: KolamEntityDetailAsset) => {
+      if (!product) {
+        return;
+      }
+      const base = appConfig.kolamApiBaseUrl.replace(/\/$/, '');
+      void Linking.openURL(
+        `${base}/products/${encodeURIComponent(
+          product.id,
+        )}/assets/${encodeURIComponent(asset.id)}/download`,
+      );
+    },
+    [product],
+  );
+
+  if (!product) {
+    return (
+      <ProductFieldShell label="Aset Produk">
+        <View style={styles.variantMediaPanel}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'empty',
+                text: 'Simpan produk terlebih dahulu sebelum mengunggah aset.',
+                style: styles.fieldHint,
+              },
+            ]}
+          />
+        </View>
+      </ProductFieldShell>
+    );
+  }
+
+  return (
+    <ProductFieldShell label="Aset Produk">
+      <View style={styles.variantMediaPanel}>
+        <KolamEntityDetailAssetsPanel
+          assets={product.assets}
+          deleteAsset={handleDelete}
+          downloadAsset={handleDownload}
+          inlineTitleUploadActions
+          uploadAsset={handleUpload}
         />
       </View>
     </ProductFieldShell>
