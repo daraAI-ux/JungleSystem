@@ -49,7 +49,11 @@ export function isKolamCenteredRoute(route?: string | null) {
 }
 
 function isKolamWorkspaceOwnedScrollRoutePath(routePath: string) {
-  return routePath === '/' || routePath === '/cashflow-session';
+  return (
+    routePath === '/' ||
+    routePath === '/app-downloads' ||
+    routePath === '/cashflow-session'
+  );
 }
 
 function isKolamCenteredRoutePath(routePath: string) {

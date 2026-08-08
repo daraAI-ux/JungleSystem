@@ -6,6 +6,12 @@ describe('isCatalogTableListRoute', () => {
     expect(isCatalogTableListRoute('')).toBe(true);
   });
 
+  it('matches app downloads because the page owns its detail scroll', () => {
+    expect(isCatalogTableListRoute('/app-downloads')).toBe(true);
+    expect(isCatalogTableListRoute('/app-downloads?tab=download')).toBe(true);
+    expect(isCatalogTableListRoute('/app-downloads/')).toBe(true);
+  });
+
   it('keeps mapped-table catalog roots on shell ScrollView', () => {
     expect(isCatalogTableListRoute('/species')).toBe(false);
     expect(isCatalogTableListRoute('/products')).toBe(false);

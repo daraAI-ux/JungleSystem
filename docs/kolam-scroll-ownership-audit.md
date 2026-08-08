@@ -20,6 +20,8 @@ another page `ScrollView`.
 These routes may return `true` from `isCatalogTableListRoute`:
 
 - `/` - Beranda owns page scrolling through `KolamDetailScrollSurface`.
+- `/app-downloads` - Download aplikasi owns page scrolling through
+  `KolamDetailScrollSurface`.
 - `/cashflow-session` - list body owns scrolling through `FlatList`.
 
 ## Shell-Scroll Routes
