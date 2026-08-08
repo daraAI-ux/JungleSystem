@@ -4726,64 +4726,23 @@ function SpeciesVariantFormCard({
           ) : null}
           {activeTab === 'advanced' ? (
             <View style={styles.variantTabContent}>
-              <View style={styles.variantMemberPointsRow}>
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'title',
-                      text: 'Poin Anggota',
-                      style: styles.variantAdvancedTitle,
-                    },
-                    {
-                      id: 'hint',
-                      text: 'Poin yang didapat pelanggan per unit pembelian.',
-                      style: styles.variantCompactHint,
-                    },
-                  ]}
-                />
-                <View style={styles.variantAdvancedActions}>
-                  <KolamButton
-                    disabled={controller.saving}
-                    intent={variant.memberPointsEnabled ? 'primary' : 'outline'}
-                    label="Aktif"
-                    onPress={() =>
-                      updateSpeciesVariantRow(controller, variant.id, {
-                        memberPointsEnabled: true,
-                      })
-                    }
-                  />
-                  <KolamButton
-                    disabled={controller.saving}
-                    intent={
-                      !variant.memberPointsEnabled ? 'primary' : 'outline'
-                    }
-                    label="Nonaktif"
-                    onPress={() =>
-                      updateSpeciesVariantRow(controller, variant.id, {
-                        memberPoints: '0',
-                        memberPointsEnabled: false,
-                      })
-                    }
-                  />
-                  {variant.memberPointsEnabled ? (
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      keyboardType="numeric"
-                      onChangeText={memberPoints =>
-                        updateSpeciesVariantRow(controller, variant.id, {
-                          memberPoints,
-                        })
-                      }
-                      placeholder="Poin"
-                      style={[
-                        settingsWebFormStyles.settingsWebFormFieldValue,
-                        styles.memberPointsInput,
-                      ]}
-                      value={variant.memberPoints}
-                    />
-                  ) : null}
-                </View>
-              </View>
+              <KolamCommercialPolicyEditor
+                commissionHidden
+                disabled={controller.saving}
+                onChange={value =>
+                  updateSpeciesVariantRow(controller, variant.id, {
+                    memberPoints: value.memberPoints,
+                    memberPointsEnabled: value.memberPointsEnabled,
+                  })
+                }
+                value={{
+                  commissionEnabled: variant.commissionEnabled,
+                  commissionType: variant.commissionType,
+                  commissionValue: variant.commissionValue,
+                  memberPoints: variant.memberPoints,
+                  memberPointsEnabled: variant.memberPointsEnabled,
+                }}
+              />
 
               <View style={styles.variantAdvancedGrid}>
                 <View style={styles.variantAdvancedCard}>
@@ -8171,27 +8130,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  variantMemberPointsRow: {
-    alignItems: 'center',
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-    padding: 12,
-  },
-  variantAdvancedActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  memberPointsInput: {
-    minWidth: 120,
   },
   variantAdvancedGrid: {
     flexDirection: 'row',

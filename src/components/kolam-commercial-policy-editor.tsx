@@ -18,6 +18,7 @@ export interface KolamCommercialPolicyEditorValue {
 }
 
 export function KolamCommercialPolicyEditor({
+  commissionHidden = false,
   disabled = false,
   memberPointsDisabled = false,
   memberPointsHint,
@@ -25,6 +26,7 @@ export function KolamCommercialPolicyEditor({
   style,
   value,
 }: {
+  commissionHidden?: boolean;
   disabled?: boolean;
   memberPointsDisabled?: boolean;
   memberPointsHint?: string;
@@ -37,50 +39,52 @@ export function KolamCommercialPolicyEditor({
 
   return (
     <View style={[styles.root, style]}>
-      <View style={styles.policyPanel}>
-        <View style={styles.policyHeader}>
-          <KolamCopyStack
-            items={[
-              {id: 'title', text: 'Komisi', style: styles.title},
-              {
-                id: 'hint',
-                text: 'Komisi penjualan untuk staff atau alur komisi backend.',
-                style: styles.hint,
-              },
-            ]}
-          />
-          <KolamSwitch
-            accessibilityLabel="Aktifkan komisi"
-            active={value.commissionEnabled}
-            disabled={disabled}
-            onPress={() =>
-              patch({commissionEnabled: !value.commissionEnabled})
-            }
-          />
-        </View>
-        {value.commissionEnabled ? (
-          <View style={styles.fieldGrid}>
-            <KolamDropdownSelect
-              label="Tipe komisi"
-              onChange={commissionType => patch({commissionType})}
-              options={[
-                {label: 'Persentase', value: 'percentage'},
-                {label: 'Nominal tetap', value: 'fixed'},
+      {!commissionHidden ? (
+        <View style={styles.policyPanel}>
+          <View style={styles.policyHeader}>
+            <KolamCopyStack
+              items={[
+                {id: 'title', text: 'Komisi', style: styles.title},
+                {
+                  id: 'hint',
+                  text: 'Komisi penjualan untuk staff atau alur komisi backend.',
+                  style: styles.hint,
+                },
               ]}
-              showLabelInTrigger={false}
-              value={value.commissionType}
             />
-            <KolamFormTextField
-              editable={!disabled}
-              keyboardType="numeric"
-              onChangeText={commissionValue => patch({commissionValue})}
-              placeholder={value.commissionType === 'percentage' ? 'Persen' : 'Nominal'}
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
-              value={value.commissionValue}
+            <KolamSwitch
+              accessibilityLabel="Aktifkan komisi"
+              active={value.commissionEnabled}
+              disabled={disabled}
+              onPress={() =>
+                patch({commissionEnabled: !value.commissionEnabled})
+              }
             />
           </View>
-        ) : null}
-      </View>
+          {value.commissionEnabled ? (
+            <View style={styles.fieldGrid}>
+              <KolamDropdownSelect
+                label="Tipe komisi"
+                onChange={commissionType => patch({commissionType})}
+                options={[
+                  {label: 'Persentase', value: 'percentage'},
+                  {label: 'Nominal tetap', value: 'fixed'},
+                ]}
+                showLabelInTrigger={false}
+                value={value.commissionType}
+              />
+              <KolamFormTextField
+                editable={!disabled}
+                keyboardType="numeric"
+                onChangeText={commissionValue => patch({commissionValue})}
+                placeholder={value.commissionType === 'percentage' ? 'Persen' : 'Nominal'}
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={value.commissionValue}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {!memberPointsDisabled ? (
         <View style={styles.policyPanel}>
           <View style={styles.policyHeader}>
