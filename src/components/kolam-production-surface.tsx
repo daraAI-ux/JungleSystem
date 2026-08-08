@@ -37,6 +37,7 @@ import {
   type KolamProductionController,
 } from '../hooks/use-kolam-production-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -788,7 +789,7 @@ function KolamProductionForm({
                     sourceUri={getKolamFileUrl(photo)}
                     style={styles.photoThumb}
                   />
-                  <KolamButton
+                  <KolamDeleteButton
                     disabled={controller.mutating}
                     label="Hapus"
                     onPress={() => void controller.onDeletePhoto(index)}
@@ -993,7 +994,7 @@ function KolamProductionDetail({
               />
             ) : null}
             {production.status === 'cancelled' && canDelete ? (
-              <KolamButton
+              <KolamDeleteButton
                 intent="danger"
                 label="Hapus"
                 onPress={() => setShowDelete(true)}

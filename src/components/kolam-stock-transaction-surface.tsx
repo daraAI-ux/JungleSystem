@@ -20,6 +20,7 @@ import {
   type KolamStockTransactionController,
 } from '../hooks/use-kolam-stock-transaction-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -336,7 +337,7 @@ function KolamStockTransactionOpname({
                   sourceUri={uri}
                   style={styles.photoThumb}
                 />
-                <KolamButton
+                <KolamDeleteButton
                   label="Hapus"
                   onPress={() => controller.onRemoveOpnamePhoto(index)}
                 />

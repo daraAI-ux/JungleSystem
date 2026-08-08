@@ -58,6 +58,7 @@ import {
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamCasesReportedIcon} from './kolam-cases-reported-icon';
@@ -587,7 +588,7 @@ function KolamEnclosureEditSurface({
             onPress={() => void onPickCover()}
           />
           {coverUri ? (
-            <KolamButton
+            <KolamDeleteButton
               disabled={controller.operationLoading}
               label="Hapus foto"
               onPress={() => void controller.onDeleteCoverPhoto()}

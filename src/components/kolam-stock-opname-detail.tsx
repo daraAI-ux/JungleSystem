@@ -34,6 +34,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -346,7 +347,7 @@ export function KolamStockOpnameDetail({
             />
           ) : null}
           {controller.isCancelled && canDelete ? (
-            <KolamButton
+            <KolamDeleteButton
               disabled={controller.acting}
               intent="danger"
               label="Hapus"
@@ -997,7 +998,7 @@ function LineCard({
           <KolamEditButton onPress={onEdit} />
         ) : null}
         {canRemove ? (
-          <KolamButton intent="danger" label="Hapus" onPress={onRemove} />
+          <KolamDeleteButton intent="danger" label="Hapus" onPress={onRemove} />
         ) : null}
         {canApprove ? (
           <KolamButton intent="primary" label="Setujui" onPress={onApprove} />

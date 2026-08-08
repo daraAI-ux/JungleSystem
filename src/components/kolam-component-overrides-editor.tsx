@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import type { KolamProductOption } from '../domain/kolam-product-option';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -100,7 +101,7 @@ export function KolamComponentOverridesEditor({
                   value={row.quantity}
                 />
               </View>
-              <KolamButton
+              <KolamDeleteButton
                 disabled={disabled}
                 intent="danger"
                 label="Hapus"

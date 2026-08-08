@@ -1,8 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { KolamPackingOption } from '../domain/kolam-packing-option';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -130,7 +131,7 @@ export function KolamPackingLinksEditor({
                   value={row.quantity}
                 />
               </View>
-              <KolamButton
+              <KolamDeleteButton
                 disabled={disabled}
                 intent="danger"
                 label="Hapus"

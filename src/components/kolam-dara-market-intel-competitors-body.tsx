@@ -22,6 +22,7 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraMarketIntelCompetitorsController} from '../hooks/use-kolam-dara-market-intel-competitors-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaraMarketIntelCompetitorsProductSelect} from './kolam-dara-market-intel-competitors-product-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSearchField} from './kolam-search-field';
@@ -460,7 +461,7 @@ function CompetitorLinkRow({
           label={fetchingId === link.id ? '…' : 'Fetch'}
           onPress={onFetch}
         />
-        <KolamButton disabled={rowBusy} label="Hapus" onPress={onDelete} />
+        <KolamDeleteButton disabled={rowBusy} label="Hapus" onPress={onDelete} />
       </View>
     </View>
   );

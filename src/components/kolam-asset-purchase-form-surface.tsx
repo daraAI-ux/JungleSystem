@@ -18,6 +18,7 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -251,7 +252,7 @@ function AssetPurchaseFormBody({
                         }}
                         style={styles.photoThumb}
                       />
-                      <KolamButton
+                      <KolamDeleteButton
                         disabled={controller.submitting}
                         intent="secondary"
                         label="Hapus"
@@ -308,7 +309,7 @@ function AssetPurchaseFormBody({
                       value={field.value}
                     />
                   </View>
-                  <KolamButton
+                  <KolamDeleteButton
                     disabled={controller.submitting}
                     intent="secondary"
                     label="Hapus"

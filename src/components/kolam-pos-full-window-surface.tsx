@@ -24,6 +24,7 @@ import type {WorkflowStep} from '../lib/workflow';
 import type {CreateCustomerBody} from '../services/pos-api';
 import {KolamShellChromeContext} from '../context/kolam-app-contexts';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDashboardHeader} from './kolam-dashboard-header';
@@ -356,7 +357,7 @@ export function KolamPosFullWindowSurface({
                 <Text style={styles.categoryScrollText}>{'>'}</Text>
               </KolamInteractionFrame>
               {catalogSearch || activeCategory ? (
-                <KolamButton
+                <KolamDeleteButton
                   label="Hapus Filter"
                   intent="plain"
                   onPress={() => {
@@ -1803,7 +1804,7 @@ function PosSavedOrdersPanel({
                           : () => handleLoadPress(order)
                       }
                     />
-                    <KolamButton
+                    <KolamDeleteButton
                       label={
                         confirmingLoad
                           ? 'Batal'

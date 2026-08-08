@@ -36,6 +36,7 @@ import {
   type KolamSupplierController,
 } from '../hooks/use-kolam-supplier-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -645,7 +646,7 @@ function KolamSupplierDetail({
                 }}
                 style={styles.toolbarButton}
               />
-              <KolamButton
+              <KolamDeleteButton
                 intent="danger"
                 label="Hapus"
                 onPress={() => setDeleteCandidate(vendor)}
@@ -1980,7 +1981,7 @@ function KolamSupplierForm({
                         sourceUri={uri}
                         style={styles.photoThumb}
                       />
-                      <KolamButton
+                      <KolamDeleteButton
                         disabled={controller.saving}
                         intent="danger"
                         label="Hapus"

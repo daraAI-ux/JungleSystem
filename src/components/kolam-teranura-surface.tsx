@@ -10,6 +10,7 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -435,7 +436,7 @@ function KolamTeranuraDetail({
           </Text>
         </View>
         <View style={styles.detailHeaderActions}>
-          <KolamButton
+          <KolamDeleteButton
             disabled
             intent="danger"
             label="Hapus"

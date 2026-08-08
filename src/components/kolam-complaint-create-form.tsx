@@ -28,6 +28,7 @@ import {
   getKolamSalesList,
 } from '../services/kolam-sales-api';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -493,7 +494,7 @@ export function KolamComplaintCreateForm({
             {photoUris.map((uri, index) => (
               <View key={`${uri}-${index}`} style={styles.photoItem}>
                 <Image source={{ uri }} style={styles.photoThumb} />
-                <KolamButton
+                <KolamDeleteButton
                   intent="plain"
                   label="Hapus"
                   onPress={() =>

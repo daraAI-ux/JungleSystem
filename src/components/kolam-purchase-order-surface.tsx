@@ -36,6 +36,7 @@ import type {
   KolamPOItemForSelectionVariant,
 } from '../services/kolam-purchase-order-api';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -1061,7 +1062,7 @@ function buildPOFormItemColumns(
       id: 'actions',
       label: 'Aksi',
       render: item => (
-        <KolamButton
+        <KolamDeleteButton
           intent="danger"
           label="Hapus"
           onPress={() => controller.onRemoveItemLine(item.key)}
@@ -1977,7 +1978,7 @@ function KolamPOReceiveDialog({
           {proofUris.map((uri, index) => (
             <View key={`${uri}-${index}`} style={styles.photoItem}>
               <Image resizeMode="cover" source={{ uri: toLocalImageUri(uri) }} style={styles.photoThumb} />
-              <KolamButton
+              <KolamDeleteButton
                 label="Hapus"
                 onPress={() => setProofUris(current => current.filter((_, i) => i !== index))}
               />

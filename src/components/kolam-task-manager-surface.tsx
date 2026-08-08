@@ -32,6 +32,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -283,7 +284,7 @@ function KolamTaskManagerDetail({
               />
             ) : null}
             {controller.isTaskAdmin ? (
-              <KolamButton
+              <KolamDeleteButton
                 disabled={controller.mutatingTaskId === `delete:${task.id}`}
                 intent="outline"
                 label="Hapus"
@@ -521,7 +522,7 @@ function KolamTaskManagerDetail({
                 />
               ) : null}
               {canEditChecklist ? (
-                <KolamButton
+                <KolamDeleteButton
                   disabled={controller.mutatingTaskId === `checklist:${task.id}`}
                   intent="outline"
                   label="Hapus"
@@ -2041,7 +2042,7 @@ function KolamTaskRecurringPanel({
                             }
                           />
                         ) : null}
-                        <KolamButton
+                        <KolamDeleteButton
                           disabled={
                             controller.mutatingTaskId ===
                             `recurring-template:${template.id}`
@@ -2845,7 +2846,7 @@ function KolamTaskDeleteConfirmModal({
                 disabled={deleting}
                 onPress={controller.onCloseDeleteTaskConfirm}
               />
-              <KolamButton
+              <KolamDeleteButton
                 disabled={!task || deleting}
                 intent="danger"
                 label={deleting ? 'Menghapus...' : 'Hapus'}
@@ -2893,7 +2894,7 @@ function KolamTaskTypeDeleteConfirmModal({
                 disabled={deleting}
                 onPress={controller.onCloseDeleteTaskTypeConfirm}
               />
-              <KolamButton
+              <KolamDeleteButton
                 disabled={!taskType || deleting}
                 intent="danger"
                 label={deleting ? 'Menghapus...' : 'Hapus'}
@@ -2971,7 +2972,7 @@ function KolamTaskCategorySettingsPanel({
                   disabled={controller.mutatingTaskId === `category:${category.id}`}
                   onPress={() => controller.onEditCategory(category)}
                 />
-                <KolamButton
+                <KolamDeleteButton
                   disabled={controller.mutatingTaskId === `category:${category.id}`}
                   intent="outline"
                   label="Hapus"
@@ -3246,7 +3247,7 @@ function KolamTaskTypeSettingsPanel({
                   onPress={() => controller.onEditTaskType(row)}
                 />
                 {!row.isSystem ? (
-                  <KolamButton
+                  <KolamDeleteButton
                     disabled={controller.mutatingTaskId === `task-type:${row.id}`}
                     intent="outline"
                     label="Hapus"

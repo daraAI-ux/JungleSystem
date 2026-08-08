@@ -42,6 +42,7 @@ import {
   type KolamSalesController,
 } from '../hooks/use-kolam-sales-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -1246,13 +1247,12 @@ function KolamSalesOpsCreateForm({
 
                   <View style={styles.itemColAction}>
                     {form.items.length > 1 ? (
-                      <KolamButton
+                      <KolamDeleteButton
                         accessibilityLabel={`Hapus item ${index + 1}`}
                         intent="danger"
                         label="×"
                         onPress={() => controller.onRemoveCreateItem(item.key)}
                         style={styles.itemRemoveButton}
-                        textStyle={styles.itemRemoveButtonText}
                       />
                     ) : null}
                   </View>
@@ -1368,7 +1368,7 @@ function KolamSalesOpsCreateForm({
                   </View>
                   <View style={styles.formSplitCellNarrow}>
                     <FieldShell label=" ">
-                      <KolamButton
+                      <KolamDeleteButton
                         label="Hapus"
                         muted
                         onPress={() => controller.onRemoveCustomCost(cost.key)}

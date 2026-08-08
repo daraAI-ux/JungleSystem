@@ -22,6 +22,7 @@ import {
   updateKolamDaraTrainingPhrase,
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -245,7 +246,7 @@ export function KolamDaraTrainingPhrasesBody({
                       onPress={() => openEdit(row)}
                       size="sm"
                     />
-                    <KolamButton
+                    <KolamDeleteButton
                       intent="plain"
                       label="Hapus"
                       onPress={() => onDelete(row)}

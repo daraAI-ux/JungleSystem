@@ -38,6 +38,7 @@ import {KolamBarcodePrintButton} from './kolam-barcode-print-button';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -2515,7 +2516,7 @@ function SpeciesRootVendorPriceRow({
             },
           ]}
         />
-        <KolamButton
+        <KolamDeleteButton
           disabled={controller.saving}
           intent="danger"
           label="Hapus Pemasok"
@@ -3698,7 +3699,7 @@ function SpeciesAttachedItemsEditPanel({
                 },
               ]}
             />
-            <KolamButton
+            <KolamDeleteButton
               disabled={controller.saving}
               intent="danger"
               label="Hapus"
@@ -5152,7 +5153,7 @@ function SpeciesVariantVendorPriceRow({
             },
           ]}
         />
-        <KolamButton
+        <KolamDeleteButton
           disabled={controller.saving}
           intent="danger"
           label="Hapus Pemasok"
@@ -5796,7 +5797,7 @@ function SpeciesLinkMediaRow({
           />
         </>
       ) : null}
-      <KolamButton
+      <KolamDeleteButton
         disabled={disabled}
         intent="danger"
         label="Hapus"

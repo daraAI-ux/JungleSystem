@@ -2,6 +2,7 @@ import React from 'react';
 import {StyleSheet, View, type StyleProp, type ViewStyle} from 'react-native';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {settingsWebFormStyles} from './kolam-settings-web-form-styles';
@@ -71,7 +72,7 @@ export function KolamGrocerPricingTiersEditor({
                   },
                 ]}
               />
-              <KolamButton
+              <KolamDeleteButton
                 disabled={disabled}
                 intent="danger"
                 label="Hapus Tingkat"

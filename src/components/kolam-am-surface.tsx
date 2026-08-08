@@ -115,6 +115,7 @@ import {
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
@@ -2955,7 +2956,7 @@ function AmTokopediaSessionPanel({
               onPress={saveCaptchaSettings}
             />
             {info?.hasAnthropicApiKey ? (
-              <KolamButton
+              <KolamDeleteButton
                 accessibilityLabel={`AM Tokopedia Captcha Clear Key ${account._id}`}
                 disabled={!canRunSessionAction || acting === 'captcha-clear-key'}
                 intent="outline"
@@ -6078,7 +6079,7 @@ function AmActivityLogPage() {
           <KolamResetButton intent="outline" size="sm" onPress={resetFilters} />
         ) : null}
         {selectedLogIds.size ? (
-          <KolamButton
+          <KolamDeleteButton
             accessibilityLabel="AM Activity Logs Delete Selected"
             disabled={isLoading || isDeleting}
             label={`Hapus terpilih (${selectedLogIds.size})`}
@@ -6088,7 +6089,7 @@ function AmActivityLogPage() {
           />
         ) : null}
         {total > 0 ? (
-          <KolamButton
+          <KolamDeleteButton
             accessibilityLabel="AM Activity Logs Delete Filter"
             disabled={isLoading || isDeleting}
             label={`Hapus sesuai filter (${total})`}
@@ -6120,7 +6121,7 @@ function AmActivityLogPage() {
               size="sm"
               onPress={() => setShowDeleteFilterConfirm(false)}
             />
-            <KolamButton
+            <KolamDeleteButton
               accessibilityLabel="AM Activity Logs Confirm Delete Filter"
               disabled={isDeleting}
               label={isDeleting ? 'Menghapus' : 'Hapus'}
@@ -6253,7 +6254,7 @@ function AmActivityLogPage() {
               size="sm"
               onPress={() => setShowDeleteSelectedConfirm(false)}
             />
-            <KolamButton
+            <KolamDeleteButton
               accessibilityLabel="AM Activity Logs Confirm Delete Selected"
               disabled={isDeleting}
               label={isDeleting ? 'Menghapus' : 'Hapus'}
@@ -6310,7 +6311,7 @@ function AmActivityLogDetailPanel({
         </View>
         <View style={styles.inlineActions}>
           <AmStatusChip label={log.statusCode ? String(log.statusCode) : log.status} tone={log.status === 'success' ? 'success' : 'danger'} />
-          <KolamButton
+          <KolamDeleteButton
             accessibilityLabel={`AM Activity Log Delete Selected ${log._id}`}
             disabled={isDeleting}
             label="Hapus log ini"

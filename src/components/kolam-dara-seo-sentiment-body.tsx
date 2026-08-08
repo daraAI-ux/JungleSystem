@@ -7,6 +7,7 @@ import type {
 } from '../hooks/use-kolam-dara-seo-sentiment-controller';
 import {formatKolamDaraSeoSentimentRelativeTime} from '../hooks/use-kolam-dara-seo-sentiment-controller';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
@@ -291,7 +292,7 @@ export function KolamDaraSeoSentimentBody({
                       </Text>
                       {canDraft ? (
                         <View style={styles.colAction}>
-                          <KolamButton
+                          <KolamDeleteButton
                             disabled={controller.deletingId === row.id}
                             label="Hapus"
                             onPress={() => {

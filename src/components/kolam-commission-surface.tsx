@@ -15,6 +15,7 @@ import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { resolveProfilePhotoUrl } from '../services/auth-api';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -539,7 +540,7 @@ function CommissionListBody({
           <Text numberOfLines={1} style={styles.recipientFilterText}>
             {filteredRecipientLabel}
           </Text>
-          <KolamButton
+          <KolamDeleteButton
             intent="secondary"
             label="Hapus"
             onPress={() => controller.onRecipientFilterChange('')}

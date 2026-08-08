@@ -35,6 +35,7 @@ import {
   type KolamLayananVoucherController,
 } from '../hooks/use-kolam-layanan-voucher-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamContentFrame } from './kolam-content-frame';
@@ -1745,7 +1746,7 @@ function MaterialLineEditor({
         </FieldShell>
       ) : null}
       {!disabled ? (
-        <KolamButton label="Hapus baris" onPress={onRemove} />
+        <KolamDeleteButton label="Hapus baris" onPress={onRemove} />
       ) : null}
     </View>
   );

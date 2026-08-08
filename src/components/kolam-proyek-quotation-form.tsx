@@ -4,6 +4,7 @@ import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamProyekController } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamDateField } from './kolam-date-field';
@@ -451,7 +452,7 @@ export function KolamProyekQuotationForm({
                   value={item.note}
                 />
               </Field>
-              <KolamButton
+              <KolamDeleteButton
                 intent="outline"
                 label="Hapus item"
                 onPress={() => controller.onRemoveFormItem(item.key)}

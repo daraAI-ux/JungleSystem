@@ -10,6 +10,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamCampaignController } from '../hooks/use-kolam-campaign-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -256,7 +257,7 @@ export function KolamCampaignForm({
                     diperlukan.
                   </Text>
                 </View>
-                <KolamButton
+                <KolamDeleteButton
                   disabled={form.products.length === 1}
                   intent="outline"
                   label="Hapus"

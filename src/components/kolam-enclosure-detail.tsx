@@ -46,6 +46,7 @@ import type {KolamEnclosureController} from '../hooks/use-kolam-enclosure-contro
 import {KolamBarcodePanel} from './kolam-barcode-panel';
 import {KolamBarcodePrintDialog} from './kolam-barcode-print-dialog';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -1727,7 +1728,7 @@ function EnclosureCommentItem({
               onPress={() => setEditOpen(true)}
               style={styles.toolbarButton}
             />
-            <KolamButton
+            <KolamDeleteButton
               disabled={controller.operationLoading}
               label="Hapus"
               onPress={() => void controller.onDeleteComment(comment.id)}

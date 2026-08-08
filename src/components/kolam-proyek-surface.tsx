@@ -48,6 +48,7 @@ import {
   type KolamProyekController,
 } from '../hooks/use-kolam-proyek-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -672,7 +673,7 @@ function KolamProyekDetailRead({
               />
             ) : null}
             {controller.canDelete ? (
-              <KolamButton
+              <KolamDeleteButton
                 disabled={controller.acting}
                 intent="danger"
                 label="Hapus draft"
@@ -1599,7 +1600,7 @@ function KolamProyekDetailRead({
                       />
                     ) : null}
                     {controller.canDelete ? (
-                      <KolamButton
+                      <KolamDeleteButton
                         disabled={controller.acting}
                         intent="danger"
                         label="Hapus draft"
@@ -1908,7 +1909,7 @@ function KolamProyekDetailRead({
                 label="Tutup"
                 onPress={() => setDeleteOpen(false)}
               />
-              <KolamButton
+              <KolamDeleteButton
                 disabled={controller.acting}
                 intent="danger"
                 label={controller.acting ? 'Menghapus…' : 'Hapus draft'}
@@ -2228,7 +2229,7 @@ function ReviewRoundSubmitForm({
                       </Text>
                     </View>
                   )}
-                  <KolamButton
+                  <KolamDeleteButton
                     intent="outline"
                     label="Hapus"
                     onPress={() =>
@@ -2723,7 +2724,7 @@ function ProyekHppMaterialsSection({
                     {canEdit ? (
                       <View style={styles.hppColAction}>
                         {editableLine ? (
-                          <KolamButton
+                          <KolamDeleteButton
                             disabled={acting}
                             intent="outline"
                             label="Hapus"

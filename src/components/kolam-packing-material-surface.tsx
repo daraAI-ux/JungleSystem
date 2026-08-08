@@ -20,6 +20,7 @@ import {
   type KolamPackingMaterialController,
 } from '../hooks/use-kolam-packing-material-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -1010,14 +1011,13 @@ function PackingPhotoEditPanel({
                       <Text style={styles.photoManagerMissingText}>-</Text>
                     </View>
                   )}
-                  <KolamButton
+                  <KolamDeleteButton
                     disabled={busy || controller.saving}
                     intent="plain"
                     label="Hapus"
                     onPress={() => {
                       void deletePhoto(index);
                     }}
-                    textStyle={styles.photoManagerDeleteText}
                   />
                 </View>
               );
@@ -1549,7 +1549,7 @@ function VendorPriceEditor({
               />
             </FieldShell>
             <View style={styles.vendorActions}>
-              <KolamButton
+              <KolamDeleteButton
                 intent="danger"
                 label="Hapus Supplier"
                 onPress={() =>

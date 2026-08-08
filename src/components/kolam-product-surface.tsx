@@ -53,6 +53,7 @@ import { KolamBarcodePanel } from './kolam-barcode-panel';
 import {KolamBarcodePrintButton} from './kolam-barcode-print-button';
 import { KolamBarcodePrintDialog } from './kolam-barcode-print-dialog';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -1337,7 +1338,7 @@ function KolamProductDetailView({
                 textStyle={styles.archiveButtonText}
               />
             )}
-            <KolamButton
+            <KolamDeleteButton
               intent="danger"
               label="Hapus"
               onPress={() => onDelete(product)}
@@ -3596,7 +3597,7 @@ function ProductVariantFormCard({
             />
           </View>
         </KolamInteractionFrame>
-        <KolamButton
+        <KolamDeleteButton
           disabled={controller.saving}
           intent="danger"
           label="Hapus"
@@ -4682,7 +4683,7 @@ function ProductVendorPriceRow({
             },
           ]}
         />
-        <KolamButton
+        <KolamDeleteButton
           disabled={controller.saving}
           intent="danger"
           label="Hapus Pemasok"
@@ -6206,7 +6207,7 @@ function ProductAttachedItemsEditPanel({
                 },
               ]}
             />
-            <KolamButton
+            <KolamDeleteButton
               disabled={controller.saving}
               intent="danger"
               label="Hapus"

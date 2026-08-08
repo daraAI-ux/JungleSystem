@@ -31,6 +31,7 @@ import {
   type KolamAppDownloadPickedFile,
 } from '../services/kolam-app-download-api';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -493,7 +494,7 @@ function ManageAppCard({
             {app.isActive ? 'Aktif' : 'Nonaktif'}
           </Text>
         </View>
-        <KolamButton
+        <KolamDeleteButton
           disabled={acting}
           intent="danger"
           label="Hapus app"
@@ -556,7 +557,7 @@ function ManageAppCard({
             <View key={version.id} style={styles.versionAdminCard}>
               <View style={styles.versionAdminHeader}>
                 <Text style={styles.versionTitle}>v{version.version}</Text>
-                <KolamButton
+                <KolamDeleteButton
                   disabled={acting}
                   intent="outline"
                   label="Hapus versi"
@@ -575,7 +576,7 @@ function ManageAppCard({
                       {artifact.md5.slice(0, 8)}...
                     </Text>
                   </View>
-                  <KolamButton
+                  <KolamDeleteButton
                     disabled={acting}
                     intent="plain"
                     label="Hapus file"
@@ -676,7 +677,7 @@ function UploadVersionForm({
               <Text numberOfLines={1} style={styles.fileName}>
                 {file.name || file.uri.split(/[/\\]/).pop() || `File ${index + 1}`}
               </Text>
-              <KolamButton
+              <KolamDeleteButton
                 intent="outline"
                 label="Hapus"
                 onPress={() =>

@@ -23,6 +23,7 @@ import {
   type KolamSourceController,
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -608,7 +609,7 @@ function KolamSourceDetail({
       </SourceFormSection>
 
       <View style={styles.detailActions}>
-        <KolamButton
+        <KolamDeleteButton
           intent="danger"
           label="Hapus"
           onPress={() => setDeleteOpen(true)}
@@ -889,7 +890,7 @@ function KolamSourceForm({
         <View style={styles.badgeRow}>
           <KolamButton label="Pilih logo" onPress={() => void handlePickLogo()} />
           {previewUri ? (
-            <KolamButton
+            <KolamDeleteButton
               intent="danger"
               label="Hapus logo"
               onPress={() => {
@@ -966,7 +967,7 @@ function KolamSourceForm({
                 value={String(field.value)}
               />
             </FieldShell>
-            <KolamButton
+            <KolamDeleteButton
               intent="danger"
               label="Hapus field"
               onPress={() => removeCostField(index)}

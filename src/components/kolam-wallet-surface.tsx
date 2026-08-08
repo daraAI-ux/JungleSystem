@@ -45,6 +45,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -733,7 +734,7 @@ function WalletListPanel({
                   intent="secondary"
                   onPress={() => setDeleteTarget(null)}
                 />
-                <KolamButton
+                <KolamDeleteButton
                   disabled={controller.deletingWalletId === deleteTarget.id}
                   intent="primary"
                   label={
@@ -1999,7 +2000,7 @@ function WalletProofPicker({
               <Text numberOfLines={1} style={styles.proofName}>
                 {proof.name}
               </Text>
-              <KolamButton
+              <KolamDeleteButton
                 intent="secondary"
                 label="Hapus"
                 onPress={() =>

@@ -24,6 +24,7 @@ import type {
   KolamCustomerSurfaceProps,
 } from './kolam-workspace-module-surface-types';
 import {KolamButton} from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -496,7 +497,7 @@ function KolamCustomerDetailSurface({
                       <Text numberOfLines={1} style={styles.customerSubText}>
                         Foto {index + 1}
                       </Text>
-                      <KolamButton
+                      <KolamDeleteButton
                         disabled={photoSaving}
                         intent="danger"
                         label="Hapus"

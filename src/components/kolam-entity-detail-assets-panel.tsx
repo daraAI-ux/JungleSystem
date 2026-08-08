@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { pickNativeAssetFile, type NativeImagePickerResult } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamTextField } from './kolam-text-field';
@@ -165,7 +166,7 @@ export function KolamEntityDetailAssetsPanel({
               <Text style={[styles.materialTableText, styles.materialSmallCell]}>{formatFileSize(asset.fileSize)}</Text>
               <Text style={[styles.materialTableText, styles.materialSmallCell]}>{formatAssetType(asset)}</Text>
               <KolamButton label="Unduh" onPress={() => downloadAsset(asset)} style={styles.tableActionButton} />
-              <KolamButton disabled={busy} intent="danger" label="Hapus" onPress={() => setDeleteTarget(asset)} style={styles.tableActionButton} />
+              <KolamDeleteButton disabled={busy} intent="danger" label="Hapus" onPress={() => setDeleteTarget(asset)} style={styles.tableActionButton} />
             </View>
           ))}
         </View>

@@ -18,6 +18,7 @@ import {
 } from '../domain/kolam-date';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamChevronIcon } from './kolam-chevron-icon';
 import { kolamFormControlStyles } from './kolam-form-control-styles';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -229,7 +230,7 @@ export function KolamDateField({
             </View>
 
             <View style={styles.footer}>
-              <KolamButton
+              <KolamDeleteButton
                 label="Hapus"
                 onPress={() => {
                   onChange('');

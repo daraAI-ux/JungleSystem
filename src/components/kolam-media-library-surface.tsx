@@ -26,6 +26,7 @@ import {
   type KolamMediaOrphanCleanupResult,
 } from '../services/kolam-media-api';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
@@ -286,7 +287,7 @@ export function KolamMediaLibrarySurface({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {routeState.filter === 'orphan' ? (
-                <KolamButton
+                <KolamDeleteButton
                   disabled={cleanupDialogOpen}
                   intent="danger"
                   label="Hapus orphan"
@@ -620,7 +621,7 @@ function KolamMediaOrphanCleanupDialog({
         <View style={styles.cleanupModalFooter}>
           <KolamButton disabled={busy} label="Tutup" onPress={onClose} />
           {cleanupPhase === 'review' && safeCount > 0 ? (
-            <KolamButton
+            <KolamDeleteButton
               intent="danger"
               label="Hapus"
               onPress={() => {

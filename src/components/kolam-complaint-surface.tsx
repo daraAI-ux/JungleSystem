@@ -62,6 +62,7 @@ import {
   type KolamComplaintController,
 } from '../hooks/use-kolam-complaint-controller';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
@@ -2400,7 +2401,7 @@ function KolamComplaintReworkWorkflow({
               {photoUris.map((uri, index) => (
                 <View key={`${uri}-${index}`} style={styles.localPhotoItem}>
                   <Image source={{ uri }} style={styles.localPhotoThumb} />
-                  <KolamButton
+                  <KolamDeleteButton
                     intent="plain"
                     label="Hapus"
                     onPress={() =>
@@ -2716,7 +2717,7 @@ function KolamComplaintRefundWorkflow({
               {photoUris.map((uri, index) => (
                 <View key={`${uri}-${index}`} style={styles.localPhotoItem}>
                   <Image source={{ uri }} style={styles.localPhotoThumb} />
-                  <KolamButton
+                  <KolamDeleteButton
                     intent="plain"
                     label="Hapus"
                     onPress={() =>

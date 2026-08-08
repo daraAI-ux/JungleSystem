@@ -27,6 +27,7 @@ import {
 } from '../hooks/use-kolam-shipping-method-controller';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamButton } from './kolam-button';
+import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
@@ -203,7 +204,7 @@ function KolamShippingMethodShell({
                     }
                   }}
                 />
-                <KolamButton
+                <KolamDeleteButton
                   disabled={controller.saving || !controller.selectedMethod}
                   intent="danger"
                   label="Hapus"
@@ -1277,7 +1278,7 @@ function KolamShippingMethodForm({
           <View style={styles.logoActions}>
             <KolamButton label="Pilih logo" onPress={() => void handlePickLogo()} />
             {previewUri || controller.selectedMethod?.iconPath ? (
-              <KolamButton
+              <KolamDeleteButton
                 intent="danger"
                 label="Hapus logo"
                 onPress={() =>
