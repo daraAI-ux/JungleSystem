@@ -3,6 +3,7 @@ import { getShellModule, type AppModule } from './app-shell';
 import type { AccessScope } from './auth';
 import type { ShellModuleRouteEntry } from './app-shell';
 import {
+  getKolamNavigationItemByRoute,
   getKolamNavigationSectionTitleForRoute,
   type KolamNavigationItem,
 } from './kolam-navigation';
@@ -242,6 +243,23 @@ export function getDashboardHeaderRouteContext({
   }
 
   if (activeModuleRoute) {
+    const navigationItem = getKolamNavigationItemByRoute(
+      activeModuleRoute.route,
+    );
+
+    if (navigationItem) {
+      return {
+        eyebrow:
+          navigationItem.group ??
+          getKolamNavigationSectionTitleForRoute(navigationItem.route) ??
+          undefined,
+        moduleIcon: navigationItem.moduleIcon,
+        route: navigationItem.route,
+        title: getDashboardRouteTitle(navigationItem),
+        subtitle: navigationItem.description ?? '',
+      };
+    }
+
     return {
       eyebrow: `${activeModuleRoute.area.toUpperCase()} Route`,
       route: activeModuleRoute.route,
