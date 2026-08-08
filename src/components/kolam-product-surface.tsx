@@ -1637,6 +1637,38 @@ function ProductEditFormPage({
                               </View>
                             </View>
                           </View>
+                          <View style={styles.inlineFieldGroup}>
+                            <KolamDropdownSelect
+                              accessibilityLabel="Pilih satuan"
+                              label="Satuan"
+                              menuStyle={styles.longDropdownMenu}
+                              onChange={unitId =>
+                                controller.onChangeForm({ unitId })
+                              }
+                              options={[
+                                { label: 'Pilih satuan', value: '' },
+                                ...controller.units.map(unit => ({
+                                  label: unit.initial
+                                    ? `${unit.name} (${unit.initial})`
+                                    : unit.name,
+                                  value: unit.id,
+                                })),
+                              ]}
+                              searchable
+                              searchPlaceholder="Cari satuan..."
+                              showLabelInTrigger={false}
+                              value={form.unitId}
+                            />
+                            <KolamCopyStack
+                              items={[
+                                {
+                                  id: 'unit-hint',
+                                  text: 'Satuan.',
+                                  style: styles.fieldHint,
+                                },
+                              ]}
+                            />
+                          </View>
                         </View>
                       </ProductFieldShell>
                     </View>
@@ -1763,32 +1795,6 @@ function ProductEditFormPage({
                   }))}
                   triggerLabel="Tambah merek"
                 />
-              </ProductEditSection>
-
-              <ProductEditSection
-                description="Satuan pengukuran dan penghitungan stok bahan baku."
-                title="Satuan"
-              >
-                <ProductFieldShell label="Satuan" required>
-                  <KolamDropdownSelect
-                    label="Satuan"
-                    menuStyle={styles.longDropdownMenu}
-                    onChange={unitId => controller.onChangeForm({ unitId })}
-                    options={[
-                      { label: 'Pilih satuan', value: '' },
-                      ...controller.units.map(unit => ({
-                        label: unit.initial
-                          ? `${unit.name} (${unit.initial})`
-                          : unit.name,
-                        value: unit.id,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari satuan..."
-                    showLabelInTrigger={false}
-                    value={form.unitId}
-                  />
-                </ProductFieldShell>
               </ProductEditSection>
 
               <ProductEditSection
