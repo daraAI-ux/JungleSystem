@@ -307,19 +307,20 @@ export function KolamPosFullWindowSurface({
         }}
       />
       <View style={styles.posMain}>
-        {shellChrome ? (
-          <>
-            <KolamTopNavigation {...shellChrome.topNavigation} />
-            <KolamOverlaySurface {...shellChrome.overlay} />
-            <View style={styles.posDashboardHeader}>
-              <KolamDashboardHeader {...shellChrome.dashboardHeader} />
-            </View>
-          </>
-        ) : null}
-        <View style={styles.posWorkspace}>
-          <View style={styles.catalogPane}>
-            {isCatalogView ? (
-              <>
+        <View style={styles.posContent}>
+          {shellChrome ? (
+            <>
+              <KolamTopNavigation {...shellChrome.topNavigation} />
+              <KolamOverlaySurface {...shellChrome.overlay} />
+              <View style={styles.posDashboardHeader}>
+                <KolamDashboardHeader {...shellChrome.dashboardHeader} />
+              </View>
+            </>
+          ) : null}
+          <View style={styles.posWorkspace}>
+            <View style={styles.catalogPane}>
+              {isCatalogView ? (
+                <>
             <View style={styles.categoryBar}>
               <KolamInteractionFrame
                 onPress={() => scrollCategories('left')}
@@ -420,27 +421,29 @@ export function KolamPosFullWindowSurface({
             {!hasCashflowSession ? (
               <PosCashflowLockOverlay onOpenCashflow={() => setActiveView('cashflow')} />
             ) : null}
-              </>
-            ) : (
-              <PosSubview
-                activeView={activeView}
-                activeSession={activeSession}
-                customerForm={customerForm}
-                customers={customers}
-                isCreatingCustomer={isCreatingCustomer}
-                paymentMethods={paymentMethods}
-                recentSales={recentSales}
-                selectedCustomerId={checkout.customerId}
-                selectedPaymentId={checkout.paymentMethodId}
-                onCreateCustomer={onCreateCustomer}
-                onCustomerFormChange={onCustomerFormChange}
-                onSelectCustomer={onSelectCustomer}
-                onSelectPaymentMethod={onSelectPaymentMethod}
-              />
-            )}
+                </>
+              ) : (
+                <PosSubview
+                  activeView={activeView}
+                  activeSession={activeSession}
+                  customerForm={customerForm}
+                  customers={customers}
+                  isCreatingCustomer={isCreatingCustomer}
+                  paymentMethods={paymentMethods}
+                  recentSales={recentSales}
+                  selectedCustomerId={checkout.customerId}
+                  selectedPaymentId={checkout.paymentMethodId}
+                  onCreateCustomer={onCreateCustomer}
+                  onCustomerFormChange={onCustomerFormChange}
+                  onSelectCustomer={onSelectCustomer}
+                  onSelectPaymentMethod={onSelectPaymentMethod}
+                />
+              )}
+            </View>
           </View>
+        </View>
 
-          <View style={orderPaneStyle}>
+        <View style={orderPaneStyle}>
         <View style={styles.orderHeader}>
           <Text style={styles.orderTitle}>Pesanan</Text>
           <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
@@ -557,7 +560,6 @@ export function KolamPosFullWindowSurface({
             </View>
           </View>
         ) : null}
-          </View>
         </View>
       </View>
       {isSavedOrdersOpen ? (
@@ -2268,6 +2270,12 @@ const styles = StyleSheet.create({
   posMain: {
     flex: 1,
     minWidth: 0,
+    flexDirection: 'row',
+    backgroundColor: V.colors.mainSurface,
+  },
+  posContent: {
+    flex: 1,
+    minWidth: 0,
     backgroundColor: V.colors.mainSurface,
   },
   posDashboardHeader: {
@@ -2936,7 +2944,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.muted,
   },
   orderPane: {
+    alignSelf: 'stretch',
     width: 340,
+    height: '100%',
     backgroundColor: V.colors.bg,
   },
   orderPaneCompact: {
