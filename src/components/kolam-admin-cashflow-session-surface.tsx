@@ -271,6 +271,7 @@ function createAdminCashflowColumns(
       id: 'name',
       label: 'Nama',
       flex: 1.4,
+      align: 'left',
       render: item => (
         <KolamButton
           intent="plain"
@@ -322,8 +323,9 @@ function createAdminCashflowColumns(
       id: 'openedBy',
       label: 'Dibuka oleh',
       flex: 1,
+      align: 'center',
       render: item => (
-        <Text numberOfLines={1} style={styles.metaText}>
+        <Text numberOfLines={1} style={[styles.metaText, styles.centerText]}>
           {formatAdminCashflowOpenedBy(item.openedBy, item.source)}
         </Text>
       ),
@@ -540,6 +542,9 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     fontWeight: '600',
+  },
+  centerText: {
+    textAlign: 'center',
   },
   nameButton: {
     alignItems: 'flex-start',
