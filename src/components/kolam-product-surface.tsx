@@ -1977,6 +1977,15 @@ function ProductEditFormPage({
             </ProductEditSection>
 
             <ProductEditSection
+              description="Aktifkan varian jika produk memiliki beberapa variasi atau beberapa SKU."
+              title="Varian"
+            >
+              <View style={styles.productBasicInfoCard}>
+                <ProductVariantEditorPanel controller={controller} />
+              </View>
+            </ProductEditSection>
+
+            <ProductEditSection
               description="Satuan pengukuran dan penghitungan stok produk."
               title="Satuan"
             >
@@ -2014,13 +2023,6 @@ function ProductEditFormPage({
               title="Field Kustom"
             >
               <ProductCustomFieldEditorPanel controller={controller} />
-            </ProductEditSection>
-
-            <ProductEditSection
-              description="Aktifkan varian jika produk memiliki beberapa variasi atau beberapa SKU."
-              title="Varian"
-            >
-              <ProductVariantEditorPanel controller={controller} />
             </ProductEditSection>
 
             {!hasVariants ? (
