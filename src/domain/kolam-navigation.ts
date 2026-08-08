@@ -26,6 +26,7 @@ export type KolamNavigationModuleIcon =
   | 'species'
   | 'stockMovement'
   | 'stockOpname'
+  | 'supplier'
   | 'tag'
   | 'taxonomy'
   | 'teranura'
@@ -322,6 +323,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/suppliers',
         description: 'Daftar pemasok dan vendor pengadaan',
         group: 'Pengadaan',
+        moduleIcon: 'supplier',
         requiredAccess: ['kolam'],
       },
       {
@@ -831,7 +833,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Stock Opname',
         moduleIcon: 'stockOpname',
       }),
-      sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
+      sidebarItem('/suppliers', {
+        group: 'Pengadaan',
+        label: 'Pemasok',
+        moduleIcon: 'supplier',
+      }),
       sidebarItem('/purchase-order', {
         group: 'Pengadaan',
         label: 'Pesanan Pembelian',
