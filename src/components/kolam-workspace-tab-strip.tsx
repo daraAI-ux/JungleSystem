@@ -150,8 +150,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   activeTab: {
-    borderColor: 'rgba(255,255,255,0.36)',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderColor: V.colors.border,
+    backgroundColor: V.colors.bg,
   },
   moduleIconSurface: {
     alignItems: 'center',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabLabel: {
-    color: V.colors.primaryFg,
+    color: V.colors.fg,
   },
   closeButton: {
     alignItems: 'center',
