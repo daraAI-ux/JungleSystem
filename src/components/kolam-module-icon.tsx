@@ -3,6 +3,7 @@ import {Image, StyleSheet, View} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
+import {KOLAM_PACKING_MODULE_ICON_SVG} from '../assets/icons/packing-module-icon-svg';
 import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon-svg';
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
@@ -18,6 +19,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   category: 'Icon Kategori',
   fieldcustom: 'Icon Field Kustom',
   iucn: 'Icon Status IUCN',
+  packing: 'Icon Bahan Kemasan',
   product: 'Icon Produk',
   raw: 'Icon Bahan Baku',
   species: 'Icon Spesies',
@@ -38,6 +40,7 @@ const FIELDCUSTOM_ICON_PATHS = [
 ] as const;
 const BRAND_ICON_PATHS = getSvgPathData(KOLAM_BRAND_MODULE_ICON_SVG);
 const ARCHIVE_ICON_PATHS = getSvgPathData(KOLAM_ARCHIVE_MODULE_ICON_SVG);
+const PACKING_ICON_PATHS = getSvgPathData(KOLAM_PACKING_MODULE_ICON_SVG);
 const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
 const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
@@ -100,6 +103,12 @@ export function KolamModuleIcon({
           source={IUCN_MODULE_ICON_SOURCE}
           style={styles.imageIcon}
         />
+      ) : kind === 'packing' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {PACKING_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
       ) : kind === 'product' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {PRODUCT_ICON_PATHS.map(path => (

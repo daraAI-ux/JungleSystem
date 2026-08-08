@@ -17,6 +17,7 @@ export type KolamNavigationModuleIcon =
   | 'category'
   | 'fieldcustom'
   | 'iucn'
+  | 'packing'
   | 'product'
   | 'raw'
   | 'species'
@@ -296,6 +297,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Master data bahan kemasan untuk pengemasan dan pengiriman',
         group: 'Stok',
+        moduleIcon: 'packing',
         requiredAccess: ['kolam'],
       },
       {
@@ -799,6 +801,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/packing-materials', {
         group: 'Produk',
         label: 'Bahan Kemasan',
+        moduleIcon: 'packing',
       }),
       sidebarItem('/teranura', { group: 'Produk', label: 'Teranura' }),
       sidebarItem('/stock-transaction', {
