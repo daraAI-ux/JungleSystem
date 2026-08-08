@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   },
   nameButton: {
     alignItems: 'flex-start',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     minHeight: 0,
     paddingHorizontal: 0,
     paddingVertical: 0,
@@ -557,6 +557,7 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '800',
+    textAlign: 'left',
   },
   formRoot: {
     gap: 12,
