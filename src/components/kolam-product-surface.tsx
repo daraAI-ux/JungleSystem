@@ -10388,9 +10388,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   externalLinkTypeSelect: {
-    flexBasis: 112,
+    flexBasis: 128,
     flexShrink: 0,
-    minWidth: 104,
+    minWidth: 120,
   },
   externalLinkDropdown: {
     alignSelf: 'stretch',
