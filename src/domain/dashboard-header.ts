@@ -248,9 +248,6 @@ export function getDashboardHeaderRouteContext({
     );
 
     if (navigationItem) {
-      const routePath = navigationItem.route.split('?')[0];
-      const isSpeciesDetail = /^\/species\/[^/]+$/.test(routePath);
-
       return {
         eyebrow:
           navigationItem.group ??
@@ -258,8 +255,8 @@ export function getDashboardHeaderRouteContext({
           undefined,
         moduleIcon: navigationItem.moduleIcon,
         route: navigationItem.route,
-        title: isSpeciesDetail ? '' : getDashboardRouteTitle(navigationItem),
-        subtitle: isSpeciesDetail ? '' : navigationItem.description ?? '',
+        title: getDashboardRouteTitle(navigationItem),
+        subtitle: navigationItem.description ?? '',
       };
     }
 
@@ -302,7 +299,6 @@ export function getDashboardHeaderRouteContext({
       activeNavigationItem.route.split('?')[0].replace(/\/+$/, '') || '/';
     const assetPurchaseHeader = getAssetPurchaseDashboardHeaderCopy(routePath);
     const productHeader = getProductDashboardHeaderCopy(routePath);
-    const isSpeciesDetail = /^\/species\/[^/]+$/.test(routePath);
     if (assetPurchaseHeader) {
       return {
         eyebrow:
@@ -335,10 +331,8 @@ export function getDashboardHeaderRouteContext({
         undefined,
       moduleIcon: activeNavigationItem.moduleIcon,
       route: activeNavigationItem.route,
-      title: isSpeciesDetail
-        ? ''
-        : getDashboardRouteTitle(activeNavigationItem),
-      subtitle: isSpeciesDetail ? '' : activeNavigationItem.description ?? '',
+      title: getDashboardRouteTitle(activeNavigationItem),
+      subtitle: activeNavigationItem.description ?? '',
     };
   }
 
