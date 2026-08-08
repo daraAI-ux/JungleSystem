@@ -1582,7 +1582,14 @@ function KolamSpeciesForm({
               description="Judul, kata kunci, dan deskripsi SEO Google."
               title="SEO Google"
             >
-              <SpeciesSeoEditPanel controller={controller} />
+              <View
+                style={[
+                  styles.speciesBasicInfoCard,
+                  styles.customFieldSettingsCard,
+                ]}
+              >
+                <SpeciesSeoEditPanel controller={controller} />
+              </View>
             </SpeciesEditSection>
 
             <SpeciesEditSection

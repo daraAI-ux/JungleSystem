@@ -2151,7 +2151,9 @@ function ProductEditFormPage({
               description="Judul, kata kunci, dan deskripsi SEO Google."
               title="SEO Google"
             >
-              <ProductSeoEditPanel controller={controller} />
+              <View style={styles.productBasicInfoCard}>
+                <ProductSeoEditPanel controller={controller} />
+              </View>
             </ProductEditSection>
 
             <View style={styles.productEditTwoColumnSections}>
@@ -4343,41 +4345,34 @@ function ProductRootVendorPricesEditor({
   }
 
   return (
-    <ProductVendorPricesEditor
-      controller={controller}
-      emptyText="Belum ada harga pemasok untuk produk utama."
-      hint={
-        form.productType === 'raw'
-          ? 'Harga beli supplier untuk bahan baku tanpa varian. Ongkir dan total biaya berasal dari data PO/BE.'
-          : 'Harga beli pemasok untuk produk tanpa varian. Ongkir mengikuti data PO jika tersedia.'
-      }
-      onAdd={() =>
-        controller.onChangeForm({
-          vendorPrices: [
-            ...form.vendorPrices,
-            createEmptyKolamProductVendorPriceFormRow(),
-          ],
-        })
-      }
-      onPatch={(rowId, patch) =>
-        controller.onChangeForm({
-          vendorPrices: form.vendorPrices.map(row =>
-            row.id === rowId ? { ...row, ...patch } : row,
-          ),
-        })
-      }
-      onRemove={rowId =>
-        controller.onChangeForm({
-          vendorPrices: form.vendorPrices.filter(row => row.id !== rowId),
-        })
-      }
-      rows={form.vendorPrices}
-      title={
-        form.productType === 'raw'
-          ? 'Harga Supplier'
-          : 'Harga Vendor / HPP Utama'
-      }
-    />
+    <ProductFieldShell label="Harga Pemasok / HPP Utama">
+      <ProductVendorPricesEditor
+        controller={controller}
+        emptyText="Belum ada harga pemasok untuk produk utama."
+        hint="Harga beli pemasok untuk produk tanpa varian. Ongkir mengikuti data PO jika tersedia."
+        onAdd={() =>
+          controller.onChangeForm({
+            vendorPrices: [
+              ...form.vendorPrices,
+              createEmptyKolamProductVendorPriceFormRow(),
+            ],
+          })
+        }
+        onPatch={(rowId, patch) =>
+          controller.onChangeForm({
+            vendorPrices: form.vendorPrices.map(row =>
+              row.id === rowId ? { ...row, ...patch } : row,
+            ),
+          })
+        }
+        onRemove={rowId =>
+          controller.onChangeForm({
+            vendorPrices: form.vendorPrices.filter(row => row.id !== rowId),
+          })
+        }
+        rows={form.vendorPrices}
+      />
+    </ProductFieldShell>
   );
 }
 
@@ -4401,7 +4396,7 @@ function ProductVendorPricesEditor({
   ) => void;
   onRemove: (rowId: string) => void;
   rows: KolamProductVendorPriceFormRow[];
-  title: string;
+  title?: string;
 }) {
   const vendorOptions = [
     { label: 'Pilih pemasok', value: '' },
@@ -4416,11 +4411,15 @@ function ProductVendorPricesEditor({
       <View style={styles.variantEditorHeader}>
         <KolamCopyStack
           items={[
-            {
-              id: 'title',
-              text: title,
-              style: styles.variantTitle,
-            },
+            ...(title
+              ? [
+                  {
+                    id: 'title',
+                    text: title,
+                    style: styles.variantTitle,
+                  },
+                ]
+              : []),
             {
               id: 'hint',
               text: hint,
