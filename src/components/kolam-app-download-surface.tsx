@@ -6,6 +6,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import Svg, {Circle, Path, Rect} from 'react-native-svg';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   formatKolamAppDownloadFileSize,
@@ -866,6 +867,8 @@ function KolamAppDownloadArtifactRow({
 }
 
 function PlatformBadge({platform}: {platform: KolamAppDownloadPlatform}) {
+  const isAndroid = platform === 'android';
+
   return (
     <KolamInteractionFrame
       accessibilityLabel={platform}
@@ -875,8 +878,32 @@ function PlatformBadge({platform}: {platform: KolamAppDownloadPlatform}) {
         {backgroundColor: getPlatformColor(platform)},
       ]}
     >
-      <Text style={styles.platformBadgeText}>{getPlatformInitial(platform)}</Text>
+      {isAndroid ? (
+        <AndroidPlatformIcon color="#ffffff" />
+      ) : (
+        <Text style={styles.platformBadgeText}>
+          {getPlatformInitial(platform)}
+        </Text>
+      )}
     </KolamInteractionFrame>
+  );
+}
+
+function AndroidPlatformIcon({color}: {color: string}) {
+  return (
+    <Svg height={22} viewBox="0 0 24 24" width={22}>
+      <Path
+        d="M7.25 8.15L5.65 5.38a.58.58 0 011-.58l1.7 2.94A7.02 7.02 0 0112 6.75c1.31 0 2.55.36 3.61.99l1.7-2.94a.58.58 0 111 .58l-1.6 2.77A5.86 5.86 0 0118.08 12H5.92a5.86 5.86 0 011.33-3.85z"
+        fill={color}
+      />
+      <Rect fill={color} height={7.4} rx={1.4} width={12.16} x={5.92} y={12.85} />
+      <Rect fill={color} height={5.4} rx={1} width={1.7} x={3.7} y={13.45} />
+      <Rect fill={color} height={5.4} rx={1} width={1.7} x={18.6} y={13.45} />
+      <Rect fill={color} height={3.7} rx={0.85} width={1.9} x={8.3} y={19.25} />
+      <Rect fill={color} height={3.7} rx={0.85} width={1.9} x={13.8} y={19.25} />
+      <Circle cx={9.35} cy={10.2} fill="#16a34a" r={0.58} />
+      <Circle cx={14.65} cy={10.2} fill="#16a34a" r={0.58} />
+    </Svg>
   );
 }
 
