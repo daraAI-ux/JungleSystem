@@ -1,11 +1,16 @@
 ﻿import React from 'react';
 import {StyleSheet, View} from 'react-native';
-import Svg, {Circle, Path} from 'react-native-svg';
+import Svg, {Path} from 'react-native-svg';
+import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
 import {
   getAdminCashflowHeaderRoute,
 } from '../services/kolam-cashflow-session-api';
 import {useKolamAdminCashflowHeaderController} from '../hooks/use-kolam-admin-cashflow-header-controller';
 import {KolamIconButton} from './kolam-icon-button';
+
+const CASHFLOW_SESSION_ICON_PATHS = getSvgPathData(
+  KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG,
+);
 
 /**
  * Top-nav cashflow quick access â€” FE parity with CashflowHeaderIcon
@@ -55,42 +60,27 @@ export function KolamTopNavigationCashflowHost({
 
 function CashflowSessionIcon() {
   return (
-    <Svg height={22} width={22} viewBox="0 0 512 512">
-      <Circle cx={256} cy={256} r={256} fill="#181818" />
-      <Path
-        d="M153 184h242c21 0 38 17 38 38v96c0 21-17 38-38 38H153c-21 0-38-17-38-38v-96c0-21 17-38 38-38Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={22}
-      />
-      <Path
-        d="M116 224h250c23 0 42 19 42 42v93c0 23-19 42-42 42H116c-23 0-42-19-42-42v-93c0-23 19-42 42-42Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={22}
-      />
-      <Path
-        d="M223 311c0-43 25-76 58-76s58 33 58 76-25 76-58 76-58-33-58-76Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={18}
-      />
-      <Path
-        d="M118 313h40M403 313h40"
-        fill="none"
-        stroke="#181818"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={18}
-      />
+    <Svg height={22} width={22} viewBox="0 0 810 809.999993">
+      {CASHFLOW_SESSION_ICON_PATHS.map(path => (
+        <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+      ))}
     </Svg>
   );
+}
+
+function getSvgPathData(svg: string) {
+  const paths: string[] = [];
+  const drawableSvg = svg.replace(/<defs[\s\S]*?<\/defs>/g, '');
+  const pattern = /\sd="([^"]+)"/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(drawableSvg)) !== null) {
+    if (match[1]) {
+      paths.push(match[1]);
+    }
+  }
+
+  return paths;
 }
 
 const styles = StyleSheet.create({
