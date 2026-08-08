@@ -302,6 +302,7 @@ export function getDashboardHeaderRouteContext({
       activeNavigationItem.route.split('?')[0].replace(/\/+$/, '') || '/';
     const assetPurchaseHeader = getAssetPurchaseDashboardHeaderCopy(routePath);
     const productHeader = getProductDashboardHeaderCopy(routePath);
+    const isSpeciesDetail = /^\/species\/[^/]+$/.test(routePath);
     if (assetPurchaseHeader) {
       return {
         eyebrow:
@@ -334,8 +335,10 @@ export function getDashboardHeaderRouteContext({
         undefined,
       moduleIcon: activeNavigationItem.moduleIcon,
       route: activeNavigationItem.route,
-      title: getDashboardRouteTitle(activeNavigationItem),
-      subtitle: activeNavigationItem.description ?? '',
+      title: isSpeciesDetail
+        ? ''
+        : getDashboardRouteTitle(activeNavigationItem),
+      subtitle: isSpeciesDetail ? '' : activeNavigationItem.description ?? '',
     };
   }
 
