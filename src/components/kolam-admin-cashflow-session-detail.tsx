@@ -337,9 +337,8 @@ function DetailHeader({
         <View style={styles.headerActions}>
           <KolamDaftarButton onPress={onBack} />
           {controller.canClose ? (
-            <KolamButton
+            <KolamCancelButton
               disabled={controller.acting}
-              intent="primary"
               label="Tutup"
               onPress={onClose}
             />

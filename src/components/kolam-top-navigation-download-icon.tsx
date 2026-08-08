@@ -1,24 +1,33 @@
-﻿import React from 'react';
-import Svg, {Circle, Path} from 'react-native-svg';
+import React from 'react';
+import Svg, {Path} from 'react-native-svg';
+import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
 
-export function KolamTopNavigationDownloadIcon(_props: {color?: string}) {
+const DOWNLOAD_ICON_PATHS = getSvgPathData(KOLAM_DOWNLOAD_TOPBAR_ICON_SVG);
+
+export function KolamTopNavigationDownloadIcon({
+  color = '#1a1a1a',
+}: {
+  color?: string;
+}) {
   return (
-    <Svg height={22} viewBox="0 0 512 512" width={22}>
-      <Circle cx={256} cy={256} fill="#181818" r={256} />
-      <Path
-        d="M225 126H287C305 126 319 140 319 158V258H352C367 258 375 276 365 287L279 377C267 390 245 390 233 377L147 287C137 276 145 258 160 258H193V158C193 140 207 126 225 126Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinejoin="round"
-        strokeWidth={7}
-      />
-      <Path
-        d="M128 317V360C128 384 147 403 171 403H341C365 403 384 384 384 360V317H345V347C345 358 336 367 325 367H187C176 367 167 358 167 347V317H128Z"
-        fill="#9CFF7A"
-        stroke="#181818"
-        strokeLinejoin="round"
-        strokeWidth={7}
-      />
+    <Svg height={22} viewBox="0 0 810 809.999993" width={22}>
+      {DOWNLOAD_ICON_PATHS.map(path => (
+        <Path key={path} d={path} fill={color} fillRule="nonzero" />
+      ))}
     </Svg>
   );
+}
+
+function getSvgPathData(svg: string) {
+  const paths: string[] = [];
+  const pattern = /\sd="([^"]+)"/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(svg)) !== null) {
+    if (match[1]) {
+      paths.push(match[1]);
+    }
+  }
+
+  return paths;
 }
