@@ -22,6 +22,7 @@ export type KolamNavigationModuleIcon =
   | 'raw'
   | 'species'
   | 'stockMovement'
+  | 'stockOpname'
   | 'tag'
   | 'taxonomy'
   | 'teranura'
@@ -278,6 +279,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Penghitungan fisik multi-baris dengan alur review dan posting',
         group: 'Stok',
+        moduleIcon: 'stockOpname',
         requiredAccess: ['kolam'],
       },
       {
@@ -817,7 +819,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Transaksi Stok',
         moduleIcon: 'stockMovement',
       }),
-      sidebarItem('/stock-opname', { group: 'Stok', label: 'Stock Opname' }),
+      sidebarItem('/stock-opname', {
+        group: 'Stok',
+        label: 'Stock Opname',
+        moduleIcon: 'stockOpname',
+      }),
       sidebarItem('/suppliers', { group: 'Pengadaan', label: 'Pemasok' }),
       sidebarItem('/purchase-order', {
         group: 'Pengadaan',
