@@ -2158,19 +2158,25 @@ function ProductEditFormPage({
               <ProductSeoEditPanel controller={controller} />
             </ProductEditSection>
 
-            <ProductEditSection
-              description="Hubungkan produk kompatibel atau pengganti."
-              title="Produk kompatibel"
-            >
-              <ProductAttachedItemsEditPanel controller={controller} />
-            </ProductEditSection>
+            <View style={styles.productEditTwoColumnSections}>
+              <View style={styles.productEditTwoColumnSection}>
+                <ProductEditSection
+                  description="Hubungkan produk kompatibel atau pengganti."
+                  title="Produk kompatibel"
+                >
+                  <ProductAttachedItemsEditPanel controller={controller} />
+                </ProductEditSection>
+              </View>
 
-            <ProductEditSection
-              description="Template S&K yang berlaku untuk produk ini."
-              title="Syarat dan Ketentuan"
-            >
-              <ProductTermsTemplatesSummaryPanel controller={controller} />
-            </ProductEditSection>
+              <View style={styles.productEditTwoColumnSection}>
+                <ProductEditSection
+                  description="Template S&K yang berlaku untuk produk ini."
+                  title="Syarat dan Ketentuan"
+                >
+                  <ProductTermsTemplatesSummaryPanel controller={controller} />
+                </ProductEditSection>
+              </View>
+            </View>
 
             <ProductEditSection
               description="Material packing default untuk mengirim 1 unit produk."

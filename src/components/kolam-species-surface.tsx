@@ -1634,19 +1634,25 @@ function KolamSpeciesForm({
               </View>
             </SpeciesEditSection>
 
-            <SpeciesEditSection
-              description="Template syarat dan ketentuan aktif untuk spesies."
-              title="Syarat dan Ketentuan"
-            >
-              <SpeciesTermsTemplatesSummaryPanel controller={controller} />
-            </SpeciesEditSection>
+            <View style={styles.speciesEditTwoColumnSections}>
+              <View style={styles.speciesEditTwoColumnSection}>
+                <SpeciesEditSection
+                  description="Template syarat dan ketentuan aktif untuk spesies."
+                  title="Syarat dan Ketentuan"
+                >
+                  <SpeciesTermsTemplatesSummaryPanel controller={controller} />
+                </SpeciesEditSection>
+              </View>
 
-            <SpeciesEditSection
-              description="Produk atau spesies yang terhubung sebagai informasi tambahan."
-              title="Item Terlampir"
-            >
-              <SpeciesAttachedItemsEditPanel controller={controller} />
-            </SpeciesEditSection>
+              <View style={styles.speciesEditTwoColumnSection}>
+                <SpeciesEditSection
+                  description="Produk atau spesies yang terhubung sebagai informasi tambahan."
+                  title="Item Terlampir"
+                >
+                  <SpeciesAttachedItemsEditPanel controller={controller} />
+                </SpeciesEditSection>
+              </View>
+            </View>
 
             <SpeciesEditSection
               description="Dokumen dan file pendukung spesies."
