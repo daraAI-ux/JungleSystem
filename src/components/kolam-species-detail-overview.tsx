@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import * as ClipboardModule from 'react-native/Libraries/Components/Clipboard/Clipboard';
+import { copyTextToClipboard } from '../lib/native-clipboard';
 import {
   fetchKolamActivePricingSources,
   fetchKolamChannelPricingAnalysis,
@@ -350,10 +350,13 @@ function CopyableSkuChip({ compact = false, sku }: { compact?: boolean; sku: str
     if (!safeSku) {
       return;
     }
-    const clipboard = ((ClipboardModule as unknown as { default?: { setString?: (value: string) => void }; setString?: (value: string) => void }).default ?? ClipboardModule) as { setString?: (value: string) => void };
-    clipboard.setString?.(safeSku);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1400);
+    void copyTextToClipboard(safeSku).then(ok => {
+      if (!ok) {
+        return;
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    });
   };
 
   if (!safeSku) {
