@@ -1493,15 +1493,23 @@ function KolamSpeciesForm({
                   ]}
                 >
                   <SpeciesRootPricingPanel controller={controller} />
-                  <SpeciesGrocerPricingPanel
-                    disabled={controller.saving}
-                    hint="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk spesies tanpa varian; jika varian aktif, harga bertingkat diatur per varian."
-                    onChange={grocerPricingTiers =>
-                      controller.onChangeForm({ grocerPricingTiers })
-                    }
-                    rows={form.grocerPricingTiers}
-                    title="Harga Bertingkat / Grosir Spesies"
-                  />
+                  <View style={styles.pricingHalfRow}>
+                    <View style={styles.pricingHalfColumn}>
+                      <SpeciesRootOrderRulesPanel controller={controller} />
+                    </View>
+                    <View style={styles.pricingHalfColumn}>
+                      <SpeciesGrocerPricingPanel
+                        disabled={controller.saving}
+                        hint="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk spesies tanpa varian; jika varian aktif, harga bertingkat diatur per varian."
+                        onChange={grocerPricingTiers =>
+                          controller.onChangeForm({ grocerPricingTiers })
+                        }
+                        rows={form.grocerPricingTiers}
+                        title="Harga Bertingkat / Grosir Spesies"
+                      />
+                    </View>
+                  </View>
+                  <SpeciesRootVendorPricesEditor controller={controller} />
                 </View>
               </SpeciesEditSection>
             ) : null}
@@ -1553,22 +1561,6 @@ function KolamSpeciesForm({
                 />
               </View>
             </SpeciesEditSection>
-
-            {showRootOnlySections ? (
-              <SpeciesEditSection
-                description="Harga beli pemasok, ongkir, dan total HPP."
-                title="Harga Supplier"
-              >
-                <View
-                  style={[
-                    styles.speciesBasicInfoCard,
-                    styles.customFieldSettingsCard,
-                  ]}
-                >
-                  <SpeciesRootVendorPricesEditor controller={controller} />
-                </View>
-              </SpeciesEditSection>
-            ) : null}
 
             {showRootOnlySections ? (
               <SpeciesEditSection
@@ -2317,24 +2309,35 @@ function SpeciesRootPricingPanel({
           </View>
         </SpeciesVariantFieldPanel>
 
-        <SpeciesVariantFieldPanel
-          description="Aturan jumlah minimum saat item dibeli."
-          title="Aturan Pesanan"
-        >
-          <View style={styles.twoColumnGrid}>
-            <SpeciesPriceInput
-              disabled={controller.saving}
-              hint="Jumlah minimum per transaksi."
-              label="Minimum Pesanan"
-              onChangeText={minimumOrderQty =>
-                controller.onChangeForm({ minimumOrderQty })
-              }
-              value={form.minimumOrderQty}
-            />
-          </View>
-        </SpeciesVariantFieldPanel>
       </View>
     </FieldShell>
+  );
+}
+
+function SpeciesRootOrderRulesPanel({
+  controller,
+}: {
+  controller: KolamSpeciesController;
+}) {
+  const form = controller.form;
+
+  return (
+    <SpeciesVariantFieldPanel
+      description="Aturan jumlah minimum saat item dibeli."
+      title="Aturan Pesanan"
+    >
+      <View style={styles.twoColumnGrid}>
+        <SpeciesPriceInput
+          disabled={controller.saving}
+          hint="Jumlah minimum per transaksi."
+          label="Minimum Pesanan"
+          onChangeText={minimumOrderQty =>
+            controller.onChangeForm({ minimumOrderQty })
+          }
+          value={form.minimumOrderQty}
+        />
+      </View>
+    </SpeciesVariantFieldPanel>
   );
 }
 
@@ -8231,6 +8234,20 @@ const styles = StyleSheet.create({
   },
   pricingPanelStack: {
     gap: 12,
+  },
+  pricingHalfRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    minWidth: 0,
+    width: '100%',
+  },
+  pricingHalfColumn: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 320,
   },
   priceInputBlock: {
     flexBasis: 320,

@@ -1543,6 +1543,8 @@ function ProductEditFormPage({
                 >
                   <View style={styles.productBasicInfoCard}>
                     <ProductRootPricingPanel controller={controller} />
+                    <ProductRootOrderRulesPanel controller={controller} />
+                    <ProductRootVendorPricesEditor controller={controller} />
                   </View>
                 </ProductEditSection>
               ) : null}
@@ -1591,15 +1593,6 @@ function ProductEditFormPage({
                       />
                     </View>
                   </ProductFieldShell>
-                </ProductEditSection>
-              ) : null}
-
-              {!hasVariants ? (
-                <ProductEditSection
-                  description="Harga pemasok untuk bahan baku tanpa varian."
-                  title="Harga Supplier"
-                >
-                  <ProductRootVendorPricesEditor controller={controller} />
                 </ProductEditSection>
               ) : null}
 
@@ -2071,18 +2064,26 @@ function ProductEditFormPage({
               >
                 <View style={styles.productBasicInfoCard}>
                   <ProductRootPricingPanel controller={controller} />
-                  <ProductPricingFieldPanel
-                    description="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk produk tanpa varian."
-                    title="Harga Bertingkat / Grosir Produk"
-                  >
-                    <KolamGrocerPricingTiersEditor
-                      disabled={controller.saving}
-                      onChange={grocerPricingTiers =>
-                        controller.onChangeForm({ grocerPricingTiers })
-                      }
-                      rows={form.grocerPricingTiers}
-                    />
-                  </ProductPricingFieldPanel>
+                  <View style={styles.pricingHalfRow}>
+                    <View style={styles.pricingHalfColumn}>
+                      <ProductRootOrderRulesPanel controller={controller} />
+                    </View>
+                    <View style={styles.pricingHalfColumn}>
+                      <ProductPricingFieldPanel
+                        description="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk produk tanpa varian."
+                        title="Harga Bertingkat / Grosir Produk"
+                      >
+                        <KolamGrocerPricingTiersEditor
+                          disabled={controller.saving}
+                          onChange={grocerPricingTiers =>
+                            controller.onChangeForm({ grocerPricingTiers })
+                          }
+                          rows={form.grocerPricingTiers}
+                        />
+                      </ProductPricingFieldPanel>
+                    </View>
+                  </View>
+                  <ProductRootVendorPricesEditor controller={controller} />
                 </View>
               </ProductEditSection>
             ) : null}
@@ -2145,15 +2146,6 @@ function ProductEditFormPage({
                 }}
               />
             </ProductEditSection>
-
-            {!hasVariants ? (
-              <ProductEditSection
-                description="Harga beli pemasok, ongkir, dan total HPP."
-                title="Harga Supplier"
-              >
-                <ProductRootVendorPricesEditor controller={controller} />
-              </ProductEditSection>
-            ) : null}
 
             <ProductEditSection
               description="Judul, kata kunci, dan deskripsi SEO Google."
@@ -2312,24 +2304,39 @@ function ProductRootPricingPanel({
           </View>
         </ProductPricingFieldPanel>
 
-        <ProductPricingFieldPanel
-          description="Aturan jumlah minimum saat produk dibeli."
-          title="Aturan Pesanan"
-        >
-          <View style={styles.twoColumnGrid}>
-            <ProductPriceInput
-              disabled={controller.saving}
-              hint="Jumlah minimum per transaksi."
-              label="Minimum Pesanan"
-              onChangeText={minimumOrderQty =>
-                controller.onChangeForm({ minimumOrderQty })
-              }
-              value={form.minimumOrderQty}
-            />
-          </View>
-        </ProductPricingFieldPanel>
       </View>
     </ProductFieldShell>
+  );
+}
+
+function ProductRootOrderRulesPanel({
+  controller,
+}: {
+  controller: ReturnType<typeof useKolamProductController>;
+}) {
+  const form = controller.form;
+
+  if (!form) {
+    return null;
+  }
+
+  return (
+    <ProductPricingFieldPanel
+      description="Aturan jumlah minimum saat produk dibeli."
+      title="Aturan Pesanan"
+    >
+      <View style={styles.twoColumnGrid}>
+        <ProductPriceInput
+          disabled={controller.saving}
+          hint="Jumlah minimum per transaksi."
+          label="Minimum Pesanan"
+          onChangeText={minimumOrderQty =>
+            controller.onChangeForm({ minimumOrderQty })
+          }
+          value={form.minimumOrderQty}
+        />
+      </View>
+    </ProductPricingFieldPanel>
   );
 }
 
@@ -10384,6 +10391,20 @@ const styles = StyleSheet.create({
     gap: 12,
     minWidth: 0,
     width: '100%',
+  },
+  pricingHalfRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    minWidth: 0,
+    width: '100%',
+  },
+  pricingHalfColumn: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 320,
   },
   priceInputBlock: {
     flexBasis: 320,
