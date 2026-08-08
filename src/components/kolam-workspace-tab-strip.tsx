@@ -51,7 +51,7 @@ export function KolamWorkspaceTabStrip({
         <KolamIconButton
           accessibilityLabel="Tab baru"
           onPress={onCreateTab}
-          size={28}
+          size={22}
           radius="md"
           variant="ghost"
           style={styles.addButton}>
@@ -116,7 +116,7 @@ function WorkspaceTabButton({
 
 const styles = StyleSheet.create({
   shell: {
-    minHeight: 38,
+    minHeight: 32,
     justifyContent: 'center',
     backgroundColor: KOLAM_WORKSPACE_TAB_STRIP_BG,
   },
@@ -126,23 +126,23 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     paddingHorizontal: DASHBOARD_LAYOUT_VISUAL.page.paddingX,
   },
   list: {
     alignItems: 'center',
-    gap: 4,
-    paddingRight: 4,
+    gap: 3,
+    paddingRight: 3,
   },
   tab: {
-    minHeight: 32,
-    maxWidth: 190,
-    minWidth: 96,
+    minHeight: 26,
+    maxWidth: 170,
+    minWidth: 82,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingLeft: 12,
-    paddingRight: 6,
+    gap: 5,
+    paddingLeft: 10,
+    paddingRight: 5,
     borderRadius: V.radius.md,
     borderWidth: 1,
     borderColor: 'transparent',
@@ -156,16 +156,16 @@ const styles = StyleSheet.create({
   moduleIconSurface: {
     alignItems: 'center',
     backgroundColor: V.colors.primaryFg,
-    borderRadius: 9,
-    height: 18,
+    borderRadius: 8,
+    height: 16,
     justifyContent: 'center',
-    width: 18,
+    width: 16,
   },
   tabLabel: {
     flexShrink: 1,
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
   },
   activeTabLabel: {
@@ -174,11 +174,11 @@ const styles = StyleSheet.create({
   closeButton: {
     alignItems: 'center',
     backgroundColor: V.colors.mutedFg,
-    borderRadius: 7.5,
+    borderRadius: 7,
     flexShrink: 0,
-    height: 15,
+    height: 14,
     justifyContent: 'center',
-    width: 15,
+    width: 14,
   },
   closeButtonHovered: {
     backgroundColor: V.colors.danger,
@@ -188,9 +188,9 @@ const styles = StyleSheet.create({
   },
   indicator: {
     position: 'absolute',
-    right: 8,
+    right: 7,
     bottom: -4,
-    left: 8,
+    left: 7,
     height: 2,
     borderRadius: 999,
     backgroundColor: V.colors.primary,
