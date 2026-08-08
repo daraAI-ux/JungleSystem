@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,7 +17,6 @@ import {
   getDepositStatusIntent,
   getInvoiceConfirmStatusIntent,
   isCashInvoiceGroup,
-  isConfirmableCashflowSource,
   KOLAM_ADMIN_CASHFLOW_SESSION_ROOT,
   type KolamAdminCashflowDeposit,
   type KolamAdminCashflowDetailTab,
@@ -43,6 +41,10 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamStatusBadge } from './kolam-status-badge';
 
@@ -72,6 +74,8 @@ const INVOICE_FILTER_EMPTY_LABEL: Record<
   all: 'Semua',
 };
 
+const REVIEW_TABLE_PAGE_SIZE = 10;
+
 /**
  * Admin cashflow session detail — FE `/cashflow-session/[id]`.
  * Tabs: Overview + lifecycle, by-invoice review, deposits.
@@ -91,7 +95,6 @@ export function KolamAdminCashflowSessionDetail({
     useState<KolamAdminCashflowInvoiceGroup | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const [depositOpen, setDepositOpen] = useState(false);
-  const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
 
   return (
     <View style={styles.root}>
@@ -161,8 +164,6 @@ export function KolamAdminCashflowSessionDetail({
       {controller.session && controller.activeTab === 'review' ? (
         <ReviewTab
           controller={controller}
-          expandedSaleId={expandedSaleId}
-          onExpandSale={setExpandedSaleId}
           onOpenDeposit={() => setDepositOpen(true)}
           onReject={group => {
             setRejectTarget(group);
@@ -435,17 +436,98 @@ function OverviewTab({
 
 function ReviewTab({
   controller,
-  expandedSaleId,
-  onExpandSale,
   onOpenDeposit,
   onReject,
 }: {
   controller: KolamAdminCashflowSessionDetailController;
-  expandedSaleId: string | null;
-  onExpandSale: (saleId: string | null) => void;
   onOpenDeposit: () => void;
   onReject: (group: KolamAdminCashflowInvoiceGroup) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const filteredGroups = controller.filteredInvoiceGroups;
+  const pageCount = Math.max(
+    1,
+    Math.ceil(filteredGroups.length / REVIEW_TABLE_PAGE_SIZE),
+  );
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const pageGroups = filteredGroups.slice(
+    (safePage - 1) * REVIEW_TABLE_PAGE_SIZE,
+    safePage * REVIEW_TABLE_PAGE_SIZE,
+  );
+  const columns = useMemo<
+    Array<KolamListTableColumn<KolamAdminCashflowInvoiceGroup>>
+  >(
+    () => [
+      {
+        id: 'invoice',
+        label: 'Invoice',
+        flex: 1.25,
+        align: 'left',
+        render: group => (
+          <Text numberOfLines={1} style={styles.invoiceCode}>
+            {group.invoiceCode || '(tanpa kode)'}
+          </Text>
+        ),
+      },
+      {
+        id: 'type',
+        label: 'Tipe',
+        flex: 0.75,
+        align: 'center',
+        render: group => (
+          <Text style={[styles.metaText, styles.tableTextCenter]}>
+            {isCashInvoiceGroup(group) ? 'Tunai' : 'Non-tunai'}
+          </Text>
+        ),
+      },
+      {
+        id: 'netAmount',
+        label: 'Bersih',
+        flex: 0.9,
+        align: 'right',
+        render: group => (
+          <Text style={styles.tableAmount}>
+            {formatRupiah(group.netAmount)}
+          </Text>
+        ),
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        flex: 0.95,
+        align: 'center',
+        render: group => (
+          <KolamStatusBadge
+            intent={getInvoiceConfirmStatusIntent(group.confirmStatus)}
+            label={formatInvoiceConfirmStatusLabel(group.confirmStatus)}
+          />
+        ),
+      },
+      {
+        id: 'entries',
+        label: 'Entri',
+        flex: 0.65,
+        align: 'center',
+        render: group => (
+          <Text style={[styles.metaText, styles.tableTextCenter]}>
+            {group.entries.length}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [controller.invoiceFilter]);
+
+  React.useEffect(() => {
+    if (page > pageCount) {
+      setPage(pageCount);
+    }
+  }, [page, pageCount]);
+
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.tabBody}>
       <View style={styles.reviewToolbar}>
@@ -488,15 +570,19 @@ function ReviewTab({
         ))}
       </View>
 
-      {controller.filteredInvoiceGroups.length === 0 ? (
-        <KolamEmptyState
-          message={`Tidak ada invoice di filter "${INVOICE_FILTER_EMPTY_LABEL[controller.invoiceFilter]}".`}
-          title="Kosong"
-        />
-      ) : (
-        controller.filteredInvoiceGroups.map((group, index) => {
-          const key = group.saleId || `unlinked-${index}`;
-          const expanded = expandedSaleId === group.saleId;
+      <KolamListTableComposition
+        actionsColumn
+        columns={columns}
+        emptyTitle={`Tidak ada invoice di filter "${INVOICE_FILTER_EMPTY_LABEL[controller.invoiceFilter]}".`}
+        getRowKey={(group, index) => group.saleId || `unlinked-${index}`}
+        loading={controller.loading}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize: REVIEW_TABLE_PAGE_SIZE,
+          total: filteredGroups.length,
+        }}
+        renderActions={group => {
           const isCash = isCashInvoiceGroup(group);
           const isPending =
             group.confirmStatus === 'unconfirmed' ||
@@ -507,84 +593,33 @@ function ReviewTab({
             isPending &&
             !isCash;
 
+          if (!canAct) {
+            return <Text style={styles.metaText}>-</Text>;
+          }
+
           return (
-            <KolamCardFrame
-              key={key}
-              style={styles.invoiceCard}
-              variant="compact"
-            >
-              <Pressable
-                onPress={() =>
-                  onExpandSale(expanded ? null : group.saleId)
-                }
-              >
-                <View style={styles.invoiceHeader}>
-                  <View style={styles.headerText}>
-                    <Text style={styles.invoiceCode}>
-                      {group.invoiceCode || '(tanpa kode)'}
-                    </Text>
-                    <Text style={styles.metaText}>
-                      {isCash ? 'Tunai' : 'Non-tunai'} · bersih{' '}
-                      {formatRupiah(group.netAmount)}
-                    </Text>
-                  </View>
-                  <KolamStatusBadge
-                    intent={getInvoiceConfirmStatusIntent(group.confirmStatus)}
-                    label={formatInvoiceConfirmStatusLabel(group.confirmStatus)}
-                  />
-                </View>
-              </Pressable>
-
-              {canAct ? (
-                <View style={styles.invoiceActions}>
-                  <KolamButton
-                    disabled={controller.acting}
-                    intent="primary"
-                    label="Setujui"
-                    onPress={() => {
-                      if (group.saleId) {
-                        void controller.onConfirmInvoice(group.saleId);
-                      }
-                    }}
-                  />
-                  <KolamButton
-                    disabled={controller.acting}
-                    intent="danger"
-                    label="Tolak"
-                    onPress={() => onReject(group)}
-                  />
-                </View>
-              ) : null}
-
-              {isCash && isPending && !controller.readOnlyReview ? (
-                <Text style={styles.metaText}>
-                  Invoice tunai diselesaikan lewat Kirim setoran.
-                </Text>
-              ) : null}
-
-              {expanded ? (
-                <View style={styles.entryList}>
-                  {group.entries.map(entry => (
-                    <View key={entry.id} style={styles.entryRow}>
-                      <Text style={styles.entryMain}>
-                        {entry.type === 'credit' ? 'kredit' : 'debit'} ·{' '}
-                        {entry.source} · {formatRupiah(entry.amount)}
-                      </Text>
-                      <Text style={styles.metaText}>
-                        {entry.walletName} ·{' '}
-                        {formatInvoiceConfirmStatusLabel(entry.confirmStatus)}
-                        {!isConfirmableCashflowSource(entry.source)
-                          ? ' · komisi (dikecualikan)'
-                          : ''}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </KolamCardFrame>
+            <View style={styles.invoiceActions}>
+              <KolamButton
+                disabled={controller.acting}
+                intent="primary"
+                label="Setujui"
+                onPress={() => {
+                  if (group.saleId) {
+                    void controller.onConfirmInvoice(group.saleId);
+                  }
+                }}
+              />
+              <KolamButton
+                disabled={controller.acting}
+                intent="danger"
+                label="Tolak"
+                onPress={() => onReject(group)}
+              />
+            </View>
           );
-        })
-      )}
+        }}
+        rows={pageGroups}
+      />
     </KolamDetailScrollSurface>
   );
 }
@@ -987,10 +1022,6 @@ const styles = StyleSheet.create({
     minHeight: 32,
     paddingHorizontal: 10,
   },
-  invoiceCard: {
-    gap: 8,
-    padding: 12,
-  },
   invoiceHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -1002,23 +1033,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
+  tableTextCenter: {
+    textAlign: 'center',
+  },
+  tableAmount: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
   invoiceActions: {
     flexDirection: 'row',
     gap: 6,
-  },
-  entryList: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 6,
-    paddingTop: 8,
-  },
-  entryRow: {
-    gap: 2,
-  },
-  entryMain: {
-    color: V.colors.fg,
-    fontSize: 12,
-    fontWeight: '700',
   },
   depositCard: {
     gap: 8,
