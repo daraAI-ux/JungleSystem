@@ -1557,6 +1557,21 @@ function ProductEditFormPage({
                       triggerLabel="Tambah kategori"
                     />
                   </ProductFieldShell>
+                  <ProductFieldShell label="Deskripsi">
+                    <KolamFormTextField
+                      editable={!disabled}
+                      multiline
+                      onChangeText={description =>
+                        controller.onChangeForm({ description })
+                      }
+                      placeholder="Deskripsi bahan baku"
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        styles.customFieldTextArea,
+                      ]}
+                      value={form.description}
+                    />
+                  </ProductFieldShell>
                 </View>
               </ProductEditSection>
 
@@ -1577,27 +1592,6 @@ function ProductEditFormPage({
                 title="Field Kustom / Spesifikasi"
               >
                 <ProductCustomFieldEditorPanel controller={controller} />
-              </ProductEditSection>
-
-              <ProductEditSection
-                description="Deskripsi bahan baku."
-                title="Detail bahan baku"
-              >
-                <ProductFieldShell label="Deskripsi">
-                  <KolamFormTextField
-                    editable={!disabled}
-                    multiline
-                    onChangeText={description =>
-                      controller.onChangeForm({ description })
-                    }
-                    placeholder="Deskripsi bahan baku"
-                    style={[
-                      settingsWebFormStyles.settingsWebFormFieldValue,
-                      styles.customFieldTextArea,
-                    ]}
-                    value={form.description}
-                  />
-                </ProductFieldShell>
               </ProductEditSection>
 
               <ProductEditSection
