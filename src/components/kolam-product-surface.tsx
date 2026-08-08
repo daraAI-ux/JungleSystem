@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Image,
   Linking,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -2914,6 +2915,8 @@ function ProductVariantEditorPanel({
   const [expandedVariantId, setExpandedVariantId] = React.useState<
     string | null
   >(form?.variants[0]?.id ?? null);
+  const [newTier1Value, setNewTier1Value] = React.useState('');
+  const [newTier2Value, setNewTier2Value] = React.useState('');
 
   React.useEffect(() => {
     if (!form?.variants.length) {
@@ -2935,130 +2938,381 @@ function ProductVariantEditorPanel({
 
   const variantActive = form.hasVariants || form.variants.length > 0;
   const isRawVariantForm = form.productType === 'raw';
+  const baseCode = isRawVariantForm ? form.productCode : form.sku;
+  const primaryValues = uniqueProductStrings(
+    form.variants.map(variant => variant.tier1Value.trim()).filter(Boolean),
+  );
+  const secondaryValues = uniqueProductStrings(
+    form.variants.map(variant => variant.tier2Value.trim()).filter(Boolean),
+  );
+  const secondaryEnabled =
+    Boolean(form.variantConfigTier2Name.trim()) || secondaryValues.length > 0;
+
+  const applyVariantValues = (tier1Values: string[], tier2Values: string[]) => {
+    controller.onChangeForm({
+      hasVariants: true,
+      variants: createProductVariantCombinationRows({
+        baseCode,
+        currentRows: form.variants,
+        isRaw: isRawVariantForm,
+        tier1Values,
+        tier2Values,
+      }),
+      variantsTouched: true,
+    });
+  };
+
+  const addPrimaryValue = () => {
+    const value = newTier1Value.trim();
+    if (!value) {
+      return;
+    }
+
+    setNewTier1Value('');
+    applyVariantValues([...primaryValues, value], secondaryValues);
+  };
+
+  const removePrimaryValue = (value: string) => {
+    applyVariantValues(
+      primaryValues.filter(item => item !== value),
+      secondaryValues,
+    );
+  };
+
+  const addSecondaryValue = () => {
+    const value = newTier2Value.trim();
+    if (!value) {
+      return;
+    }
+
+    setNewTier2Value('');
+    applyVariantValues(primaryValues, [...secondaryValues, value]);
+  };
+
+  const removeSecondaryValue = (value: string) => {
+    applyVariantValues(
+      primaryValues,
+      secondaryValues.filter(item => item !== value),
+    );
+  };
+
+  const resetVariants = () => {
+    setNewTier1Value('');
+    setNewTier2Value('');
+    controller.onChangeForm({
+      hasVariants: false,
+      selectedVariantId: '',
+      variantConfigTier1Name: 'Varian',
+      variantConfigTier2Name: '',
+      variants: [],
+      variantsTouched: true,
+    });
+  };
 
   return (
     <ProductFieldShell
       label={isRawVariantForm ? 'Varian Bahan Baku' : 'Varian Produk'}
     >
       <View style={styles.variantEditorPanel}>
-        <View style={styles.variantToggleHeader}>
+        <View style={styles.variantSwitchPanel}>
           <KolamCopyStack
+            containerStyle={styles.variantSwitchCopy}
             items={[
               {
-                id: 'summary',
-                text: variantActive
-                  ? `${form.variants.length} varian disiapkan`
-                  : isRawVariantForm
-                  ? 'Bahan baku tanpa varian'
-                  : 'Produk tanpa varian',
+                id: 'label',
+                text: isRawVariantForm
+                  ? 'Bahan baku ini memiliki varian'
+                  : 'Produk ini memiliki varian',
+                style: styles.variantTitle,
+              },
+              {
+                id: 'hint',
+                text: 'Beberapa SKU untuk ukuran, warna, tipe, atau kemasan berbeda.',
                 style: styles.fieldHint,
               },
             ]}
           />
-          <View style={styles.variantHeaderActions}>
-            <KolamButton
-              disabled={controller.saving}
-              intent={variantActive ? 'primary' : 'outline'}
-              label="Aktif"
-              onPress={() =>
-                controller.onChangeForm({
-                  hasVariants: true,
-                  variantsTouched: true,
-                })
+          <KolamSwitch
+            accessibilityLabel="Aktifkan varian produk"
+            active={variantActive}
+            disabled={controller.saving}
+            onPress={() => {
+              if (variantActive) {
+                resetVariants();
+                return;
               }
-            />
-            <KolamButton
-              disabled={controller.saving}
-              intent={!variantActive ? 'primary' : 'outline'}
-              label="Nonaktif"
-              onPress={() =>
-                controller.onChangeForm({
-                  hasVariants: false,
-                  selectedVariantId: '',
-                  variants: [],
-                  variantsTouched: true,
-                })
-              }
-            />
-          </View>
+
+              controller.onChangeForm({
+                hasVariants: true,
+                variantsTouched: true,
+              });
+            }}
+          />
         </View>
 
         {variantActive ? (
-          <>
-            <ProductPricingFieldPanel
-              description="Nama tier dipakai backend untuk menyusun konfigurasi varian."
-              title="Konfigurasi Varian"
-            >
-              <View style={styles.twoColumnGrid}>
-                <ProductCompactField label="Nama Tier 1">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={variantConfigTier1Name =>
-                      controller.onChangeForm({
-                        variantConfigTier1Name,
-                        variantsTouched: true,
-                      })
-                    }
-                    placeholder="Contoh: Ukuran"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.variantConfigTier1Name}
-                  />
-                </ProductCompactField>
-                <ProductCompactField label="Nama Tier 2">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={variantConfigTier2Name =>
-                      controller.onChangeForm({
-                        variantConfigTier2Name,
-                        variantsTouched: true,
-                      })
-                    }
-                    placeholder="Contoh: Warna / tipe"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.variantConfigTier2Name}
-                  />
-                </ProductCompactField>
-              </View>
-            </ProductPricingFieldPanel>
+          <View style={styles.variantInfoPanel}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'title',
+                  text: 'Harga dikelola oleh varian',
+                  style: styles.variantInfoTitle,
+                },
+                {
+                  id: 'hint',
+                  text: 'Saat varian aktif, harga dan pemasok root disembunyikan. Atur harga dan pemasok per varian di bawah.',
+                  style: styles.variantInfoHint,
+                },
+              ]}
+            />
+          </View>
+        ) : null}
 
-            <View style={styles.variantEditorHeader}>
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'summary',
-                    text: form.variants.length
-                      ? `${form.variants.length} varian disiapkan`
-                      : 'Belum ada varian',
-                    style: styles.fieldHint,
-                  },
-                ]}
-              />
-              <KolamButton
-                disabled={controller.saving}
-                intent="primary"
-                label="Tambah Varian"
-                onPress={() => addProductVariantRow(controller)}
-              />
+        {variantActive ? (
+          <>
+            <View style={styles.variantConfiguratorCard}>
+              <View style={styles.variantConfiguratorHeader}>
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'title',
+                      text: 'Konfigurasi Varian',
+                      style: styles.variantFieldPanelTitle,
+                    },
+                    {
+                      id: 'hint',
+                      text: 'Tentukan struktur varian.',
+                      style: styles.fieldHint,
+                    },
+                  ]}
+                />
+                <KolamButton
+                  disabled={controller.saving}
+                  intent="outline"
+                  label="Reset"
+                  onPress={resetVariants}
+                  style={styles.variantHeaderButton}
+                />
+              </View>
+              <View style={styles.variantConfiguratorSection}>
+                <View style={styles.variantConfiguratorTitleRow}>
+                  <Text style={styles.variantSpecsLabel}>Varian Utama</Text>
+                  <KolamBadge
+                    intent="primary"
+                    label="Wajib"
+                    style={styles.variantMetaBadge}
+                  />
+                </View>
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={variantConfigTier1Name =>
+                    controller.onChangeForm({
+                      variantConfigTier1Name,
+                      variantsTouched: true,
+                    })
+                  }
+                  placeholder="Contoh: Ukuran"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.variantConfigTier1Name}
+                />
+                <ProductVariantValueChips
+                  emptyText="Belum ada nilai varian utama."
+                  onRemove={removePrimaryValue}
+                  values={primaryValues}
+                />
+                <View style={styles.variantValueInputRow}>
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    onChangeText={setNewTier1Value}
+                    placeholder="Tambah nilai varian"
+                    style={[
+                      settingsWebFormStyles.settingsWebFormFieldValue,
+                      styles.variantValueInput,
+                    ]}
+                    value={newTier1Value}
+                  />
+                  <KolamButton
+                    disabled={controller.saving || !newTier1Value.trim()}
+                    intent="primary"
+                    label="Tambah"
+                    onPress={addPrimaryValue}
+                    style={styles.variantHeaderButton}
+                  />
+                </View>
+              </View>
+              <View style={styles.variantConfiguratorSection}>
+                <View style={styles.variantSecondaryHeader}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Varian Kedua',
+                        style: styles.variantSpecsLabel,
+                      },
+                      {
+                        id: 'hint',
+                        text: 'Opsional untuk kombinasi seperti ukuran dan warna.',
+                        style: styles.fieldHint,
+                      },
+                    ]}
+                  />
+                  <KolamSwitch
+                    accessibilityLabel="Aktifkan varian kedua"
+                    active={secondaryEnabled}
+                    disabled={controller.saving}
+                    onPress={() => {
+                      if (secondaryEnabled) {
+                        controller.onChangeForm({
+                          variantConfigTier2Name: '',
+                          variants: createProductVariantCombinationRows({
+                            baseCode,
+                            currentRows: form.variants,
+                            isRaw: isRawVariantForm,
+                            tier1Values: primaryValues,
+                            tier2Values: [],
+                          }),
+                          variantsTouched: true,
+                        });
+                        return;
+                      }
+
+                      controller.onChangeForm({
+                        hasVariants: true,
+                        variantConfigTier2Name: 'Tipe',
+                        variantsTouched: true,
+                      });
+                    }}
+                  />
+                </View>
+                {secondaryEnabled ? (
+                  <>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={variantConfigTier2Name =>
+                        controller.onChangeForm({
+                          variantConfigTier2Name,
+                          variantsTouched: true,
+                        })
+                      }
+                      placeholder="Contoh: Warna"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.variantConfigTier2Name}
+                    />
+                    <ProductVariantValueChips
+                      emptyText="Belum ada nilai varian kedua."
+                      onRemove={removeSecondaryValue}
+                      values={secondaryValues}
+                    />
+                    <View style={styles.variantValueInputRow}>
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        onChangeText={setNewTier2Value}
+                        placeholder="Tambah nilai varian kedua"
+                        style={[
+                          settingsWebFormStyles.settingsWebFormFieldValue,
+                          styles.variantValueInput,
+                        ]}
+                        value={newTier2Value}
+                      />
+                      <KolamButton
+                        disabled={controller.saving || !newTier2Value.trim()}
+                        intent="primary"
+                        label="Tambah"
+                        onPress={addSecondaryValue}
+                        style={styles.variantHeaderButton}
+                      />
+                    </View>
+                  </>
+                ) : null}
+              </View>
             </View>
 
-            {form.variants.map((variant, index) => (
-              <ProductVariantFormCard
-                controller={controller}
-                expanded={expandedVariantId === variant.id}
-                index={index}
-                key={variant.id}
-                onToggle={() =>
-                  setExpandedVariantId(current =>
-                    current === variant.id ? null : variant.id,
-                  )
-                }
-                variant={variant}
-              />
-            ))}
+            {form.variants.length > 0 ? (
+              <View style={styles.variantManagerShell}>
+                <View style={styles.variantManagerHeader}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: 'Daftar Varian',
+                        style: styles.variantFieldPanelTitle,
+                      },
+                      {
+                        id: 'hint',
+                        text: 'Konfigurasi harga, pemasok, spesifikasi, media, dan lanjutan per varian.',
+                        style: styles.fieldHint,
+                      },
+                    ]}
+                  />
+                  <KolamBadge
+                    intent="primary"
+                    label={`${form.variants.length} varian`}
+                    style={styles.variantMetaBadge}
+                  />
+                </View>
+                <View style={styles.variantListShell}>
+                  {form.variants.map((variant, index) => (
+                    <ProductVariantFormCard
+                      controller={controller}
+                      expanded={expandedVariantId === variant.id}
+                      index={index}
+                      key={variant.id}
+                      onToggle={() =>
+                        setExpandedVariantId(current =>
+                          current === variant.id ? null : variant.id,
+                        )
+                      }
+                      variant={variant}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.variantEmptyPanel}>
+                <Text style={styles.fieldHint}>
+                  Tambahkan nilai varian utama untuk membuat daftar varian.
+                </Text>
+              </View>
+            )}
           </>
         ) : null}
       </View>
     </ProductFieldShell>
+  );
+}
+
+function ProductVariantValueChips({
+  emptyText,
+  onRemove,
+  values,
+}: {
+  emptyText: string;
+  onRemove: (value: string) => void;
+  values: string[];
+}) {
+  if (!values.length) {
+    return (
+      <View style={styles.variantValueChipBox}>
+        <Text style={styles.fieldHint}>{emptyText}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.variantValueChipBox}>
+      {values.map(value => (
+        <Pressable
+          accessibilityRole="button"
+          key={value}
+          onPress={() => onRemove(value)}
+          style={styles.variantValueChip}
+        >
+          <Text style={styles.variantValueChipText}>{value}</Text>
+          <Text style={styles.variantValueChipRemove}>x</Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
@@ -3476,11 +3730,6 @@ function ProductVariantFormCard({
                     })
                   }
                   rows={variant.customFieldValues}
-                  summaryText={
-                    activeCustomFields.length
-                      ? `${activeCustomFields.length} field aktif tersedia.`
-                      : 'Belum ada field kustom aktif.'
-                  }
                   units={controller.units}
                 />
               </ProductPricingFieldPanel>
@@ -4375,6 +4624,74 @@ function createEmptyProductVariantFormRow(): KolamProductVariantFormRow {
   };
 }
 
+function createProductVariantCombinationRows({
+  baseCode,
+  currentRows,
+  isRaw,
+  tier1Values,
+  tier2Values,
+}: {
+  baseCode: string;
+  currentRows: KolamProductVariantFormRow[];
+  isRaw: boolean;
+  tier1Values: string[];
+  tier2Values: string[];
+}) {
+  const cleanTier1Values = uniqueProductStrings(
+    tier1Values.map(value => value.trim()).filter(Boolean),
+  );
+  const cleanTier2Values = uniqueProductStrings(
+    tier2Values.map(value => value.trim()).filter(Boolean),
+  );
+  const combinations = cleanTier1Values.flatMap(tier1Value =>
+    cleanTier2Values.length
+      ? cleanTier2Values.map(tier2Value => ({ tier1Value, tier2Value }))
+      : [{ tier1Value, tier2Value: '' }],
+  );
+
+  return combinations.map(({ tier1Value, tier2Value }) => {
+    const existing = currentRows.find(
+      row =>
+        row.tier1Value.trim() === tier1Value &&
+        row.tier2Value.trim() === tier2Value,
+    );
+
+    if (existing) {
+      return existing;
+    }
+
+    const code = generateProductVariantCode(baseCode, tier1Value, tier2Value);
+    return {
+      ...createEmptyProductVariantFormRow(),
+      tier1Value,
+      tier2Value,
+      ...(isRaw ? { productCode: code } : { sku: code }),
+    };
+  });
+}
+
+function generateProductVariantCode(
+  baseCode: string,
+  tier1Value: string,
+  tier2Value: string,
+) {
+  const parts = [baseCode, tier1Value, tier2Value]
+    .map(value =>
+      value
+        .trim()
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toUpperCase(),
+    )
+    .filter(Boolean);
+
+  return parts.join('-');
+}
+
+function uniqueProductStrings(values: string[]) {
+  return Array.from(new Set(values));
+}
+
 function getCheapestProductVendorCost(
   rows: KolamProductVariantFormRow['vendorPrices'],
 ) {
@@ -4645,23 +4962,18 @@ function ProductCustomFieldEditorPanel({
   const form = controller.form;
 
   return (
-    <ProductFieldShell label="Field Kustom">
+    <View style={styles.productBasicInfoCard}>
       <ProductCustomFieldRowsEditor
         disabled={controller.saving}
-        emptyText="Belum ada definisi field kustom aktif dari modul Field Kustom."
+        emptyText="Belum ada definisi field kustom aktif."
         fields={fields}
         rows={form?.customFieldValues ?? []}
-        summaryText={
-          fields.length
-            ? `${fields.length} field aktif tersedia untuk produk ini.`
-            : 'Belum ada definisi field kustom aktif dari modul Field Kustom.'
-        }
         units={controller.units}
         onChange={customFieldValues =>
           controller.onChangeForm({ customFieldValues })
         }
       />
-    </ProductFieldShell>
+    </View>
   );
 }
 
@@ -4689,7 +5001,6 @@ function ProductCustomFieldRowsEditor({
   fields,
   onChange,
   rows,
-  summaryText,
   units,
 }: {
   disabled: boolean;
@@ -4697,7 +5008,6 @@ function ProductCustomFieldRowsEditor({
   fields: KolamCustomField[];
   onChange: (rows: unknown[]) => void;
   rows: unknown[];
-  summaryText: string;
   units: KolamUnit[];
 }) {
   const knownKeys = React.useMemo(
@@ -4748,60 +5058,33 @@ function ProductCustomFieldRowsEditor({
   };
 
   return (
-    <View style={styles.variantPricingPanel}>
-      <View style={styles.variantTabHeader}>
+    <View style={styles.customFieldFormStack}>
+      <View style={styles.customFieldSwitchRow}>
         <KolamCopyStack
           items={[
             {
-              id: 'summary',
-              text: summaryText || emptyText,
-              style: styles.fieldHint,
+              id: 'label',
+              text: 'Gunakan Field Kustom',
+              style: styles.customFieldSwitchLabel,
             },
           ]}
         />
-        <KolamButton
+        <KolamSwitch
+          accessibilityLabel="Gunakan Field Kustom"
+          active={enabled}
           disabled={disabled || fields.length === 0}
-          intent={enabled ? 'primary' : 'secondary'}
-          label={enabled ? 'Field Kustom Aktif' : 'Gunakan Field Kustom'}
           onPress={() => setUseCustomFields(!enabled)}
         />
       </View>
 
       {enabled ? (
         <>
-          <View style={styles.customFieldPickerPanel}>
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'picker-title',
-                  text: 'Pilih field yang digunakan',
-                  style: styles.variantTitle,
-                },
-                {
-                  id: 'picker-hint',
-                  text: fields.length
-                    ? 'Hanya field yang dipilih yang muncul dan dikirim ke backend.'
-                    : emptyText,
-                  style: styles.fieldHint,
-                },
-              ]}
-            />
-            <View style={styles.selectedCategoryRow}>
-              {fields.map(field => {
-                const selected = selectedKeySet.has(field.fieldKey);
-                return (
-                  <KolamButton
-                    disabled={disabled}
-                    intent={selected ? 'primary' : 'outline'}
-                    key={field.id || field.fieldKey}
-                    label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
-                    onPress={() => setFieldSelected(field, !selected)}
-                    style={styles.selectedCategoryButton}
-                  />
-                );
-              })}
-            </View>
-          </View>
+          <ProductCustomFieldMultiSelect
+            disabled={disabled || fields.length === 0}
+            fields={fields}
+            onToggleField={setFieldSelected}
+            selectedKeySet={selectedKeySet}
+          />
 
           {selectedFields.length ? (
             selectedFields.map(field => (
@@ -4819,7 +5102,7 @@ function ProductCustomFieldRowsEditor({
               items={[
                 {
                   id: 'empty-selected-fields',
-                  text: 'Pilih minimal satu field kustom untuk mengisi nilai.',
+                  text: fields.length ? 'Pilih field kustom.' : emptyText,
                   style: styles.fieldHint,
                 },
               ]}
@@ -4853,6 +5136,94 @@ function ProductCustomFieldRowsEditor({
   );
 }
 
+function ProductCustomFieldMultiSelect({
+  disabled,
+  fields,
+  onToggleField,
+  selectedKeySet,
+}: {
+  disabled: boolean;
+  fields: KolamCustomField[];
+  onToggleField: (field: KolamCustomField, nextSelected: boolean) => void;
+  selectedKeySet: Set<string>;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const selectedFields = fields.filter(field =>
+    selectedKeySet.has(field.fieldKey),
+  );
+
+  return (
+    <View style={styles.customFieldMultiSelect}>
+      <Pressable
+        accessibilityLabel="Pilih field kustom"
+        accessibilityRole="button"
+        accessibilityState={{ disabled, expanded: open }}
+        disabled={disabled}
+        onPress={() => setOpen(current => !current)}
+        style={styles.customFieldMultiSelectTrigger}
+      >
+        <View style={styles.customFieldSelectedChips}>
+          {selectedFields.map(field => (
+            <KolamButton
+              disabled={disabled}
+              intent="secondary"
+              key={field.id || field.fieldKey}
+              label={`${field.fieldLabel} x`}
+              onPress={() => onToggleField(field, false)}
+              style={styles.customFieldSelectedChip}
+              textStyle={styles.customFieldSelectedChipText}
+            />
+          ))}
+          <KolamCopyStack
+            items={[
+              {
+                id: 'placeholder',
+                text: 'Pilih field kustom...',
+                style: selectedFields.length
+                  ? styles.customFieldMultiSelectPlaceholderMuted
+                  : styles.customFieldMultiSelectPlaceholder,
+              },
+            ]}
+          />
+        </View>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'chevron',
+              text: open ? '^' : 'v',
+              style: styles.customFieldMultiSelectChevron,
+            },
+          ]}
+        />
+      </Pressable>
+      {open ? (
+        <View style={styles.customFieldMultiSelectMenu}>
+          <ScrollView
+            nestedScrollEnabled
+            style={styles.customFieldMultiSelectScroll}
+            contentContainerStyle={styles.customFieldMultiSelectContent}
+          >
+            {fields.map(field => {
+              const selected = selectedKeySet.has(field.fieldKey);
+              return (
+                <KolamButton
+                  disabled={disabled}
+                  intent={selected ? 'primary' : 'plain'}
+                  key={field.id || field.fieldKey}
+                  label={`${field.fieldLabel}${field.required ? ' *' : ''}`}
+                  onPress={() => onToggleField(field, !selected)}
+                  style={styles.customFieldMultiSelectOption}
+                  textStyle={styles.customFieldMultiSelectOptionText}
+                />
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function ProductCustomFieldRowsEditorRow({
   disabled,
   field,
@@ -4868,38 +5239,17 @@ function ProductCustomFieldRowsEditorRow({
 }) {
   const row = findProductCustomFieldValueRow(rows, field);
   const raw = getProductCustomFieldValueRecord(row);
-  const unitLabel =
-    field.unitLabel || getProductCustomFieldRowUnitLabel(row) || '';
-  const fieldTypeLabel = getCustomFieldTypeLabel(field.fieldType);
-
   return (
     <View style={styles.customFieldEditorRow}>
-      <View style={styles.variantTabHeader}>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'label',
-              text: `${field.fieldLabel}${field.required ? ' *' : ''}`,
-              style: styles.variantTitle,
-            },
-            {
-              id: 'meta',
-              text: [fieldTypeLabel, unitLabel ? `Satuan: ${unitLabel}` : '']
-                .filter(Boolean)
-                .join(' - '),
-              style: styles.fieldHint,
-            },
-          ]}
-        />
-        <KolamButton
-          disabled={disabled || !row}
-          intent="secondary"
-          label="Kosongkan"
-          onPress={() =>
-            updateProductCustomFieldRows(rows, onChange, field, null)
-          }
-        />
-      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'label',
+            text: `${field.fieldLabel}${field.required ? ' *' : ''}`,
+            style: styles.customFieldInputLabel,
+          },
+        ]}
+      />
       {renderProductCustomFieldRowsInput(
         disabled,
         rows,
@@ -4975,41 +5325,64 @@ function renderProductCustomFieldRowsInput(
   }
 
   if (field.fieldType === 'range') {
+    const unitLabel =
+      field.unitId && field.unitLabel ? 'Satuan (tetap)' : 'Satuan';
     return (
       <View style={styles.twoColumnGrid}>
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={minValue => update({ minValue })}
-          placeholder="Nilai minimum"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={getProductCustomFieldNumberText(raw.minValue)}
-        />
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={maxValue => update({ maxValue })}
-          placeholder="Nilai maksimum"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={getProductCustomFieldNumberText(raw.maxValue)}
-        />
-        {unitSelector}
+        {renderProductCustomFieldLabeledControl(
+          'Min',
+          <KolamFormTextField
+            editable={!disabled}
+            keyboardType="numeric"
+            onChangeText={minValue => update({ minValue })}
+            placeholder="Nilai minimum"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={getProductCustomFieldNumberText(raw.minValue)}
+          />,
+        )}
+        {renderProductCustomFieldLabeledControl(
+          'Maks',
+          <KolamFormTextField
+            editable={!disabled}
+            keyboardType="numeric"
+            onChangeText={maxValue => update({ maxValue })}
+            placeholder="Nilai maksimum"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={getProductCustomFieldNumberText(raw.maxValue)}
+          />,
+        )}
+        {unitSelector
+          ? renderProductCustomFieldLabeledControl(unitLabel, unitSelector)
+          : null}
       </View>
     );
   }
 
   if (field.fieldType === 'number') {
+    const numberInput = (
+      <KolamFormTextField
+        editable={!disabled}
+        keyboardType="numeric"
+        onChangeText={value => update({ value })}
+        placeholder="Masukkan angka"
+        style={settingsWebFormStyles.settingsWebFormFieldValue}
+        value={getProductCustomFieldStringValue(raw)}
+      />
+    );
+
+    if (!field.requiresUnit) {
+      return numberInput;
+    }
+
     return (
-      <View style={field.requiresUnit ? styles.twoColumnGrid : undefined}>
-        <KolamFormTextField
-          editable={!disabled}
-          keyboardType="numeric"
-          onChangeText={value => update({ value })}
-          placeholder="Masukkan angka"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={getProductCustomFieldStringValue(raw)}
-        />
-        {unitSelector}
+      <View style={styles.twoColumnGrid}>
+        {renderProductCustomFieldLabeledControl('Nilai', numberInput)}
+        {unitSelector
+          ? renderProductCustomFieldLabeledControl(
+              field.unitId && field.unitLabel ? 'Satuan (tetap)' : 'Satuan',
+              unitSelector,
+            )
+          : null}
       </View>
     );
   }
@@ -5079,6 +5452,26 @@ function renderProductCustomFieldUnitSelector(
       searchPlaceholder="Cari satuan..."
       value={getProductCustomFieldUnitId(raw)}
     />
+  );
+}
+
+function renderProductCustomFieldLabeledControl(
+  label: string,
+  children: React.ReactNode,
+) {
+  return (
+    <View style={styles.customFieldLabeledControl}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'label',
+            text: label,
+            style: styles.customFieldControlLabel,
+          },
+        ]}
+      />
+      {children}
+    </View>
   );
 }
 
@@ -9518,6 +9911,149 @@ const styles = StyleSheet.create({
     minWidth: 0,
     width: '100%',
   },
+  variantSwitchPanel: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantSwitchCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  variantInfoPanel: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#bfdbfe',
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
+  variantInfoTitle: {
+    color: '#1d4ed8',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  variantInfoHint: {
+    color: '#2563eb',
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  variantConfiguratorCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 16,
+    padding: 14,
+  },
+  variantConfiguratorHeader: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantConfiguratorSection: {
+    gap: 10,
+  },
+  variantConfiguratorTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  variantSecondaryHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  variantValueChipBox: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    minHeight: 44,
+    padding: 10,
+  },
+  variantValueChip: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 7,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  variantValueChipText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  variantValueChipRemove: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  variantValueInputRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  variantValueInput: {
+    flex: 1,
+    minWidth: 180,
+  },
+  variantManagerShell: {
+    gap: 12,
+  },
+  variantManagerHeader: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  variantListShell: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    overflow: 'hidden',
+    padding: 10,
+  },
+  variantEmptyPanel: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    padding: 16,
+  },
   variantToggleHeader: {
     alignItems: 'center',
     backgroundColor: V.colors.bg,
@@ -9831,6 +10367,97 @@ const styles = StyleSheet.create({
     padding: 10,
     width: '100%',
   },
+  customFieldFormStack: {
+    gap: 14,
+  },
+  customFieldSwitchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 34,
+  },
+  customFieldSwitchLabel: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  customFieldMultiSelect: {
+    overflow: 'visible',
+    position: 'relative',
+    zIndex: 1000,
+  },
+  customFieldMultiSelectTrigger: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+    minHeight: 38,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  customFieldSelectedChips: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    minWidth: 0,
+  },
+  customFieldSelectedChip: {
+    minHeight: 26,
+    paddingHorizontal: 8,
+  },
+  customFieldSelectedChipText: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  customFieldMultiSelectPlaceholder: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  customFieldMultiSelectPlaceholderMuted: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 15,
+  },
+  customFieldMultiSelectChevron: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  customFieldMultiSelectMenu: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 6,
+    maxHeight: 220,
+    overflow: 'hidden',
+  },
+  customFieldMultiSelectScroll: {
+    maxHeight: 220,
+  },
+  customFieldMultiSelectContent: {
+    gap: 4,
+    padding: 6,
+  },
+  customFieldMultiSelectOption: {
+    justifyContent: 'flex-start',
+    minHeight: 32,
+  },
+  customFieldMultiSelectOptionText: {
+    textAlign: 'left',
+  },
   customFieldFixedUnitBox: {
     backgroundColor: V.colors.mutedSoft,
     borderColor: V.colors.border,
@@ -9843,16 +10470,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  customFieldLabeledControl: {
+    flexBasis: 180,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 150,
+  },
+  customFieldControlLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
+  },
   customFieldEditorRow: {
     alignSelf: 'stretch',
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
+    gap: 8,
     minWidth: 0,
-    padding: 10,
     width: '100%',
+  },
+  customFieldInputLabel: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   customFieldTextArea: {
     minHeight: 88,
