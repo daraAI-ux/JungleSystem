@@ -55,6 +55,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamCustomFieldIcon } from './kolam-custom-field-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailTermsTemplatesPanel } from './kolam-detail-more-panels';
 import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
@@ -3783,51 +3784,29 @@ function SpeciesTermsTemplatesSummaryPanel({
 }: {
   controller: KolamSpeciesController;
 }) {
+  const species = controller.selectedSpecies;
+  if (!species) {
+    return (
+      <FieldShell label="TOS Aktif">
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty-terms-create',
+              text: 'Simpan spesies terlebih dahulu untuk melihat template S&K aktif.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      </FieldShell>
+    );
+  }
+
   return (
-    <FieldShell label="TOS Aktif">
-      <View style={styles.grocerPricingPanel}>
-        {controller.termsTemplates.length ? (
-          controller.termsTemplates.map(template => (
-            <View key={template.id} style={styles.attachedItemRow}>
-              <KolamCopyStack
-                items={[
-                  {
-                    id: 'title',
-                    text: template.title,
-                    style: styles.variantTitle,
-                  },
-                  {
-                    id: 'meta',
-                    text: [
-                      template.category,
-                      template.sourceLabel,
-                      `Versi ${template.version}`,
-                    ]
-                      .filter(Boolean)
-                      .join(' - '),
-                    style: styles.fieldHint,
-                  },
-                ]}
-              />
-              <KolamStatusBadge
-                intent="success"
-                label={template.status || 'Aktif'}
-              />
-            </View>
-          ))
-        ) : (
-          <KolamCopyStack
-            items={[
-              {
-                id: 'empty',
-                text: 'Belum ada TOS aktif untuk spesies ini.',
-                style: styles.fieldHint,
-              },
-            ]}
-          />
-        )}
-      </View>
-    </FieldShell>
+    <KolamDetailTermsTemplatesPanel
+      itemId={species.id}
+      itemLabel="spesies"
+      itemType="species"
+    />
   );
 }
 
