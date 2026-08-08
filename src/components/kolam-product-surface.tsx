@@ -1528,35 +1528,33 @@ function ProductEditFormPage({
                       </ProductFieldShell>
                     </View>
                   </View>
-                  <ProductFieldShell label="Kategori Produk">
-                    <ProductMultiSelectField
-                      disabled={disabled}
-                      emptyText="Belum ada kategori dipilih."
-                      label="Kategori Produk"
-                      onAdd={categoryId =>
-                        controller.onChangeForm({
-                          categoryIds: [...form.categoryIds, categoryId],
-                        })
-                      }
-                      onRemove={categoryId =>
-                        controller.onChangeForm({
-                          categoryIds: form.categoryIds.filter(
-                            id => id !== categoryId,
-                          ),
-                        })
-                      }
-                      options={categoryOptions.map(category => ({
-                        id: category.id,
-                        label: `${'  '.repeat(category.level)}${category.name}`,
-                      }))}
-                      selected={selectedCategories.map(category => ({
-                        id: category.id,
-                        label: category.name,
-                        tone: 'category' as const,
-                      }))}
-                      triggerLabel="Tambah kategori"
-                    />
-                  </ProductFieldShell>
+                  <ProductMultiSelectField
+                    disabled={disabled}
+                    emptyText="Belum ada kategori dipilih."
+                    label="Kategori Produk"
+                    onAdd={categoryId =>
+                      controller.onChangeForm({
+                        categoryIds: [...form.categoryIds, categoryId],
+                      })
+                    }
+                    onRemove={categoryId =>
+                      controller.onChangeForm({
+                        categoryIds: form.categoryIds.filter(
+                          id => id !== categoryId,
+                        ),
+                      })
+                    }
+                    options={categoryOptions.map(category => ({
+                      id: category.id,
+                      label: `${'  '.repeat(category.level)}${category.name}`,
+                    }))}
+                    selected={selectedCategories.map(category => ({
+                      id: category.id,
+                      label: category.name,
+                      tone: 'category' as const,
+                    }))}
+                    triggerLabel="Tambah kategori"
+                  />
                   <ProductFieldShell label="Deskripsi">
                     <KolamFormTextField
                       editable={!disabled}
