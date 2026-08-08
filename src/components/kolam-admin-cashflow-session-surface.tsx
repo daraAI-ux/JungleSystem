@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatAdminCashflowOpenedBy,
   formatAdminCashflowStatusLabel,
@@ -20,15 +20,24 @@ import {
 import { KolamAdminCashflowSessionDetail } from './kolam-admin-cashflow-session-detail';
 import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import { KolamFormTextField } from './kolam-form-text-field';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+
+type AdminCashflowFilterPanel = 'status' | 'source';
+
+const FILTER_PANEL_WIDTH = 220;
 
 /**
  * Admin cashflow sessions — list + create + detail ops (FE `/cashflow-session`).
@@ -95,8 +104,13 @@ function AdminCashflowList({
   controller: KolamAdminCashflowSessionController;
   onRouteChange?: (route: string) => void;
 }) {
-  const [statusPanelOpen, setStatusPanelOpen] = useState(false);
-  const [sourcePanelOpen, setSourcePanelOpen] = useState(false);
+  const [activeFilterPanel, setActiveFilterPanel] =
+    useState<AdminCashflowFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] =
+    useState<KolamFilterPanelAnchor | null>(null);
+  const toolbarRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const sourceTriggerRef = React.useRef<View>(null);
   const safePage = Math.max(1, controller.pagination.page);
   const hasFilters = Boolean(
     controller.filters.search ||
@@ -107,111 +121,128 @@ function AdminCashflowList({
   const statusLabel =
     KOLAM_ADMIN_CASHFLOW_STATUS_OPTIONS.find(
       option => option.value === controller.filters.status,
-    )?.label ?? 'Status';
+    )?.label ?? 'Semua status';
   const sourceLabel =
     KOLAM_ADMIN_CASHFLOW_SOURCE_OPTIONS.find(
       option => option.value === controller.filters.source,
-    )?.label ?? 'Sumber';
+    )?.label ?? 'Semua sumber';
   const columns = useMemo(
     () => createAdminCashflowColumns(onRouteChange),
     [onRouteChange],
   );
+  const getFilterTriggerRef = (panel: AdminCashflowFilterPanel) =>
+    panel === 'status' ? statusTriggerRef : sourceTriggerRef;
+  const closeFilterPanel = () => {
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+  };
+  const toggleFilterPanel = (panel: AdminCashflowFilterPanel) => {
+    if (activeFilterPanel === panel) {
+      closeFilterPanel();
+      return;
+    }
+
+    closeFilterPanel();
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        getFilterTriggerRef(panel).current,
+        FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel(panel);
+        },
+      );
+    });
+  };
 
   return (
     <View style={styles.listRoot}>
-      <View style={styles.toolbarWrap}>
-        <View style={styles.toolbarShell}>
-          <View style={styles.filterRow}>
-            <KolamFormTextField
-              onChangeText={value => controller.onChangeFilters({ search: value })}
-              placeholder="Cari"
-              style={styles.searchInput}
-              value={controller.filters.search}
-            />
-            <KolamButton
-              intent={
-                statusPanelOpen || controller.filters.status
-                  ? 'primary'
-                  : 'secondary'
-              }
-              label={statusLabel}
-              onPress={() => {
-                setSourcePanelOpen(false);
-                setStatusPanelOpen(current => !current);
-              }}
-              style={styles.filterTrigger}
-            />
-            <KolamButton
-              intent={
-                sourcePanelOpen || controller.filters.source
-                  ? 'primary'
-                  : 'secondary'
-              }
-              label={sourceLabel}
-              onPress={() => {
-                setStatusPanelOpen(false);
-                setSourcePanelOpen(current => !current);
-              }}
-              style={styles.filterTrigger}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            {hasFilters ? (
-              <KolamButton
-                label="Atur ulang"
-                muted
-                onPress={() => {
-                  setStatusPanelOpen(false);
-                  setSourcePanelOpen(false);
-                  controller.onClearFilters();
-                }}
-                style={styles.toolbarButton}
+      <View ref={toolbarRef} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamFormTextField
+                onChangeText={value => controller.onChangeFilters({ search: value })}
+                placeholder="Cari"
+                style={kolamTableToolbarStyles.searchInput}
+                value={controller.filters.search}
               />
-            ) : null}
-            {canCreate ? (
-              <KolamButton
-                intent="primary"
-                label="Baru"
-                tone="positive"
-                onPress={() =>
-                  onRouteChange?.(`${KOLAM_ADMIN_CASHFLOW_SESSION_ROOT}/create`)
-                }
-                style={styles.toolbarButton}
-              />
-            ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'status' ||
+                    Boolean(controller.filters.status)
+                  }
+                  label={statusLabel}
+                  onPress={() => toggleFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={sourceTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeFilterPanel === 'source' ||
+                    Boolean(controller.filters.source)
+                  }
+                  label={sourceLabel}
+                  onPress={() => toggleFilterPanel('source')}
+                  open={activeFilterPanel === 'source'}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {hasFilters ? (
+                <KolamButton
+                  label="Atur ulang"
+                  muted
+                  onPress={() => {
+                    closeFilterPanel();
+                    controller.onClearFilters();
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+              {canCreate ? (
+                <KolamButton
+                  intent="primary"
+                  label="Baru"
+                  tone="positive"
+                  onPress={() =>
+                    onRouteChange?.(`${KOLAM_ADMIN_CASHFLOW_SESSION_ROOT}/create`)
+                  }
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+            </View>
           </View>
         </View>
 
-        {statusPanelOpen ? (
+        {activeFilterPanel === 'status' && panelAnchor ? (
           <FilterPanel
-            onClose={() => setStatusPanelOpen(false)}
+            anchor={panelAnchor}
+            onClose={closeFilterPanel}
             onSelect={value => {
               controller.onChangeFilters({
                 status: value as '' | KolamAdminCashflowSessionStatus,
               });
-              setStatusPanelOpen(false);
+              closeFilterPanel();
             }}
             options={KOLAM_ADMIN_CASHFLOW_STATUS_OPTIONS}
             selectedValue={controller.filters.status}
           />
         ) : null}
-        {sourcePanelOpen ? (
+        {activeFilterPanel === 'source' && panelAnchor ? (
           <FilterPanel
-            onClose={() => setSourcePanelOpen(false)}
+            anchor={panelAnchor}
+            onClose={closeFilterPanel}
             onSelect={value => {
               controller.onChangeFilters({
                 source: value as '' | KolamAdminCashflowSessionSource,
               });
-              setSourcePanelOpen(false);
+              closeFilterPanel();
             }}
             options={KOLAM_ADMIN_CASHFLOW_SOURCE_OPTIONS}
             selectedValue={controller.filters.source}
@@ -416,11 +447,13 @@ function AdminCashflowCreateForm({
 }
 
 function FilterPanel({
+  anchor,
   onClose,
   onSelect,
   options,
   selectedValue,
 }: {
+  anchor: KolamFilterPanelAnchor;
   onClose: () => void;
   onSelect: (value: string) => void;
   options: Array<{ label: string; value: string }>;
@@ -428,17 +461,34 @@ function FilterPanel({
 }) {
   const rows = useMemo(() => options, [options]);
   return (
-    <View style={styles.filterOverlayPanel}>
-      {rows.map(option => (
-        <KolamButton
-          intent={selectedValue === option.value ? 'primary' : 'plain'}
-          key={option.value || 'all'}
-          label={option.label}
-          onPress={() => onSelect(option.value)}
-          style={styles.filterPanelOption}
-        />
-      ))}
-      <KolamButton label="Tutup" onPress={onClose} />
+    <View
+      style={[
+        styles.filterOverlayPanel,
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: FILTER_PANEL_WIDTH,
+        },
+      ]}
+    >
+      <ScrollView
+        contentContainerStyle={styles.filterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.filterPanelScroll}
+      >
+        {rows.map(option => (
+          <KolamButton
+            intent={selectedValue === option.value ? 'primary' : 'plain'}
+            key={option.value || 'all'}
+            label={option.label}
+            onPress={() => onSelect(option.value)}
+            style={styles.filterPanelOption}
+          />
+        ))}
+      </ScrollView>
+      <View style={styles.filterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
     </View>
   );
 }
@@ -467,53 +517,12 @@ const styles = StyleSheet.create({
     elevation: 1000,
     overflow: 'visible',
   },
-  toolbarShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    overflow: 'visible',
-    padding: 4,
-  },
-  filterRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 4,
-    minWidth: 0,
-  },
-  actionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 4,
-  },
-  searchInput: {
-    flex: 1,
-    minWidth: 140,
-    maxWidth: 220,
-  },
-  filterTrigger: {
-    minHeight: 34,
-    paddingHorizontal: 10,
-  },
   toolbarButton: {
     minHeight: 34,
     paddingHorizontal: 10,
   },
   filterOverlayPanel: {
     position: 'absolute',
-    top: '100%',
-    left: 4,
-    marginTop: 4,
-    minWidth: 220,
-    maxWidth: 320,
     gap: 4,
     padding: 8,
     borderRadius: 8,
@@ -522,6 +531,17 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
     zIndex: 200000,
     elevation: 2000,
+  },
+  filterPanelContent: {
+    gap: 4,
+  },
+  filterPanelScroll: {
+    maxHeight: 220,
+  },
+  filterPanelFooter: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    paddingTop: 6,
   },
   filterPanelOption: {
     justifyContent: 'flex-start',
