@@ -1851,114 +1851,116 @@ function ProductEditFormPage({
                   ? 'Kode identitas bahan baku. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace.'
                   : 'Kode identitas internal. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace.'
               }
-              title={isRawForm ? 'Identitas bahan baku' : 'Identitas produk'}
+              title="Informasi Dasar"
             >
-              <View style={styles.twoColumnGrid}>
-                <ProductFieldShell
-                  label={form.productType === 'raw' ? 'Kode Produk' : 'SKU'}
-                  required
-                >
-                  <KolamFormTextField
-                    editable={!disabled}
-                    onChangeText={value =>
-                      controller.onChangeForm(
-                        form.productType === 'raw'
-                          ? { productCode: value }
-                          : { sku: value },
-                      )
-                    }
-                    placeholder={
-                      form.productType === 'raw' ? 'Kode produk' : 'SKU'
-                    }
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={
-                      form.productType === 'raw' ? form.productCode : form.sku
-                    }
-                  />
-                </ProductFieldShell>
-                {!isRawForm ? (
-                  <ProductFieldShell label="Tipe Produk">
-                    <KolamDropdownSelect
-                      label="Tipe Produk"
-                      onChange={productType =>
+              <View style={styles.productBasicInfoCard}>
+                <View style={styles.twoColumnGrid}>
+                  <View style={styles.productBasicInfoHalfField}>
+                    <ProductFieldShell
+                      label={form.productType === 'raw' ? 'Kode Produk' : 'SKU'}
+                      required
+                    >
+                      <KolamFormTextField
+                        editable={!disabled}
+                        onChangeText={value =>
+                          controller.onChangeForm(
+                            form.productType === 'raw'
+                              ? { productCode: value }
+                              : { sku: value },
+                          )
+                        }
+                        placeholder={
+                          form.productType === 'raw' ? 'Kode produk' : 'SKU'
+                        }
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={
+                          form.productType === 'raw'
+                            ? form.productCode
+                            : form.sku
+                        }
+                      />
+                    </ProductFieldShell>
+                  </View>
+                  {!isRawForm ? (
+                    <View style={styles.productBasicInfoHalfField}>
+                      <ProductFieldShell label="Tipe Produk">
+                        <KolamDropdownSelect
+                          label="Tipe Produk"
+                          onChange={productType =>
+                            controller.onChangeForm({
+                              productType:
+                                productType as KolamProductFormState['productType'],
+                            })
+                          }
+                          options={[
+                            { label: 'Produk', value: 'product' },
+                            { label: 'Bahan Baku', value: 'raw' },
+                          ]}
+                          showLabelInTrigger={false}
+                          value={form.productType}
+                        />
+                      </ProductFieldShell>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.twoColumnGrid}>
+                  <View style={styles.productBasicInfoHalfField}>
+                    <ProductMultiSelectField
+                      disabled={disabled}
+                      emptyText="Belum ada kategori dipilih."
+                      label="Kategori Produk"
+                      onAdd={categoryId =>
                         controller.onChangeForm({
-                          productType:
-                            productType as KolamProductFormState['productType'],
+                          categoryIds: [...form.categoryIds, categoryId],
                         })
                       }
-                      options={[
-                        { label: 'Produk', value: 'product' },
-                        { label: 'Bahan Baku', value: 'raw' },
-                      ]}
-                      showLabelInTrigger={false}
-                      value={form.productType}
+                      onRemove={categoryId =>
+                        controller.onChangeForm({
+                          categoryIds: form.categoryIds.filter(
+                            id => id !== categoryId,
+                          ),
+                        })
+                      }
+                      options={categoryOptions.map(category => ({
+                        id: category.id,
+                        label: `${'  '.repeat(category.level)}${category.name}`,
+                      }))}
+                      selected={selectedCategories.map(category => ({
+                        id: category.id,
+                        label: category.name,
+                        tone: 'category' as const,
+                      }))}
+                      triggerLabel="Tambah kategori"
                     />
-                  </ProductFieldShell>
-                ) : null}
+                  </View>
+                  <View style={styles.productBasicInfoHalfField}>
+                    <ProductMultiSelectField
+                      disabled={disabled}
+                      emptyText="Belum ada merek dipilih."
+                      label="Brand"
+                      onAdd={brandId =>
+                        controller.onChangeForm({
+                          brandIds: [...form.brandIds, brandId],
+                        })
+                      }
+                      onRemove={brandId =>
+                        controller.onChangeForm({
+                          brandIds: form.brandIds.filter(id => id !== brandId),
+                        })
+                      }
+                      options={brandOptions.map(brand => ({
+                        id: brand.id,
+                        label: brand.name,
+                      }))}
+                      selected={selectedBrands.map(brand => ({
+                        id: brand.id,
+                        label: brand.name,
+                      }))}
+                      triggerLabel="Tambah merek"
+                    />
+                  </View>
+                </View>
               </View>
-            </ProductEditSection>
-
-            <ProductEditSection
-              description="Pilih satu atau lebih kategori yang relevan."
-              title="Kategori Produk"
-            >
-              <ProductMultiSelectField
-                disabled={disabled}
-                emptyText="Belum ada kategori dipilih."
-                label="Kategori"
-                onAdd={categoryId =>
-                  controller.onChangeForm({
-                    categoryIds: [...form.categoryIds, categoryId],
-                  })
-                }
-                onRemove={categoryId =>
-                  controller.onChangeForm({
-                    categoryIds: form.categoryIds.filter(
-                      id => id !== categoryId,
-                    ),
-                  })
-                }
-                options={categoryOptions.map(category => ({
-                  id: category.id,
-                  label: `${'  '.repeat(category.level)}${category.name}`,
-                }))}
-                selected={selectedCategories.map(category => ({
-                  id: category.id,
-                  label: category.name,
-                  tone: 'category' as const,
-                }))}
-                triggerLabel="Tambah kategori"
-              />
-            </ProductEditSection>
-
-            <ProductEditSection
-              description="Hubungkan produk dengan satu atau lebih brand."
-              title="Brand"
-            >
-              <ProductMultiSelectField
-                disabled={disabled}
-                emptyText="Belum ada merek dipilih."
-                label="Merek"
-                onAdd={brandId =>
-                  controller.onChangeForm({
-                    brandIds: [...form.brandIds, brandId],
-                  })
-                }
-                onRemove={brandId =>
-                  controller.onChangeForm({
-                    brandIds: form.brandIds.filter(id => id !== brandId),
-                  })
-                }
-                options={brandOptions.map(brand => ({
-                  id: brand.id,
-                  label: brand.name,
-                }))}
-                selected={selectedBrands.map(brand => ({
-                  id: brand.id,
-                  label: brand.name,
-                }))}
-                triggerLabel="Tambah merek"
-              />
             </ProductEditSection>
 
             <ProductEditSection
@@ -9174,6 +9176,19 @@ const styles = StyleSheet.create({
   },
   productEditSectionBody: {
     gap: 12,
+  },
+  productBasicInfoCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
+  productBasicInfoHalfField: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 240,
   },
   twoColumnGrid: {
     flexDirection: 'row',
