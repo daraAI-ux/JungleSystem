@@ -4897,13 +4897,15 @@ function ProductExternalLinksRowsEditor({
       {links.length ? (
         links.map((link, index) => (
           <View key={`${index}-${link.name}`} style={styles.externalLinkRow}>
-            <KolamDropdownSelect<KolamProductLinkName | ''>
-              label="Tipe tautan"
-              onChange={name => updateRow(index, { name })}
-              options={PRODUCT_EXTERNAL_LINK_OPTIONS}
-              showLabelInTrigger={false}
-              value={link.name}
-            />
+            <View style={styles.externalLinkTypeSelect}>
+              <KolamDropdownSelect<KolamProductLinkName | ''>
+                label="Tipe tautan"
+                onChange={name => updateRow(index, { name })}
+                options={PRODUCT_EXTERNAL_LINK_OPTIONS}
+                showLabelInTrigger={false}
+                value={link.name}
+              />
+            </View>
             <KolamFormTextField
               editable={!disabled}
               mode="url"
@@ -4915,15 +4917,19 @@ function ProductExternalLinksRowsEditor({
               ]}
               value={link.value}
             />
-            <KolamButton
+            <KolamInteractionFrame
+              accessibilityLabel="Hapus tautan"
               disabled={disabled}
-              intent="danger"
-              label="Hapus"
               onPress={() =>
                 onChange(links.filter((_, linkIndex) => linkIndex !== index))
               }
-              style={styles.externalLinkRemoveButton}
-            />
+              style={[
+                settingsWebFormStyles.settingsWebUploadDeleteButton,
+                styles.externalLinkRemoveButton,
+              ]}
+            >
+              <KolamUploadDeleteIcon />
+            </KolamInteractionFrame>
           </View>
         ))
       ) : (
@@ -10337,18 +10343,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'stretch',
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 8,
     minWidth: 0,
     width: '100%',
   },
+  externalLinkTypeSelect: {
+    flexBasis: 150,
+    flexShrink: 0,
+    minWidth: 130,
+  },
   externalLinkInput: {
     flex: 1,
-    minWidth: 220,
+    minWidth: 120,
   },
   externalLinkRemoveButton: {
-    minHeight: 34,
-    paddingHorizontal: 10,
+    flexShrink: 0,
+    marginLeft: 0,
   },
   externalLinkAddButton: {
     alignSelf: 'flex-start',

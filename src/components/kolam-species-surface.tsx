@@ -1793,14 +1793,16 @@ function SpeciesExternalLinksRowsEditor({
       {links.length ? (
         links.map((link, index) => (
           <View key={`${index}-${link.name}`} style={styles.externalLinkRow}>
-            <KolamDropdownSelect<KolamSpeciesLinkName | ''>
-              accessibilityLabel={`Tipe tautan ${index + 1}`}
-              label="Tipe tautan"
-              onChange={name => updateRow(index, { name })}
-              options={SPECIES_EXTERNAL_LINK_OPTIONS}
-              showLabelInTrigger={false}
-              value={link.name}
-            />
+            <View style={styles.externalLinkTypeSelect}>
+              <KolamDropdownSelect<KolamSpeciesLinkName | ''>
+                accessibilityLabel={`Tipe tautan ${index + 1}`}
+                label="Tipe tautan"
+                onChange={name => updateRow(index, { name })}
+                options={SPECIES_EXTERNAL_LINK_OPTIONS}
+                showLabelInTrigger={false}
+                value={link.name}
+              />
+            </View>
             <KolamFormTextField
               editable={!disabled}
               mode="url"
@@ -8349,15 +8351,21 @@ const styles = StyleSheet.create({
   externalLinkRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     gap: 8,
+    minWidth: 0,
+  },
+  externalLinkTypeSelect: {
+    flexBasis: 150,
+    flexShrink: 0,
+    minWidth: 130,
   },
   externalLinkInput: {
-    flexBasis: 320,
-    flexGrow: 1,
-    minWidth: 220,
+    flex: 1,
+    minWidth: 120,
   },
   externalLinkRemoveButton: {
+    flexShrink: 0,
     marginLeft: 0,
   },
   externalLinkAddButton: {
