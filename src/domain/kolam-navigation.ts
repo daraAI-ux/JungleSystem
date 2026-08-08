@@ -1138,7 +1138,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     labelSuffix: 'Baru',
     label: 'Produk Baru',
     route: '/products/create',
-    description: 'Tambah produk baru.',
+    description: 'Tambahkan produk baru ke katalog.',
   },
   {
     baseRoute: '/products',
@@ -1151,7 +1151,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     labelSuffix: 'Edit',
     label: 'Edit Produk',
     route: '/products/:id/edit',
-    description: 'Ubah data produk.',
+    description: 'Ubah informasi, harga, stok, dan keterangan produk.',
   },
   {
     baseRoute: '/products',

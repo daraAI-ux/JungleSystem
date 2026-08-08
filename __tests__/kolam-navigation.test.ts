@@ -486,7 +486,7 @@ describe('kolamNavigationSections', () => {
         expect.objectContaining({
           baseRoute: '/products',
           label: 'Produk Baru',
-          description: 'Tambah produk baru.',
+          description: 'Tambahkan produk baru ke katalog.',
           moduleIcon: 'product',
           route: '/products/create',
           routePattern: '/products/create',
@@ -494,7 +494,7 @@ describe('kolamNavigationSections', () => {
         expect.objectContaining({
           baseRoute: '/products',
           label: 'Edit Produk',
-          description: 'Ubah data produk.',
+          description: 'Ubah informasi, harga, stok, dan keterangan produk.',
           moduleIcon: 'product',
           route: '/products/:id/edit',
           routePattern: '/products/:id/edit',

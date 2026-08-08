@@ -328,13 +328,13 @@ function getProductDashboardHeaderCopy(routePath: string): {
   if (routePath === '/products/create' || routePath === '/products/baru') {
     return {
       title: 'Produk Baru',
-      subtitle: 'Tambah produk baru.',
+      subtitle: 'Tambahkan produk baru ke katalog.',
     };
   }
   if (/^\/products\/[^/]+\/edit$/.test(routePath)) {
     return {
       title: 'Edit Produk',
-      subtitle: 'Ubah data produk.',
+      subtitle: 'Ubah informasi, harga, stok, dan keterangan produk.',
     };
   }
   return null;

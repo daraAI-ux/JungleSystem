@@ -166,7 +166,7 @@ describe('dashboard header copy', () => {
         eyebrow: 'Produk',
         moduleIcon: 'product',
         title: 'Produk Baru',
-        subtitle: 'Tambah produk baru.',
+        subtitle: 'Tambahkan produk baru ke katalog.',
       }),
     );
 
@@ -185,7 +185,7 @@ describe('dashboard header copy', () => {
         eyebrow: 'Produk',
         moduleIcon: 'product',
         title: 'Edit Produk',
-        subtitle: 'Ubah data produk.',
+        subtitle: 'Ubah informasi, harga, stok, dan keterangan produk.',
       }),
     );
   });
