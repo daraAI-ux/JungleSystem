@@ -1815,10 +1815,7 @@ function ProductEditFormPage({
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.detailHeaderRow}>
-        <View style={styles.headingCopy}>
-          <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
-          <Text style={styles.title}>{formTitle}</Text>
-        </View>
+        <View />
         <View style={styles.detailHeaderActions}>
           <KolamCancelButton disabled={disabled} onPress={onCancel} />
           <KolamButton
