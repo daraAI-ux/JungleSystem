@@ -201,46 +201,23 @@ function KolamSpeciesShell({
         controller.mode === 'list' ? styles.listSurface : null,
       ]}
     >
-      {controller.mode !== 'list' ? (
+      {controller.mode !== 'list' && controller.mode !== 'detail' ? (
         <View style={styles.header}>
           <View style={styles.headerActions}>
-            {controller.mode === 'detail' ? (
-              <>
-                <KolamEditButton
-                  intent="primary"
-                  onPress={() => {
-                    controller.onEdit();
-                    const selectedItem = controller.selectedSpecies;
-                    if (selectedItem) {
-                      onRouteChange?.(`${getSpeciesRoute(selectedItem)}/edit`);
-                    }
-                  }}
-                />
-                <KolamDaftarButton
-                  onPress={() => {
-                    controller.onBackToList();
-                    onRouteChange?.('/species');
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <KolamCancelButton
-                  disabled={controller.saving}
-                  onPress={() => {
-                    controller.onBackToList();
-                    onRouteChange?.('/species');
-                  }}
-                />
-                <KolamSaveButton
-                  disabled={controller.saving}
-                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-                  onPress={() => {
-                    void controller.onSave();
-                  }}
-                />
-              </>
-            )}
+            <KolamCancelButton
+              disabled={controller.saving}
+              onPress={() => {
+                controller.onBackToList();
+                onRouteChange?.('/species');
+              }}
+            />
+            <KolamSaveButton
+              disabled={controller.saving}
+              label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+              onPress={() => {
+                void controller.onSave();
+              }}
+            />
           </View>
         </View>
       ) : null}
@@ -5993,6 +5970,21 @@ function KolamSpeciesDetail({
               .join(' | ')}
           </Text>
         </View>
+        <View style={styles.detailHeaderActions}>
+          <KolamEditButton
+            intent="primary"
+            onPress={() => {
+              controller.onEdit();
+              onRouteChange?.(`${getSpeciesRoute(selectedItem)}/edit`);
+            }}
+          />
+          <KolamDaftarButton
+            onPress={() => {
+              controller.onBackToList();
+              onRouteChange?.('/species');
+            }}
+          />
+        </View>
       </View>
       <KolamSpeciesDetailOverview
         commonName={item.commonName}
@@ -7509,11 +7501,20 @@ const styles = StyleSheet.create({
   detailHeaderRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
     justifyContent: 'space-between',
   },
+  detailHeaderActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
   headingCopy: {
     flex: 1,
+    minWidth: 260,
   },
   eyebrow: {
     color: V.colors.mutedFg,
