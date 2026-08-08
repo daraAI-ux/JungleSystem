@@ -14,6 +14,7 @@ export interface KolamNavigationItem {
 export type KolamNavigationModuleIcon =
   | 'archive'
   | 'brand'
+  | 'cashflowSession'
   | 'category'
   | 'fieldcustom'
   | 'iucn'
@@ -395,6 +396,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/cashflow-session',
         description: 'Sesi kas harian dan rekonsiliasi',
         group: 'Penjualan',
+        moduleIcon: 'cashflowSession',
         requiredAccess: ['kolam'],
       },
       {
