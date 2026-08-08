@@ -6945,11 +6945,13 @@ function ProductRawOverviewTab({
       {product.components.length ? (
         <ProductRawComponentsTable components={product.components} />
       ) : null}
-      <ProductRawVendorSection
-        onRouteChange={onRouteChange}
-        product={product}
-        vendorPrices={vendorPrices}
-      />
+      <View style={styles.rawVendorSectionSpacing}>
+        <ProductRawVendorSection
+          onRouteChange={onRouteChange}
+          product={product}
+          vendorPrices={vendorPrices}
+        />
+      </View>
       <ProductRawCatalogUsagePanel
         onRouteChange={onRouteChange}
         productId={product.id}
@@ -11592,6 +11594,12 @@ const styles = StyleSheet.create({
   rawVendorStack: {
     alignSelf: 'stretch',
     gap: 12,
+    minWidth: 0,
+    width: '100%',
+  },
+  rawVendorSectionSpacing: {
+    alignSelf: 'stretch',
+    marginBottom: 12,
     minWidth: 0,
     width: '100%',
   },
