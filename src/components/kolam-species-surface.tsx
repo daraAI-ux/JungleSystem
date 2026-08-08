@@ -7493,6 +7493,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 16,
     justifyContent: 'space-between',
+    marginTop: -88,
   },
   detailHeaderIdentity: {
     alignItems: 'center',
