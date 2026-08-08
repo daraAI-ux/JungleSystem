@@ -117,12 +117,14 @@ export function KolamEntityDetailAssetsPanel({
 
   return (
     <KolamContentFrame style={styles.sectionCardFull} variant="settingsWebConfig">
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleWrap}>
-          <Text style={styles.sectionTitle}>Aset</Text>
-          <Text style={styles.sectionDescription}>Dokumen internal (PDF, Word, Excel, gambar). Tidak ditampilkan di webstore.</Text>
+      {inlineTitleUploadActions ? null : (
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionTitleWrap}>
+            <Text style={styles.sectionTitle}>Aset</Text>
+            <Text style={styles.sectionDescription}>Dokumen internal (PDF, Word, Excel, gambar). Tidak ditampilkan di webstore.</Text>
+          </View>
         </View>
-      </View>
+      )}
 
       <View style={styles.assetUploadCard}>
         <View style={inlineTitleUploadActions ? styles.assetTitleUploadRow : styles.assetTitleInputWrap}>
