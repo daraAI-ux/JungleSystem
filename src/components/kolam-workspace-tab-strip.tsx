@@ -12,6 +12,7 @@ import {KolamPressable} from './kolam-pressable';
 import {KolamXIcon} from './kolam-x-icon';
 
 const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
+const KOLAM_WORKSPACE_TAB_STRIP_BG = '#374151';
 
 export interface KolamWorkspaceTabStripProps {
   activeTabId: string;
@@ -84,7 +85,11 @@ function WorkspaceTabButton({
       accessibilityState={{selected: active}}
       onPress={onPress}
       style={[styles.tab, active && styles.activeTab]}>
-      {moduleIcon ? <KolamModuleIcon kind={moduleIcon} /> : null}
+      {moduleIcon ? (
+        <View style={styles.moduleIconSurface}>
+          <KolamModuleIcon kind={moduleIcon} />
+        </View>
+      ) : null}
       <Text
         numberOfLines={1}
         style={[styles.tabLabel, active && styles.activeTabLabel]}>
@@ -113,6 +118,7 @@ const styles = StyleSheet.create({
   shell: {
     minHeight: 38,
     justifyContent: 'center',
+    backgroundColor: KOLAM_WORKSPACE_TAB_STRIP_BG,
   },
   inner: {
     width: '100%',
@@ -144,22 +150,30 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   activeTab: {
-    borderColor: V.colors.border,
-    backgroundColor: V.colors.bg,
+    borderColor: 'rgba(255,255,255,0.36)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  moduleIconSurface: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primaryFg,
+    borderRadius: 9,
+    height: 18,
+    justifyContent: 'center',
+    width: 18,
   },
   tabLabel: {
     flexShrink: 1,
-    color: V.colors.mutedFg,
+    color: 'rgba(255,255,255,0.72)',
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '500',
   },
   activeTabLabel: {
-    color: V.colors.fg,
+    color: V.colors.primaryFg,
   },
   closeButton: {
     alignItems: 'center',
-    backgroundColor: V.colors.mutedFg,
+    backgroundColor: 'rgba(255,255,255,0.32)',
     borderRadius: 7.5,
     flexShrink: 0,
     height: 15,
@@ -170,6 +184,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.danger,
   },
   addButton: {
+    backgroundColor: V.colors.primaryFg,
+    borderColor: 'rgba(255,255,255,0.32)',
+    borderWidth: 1,
     flexShrink: 0,
   },
   indicator: {
@@ -179,6 +196,6 @@ const styles = StyleSheet.create({
     left: 8,
     height: 2,
     borderRadius: 999,
-    backgroundColor: V.colors.primary,
+    backgroundColor: V.colors.primaryFg,
   },
 });
