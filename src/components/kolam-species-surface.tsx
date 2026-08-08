@@ -1388,6 +1388,43 @@ function KolamSpeciesForm({
                     />
                   </FieldShell>
                 </View>
+                <FieldShell label="Konservasi">
+                  <View style={styles.twoColumnGrid}>
+                    <FieldShell label="IUCN">
+                      <KolamDropdownSelect
+                        accessibilityLabel="Pilih status IUCN"
+                        label="IUCN"
+                        menuStyle={styles.longDropdownMenu}
+                        onChange={iucnStatusId =>
+                          controller.onChangeForm({ iucnStatusId })
+                        }
+                        options={[
+                          { label: 'Tanpa IUCN', value: '' },
+                          ...controller.iucnStatuses.map(status => ({
+                            label: `${status.abbreviation} - ${status.name}`,
+                            value: status.id,
+                          })),
+                        ]}
+                        searchable
+                        searchPlaceholder="Cari IUCN..."
+                        showLabelInTrigger={false}
+                        value={form.iucnStatusId}
+                      />
+                    </FieldShell>
+                    <FieldShell label="Tautan IUCN">
+                      <KolamFormTextField
+                        editable={!controller.saving}
+                        mode="url"
+                        onChangeText={iucnLink =>
+                          controller.onChangeForm({ iucnLink })
+                        }
+                        placeholder="Tautan IUCN"
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={form.iucnLink}
+                      />
+                    </FieldShell>
+                  </View>
+                </FieldShell>
               </View>
             </SpeciesEditSection>
 
@@ -1589,47 +1626,6 @@ function KolamSpeciesForm({
                 ]}
               >
                 <SpeciesSeoEditPanel controller={controller} />
-              </View>
-            </SpeciesEditSection>
-
-            <SpeciesEditSection
-              description="Status konservasi Daftar Merah IUCN dan tautannya."
-              title="Konservasi"
-            >
-              <View style={styles.twoColumnGrid}>
-                <FieldShell label="IUCN">
-                  <KolamDropdownSelect
-                    accessibilityLabel="Pilih status IUCN"
-                    label="IUCN"
-                    menuStyle={styles.longDropdownMenu}
-                    onChange={iucnStatusId =>
-                      controller.onChangeForm({ iucnStatusId })
-                    }
-                    options={[
-                      { label: 'Tanpa IUCN', value: '' },
-                      ...controller.iucnStatuses.map(status => ({
-                        label: `${status.abbreviation} - ${status.name}`,
-                        value: status.id,
-                      })),
-                    ]}
-                    searchable
-                    searchPlaceholder="Cari IUCN..."
-                    showLabelInTrigger={false}
-                    value={form.iucnStatusId}
-                  />
-                </FieldShell>
-                <FieldShell label="Tautan IUCN">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    mode="url"
-                    onChangeText={iucnLink =>
-                      controller.onChangeForm({ iucnLink })
-                    }
-                    placeholder="Tautan IUCN"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={form.iucnLink}
-                  />
-                </FieldShell>
               </View>
             </SpeciesEditSection>
 
