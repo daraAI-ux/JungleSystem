@@ -7,6 +7,7 @@ import type {KolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-we
 import {KolamButton} from './kolam-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamSeoAuditButton} from './kolam-seo-audit-button';
 
 const AUDIT_JOB_TYPE = 'seo.audit_website';
 
@@ -70,7 +71,7 @@ export function KolamDaraSeoWebsiteBody({
 
           <View style={styles.cardActions}>
             {canDraft ? (
-              <KolamButton
+              <KolamSeoAuditButton
                 disabled={auditing}
                 intent="primary"
                 label={auditing ? 'Mengaudit…' : 'Audit + draft'}

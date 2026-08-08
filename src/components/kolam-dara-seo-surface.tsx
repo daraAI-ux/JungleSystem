@@ -44,6 +44,7 @@ import {useKolamDaraSeoSocialController} from '../hooks/use-kolam-dara-seo-socia
 import {useKolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-website-controller';
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
+import {KolamSeoAuditButton} from './kolam-seo-audit-button';
 import {KolamDaraSeoApprovalsBody} from './kolam-dara-seo-approvals-body';
 import {KolamDaraSeoAuditLogsBody} from './kolam-dara-seo-audit-logs-body';
 import {KolamDaraSeoCircularKpi} from './kolam-dara-seo-circular-kpi';
@@ -343,7 +344,7 @@ function KolamDaraSeoDashboardBody({
             <View style={kolamTableToolbarStyles.actions}>
               {canDraft ? (
                 <>
-                  <KolamButton
+                  <KolamSeoAuditButton
                     disabled={jobsProgress.isRunning('seo.bulk_products')}
                     label={
                       jobsProgress.isRunning('seo.bulk_products')
@@ -358,7 +359,7 @@ function KolamDaraSeoDashboardBody({
                       );
                     }}
                   />
-                  <KolamButton
+                  <KolamSeoAuditButton
                     disabled={jobsProgress.isRunning('seo.bulk_blogs')}
                     label={
                       jobsProgress.isRunning('seo.bulk_blogs')
@@ -373,7 +374,7 @@ function KolamDaraSeoDashboardBody({
                       );
                     }}
                   />
-                  <KolamButton
+                  <KolamSeoAuditButton
                     disabled={jobsProgress.isRunning('seo.bulk_species')}
                     label={
                       jobsProgress.isRunning('seo.bulk_species')
@@ -388,7 +389,7 @@ function KolamDaraSeoDashboardBody({
                       );
                     }}
                   />
-                  <KolamButton
+                  <KolamSeoAuditButton
                     disabled={jobsProgress.isRunning('seo.serp_monitor')}
                     label={
                       jobsProgress.isRunning('seo.serp_monitor')
