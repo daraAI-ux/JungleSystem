@@ -513,6 +513,21 @@ function KolamPurchaseOrderForm({
     controller.mode === 'create'
       ? 'PO baru'
       : `Edit · ${controller.selectedPO?.poCode ?? ''}`;
+  const handleCancel = () => {
+    controller.onBackToList();
+    onRouteChange?.(
+      controller.selectedPO
+        ? `${KOLAM_PURCHASE_ORDER_ROOT}/${controller.selectedPO.id}`
+        : KOLAM_PURCHASE_ORDER_ROOT,
+    );
+  };
+  const handleSave = () => {
+    void controller.onSave().then(id => {
+      if (id) {
+        onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${id}`);
+      }
+    });
+  };
 
   return (
     <View style={styles.detailSurface}>
@@ -531,6 +546,17 @@ function KolamPurchaseOrderForm({
               }}
               style={styles.toolbarButton}
             />
+            <KolamCancelButton
+              disabled={controller.mutating}
+              onPress={handleCancel}
+              style={styles.toolbarButton}
+            />
+            <KolamSaveButton
+              disabled={controller.mutating}
+              label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+              onPress={handleSave}
+              style={styles.toolbarButton}
+            />
           </View>
         </View>
       </View>
@@ -540,49 +566,51 @@ function KolamPurchaseOrderForm({
         contentContainerStyle={styles.formContent}
       >
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Data utama</Text>
-        <View style={styles.formSplitRow}>
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Pemasok" required>
-              <KolamDropdownSelect
-                accessibilityLabel="Pilih pemasok"
-                label="Pemasok"
-                onChange={vendorId => {
-                  const vendor = controller.vendors.find(item => item.id === vendorId);
-                  controller.onChangeForm({ vendorId, vendorName: vendor?.name ?? '' });
-                }}
-                options={[
-                  { label: 'Pilih pemasok…', value: '' },
-                  ...controller.vendors.map(vendor => ({ label: vendor.name, value: vendor.id })),
-                ]}
-                searchable
-                searchPlaceholder="Cari pemasok…"
-                value={form.vendorId}
-                style={vendorLocked ? styles.disabledControl : undefined}
-              />
-              {vendorLocked ? (
-                <Text style={styles.switchHint}>
-                  Pemasok tidak bisa diubah setelah PO dikirim.
-                </Text>
-              ) : null}
-            </FieldShell>
-          </View>
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Dompet">
-              <KolamDropdownSelect
-                accessibilityLabel="Pilih dompet"
-                label="Dompet"
-                onChange={walletId => controller.onChangeForm({ walletId })}
-                options={[
-                  { label: 'Tanpa dompet', value: '' },
-                  ...controller.walletOptions.map(wallet => ({
-                    label: `${wallet.name} (${wallet.type})`,
-                    value: wallet.id,
-                  })),
-                ]}
-                value={form.walletId}
-              />
-            </FieldShell>
+        <Text style={styles.sectionTitle}>Informasi Dasar</Text>
+        <View style={styles.poBasicInfoCard}>
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Pemasok" required>
+                <KolamDropdownSelect
+                  accessibilityLabel="Pilih pemasok"
+                  label="Pemasok"
+                  onChange={vendorId => {
+                    const vendor = controller.vendors.find(item => item.id === vendorId);
+                    controller.onChangeForm({ vendorId, vendorName: vendor?.name ?? '' });
+                  }}
+                  options={[
+                    { label: 'Pilih pemasok…', value: '' },
+                    ...controller.vendors.map(vendor => ({ label: vendor.name, value: vendor.id })),
+                  ]}
+                  searchable
+                  searchPlaceholder="Cari pemasok…"
+                  value={form.vendorId}
+                  style={vendorLocked ? styles.disabledControl : undefined}
+                />
+                {vendorLocked ? (
+                  <Text style={styles.switchHint}>
+                    Pemasok tidak bisa diubah setelah PO dikirim.
+                  </Text>
+                ) : null}
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Dompet">
+                <KolamDropdownSelect
+                  accessibilityLabel="Pilih dompet"
+                  label="Dompet"
+                  onChange={walletId => controller.onChangeForm({ walletId })}
+                  options={[
+                    { label: 'Tanpa dompet', value: '' },
+                    ...controller.walletOptions.map(wallet => ({
+                      label: `${wallet.name} (${wallet.type})`,
+                      value: wallet.id,
+                    })),
+                  ]}
+                  value={form.walletId}
+                />
+              </FieldShell>
+            </View>
           </View>
         </View>
 
@@ -681,30 +709,6 @@ function KolamPurchaseOrderForm({
         </View>
       </KolamContentFrame>
 
-      <View style={styles.formActions}>
-        <KolamCancelButton
-          disabled={controller.mutating}
-          onPress={() => {
-            controller.onBackToList();
-            onRouteChange?.(
-              controller.selectedPO
-                ? `${KOLAM_PURCHASE_ORDER_ROOT}/${controller.selectedPO.id}`
-                : KOLAM_PURCHASE_ORDER_ROOT,
-            );
-          }}
-        />
-        <KolamSaveButton
-          disabled={controller.mutating}
-          label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
-          onPress={() => {
-            void controller.onSave().then(id => {
-              if (id) {
-                onRouteChange?.(`${KOLAM_PURCHASE_ORDER_ROOT}/${id}`);
-              }
-            });
-          }}
-        />
-      </View>
       </KolamDetailScrollSurface>
     </View>
   );
@@ -2825,11 +2829,16 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 24,
   },
-  formActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
+  poBasicInfoCard: {
+    alignSelf: 'stretch',
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    minWidth: 0,
+    padding: 12,
+    width: '100%',
   },
   headerActions: {
     flexDirection: 'row',
