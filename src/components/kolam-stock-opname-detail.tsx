@@ -300,14 +300,6 @@ export function KolamStockOpnameDetail({
                   }}
                 />
               ) : null}
-              {canUpdate &&
-              ['draft', 'in_review', 'ready_to_post'].includes(header.status) ? (
-                <KolamCancelButton
-                  disabled={controller.acting}
-                  label="Batalkan"
-                  onPress={() => setCancelOpen(true)}
-                />
-              ) : null}
               {controller.isCancelled && canDelete ? (
                 <KolamDeleteButton
                   disabled={controller.acting}
@@ -330,6 +322,14 @@ export function KolamStockOpnameDetail({
                   void controller.onExportPdf();
                 }}
               />
+              {canUpdate &&
+              ['draft', 'in_review', 'ready_to_post'].includes(header.status) ? (
+                <KolamCancelButton
+                  disabled={controller.acting}
+                  label="Batalkan"
+                  onPress={() => setCancelOpen(true)}
+                />
+              ) : null}
             </View>
           </View>
         </View>
