@@ -22,6 +22,7 @@ export type KolamNavigationModuleIcon =
   | 'daraMarketIntel'
   | 'daraSeo'
   | 'daraTax'
+  | 'daraTraining'
   | 'discountApproval'
   | 'download'
   | 'enclosure'
@@ -991,6 +992,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/list-of-users/dara-training', {
         group: undefined,
         label: 'Pelatihan DARA',
+        moduleIcon: 'daraTraining',
       }),
     ],
   },
