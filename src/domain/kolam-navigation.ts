@@ -1738,7 +1738,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     baseRoute: '/suppliers',
     labelSuffix: 'Baru',
     route: '/suppliers/create',
-    description: 'Tambah pemasok baru (fase berikutnya)',
+    description: 'Tambah pemasok baru',
   },
   {
     baseRoute: '/suppliers',
@@ -1749,9 +1749,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/suppliers',
+    label: 'Rubah pemasok',
     labelSuffix: 'Edit',
     route: '/suppliers/:id/edit',
-    description: 'Ubah data pemasok (fase berikutnya)',
+    description: 'Ubah data pemasok',
   },
   {
     baseRoute: '/purchase-order',

@@ -499,7 +499,7 @@ function KolamSupplierDetail({
     const contextLabel =
       controller.mode === 'new'
         ? 'Pemasok baru'
-        : `Edit · ${controller.form.name?.trim() || vendor?.name || 'Pemasok'}`;
+        : `Rubah pemasok · ${controller.form.name?.trim() || vendor?.name || 'Pemasok'}`;
 
     return (
       <View style={styles.detailSurface}>
