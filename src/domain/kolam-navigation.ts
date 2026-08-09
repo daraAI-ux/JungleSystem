@@ -1758,9 +1758,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/purchase-order',
-    labelSuffix: 'Create',
+    label: 'Buat purchase order',
+    labelSuffix: 'Buat',
     route: '/purchase-order/create',
-    description: 'Create purchase order page from live Kolam',
+    description: 'Buat pesanan pembelian baru untuk pemasok.',
   },
   {
     baseRoute: '/purchase-order',
@@ -1770,9 +1771,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/purchase-order',
-    labelSuffix: 'Edit',
+    label: 'Rubah purchase order',
+    labelSuffix: 'Rubah',
     route: '/purchase-order/:id/edit',
-    description: 'Edit purchase order page from live Kolam',
+    description: 'Perbarui data pesanan pembelian.',
   },
   {
     baseRoute: '/production',

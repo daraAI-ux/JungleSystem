@@ -514,8 +514,8 @@ function KolamPurchaseOrderForm({
   const vendorLocked = controller.mode === 'edit' && controller.selectedPO?.status === 'sent';
   const contextLabel =
     controller.mode === 'create'
-      ? 'PO baru'
-      : `Edit · ${controller.selectedPO?.poCode ?? ''}`;
+      ? 'Buat purchase order'
+      : `Rubah purchase order · ${controller.selectedPO?.poCode ?? ''}`;
   const handleCancel = () => {
     controller.onBackToList();
     onRouteChange?.(
