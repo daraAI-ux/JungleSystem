@@ -19,6 +19,7 @@ import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
 import {KOLAM_SALES_SOURCE_MODULE_ICON_SVG} from '../assets/icons/sales-source-module-icon-svg';
 import {KOLAM_SALES_MODULE_ICON_SVG} from '../assets/icons/sales-module-icon-svg';
 import {KOLAM_SERVICE_MODULE_ICON_SVG} from '../assets/icons/service-module-icon-svg';
+import {KOLAM_SHIPPING_METHOD_MODULE_ICON_SVG} from '../assets/icons/shipping-method-module-icon-svg';
 import {KOLAM_SERIAL_MODULE_ICON_SVG} from '../assets/icons/serial-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
 import {KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG} from '../assets/icons/stock-movement-module-icon-svg';
@@ -58,6 +59,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   sales: 'Icon Penjualan',
   salesSource: 'Icon Sumber Penjualan',
   service: 'Icon Layanan',
+  shippingMethod: 'Icon Metode Pengiriman',
   serial: 'Icon Serial Produk',
   species: 'Icon Spesies',
   stockMovement: 'Icon Transaksi Stok',
@@ -105,6 +107,9 @@ const SALES_SOURCE_ICON_PATHS = getSvgPathData(
 );
 const SALES_ICON_PATHS = getSvgPathData(KOLAM_SALES_MODULE_ICON_SVG);
 const SERVICE_ICON_PATHS = getSvgPathData(KOLAM_SERVICE_MODULE_ICON_SVG);
+const SHIPPING_METHOD_ICON_PATHS = getSvgPathData(
+  KOLAM_SHIPPING_METHOD_MODULE_ICON_SVG,
+);
 const SERIAL_ICON_PATHS = getSvgPathData(KOLAM_SERIAL_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
 const STOCK_MOVEMENT_ICON_PATHS = getSvgPathData(
@@ -294,6 +299,12 @@ export function KolamModuleIcon({
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {SERVICE_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'shippingMethod' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {SHIPPING_METHOD_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
       ) : kind === 'serial' ? (

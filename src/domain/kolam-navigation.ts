@@ -34,6 +34,7 @@ export type KolamNavigationModuleIcon =
   | 'sales'
   | 'salesSource'
   | 'service'
+  | 'shippingMethod'
   | 'serial'
   | 'species'
   | 'stockMovement'
@@ -503,6 +504,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/metode-pengiriman',
         description:
           'Kelola opsi pengiriman internal dan layanan Biteship untuk checkout',
+        moduleIcon: 'shippingMethod',
         requiredAccess: ['kolam'],
       },
       {
@@ -949,6 +951,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/metode-pengiriman', {
         group: undefined,
         label: 'Metode Pengiriman',
+        moduleIcon: 'shippingMethod',
       }),
     ],
   },
