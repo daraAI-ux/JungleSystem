@@ -1267,32 +1267,38 @@ function KolamSupplierTaxProfileCard({
           title="Memuat NPWP"
         />
       ) : (
-        <View style={settingsWebFormStyles.settingsWebFormFields}>
+        <View style={styles.taxProfileBody}>
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="NPWP 15 digit">
+                <KolamFormTextField
+                  editable={canEdit && !controller.taxProfileSaving}
+                  mode="numeric"
+                  onChangeText={npwp =>
+                    controller.onChangeTaxProfile({ npwp })
+                  }
+                  placeholder="15 digit"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.npwp}
+                />
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="NPWP 16 digit">
+                <KolamFormTextField
+                  editable={canEdit && !controller.taxProfileSaving}
+                  mode="numeric"
+                  onChangeText={npwp16 =>
+                    controller.onChangeTaxProfile({ npwp16 })
+                  }
+                  placeholder="16 digit"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.npwp16}
+                />
+              </FieldShell>
+            </View>
+          </View>
           <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
-            <FieldShell label="NPWP 15 digit">
-              <KolamFormTextField
-                editable={canEdit && !controller.taxProfileSaving}
-                mode="numeric"
-                onChangeText={npwp =>
-                  controller.onChangeTaxProfile({ npwp })
-                }
-                placeholder="15 digit"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.npwp}
-              />
-            </FieldShell>
-            <FieldShell label="NPWP 16 digit">
-              <KolamFormTextField
-                editable={canEdit && !controller.taxProfileSaving}
-                mode="numeric"
-                onChangeText={npwp16 =>
-                  controller.onChangeTaxProfile({ npwp16 })
-                }
-                placeholder="16 digit"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.npwp16}
-              />
-            </FieldShell>
             <FieldShell label="Nama legal (faktur)">
               <KolamFormTextField
                 editable={canEdit && !controller.taxProfileSaving}
@@ -2413,6 +2419,13 @@ const styles = StyleSheet.create({
   taxProfileCard: {
     backgroundColor: '#f5f0ff',
     borderColor: '#ddd6fe',
+    borderWidth: 1,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  taxProfileBody: {
+    gap: 14,
   },
   photoGrid: {
     flexDirection: 'row',
