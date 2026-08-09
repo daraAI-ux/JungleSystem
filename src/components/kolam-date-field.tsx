@@ -16,12 +16,12 @@ import {
   getKolamCalendarMonthLabel,
   parseKolamIsoDate,
 } from '../domain/kolam-date';
-import { kolamVisualTokens as V } from '../domain/kolam-visual';
-import { KolamButton } from './kolam-button';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {KolamButton} from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
-import { KolamChevronIcon } from './kolam-chevron-icon';
-import { kolamFormControlStyles } from './kolam-form-control-styles';
-import { KolamInteractionFrame } from './kolam-interaction-frame';
+import {KolamChevronIcon} from './kolam-chevron-icon';
+import {kolamFormControlStyles} from './kolam-form-control-styles';
+import {KolamInteractionFrame} from './kolam-interaction-frame';
 
 type ScreenOverlayLayout = {
   height: number;
@@ -34,6 +34,7 @@ export function KolamDateField({
   accessibilityLabel,
   label,
   onChange,
+  panelVariant = 'dialog',
   placeholder = 'Pilih tanggal',
   showLabelInTrigger = true,
   style,
@@ -43,6 +44,7 @@ export function KolamDateField({
   accessibilityLabel?: string;
   label: string;
   onChange: (value: string) => void;
+  panelVariant?: 'dialog' | 'dropdown';
   placeholder?: string;
   showLabelInTrigger?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -58,6 +60,7 @@ export function KolamDateField({
     React.useState<ScreenOverlayLayout | null>(null);
   const [cursorYear, setCursorYear] = React.useState(initialCursor.getFullYear());
   const [cursorMonth, setCursorMonth] = React.useState(initialCursor.getMonth());
+  const dropdownPanel = panelVariant === 'dropdown';
 
   React.useEffect(() => {
     if (!open) {
@@ -107,8 +110,8 @@ export function KolamDateField({
       setScreenOverlay({
         height: viewport.height,
         left: 0,
-        top: V.control.inputHeight + 4,
-        width: Math.min(340, viewport.width),
+        top: 0,
+        width: viewport.width,
       });
       setOpen(true);
       return;
@@ -130,6 +133,16 @@ export function KolamDateField({
     setCursorYear(next.getFullYear());
     setCursorMonth(next.getMonth());
   };
+
+  const dropdownLeft = screenOverlay
+    ? Math.min(
+        Math.max(8, -screenOverlay.left),
+        Math.max(8, screenOverlay.width - 328),
+      )
+    : 8;
+  const dropdownTop = screenOverlay
+    ? -screenOverlay.top + V.control.inputHeight + 4
+    : V.control.inputHeight + 4;
 
   return (
     <View
@@ -155,6 +168,7 @@ export function KolamDateField({
           pointerEvents="box-none"
           style={[
             styles.screenOverlay,
+            dropdownPanel ? styles.screenOverlayDropdown : null,
             {
               height: screenOverlay.height,
               left: screenOverlay.left,
@@ -167,13 +181,23 @@ export function KolamDateField({
             accessibilityLabel="Tutup kalender"
             accessibilityRole="button"
             onPress={closeCalendar}
-            style={styles.backdrop}
+            style={[
+              styles.backdrop,
+              dropdownPanel ? styles.backdropDropdown : null,
+            ]}
           />
-          <View accessibilityLabel={`${label} calendar`} style={styles.dialog}>
+          <View
+            accessibilityLabel={`${label} calendar`}
+            style={[
+              styles.dialog,
+              dropdownPanel ? styles.dropdownDialog : null,
+              dropdownPanel ? {left: dropdownLeft, top: dropdownTop} : null,
+            ]}
+          >
             <View style={styles.monthHeader}>
               <KolamButton
                 accessibilityLabel="Bulan sebelumnya"
-                label="‹"
+                label="<"
                 onPress={() => shiftMonth(-1)}
               />
               <Text style={styles.monthLabel}>
@@ -181,7 +205,7 @@ export function KolamDateField({
               </Text>
               <KolamButton
                 accessibilityLabel="Bulan berikutnya"
-                label="›"
+                label=">"
                 onPress={() => shiftMonth(1)}
               />
             </View>
@@ -286,9 +310,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  screenOverlayDropdown: {
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
+  },
+  backdropDropdown: {
+    backgroundColor: 'transparent',
   },
   dialog: {
     width: 340,
@@ -300,11 +331,16 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     backgroundColor: V.colors.bg,
     shadowColor: V.colors.fg,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOffset: {width: 0, height: 12},
     shadowOpacity: 0.16,
     shadowRadius: 20,
     zIndex: 3,
     elevation: 32,
+  },
+  dropdownDialog: {
+    maxWidth: undefined,
+    position: 'absolute',
+    width: 320,
   },
   monthHeader: {
     flexDirection: 'row',

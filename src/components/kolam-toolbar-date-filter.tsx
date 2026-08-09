@@ -22,6 +22,7 @@ export function KolamToolbarDateFilter({
       accessibilityLabel={accessibilityLabel ?? label}
       label={label}
       onChange={onChange}
+      panelVariant="dropdown"
       placeholder={placeholder ?? label}
       showLabelInTrigger={false}
       style={[styles.root, style]}
