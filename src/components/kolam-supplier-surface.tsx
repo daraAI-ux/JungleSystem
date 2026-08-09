@@ -2301,7 +2301,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   supplierSummaryLeadingSlot: {
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
     minHeight: 128,
+    minWidth: 132,
   },
   supplierSummaryValueStack: {
     gap: 2,
