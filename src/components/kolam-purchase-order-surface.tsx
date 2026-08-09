@@ -1321,17 +1321,73 @@ function KolamPurchaseOrderDetail({
             variant="settingsWebConfig"
           >
             <Text style={styles.sectionTitle}>Timeline pengadaan</Text>
-            <KolamDescriptionList
-              accessibilityLabel="Timeline pengadaan"
-              rows={[
-                { id: 'ordered', label: 'Dipesan', value: formatPODateTime(po.orderedAt), meta: '', tone: 'default' },
-                { id: 'delivery', label: 'Pengiriman', value: formatPODateTime(po.deliveryAt), meta: '', tone: 'default' },
-                { id: 'received', label: 'Diterima', value: formatPODateTime(po.receivedAt), meta: po.receivedByName || '', tone: 'default' },
-                { id: 'checked', label: 'Diperiksa', value: formatPODateTime(po.onCheckAt), meta: po.checkedByName || '', tone: 'default' },
-                { id: 'completed', label: 'Selesai', value: formatPODateTime(po.completedAt), meta: '', tone: 'default' },
-                { id: 'cancelled', label: 'Dibatalkan', value: formatPODateTime(po.cancelledAt), meta: '', tone: 'default' },
-              ]}
-            />
+            <ScrollView
+              contentContainerStyle={styles.poTimelineScroll}
+              nestedScrollEnabled
+              style={styles.poTimelineScrollView}
+            >
+              <View style={styles.poTimeline}>
+                {[
+                  {
+                    id: 'ordered',
+                    label: 'Dipesan',
+                    value: formatPODateTime(po.orderedAt),
+                  },
+                  {
+                    id: 'delivery',
+                    label: 'Pengiriman',
+                    value: formatPODateTime(po.deliveryAt),
+                  },
+                  {
+                    id: 'received',
+                    label: 'Diterima',
+                    meta: po.receivedByName || '',
+                    value: formatPODateTime(po.receivedAt),
+                  },
+                  {
+                    id: 'checked',
+                    label: 'Diperiksa',
+                    meta: po.checkedByName || '',
+                    value: formatPODateTime(po.onCheckAt),
+                  },
+                  {
+                    id: 'completed',
+                    label: 'Selesai',
+                    value: formatPODateTime(po.completedAt),
+                  },
+                  {
+                    id: 'cancelled',
+                    label: 'Dibatalkan',
+                    value: formatPODateTime(po.cancelledAt),
+                  },
+                ].map(entry => {
+                  const hasValue = entry.value !== '—';
+                  return (
+                    <View key={entry.id} style={styles.poTimelineItem}>
+                      <View
+                        style={[
+                          styles.poTimelineDot,
+                          entry.id === 'cancelled' && hasValue
+                            ? styles.poTimelineDotDanger
+                            : hasValue
+                              ? styles.poTimelineDotSuccess
+                              : styles.poTimelineDotSecondary,
+                        ]}
+                      />
+                      <View style={styles.poTimelineBody}>
+                        <Text style={styles.poTimelineTitle}>
+                          {entry.label}
+                        </Text>
+                        <Text style={styles.metaText}>
+                          {entry.value}
+                          {entry.meta ? ` · ${entry.meta}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
             {po.vendorInvoice ? (
               <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
             ) : null}
@@ -2785,6 +2841,50 @@ const styles = StyleSheet.create({
     color: V.colors.success,
     fontSize: 12,
     fontVariant: ['tabular-nums'],
+  },
+  poTimelineScrollView: {
+    maxHeight: 320,
+  },
+  poTimelineScroll: {
+    paddingBottom: 4,
+    paddingTop: 2,
+  },
+  poTimeline: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 2,
+    gap: 14,
+    paddingLeft: 12,
+  },
+  poTimelineItem: {
+    paddingLeft: 4,
+    position: 'relative',
+  },
+  poTimelineDot: {
+    borderColor: V.colors.bg,
+    borderRadius: 6,
+    borderWidth: 2,
+    height: 10,
+    left: -18,
+    position: 'absolute',
+    top: 3,
+    width: 10,
+  },
+  poTimelineDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  poTimelineDotDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  poTimelineDotSecondary: {
+    backgroundColor: V.colors.mutedFg,
+  },
+  poTimelineBody: {
+    gap: 2,
+  },
+  poTimelineTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
   },
   segmentRow: {
     flexDirection: 'row',
