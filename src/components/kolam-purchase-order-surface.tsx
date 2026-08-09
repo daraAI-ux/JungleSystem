@@ -1933,7 +1933,7 @@ function KolamPOPaymentSection({
         </View>
       </View>
 
-      <View style={styles.headerActions}>
+      <View style={[styles.headerActions, styles.poPaymentActions]}>
         {po.paymentStatus !== 'paid' ? (
           <KolamButton
             disabled={controller.mutating}
@@ -2908,6 +2908,7 @@ const styles = StyleSheet.create({
   poDetailTimelineColumn: {
     flexBasis: 0,
     flexGrow: 1,
+    gap: 8,
     minWidth: 260,
   },
   detailSplitCell: {
@@ -2974,6 +2975,9 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     gap: 8,
     paddingTop: 12,
+  },
+  poPaymentActions: {
+    justifyContent: 'flex-end',
   },
   poBreakdownCard: {
     backgroundColor: V.colors.mutedSoft,
