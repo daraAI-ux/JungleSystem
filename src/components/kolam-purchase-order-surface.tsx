@@ -3392,11 +3392,10 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   taxFakturNoteCard: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
+    backgroundColor: V.colors.bg,
+    borderColor: '#ddd6fe',
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: 4,
     padding: 10,
   },
   proofGroup: {
