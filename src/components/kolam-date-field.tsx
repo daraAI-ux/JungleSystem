@@ -243,6 +243,7 @@ export function KolamDateField({
                     <Text
                       style={[
                         styles.dayText,
+                        isToday && !selected ? styles.dayTextToday : null,
                         selected ? styles.dayTextSelected : null,
                       ]}
                     >
@@ -384,13 +385,16 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primary,
   },
   dayToday: {
-    borderWidth: 1,
-    borderColor: V.colors.primary,
+    backgroundColor: 'transparent',
   },
   dayText: {
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '500',
+  },
+  dayTextToday: {
+    color: V.colors.success,
+    fontWeight: '700',
   },
   dayTextSelected: {
     color: V.colors.primaryFg,
