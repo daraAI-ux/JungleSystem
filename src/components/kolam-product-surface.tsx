@@ -411,6 +411,14 @@ export function KolamProductSurface({
                       label={categoryFilterLabel}
                       onPress={() => openFilterPanel('category')}
                       open={activeFilterPanel === 'category'}
+                      style={
+                        isRawCatalog ? null : styles.listToolbarFilterTrigger
+                      }
+                      textStyle={
+                        isRawCatalog
+                          ? null
+                          : styles.listToolbarFilterTriggerText
+                      }
                       variant="quiet"
                     />
                   </View>
@@ -426,6 +434,14 @@ export function KolamProductSurface({
                       label={brandFilterLabel}
                       onPress={() => openFilterPanel('brand')}
                       open={activeFilterPanel === 'brand'}
+                      style={
+                        isRawCatalog ? null : styles.listToolbarFilterTrigger
+                      }
+                      textStyle={
+                        isRawCatalog
+                          ? null
+                          : styles.listToolbarFilterTriggerText
+                      }
                       variant="quiet"
                     />
                   </View>
@@ -443,6 +459,8 @@ export function KolamProductSurface({
                         label={stockFilterLabel}
                         onPress={() => openFilterPanel('stock')}
                         open={activeFilterPanel === 'stock'}
+                        style={styles.listToolbarFilterTrigger}
+                        textStyle={styles.listToolbarFilterTriggerText}
                         variant="quiet"
                       />
                     </View>
@@ -10129,6 +10147,15 @@ const styles = StyleSheet.create({
     flexBasis: 0,
     flexGrow: 1,
     minWidth: 120,
+  },
+  listToolbarFilterTrigger: {
+    alignSelf: 'stretch',
+    flexGrow: 1,
+    maxWidth: '100%',
+    width: '100%',
+  },
+  listToolbarFilterTriggerText: {
+    flexGrow: 1,
   },
   listToolbarSearch: {
     flexGrow: 1,
