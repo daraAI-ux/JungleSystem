@@ -23,6 +23,7 @@ import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 
 const IUCN_MODULE_ICON_SOURCE = require('../assets/icons/iucn-module-icon.png');
 const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-icon.png');
+const ENCLOSURE_MODULE_ICON_SOURCE = require('../assets/icons/enclosure-module-icon.png');
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   archive: 'Icon Arsip',
@@ -30,6 +31,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   cashflowSession: 'Icon Sesi Tunai',
   category: 'Icon Kategori',
   download: 'Icon Download',
+  enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
   iucn: 'Icon Status IUCN',
   media: 'Icon Media',
@@ -133,6 +135,12 @@ export function KolamModuleIcon({
             <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
+      ) : kind === 'enclosure' ? (
+        <Image
+          resizeMode="contain"
+          source={ENCLOSURE_MODULE_ICON_SOURCE}
+          style={styles.imageIcon}
+        />
       ) : kind === 'tag' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={TAG_ICON_PATH} fill="#1a1a1a" fillRule="nonzero" />

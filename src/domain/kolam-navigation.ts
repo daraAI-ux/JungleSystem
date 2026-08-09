@@ -17,6 +17,7 @@ export type KolamNavigationModuleIcon =
   | 'cashflowSession'
   | 'category'
   | 'download'
+  | 'enclosure'
   | 'fieldcustom'
   | 'iucn'
   | 'media'
@@ -359,6 +360,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/enclosures',
         description: 'Data kandang dan habitat dari live Kolam',
         group: 'Stok Hidup',
+        moduleIcon: 'enclosure',
         requiredAccess: ['kolam'],
       },
       {
@@ -864,6 +866,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/enclosures', {
         group: 'Produksi',
         label: 'Daftar Kandang',
+        moduleIcon: 'enclosure',
       }),
       sidebarItem('/locations', {
         description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
