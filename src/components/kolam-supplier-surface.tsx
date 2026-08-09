@@ -1899,7 +1899,7 @@ function KolamSupplierForm({
           <SupplierEditSection title="Status & Merek">
             <View style={styles.supplierBasicInfoCard}>
               <View style={styles.formSplitRow}>
-                <View style={styles.formSplitCell}>
+                <View style={styles.formEqualSplitCell}>
                   <View style={styles.supplierStatusTile}>
                     <FieldShell label="Status" required>
                       <KolamDropdownSelect
@@ -1929,7 +1929,7 @@ function KolamSupplierForm({
                     </FieldShell>
                   </View>
                 </View>
-                <View style={styles.formSplitCell}>
+                <View style={styles.formEqualSplitCell}>
                   <View style={styles.supplierStatusTile}>
                     <FieldShell label="Distributor resmi">
                       <View style={styles.switchRow}>
@@ -2003,7 +2003,7 @@ function KolamSupplierForm({
               </FieldShell>
 
               <View style={styles.formSplitRow}>
-                <View style={styles.formSplitCell}>
+                <View style={styles.formEqualSplitCell}>
                   <View style={styles.supplierStatusTile}>
                     <FieldShell label="Tautan eksternal">
                       <SupplierExternalLinksEditor
@@ -2017,7 +2017,7 @@ function KolamSupplierForm({
                   </View>
                 </View>
                 {form.isOfficialDistributor ? (
-                  <View style={styles.formSplitCell}>
+                  <View style={styles.formEqualSplitCell}>
                     <View style={styles.supplierStatusTile}>
                       <FieldShell label="Catatan kontak garansi">
                         <KolamFormTextField
@@ -2636,6 +2636,12 @@ const styles = StyleSheet.create({
   },
   formSplitCell: {
     flexGrow: 1,
+    minWidth: 220,
+  },
+  formEqualSplitCell: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
     minWidth: 220,
   },
   fieldHint: {
