@@ -42,6 +42,7 @@ import {KOLAM_TERMS_MODULE_ICON_SVG} from '../assets/icons/terms-module-icon-svg
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import {KOLAM_UNEXPECTED_EXPENSE_MODULE_ICON_SVG} from '../assets/icons/unexpected-expense-module-icon-svg';
+import {KOLAM_UNEXPECTED_INCOME_MODULE_ICON_SVG} from '../assets/icons/unexpected-income-module-icon-svg';
 import {KOLAM_VOUCHER_MODULE_ICON_SVG} from '../assets/icons/voucher-module-icon-svg';
 import {KOLAM_WALLET_MODULE_ICON_SVG} from '../assets/icons/wallet-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
@@ -97,6 +98,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   taxonomy: 'Icon Taksonomi',
   teranura: 'Icon Teranura',
   unexpectedExpense: 'Icon Pengeluaran Tak Terduga',
+  unexpectedIncome: 'Icon Pemasukan Tak Terduga',
   unit: 'Icon Satuan',
   voucher: 'Icon Voucher',
   wallet: 'Icon Dompet',
@@ -165,6 +167,9 @@ const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
 const UNEXPECTED_EXPENSE_ICON_PATHS = getSvgPathData(
   KOLAM_UNEXPECTED_EXPENSE_MODULE_ICON_SVG,
+);
+const UNEXPECTED_INCOME_ICON_PATHS = getSvgPathData(
+  KOLAM_UNEXPECTED_INCOME_MODULE_ICON_SVG,
 );
 const VOUCHER_ICON_PATHS = getSvgPathData(KOLAM_VOUCHER_MODULE_ICON_SVG);
 const WALLET_ICON_PATHS = getSvgPathData(KOLAM_WALLET_MODULE_ICON_SVG);
@@ -458,6 +463,12 @@ export function KolamModuleIcon({
       ) : kind === 'unexpectedExpense' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {UNEXPECTED_EXPENSE_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
+        </Svg>
+      ) : kind === 'unexpectedIncome' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {UNEXPECTED_INCOME_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
