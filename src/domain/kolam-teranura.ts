@@ -191,7 +191,12 @@ export interface KolamTeranuraListResult {
   pagination: KolamTeranuraPagination;
 }
 
-export type KolamTeranuraSurfaceMode = 'list' | 'detail' | 'unsupported';
+export type KolamTeranuraSurfaceMode =
+  | 'list'
+  | 'detail'
+  | 'edit'
+  | 'new'
+  | 'unsupported';
 export type KolamTeranuraDetailTab =
   | 'overview'
   | 'pricing'
@@ -237,13 +242,20 @@ export function getKolamTeranuraSurfaceMode(route: string): KolamTeranuraSurface
     return 'list';
   }
 
+  if (routePath === '/teranura/create' || routePath === '/teranura/baru') {
+    return 'new';
+  }
+
+  if (routePath.endsWith('/edit') && getKolamTeranuraRouteId(route)) {
+    return 'edit';
+  }
+
   if (
     routePath.startsWith('/teranura/') &&
-    !routePath.endsWith('/edit') &&
-    routePath !== '/teranura/create' &&
     routePath !== '/teranura/freyr' &&
     !routePath.startsWith('/teranura/freyr/') &&
-    !routePath.endsWith('/statistics')
+    !routePath.endsWith('/statistics') &&
+    getKolamTeranuraRouteId(route)
   ) {
     return 'detail';
   }
@@ -253,8 +265,20 @@ export function getKolamTeranuraSurfaceMode(route: string): KolamTeranuraSurface
 
 export function getKolamTeranuraRouteId(route: string) {
   const routePath = route.split('?')[0].replace(/\/+$/, '');
-  const [, , id] = routePath.split('/');
-  return id ? decodeURIComponent(id) : '';
+  const match = routePath.match(/^\/teranura\/([^/]+)(?:\/edit)?$/);
+  const id = match?.[1] ? decodeURIComponent(match[1]) : '';
+  if (!id || id === 'create' || id === 'baru' || id === 'freyr') {
+    return '';
+  }
+  return id;
+}
+
+export function buildKolamTeranuraEditRoute(id: string) {
+  return `${TERANURA_SHELL_ROOT}/${encodeURIComponent(id)}/edit`;
+}
+
+export function buildKolamTeranuraCreateRoute() {
+  return `${TERANURA_SHELL_ROOT}/create`;
 }
 
 /** List root `/teranura` (IoT hidup di detail Freyer, bukan shell list). */

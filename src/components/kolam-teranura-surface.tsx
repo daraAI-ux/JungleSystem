@@ -2,7 +2,9 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { KolamFreyerIotDevice } from '../domain/kolam-freyer-iot-device';
 import {
+  buildKolamTeranuraCreateRoute,
   buildKolamTeranuraDetailRoute,
+  buildKolamTeranuraEditRoute,
   buildKolamTeranuraShellRoute,
   getKolamTeranuraDetailTab,
   type KolamTeranura,
@@ -50,6 +52,7 @@ import {
   TeranuraStatisticsTab,
   TeranuraSummaryTab,
 } from './kolam-teranura-detail-tabs';
+import { TeranuraEditFormPage } from './kolam-teranura-edit-form';
 
 type TeranuraFilterPanel = 'category' | 'brand' | 'sellable';
 const TERANURA_FILTER_PANEL_WIDTH = 320;
@@ -62,6 +65,29 @@ export function KolamTeranuraSurface({
   route?: string;
 }) {
   const controller = useKolamTeranuraController(route);
+
+  if (controller.mode === 'new' || controller.mode === 'edit') {
+    return (
+      <View style={styles.surface}>
+        {controller.error ? (
+          <Text style={styles.error}>{controller.error}</Text>
+        ) : null}
+        <TeranuraEditFormPage
+          controller={controller}
+          onCancel={() => {
+            if (controller.mode === 'edit' && controller.selectedItem?.id) {
+              onRouteChange?.(
+                buildKolamTeranuraDetailRoute(controller.selectedItem.id),
+              );
+              return;
+            }
+            onRouteChange?.(buildKolamTeranuraShellRoute());
+          }}
+          onSaved={id => onRouteChange?.(buildKolamTeranuraDetailRoute(id))}
+        />
+      </View>
+    );
+  }
 
   return (
     <KolamTeranuraShell controller={controller} onRouteChange={onRouteChange}>
@@ -120,7 +146,9 @@ function KolamTeranuraShell({
             {item ? (
               <KolamEditButton
                 intent="primary"
-                onPress={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
+                onPress={() =>
+                  onRouteChange?.(buildKolamTeranuraEditRoute(item.id))
+                }
               />
             ) : null}
             {item ? (
@@ -323,7 +351,7 @@ function KolamTeranuraList({
                 intent="primary"
                 label="Baru"
                 tone="positive"
-                onPress={() => onRouteChange?.('/teranura/create')}
+                onPress={() => onRouteChange?.(buildKolamTeranuraCreateRoute())}
               />
             </View>
           </View>
@@ -378,7 +406,7 @@ function KolamTeranuraList({
         renderActions={item => (
           <TeranuraActionsMenu
             item={item}
-            onEdit={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
+            onEdit={() => onRouteChange?.(buildKolamTeranuraEditRoute(item.id))}
             onSelect={() => onRouteChange?.(`/teranura/${item.id}`)}
           />
         )}
