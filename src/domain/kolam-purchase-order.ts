@@ -1215,7 +1215,6 @@ export interface KolamPOFormState {
   shippingCost: string;
   discountType: KolamPODiscountType;
   discountValue: string;
-  sendImmediately: boolean;
   items: KolamPOFormLineItem[];
   paymentType: KolamPOPaymentType;
   tempoMode: KolamPOTempoMode;
@@ -1257,7 +1256,6 @@ export function createEmptyKolamPOFormState(): KolamPOFormState {
     shippingCost: '0',
     discountType: 'percent',
     discountValue: '0',
-    sendImmediately: false,
     items: [createEmptyKolamPOFormLineItem()],
     paymentType: 'cash',
     tempoMode: 'net_days',
@@ -1356,7 +1354,6 @@ export function buildCreatePOBody(form: KolamPOFormState): KolamCreatePOBody {
       value: Number(form.discountValue) || 0,
     },
     wallet: form.walletId || undefined,
-    status: form.sendImmediately ? 'sent' : undefined,
     paymentConfig: buildKolamPOPaymentConfig(form),
   };
 }

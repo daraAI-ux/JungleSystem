@@ -601,22 +601,6 @@ function KolamPurchaseOrderForm({
             </View>
           </View>
         </View>
-
-        {controller.mode === 'create' ? (
-          <FieldShell label="Kirim langsung">
-            <View style={styles.switchRow}>
-              <Text style={styles.switchHint}>
-                Aktifkan untuk mengirim PO ke pemasok segera setelah disimpan.
-              </Text>
-              <KolamSwitch
-                active={form.sendImmediately}
-                onPress={() =>
-                  controller.onChangeForm({ sendImmediately: !form.sendImmediately })
-                }
-              />
-            </View>
-          </FieldShell>
-        ) : null}
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
