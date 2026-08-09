@@ -2020,7 +2020,7 @@ function KolamPOFakturPajakSection({
 
   return (
     <KolamContentFrame
-      style={[styles.detailCard, styles.proofBorderCard]}
+      style={[styles.detailCard, styles.taxFakturCard]}
       variant="settingsWebConfig"
     >
       <View style={styles.itemsHeaderRow}>
@@ -2044,49 +2044,63 @@ function KolamPOFakturPajakSection({
       <Text style={styles.metaText}>
         Catatan internal DJP (bukan e-Faktur Coretax).
       </Text>
-      <FieldShell label="Nomor seri faktur">
-        <KolamFormTextField
-          onChangeText={setSerialNumber}
-          placeholder="Nomor seri faktur"
-          value={serialNumber}
-        />
-      </FieldShell>
-      <FieldShell label="Status faktur">
-        <KolamDropdownSelect
-          label="Status faktur"
-          onChange={value =>
-            setStatus(value as 'none' | 'draft' | 'issued' | 'cancelled')
-          }
-          options={[
-            { label: 'Belum ada', value: 'none' },
-            { label: 'Draft', value: 'draft' },
-            { label: 'Terbit', value: 'issued' },
-            { label: 'Batal', value: 'cancelled' },
-          ]}
-          value={status}
-        />
-      </FieldShell>
-      <FieldShell label="NPWP vendor">
-        <KolamFormTextField
-          onChangeText={setVendorNpwp}
-          placeholder="NPWP vendor"
-          value={vendorNpwp}
-        />
-      </FieldShell>
-      <FieldShell label="Nama vendor (faktur)">
-        <KolamFormTextField
-          onChangeText={setVendorName}
-          placeholder="Nama vendor pada faktur"
-          value={vendorName}
-        />
-      </FieldShell>
-      <FieldShell label="Catatan">
-        <KolamFormTextField
-          onChangeText={setNotes}
-          placeholder="Catatan faktur"
-          value={notes}
-        />
-      </FieldShell>
+      <View style={styles.taxFakturRow}>
+        <View style={styles.taxFakturFieldCard}>
+          <FieldShell label="Nomor seri faktur">
+            <KolamFormTextField
+              onChangeText={setSerialNumber}
+              placeholder="Nomor seri faktur"
+              value={serialNumber}
+            />
+          </FieldShell>
+        </View>
+        <View style={styles.taxFakturFieldCard}>
+          <FieldShell label="Status faktur">
+            <KolamDropdownSelect
+              label="Status faktur"
+              onChange={value =>
+                setStatus(value as 'none' | 'draft' | 'issued' | 'cancelled')
+              }
+              options={[
+                { label: 'Belum ada', value: 'none' },
+                { label: 'Draft', value: 'draft' },
+                { label: 'Terbit', value: 'issued' },
+                { label: 'Batal', value: 'cancelled' },
+              ]}
+              value={status}
+            />
+          </FieldShell>
+        </View>
+      </View>
+      <View style={styles.taxFakturRow}>
+        <View style={styles.taxFakturFieldCard}>
+          <FieldShell label="NPWP vendor">
+            <KolamFormTextField
+              onChangeText={setVendorNpwp}
+              placeholder="NPWP vendor"
+              value={vendorNpwp}
+            />
+          </FieldShell>
+        </View>
+        <View style={styles.taxFakturFieldCard}>
+          <FieldShell label="Nama vendor (faktur)">
+            <KolamFormTextField
+              onChangeText={setVendorName}
+              placeholder="Nama vendor pada faktur"
+              value={vendorName}
+            />
+          </FieldShell>
+        </View>
+      </View>
+      <View style={styles.taxFakturNoteCard}>
+        <FieldShell label="Catatan">
+          <KolamFormTextField
+            onChangeText={setNotes}
+            placeholder="Catatan faktur"
+            value={notes}
+          />
+        </FieldShell>
+      </View>
     </KolamContentFrame>
   );
 }
@@ -3053,6 +3067,37 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     padding: 12,
+  },
+  taxFakturCard: {
+    backgroundColor: '#f5f0ff',
+    borderColor: '#ddd6fe',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
+  taxFakturRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  taxFakturFieldCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: '#ddd6fe',
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    flex: 1,
+    minWidth: 220,
+    padding: 10,
+  },
+  taxFakturNoteCard: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: 4,
+    padding: 10,
   },
   proofGroup: {
     gap: 6,
