@@ -718,146 +718,149 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Metode pembayaran</Text>
-      <View style={styles.formSplitRow}>
-        <View style={styles.formSplitCell}>
-          <View style={styles.poPaymentTypeCard}>
-            <FieldShell label="Gunakan uang muka (DP)">
-              <View style={styles.switchRow}>
-                <Text style={styles.switchHint}>
-                  Aktifkan bila pemasok mensyaratkan uang muka sebelum pelunasan/cicilan.
-                </Text>
-                <KolamSwitch
-                  active={form.downPaymentEnabled}
-                  onPress={() =>
-                    controller.onChangeForm({ downPaymentEnabled: !form.downPaymentEnabled })
-                  }
-                />
-              </View>
-            </FieldShell>
-          </View>
-        </View>
-        <View style={styles.formSplitCell}>
-          <View style={styles.poPaymentTypeCard}>
-            <FieldShell label="Tipe pembayaran">
-              <KolamDropdownSelect
-                accessibilityLabel="Pilih metode pembayaran"
-                label="Metode pembayaran"
-                onChange={paymentType =>
-                  controller.onChangeForm({
-                    paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
-                  })
-                }
-                options={[
-                  { label: paymentTypeLabel('cash'), value: 'cash' },
-                  { label: paymentTypeLabel('tempo'), value: 'tempo' },
-                  { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
-                ]}
-                value={form.paymentType}
-              />
-            </FieldShell>
-          </View>
-        </View>
-      </View>
-
-      {form.paymentType === 'tempo' ? (
+      <View style={styles.poPaymentConfigBox}>
         <View style={styles.formSplitRow}>
           <View style={styles.formSplitCell}>
-            <FieldShell label="Mode tempo">
-              <View style={styles.segmentRow}>
-                <KolamButton
-                  intent={form.tempoMode === 'net_days' ? 'primary' : 'outline'}
-                  label="Net days"
-                  onPress={() => controller.onChangeForm({ tempoMode: 'net_days' })}
-                />
-                <KolamButton
-                  intent={form.tempoMode === 'specific_date' ? 'primary' : 'outline'}
-                  label="Tanggal tertentu"
-                  onPress={() => controller.onChangeForm({ tempoMode: 'specific_date' })}
-                />
-              </View>
-            </FieldShell>
+            <View style={styles.poPaymentTypeCard}>
+              <FieldShell label="Gunakan uang muka (DP)">
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchHint}>
+                    Aktifkan bila pemasok mensyaratkan uang muka sebelum pelunasan/cicilan.
+                  </Text>
+                  <KolamSwitch
+                    active={form.downPaymentEnabled}
+                    onPress={() =>
+                      controller.onChangeForm({ downPaymentEnabled: !form.downPaymentEnabled })
+                    }
+                  />
+                </View>
+              </FieldShell>
+            </View>
           </View>
           <View style={styles.formSplitCell}>
-            {form.tempoMode === 'net_days' ? (
-              <FieldShell label="Jumlah hari">
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={netDays => controller.onChangeForm({ netDays })}
-                  placeholder="30"
-                  value={form.netDays}
+            <View style={styles.poPaymentTypeCard}>
+              <FieldShell label="Tipe pembayaran">
+                <KolamDropdownSelect
+                  accessibilityLabel="Pilih metode pembayaran"
+                  label="Metode pembayaran"
+                  onChange={paymentType =>
+                    controller.onChangeForm({
+                      paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
+                    })
+                  }
+                  options={[
+                    { label: paymentTypeLabel('cash'), value: 'cash' },
+                    { label: paymentTypeLabel('tempo'), value: 'tempo' },
+                    { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
+                  ]}
+                  value={form.paymentType}
                 />
               </FieldShell>
-            ) : (
-              <FieldShell label="Tanggal jatuh tempo">
+            </View>
+          </View>
+        </View>
+
+        {form.paymentType === 'tempo' ? (
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Mode tempo">
+                <View style={styles.segmentRow}>
+                  <KolamButton
+                    intent={form.tempoMode === 'net_days' ? 'primary' : 'outline'}
+                    label="Net days"
+                    onPress={() => controller.onChangeForm({ tempoMode: 'net_days' })}
+                  />
+                  <KolamButton
+                    intent={form.tempoMode === 'specific_date' ? 'primary' : 'outline'}
+                    label="Tanggal tertentu"
+                    onPress={() => controller.onChangeForm({ tempoMode: 'specific_date' })}
+                  />
+                </View>
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              {form.tempoMode === 'net_days' ? (
+                <FieldShell label="Jumlah hari">
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={netDays => controller.onChangeForm({ netDays })}
+                    placeholder="30"
+                    value={form.netDays}
+                  />
+                </FieldShell>
+              ) : (
+                <FieldShell label="Tanggal jatuh tempo">
+                  <KolamDateField
+                    label="Tanggal"
+                    onChange={specificDate => controller.onChangeForm({ specificDate })}
+                    value={form.specificDate}
+                  />
+                </FieldShell>
+              )}
+            </View>
+          </View>
+        ) : null}
+
+        {form.paymentType === 'cicilan' ? (
+          <FieldShell label="Jumlah cicilan (2–24)">
+            <KolamFormTextField
+              mode="numeric"
+              onChangeText={installmentCount => controller.onChangeForm({ installmentCount })}
+              placeholder="2"
+              value={form.installmentCount}
+            />
+          </FieldShell>
+        ) : null}
+
+        {form.downPaymentEnabled ? (
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell
+                label={form.downPaymentInputType === 'percent' ? 'Nilai DP (%)' : 'Nilai DP'}>
+                <View style={styles.segmentRow}>
+                  <KolamButton
+                    intent={form.downPaymentInputType === 'percent' ? 'primary' : 'outline'}
+                    label="Persen"
+                    onPress={() => controller.onChangeForm({ downPaymentInputType: 'percent' })}
+                  />
+                  <KolamButton
+                    intent={form.downPaymentInputType === 'amount' ? 'primary' : 'outline'}
+                    label="Nominal"
+                    onPress={() => controller.onChangeForm({ downPaymentInputType: 'amount' })}
+                  />
+                </View>
+                {form.downPaymentInputType === 'amount' ? (
+                  <KolamRupiahField
+                    onChangeValue={downPaymentValue =>
+                      controller.onChangeForm({ downPaymentValue: String(downPaymentValue) })
+                    }
+                    placeholder="0"
+                    value={Number(form.downPaymentValue) || 0}
+                  />
+                ) : (
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={downPaymentValue => controller.onChangeForm({ downPaymentValue })}
+                    placeholder="0"
+                    value={form.downPaymentValue}
+                  />
+                )}
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Jatuh tempo DP">
                 <KolamDateField
                   label="Tanggal"
-                  onChange={specificDate => controller.onChangeForm({ specificDate })}
-                  value={form.specificDate}
+                  onChange={downPaymentDueDate =>
+                    controller.onChangeForm({ downPaymentDueDate })
+                  }
+                  value={form.downPaymentDueDate}
                 />
               </FieldShell>
-            )}
+            </View>
           </View>
-        </View>
-      ) : null}
-
-      {form.paymentType === 'cicilan' ? (
-        <FieldShell label="Jumlah cicilan (2–24)">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={installmentCount => controller.onChangeForm({ installmentCount })}
-            placeholder="2"
-            value={form.installmentCount}
-          />
-        </FieldShell>
-      ) : null}
-
-      {form.downPaymentEnabled ? (
-        <View style={styles.formSplitRow}>
-          <View style={styles.formSplitCell}>
-            <FieldShell label={form.downPaymentInputType === 'percent' ? 'Nilai DP (%)' : 'Nilai DP'}>
-              <View style={styles.segmentRow}>
-                <KolamButton
-                  intent={form.downPaymentInputType === 'percent' ? 'primary' : 'outline'}
-                  label="Persen"
-                  onPress={() => controller.onChangeForm({ downPaymentInputType: 'percent' })}
-                />
-                <KolamButton
-                  intent={form.downPaymentInputType === 'amount' ? 'primary' : 'outline'}
-                  label="Nominal"
-                  onPress={() => controller.onChangeForm({ downPaymentInputType: 'amount' })}
-                />
-              </View>
-              {form.downPaymentInputType === 'amount' ? (
-                <KolamRupiahField
-                  onChangeValue={downPaymentValue =>
-                    controller.onChangeForm({ downPaymentValue: String(downPaymentValue) })
-                  }
-                  placeholder="0"
-                  value={Number(form.downPaymentValue) || 0}
-                />
-              ) : (
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={downPaymentValue => controller.onChangeForm({ downPaymentValue })}
-                  placeholder="0"
-                  value={form.downPaymentValue}
-                />
-              )}
-            </FieldShell>
-          </View>
-          <View style={styles.formSplitCell}>
-            <FieldShell label="Jatuh tempo DP">
-              <KolamDateField
-                label="Tanggal"
-                onChange={downPaymentDueDate =>
-                  controller.onChangeForm({ downPaymentDueDate })
-                }
-                value={form.downPaymentDueDate}
-              />
-            </FieldShell>
-          </View>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </KolamContentFrame>
   );
 }
@@ -2863,6 +2866,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
     padding: 10,
+  },
+  poPaymentConfigBox: {
+    alignSelf: 'stretch',
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    minWidth: 0,
+    padding: 12,
+    width: '100%',
   },
   headerActions: {
     flexDirection: 'row',
