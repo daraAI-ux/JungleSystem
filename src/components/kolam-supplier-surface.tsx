@@ -1809,101 +1809,6 @@ function KolamSupplierForm({
             </View>
           </View>
 
-          <FieldShell label="Status" required>
-            <View style={styles.segmentRow}>
-              {(
-                ['active', 'inactive', 'blacklisted'] as KolamVendorStatus[]
-              ).map(status => (
-                <KolamButton
-                  intent={form.status === status ? 'primary' : 'outline'}
-                  key={status}
-                  label={getKolamVendorStatusLabel(status)}
-                  onPress={() => controller.onChangeForm({ status })}
-                />
-              ))}
-            </View>
-          </FieldShell>
-
-          <FieldShell label="Distributor resmi">
-            <View style={styles.switchRow}>
-              <Text style={styles.switchHint}>
-                Tandai jika pemasok adalah distributor resmi merek.
-              </Text>
-              <KolamSwitch
-                active={form.isOfficialDistributor}
-                disabled={controller.saving}
-                onPress={() =>
-                  controller.onChangeForm({
-                    isOfficialDistributor: !form.isOfficialDistributor,
-                  })
-                }
-              />
-            </View>
-          </FieldShell>
-
-          {form.isOfficialDistributor ? (
-            <FieldShell label="Catatan kontak garansi">
-              <KolamFormTextField
-                editable={!controller.saving}
-                multiline
-                onChangeText={warrantyContactNote =>
-                  controller.onChangeForm({ warrantyContactNote })
-                }
-                placeholder="Kontak / catatan garansi"
-                style={[
-                  settingsWebFormStyles.settingsWebFormFieldValue,
-                  settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-                ]}
-                value={form.warrantyContactNote}
-              />
-            </FieldShell>
-          ) : null}
-
-          <FieldShell label="Merek">
-            <View style={styles.brandPicker}>
-              {selectedBrands.length ? (
-                <View style={styles.brandChipRow}>
-                  {selectedBrands.map(brand => (
-                    <KolamButton
-                      key={brand.id}
-                      label={`× ${brand.name}`}
-                      muted
-                      onPress={() =>
-                        controller.onChangeForm({
-                          brandIds: form.brandIds.filter(id => id !== brand.id),
-                        })
-                      }
-                      style={styles.brandChip}
-                    />
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.switchHint}>Belum ada merek dipilih.</Text>
-              )}
-              <KolamDropdownSelect
-                label="Tambah merek"
-                onChange={brandId => {
-                  if (!brandId || form.brandIds.includes(brandId)) {
-                    return;
-                  }
-                  controller.onChangeForm({
-                    brandIds: [...form.brandIds, brandId],
-                  });
-                }}
-                options={[
-                  { label: 'Pilih merek…', value: '' },
-                  ...brandOptions.map(brand => ({
-                    label: brand.name,
-                    value: brand.id,
-                  })),
-                ]}
-                searchable
-                searchPlaceholder="Cari merek…"
-                showLabelInTrigger={false}
-                value=""
-              />
-            </View>
-          </FieldShell>
 
           <FieldShell label="Tautan">
             <KolamFormTextField
@@ -1984,6 +1889,128 @@ function KolamSupplierForm({
                   )}
                 </View>
               </FieldShell>
+            </View>
+          </SupplierEditSection>
+
+          <SupplierEditSection title="Status & Merek">
+            <View style={styles.supplierBasicInfoCard}>
+              <View style={styles.formSplitRow}>
+                <View style={styles.formSplitCell}>
+                  <FieldShell label="Status" required>
+                    <KolamDropdownSelect
+                      label="Status"
+                      onChange={status =>
+                        controller.onChangeForm({
+                          status: status as KolamVendorStatus,
+                        })
+                      }
+                      options={[
+                        {
+                          label: getKolamVendorStatusLabel('active'),
+                          value: 'active',
+                        },
+                        {
+                          label: getKolamVendorStatusLabel('inactive'),
+                          value: 'inactive',
+                        },
+                        {
+                          label: getKolamVendorStatusLabel('blacklisted'),
+                          value: 'blacklisted',
+                        },
+                      ]}
+                      showLabelInTrigger={false}
+                      value={form.status}
+                    />
+                  </FieldShell>
+                </View>
+                <View style={styles.formSplitCell}>
+                  <FieldShell label="Distributor resmi">
+                    <View style={styles.switchRow}>
+                      <Text style={styles.switchHint}>
+                        Tandai jika pemasok adalah distributor resmi merek.
+                      </Text>
+                      <KolamSwitch
+                        active={form.isOfficialDistributor}
+                        disabled={controller.saving}
+                        onPress={() =>
+                          controller.onChangeForm({
+                            isOfficialDistributor:
+                              !form.isOfficialDistributor,
+                          })
+                        }
+                      />
+                    </View>
+                  </FieldShell>
+                </View>
+              </View>
+
+              <FieldShell label="Merek">
+                <View style={styles.brandPicker}>
+                  {selectedBrands.length ? (
+                    <View style={styles.brandChipRow}>
+                      {selectedBrands.map(brand => (
+                        <KolamButton
+                          key={brand.id}
+                          label={`× ${brand.name}`}
+                          muted
+                          onPress={() =>
+                            controller.onChangeForm({
+                              brandIds: form.brandIds.filter(
+                                id => id !== brand.id,
+                              ),
+                            })
+                          }
+                          style={styles.brandChip}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={styles.switchHint}>
+                      Belum ada merek dipilih.
+                    </Text>
+                  )}
+                  <KolamDropdownSelect
+                    label="Tambah merek"
+                    onChange={brandId => {
+                      if (!brandId || form.brandIds.includes(brandId)) {
+                        return;
+                      }
+                      controller.onChangeForm({
+                        brandIds: [...form.brandIds, brandId],
+                      });
+                    }}
+                    options={[
+                      { label: 'Pilih merek…', value: '' },
+                      ...brandOptions.map(brand => ({
+                        label: brand.name,
+                        value: brand.id,
+                      })),
+                    ]}
+                    searchable
+                    searchPlaceholder="Cari merek…"
+                    showLabelInTrigger={false}
+                    value=""
+                  />
+                </View>
+              </FieldShell>
+
+              {form.isOfficialDistributor ? (
+                <FieldShell label="Catatan kontak garansi">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    multiline
+                    onChangeText={warrantyContactNote =>
+                      controller.onChangeForm({ warrantyContactNote })
+                    }
+                    placeholder="Kontak / catatan garansi"
+                    style={[
+                      settingsWebFormStyles.settingsWebFormFieldValue,
+                      settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                    ]}
+                    value={form.warrantyContactNote}
+                  />
+                </FieldShell>
+              ) : null}
             </View>
           </SupplierEditSection>
         </View>
