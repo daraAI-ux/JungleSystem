@@ -1311,76 +1311,61 @@ function KolamPurchaseOrderDetail({
               ]}
             />
           <KolamDetailSummaryCard
-            body={
-              <ScrollView
-                contentContainerStyle={styles.poTimelineScroll}
-                nestedScrollEnabled
-                style={styles.poTimelineScrollView}
-              >
-                <View style={styles.poTimeline}>
-                  {[
-                    {
-                      id: 'ordered',
-                      label: 'Dipesan',
-                      value: formatPODateTime(po.orderedAt),
-                    },
-                    {
-                      id: 'delivery',
-                      label: 'Pengiriman',
-                      value: formatPODateTime(po.deliveryAt),
-                    },
-                    {
-                      id: 'received',
-                      label: 'Diterima',
-                      meta: po.receivedByName || '',
-                      value: formatPODateTime(po.receivedAt),
-                    },
-                    {
-                      id: 'checked',
-                      label: 'Diperiksa',
-                      meta: po.checkedByName || '',
-                      value: formatPODateTime(po.onCheckAt),
-                    },
-                    {
-                      id: 'completed',
-                      label: 'Selesai',
-                      value: formatPODateTime(po.completedAt),
-                    },
-                    {
-                      id: 'cancelled',
-                      label: 'Dibatalkan',
-                      value: formatPODateTime(po.cancelledAt),
-                    },
-                  ].map(entry => {
-                    const hasValue = entry.value !== '—';
-                    return (
-                      <View key={entry.id} style={styles.poTimelineItem}>
-                        <View
-                          style={[
-                            styles.poTimelineDot,
-                            entry.id === 'cancelled' && hasValue
-                              ? styles.poTimelineDotDanger
-                              : hasValue
-                                ? styles.poTimelineDotSuccess
-                                : styles.poTimelineDotSecondary,
-                          ]}
-                        />
-                        <View style={styles.poTimelineBody}>
-                          <Text style={styles.poTimelineTitle}>
-                            {entry.label}
-                          </Text>
-                          <Text style={styles.metaText}>
-                            {entry.value}
-                            {entry.meta ? ` · ${entry.meta}` : ''}
-                          </Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            }
-            fields={[]}
+            fieldColumns={3}
+            fields={[
+              {
+                id: 'ordered',
+                label: 'Dipesan',
+                value: formatPODateTime(po.orderedAt),
+              },
+              {
+                id: 'delivery',
+                label: 'Pengiriman',
+                value: formatPODateTime(po.deliveryAt),
+              },
+              {
+                id: 'received',
+                label: 'Diterima',
+                value: (
+                  <View style={styles.summaryValueStack}>
+                    <Text style={styles.summaryValueText}>
+                      {formatPODateTime(po.receivedAt)}
+                    </Text>
+                    {po.receivedByName ? (
+                      <Text style={styles.summaryMetaText}>
+                        {po.receivedByName}
+                      </Text>
+                    ) : null}
+                  </View>
+                ),
+              },
+              {
+                id: 'checked',
+                label: 'Diperiksa',
+                value: (
+                  <View style={styles.summaryValueStack}>
+                    <Text style={styles.summaryValueText}>
+                      {formatPODateTime(po.onCheckAt)}
+                    </Text>
+                    {po.checkedByName ? (
+                      <Text style={styles.summaryMetaText}>
+                        {po.checkedByName}
+                      </Text>
+                    ) : null}
+                  </View>
+                ),
+              },
+              {
+                id: 'completed',
+                label: 'Selesai',
+                value: formatPODateTime(po.completedAt),
+              },
+              {
+                id: 'cancelled',
+                label: 'Dibatalkan',
+                value: formatPODateTime(po.cancelledAt),
+              },
+            ]}
             style={[styles.detailCard, styles.detailSplitCard]}
             title="Timeline pengadaan"
           />
