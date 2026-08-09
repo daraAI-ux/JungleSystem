@@ -382,54 +382,60 @@ export function KolamProductSurface({
               <View
                 style={[
                   kolamTableToolbarStyles.filters,
-                  styles.listToolbarFilters,
+                  isRawCatalog
+                    ? styles.listToolbarFilters
+                    : styles.listToolbarFiltersStack,
                 ]}
               >
                 <KolamSearchField
                   containerStyle={[
                     kolamTableToolbarStyles.searchInput,
                     styles.listToolbarSearch,
+                    isRawCatalog ? null : styles.listToolbarSearchFull,
                   ]}
                   onChangeText={controller.onSearchChange}
                   placeholder="Cari"
                   value={controller.filters.search}
                 />
-                <View ref={categoryTriggerRef} collapsable={false}>
-                  <KolamTableFilterTrigger
-                    active={
-                      activeFilterPanel === 'category' ||
-                      selectedCategory !== 'all'
-                    }
-                    label={categoryFilterLabel}
-                    onPress={() => openFilterPanel('category')}
-                    open={activeFilterPanel === 'category'}
-                    variant="quiet"
-                  />
-                </View>
-                <View ref={brandTriggerRef} collapsable={false}>
-                  <KolamTableFilterTrigger
-                    active={
-                      activeFilterPanel === 'brand' || selectedBrand !== 'all'
-                    }
-                    label={brandFilterLabel}
-                    onPress={() => openFilterPanel('brand')}
-                    open={activeFilterPanel === 'brand'}
-                    variant="quiet"
-                  />
-                </View>
-                {!isRawCatalog ? (
-                  <View ref={stockTriggerRef} collapsable={false}>
+                <View style={styles.listToolbarFilterRow}>
+                  <View ref={categoryTriggerRef} collapsable={false}>
                     <KolamTableFilterTrigger
                       active={
-                        activeFilterPanel === 'stock' || selectedStock !== 'all'
+                        activeFilterPanel === 'category' ||
+                        selectedCategory !== 'all'
                       }
-                      label={stockFilterLabel}
-                      onPress={() => openFilterPanel('stock')}
-                      open={activeFilterPanel === 'stock'}
+                      label={categoryFilterLabel}
+                      onPress={() => openFilterPanel('category')}
+                      open={activeFilterPanel === 'category'}
                       variant="quiet"
                     />
                   </View>
-                ) : null}
+                  <View ref={brandTriggerRef} collapsable={false}>
+                    <KolamTableFilterTrigger
+                      active={
+                        activeFilterPanel === 'brand' || selectedBrand !== 'all'
+                      }
+                      label={brandFilterLabel}
+                      onPress={() => openFilterPanel('brand')}
+                      open={activeFilterPanel === 'brand'}
+                      variant="quiet"
+                    />
+                  </View>
+                  {!isRawCatalog ? (
+                    <View ref={stockTriggerRef} collapsable={false}>
+                      <KolamTableFilterTrigger
+                        active={
+                          activeFilterPanel === 'stock' ||
+                          selectedStock !== 'all'
+                        }
+                        label={stockFilterLabel}
+                        onPress={() => openFilterPanel('stock')}
+                        open={activeFilterPanel === 'stock'}
+                        variant="quiet"
+                      />
+                    </View>
+                  ) : null}
+                </View>
               </View>
               <View style={kolamTableToolbarStyles.actions}>
                 <KolamExportXlsButton
@@ -10096,10 +10102,24 @@ const styles = StyleSheet.create({
   listToolbarFilters: {
     flexWrap: 'nowrap',
   },
+  listToolbarFiltersStack: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
+  },
+  listToolbarFilterRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    minWidth: 0,
+  },
   listToolbarSearch: {
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 120,
+  },
+  listToolbarSearchFull: {
+    width: '100%',
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
