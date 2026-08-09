@@ -542,13 +542,6 @@ function KolamPurchaseOrderForm({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.(KOLAM_PURCHASE_ORDER_ROOT);
-              }}
-              style={styles.toolbarButton}
-            />
             <KolamCancelButton
               disabled={controller.mutating}
               onPress={handleCancel}
