@@ -19,6 +19,7 @@ export type KolamNavigationModuleIcon =
   | 'campaign'
   | 'cashflowSession'
   | 'category'
+  | 'commission'
   | 'complaint'
   | 'daraMarketIntel'
   | 'daraSeo'
@@ -612,6 +613,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/commissions',
         description: 'Akrual dan pelepasan komisi penjualan',
         group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'commission',
         requiredAccess: ['kolam', 'pos'],
       },
       {
@@ -1022,6 +1024,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/commissions', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Komisi',
+        moduleIcon: 'commission',
       }),
       sidebarItem('/payable', {
         group: 'Pengeluaran & Pemasukan',

@@ -7,6 +7,7 @@ import {KOLAM_ASSET_PURCHASE_MODULE_ICON_SVG} from '../assets/icons/asset-purcha
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CAMPAIGN_MODULE_ICON_SVG} from '../assets/icons/campaign-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
+import {KOLAM_COMMISSION_MODULE_ICON_SVG} from '../assets/icons/commission-module-icon-svg';
 import {KOLAM_COMPLAINT_MODULE_ICON_SVG} from '../assets/icons/complaint-module-icon-svg';
 import {KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG} from '../assets/icons/dara-market-intel-module-icon-svg';
 import {KOLAM_DARA_SEO_MODULE_ICON_SVG} from '../assets/icons/dara-seo-module-icon-svg';
@@ -52,6 +53,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   campaign: 'Icon Kampanye',
   cashflowSession: 'Icon Sesi Tunai',
   category: 'Icon Kategori',
+  commission: 'Icon Komisi',
   complaint: 'Icon Komplain',
   daraMarketIntel: 'Icon Intel Pasar',
   daraSeo: 'Icon DARA SEO',
@@ -109,6 +111,7 @@ const CAMPAIGN_ICON_PATHS = getSvgPathData(KOLAM_CAMPAIGN_MODULE_ICON_SVG);
 const CASHFLOW_SESSION_ICON_PATHS = getSvgPathData(
   KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG,
 );
+const COMMISSION_ICON_PATHS = getSvgPathData(KOLAM_COMMISSION_MODULE_ICON_SVG);
 const COMPLAINT_ICON_PATHS = getSvgPathData(KOLAM_COMPLAINT_MODULE_ICON_SVG);
 const DOWNLOAD_ICON_PATHS = getSvgPathData(KOLAM_DOWNLOAD_TOPBAR_ICON_SVG);
 const LOCATION_ICON_PATHS = getSvgPathData(KOLAM_LOCATION_MODULE_ICON_SVG);
@@ -198,6 +201,12 @@ export function KolamModuleIcon({
       ) : kind === 'category' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={CATEGORY_ICON_PATH} fill="#1a1a1a" fillRule="evenodd" />
+        </Svg>
+      ) : kind === 'commission' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {COMMISSION_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
         </Svg>
       ) : kind === 'complaint' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
