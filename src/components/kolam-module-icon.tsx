@@ -1,11 +1,12 @@
 import React from 'react';
 import {Image, StyleSheet, View} from 'react-native';
-import Svg, {Path} from 'react-native-svg';
+import Svg, {Path, SvgXml} from 'react-native-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CAMPAIGN_MODULE_ICON_SVG} from '../assets/icons/campaign-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
 import {KOLAM_COMPLAINT_MODULE_ICON_SVG} from '../assets/icons/complaint-module-icon-svg';
+import {KOLAM_DISCOUNT_APPROVAL_MODULE_ICON_SVG} from '../assets/icons/discount-approval-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
@@ -40,6 +41,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   cashflowSession: 'Icon Sesi Tunai',
   category: 'Icon Kategori',
   complaint: 'Icon Komplain',
+  discountApproval: 'Icon Persetujuan Diskon',
   download: 'Icon Download',
   enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
@@ -167,6 +169,12 @@ export function KolamModuleIcon({
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
           ))}
         </Svg>
+      ) : kind === 'discountApproval' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_DISCOUNT_APPROVAL_MODULE_ICON_SVG}
+        />
       ) : kind === 'download' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {DOWNLOAD_ICON_PATHS.map(path => (

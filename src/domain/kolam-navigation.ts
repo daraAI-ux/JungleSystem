@@ -18,6 +18,7 @@ export type KolamNavigationModuleIcon =
   | 'cashflowSession'
   | 'category'
   | 'complaint'
+  | 'discountApproval'
   | 'download'
   | 'enclosure'
   | 'fieldcustom'
@@ -485,6 +486,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/sales/discount-approval',
         description: 'Discount request approvals',
         group: 'Kampanye',
+        moduleIcon: 'discountApproval',
         requiredAccess: ['kolam'],
       },
       {
@@ -935,6 +937,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/sales/discount-approval', {
         group: 'Kampanye',
         label: 'Persetujuan Diskon',
+        moduleIcon: 'discountApproval',
       }),
       sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
       sidebarItem('/metode-pengiriman', {
