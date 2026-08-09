@@ -10494,7 +10494,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: 12,
     minWidth: 0,
-    padding: 14,
+    paddingVertical: 14,
     width: '100%',
   },
   productEditSectionHeader: {
@@ -10516,12 +10516,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   productBasicInfoCard: {
+    alignSelf: 'stretch',
     backgroundColor: '#f9fafb',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     gap: 12,
+    minWidth: 0,
     padding: 12,
+    width: '100%',
   },
   productBasicInfoHalfField: {
     flexBasis: 0,

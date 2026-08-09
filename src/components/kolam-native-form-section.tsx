@@ -17,7 +17,9 @@ export function KolamNativeFormSection({
   style,
 }: KolamNativeFormSectionProps) {
   return (
-    <KolamContentFrame style={style} variant="nativeFormSection">
+    <KolamContentFrame
+      style={[styles.nativeFormSection, style]}
+      variant="nativeFormSection">
       <KolamCopyStack
         containerStyle={styles.nativeFormCopy}
         items={[
@@ -41,6 +43,11 @@ export function KolamNativeFormSection({
 }
 
 const styles = StyleSheet.create({
+  nativeFormSection: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
+  },
   nativeFormCopy: {
     flex: 1,
     minWidth: 220,
