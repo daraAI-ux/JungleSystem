@@ -60,6 +60,7 @@ import {
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -1821,17 +1822,25 @@ function KolamSupplierForm({
 
               <FieldShell label="Foto">
                 <View style={styles.photoEditor}>
-                  <Text style={styles.switchHint}>
-                    Pilih hingga 5 foto baru. Foto tersimpan dihapus langsung; foto baru diunggah saat Simpan.
-                  </Text>
-                  <KolamButton
+                  <KolamSettingsWebFileField
+                    accessibilityLabel="Foto pemasok"
+                    actionLabel="Pilih file"
                     disabled={
                       controller.saving || controller.pendingPhotoUris.length >= 5
                     }
-                    label="Tambah foto"
-                    onPress={() => {
+                    emptyLabel="Foto belum dipilih"
+                    fileCount={Math.min(
+                      (controller.selectedVendor?.photoUrls.length ?? 0) +
+                        controller.pendingPhotoUris.length,
+                      5,
+                    )}
+                    fileMax={5}
+                    onUpload={() => {
                       void controller.onPickPhoto();
                     }}
+                    scope="vendor-photo"
+                    title="Foto"
+                    value={controller.pendingPhotoUris[0] ?? ''}
                   />
                   {controller.pendingPhotoUris.length ? (
                     <View style={styles.photoGrid}>
