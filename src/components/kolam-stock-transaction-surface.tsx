@@ -173,6 +173,10 @@ function KolamStockTransactionOpname({
     (!hasVariants || Boolean(form.variantId)) &&
     !controller.mutating;
   const submitOpname = () => {
+    if (!canSave) {
+      return;
+    }
+
     void controller.onSubmitOpname().then(result => {
       if (result === 'wallet') {
         setWalletModalOpen(true);
@@ -207,7 +211,7 @@ function KolamStockTransactionOpname({
               onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
             />
             <KolamSaveButton
-              disabled={!canSave}
+              disabled={controller.mutating}
               label={controller.mutating ? 'Menyimpan...' : 'Simpan'}
               onPress={submitOpname}
             />
