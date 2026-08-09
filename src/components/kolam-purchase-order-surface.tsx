@@ -1588,34 +1588,27 @@ function KolamPOProofsCard({
               : [styles.formSplitCell, styles.detailSplitCell]
           }
         >
-          <KolamContentFrame
-            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
-            variant="settingsWebConfig"
-          >
-            <Text style={styles.sectionTitle}>Penerimaan</Text>
-            <KolamDescriptionList
-              accessibilityLabel="Penerimaan barang"
-              rows={[
+          <KolamDetailSummaryCard
+            body={
+              po.receiveProofs.length ? (
+                <ProofGallery label="Bukti Penerimaan" paths={po.receiveProofs} />
+              ) : null
+            }
+            fields={[
                 {
                   id: 'receivedAt',
                   label: 'Diterima Pada',
                   value: formatPODateTime(po.receivedAt),
-                  meta: '',
-                  tone: 'default',
                 },
                 {
                   id: 'receivedBy',
                   label: 'Diterima Oleh',
                   value: po.receivedByName || '—',
-                  meta: '',
-                  tone: 'default',
                 },
-              ]}
-            />
-            {po.receiveProofs.length ? (
-              <ProofGallery label="Bukti Penerimaan" paths={po.receiveProofs} />
-            ) : null}
-          </KolamContentFrame>
+            ]}
+            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+            title="Penerimaan"
+          />
         </View>
 
         <View
@@ -1625,34 +1618,27 @@ function KolamPOProofsCard({
               : [styles.formSplitCell, styles.detailSplitCell]
           }
         >
-          <KolamContentFrame
-            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
-            variant="settingsWebConfig"
-          >
-            <Text style={styles.sectionTitle}>Pemeriksaan</Text>
-            <KolamDescriptionList
-              accessibilityLabel="Pemeriksaan barang"
-              rows={[
+          <KolamDetailSummaryCard
+            body={
+              po.checkProofs.length ? (
+                <ProofGallery label="Bukti Pemeriksaan" paths={po.checkProofs} />
+              ) : null
+            }
+            fields={[
                 {
                   id: 'checkedAt',
                   label: 'Diperiksa Pada',
                   value: formatPODateTime(po.onCheckAt),
-                  meta: '',
-                  tone: 'default',
                 },
                 {
                   id: 'checkedBy',
                   label: 'Diperiksa Oleh',
                   value: po.checkedByName || '—',
-                  meta: '',
-                  tone: 'default',
                 },
-              ]}
-            />
-            {po.checkProofs.length ? (
-              <ProofGallery label="Bukti Pemeriksaan" paths={po.checkProofs} />
-            ) : null}
-          </KolamContentFrame>
+            ]}
+            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+            title="Pemeriksaan"
+          />
         </View>
       </View>
 
