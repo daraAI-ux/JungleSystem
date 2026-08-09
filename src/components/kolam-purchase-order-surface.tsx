@@ -878,7 +878,14 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
         <Text style={[styles.poItemHeaderText, styles.poItemCellVariant]}>Varian</Text>
         <Text style={[styles.poItemHeaderText, styles.poItemCellQty]}>Jumlah</Text>
         <Text style={[styles.poItemHeaderText, styles.poItemCellPrice]}>Harga Satuan</Text>
-        <Text style={[styles.poItemHeaderText, styles.poItemCellSubtotal]}>Subtotal</Text>
+        <Text
+          style={[
+            styles.poItemHeaderText,
+            styles.poItemCellSubtotal,
+            styles.poItemHeaderTextCenter,
+          ]}>
+          Subtotal
+        </Text>
         <View style={styles.poItemCellAction} />
       </View>
       {controller.form.items.map((line, index) => {
@@ -3073,6 +3080,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
   },
+  poItemHeaderTextCenter: {
+    textAlign: 'center',
+  },
   poItemLineCard: {
     backgroundColor: V.colors.mutedSoft,
     borderColor: V.colors.border,
@@ -3113,11 +3123,13 @@ const styles = StyleSheet.create({
     flexBasis: 128,
     flexGrow: 0,
     minWidth: 118,
+    width: 128,
   },
   poItemCellAction: {
     flexBasis: 92,
     flexGrow: 0,
     minWidth: 88,
+    width: 92,
   },
   poItemMetaRow: {
     flexDirection: 'row',
@@ -3157,6 +3169,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     justifyContent: 'center',
     minHeight: 38,
+    paddingHorizontal: 0,
   },
   poItemSubtotalText: {
     color: V.colors.primary,
