@@ -134,6 +134,16 @@ export function KolamDateField({
     setCursorMonth(next.getMonth());
   };
 
+  const dropdownPanelHeight = 360;
+  const dropdownTriggerTop = screenOverlay ? -screenOverlay.top : 0;
+  const dropdownAvailableAbove = dropdownTriggerTop;
+  const dropdownAvailableBelow = screenOverlay
+    ? screenOverlay.height - (dropdownTriggerTop + V.control.inputHeight)
+    : viewport.height;
+  const dropdownOpenUp =
+    dropdownPanel &&
+    dropdownAvailableBelow < dropdownPanelHeight + 12 &&
+    dropdownAvailableAbove > dropdownAvailableBelow;
   const dropdownLeft = screenOverlay
     ? Math.min(
         Math.max(8, -screenOverlay.left),
@@ -141,7 +151,12 @@ export function KolamDateField({
       )
     : 8;
   const dropdownTop = screenOverlay
-    ? -screenOverlay.top + V.control.inputHeight + 4
+    ? dropdownOpenUp
+      ? Math.max(8, dropdownTriggerTop - dropdownPanelHeight - 4)
+      : Math.min(
+          dropdownTriggerTop + V.control.inputHeight + 4,
+          Math.max(8, screenOverlay.height - dropdownPanelHeight - 8),
+        )
     : V.control.inputHeight + 4;
 
   return (

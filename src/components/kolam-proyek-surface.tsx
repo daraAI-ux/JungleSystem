@@ -55,6 +55,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { kolamDetailMetaStripStyles } from './kolam-detail-meta-strip';
@@ -2148,10 +2149,12 @@ function ReviewRoundSubmitForm({
         placeholder="Ronde 1"
         value={roundTitle}
       />
-      <KolamSettingsWebFieldLabel label="Tenggat (YYYY-MM-DD)" required={false} />
-      <KolamFormTextField
-        onChangeText={setDeadline}
+      <KolamSettingsWebFieldLabel label="Tenggat" required={false} />
+      <KolamDateField
+        label="Tenggat"
+        onChange={setDeadline}
         placeholder="Opsional"
+        showLabelInTrigger={false}
         value={deadline}
       />
       <KolamSettingsWebFieldLabel label="Catatan" required={false} />

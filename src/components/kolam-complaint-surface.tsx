@@ -66,6 +66,7 @@ import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
+import { KolamDateField } from './kolam-date-field';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -2672,9 +2673,9 @@ function KolamComplaintRefundWorkflow({
             placeholder="Bank *"
             value={bank}
           />
-          <KolamFormTextField
-            onChangeText={setTransferDate}
-            placeholder="Tanggal transfer (YYYY-MM-DD)"
+          <KolamDateField
+            label="Tanggal transfer"
+            onChange={setTransferDate}
             value={transferDate}
           />
           <KolamDropdownSelect

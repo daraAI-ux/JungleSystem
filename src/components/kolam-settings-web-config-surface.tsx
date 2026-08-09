@@ -23,6 +23,7 @@ import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
 import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamRowFrame } from './kolam-row-frame';
@@ -5018,19 +5019,16 @@ export function KolamSettingsWebConfigSurface({
                     },
                   ]}
                 />
-                <KolamTextFieldRow
-                  variant="settingsForm"
-                  fieldWidth={220}
+                <KolamDateField
                   label="Tanggal libur khusus"
-                  description="Format YYYY-MM-DD."
-                  value={draft.storeOperatingHoursSpecialClosureDate}
-                  onChangeText={value =>
+                  onChange={value =>
                     setDraftField(
                       'storeOperatingHoursSpecialClosureDate',
                       value,
                     )
                   }
-                  placeholder="2026-04-10"
+                  style={styles.shippingSpecialClosureDateField}
+                  value={draft.storeOperatingHoursSpecialClosureDate}
                 />
                 <KolamTextFieldRow
                   variant="settingsForm"
@@ -9836,6 +9834,9 @@ const styles = StyleSheet.create({
   },
   shippingSpecialClosureActions: {
     alignItems: 'flex-start',
+  },
+  shippingSpecialClosureDateField: {
+    width: 220,
   },
   shippingTimezonePicker: {
     width: '100%',

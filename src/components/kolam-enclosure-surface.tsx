@@ -68,6 +68,7 @@ import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
+import {KolamDateField} from './kolam-date-field';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
@@ -507,11 +508,11 @@ function KolamEnclosureEditSurface({
             </View>
           ) : null}
           <LabeledEditField label="Tanggal ditambahkan">
-            <KolamFormTextField
-              onChangeText={value =>
+            <KolamDateField
+              label="Tanggal ditambahkan"
+              onChange={value =>
                 setForm(current => ({...current, acquired_date: value}))
               }
-              placeholder="YYYY-MM-DD"
               style={styles.editFormInput}
               value={form.acquired_date}
             />
