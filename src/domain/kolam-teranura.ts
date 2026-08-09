@@ -43,8 +43,12 @@ export interface KolamTeranuraListResult {
 }
 
 export type KolamTeranuraSurfaceMode = 'list' | 'detail' | 'unsupported';
+export type KolamTeranuraShellTab = 'katalog' | 'perangkat-iot';
+export type KolamTeranuraDetailTab = 'overview' | 'perangkat-iot';
 export type KolamTeranuraSortBy = 'createdAt' | 'updatedAt' | 'name' | 'stock' | 'price';
 export type KolamTeranuraSortOrder = 'asc' | 'desc';
+
+const TERANURA_SHELL_ROOT = '/teranura';
 
 export function isKolamTeranuraRoute(route: string) {
   return (
@@ -83,6 +87,66 @@ export function getKolamTeranuraRouteId(route: string) {
   const routePath = route.split('?')[0].replace(/\/+$/, '');
   const [, , id] = routePath.split('/');
   return id ? decodeURIComponent(id) : '';
+}
+
+/** FE shell `?tab=` — `devices` alias → perangkat-iot; else katalog. */
+export function getKolamTeranuraShellTab(route: string): KolamTeranuraShellTab {
+  const raw = getTeranuraQueryParam(route, 'tab').toLowerCase();
+  if (raw === 'perangkat-iot' || raw === 'devices') {
+    return 'perangkat-iot';
+  }
+  return 'katalog';
+}
+
+export function getKolamTeranuraProductIdQuery(route: string) {
+  return getTeranuraQueryParam(route, 'teranuraProductId');
+}
+
+export function buildKolamTeranuraShellRoute(
+  tab: KolamTeranuraShellTab = 'katalog',
+  teranuraProductId?: string | null,
+): string {
+  const params = new URLSearchParams();
+  if (tab === 'perangkat-iot') {
+    params.set('tab', 'perangkat-iot');
+  }
+  const productId = teranuraProductId?.trim() || '';
+  if (productId) {
+    params.set('teranuraProductId', productId);
+  }
+  const query = params.toString();
+  return query ? `${TERANURA_SHELL_ROOT}?${query}` : TERANURA_SHELL_ROOT;
+}
+
+/** FE detail `?tab=` — only overview | perangkat-iot in this RNW slice. */
+export function getKolamTeranuraDetailTab(
+  route: string,
+  options?: { showPerangkatIot?: boolean },
+): KolamTeranuraDetailTab {
+  const raw = getTeranuraQueryParam(route, 'tab').toLowerCase();
+  if (
+    options?.showPerangkatIot !== false &&
+    (raw === 'perangkat-iot' || raw === 'devices')
+  ) {
+    return 'perangkat-iot';
+  }
+  return 'overview';
+}
+
+export function buildKolamTeranuraDetailRoute(
+  id: string,
+  tab: KolamTeranuraDetailTab = 'overview',
+): string {
+  const base = `${TERANURA_SHELL_ROOT}/${encodeURIComponent(id)}`;
+  if (tab === 'perangkat-iot') {
+    return `${base}?tab=perangkat-iot`;
+  }
+  return base;
+}
+
+function getTeranuraQueryParam(route: string, key: string) {
+  const query = route.includes('?') ? route.split('?')[1] || '' : '';
+  return String(new URLSearchParams(query).get(key) || '').trim();
 }
 
 export function normalizeKolamTeranuraList(payload: unknown): KolamTeranuraListResult {

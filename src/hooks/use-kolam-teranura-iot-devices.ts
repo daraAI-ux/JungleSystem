@@ -26,11 +26,11 @@ const DEFAULT_PAGINATION: KolamFreyerIotDevicePagination = {
 };
 
 /**
- * FE parity: `useIotFreyerDevices({ teranuraProductId })` for Teranura detail
- * tab Perangkat IoT (page size 10 + shared table footer).
+ * FE parity: `useIotFreyerDevices({ teranuraProductId? })` for shell IoT tab
+ * and detail Perangkat IoT (page size 10 + shared table footer).
  */
 export function useKolamTeranuraIotDevices(
-  teranuraProductId: string | null | undefined,
+  teranuraProductId?: string | null,
 ): KolamTeranuraIotDevicesController {
   const [devices, setDevices] = useState<KolamFreyerIotDevice[]>([]);
   const [pagination, setPagination] =
@@ -39,16 +39,9 @@ export function useKolamTeranuraIotDevices(
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const productFilter = teranuraProductId?.trim() || '';
 
   const onRefresh = useCallback(async () => {
-    const id = teranuraProductId?.trim() || '';
-    if (!id) {
-      setDevices([]);
-      setPagination(DEFAULT_PAGINATION);
-      setError(null);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
@@ -56,7 +49,7 @@ export function useKolamTeranuraIotDevices(
         page,
         limit: PAGE_SIZE,
         search: search.trim() || undefined,
-        teranuraProductId: id,
+        teranuraProductId: productFilter || undefined,
       });
       setDevices(result.data);
       setPagination(result.pagination);
@@ -67,12 +60,12 @@ export function useKolamTeranuraIotDevices(
     } finally {
       setLoading(false);
     }
-  }, [page, search, teranuraProductId]);
+  }, [page, productFilter, search]);
 
   useEffect(() => {
     setPage(1);
     setSearch('');
-  }, [teranuraProductId]);
+  }, [productFilter]);
 
   useEffect(() => {
     void onRefresh();
