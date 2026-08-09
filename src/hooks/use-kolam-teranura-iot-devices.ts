@@ -11,20 +11,23 @@ export interface KolamTeranuraIotDevicesController {
   loading: boolean;
   pagination: KolamFreyerIotDevicePagination;
   search: string;
+  onPageChange: (page: number) => void;
   onRefresh: () => Promise<void>;
   onSearchChange: (search: string) => void;
 }
 
+const PAGE_SIZE = 10;
+
 const DEFAULT_PAGINATION: KolamFreyerIotDevicePagination = {
   page: 1,
-  limit: 100,
+  limit: PAGE_SIZE,
   total: 0,
   totalPages: 1,
 };
 
 /**
  * FE parity: `useIotFreyerDevices({ teranuraProductId })` for Teranura detail
- * tab Perangkat IoT.
+ * tab Perangkat IoT (page size 10 + shared table footer).
  */
 export function useKolamTeranuraIotDevices(
   teranuraProductId: string | null | undefined,
@@ -32,6 +35,7 @@ export function useKolamTeranuraIotDevices(
   const [devices, setDevices] = useState<KolamFreyerIotDevice[]>([]);
   const [pagination, setPagination] =
     useState<KolamFreyerIotDevicePagination>(DEFAULT_PAGINATION);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +53,8 @@ export function useKolamTeranuraIotDevices(
     setError(null);
     try {
       const result = await getKolamFreyerIotDevices({
-        page: 1,
-        limit: 100,
+        page,
+        limit: PAGE_SIZE,
         search: search.trim() || undefined,
         teranuraProductId: id,
       });
@@ -63,13 +67,23 @@ export function useKolamTeranuraIotDevices(
     } finally {
       setLoading(false);
     }
-  }, [search, teranuraProductId]);
+  }, [page, search, teranuraProductId]);
+
+  useEffect(() => {
+    setPage(1);
+    setSearch('');
+  }, [teranuraProductId]);
 
   useEffect(() => {
     void onRefresh();
   }, [onRefresh]);
 
+  const onPageChange = useCallback((nextPage: number) => {
+    setPage(Math.max(1, nextPage));
+  }, []);
+
   const onSearchChange = useCallback((next: string) => {
+    setPage(1);
     setSearch(next);
   }, []);
 
@@ -77,8 +91,13 @@ export function useKolamTeranuraIotDevices(
     devices,
     error,
     loading,
-    pagination,
+    pagination: {
+      ...pagination,
+      page,
+      limit: PAGE_SIZE,
+    },
     search,
+    onPageChange,
     onRefresh,
     onSearchChange,
   };

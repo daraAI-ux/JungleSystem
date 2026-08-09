@@ -102,6 +102,12 @@ function KolamTeranuraShell({
                 onPress={() => onRouteChange?.(`/teranura/${item.id}/edit`)}
               />
             ) : null}
+            {item ? (
+              <KolamDeleteButton
+                label="Hapus"
+                onPress={() => undefined}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -452,14 +458,6 @@ function KolamTeranuraDetail({
             {formatDateTime(item.updatedAt)}
           </Text>
         </View>
-        <View style={styles.detailHeaderActions}>
-          <KolamDeleteButton
-            disabled
-            intent="danger"
-            label="Hapus"
-            onPress={() => undefined}
-          />
-        </View>
       </View>
       {tabPanel}
     </View>
@@ -515,8 +513,13 @@ function TeranuraIotDevicesPanel({
         emptyTitle="Tidak ada perangkat"
         getRowKey={device => device.id}
         loading={iot.loading}
+        pagination={{
+          onPageChange: iot.onPageChange,
+          page: iot.pagination.page,
+          pageSize: iot.pagination.limit,
+          total: iot.pagination.total,
+        }}
         rows={iot.devices}
-        showFooter={false}
         style={styles.tableFrame}
       />
     </View>
@@ -528,31 +531,34 @@ function buildTeranuraIotDeviceColumns(): Array<
 > {
   return [
     {
+      align: 'left',
       flex: 1.4,
       id: 'name',
       label: 'Nama',
       render: device => (
-        <Text numberOfLines={2} style={styles.cellText}>
+        <Text numberOfLines={2} style={styles.iotCellTextLeft}>
           {device.name}
         </Text>
       ),
     },
     {
+      align: 'center',
       flex: 1.1,
       id: 'serial',
       label: 'Serial',
       render: device => (
-        <Text numberOfLines={1} selectable style={styles.cellText}>
+        <Text numberOfLines={1} selectable style={styles.iotCellTextCenter}>
           {device.serialNumber}
         </Text>
       ),
     },
     {
+      align: 'center',
       flex: 1.2,
       id: 'customer',
       label: 'Customer',
       render: device => (
-        <Text numberOfLines={2} style={styles.cellText}>
+        <Text numberOfLines={2} style={styles.iotCellTextCenter}>
           {device.customerLabel}
         </Text>
       ),
@@ -576,17 +582,18 @@ function buildTeranuraIotDeviceColumns(): Array<
       id: 'water',
       label: 'Air',
       render: device => (
-        <Text numberOfLines={1} style={styles.cellText}>
+        <Text numberOfLines={1} style={styles.iotCellTextCenter}>
           {String(device.waterLevelStatus ?? 0)}
         </Text>
       ),
     },
     {
+      align: 'center',
       flex: 1.1,
       id: 'updated',
       label: 'Diperbarui',
       render: device => (
-        <Text numberOfLines={1} style={styles.cellText}>
+        <Text numberOfLines={1} style={styles.iotCellTextCenter}>
           {formatDateTime(device.updatedAt)}
         </Text>
       ),
@@ -1131,13 +1138,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 18,
   },
-  detailHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
   detailTabPanel: {
     minHeight: 220,
     padding: 16,
@@ -1170,5 +1170,23 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
+  },
+  iotCellTextLeft: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    textAlign: 'left',
+    width: '100%',
+  },
+  iotCellTextCenter: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    textAlign: 'center',
+    width: '100%',
   },
 });
