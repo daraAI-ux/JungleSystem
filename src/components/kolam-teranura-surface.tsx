@@ -586,6 +586,7 @@ function TeranuraActionsMenu({
     <View style={actionMenuOpen ? styles.activeActionRow : null}>
       <KolamOverflowMenuButton
         accessibilityLabel={`Menu ${item.name}`}
+        floating
         onOpenChange={setActionMenuOpen}
         actions={[
           { label: 'Lihat', onPress: onSelect },

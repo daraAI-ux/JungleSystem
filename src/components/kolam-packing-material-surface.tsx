@@ -641,6 +641,7 @@ function KolamPackingMaterialActionsMenu({
     <View style={actionMenuOpen ? styles.activeActionRow : null}>
       <KolamOverflowMenuButton
         accessibilityLabel={`Menu ${item.name}`}
+        floating
         actions={[
           { label: 'Lihat', onPress: onSelect },
           { label: 'Rubah', onPress: onEdit },
