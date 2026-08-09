@@ -879,7 +879,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
         <Text style={[styles.poItemHeaderText, styles.poItemCellQty]}>Jumlah</Text>
         <Text style={[styles.poItemHeaderText, styles.poItemCellPrice]}>Harga Satuan</Text>
         <Text style={[styles.poItemHeaderText, styles.poItemCellSubtotal]}>Subtotal</Text>
-        <Text style={[styles.poItemHeaderText, styles.poItemCellAction]}>Aksi</Text>
+        <View style={styles.poItemCellAction} />
       </View>
       {controller.form.items.map((line, index) => {
         const selectedItem = results.find(item => item.id === line.refId);
@@ -992,6 +992,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
                   onPress={() => controller.onRemoveItemLine(line.key)}
                   style={[
                     settingsWebFormStyles.settingsWebUploadDeleteButton,
+                    styles.poItemDeleteButton,
                     removeDisabled ? styles.poItemDeleteButtonDisabled : null,
                   ]}>
                   <KolamUploadDeleteIcon />
@@ -3110,7 +3111,7 @@ const styles = StyleSheet.create({
   },
   poItemCellSubtotal: {
     flexBasis: 128,
-    flexGrow: 1,
+    flexGrow: 0,
     minWidth: 118,
   },
   poItemCellAction: {
@@ -3153,6 +3154,7 @@ const styles = StyleSheet.create({
   },
   poItemSubtotalBlock: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     justifyContent: 'center',
     minHeight: 38,
   },
@@ -3165,8 +3167,12 @@ const styles = StyleSheet.create({
   },
   poItemActionBlock: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     justifyContent: 'center',
     minHeight: 38,
+  },
+  poItemDeleteButton: {
+    marginLeft: 0,
   },
   poItemDeleteButtonDisabled: {
     opacity: 0.45,
