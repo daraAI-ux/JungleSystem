@@ -56,7 +56,7 @@ export function KolamStockTransactionSourceIcon({
 
   if (logoUri) {
     return (
-      <KolamHoverTooltip label={tooltip}>
+      <KolamHoverTooltip align="center" label={tooltip}>
         <View accessibilityLabel={tooltip} style={styles.logoWrap}>
           <KolamRemoteImage
             accessibilityLabel={tooltip}
@@ -71,7 +71,7 @@ export function KolamStockTransactionSourceIcon({
   }
 
   return (
-    <KolamHoverTooltip label={tooltip}>
+    <KolamHoverTooltip align="center" label={tooltip}>
       <View
         accessibilityLabel={tooltip}
         style={[styles.chip, toneStyles[visual.tone]]}
