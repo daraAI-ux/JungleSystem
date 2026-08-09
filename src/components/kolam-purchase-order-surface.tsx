@@ -1393,6 +1393,7 @@ function KolamPurchaseOrderDetail({
               <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
             ) : null}
           </KolamContentFrame>
+          <KolamPOProofsCard compact po={po} />
         </View>
       </View>
 
@@ -1418,7 +1419,6 @@ function KolamPurchaseOrderDetail({
         />
       </KolamContentFrame>
 
-      <KolamPOProofsCard po={po} />
       <KolamPOInstallmentSection controller={controller} po={po} />
       <KolamPOFakturPajakSection controller={controller} po={po} />
 
@@ -1564,7 +1564,13 @@ function buildPODetailItemColumns({
   ];
 }
 
-function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
+function KolamPOProofsCard({
+  compact = false,
+  po,
+}: {
+  compact?: boolean;
+  po: KolamPurchaseOrder;
+}) {
   const showCard = Boolean(po.receivedAt || po.onCheckAt || po.isPartial);
   if (!showCard) {
     return null;
@@ -1574,8 +1580,14 @@ function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
     <View style={styles.proofSection}>
       <Text style={styles.sectionTitle}>Penerimaan & Pemeriksaan</Text>
 
-      <View style={styles.formSplitRow}>
-        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+      <View style={compact ? styles.proofCardStack : styles.formSplitRow}>
+        <View
+          style={
+            compact
+              ? styles.proofCardStackItem
+              : [styles.formSplitCell, styles.detailSplitCell]
+          }
+        >
           <KolamContentFrame
             style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
             variant="settingsWebConfig"
@@ -1606,7 +1618,13 @@ function KolamPOProofsCard({ po }: { po: KolamPurchaseOrder }) {
           </KolamContentFrame>
         </View>
 
-        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+        <View
+          style={
+            compact
+              ? styles.proofCardStackItem
+              : [styles.formSplitCell, styles.detailSplitCell]
+          }
+        >
           <KolamContentFrame
             style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
             variant="settingsWebConfig"
@@ -3034,6 +3052,14 @@ const styles = StyleSheet.create({
   },
   proofSection: {
     gap: 12,
+  },
+  proofCardStack: {
+    gap: 12,
+  },
+  proofCardStackItem: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
   },
   proofBorderCard: {
     backgroundColor: V.colors.bg,
