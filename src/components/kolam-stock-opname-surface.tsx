@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS,
   KOLAM_STOCK_OPNAME_ROOT,
@@ -27,7 +27,7 @@ import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
-import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamModalDialog} from './kolam-modal-dialog';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamSearchField } from './kolam-search-field';
@@ -593,99 +593,85 @@ function StockOpnameImportDialog({
   }, [visible]);
 
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={() => onOpenChange(false)}
-      transparent
+    <KolamModalDialog
+      description="Unggah Excel untuk membuat draf baru. Kolom wajib: Name/Nama, Stock/Jumlah."
+      maxWidth="92%"
+      onClose={() => onOpenChange(false)}
+      title="Impor stock opname"
       visible={visible}
-    >
-      <View style={styles.importOverlay}>
-        <KolamModalBackdrop onPress={() => onOpenChange(false)} />
-        <View
-          accessibilityLabel="Impor stock opname"
-          style={styles.importDialog}
-        >
-          <Text style={styles.sectionTitle}>Impor stock opname</Text>
-          <Text style={styles.muted}>
-            Unggah Excel untuk membuat draf baru. Kolom wajib: Name/Nama,
-            Stock/Jumlah.
-          </Text>
-
-          <Text style={styles.fieldLabel}>Tipe barang</Text>
-          <View style={styles.importTargetRow}>
-            {IMPORT_TARGET_OPTIONS.map(option => (
-              <KolamButton
-                intent={targetType === option.value ? 'primary' : 'secondary'}
-                key={option.value}
-                label={option.label}
-                onPress={() => setTargetType(option.value)}
-                style={styles.importTargetButton}
-              />
-            ))}
-          </View>
-
-          <Text style={styles.fieldLabel}>File Excel</Text>
-          {fileUri ? (
-            <View style={styles.fileRow}>
-              <Text numberOfLines={1} style={styles.fileName}>
-                {fileName || fileUri}
-              </Text>
-              <KolamButton
-                label="Ganti"
-                onPress={() => {
-                  setFileUri('');
-                  setFileName('');
-                }}
-              />
-            </View>
-          ) : (
-            <KolamButton
-              label="Pilih file .xlsx"
-              onPress={() => {
-                setPickError('');
-                void pickNativeAssetFile()
-                  .then(result => {
-                    if (result.cancelled) {
-                      return;
-                    }
-                    const uri = result.uri || result.path || '';
-                    if (!uri) {
-                      setPickError('File tidak valid');
-                      return;
-                    }
-                    setFileUri(uri);
-                    setFileName(result.name || 'stock-opname-import.xlsx');
-                  })
-                  .catch(err => {
-                    setPickError(
-                      err instanceof Error ? err.message : 'Gagal memilih file',
-                    );
-                  });
-              }}
-            />
-          )}
-          {pickError ? (
-            <Text style={styles.dangerText}>{pickError}</Text>
-          ) : null}
-
-          <View style={styles.importActions}>
-            <KolamCancelButton onPress={() => onOpenChange(false)} />
-            <KolamButton
-              disabled={!fileUri || importing}
-              intent="primary"
-              label={importing ? 'Mengimpor…' : 'Impor'}
-              onPress={() => {
-                void onImport({
-                  fileUri,
-                  fileName,
-                  targetType,
-                });
-              }}
-            />
-          </View>
-        </View>
+      width={420}
+      footer={
+        <>
+          <KolamCancelButton onPress={() => onOpenChange(false)} />
+          <KolamButton
+            disabled={!fileUri || importing}
+            intent="primary"
+            label={importing ? 'Mengimpor...' : 'Impor'}
+            onPress={() => {
+              void onImport({
+                fileUri,
+                fileName,
+                targetType,
+              });
+            }}
+          />
+        </>
+      }>
+      <Text style={styles.fieldLabel}>Tipe barang</Text>
+      <View style={styles.importTargetRow}>
+        {IMPORT_TARGET_OPTIONS.map(option => (
+          <KolamButton
+            intent={targetType === option.value ? 'primary' : 'secondary'}
+            key={option.value}
+            label={option.label}
+            onPress={() => setTargetType(option.value)}
+            style={styles.importTargetButton}
+          />
+        ))}
       </View>
-    </Modal>
+
+      <Text style={styles.fieldLabel}>File Excel</Text>
+      {fileUri ? (
+        <View style={styles.fileRow}>
+          <Text numberOfLines={1} style={styles.fileName}>
+            {fileName || fileUri}
+          </Text>
+          <KolamButton
+            label="Ganti"
+            onPress={() => {
+              setFileUri('');
+              setFileName('');
+            }}
+          />
+        </View>
+      ) : (
+        <KolamButton
+          label="Pilih file .xlsx"
+          onPress={() => {
+            setPickError('');
+            void pickNativeAssetFile()
+              .then(result => {
+                if (result.cancelled) {
+                  return;
+                }
+                const uri = result.uri || result.path || '';
+                if (!uri) {
+                  setPickError('File tidak valid');
+                  return;
+                }
+                setFileUri(uri);
+                setFileName(result.name || 'stock-opname-import.xlsx');
+              })
+              .catch(err => {
+                setPickError(
+                  err instanceof Error ? err.message : 'Gagal memilih file',
+                );
+              });
+          }}
+        />
+      )}
+      {pickError ? <Text style={styles.dangerText}>{pickError}</Text> : null}
+    </KolamModalDialog>
   );
 }
 
@@ -890,31 +876,6 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
   },
-  sectionTitle: {
-    color: V.colors.fg,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  muted: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  importOverlay: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  importDialog: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    maxWidth: '92%',
-    padding: 16,
-    width: 420,
-  },
   importTargetRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -936,11 +897,5 @@ const styles = StyleSheet.create({
   dangerText: {
     color: V.colors.danger,
     fontSize: 12,
-  },
-  importActions: {
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    marginTop: 4,
   },
 });
