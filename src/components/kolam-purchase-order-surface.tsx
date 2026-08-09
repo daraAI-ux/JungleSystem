@@ -651,34 +651,41 @@ function KolamPurchaseOrderForm({
           </View>
           <View style={styles.formSplitCell}>
             <FieldShell label="Diskon">
-              <View style={styles.segmentRow}>
-                <KolamButton
-                  intent={form.discountType === 'percent' ? 'primary' : 'outline'}
-                  label="Persen"
-                  onPress={() => controller.onChangeForm({ discountType: 'percent' })}
-                />
-                <KolamButton
-                  intent={form.discountType === 'amount' ? 'primary' : 'outline'}
-                  label="Nominal"
-                  onPress={() => controller.onChangeForm({ discountType: 'amount' })}
-                />
-              </View>
-              {form.discountType === 'amount' ? (
-                <KolamRupiahField
-                  onChangeValue={discountValue =>
-                    controller.onChangeForm({ discountValue: String(discountValue) })
+              <View style={styles.poDiscountRow}>
+                <KolamDropdownSelect
+                  label="Tipe diskon"
+                  onChange={discountType =>
+                    controller.onChangeForm({
+                      discountType: discountType === 'amount' ? 'amount' : 'percent',
+                    })
                   }
-                  placeholder="0"
-                  value={Number(form.discountValue) || 0}
+                  options={[
+                    {label: 'Persen', value: 'percent'},
+                    {label: 'Nominal', value: 'amount'},
+                  ]}
+                  showLabelInTrigger={false}
+                  style={styles.poDiscountTypeSelect}
+                  value={form.discountType}
                 />
-              ) : (
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={discountValue => controller.onChangeForm({ discountValue })}
-                  placeholder="0"
-                  value={form.discountValue}
-                />
-              )}
+                {form.discountType === 'amount' ? (
+                  <KolamRupiahField
+                    onChangeValue={discountValue =>
+                      controller.onChangeForm({ discountValue: String(discountValue) })
+                    }
+                    placeholder="0"
+                    style={styles.poDiscountValueInput}
+                    value={Number(form.discountValue) || 0}
+                  />
+                ) : (
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={discountValue => controller.onChangeForm({ discountValue })}
+                    placeholder="0"
+                    style={styles.poDiscountValueInput}
+                    value={form.discountValue}
+                  />
+                )}
+              </View>
             </FieldShell>
           </View>
         </View>
@@ -2880,6 +2887,18 @@ const styles = StyleSheet.create({
   formSplitCell: {
     flexGrow: 1,
     minWidth: 220,
+  },
+  poDiscountRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  poDiscountTypeSelect: {
+    flex: 1,
+    minWidth: 0,
+  },
+  poDiscountValueInput: {
+    flex: 1,
+    minWidth: 0,
   },
   poDetailOverviewRow: {
     alignItems: 'stretch',
