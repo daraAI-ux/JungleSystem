@@ -734,16 +734,23 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Metode pembayaran</Text>
-      <View style={styles.segmentRow}>
-        {(['cash', 'tempo', 'cicilan'] as const).map(type => (
-          <KolamButton
-            intent={form.paymentType === type ? 'primary' : 'outline'}
-            key={type}
-            label={paymentTypeLabel(type)}
-            onPress={() => controller.onChangeForm({ paymentType: type })}
-          />
-        ))}
-      </View>
+      <FieldShell label="Tipe pembayaran">
+        <KolamDropdownSelect
+          accessibilityLabel="Pilih metode pembayaran"
+          label="Metode pembayaran"
+          onChange={paymentType =>
+            controller.onChangeForm({
+              paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
+            })
+          }
+          options={[
+            { label: paymentTypeLabel('cash'), value: 'cash' },
+            { label: paymentTypeLabel('tempo'), value: 'tempo' },
+            { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
+          ]}
+          value={form.paymentType}
+        />
+      </FieldShell>
 
       {form.paymentType === 'tempo' ? (
         <View style={styles.formSplitRow}>
