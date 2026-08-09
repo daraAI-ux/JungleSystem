@@ -899,7 +899,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
               <View style={[styles.poItemFieldBlock, styles.poItemCellItem]}>
                 <KolamDropdownSelect
                   accessibilityLabel={`Item PO ${index + 1}`}
-                  label="Item"
+                  label=""
                   onChange={itemId => controller.onSelectItemForLine(line.key, itemId)}
                   options={itemOptions}
                   searchable
@@ -922,7 +922,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
                 {hasVariants ? (
                   <KolamDropdownSelect
                     accessibilityLabel={`Varian PO ${index + 1}`}
-                    label="Varian"
+                    label=""
                     onChange={variantId =>
                       controller.onSelectVariantForLine(line.key, variantId)
                     }
@@ -933,7 +933,6 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
                   />
                 ) : (
                   <View style={styles.poItemReadonlyField}>
-                    <Text style={styles.poItemReadonlyLabel}>Varian</Text>
                     <Text style={styles.poItemReadonlyText}>
                       {line.refId ? 'Tidak ada varian' : 'Pilih item dulu'}
                     </Text>
@@ -942,29 +941,27 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
               </View>
 
               <View style={[styles.poItemFieldBlock, styles.poItemCellQty]}>
-                <FieldShell label="Jumlah">
-                  <KolamFormTextField
-                    mode="numeric"
-                    onChangeText={quantity =>
-                      controller.onChangeItemLine(line.key, { quantity })
-                    }
-                    value={line.quantity}
-                  />
-                </FieldShell>
+                <KolamFormTextField
+                  accessibilityLabel={`Jumlah PO ${index + 1}`}
+                  mode="numeric"
+                  onChangeText={quantity =>
+                    controller.onChangeItemLine(line.key, { quantity })
+                  }
+                  value={line.quantity}
+                />
               </View>
 
               <View style={[styles.poItemFieldBlock, styles.poItemCellPrice]}>
-                <FieldShell label="Harga Satuan">
-                  <KolamFormTextField
-                    mode="numeric"
-                    onChangeText={value =>
-                      controller.onChangeItemLine(line.key, {
-                        unitPrice: Number(value) || 0,
-                      })
-                    }
-                    value={String(line.unitPrice)}
-                  />
-                </FieldShell>
+                <KolamFormTextField
+                  accessibilityLabel={`Harga satuan PO ${index + 1}`}
+                  mode="numeric"
+                  onChangeText={value =>
+                    controller.onChangeItemLine(line.key, {
+                      unitPrice: Number(value) || 0,
+                    })
+                  }
+                  value={String(line.unitPrice)}
+                />
                 {line.priceOverridden && line.vendorPrice > 0 ? (
                   <View style={styles.poItemPriceMetaRow}>
                     <Text style={styles.rowMeta}>
@@ -980,7 +977,6 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
               </View>
 
               <View style={[styles.poItemSubtotalBlock, styles.poItemCellSubtotal]}>
-                <Text style={styles.poItemReadonlyLabel}>Subtotal</Text>
                 <Text style={styles.poItemSubtotalText}>{formatRupiah(subtotal)}</Text>
               </View>
 
