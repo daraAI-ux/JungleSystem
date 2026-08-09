@@ -38,6 +38,7 @@ export type KolamNavigationModuleIcon =
   | 'supplier'
   | 'tag'
   | 'taskManager'
+  | 'terms'
   | 'taxonomy'
   | 'teranura'
   | 'unit';
@@ -509,6 +510,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/terms-templates',
         description: 'Template syarat dan ketentuan untuk surat penawaran',
         group: 'Penjualan',
+        moduleIcon: 'terms',
         requiredAccess: ['kolam'],
       },
       {
@@ -914,6 +916,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/terms-templates', {
         group: 'Penjualan',
         label: 'Syarat & Ketentuan',
+        moduleIcon: 'terms',
       }),
       sidebarItem('/proyek', { group: 'Penjualan', label: 'Proyek' }),
       sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
