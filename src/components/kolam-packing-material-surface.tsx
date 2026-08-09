@@ -1466,15 +1466,17 @@ function KolamPackingMaterialForm({
                       onChange={weightUnit =>
                         controller.onChangeForm({ weightUnit })
                       }
-                      options={createUnitOptions(weightUnits)}
+                      options={[
+                        {
+                          label: 'Satuan berat belum diatur',
+                          value: '',
+                        },
+                        ...createUnitOptions(weightUnits),
+                      ]}
                       searchable
                       searchPlaceholder="Cari satuan..."
                       showLabelInTrigger={false}
-                      value={
-                        form.weightUnit ||
-                        createUnitOptions(weightUnits)[0]?.value ||
-                        ''
-                      }
+                      value={form.weightUnit || ''}
                     />
                   </PackingCompactField>
                 </View>
@@ -1528,15 +1530,17 @@ function KolamPackingMaterialForm({
                       onChange={dimensionUnit =>
                         controller.onChangeForm({ dimensionUnit })
                       }
-                      options={createUnitOptions(dimensionUnits)}
+                      options={[
+                        {
+                          label: 'Satuan dimensi belum diatur',
+                          value: '',
+                        },
+                        ...createUnitOptions(dimensionUnits),
+                      ]}
                       searchable
                       searchPlaceholder="Cari satuan..."
                       showLabelInTrigger={false}
-                      value={
-                        form.dimensionUnit ||
-                        createUnitOptions(dimensionUnits)[0]?.value ||
-                        ''
-                      }
+                      value={form.dimensionUnit || ''}
                     />
                   </PackingCompactField>
                 </View>
