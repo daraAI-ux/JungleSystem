@@ -534,15 +534,15 @@ function KolamPurchaseOrderForm({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamCancelButton
-              disabled={controller.mutating}
-              onPress={handleCancel}
-              style={styles.toolbarButton}
-            />
             <KolamSaveButton
               disabled={controller.mutating}
               label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
               onPress={handleSave}
+              style={styles.toolbarButton}
+            />
+            <KolamCancelButton
+              disabled={controller.mutating}
+              onPress={handleCancel}
               style={styles.toolbarButton}
             />
           </View>
