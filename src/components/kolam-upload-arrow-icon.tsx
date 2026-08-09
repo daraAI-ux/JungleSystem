@@ -1,8 +1,20 @@
 import React from 'react';
 import {SvgXml} from 'react-native-svg';
 
-export function KolamUploadArrowIcon({size = 20}: {size?: number}) {
-  return <SvgXml height={size} width={size} xml={KOLAM_UPLOAD_ARROW_ICON_SVG} />;
+export function KolamUploadArrowIcon({
+  color = '#000000',
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <SvgXml
+      height={size}
+      width={size}
+      xml={KOLAM_UPLOAD_ARROW_ICON_SVG.replace(/#000000/g, color)}
+    />
+  );
 }
 
 const KOLAM_UPLOAD_ARROW_ICON_SVG = `

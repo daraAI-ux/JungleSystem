@@ -64,9 +64,11 @@ import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamStockSyncButton } from './kolam-stock-sync-button';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 
 type POStatusFilterPanel = 'status' | 'payment' | null;
 type POStatusIntent = 'primary' | 'success' | 'warning' | 'danger' | 'muted';
@@ -1199,6 +1201,7 @@ function KolamPurchaseOrderDetail({
             {canUploadVendorInvoice ? (
               <KolamButton
                 disabled={controller.mutating}
+                icon={<KolamUploadArrowIcon color={V.colors.primaryFg} size={16} />}
                 label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
                 onPress={async () => {
                   const uri = await controller.onPickImage();
@@ -1206,11 +1209,12 @@ function KolamPurchaseOrderDetail({
                     void controller.onUploadVendorInvoice(uri);
                   }
                 }}
-                style={styles.toolbarButton}
+                style={[styles.toolbarButton, styles.poToolbarActionButton]}
+                textStyle={styles.poToolbarActionButtonText}
               />
             ) : null}
             {canSyncMarketplace ? (
-              <KolamButton
+              <KolamStockSyncButton
                 label="Sinkron marketplace"
                 onPress={() => setActiveDialog('marketplace')}
                 style={styles.toolbarButton}
@@ -2710,6 +2714,13 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  poToolbarActionButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  poToolbarActionButtonText: {
+    color: V.colors.primaryFg,
   },
   filterRowInline: {
     alignItems: 'center',
