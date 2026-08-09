@@ -23,6 +23,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import {KolamPageIdentityHeader} from './kolam-page-identity-header';
 import { KolamSaveButton } from './kolam-save-button';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamSwitch } from './kolam-switch';
@@ -55,15 +56,20 @@ export function TeranuraEditFormPage({
   if (!form) {
     return (
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
-        <View style={styles.emptyHeaderRow}>
-          <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>TERANURA</Text>
-            <Text style={styles.title}>Edit Teranura</Text>
-            <Text style={styles.description}>
-              {controller.loading ? 'Memuat...' : 'Form belum siap.'}
-            </Text>
+        <KolamPageIdentityHeader
+          eyebrow="TERANURA"
+          moduleIcon="teranura"
+          placement="workspace"
+          subtitle={controller.loading ? 'Memuat...' : 'Form belum siap.'}
+          title="Edit Teranura"
+        />
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters} />
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamCancelButton onPress={onCancel} />
+            </View>
           </View>
-          <KolamCancelButton onPress={onCancel} />
         </View>
       </KolamDetailScrollSurface>
     );
@@ -1371,37 +1377,6 @@ const styles = StyleSheet.create({
     minHeight: 0,
     overflow: 'visible',
     width: '100%',
-  },
-  emptyHeaderRow: {
-    alignItems: 'flex-start',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    gap: 16,
-    justifyContent: 'space-between',
-    minWidth: 0,
-    width: '100%',
-  },
-  headingCopy: {
-    flex: 1,
-  },
-  eyebrow: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0,
-  },
-  title: {
-    color: V.colors.fg,
-    fontSize: 24,
-    fontWeight: '800',
-    lineHeight: 30,
-    marginTop: 2,
-  },
-  description: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 4,
   },
   error: {
     color: V.colors.danger,

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   type StyleProp,
   type ViewStyle,
@@ -12,28 +11,22 @@ import {dashboardHeaderStyles as styles} from './kolam-dashboard-header-styles';
 import {KolamModuleIcon} from './kolam-module-icon';
 
 export function KolamPageIdentityHeader({
-  children,
   containerStyle,
   eyebrow,
-  eyebrowAccessory,
   moduleIcon,
   placement = 'shell',
   subtitle,
   title,
 }: {
-  children?: React.ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
   eyebrow?: string;
-  eyebrowAccessory?: React.ReactNode;
   moduleIcon?: KolamNavigationModuleIcon;
   placement?: 'shell' | 'workspace';
   subtitle?: string;
   title: string;
 }) {
   const items = [
-    ...(eyebrow && !eyebrowAccessory
-      ? [{id: 'eyebrow', text: eyebrow, style: styles.eyebrow}]
-      : []),
+    ...(eyebrow ? [{id: 'eyebrow', text: eyebrow, style: styles.eyebrow}] : []),
     {id: 'title', text: title, style: styles.title},
     ...(subtitle
       ? [{id: 'subtitle', text: subtitle, style: styles.headerSubtitle}]
@@ -50,14 +43,7 @@ export function KolamPageIdentityHeader({
       ]}>
       {moduleIcon ? <KolamModuleIcon kind={moduleIcon} size="header" /> : null}
       <View style={moduleIcon ? styles.headerCopyText : undefined}>
-        {eyebrow && eyebrowAccessory ? (
-          <View style={pageIdentityHeaderStyles.eyebrowRow}>
-            <Text style={styles.eyebrow}>{eyebrow}</Text>
-            {eyebrowAccessory}
-          </View>
-        ) : null}
         <KolamCopyStack items={items} />
-        {children}
       </View>
     </View>
   );
@@ -66,11 +52,5 @@ export function KolamPageIdentityHeader({
 const pageIdentityHeaderStyles = StyleSheet.create({
   workspace: {
     marginTop: -64,
-  },
-  eyebrowRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
   },
 });

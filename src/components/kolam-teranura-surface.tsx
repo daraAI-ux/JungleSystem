@@ -521,22 +521,20 @@ function KolamTeranuraDetail({
         eyebrow="TERANURA"
         moduleIcon="teranura"
         placement="workspace"
-        subtitle={
+        subtitle={[
+          item?.deviceLine === 'freyer' ? 'Freyer' : '',
           item
             ? `Dibuat ${formatDateTime(item.createdAt)} | Diperbarui ${formatDateTime(
                 item.updatedAt,
               )}`
             : loading
             ? 'Memuat detail Teranura...'
-            : 'Detail Teranura tidak ditemukan.'
-        }
+            : 'Detail Teranura tidak ditemukan.',
+        ]
+          .filter(Boolean)
+          .join(' | ')}
         title={item?.name || 'Detail Teranura'}
       />
-      {item?.deviceLine === 'freyer' ? (
-        <View style={styles.detailBadgeRow}>
-          <KolamBadge intent="info" label="Freyer" />
-        </View>
-      ) : null}
       <KolamControlTabList
         accessibilityLabel="Tab detail Teranura"
         items={tabItems}
@@ -1191,12 +1189,6 @@ const styles = StyleSheet.create({
     minHeight: 0,
     overflow: 'visible',
     width: '100%',
-  },
-  detailBadgeRow: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    gap: 8,
   },
   iotPanel: {
     gap: 12,

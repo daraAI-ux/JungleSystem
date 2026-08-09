@@ -5931,31 +5931,21 @@ function KolamSpeciesDetail({
         eyebrow="Spesies Detail Spesies"
         moduleIcon="species"
         placement="workspace"
-        title={item.scientificName || item.displayName}>
-        {item.commonName || item.localName ? (
-          <View style={styles.nameLine}>
-            {item.commonName ? (
-              <Text style={styles.commonName}>{item.commonName}</Text>
-            ) : null}
-            {item.commonName && item.localName ? (
-              <Text style={styles.nameSeparator}>|</Text>
-            ) : null}
-            {item.localName ? (
-              <Text style={styles.localName}>{item.localName}</Text>
-            ) : null}
-          </View>
-        ) : null}
-        <Text style={styles.description}>
-          {[
+        subtitle={[
+          [item.commonName, item.localName].filter(Boolean).join(' | '),
+          [
             item.createdAt ? `Dibuat ${formatShortDate(item.createdAt)}` : '',
             item.updatedAt
               ? `Diperbarui ${formatShortDate(item.updatedAt)}`
               : '',
           ]
             .filter(Boolean)
-            .join(' | ')}
-        </Text>
-      </KolamPageIdentityHeader>
+            .join(' | '),
+        ]
+          .filter(Boolean)
+          .join(' | ')}
+        title={item.scientificName || item.displayName}
+      />
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters} />
@@ -7494,36 +7484,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
-  },
-  nameLine: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  commonName: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '800',
-    lineHeight: 20,
-  },
-  localName: {
-    color: V.colors.mutedFg,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  nameSeparator: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  description: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 4,
   },
   errorBadge: {
     alignSelf: 'flex-start',
