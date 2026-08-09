@@ -19,6 +19,7 @@ export type KolamNavigationModuleIcon =
   | 'cashflowSession'
   | 'category'
   | 'complaint'
+  | 'daraSeo'
   | 'discountApproval'
   | 'download'
   | 'enclosure'
@@ -484,6 +485,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Analisa, rekomendasi, dan draft perubahan. Mutasi produk hanya setelah approval.',
         group: 'Kampanye',
+        moduleIcon: 'daraSeo',
         requiredAccess: ['kolam'],
       },
       {
@@ -970,6 +972,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/campaign/dara-seo', {
         group: undefined,
         label: 'DARA SEO',
+        moduleIcon: 'daraSeo',
       }),
       sidebarItem('/campaign/dara-market-intel', {
         group: undefined,
