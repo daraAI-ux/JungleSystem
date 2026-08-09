@@ -1319,7 +1319,7 @@ function KolamPurchaseOrderDetail({
 
         <View style={styles.poDetailTimelineColumn}>
           <KolamContentFrame
-            style={[styles.detailCard, styles.detailSplitCard]}
+            style={styles.detailCard}
             variant="settingsWebConfig"
           >
             <Text style={styles.sectionTitle}>Timeline pengadaan</Text>
