@@ -17,6 +17,9 @@ namespace {
 
 std::mutex g_droppedFileMutex;
 std::string g_droppedFilePath;
+int g_droppedFileScreenX = 0;
+int g_droppedFileScreenY = 0;
+bool g_droppedFileHasPoint = false;
 constexpr uint64_t kMaxSvgPreviewBytes = 512 * 1024;
 
 std::string GetExtension(std::string fileName) {
@@ -91,6 +94,31 @@ HWND GetCurrentProcessWindow() {
       {"name", name},
       {"extension", extension},
       {"mimeType", GetMimeType(extension)},
+  };
+}
+
+::React::JSValueObject DroppedFileResult(
+    std::string const &path,
+    bool hasPoint,
+    int screenX,
+    int screenY) {
+  const auto slash = path.find_last_of("\\/");
+  const auto name = slash == std::string::npos ? path : path.substr(slash + 1);
+  const auto extension = GetExtension(name);
+
+  if (!hasPoint) {
+    return FileResult(path);
+  }
+
+  return ::React::JSValueObject{
+      {"cancelled", false},
+      {"path", path},
+      {"uri", ToFileUri(path)},
+      {"name", name},
+      {"extension", extension},
+      {"mimeType", GetMimeType(extension)},
+      {"dropScreenX", screenX},
+      {"dropScreenY", screenY},
   };
 }
 
@@ -443,7 +471,7 @@ void PickFileWithTypes(
 }
 } // namespace
 
-void SetKolamDroppedFilePath(std::wstring path) noexcept {
+void SetKolamDroppedFilePath(std::wstring path, int screenX, int screenY) noexcept {
   const auto nativePath = winrt::to_string(path);
   const auto extension = GetExtension(nativePath);
   if (!IsImageExtension(extension)) {
@@ -452,6 +480,9 @@ void SetKolamDroppedFilePath(std::wstring path) noexcept {
 
   std::lock_guard<std::mutex> lock(g_droppedFileMutex);
   g_droppedFilePath = nativePath;
+  g_droppedFileScreenX = screenX;
+  g_droppedFileScreenY = screenY;
+  g_droppedFileHasPoint = true;
 }
 
 void KolamWindowsFilePicker::Initialize(
@@ -585,14 +616,19 @@ void KolamWindowsFilePicker::readSvgPreviewFile(
   });
 }
 
-void KolamWindowsFilePicker::consumeDroppedImage(
+void KolamWindowsFilePicker::peekDroppedImage(
     ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
   m_context.UIDispatcher().Post([result = std::move(result)]() mutable {
     std::string path;
+    int screenX = 0;
+    int screenY = 0;
+    bool hasPoint = false;
     {
       std::lock_guard<std::mutex> lock(g_droppedFileMutex);
-      path = std::move(g_droppedFilePath);
-      g_droppedFilePath.clear();
+      path = g_droppedFilePath;
+      screenX = g_droppedFileScreenX;
+      screenY = g_droppedFileScreenY;
+      hasPoint = g_droppedFileHasPoint;
     }
 
     if (path.empty()) {
@@ -600,7 +636,35 @@ void KolamWindowsFilePicker::consumeDroppedImage(
       return;
     }
 
-    result.Resolve(FileResult(path));
+    result.Resolve(DroppedFileResult(path, hasPoint, screenX, screenY));
+  });
+}
+
+void KolamWindowsFilePicker::consumeDroppedImage(
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  m_context.UIDispatcher().Post([result = std::move(result)]() mutable {
+    std::string path;
+    int screenX = 0;
+    int screenY = 0;
+    bool hasPoint = false;
+    {
+      std::lock_guard<std::mutex> lock(g_droppedFileMutex);
+      path = std::move(g_droppedFilePath);
+      g_droppedFilePath.clear();
+      screenX = g_droppedFileScreenX;
+      screenY = g_droppedFileScreenY;
+      hasPoint = g_droppedFileHasPoint;
+      g_droppedFileScreenX = 0;
+      g_droppedFileScreenY = 0;
+      g_droppedFileHasPoint = false;
+    }
+
+    if (path.empty()) {
+      result.Resolve(CancelledResult());
+      return;
+    }
+
+    result.Resolve(DroppedFileResult(path, hasPoint, screenX, screenY));
   });
 }
 

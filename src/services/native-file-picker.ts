@@ -2,6 +2,8 @@ import { NativeModules, Platform } from 'react-native';
 
 export interface NativeImagePickerResult {
   cancelled: boolean;
+  dropScreenX?: number;
+  dropScreenY?: number;
   extension?: string;
   mimeType?: string;
   name?: string;
@@ -11,6 +13,7 @@ export interface NativeImagePickerResult {
 
 export interface NativeFilePickerBridge {
   consumeDroppedImage?(): Promise<NativeImagePickerResult>;
+  peekDroppedImage?(): Promise<NativeImagePickerResult>;
   pickAudio?(): Promise<NativeImagePickerResult>;
   pickFile?(): Promise<NativeImagePickerResult>;
   pickImage(): Promise<NativeImagePickerResult>;
@@ -29,6 +32,27 @@ export async function pickNativeImageFile(): Promise<NativeImagePickerResult> {
   }
 
   return bridge.pickImage();
+}
+
+export async function peekNativeDroppedImage(): Promise<NativeImagePickerResult> {
+  if (Platform.OS !== 'windows') {
+    return { cancelled: true };
+  }
+
+  const bridge = getNativeFilePickerBridge();
+  if (!bridge?.peekDroppedImage) {
+    return { cancelled: true };
+  }
+
+  try {
+    const result = await bridge.peekDroppedImage();
+    if (!result || typeof result !== 'object') {
+      return { cancelled: true };
+    }
+    return result;
+  } catch {
+    return { cancelled: true };
+  }
 }
 
 export async function consumeNativeDroppedImage(): Promise<NativeImagePickerResult> {

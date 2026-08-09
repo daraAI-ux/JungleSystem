@@ -1,7 +1,14 @@
 import React from 'react';
 import { Text, View } from 'react-native';
+
+type NativeView = React.ElementRef<typeof View>;
 import { getKolamFileUrl } from '../lib/file-url';
-import { consumeNativeDroppedImage } from '../services/native-file-picker';
+import {
+  consumeNativeDroppedImage,
+  getNativeFilePickerBridge,
+  peekNativeDroppedImage,
+  type NativeImagePickerResult,
+} from '../services/native-file-picker';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -11,14 +18,28 @@ import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 /**
- * Native Windows drops arrive via a single global queue (`consumeDroppedImage`).
- * When several upload fields mount (Product Media: Thumbnail / Foto / Video),
- * every field used to poll that queue — Thumbnail usually won.
- * Only the dropzone currently hovered (or the sole mounted field) may consume.
+ * Native Windows file drops arrive via WM_DROPFILES into one global queue.
+ * Product Media mounts several upload fields; routing uses drop screen coords
+ * from DragQueryPoint + measureInWindow hit-testing (not "first field wins").
  */
+type DropTargetRect = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+type DropTargetRegistration = {
+  id: string;
+  measure: () => Promise<DropTargetRect | null>;
+  onUri: (uri: string) => void;
+};
+
 let activeNativeDropTargetId: string | null = null;
 let nativeDropTargetSeq = 0;
-const mountedNativeDropTargets = new Set<string>();
+const registeredNativeDropTargets = new Map<string, DropTargetRegistration>();
+let sharedNativeDropPollTimer: ReturnType<typeof setInterval> | null = null;
+let sharedNativeDropPollInFlight = false;
 
 function claimNativeDropTarget(id: string) {
   activeNativeDropTargetId = id;
@@ -30,26 +51,135 @@ function releaseNativeDropTarget(id: string) {
   }
 }
 
-function getFirstMountedNativeDropTargetId() {
-  for (const id of mountedNativeDropTargets) {
-    return id;
+function ensureSharedNativeDropPoll() {
+  if (sharedNativeDropPollTimer) {
+    return;
   }
+  sharedNativeDropPollTimer = setInterval(() => {
+    void runSharedNativeDropPoll();
+  }, 250);
+}
+
+function stopSharedNativeDropPollIfIdle() {
+  if (registeredNativeDropTargets.size > 0 || !sharedNativeDropPollTimer) {
+    return;
+  }
+  clearInterval(sharedNativeDropPollTimer);
+  sharedNativeDropPollTimer = null;
+}
+
+function registerNativeDropTarget(registration: DropTargetRegistration) {
+  registeredNativeDropTargets.set(registration.id, registration);
+  ensureSharedNativeDropPoll();
+}
+
+function unregisterNativeDropTarget(id: string) {
+  registeredNativeDropTargets.delete(id);
+  releaseNativeDropTarget(id);
+  stopSharedNativeDropPollIfIdle();
+}
+
+async function runSharedNativeDropPoll() {
+  if (sharedNativeDropPollInFlight || registeredNativeDropTargets.size === 0) {
+    return;
+  }
+
+  sharedNativeDropPollInFlight = true;
+  try {
+    const bridge = getNativeFilePickerBridge();
+    const peeked = bridge?.peekDroppedImage
+      ? await peekNativeDroppedImage()
+      : await consumeNativeDroppedImage();
+    const peekedUri = readDroppedNativeUri(peeked);
+    if (!peekedUri) {
+      return;
+    }
+
+    const ownerId = await resolveNativeDropOwnerId(peeked);
+    if (bridge?.peekDroppedImage) {
+      const consumed = await consumeNativeDroppedImage();
+      const consumedUri = readDroppedNativeUri(consumed) || peekedUri;
+      if (ownerId) {
+        registeredNativeDropTargets.get(ownerId)?.onUri(consumedUri);
+        releaseNativeDropTarget(ownerId);
+      }
+      return;
+    }
+
+    // Legacy bridge without peek: only sole/claimed target may keep the file.
+    if (ownerId) {
+      registeredNativeDropTargets.get(ownerId)?.onUri(peekedUri);
+      releaseNativeDropTarget(ownerId);
+    }
+  } catch {
+    // Ignore bridge failures so drop polling cannot white-screen the form.
+  } finally {
+    sharedNativeDropPollInFlight = false;
+  }
+}
+
+async function resolveNativeDropOwnerId(
+  dropped: NativeImagePickerResult,
+): Promise<string | null> {
+  const dropX =
+    typeof dropped.dropScreenX === 'number' ? dropped.dropScreenX : null;
+  const dropY =
+    typeof dropped.dropScreenY === 'number' ? dropped.dropScreenY : null;
+
+  if (dropX != null && dropY != null) {
+    const hits: Array<{ id: string; area: number }> = [];
+    for (const [id, target] of registeredNativeDropTargets) {
+      const rect = await target.measure();
+      if (!rect || !pointInRect(dropX, dropY, rect)) {
+        continue;
+      }
+      hits.push({ id, area: rect.width * rect.height });
+    }
+    if (hits.length) {
+      hits.sort((left, right) => left.area - right.area);
+      return hits[0]?.id ?? null;
+    }
+  }
+
+  if (
+    activeNativeDropTargetId &&
+    registeredNativeDropTargets.has(activeNativeDropTargetId)
+  ) {
+    return activeNativeDropTargetId;
+  }
+
+  if (registeredNativeDropTargets.size === 1) {
+    return registeredNativeDropTargets.keys().next().value ?? null;
+  }
+
   return null;
 }
 
-function canConsumeNativeDrop(id: string) {
-  if (activeNativeDropTargetId === id) {
-    return true;
-  }
-  if (activeNativeDropTargetId != null) {
-    return false;
-  }
-  // No hover claim yet: sole field, or first mounted (Thumbnail / default).
-  // Hover/drag still redirects ownership to Foto/Video when those events fire.
-  if (mountedNativeDropTargets.size <= 1) {
-    return true;
-  }
-  return getFirstMountedNativeDropTargetId() === id;
+function pointInRect(x: number, y: number, rect: DropTargetRect) {
+  return (
+    x >= rect.x &&
+    y >= rect.y &&
+    x <= rect.x + rect.width &&
+    y <= rect.y + rect.height
+  );
+}
+
+function measureViewInWindow(
+  view: NativeView | null,
+): Promise<DropTargetRect | null> {
+  return new Promise(resolve => {
+    if (!view || typeof view.measureInWindow !== 'function') {
+      resolve(null);
+      return;
+    }
+    view.measureInWindow((x, y, width, height) => {
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+        resolve(null);
+        return;
+      }
+      resolve({ x, y, width, height });
+    });
+  });
 }
 
 export function KolamSettingsWebFileField({
@@ -95,6 +225,7 @@ export function KolamSettingsWebFileField({
       ? `(${Math.max(0, fileCount ?? 0)}/${Math.max(0, fileMax ?? 0)})`
       : '');
   const targetIdRef = React.useRef(`upload-drop-${++nativeDropTargetSeq}`);
+  const dropzoneRef = React.useRef<NativeView>(null);
   const onLocalValueChangeRef = React.useRef(onLocalValueChange);
   onLocalValueChangeRef.current = onLocalValueChange;
 
@@ -104,34 +235,16 @@ export function KolamSettingsWebFileField({
       return undefined;
     }
 
-    mountedNativeDropTargets.add(targetId);
-    let disposed = false;
-    const timer = setInterval(() => {
-      if (!canConsumeNativeDrop(targetId)) {
-        return;
-      }
-      void consumeNativeDroppedImage()
-        .then(dropped => {
-          const droppedUri = readDroppedNativeUri(dropped);
-          if (disposed || !droppedUri) {
-            return;
-          }
-          if (!canConsumeNativeDrop(targetId)) {
-            return;
-          }
-          onLocalValueChangeRef.current?.(droppedUri);
-          releaseNativeDropTarget(targetId);
-        })
-        .catch(() => {
-          // Ignore bridge failures so a bad drop payload cannot white-screen the form.
-        });
-    }, 500);
+    registerNativeDropTarget({
+      id: targetId,
+      measure: () => measureViewInWindow(dropzoneRef.current),
+      onUri: uri => {
+        onLocalValueChangeRef.current?.(uri);
+      },
+    });
 
     return () => {
-      disposed = true;
-      clearInterval(timer);
-      mountedNativeDropTargets.delete(targetId);
-      releaseNativeDropTarget(targetId);
+      unregisterNativeDropTarget(targetId);
     };
   }, [disabled, onLocalValueChange]);
 
@@ -148,16 +261,13 @@ export function KolamSettingsWebFileField({
       const targetId = targetIdRef.current;
       void (async () => {
         try {
-          // Windows native queue holds the real filesystem path. Prefer it over
-          // flaky event/blob URLs that cannot preview in KolamRemoteImage.
-          if (canConsumeNativeDrop(targetId)) {
-            const nativeUri = readDroppedNativeUri(
-              await consumeNativeDroppedImage(),
-            );
-            if (nativeUri) {
-              onLocalValueChangeRef.current?.(nativeUri);
-              return;
-            }
+          // Prefer assigning to this field when its drop handler fires.
+          const nativeUri = readDroppedNativeUri(
+            await consumeNativeDroppedImage(),
+          );
+          if (nativeUri) {
+            onLocalValueChangeRef.current?.(nativeUri);
+            return;
           }
 
           const eventUri = asUsableDroppedPreviewUri(
@@ -203,7 +313,10 @@ export function KolamSettingsWebFileField({
           </Text>
         ) : null}
       </View>
-      <View {...dropzoneProps} style={styles.settingsWebUploadDropzone}>
+      <View
+        {...dropzoneProps}
+        ref={dropzoneRef}
+        style={styles.settingsWebUploadDropzone}>
         <KolamInteractionFrame
           {...dropzoneProps}
           accessibilityLabel={hint}

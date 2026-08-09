@@ -4,7 +4,7 @@
 
 namespace KolamWindows {
 
-void SetKolamDroppedFilePath(std::wstring path) noexcept;
+void SetKolamDroppedFilePath(std::wstring path, int screenX, int screenY) noexcept;
 
 REACT_MODULE(KolamWindowsFilePicker)
 struct KolamWindowsFilePicker {
@@ -27,6 +27,9 @@ struct KolamWindowsFilePicker {
   void readSvgPreviewFile(
       std::string pathOrUri,
       ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
+  REACT_METHOD(peekDroppedImage)
+  void peekDroppedImage(::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
 
   REACT_METHOD(consumeDroppedImage)
   void consumeDroppedImage(::React::ReactPromise<::React::JSValueObject> &&result) noexcept;

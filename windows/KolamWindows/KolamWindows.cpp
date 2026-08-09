@@ -24,7 +24,12 @@ LRESULT CALLBACK KolamWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     auto drop = reinterpret_cast<HDROP>(wParam);
     WCHAR path[MAX_PATH]{};
     if (DragQueryFileW(drop, 0, path, MAX_PATH) > 0) {
-      KolamWindows::SetKolamDroppedFilePath(path);
+      POINT dropPoint{};
+      if (!DragQueryPoint(drop, &dropPoint)) {
+        dropPoint = {};
+      }
+      ClientToScreen(hwnd, &dropPoint);
+      KolamWindows::SetKolamDroppedFilePath(path, dropPoint.x, dropPoint.y);
     }
     DragFinish(drop);
     return 0;
