@@ -1791,33 +1791,52 @@ function KolamPOPaymentSection({
         </View>
 
         <View style={styles.poCostPaymentColumn}>
-          <Text style={styles.sectionTitle}>Pembayaran</Text>
-      <KolamDescriptionList
-        accessibilityLabel="Detail pembayaran PO"
-        rows={[
+          <KolamDetailSummaryCard
+            fieldColumns={3}
+            fields={[
           {
             id: 'status',
             label: 'Status bayar',
             value: getKolamPOPaymentStatusLabel(po.paymentStatus),
-            meta: '',
-            tone: getKolamDescriptionTone(getKolamPOPaymentStatusIntent(po.paymentStatus)),
           },
           {
             id: 'amount',
             label: 'Jumlah dibayar',
-            value: formatRupiah(po.paymentAmount),
-            meta: po.paidAt ? `${po.paidByName || ''} · ${formatPODateTime(po.paidAt)}` : '',
-            tone: 'default',
+            value: (
+              <View style={styles.summaryValueStack}>
+                <Text style={styles.summaryValueText}>
+                  {formatRupiah(po.paymentAmount)}
+                </Text>
+                {po.paidAt ? (
+                  <Text style={styles.summaryMetaText}>
+                    {po.paidByName || ''}
+                    {po.paidByName ? ' · ' : ''}
+                    {formatPODateTime(po.paidAt)}
+                  </Text>
+                ) : null}
+              </View>
+            ),
           },
           {
             id: 'refund',
             label: 'Status refund',
-            value: getKolamPORefundStatusLabel(po.refundStatus),
-            meta: po.refundStatus !== 'none' ? formatRupiah(po.refundAmount) : '',
-            tone: getKolamDescriptionTone(getKolamPORefundStatusIntent(po.refundStatus)),
+            value: (
+              <View style={styles.summaryValueStack}>
+                <Text style={styles.summaryValueText}>
+                  {getKolamPORefundStatusLabel(po.refundStatus)}
+                </Text>
+                {po.refundStatus !== 'none' ? (
+                  <Text style={styles.summaryMetaText}>
+                    {formatRupiah(po.refundAmount)}
+                  </Text>
+                ) : null}
+              </View>
+            ),
           },
-        ]}
-      />
+            ]}
+            style={styles.poPaymentSummaryCard}
+            title="Pembayaran"
+          />
         </View>
       </View>
 
@@ -2785,15 +2804,18 @@ const styles = StyleSheet.create({
   },
   poCostPaymentGrid: {
     alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column-reverse',
     gap: 14,
   },
   poCostPaymentColumn: {
-    flexBasis: 0,
-    flexGrow: 1,
+    alignSelf: 'stretch',
     minWidth: 280,
     gap: 8,
+    width: '100%',
+  },
+  poPaymentSummaryCard: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   poBreakdownCard: {
     backgroundColor: V.colors.mutedSoft,
