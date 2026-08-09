@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { KolamFreyerIotDevice } from '../domain/kolam-freyer-iot-device';
 import { type KolamTeranura } from '../domain/kolam-teranura';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -7,6 +8,7 @@ import {
   type KolamTeranuraSellableFilter,
   useKolamTeranuraController,
 } from '../hooks/use-kolam-teranura-controller';
+import { useKolamTeranuraIotDevices } from '../hooks/use-kolam-teranura-iot-devices';
 import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamButton } from './kolam-button';
@@ -387,15 +389,30 @@ function KolamTeranuraDetail({
         style={styles.detailTabPanel}
         variant="settingsWebConfig"
       >
-        <KolamEmptyState
-          compact
-          message={
-            activeTab === 'iot'
-              ? 'Panel perangkat IoT akan diisi setelah audit endpoint dan payload IoT Teranura.'
-              : 'Ringkasan katalog Teranura akan diisi pada fase berikutnya.'
-          }
-          title={activeTab === 'iot' ? 'Perangkat IoT' : 'Katalog'}
-        />
+        {activeTab === 'iot' ? (
+          item ? (
+            <TeranuraIotDevicesPanel
+              catalogName={item.name}
+              teranuraProductId={item.id}
+            />
+          ) : (
+            <KolamEmptyState
+              compact
+              message={
+                loading
+                  ? 'Memuat detail Teranura...'
+                  : 'Pilih katalog Teranura untuk melihat perangkat IoT.'
+              }
+              title="Perangkat IoT"
+            />
+          )
+        ) : (
+          <KolamEmptyState
+            compact
+            message="Ringkasan katalog Teranura akan diisi pada fase berikutnya."
+            title="Katalog"
+          />
+        )}
       </KolamContentFrame>
     </>
   );
@@ -447,6 +464,134 @@ function KolamTeranuraDetail({
       {tabPanel}
     </View>
   );
+}
+
+function TeranuraIotDevicesPanel({
+  catalogName,
+  teranuraProductId,
+}: {
+  catalogName: string;
+  teranuraProductId: string;
+}) {
+  const iot = useKolamTeranuraIotDevices(teranuraProductId);
+  const columns = React.useMemo(() => buildTeranuraIotDeviceColumns(), []);
+
+  return (
+    <View style={styles.iotPanel}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'title',
+            text: 'Perangkat IoT terpasang',
+            style: styles.iotPanelTitle,
+          },
+          {
+            id: 'description',
+            text: catalogName.trim()
+              ? `Instance alat Freyr untuk katalog “${catalogName.trim()}”.`
+              : 'Instance alat Freyr untuk katalog ini.',
+            style: styles.iotPanelDescription,
+          },
+        ]}
+      />
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters}>
+            <KolamSearchField
+              onChangeText={iot.onSearchChange}
+              placeholder="Nama, serial, invoice…"
+              style={styles.iotSearch}
+              value={iot.search}
+            />
+          </View>
+        </View>
+      </View>
+      <Text style={styles.iotCount}>
+        {iot.pagination.total} perangkat untuk katalog ini
+      </Text>
+      {iot.error ? <Text style={styles.error}>{iot.error}</Text> : null}
+      <KolamListTableComposition
+        columns={columns}
+        emptyTitle="Tidak ada perangkat"
+        getRowKey={device => device.id}
+        loading={iot.loading}
+        rows={iot.devices}
+        showFooter={false}
+        style={styles.tableFrame}
+      />
+    </View>
+  );
+}
+
+function buildTeranuraIotDeviceColumns(): Array<
+  KolamListTableColumn<KolamFreyerIotDevice>
+> {
+  return [
+    {
+      flex: 1.4,
+      id: 'name',
+      label: 'Nama',
+      render: device => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {device.name}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.1,
+      id: 'serial',
+      label: 'Serial',
+      render: device => (
+        <Text numberOfLines={1} selectable style={styles.cellText}>
+          {device.serialNumber}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.2,
+      id: 'customer',
+      label: 'Customer',
+      render: device => (
+        <Text numberOfLines={2} style={styles.cellText}>
+          {device.customerLabel}
+        </Text>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.7,
+      id: 'status',
+      label: 'Status',
+      render: device => (
+        <KolamBadge
+          intent={device.status === 1 ? 'success' : 'secondary'}
+          label={device.statusLabel}
+          style={styles.centerBadge}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.6,
+      id: 'water',
+      label: 'Air',
+      render: device => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {String(device.waterLevelStatus ?? 0)}
+        </Text>
+      ),
+    },
+    {
+      flex: 1.1,
+      id: 'updated',
+      label: 'Diperbarui',
+      render: device => (
+        <Text numberOfLines={1} style={styles.cellText}>
+          {formatDateTime(device.updatedAt)}
+        </Text>
+      ),
+    },
+  ];
 }
 
 function buildTeranuraListColumns(): Array<
@@ -996,5 +1141,34 @@ const styles = StyleSheet.create({
   detailTabPanel: {
     minHeight: 220,
     padding: 16,
+  },
+  iotPanel: {
+    gap: 12,
+    width: '100%',
+  },
+  iotPanelTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 15,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  iotPanelDescription: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
+  },
+  iotSearch: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 120,
+  },
+  iotCount: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
