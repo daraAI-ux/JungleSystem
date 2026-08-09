@@ -14,6 +14,7 @@ export interface KolamNavigationItem {
 export type KolamNavigationModuleIcon =
   | 'ai'
   | 'archive'
+  | 'assetPurchase'
   | 'brand'
   | 'campaign'
   | 'cashflowSession'
@@ -603,6 +604,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/asset-purchase',
         description: 'Pembelian aset tetap',
         group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'assetPurchase',
         requiredAccess: ['kolam'],
       },
       {
@@ -1015,6 +1017,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/asset-purchase', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Pembelian Aset',
+        moduleIcon: 'assetPurchase',
       }),
       sidebarItem('/commissions', {
         group: 'Pengeluaran & Pemasukan',
