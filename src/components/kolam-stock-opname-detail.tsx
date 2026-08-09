@@ -45,7 +45,10 @@ import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
-import { KolamDropdownSelect } from './kolam-dropdown-select';
+import {
+  KolamDropdownSelect,
+  KolamOverflowMenuButton,
+} from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -647,87 +650,52 @@ export function KolamStockOpnameDetail({
           getRowKey={line => line.id}
           loading={controller.loading}
           renderActions={line => {
-            const canEdit =
-              canUpdate &&
-              (controller.canEditDraftLine(line) ||
-                controller.canEditRevisionLine(line));
-            const canRemove = canUpdate && controller.canRemoveLine(line);
-            const canApproveLine =
-              canReview &&
-              controller.isReview &&
-              line.lineStatus === 'pending_review';
-            const canReviewLine =
-              canReview &&
-              controller.isReview &&
-              line.lineStatus === 'pending_review';
-            const canResubmitLine =
-              canUpdate &&
-              controller.isReview &&
-              line.lineStatus === 'revision';
-
             return (
-              <View style={styles.tableActions}>
-                {canEdit ? (
-                  <KolamEditButton
-                    onPress={() => {
-                      setEditLine(line);
-                      setEditQty(String(line.physicalQty));
-                      setEditMinus(line.minusReason || '');
-                      setEditNote(line.lineNote || '');
-                    }}
-                  />
-                ) : null}
-                {canRemove ? (
-                  <KolamDeleteButton
-                    intent="danger"
-                    label="Hapus"
-                    onPress={() => {
-                      void controller.onDeleteLine(line.id);
-                    }}
-                  />
-                ) : null}
-                {canApproveLine ? (
-                  <KolamButton
-                    intent="primary"
-                    label="Setujui"
-                    onPress={() => {
-                      void controller.onApproveLine(line.id);
-                    }}
-                  />
-                ) : null}
-                {canReviewLine ? (
-                  <>
-                    <KolamButton
-                      label="Revisi"
-                      onPress={() =>
-                        setReviewTarget({
-                          lineId: line.id,
-                          decision: 'revision',
-                        })
-                      }
-                    />
-                    <KolamButton
-                      intent="danger"
-                      label="Tolak"
-                      onPress={() =>
-                        setReviewTarget({
-                          lineId: line.id,
-                          decision: 'rejected',
-                        })
-                      }
-                    />
-                  </>
-                ) : null}
-                {canResubmitLine ? (
-                  <KolamButton
-                    intent="primary"
-                    label="Kirim ulang"
-                    onPress={() => {
-                      void controller.onResubmitLine(line.id);
-                    }}
-                  />
-                ) : null}
-              </View>
+              <StockOpnameLineActionsMenu
+                canApprove={
+                  canReview &&
+                  controller.isReview &&
+                  line.lineStatus === 'pending_review'
+                }
+                canEdit={
+                  canUpdate &&
+                  (controller.canEditDraftLine(line) ||
+                    controller.canEditRevisionLine(line))
+                }
+                canRemove={canUpdate && controller.canRemoveLine(line)}
+                canResubmit={
+                  canUpdate &&
+                  controller.isReview &&
+                  line.lineStatus === 'revision'
+                }
+                canReview={
+                  canReview &&
+                  controller.isReview &&
+                  line.lineStatus === 'pending_review'
+                }
+                line={line}
+                onApprove={() => {
+                  void controller.onApproveLine(line.id);
+                }}
+                onEdit={() => {
+                  setEditLine(line);
+                  setEditQty(String(line.physicalQty));
+                  setEditMinus(line.minusReason || '');
+                  setEditNote(line.lineNote || '');
+                }}
+                onReject={() =>
+                  setReviewTarget({ lineId: line.id, decision: 'rejected' })
+                }
+                onRemove={() => {
+                  void controller.onDeleteLine(line.id);
+                }}
+                onRequestRevision={() =>
+                  setReviewTarget({ lineId: line.id, decision: 'revision' })
+                }
+                onResubmit={() => {
+                  void controller.onResubmitLine(line.id);
+                }}
+              />
             );
           }}
           rows={controller.lines}
@@ -1086,6 +1054,65 @@ function stockOpnameStaffAssigneeLabel(user: KolamStockOpnameStaffAssignee) {
     .join(' ')
     .trim();
   return fullName || user.name || user.username || user.email || user.id;
+}
+
+function StockOpnameLineActionsMenu({
+  canApprove,
+  canEdit,
+  canRemove,
+  canResubmit,
+  canReview,
+  line,
+  onApprove,
+  onEdit,
+  onReject,
+  onRemove,
+  onRequestRevision,
+  onResubmit,
+}: {
+  canApprove: boolean;
+  canEdit: boolean;
+  canRemove: boolean;
+  canResubmit: boolean;
+  canReview: boolean;
+  line: KolamStockOpnameLine;
+  onApprove: () => void;
+  onEdit: () => void;
+  onReject: () => void;
+  onRemove: () => void;
+  onRequestRevision: () => void;
+  onResubmit: () => void;
+}) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+  const actions = [
+    ...(canEdit ? [{ label: 'Rubah', onPress: onEdit }] : []),
+    ...(canApprove ? [{ label: 'Setujui', onPress: onApprove }] : []),
+    ...(canReview
+      ? [
+          { label: 'Revisi', onPress: onRequestRevision },
+          { label: 'Tolak', onPress: onReject, tone: 'danger' as const },
+        ]
+      : []),
+    ...(canResubmit ? [{ label: 'Kirim ulang', onPress: onResubmit }] : []),
+    ...(canRemove
+      ? [{ label: 'Hapus', onPress: onRemove, tone: 'danger' as const }]
+      : []),
+  ];
+
+  return (
+    <View style={actionMenuOpen ? styles.activeActionRow : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={`Aksi baris ${line.lineNo}`}
+        actions={
+          actions.length
+            ? actions
+            : [{ disabled: true, label: 'Tidak ada aksi', onPress: () => {} }]
+        }
+        floating
+        onOpenChange={setActionMenuOpen}
+      />
+    </View>
+  );
 }
 
 function AddLineForm({
@@ -1586,11 +1613,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  tableActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-end',
+  activeActionRow: {
+    elevation: 30,
+    overflow: 'visible',
+    zIndex: 1000,
   },
   uploadCard: {
     borderColor: V.colors.border,
