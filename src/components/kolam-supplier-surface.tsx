@@ -508,10 +508,23 @@ function KolamSupplierDetail({
               </Text>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamDaftarButton
+              <KolamCancelButton
+                disabled={controller.saving}
                 onPress={() => {
                   controller.onBackToList();
                   onRouteChange?.(KOLAM_SUPPLIER_ROOT);
+                }}
+                style={styles.toolbarButton}
+              />
+              <KolamSaveButton
+                disabled={controller.saving}
+                label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSave().then(id => {
+                    if (id) {
+                      onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${id}`);
+                    }
+                  });
                 }}
                 style={styles.toolbarButton}
               />
@@ -1969,27 +1982,6 @@ function KolamSupplierForm({
               )}
             </View>
           </FieldShell>
-        </View>
-
-        <View style={styles.formActions}>
-          <KolamCancelButton
-            disabled={controller.saving}
-            onPress={() => {
-              controller.onBackToList();
-              onRouteChange?.(KOLAM_SUPPLIER_ROOT);
-            }}
-          />
-          <KolamSaveButton
-            disabled={controller.saving}
-            label={controller.saving ? 'Menyimpan…' : 'Simpan'}
-            onPress={() => {
-              void controller.onSave().then(id => {
-                if (id) {
-                  onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${id}`);
-                }
-              });
-            }}
-          />
         </View>
       </View>
     </KolamNativeFormSection>
