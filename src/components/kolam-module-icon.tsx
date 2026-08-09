@@ -3,6 +3,7 @@ import {Image, StyleSheet, View} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
+import {KOLAM_CAMPAIGN_MODULE_ICON_SVG} from '../assets/icons/campaign-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
 import {KOLAM_COMPLAINT_MODULE_ICON_SVG} from '../assets/icons/complaint-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
@@ -35,6 +36,7 @@ const ENCLOSURE_MODULE_ICON_SOURCE = require('../assets/icons/enclosure-module-i
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   archive: 'Icon Arsip',
   brand: 'Icon Merek',
+  campaign: 'Icon Kampanye',
   cashflowSession: 'Icon Sesi Tunai',
   category: 'Icon Kategori',
   complaint: 'Icon Komplain',
@@ -78,6 +80,7 @@ const FIELDCUSTOM_ICON_PATHS = [
 ] as const;
 const BRAND_ICON_PATHS = getSvgPathData(KOLAM_BRAND_MODULE_ICON_SVG);
 const ARCHIVE_ICON_PATHS = getSvgPathData(KOLAM_ARCHIVE_MODULE_ICON_SVG);
+const CAMPAIGN_ICON_PATHS = getSvgPathData(KOLAM_CAMPAIGN_MODULE_ICON_SVG);
 const CASHFLOW_SESSION_ICON_PATHS = getSvgPathData(
   KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG,
 );
@@ -139,6 +142,12 @@ export function KolamModuleIcon({
       ) : kind === 'brand' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {BRAND_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'campaign' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {CAMPAIGN_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
           ))}
         </Svg>

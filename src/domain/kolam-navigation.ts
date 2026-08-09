@@ -14,6 +14,7 @@ export interface KolamNavigationItem {
 export type KolamNavigationModuleIcon =
   | 'archive'
   | 'brand'
+  | 'campaign'
   | 'cashflowSession'
   | 'category'
   | 'complaint'
@@ -442,10 +443,11 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Daftar',
+        label: 'Daftar Kampanye',
         route: '/campaign',
         description: 'Kelola semua kampanye pemasaran dan promosi.',
         group: 'Kampanye',
+        moduleIcon: 'campaign',
         requiredAccess: ['kolam'],
       },
       {
@@ -925,7 +927,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Proyek',
         moduleIcon: 'project',
       }),
-      sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
+      sidebarItem('/campaign', {
+        group: 'Kampanye',
+        label: 'Daftar Kampanye',
+        moduleIcon: 'campaign',
+      }),
       sidebarItem('/sales/discount-approval', {
         group: 'Kampanye',
         label: 'Persetujuan Diskon',
