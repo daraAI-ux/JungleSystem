@@ -12,6 +12,8 @@ export interface KolamPdfDownloadButtonProps
   loadingLabel?: string;
 }
 
+const KOLAM_ACTION_BUTTON_BG = '#374151';
+
 export function KolamPdfDownloadButton({
   accessibilityLabel,
   iconOnly = false,
@@ -34,13 +36,20 @@ export function KolamPdfDownloadButton({
       icon={<KolamPdfFileIcon size={size === 'md' ? 18 : 16} />}
       label={iconOnly ? '' : resolvedLabel}
       size={size}
-      style={[iconOnly ? styles.iconOnlyButton : null, style]}
-      textStyle={[iconOnly ? styles.iconOnlyText : null, textStyle]}
+      style={[styles.button, iconOnly ? styles.iconOnlyButton : null, style]}
+      textStyle={[styles.text, iconOnly ? styles.iconOnlyText : null, textStyle]}
     />
   );
 }
 
 const styles = StyleSheet.create({
+  button: {
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
+  },
+  text: {
+    color: V.colors.primaryFg,
+  },
   iconOnlyButton: {
     minWidth: 34,
     paddingHorizontal: 0,
