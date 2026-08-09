@@ -547,16 +547,7 @@ function KolamTeranuraDetail({
         onSelect={selectTab}
         selectedId={activeTab}
       />
-      {activeTab === 'overview' || activeTab === 'statistics' ? (
-        tabBody
-      ) : (
-        <KolamContentFrame
-          style={styles.detailTabPanel}
-          variant="settingsWebConfig"
-        >
-          {tabBody}
-        </KolamContentFrame>
-      )}
+      {tabBody}
     </KolamDetailScrollSurface>
   );
 }
@@ -1259,10 +1250,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
-  },
-  detailTabPanel: {
-    minHeight: 220,
-    padding: 16,
   },
   iotPanel: {
     gap: 12,

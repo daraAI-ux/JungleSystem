@@ -62,7 +62,35 @@ export interface KolamTeranuraShippingMethod {
   pricingType: string;
   pricingPrice: number;
   priceLabel: string;
+  etaLabel: string;
+  coverageLabel: string;
+  minimumOrderAmount: number;
   logoUri: string | null;
+}
+
+export interface KolamTeranuraWarranty {
+  days: number;
+  label: string;
+  mode: string;
+  termsTitle: string;
+  vendorName: string;
+}
+
+export interface KolamTeranuraSeo {
+  keywords: string[];
+  lastSeoScore: number | null;
+  metaDescription: string;
+  metaTitle: string;
+}
+
+export interface KolamTeranuraAttachedItem {
+  id: string;
+  itemType: string;
+  note: string;
+  targetName: string;
+  targetSku: string;
+  type: string;
+  typeLabel: string;
 }
 
 export interface KolamTeranuraAsset {
@@ -115,6 +143,7 @@ export interface KolamTeranura {
   marketPrice: number;
   onlinePrice: number;
   minimumPriceToSales: number;
+  minimumOrderQty: number;
   sellable: boolean;
   stock: number;
   lowStockThreshold: number;
@@ -127,9 +156,12 @@ export interface KolamTeranura {
   vendorPrices: KolamTeranuraVendorPrice[];
   shippingMethods: KolamTeranuraShippingMethod[];
   assets: KolamTeranuraAsset[];
+  attachedItems: KolamTeranuraAttachedItem[];
   links: KolamTeranuraLink[];
   localeBlocks: KolamTeranuraLocaleBlock[];
   marketplaceSyncPlatforms: KolamTeranuraMarketplaceSyncPlatform[];
+  warranty: KolamTeranuraWarranty;
+  seo: KolamTeranuraSeo;
   tags: string[];
   locationLabel: string;
   linkedProductId: string;
@@ -407,6 +439,9 @@ export function normalizeKolamTeranura(value: unknown): KolamTeranura {
     minimumPriceToSales:
       getNumber(record, 'minimum_price_to_sales') ||
       getNumber(record, 'minimumPriceToSales'),
+    minimumOrderQty:
+      getNumber(record, 'minimumOrderQty') ||
+      getNumber(record, 'minimum_order_qty'),
     sellable: getBoolean(record, 'sellable'),
     stock: getTeranuraStock(record, variants),
     lowStockThreshold:
@@ -423,11 +458,14 @@ export function normalizeKolamTeranura(value: unknown): KolamTeranura {
       record.availableShippingMethods ?? record.shippingMethods,
     ),
     assets: normalizeAssets(record.assets),
+    attachedItems: normalizeAttachedItems(record.attachedItems),
     links: normalizeLinks(record.links ?? record.externalLinks),
     localeBlocks: normalizeLocaleBlocks(record, getString(record, 'name')),
     marketplaceSyncPlatforms: normalizeMarketplaceSyncPlatforms(
       asRecord(record.marketplaceSync).platforms ?? record.marketplaceSync,
     ),
+    warranty: normalizeWarranty(record),
+    seo: normalizeSeo(record),
     tags: normalizeTags(record.tags),
     locationLabel: normalizeLocationLabel(record.location),
     linkedProductId: normalizeLinkedProductId(record.linkedProductId),
@@ -679,8 +717,15 @@ function normalizeShippingMethods(
   return list.map((entry, index) => {
     const method = asRecord(entry);
     const pricing = asRecord(method.pricingModel ?? method.pricing);
+    const estimatedDays = asRecord(method.estimatedDays);
+    const specialConditions = asRecord(method.specialConditions);
+    const restrictedRegions = Array.isArray(specialConditions.restrictedRegions)
+      ? specialConditions.restrictedRegions
+      : [];
     const pricingType = getString(pricing, 'type') || 'fixed';
     const pricingPrice = getNumber(pricing, 'price');
+    const minDays = getNumber(estimatedDays, 'min');
+    const maxDays = getNumber(estimatedDays, 'max');
     const displayName =
       getString(method, 'displayName') ||
       getString(method, 'name') ||
@@ -696,12 +741,96 @@ function normalizeShippingMethods(
         pricingType === 'per_kg'
           ? `Rp ${pricingPrice.toLocaleString('id-ID')}/kg`
           : `Rp ${pricingPrice.toLocaleString('id-ID')} (fixed)`,
+      etaLabel:
+        minDays === maxDays
+          ? `${minDays || '-'} hari`
+          : `${minDays || '-'}-${maxDays || '-'} hari`,
+      coverageLabel: restrictedRegions.length
+        ? `Restricted: ${restrictedRegions
+            .slice(0, 3)
+            .map(String)
+            .join(', ')}`
+        : 'Coverage: semua region',
+      minimumOrderAmount: getNumber(specialConditions, 'minimumOrderAmount'),
       logoUri:
         normalizeUri(
           getString(method, 'icon') || getString(method, 'logo') || '',
         ) || null,
     };
   });
+}
+
+function normalizeWarranty(record: Record<string, unknown>): KolamTeranuraWarranty {
+  const publicWarranty = asRecord(record.warranty);
+  const warranty = asRecord(record.productWarranty);
+  const mode =
+    getString(publicWarranty, 'mode') ||
+    getString(warranty, 'mode') ||
+    'none';
+  const vendor = asRecord(warranty.warrantyVendor);
+  const terms = asRecord(warranty.warrantyTermsTemplate);
+  const label =
+    mode === 'none'
+      ? 'Tanpa garansi'
+      : mode === 'official_distributor'
+      ? 'Distributor resmi'
+      : mode === 'store'
+      ? 'Toko'
+      : mode || 'Garansi';
+
+  return {
+    days:
+      getNumber(publicWarranty, 'warrantyDays') ||
+      getNumber(warranty, 'warrantyDays'),
+    label,
+    mode,
+    termsTitle:
+      getString(publicWarranty, 'termsTitle') || getString(terms, 'title'),
+    vendorName:
+      getString(publicWarranty, 'vendorName') || getString(vendor, 'name'),
+  };
+}
+
+function normalizeSeo(record: Record<string, unknown>): KolamTeranuraSeo {
+  const seo = asRecord(record.seo);
+  return {
+    keywords: Array.isArray(seo.keywords)
+      ? seo.keywords.map(value => String(value).trim()).filter(Boolean)
+      : [],
+    lastSeoScore:
+      typeof seo.lastSeoScore === 'number' ? seo.lastSeoScore : null,
+    metaDescription: getString(seo, 'metaDescription'),
+    metaTitle: getString(seo, 'metaTitle'),
+  };
+}
+
+function normalizeAttachedItems(
+  value: unknown,
+): KolamTeranuraAttachedItem[] {
+  const list = Array.isArray(value) ? value : [];
+  return list
+    .map((entry, index) => {
+      const row = asRecord(entry);
+      const itemType = getString(row, 'itemType') || 'product';
+      const target = asRecord(
+        itemType === 'species' ? row.species : row.product,
+      );
+      const targetName =
+        getString(target, 'name') ||
+        getString(row, 'name') ||
+        (itemType === 'species' ? 'Spesies' : 'Produk');
+      const type = getString(row, 'type');
+      return {
+        id: getId(row) || `${itemType}-${index}`,
+        itemType,
+        note: getString(row, 'note'),
+        targetName,
+        targetSku: getString(target, 'sku') || getString(row, 'sku'),
+        type,
+        typeLabel: type || 'Terkait',
+      };
+    })
+    .filter(item => item.targetName);
 }
 
 function normalizeAssets(value: unknown): KolamTeranuraAsset[] {
