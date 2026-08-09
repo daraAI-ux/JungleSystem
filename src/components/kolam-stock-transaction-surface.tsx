@@ -30,7 +30,6 @@ import {KolamDaftarButton} from './kolam-daftar-button';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamDateField } from './kolam-date-field';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
@@ -46,6 +45,7 @@ import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-sourc
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -990,7 +990,7 @@ function KolamStockTransactionList({
                 open={activeFilterPanel === 'status'}
                 variant="quiet"
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal mulai"
                 label="Dari"
                 onChange={value => {
@@ -998,11 +998,9 @@ function KolamStockTransactionList({
                   controller.onChangeFilters({ startDate: value });
                 }}
                 placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.startDate}
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal sampai"
                 label="Sampai"
                 onChange={value => {
@@ -1010,8 +1008,6 @@ function KolamStockTransactionList({
                   controller.onChangeFilters({ endDate: value });
                 }}
                 placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.endDate}
               />
             </View>
@@ -1550,12 +1546,6 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: 'flex-end',
     marginLeft: 'auto',
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 110,
-    maxWidth: 160,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,

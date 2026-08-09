@@ -35,7 +35,6 @@ import {
 import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamDateField } from './kolam-date-field';
 import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -46,6 +45,7 @@ import { KolamPayableFormSurface } from './kolam-payable-form-surface';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 const FILTER_PANEL_WIDTH = 220;
 
@@ -344,24 +344,18 @@ function PayableToolbar({
               </View>
               {controller.filters.period === 'custom' ? (
                 <>
-                  <KolamDateField
+                  <KolamToolbarDateFilter
                     accessibilityLabel="Tanggal dari"
                     label="Dari"
                     onChange={controller.onStartDateChange}
                     placeholder="Dari"
-                    showLabelInTrigger={false}
-                    style={styles.dateField}
-                    triggerStyle={styles.dateFieldTrigger}
                     value={controller.filters.startDate}
                   />
-                  <KolamDateField
+                  <KolamToolbarDateFilter
                     accessibilityLabel="Tanggal sampai"
                     label="Sampai"
                     onChange={controller.onEndDateChange}
                     placeholder="Sampai"
-                    showLabelInTrigger={false}
-                    style={styles.dateField}
-                    triggerStyle={styles.dateFieldTrigger}
                     value={controller.filters.endDate}
                   />
                 </>
@@ -1340,15 +1334,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 116,
-  },
-  dateFieldTrigger: {
-    minWidth: 0,
-    paddingHorizontal: 8,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,

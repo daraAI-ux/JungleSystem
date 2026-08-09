@@ -41,7 +41,6 @@ import { KolamUnexpectedExpenseFormSurface } from './kolam-unexpected-expense-fo
 import { KolamUnexpectedIncomeDetailSurface } from './kolam-unexpected-income-detail-surface';
 import { KolamUnexpectedIncomeFormSurface } from './kolam-unexpected-income-form-surface';
 import { KolamRoutineExpenseFormSurface } from './kolam-routine-expense-form-surface';
-import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
@@ -56,6 +55,7 @@ import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 type ColumnDef = {
   align?: 'left' | 'center' | 'right';
@@ -725,24 +725,18 @@ function FinanceExpenseListBody({
                 />
                 {controller.filters.period === 'custom' ? (
                   <>
-                    <KolamDateField
+                    <KolamToolbarDateFilter
                       accessibilityLabel="Tanggal mulai"
                       label="Dari"
                       onChange={controller.onStartDateChange}
                       placeholder="Dari"
-                      showLabelInTrigger={false}
-                      style={styles.dateField}
-                      triggerStyle={styles.dateFieldTrigger}
                       value={controller.filters.startDate}
                     />
-                    <KolamDateField
+                    <KolamToolbarDateFilter
                       accessibilityLabel="Tanggal sampai"
                       label="Sampai"
                       onChange={controller.onEndDateChange}
                       placeholder="Sampai"
-                      showLabelInTrigger={false}
-                      style={styles.dateField}
-                      triggerStyle={styles.dateFieldTrigger}
                       value={controller.filters.endDate}
                     />
                   </>
@@ -974,15 +968,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 96,
-  },
-  dateFieldTrigger: {
-    minWidth: 96,
-    paddingHorizontal: 8,
   },
   locationSelect: {
     minWidth: 120,

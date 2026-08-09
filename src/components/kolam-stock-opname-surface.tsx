@@ -22,7 +22,6 @@ import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
-import { KolamDateField } from './kolam-date-field';
 import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -35,6 +34,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockOpnameDetail } from './kolam-stock-opname-detail';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -276,7 +276,7 @@ function KolamStockOpnameList({
                 open={statusPanelOpen}
                 variant="quiet"
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal mulai"
                 label="Dari"
                 onChange={value => {
@@ -284,11 +284,9 @@ function KolamStockOpnameList({
                   controller.onChangeFilters({ startDate: value });
                 }}
                 placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.startDate}
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal sampai"
                 label="Sampai"
                 onChange={value => {
@@ -296,8 +294,6 @@ function KolamStockOpnameList({
                   controller.onChangeFilters({ endDate: value });
                 }}
                 placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.endDate}
               />
             </View>
@@ -723,12 +719,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    maxWidth: 160,
-    minWidth: 110,
   },
   toolbarButton: {
     flexShrink: 0,

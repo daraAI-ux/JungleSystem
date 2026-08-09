@@ -69,6 +69,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 const PRODUCTION_STATUS_OPTIONS: KolamProductionStatus[] = [
   'waiting_for_po',
@@ -188,22 +189,18 @@ function KolamProductionList({
                 open={activeFilterPanel === 'status'}
                 variant="quiet"
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal mulai"
                 label="Dari"
                 onChange={value => controller.onChangeFilters({ startDate: value })}
                 placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.startDate}
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal sampai"
                 label="Sampai"
                 onChange={value => controller.onChangeFilters({ endDate: value })}
                 placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.endDate}
               />
             </View>
@@ -1809,13 +1806,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     marginTop: 6,
     paddingTop: 6,
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    maxWidth: 140,
-    minWidth: 108,
-    width: 120,
   },
   emptyWrap: { padding: 16 },
   paginationRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },

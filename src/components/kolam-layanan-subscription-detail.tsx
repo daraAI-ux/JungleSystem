@@ -18,6 +18,7 @@ import {
   KolamDetailMetaStripItem,
   kolamDetailMetaStripStyles,
 } from './kolam-detail-meta-strip';
+import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -496,22 +497,24 @@ export function KolamLayananSubscriptionDetail({
                 <View style={styles.dateRow}>
                   <View style={styles.dateField}>
                     <FieldShell label="Tanggal mulai">
-                      <KolamFormTextField
-                        onChangeText={value =>
+                      <KolamDateField
+                        accessibilityLabel="Tanggal mulai"
+                        label="Tanggal mulai"
+                        onChange={value =>
                           controller.onChangeContractForm({ startDate: value })
                         }
-                        placeholder="YYYY-MM-DD"
                         value={form.startDate}
                       />
                     </FieldShell>
                   </View>
                   <View style={styles.dateField}>
                     <FieldShell label="Tanggal berakhir">
-                      <KolamFormTextField
-                        onChangeText={value =>
+                      <KolamDateField
+                        accessibilityLabel="Tanggal berakhir"
+                        label="Tanggal berakhir"
+                        onChange={value =>
                           controller.onChangeContractForm({ endDate: value })
                         }
-                        placeholder="YYYY-MM-DD"
                         value={form.endDate}
                       />
                     </FieldShell>

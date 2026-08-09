@@ -68,6 +68,7 @@ import { KolamStockSyncButton } from './kolam-stock-sync-button';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -221,22 +222,18 @@ function KolamPurchaseOrderList({
                 open={activeFilterPanel === 'payment'}
                 variant="quiet"
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal mulai"
                 label="Dari"
                 onChange={value => controller.onChangeFilters({ startDate: value })}
                 placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.startDate}
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal sampai"
                 label="Sampai"
                 onChange={value => controller.onChangeFilters({ endDate: value })}
                 placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.endDate}
               />
             </View>
@@ -2726,13 +2723,6 @@ const styles = StyleSheet.create({
     flexBasis: 140,
     flexGrow: 1,
     minWidth: 120,
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    maxWidth: 140,
-    minWidth: 108,
-    width: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,

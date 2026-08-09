@@ -30,7 +30,6 @@ import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
 } from './kolam-filter-panel-anchor';
-import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   KolamListTableComposition,
@@ -40,6 +39,7 @@ import { KolamSegment } from './kolam-segment';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 const TX_COLUMNS = [
   { id: 'date', label: 'Tanggal', flex: 1.1, align: 'left' },
@@ -215,26 +215,28 @@ function FinanceSummaryToolbar({
             </View>
             {controller.filters.range === 'custom' ? (
               <>
-                <KolamFormTextField
-                  onChangeText={value =>
+                <KolamToolbarDateFilter
+                  accessibilityLabel="Tanggal mulai"
+                  label="Dari"
+                  onChange={value =>
                     controller.onChangeCustomDates(
                       value,
                       controller.filters.endDate,
                     )
                   }
-                  placeholder="Mulai YYYY-MM-DD"
-                  style={styles.dateInput}
+                  placeholder="Dari"
                   value={controller.filters.startDate}
                 />
-                <KolamFormTextField
-                  onChangeText={value =>
+                <KolamToolbarDateFilter
+                  accessibilityLabel="Tanggal sampai"
+                  label="Sampai"
+                  onChange={value =>
                     controller.onChangeCustomDates(
                       controller.filters.startDate,
                       value,
                     )
                   }
-                  placeholder="Akhir YYYY-MM-DD"
-                  style={styles.dateInput}
+                  placeholder="Sampai"
                   value={controller.filters.endDate}
                 />
               </>
@@ -1043,11 +1045,6 @@ const styles = StyleSheet.create({
   /** No search filler — keep filter hugs flush before actions (right side). */
   filtersAlignEnd: {
     justifyContent: 'flex-end',
-  },
-  dateInput: {
-    flexGrow: 0,
-    minWidth: 140,
-    width: 150,
   },
   actionButton: {
     flexGrow: 0,

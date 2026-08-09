@@ -50,7 +50,6 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamDateField } from './kolam-date-field';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
@@ -67,6 +66,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 type WalletProofPick = {
   name: string;
@@ -1234,28 +1234,22 @@ function WalletTransactionPanel({
               }}
               style={styles.filterTrigger}
             />
-            <KolamDateField
+            <KolamToolbarDateFilter
               accessibilityLabel="Tanggal mulai"
               label="Dari"
               onChange={value =>
                 controller.onChangeTxFilters({ startDate: value })
               }
               placeholder="Dari"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              triggerStyle={styles.dateFieldTrigger}
               value={controller.txFilters.startDate}
             />
-            <KolamDateField
+            <KolamToolbarDateFilter
               accessibilityLabel="Tanggal sampai"
               label="Sampai"
               onChange={value =>
                 controller.onChangeTxFilters({ endDate: value })
               }
               placeholder="Sampai"
-              showLabelInTrigger={false}
-              style={styles.dateField}
-              triggerStyle={styles.dateFieldTrigger}
               value={controller.txFilters.endDate}
             />
           </ScrollView>
@@ -2303,6 +2297,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
+  statIconSmall: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
   walletCardCopy: {
     flex: 1,
     gap: 4,
@@ -2584,15 +2582,6 @@ const styles = StyleSheet.create({
   filterClose: {
     alignSelf: 'flex-start',
     marginTop: 4,
-  },
-  dateField: {
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 96,
-  },
-  dateFieldTrigger: {
-    minWidth: 96,
-    paddingHorizontal: 8,
   },
   primaryText: {
     color: V.colors.fg,
