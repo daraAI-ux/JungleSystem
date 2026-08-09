@@ -683,8 +683,6 @@ function KolamPurchaseOrderForm({
         </View>
       </KolamContentFrame>
 
-      <KolamPOPaymentConfigCard controller={controller} />
-
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
         <View style={styles.poBreakdownCard}>
@@ -709,6 +707,8 @@ function KolamPurchaseOrderForm({
           />
         </View>
       </KolamContentFrame>
+
+      <KolamPOPaymentConfigCard controller={controller} />
 
       <KolamContentFrame style={[styles.detailCard, styles.poNotesCard]} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Catatan PO</Text>
