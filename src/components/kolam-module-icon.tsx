@@ -1,6 +1,7 @@
 import React from 'react';
 import {Image, StyleSheet, View} from 'react-native';
 import Svg, {Path, SvgXml} from 'react-native-svg';
+import {KOLAM_AI_MODULE_ICON_SVG} from '../assets/icons/ai-module-icon-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CAMPAIGN_MODULE_ICON_SVG} from '../assets/icons/campaign-module-icon-svg';
@@ -37,6 +38,7 @@ const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-ico
 const ENCLOSURE_MODULE_ICON_SOURCE = require('../assets/icons/enclosure-module-icon.png');
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
+  ai: 'Icon Pusat AI',
   archive: 'Icon Arsip',
   brand: 'Icon Merek',
   campaign: 'Icon Kampanye',
@@ -143,7 +145,9 @@ export function KolamModuleIcon({
     <View
       accessibilityLabel={MODULE_ICON_LABEL[kind]}
       style={[styles.root, {height: dimension, width: dimension}]}>
-      {kind === 'archive' ? (
+      {kind === 'ai' ? (
+        <SvgXml height="100%" width="100%" xml={KOLAM_AI_MODULE_ICON_SVG} />
+      ) : kind === 'archive' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {ARCHIVE_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />

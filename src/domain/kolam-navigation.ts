@@ -12,6 +12,7 @@ export interface KolamNavigationItem {
 }
 
 export type KolamNavigationModuleIcon =
+  | 'ai'
   | 'archive'
   | 'brand'
   | 'campaign'
@@ -146,6 +147,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/pusat-ai',
         description: 'Pintu masuk asisten AI dan otomasi dari Kolam live',
         group: 'Komunikasi',
+        moduleIcon: 'ai',
         requiredAccess: ['kolam'],
       },
       {
@@ -458,6 +460,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/pusat-ai',
         description: 'DARA campaign job queue from live Kolam',
         group: 'Kampanye',
+        moduleIcon: 'ai',
         requiredAccess: ['kolam'],
       },
       {
@@ -959,7 +962,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     id: 'pusatAi',
     title: 'Pusat AI',
     items: [
-      sidebarItem('/pusat-ai', { group: undefined, label: 'Pusat AI' }),
+      sidebarItem('/pusat-ai', {
+        group: undefined,
+        label: 'Pusat AI',
+        moduleIcon: 'ai',
+      }),
       sidebarItem('/campaign/dara-seo', {
         group: undefined,
         label: 'DARA SEO',
