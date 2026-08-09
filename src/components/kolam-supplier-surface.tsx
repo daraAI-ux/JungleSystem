@@ -1957,8 +1957,11 @@ function KolamSupplierForm({
                 </View>
               </View>
 
-              <FieldShell label="Merek">
-                <View style={styles.brandPicker}>
+              <View style={styles.formEqualSplitRow}>
+                <View style={styles.formEqualSplitCell}>
+                  <View style={styles.supplierStatusTile}>
+                    <FieldShell label="Merek">
+                      <View style={styles.brandPicker}>
                   {selectedBrands.length ? (
                     <View style={styles.brandChipRow}>
                       {selectedBrands.map(brand => (
@@ -2004,10 +2007,11 @@ function KolamSupplierForm({
                     showLabelInTrigger={false}
                     value=""
                   />
+                      </View>
+                    </FieldShell>
+                  </View>
                 </View>
-              </FieldShell>
 
-              <View style={styles.formEqualSplitRow}>
                 <View style={styles.formEqualSplitCell}>
                   <View style={styles.supplierStatusTile}>
                     <FieldShell label="Tautan eksternal">
@@ -2021,28 +2025,27 @@ function KolamSupplierForm({
                     </FieldShell>
                   </View>
                 </View>
-                {form.isOfficialDistributor ? (
-                  <View style={styles.formEqualSplitCell}>
-                    <View style={styles.supplierStatusTile}>
-                      <FieldShell label="Catatan kontak garansi">
-                        <KolamFormTextField
-                          editable={!controller.saving}
-                          multiline
-                          onChangeText={warrantyContactNote =>
-                            controller.onChangeForm({ warrantyContactNote })
-                          }
-                          placeholder="Kontak / catatan garansi"
-                          style={[
-                            settingsWebFormStyles.settingsWebFormFieldValue,
-                            settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-                          ]}
-                          value={form.warrantyContactNote}
-                        />
-                      </FieldShell>
-                    </View>
-                  </View>
-                ) : null}
               </View>
+
+              {form.isOfficialDistributor ? (
+                <View style={styles.supplierStatusTile}>
+                  <FieldShell label="Catatan kontak garansi">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      multiline
+                      onChangeText={warrantyContactNote =>
+                        controller.onChangeForm({ warrantyContactNote })
+                      }
+                      placeholder="Kontak / catatan garansi"
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                      ]}
+                      value={form.warrantyContactNote}
+                    />
+                  </FieldShell>
+                </View>
+              ) : null}
             </View>
           </SupplierEditSection>
         </View>
