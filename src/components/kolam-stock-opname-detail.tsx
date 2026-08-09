@@ -781,18 +781,22 @@ function AddLineForm({
   return (
     <KolamCardFrame style={styles.card} variant="compact">
       <Text style={styles.sectionTitle}>Tambah barang</Text>
-      <KolamDropdownSelect
-        label="Tipe"
-        onChange={value =>
-          controller.setAddDraft({
-            targetType: value as KolamStockOpnameLineTargetType,
-          })
-        }
-        options={typeOptions}
-        value={controller.addDraft.targetType}
-      />
-      <KolamDropdownSelect
-        label="Item"
+      <View style={styles.accountabilityRow}>
+        <View style={styles.accountabilityBox}>
+          <KolamDropdownSelect
+            label="Tipe"
+            onChange={value =>
+              controller.setAddDraft({
+                targetType: value as KolamStockOpnameLineTargetType,
+              })
+            }
+            options={typeOptions}
+            value={controller.addDraft.targetType}
+          />
+        </View>
+        <View style={styles.accountabilityBox}>
+          <KolamDropdownSelect
+            label="Item"
         onChange={value => {
           const stock =
             controller.addDraft.targetType === 'packing'
@@ -811,9 +815,11 @@ function AddLineForm({
           });
         }}
         options={[{ label: '— Pilih —', value: '' }, ...targetOptions]}
-        searchable
-        value={controller.addDraft.targetId}
-      />
+            searchable
+            value={controller.addDraft.targetId}
+          />
+        </View>
+      </View>
       {controller.selectedVariants.length > 0 ? (
         <KolamDropdownSelect
           label="Varian"
