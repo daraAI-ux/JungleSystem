@@ -10,6 +10,43 @@ import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
+/**
+ * Native Windows drops arrive via a single global queue (`consumeDroppedImage`).
+ * When several upload fields mount (Product Media: Thumbnail / Foto / Video),
+ * every field used to poll that queue — Thumbnail usually won.
+ * Only the dropzone currently hovered (or the sole mounted field) may consume.
+ */
+let activeNativeDropTargetId: string | null = null;
+let nativeDropTargetSeq = 0;
+const mountedNativeDropTargets = new Set<string>();
+
+function claimNativeDropTarget(id: string) {
+  activeNativeDropTargetId = id;
+}
+
+function releaseNativeDropTarget(id: string) {
+  if (activeNativeDropTargetId === id) {
+    activeNativeDropTargetId = null;
+  }
+}
+
+function canConsumeNativeDrop(id: string) {
+  if (activeNativeDropTargetId === id) {
+    return true;
+  }
+  return (
+    activeNativeDropTargetId == null && mountedNativeDropTargets.size === 1
+  );
+}
+
+async function drainNativeDroppedImageQueue() {
+  try {
+    await consumeNativeDroppedImage();
+  } catch {
+    // Ignore when bridge is unavailable.
+  }
+}
+
 export function KolamSettingsWebFileField({
   accessibilityLabel = 'Logo',
   actionLabel = 'Unggah logo',
@@ -51,50 +88,91 @@ export function KolamSettingsWebFileField({
     (Number.isFinite(fileCount) && Number.isFinite(fileMax)
       ? `(${Math.max(0, fileCount ?? 0)}/${Math.max(0, fileMax ?? 0)})`
       : '');
+  const targetIdRef = React.useRef(`upload-drop-${++nativeDropTargetSeq}`);
+  const onLocalValueChangeRef = React.useRef(onLocalValueChange);
+  onLocalValueChangeRef.current = onLocalValueChange;
+
   React.useEffect(() => {
+    const targetId = targetIdRef.current;
     if (disabled || !onLocalValueChange) {
       return undefined;
     }
 
+    mountedNativeDropTargets.add(targetId);
     let disposed = false;
     const timer = setInterval(() => {
+      if (!canConsumeNativeDrop(targetId)) {
+        return;
+      }
       void consumeNativeDroppedImage().then(dropped => {
         const droppedUri = dropped.uri ?? dropped.path ?? '';
-        if (!disposed && !dropped.cancelled && droppedUri) {
-          onLocalValueChange(droppedUri);
+        if (disposed || dropped.cancelled || !droppedUri) {
+          return;
         }
+        if (!canConsumeNativeDrop(targetId)) {
+          return;
+        }
+        onLocalValueChangeRef.current?.(droppedUri);
+        releaseNativeDropTarget(targetId);
       });
     }, 500);
 
     return () => {
       disposed = true;
       clearInterval(timer);
+      mountedNativeDropTargets.delete(targetId);
+      releaseNativeDropTarget(targetId);
     };
+  }, [disabled, onLocalValueChange]);
+
+  const claimDropTarget = React.useCallback(() => {
+    if (!disabled && onLocalValueChange) {
+      claimNativeDropTarget(targetIdRef.current);
+    }
   }, [disabled, onLocalValueChange]);
 
   const handleDrop = React.useCallback(
     (event: unknown) => {
       preventDefaultDropEvent(event);
+      claimDropTarget();
       void getDroppedImageValue(event).then(dropped => {
         if (dropped) {
           onLocalValueChange?.(dropped);
+          void drainNativeDroppedImageQueue();
+          releaseNativeDropTarget(targetIdRef.current);
+          return;
         }
+        // Event path empty — try native queue only if this field is the owner.
+        if (!canConsumeNativeDrop(targetIdRef.current)) {
+          return;
+        }
+        void consumeNativeDroppedImage().then(nativeDropped => {
+          const droppedUri =
+            nativeDropped.uri ?? nativeDropped.path ?? '';
+          if (!nativeDropped.cancelled && droppedUri) {
+            onLocalValueChange?.(droppedUri);
+          }
+          releaseNativeDropTarget(targetIdRef.current);
+        });
       });
     },
-    [onLocalValueChange],
+    [claimDropTarget, onLocalValueChange],
   );
+
   const dropzoneProps = React.useMemo(
     () =>
       ({
         onDragEnter: (event: unknown) => {
           preventDefaultDropEvent(event);
+          claimDropTarget();
         },
         onDragOver: (event: unknown) => {
           preventDefaultDropEvent(event);
+          claimDropTarget();
         },
         onDrop: handleDrop,
       }) as object,
-    [handleDrop],
+    [claimDropTarget, handleDrop],
   );
 
   return (
