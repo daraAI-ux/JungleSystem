@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Svg, {Path} from 'react-native-svg';
 import {
   KOLAM_OPNAME_MINUS_REASON_OPTIONS,
   KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS,
@@ -478,6 +479,7 @@ export function KolamStockOpnameDetail({
               {controller.isReady && canPost ? (
                 <KolamButton
                   disabled={controller.acting}
+                  icon={<PostToStockArrowIcon />}
                   intent="primary"
                   label="Posting ke stok"
                   onPress={() => {
@@ -489,6 +491,8 @@ export function KolamStockOpnameDetail({
                       }
                     });
                   }}
+                  style={styles.postToStockButton}
+                  textStyle={styles.postToStockButtonText}
                 />
               ) : null}
               {controller.isCancelled && canDelete ? (
@@ -1139,6 +1143,21 @@ function getAccountabilityInitials(name: string) {
     .join('');
 }
 
+function PostToStockArrowIcon() {
+  return (
+    <Svg height="100%" viewBox="0 0 20 20" width="100%">
+      <Path
+        d="M10 16 V5 M5.5 9.5 10 5 14.5 9.5"
+        fill="none"
+        stroke={V.colors.primaryFg}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+    </Svg>
+  );
+}
+
 function StockOpnameLineActionsMenu({
   canApprove,
   canEdit,
@@ -1642,6 +1661,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  postToStockButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  postToStockButtonText: {
+    color: V.colors.primaryFg,
   },
   accountabilityRow: {
     flexDirection: 'row',
