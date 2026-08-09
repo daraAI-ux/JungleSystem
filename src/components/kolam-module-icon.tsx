@@ -36,6 +36,7 @@ import {KOLAM_TERMS_MODULE_ICON_SVG} from '../assets/icons/terms-module-icon-svg
 import {KOLAM_TAXONOMY_MODULE_ICON_SVG} from '../assets/icons/taxonomy-module-icon-svg';
 import {KOLAM_UNIT_MODULE_ICON_SVG} from '../assets/icons/unit-module-icon-svg';
 import {KOLAM_VOUCHER_MODULE_ICON_SVG} from '../assets/icons/voucher-module-icon-svg';
+import {KOLAM_WALLET_MODULE_ICON_SVG} from '../assets/icons/wallet-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
 
 const IUCN_MODULE_ICON_SOURCE = require('../assets/icons/iucn-module-icon.png');
@@ -84,6 +85,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   teranura: 'Icon Teranura',
   unit: 'Icon Satuan',
   voucher: 'Icon Voucher',
+  wallet: 'Icon Dompet',
 };
 
 const CATEGORY_ICON_PATH =
@@ -136,6 +138,7 @@ const TERMS_ICON_PATHS = getSvgPathData(KOLAM_TERMS_MODULE_ICON_SVG);
 const TAXONOMY_ICON_PATHS = getSvgPathData(KOLAM_TAXONOMY_MODULE_ICON_SVG);
 const UNIT_ICON_PATHS = getSvgPathData(KOLAM_UNIT_MODULE_ICON_SVG);
 const VOUCHER_ICON_PATHS = getSvgPathData(KOLAM_VOUCHER_MODULE_ICON_SVG);
+const WALLET_ICON_PATHS = getSvgPathData(KOLAM_WALLET_MODULE_ICON_SVG);
 
 const MODULE_ICON_SIZE = {
   header: 64,
@@ -390,6 +393,12 @@ export function KolamModuleIcon({
       ) : kind === 'voucher' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {VOUCHER_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
+        </Svg>
+      ) : kind === 'wallet' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {WALLET_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>

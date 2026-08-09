@@ -52,7 +52,8 @@ export type KolamNavigationModuleIcon =
   | 'taxonomy'
   | 'teranura'
   | 'unit'
-  | 'voucher';
+  | 'voucher'
+  | 'wallet';
 
 export interface KolamNavigationSection {
   id: string;
@@ -594,6 +595,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Wallet',
         route: '/wallet',
         description: 'Kelola dompet dan saldo kas',
+        moduleIcon: 'wallet',
         requiredAccess: ['kolam', 'pos'],
       },
       {
@@ -1006,7 +1008,10 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Ringkasan Keuangan',
         moduleIcon: 'financeSummary',
       }),
-      sidebarItem('/wallet', { label: 'Dompet' }),
+      sidebarItem('/wallet', {
+        label: 'Dompet',
+        moduleIcon: 'wallet',
+      }),
       sidebarItem('/asset-purchase', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Pembelian Aset',
