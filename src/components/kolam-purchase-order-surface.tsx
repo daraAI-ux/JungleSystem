@@ -22,7 +22,7 @@ import {
 } from '../domain/kolam-purchase-order';
 import { KOLAM_SUPPLIER_ROOT } from '../domain/kolam-vendor';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
-import { formatRupiah } from '../lib/money';
+import { formatRupiah, formatRupiahAccounting } from '../lib/money';
 import { getKolamFileUrl } from '../lib/file-url';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
@@ -61,6 +61,7 @@ import {
 } from './kolam-list-table-composition';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockSyncButton } from './kolam-stock-sync-button';
@@ -964,15 +965,14 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
               </View>
 
               <View style={[styles.poItemFieldBlock, styles.poItemCellPrice]}>
-                <KolamFormTextField
+                <KolamRupiahField
                   accessibilityLabel={`Harga satuan PO ${index + 1}`}
-                  mode="numeric"
-                  onChangeText={value =>
+                  onChangeValue={value =>
                     controller.onChangeItemLine(line.key, {
-                      unitPrice: Number(value) || 0,
+                      unitPrice: value,
                     })
                   }
-                  value={String(line.unitPrice)}
+                  value={line.unitPrice}
                 />
                 {line.priceOverridden && line.vendorPrice > 0 ? (
                   <View style={styles.poItemPriceMetaRow}>
@@ -989,7 +989,9 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
               </View>
 
               <View style={[styles.poItemSubtotalBlock, styles.poItemCellSubtotal]}>
-                <Text style={styles.poItemSubtotalText}>{formatRupiah(subtotal)}</Text>
+                <Text style={styles.poItemSubtotalText}>
+                  {formatRupiahAccounting(subtotal)}
+                </Text>
               </View>
 
               <View style={[styles.poItemActionBlock, styles.poItemCellAction]}>
