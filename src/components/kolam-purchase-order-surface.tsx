@@ -720,7 +720,7 @@ function KolamPurchaseOrderForm({
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Catatan PO</Text>
-        <FieldShell label="Catatan">
+        <View style={styles.fieldShell}>
           <KolamFormTextField
             multiline
             onChangeText={notes => controller.onChangeForm({ notes })}
@@ -728,7 +728,7 @@ function KolamPurchaseOrderForm({
             style={styles.notesInput}
             value={form.notes}
           />
-        </FieldShell>
+        </View>
       </KolamContentFrame>
 
       </KolamDetailScrollSurface>
