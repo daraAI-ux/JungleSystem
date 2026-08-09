@@ -610,6 +610,33 @@ function KolamPurchaseOrderForm({
           </View>
         </View>
 
+        {controller.mode === 'create' ? (
+          <FieldShell label="Kirim langsung">
+            <View style={styles.switchRow}>
+              <Text style={styles.switchHint}>
+                Aktifkan untuk mengirim PO ke pemasok segera setelah disimpan.
+              </Text>
+              <KolamSwitch
+                active={form.sendImmediately}
+                onPress={() =>
+                  controller.onChangeForm({ sendImmediately: !form.sendImmediately })
+                }
+              />
+            </View>
+          </FieldShell>
+        ) : null}
+      </KolamContentFrame>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <View style={styles.itemsHeaderRow}>
+          <View style={styles.sectionTitleWrap}>
+            <Text style={styles.sectionTitle}>Item Pesanan</Text>
+            <Text style={styles.metaText}>
+              Tambahkan produk, ternak, atau bahan kemasan.
+            </Text>
+          </View>
+        </View>
+        <KolamPOItemRowsEditor controller={controller} />
         <View style={styles.formSplitRow}>
           <View style={styles.formSplitCell}>
             <FieldShell label="Ongkos kirim">
@@ -655,34 +682,6 @@ function KolamPurchaseOrderForm({
             </FieldShell>
           </View>
         </View>
-
-        {controller.mode === 'create' ? (
-          <FieldShell label="Kirim langsung">
-            <View style={styles.switchRow}>
-              <Text style={styles.switchHint}>
-                Aktifkan untuk mengirim PO ke pemasok segera setelah disimpan.
-              </Text>
-              <KolamSwitch
-                active={form.sendImmediately}
-                onPress={() =>
-                  controller.onChangeForm({ sendImmediately: !form.sendImmediately })
-                }
-              />
-            </View>
-          </FieldShell>
-        ) : null}
-      </KolamContentFrame>
-
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <View style={styles.itemsHeaderRow}>
-          <View style={styles.sectionTitleWrap}>
-            <Text style={styles.sectionTitle}>Item Pesanan</Text>
-            <Text style={styles.metaText}>
-              Tambahkan produk, ternak, atau bahan kemasan.
-            </Text>
-          </View>
-        </View>
-        <KolamPOItemRowsEditor controller={controller} />
       </KolamContentFrame>
 
       <KolamPOPaymentConfigCard controller={controller} />
