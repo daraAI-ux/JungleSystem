@@ -519,11 +519,6 @@ function KolamTeranuraDetail({
     <KolamDetailScrollSurface contentContainerStyle={styles.detailRoot}>
       <KolamPageIdentityHeader
         eyebrow="TERANURA"
-        eyebrowAccessory={
-          item?.deviceLine === 'freyer' ? (
-            <KolamBadge intent="info" label="Freyer" />
-          ) : null
-        }
         moduleIcon="teranura"
         placement="workspace"
         subtitle={
@@ -537,6 +532,11 @@ function KolamTeranuraDetail({
         }
         title={item?.name || 'Detail Teranura'}
       />
+      {item?.deviceLine === 'freyer' ? (
+        <View style={styles.detailBadgeRow}>
+          <KolamBadge intent="info" label="Freyer" />
+        </View>
+      ) : null}
       <KolamControlTabList
         accessibilityLabel="Tab detail Teranura"
         items={tabItems}
@@ -1191,6 +1191,12 @@ const styles = StyleSheet.create({
     minHeight: 0,
     overflow: 'visible',
     width: '100%',
+  },
+  detailBadgeRow: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    gap: 8,
   },
   iotPanel: {
     gap: 12,
