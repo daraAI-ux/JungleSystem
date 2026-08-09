@@ -1394,9 +1394,6 @@ function KolamPurchaseOrderDetail({
                 })}
               </View>
             </ScrollView>
-            {po.vendorInvoice ? (
-              <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
-            ) : null}
           </KolamContentFrame>
           <KolamPOProofsCard compact po={po} />
         </View>
@@ -1645,6 +1642,15 @@ function KolamPOProofsCard({
           />
         </View>
       </View>
+
+      {po.vendorInvoice ? (
+        <KolamContentFrame
+          style={[styles.detailCard, styles.proofBorderCard]}
+          variant="settingsWebConfig"
+        >
+          <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
+        </KolamContentFrame>
+      ) : null}
 
       {po.isPartial ? (
         <View style={styles.partialNoteBox}>
