@@ -28,8 +28,18 @@ LRESULT CALLBACK KolamWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
       if (!DragQueryPoint(drop, &dropPoint)) {
         dropPoint = {};
       }
+      // Screen coords in physical pixels → DIP so JS measureInWindow hit-tests match.
       ClientToScreen(hwnd, &dropPoint);
-      KolamWindows::SetKolamDroppedFilePath(path, dropPoint.x, dropPoint.y);
+      UINT dpi = 96;
+      if (hwnd) {
+        dpi = GetDpiForWindow(hwnd);
+        if (dpi == 0) {
+          dpi = 96;
+        }
+      }
+      const int dipX = MulDiv(dropPoint.x, 96, static_cast<int>(dpi));
+      const int dipY = MulDiv(dropPoint.y, 96, static_cast<int>(dpi));
+      KolamWindows::SetKolamDroppedFilePath(path, dipX, dipY);
     }
     DragFinish(drop);
     return 0;

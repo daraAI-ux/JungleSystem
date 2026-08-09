@@ -1,7 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
-
-type NativeView = React.ElementRef<typeof View>;
+import { PixelRatio, Text, View } from 'react-native';
 import { getKolamFileUrl } from '../lib/file-url';
 import {
   consumeNativeDroppedImage,
@@ -22,6 +20,8 @@ import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
  * Product Media mounts several upload fields; routing uses drop screen coords
  * from DragQueryPoint + measureInWindow hit-testing (not "first field wins").
  */
+type NativeView = React.ElementRef<typeof View>;
+
 type DropTargetRect = {
   height: number;
   width: number;
@@ -121,23 +121,59 @@ async function runSharedNativeDropPoll() {
 async function resolveNativeDropOwnerId(
   dropped: NativeImagePickerResult,
 ): Promise<string | null> {
-  const dropX =
-    typeof dropped.dropScreenX === 'number' ? dropped.dropScreenX : null;
-  const dropY =
-    typeof dropped.dropScreenY === 'number' ? dropped.dropScreenY : null;
+  const rawX = Number(dropped.dropScreenX);
+  const rawY = Number(dropped.dropScreenY);
+  const hasPoint = Number.isFinite(rawX) && Number.isFinite(rawY);
 
-  if (dropX != null && dropY != null) {
-    const hits: Array<{ id: string; area: number }> = [];
-    for (const [id, target] of registeredNativeDropTargets) {
-      const rect = await target.measure();
-      if (!rect || !pointInRect(dropX, dropY, rect)) {
-        continue;
-      }
-      hits.push({ id, area: rect.width * rect.height });
+  const measured: Array<{ id: string; rect: DropTargetRect }> = [];
+  for (const [id, target] of registeredNativeDropTargets) {
+    const rect = await target.measure();
+    if (rect) {
+      measured.push({ id, rect });
     }
-    if (hits.length) {
-      hits.sort((left, right) => left.area - right.area);
-      return hits[0]?.id ?? null;
+  }
+
+  if (hasPoint && measured.length) {
+    const ratio = PixelRatio.get() || 1;
+    const pointCandidates = [
+      { x: rawX, y: rawY },
+      { x: rawX / ratio, y: rawY / ratio },
+      { x: rawX * ratio, y: rawY * ratio },
+    ];
+
+    const hits: Array<{ id: string; area: number }> = [];
+    for (const point of pointCandidates) {
+      for (const entry of measured) {
+        if (!pointInRect(point.x, point.y, entry.rect, 12)) {
+          continue;
+        }
+        hits.push({
+          id: entry.id,
+          area: entry.rect.width * entry.rect.height,
+        });
+      }
+      if (hits.length) {
+        hits.sort((left, right) => left.area - right.area);
+        return hits[0]?.id ?? null;
+      }
+    }
+
+    // DPI/layout drift: pick nearest dropzone center instead of discarding.
+    let nearestId: string | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const point of pointCandidates) {
+      for (const entry of measured) {
+        const centerX = entry.rect.x + entry.rect.width / 2;
+        const centerY = entry.rect.y + entry.rect.height / 2;
+        const distance = Math.hypot(point.x - centerX, point.y - centerY);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestId = entry.id;
+        }
+      }
+    }
+    if (nearestId != null && nearestDistance <= 240) {
+      return nearestId;
     }
   }
 
@@ -152,15 +188,21 @@ async function resolveNativeDropOwnerId(
     return registeredNativeDropTargets.keys().next().value ?? null;
   }
 
-  return null;
+  // Measure failed or point missing: keep previous Thumbnail behavior.
+  return registeredNativeDropTargets.keys().next().value ?? null;
 }
 
-function pointInRect(x: number, y: number, rect: DropTargetRect) {
+function pointInRect(
+  x: number,
+  y: number,
+  rect: DropTargetRect,
+  padding = 0,
+) {
   return (
-    x >= rect.x &&
-    y >= rect.y &&
-    x <= rect.x + rect.width &&
-    y <= rect.y + rect.height
+    x >= rect.x - padding &&
+    y >= rect.y - padding &&
+    x <= rect.x + rect.width + padding &&
+    y <= rect.y + rect.height + padding
   );
 }
 
