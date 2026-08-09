@@ -1370,10 +1370,10 @@ function KolamPurchaseOrderDetail({
             title="Timeline pengadaan"
           />
           <KolamPOPaymentSection controller={controller} po={po} />
-          <KolamPOFakturPajakSection controller={controller} po={po} />
         </View>
 
         <View style={styles.poDetailTimelineColumn}>
+          <KolamPOFakturPajakSection controller={controller} po={po} />
           <KolamPOProofsCard compact po={po} />
         </View>
       </View>
