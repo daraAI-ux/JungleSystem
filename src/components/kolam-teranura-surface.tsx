@@ -8,6 +8,7 @@ import {
   getKolamTeranuraProductIdQuery,
   getKolamTeranuraShellTab,
   type KolamTeranura,
+  type KolamTeranuraDetailTab,
 } from '../domain/kolam-teranura';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -25,6 +26,7 @@ import {KolamEditButton} from './kolam-edit-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -40,6 +42,16 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {
+  TeranuraAssetsTab,
+  TeranuraLogisticsTab,
+  TeranuraMaterialsTab,
+  TeranuraMoreTab,
+  TeranuraPricingTab,
+  TeranuraSpecificationsTab,
+  TeranuraStatisticsTab,
+  TeranuraSummaryTab,
+} from './kolam-teranura-detail-tabs';
 
 type TeranuraFilterPanel = 'category' | 'brand' | 'sellable';
 const TERANURA_FILTER_PANEL_WIDTH = 320;
@@ -420,143 +432,128 @@ function KolamTeranuraDetail({
   const activeTab = getKolamTeranuraDetailTab(route, {
     showPerangkatIot,
   });
-  const tabItems = React.useMemo(
-    () => [
+  const tabItems = React.useMemo(() => {
+    const items: Array<{
+      count?: number;
+      id: KolamTeranuraDetailTab;
+      label: string;
+    }> = [
       { id: 'overview', label: 'Ringkasan' },
-      ...(showPerangkatIot
-        ? [{ id: 'perangkat-iot', label: 'Perangkat IoT' }]
-        : []),
-    ],
-    [showPerangkatIot],
+      { id: 'pricing', label: 'Harga' },
+      {
+        id: 'specifications',
+        label: 'Spesifikasi',
+        count: item?.variants.length || undefined,
+      },
+    ];
+    if (showPerangkatIot) {
+      items.push({ id: 'perangkat-iot', label: 'Perangkat IoT' });
+    }
+    items.push(
+      { id: 'logistics', label: 'Logistik' },
+      {
+        id: 'materials',
+        label: 'Bahan Penyusun',
+        count:
+          item
+            ? item.components.length + item.packings.length || undefined
+            : undefined,
+      },
+      { id: 'more', label: 'Lainnya' },
+      {
+        id: 'assets',
+        label: 'Aset',
+        count: item?.assets.length || undefined,
+      },
+      { id: 'statistics', label: 'Statistik' },
+    );
+    return items;
+  }, [item, showPerangkatIot]);
+
+  const selectTab = (tabId: string) => {
+    if (!item) {
+      return;
+    }
+    onRouteChange?.(
+      buildKolamTeranuraDetailRoute(item.id, tabId as KolamTeranuraDetailTab),
+    );
+  };
+
+  const tabBody = !item ? (
+    <KolamEmptyState
+      compact
+      message={
+        loading
+          ? 'Memuat detail Teranura...'
+          : 'Detail Teranura tidak ditemukan.'
+      }
+      title="Detail Teranura"
+    />
+  ) : activeTab === 'overview' ? (
+    <TeranuraSummaryTab item={item} />
+  ) : activeTab === 'pricing' ? (
+    <TeranuraPricingTab item={item} />
+  ) : activeTab === 'specifications' ? (
+    <TeranuraSpecificationsTab item={item} />
+  ) : activeTab === 'perangkat-iot' && showPerangkatIot ? (
+    <TeranuraIotDevicesPanel
+      catalogName={item.name}
+      onOpenGlobalList={() =>
+        onRouteChange?.(buildKolamTeranuraShellRoute('perangkat-iot', item.id))
+      }
+      teranuraProductId={item.id}
+    />
+  ) : activeTab === 'logistics' ? (
+    <TeranuraLogisticsTab item={item} />
+  ) : activeTab === 'materials' ? (
+    <TeranuraMaterialsTab item={item} />
+  ) : activeTab === 'more' ? (
+    <TeranuraMoreTab item={item} />
+  ) : activeTab === 'assets' ? (
+    <TeranuraAssetsTab item={item} />
+  ) : activeTab === 'statistics' ? (
+    <TeranuraStatisticsTab item={item} />
+  ) : (
+    <TeranuraSummaryTab item={item} />
   );
-  const tabPanel = (
-    <>
+
+  return (
+    <KolamDetailScrollSurface contentContainerStyle={styles.detailRoot}>
+      <View style={styles.detailHeaderRow}>
+        <View style={styles.headingCopy}>
+          <View style={styles.detailEyebrowRow}>
+            <Text style={styles.eyebrow}>TERANURA</Text>
+            {item?.deviceLine === 'freyer' ? (
+              <KolamBadge intent="info" label="Freyer" />
+            ) : null}
+          </View>
+          <Text style={styles.detailTitle}>
+            {item?.name || 'Detail Teranura'}
+          </Text>
+          <Text style={styles.description}>
+            {item
+              ? `Dibuat ${formatDateTime(item.createdAt)} | Diperbarui ${formatDateTime(
+                  item.updatedAt,
+                )}`
+              : loading
+              ? 'Memuat detail Teranura...'
+              : 'Detail Teranura tidak ditemukan.'}
+          </Text>
+        </View>
+      </View>
       <KolamControlTabList
         accessibilityLabel="Tab detail Teranura"
         items={tabItems}
-        onSelect={tabId => {
-          if (!item) {
-            return;
-          }
-          onRouteChange?.(
-            buildKolamTeranuraDetailRoute(
-              item.id,
-              tabId === 'perangkat-iot' ? 'perangkat-iot' : 'overview',
-            ),
-          );
-        }}
+        onSelect={selectTab}
         selectedId={activeTab}
       />
       <KolamContentFrame
         style={styles.detailTabPanel}
         variant="settingsWebConfig"
       >
-        {activeTab === 'perangkat-iot' && showPerangkatIot ? (
-          item ? (
-            <TeranuraIotDevicesPanel
-              catalogName={item.name}
-              onOpenGlobalList={() =>
-                onRouteChange?.(
-                  buildKolamTeranuraShellRoute('perangkat-iot', item.id),
-                )
-              }
-              teranuraProductId={item.id}
-            />
-          ) : (
-            <KolamEmptyState
-              compact
-              message={
-                loading
-                  ? 'Memuat detail Teranura...'
-                  : 'Detail Teranura tidak ditemukan.'
-              }
-              title="Perangkat IoT"
-            />
-          )
-        ) : item ? (
-          <TeranuraOverviewPanel item={item} />
-        ) : (
-          <KolamEmptyState
-            compact
-            message={
-              loading
-                ? 'Memuat detail Teranura...'
-                : 'Detail Teranura tidak ditemukan.'
-            }
-            title="Ringkasan"
-          />
-        )}
+        {tabBody}
       </KolamContentFrame>
-    </>
-  );
-
-  if (!item) {
-    return (
-      <View style={styles.detailRoot}>
-        <View style={styles.detailHeaderRow}>
-          <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>TERANURA</Text>
-            <Text style={styles.detailTitle}>Detail Teranura</Text>
-            <Text style={styles.description}>
-              {loading
-                ? 'Memuat detail Teranura...'
-                : 'Detail Teranura tidak ditemukan.'}
-            </Text>
-          </View>
-        </View>
-        {tabPanel}
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.detailRoot}>
-      <View style={styles.detailHeaderRow}>
-        <View style={styles.headingCopy}>
-          <View style={styles.detailEyebrowRow}>
-            <Text style={styles.eyebrow}>TERANURA</Text>
-            {item.deviceLine === 'freyer' ? (
-              <KolamBadge intent="info" label="Freyer" />
-            ) : null}
-          </View>
-          <Text style={styles.detailTitle}>{item.name}</Text>
-          <Text style={styles.description}>
-            Dibuat {formatDateTime(item.createdAt)} | Diperbarui{' '}
-            {formatDateTime(item.updatedAt)}
-          </Text>
-        </View>
-      </View>
-      {tabPanel}
-    </View>
-  );
-}
-
-function TeranuraOverviewPanel({ item }: { item: KolamTeranura }) {
-  const rows = [
-    { label: 'SKU', value: item.sku || item.productCode || '—' },
-    { label: 'Merek', value: item.brand?.name || '—' },
-    { label: 'Kategori', value: item.category?.name || '—' },
-    {
-      label: 'Tipe',
-      value: item.variants.length ? 'Produk varian' : 'Produk standar',
-    },
-    { label: 'Harga', value: formatRupiah(item.priceToSell) },
-    {
-      label: 'Stok',
-      value: `${item.stock}${item.unitLabel ? ` ${item.unitLabel}` : ''}`,
-    },
-    { label: 'Sellable', value: item.sellable ? 'Ya' : 'Tidak' },
-  ];
-
-  return (
-    <View style={styles.overviewPanel}>
-      {rows.map(row => (
-        <View key={row.label} style={styles.overviewRow}>
-          <Text style={styles.overviewLabel}>{row.label}</Text>
-          <Text style={styles.overviewValue}>{row.value}</Text>
-        </View>
-      ))}
-    </View>
+    </KolamDetailScrollSurface>
   );
 }
 
@@ -607,9 +604,9 @@ function TeranuraIotDevicesPanel({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
             <KolamSearchField
+              containerStyle={styles.iotSearch}
               onChangeText={iot.onSearchChange}
               placeholder="Nama, serial, invoice…"
-              style={styles.iotSearch}
               value={iot.search}
             />
           </View>
@@ -1258,32 +1255,6 @@ const styles = StyleSheet.create({
   detailTabPanel: {
     minHeight: 220,
     padding: 16,
-  },
-  overviewPanel: {
-    gap: 10,
-    width: '100%',
-  },
-  overviewRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  overviewLabel: {
-    color: V.colors.mutedFg,
-    flexShrink: 0,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    minWidth: 88,
-  },
-  overviewValue: {
-    color: V.colors.fg,
-    flex: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'right',
   },
   iotPanel: {
     gap: 12,
