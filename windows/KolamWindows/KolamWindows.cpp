@@ -24,19 +24,17 @@ LRESULT CALLBACK KolamWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
     auto drop = reinterpret_cast<HDROP>(wParam);
     WCHAR path[MAX_PATH]{};
     if (DragQueryFileW(drop, 0, path, MAX_PATH) > 0) {
+      // DragQueryPoint is already in client/window space — same space as
+      // React Native measureInWindow. Do NOT ClientToScreen (that swapped zones).
       POINT dropPoint{};
       if (!DragQueryPoint(drop, &dropPoint)) {
         dropPoint = {};
       }
-      // Screen coords in physical pixels → DIP so JS measureInWindow hit-tests match.
-      ClientToScreen(hwnd, &dropPoint);
-      UINT dpi = 96;
-      if (hwnd) {
-        dpi = GetDpiForWindow(hwnd);
-        if (dpi == 0) {
-          dpi = 96;
-        }
+      UINT dpi = GetDpiForWindow(hwnd);
+      if (dpi == 0) {
+        dpi = 96;
       }
+      // Physical client pixels → DIP for RN layout units.
       const int dipX = MulDiv(dropPoint.x, 96, static_cast<int>(dpi));
       const int dipY = MulDiv(dropPoint.y, 96, static_cast<int>(dpi));
       KolamWindows::SetKolamDroppedFilePath(path, dipX, dipY);

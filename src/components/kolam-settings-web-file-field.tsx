@@ -1,5 +1,5 @@
 import React from 'react';
-import { PixelRatio, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { getKolamFileUrl } from '../lib/file-url';
 import {
   consumeNativeDroppedImage,
@@ -17,8 +17,7 @@ import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 /**
  * Native Windows file drops arrive via WM_DROPFILES into one global queue.
- * Product Media mounts several upload fields; routing uses drop screen coords
- * from DragQueryPoint + measureInWindow hit-testing (not "first field wins").
+ * Routing uses DragQueryPoint client/DIP coords + measureInWindow hit-testing.
  */
 type NativeView = React.ElementRef<typeof View>;
 
@@ -121,9 +120,9 @@ async function runSharedNativeDropPoll() {
 async function resolveNativeDropOwnerId(
   dropped: NativeImagePickerResult,
 ): Promise<string | null> {
-  const rawX = Number(dropped.dropScreenX);
-  const rawY = Number(dropped.dropScreenY);
-  const hasPoint = Number.isFinite(rawX) && Number.isFinite(rawY);
+  const dropX = Number(dropped.dropScreenX);
+  const dropY = Number(dropped.dropScreenY);
+  const hasPoint = Number.isFinite(dropX) && Number.isFinite(dropY);
 
   const measured: Array<{ id: string; rect: DropTargetRect }> = [];
   for (const [id, target] of registeredNativeDropTargets) {
@@ -134,45 +133,38 @@ async function resolveNativeDropOwnerId(
   }
 
   if (hasPoint && measured.length) {
-    const ratio = PixelRatio.get() || 1;
-    const pointCandidates = [
-      { x: rawX, y: rawY },
-      { x: rawX / ratio, y: rawY / ratio },
-      { x: rawX * ratio, y: rawY * ratio },
-    ];
-
-    const hits: Array<{ id: string; area: number }> = [];
-    for (const point of pointCandidates) {
-      for (const entry of measured) {
-        if (!pointInRect(point.x, point.y, entry.rect, 12)) {
-          continue;
-        }
-        hits.push({
-          id: entry.id,
-          area: entry.rect.width * entry.rect.height,
-        });
+    // Prefer the zone whose center is closest among those containing the point.
+    let bestHitId: string | null = null;
+    let bestHitDistance = Number.POSITIVE_INFINITY;
+    for (const entry of measured) {
+      if (!pointInRect(dropX, dropY, entry.rect, 8)) {
+        continue;
       }
-      if (hits.length) {
-        hits.sort((left, right) => left.area - right.area);
-        return hits[0]?.id ?? null;
+      const centerX = entry.rect.x + entry.rect.width / 2;
+      const centerY = entry.rect.y + entry.rect.height / 2;
+      const distance = Math.hypot(dropX - centerX, dropY - centerY);
+      if (distance < bestHitDistance) {
+        bestHitDistance = distance;
+        bestHitId = entry.id;
       }
     }
+    if (bestHitId) {
+      return bestHitId;
+    }
 
-    // DPI/layout drift: pick nearest dropzone center instead of discarding.
+    // Slight miss (padding/scroll): nearest center, but only if reasonably close.
     let nearestId: string | null = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
-    for (const point of pointCandidates) {
-      for (const entry of measured) {
-        const centerX = entry.rect.x + entry.rect.width / 2;
-        const centerY = entry.rect.y + entry.rect.height / 2;
-        const distance = Math.hypot(point.x - centerX, point.y - centerY);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestId = entry.id;
-        }
+    for (const entry of measured) {
+      const centerX = entry.rect.x + entry.rect.width / 2;
+      const centerY = entry.rect.y + entry.rect.height / 2;
+      const distance = Math.hypot(dropX - centerX, dropY - centerY);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestId = entry.id;
       }
     }
-    if (nearestId != null && nearestDistance <= 240) {
+    if (nearestId != null && nearestDistance <= 120) {
       return nearestId;
     }
   }
@@ -188,8 +180,8 @@ async function resolveNativeDropOwnerId(
     return registeredNativeDropTargets.keys().next().value ?? null;
   }
 
-  // Measure failed or point missing: keep previous Thumbnail behavior.
-  return registeredNativeDropTargets.keys().next().value ?? null;
+  // No reliable owner — leave unassigned (caller discards) rather than swapping zones.
+  return null;
 }
 
 function pointInRect(
