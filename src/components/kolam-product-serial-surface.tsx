@@ -31,7 +31,7 @@ import {
 } from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamSearchField } from './kolam-search-field';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
 import {
   measureFilterPanelAnchor,
@@ -489,7 +489,7 @@ function KolamProductSerialActionsMenu({
   ];
 
   return actions.length ? (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${serial.serialNumber}`}
       actions={actions}
     />

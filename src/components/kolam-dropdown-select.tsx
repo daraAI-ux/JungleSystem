@@ -30,6 +30,13 @@ export interface KolamDropdownOption<TValue extends string = string> {
 
 type KolamOpenMenuListener = (activeId: string | null) => void;
 
+export type KolamOverflowMenuAction = {
+  disabled?: boolean;
+  label: string;
+  onPress: () => void;
+  tone?: 'default' | 'danger';
+};
+
 const openMenuListeners = new Set<KolamOpenMenuListener>();
 let openMenuId: string | null = null;
 let openMenuSequence = 0;
@@ -284,12 +291,7 @@ export function KolamOverflowMenuButton({
   onOpenChange,
 }: {
   accessibilityLabel?: string;
-  actions: Array<{
-    disabled?: boolean;
-    label: string;
-    onPress: () => void;
-    tone?: 'default' | 'danger';
-  }>;
+  actions: KolamOverflowMenuAction[];
   floating?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -438,6 +440,27 @@ export function KolamOverflowMenuButton({
   );
 }
 
+export function KolamTableRowActionMenu({
+  accessibilityLabel = 'Menu aksi',
+  actions,
+}: {
+  accessibilityLabel?: string;
+  actions: KolamOverflowMenuAction[];
+}) {
+  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
+
+  return (
+    <View style={actionMenuOpen ? styles.tableRowActionMenuRaised : null}>
+      <KolamOverflowMenuButton
+        accessibilityLabel={accessibilityLabel}
+        actions={actions}
+        floating
+        onOpenChange={setActionMenuOpen}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: {
     overflow: 'visible',
@@ -578,6 +601,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 900,
     elevation: 20,
+  },
+  tableRowActionMenuRaised: {
+    elevation: 96,
+    overflow: 'visible',
+    zIndex: 2000,
   },
   overflowButton: {
     minWidth: 38,

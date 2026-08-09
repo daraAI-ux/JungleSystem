@@ -28,7 +28,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -352,7 +352,7 @@ function TermsTemplateActionsMenu({
       : []),
   ];
 
-  return actions.length > 0 ? <KolamOverflowMenuButton actions={actions} /> : null;
+  return actions.length > 0 ? <KolamTableRowActionMenu actions={actions} /> : null;
 }
 function KolamTermsTemplateFormShell({
   controller,

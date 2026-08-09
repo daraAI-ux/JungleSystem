@@ -78,7 +78,7 @@ import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
 import { KolamComponentOverridesEditor } from './kolam-component-overrides-editor';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamControlTabList } from './kolam-control-tab-list';
@@ -1266,67 +1266,62 @@ function ProductActionsMenu({
   onTogglePin: () => void;
   product: KolamProduct;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const productCode = getProductCode(product);
   const rawProductCode = product.productCode.trim();
 
   return (
-    <View style={actionMenuOpen ? styles.activeActionRow : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${product.name}`}
-        floating
-        onOpenChange={setActionMenuOpen}
-        actions={
-          isRawCatalog
-            ? [
-                { label: 'Lihat', onPress: onDetail },
-                { label: 'Rubah', onPress: onEdit },
-                {
-                  disabled: !rawProductCode,
-                  label: 'Salin Kode Produk',
-                  onPress: () => void copyTextToClipboard(rawProductCode),
-                },
-                { label: 'Duplikat Data', onPress: onDuplicate },
-                { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-              ]
-            : [
-                { label: 'Lihat', onPress: onDetail },
-                { label: 'Lihat lisensi / stok', onPress: onLicense },
-                { label: 'Rubah', onPress: onEdit },
-                {
-                  label: 'Sinkron ke Tokopedia',
-                  onPress: () => onSyncStock(['tokopedia']),
-                },
-                {
-                  label: 'Sinkron ke Shopee',
-                  onPress: () => onSyncStock(['shopee']),
-                },
-                {
-                  label: 'Sinkron ke Keduanya',
-                  onPress: () => onSyncStock(['tokopedia', 'shopee']),
-                },
-                {
-                  disabled: !productCode,
-                  label:
-                    product.type === 'raw' ? 'Salin Kode Produk' : 'Salin SKU',
-                  onPress: () => void copyTextToClipboard(productCode),
-                },
-                {
-                  disabled: !productCode,
-                  label: 'Buat Barcode',
-                  onPress: onBarcode,
-                },
-                { label: 'Duplikat Data', onPress: onDuplicate },
-                {
-                  label: product.isPinned ? 'Lepas Pin' : 'Pin',
-                  onPress: onTogglePin,
-                },
-                { label: 'Arsipkan', onPress: onArchive },
-                { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-              ]
-        }
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${product.name}`}
+      actions={
+        isRawCatalog
+          ? [
+              { label: 'Lihat', onPress: onDetail },
+              { label: 'Rubah', onPress: onEdit },
+              {
+                disabled: !rawProductCode,
+                label: 'Salin Kode Produk',
+                onPress: () => void copyTextToClipboard(rawProductCode),
+              },
+              { label: 'Duplikat Data', onPress: onDuplicate },
+              { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+            ]
+          : [
+              { label: 'Lihat', onPress: onDetail },
+              { label: 'Lihat lisensi / stok', onPress: onLicense },
+              { label: 'Rubah', onPress: onEdit },
+              {
+                label: 'Sinkron ke Tokopedia',
+                onPress: () => onSyncStock(['tokopedia']),
+              },
+              {
+                label: 'Sinkron ke Shopee',
+                onPress: () => onSyncStock(['shopee']),
+              },
+              {
+                label: 'Sinkron ke Keduanya',
+                onPress: () => onSyncStock(['tokopedia', 'shopee']),
+              },
+              {
+                disabled: !productCode,
+                label:
+                  product.type === 'raw' ? 'Salin Kode Produk' : 'Salin SKU',
+                onPress: () => void copyTextToClipboard(productCode),
+              },
+              {
+                disabled: !productCode,
+                label: 'Buat Barcode',
+                onPress: onBarcode,
+              },
+              { label: 'Duplikat Data', onPress: onDuplicate },
+              {
+                label: product.isPinned ? 'Lepas Pin' : 'Pin',
+                onPress: onTogglePin,
+              },
+              { label: 'Arsipkan', onPress: onArchive },
+              { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+            ]
+      }
+    />
   );
 }
 

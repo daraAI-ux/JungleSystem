@@ -50,7 +50,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
@@ -485,7 +485,7 @@ function KolamPurchaseOrderActionsMenu({
   const canRestore = po.status === 'cancelled';
 
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${po.poCode || 'purchase order'}`}
       actions={[
         { label: 'Lihat', onPress: onSelect },

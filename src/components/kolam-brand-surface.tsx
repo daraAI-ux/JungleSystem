@@ -26,7 +26,7 @@ import {KolamEditButton} from './kolam-edit-button';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFlagIcon } from './kolam-flag-icon';
@@ -524,20 +524,15 @@ function KolamBrandActionsMenu({
   onEdit: () => void;
   onSelect: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.brandActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${brand.name}`}
-        onOpenChange={setActionMenuOpen}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${brand.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

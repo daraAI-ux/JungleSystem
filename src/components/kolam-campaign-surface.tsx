@@ -26,7 +26,7 @@ import { KolamCampaignForm } from './kolam-campaign-form';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -234,7 +234,7 @@ function KolamCampaignList({
           total: controller.total,
         }}
         renderActions={campaign => (
-          <KolamOverflowMenuButton
+          <KolamTableRowActionMenu
             accessibilityLabel={`Menu ${campaign.title}`}
             actions={[
               { label: 'Lihat', onPress: () => openCampaign(campaign) },

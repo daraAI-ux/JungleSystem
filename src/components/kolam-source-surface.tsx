@@ -35,7 +35,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -427,7 +427,7 @@ function KolamSourceActionsMenu({
   source: KolamSource;
 }) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${source.name}`}
       actions={[
         {

@@ -30,7 +30,7 @@ import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -577,20 +577,15 @@ function KolamTaxonomyActionsMenu({
   onSelect: () => void;
   taxonomy: KolamTaxonomy;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.taxonomyActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${taxonomy.name}`}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${taxonomy.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

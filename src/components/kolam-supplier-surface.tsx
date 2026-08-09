@@ -48,7 +48,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -454,7 +454,7 @@ function KolamSupplierActionsMenu({
   vendor: KolamVendor;
 }) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${vendor.name}`}
       actions={[
         { label: 'Lihat', onPress: onSelect },

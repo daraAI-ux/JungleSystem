@@ -59,7 +59,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailTermsTemplatesPanel } from './kolam-detail-more-panels';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -991,49 +991,43 @@ function KolamSpeciesActionsMenu({
   onSyncStock: (platforms: KolamMarketplacePlatform[]) => void;
   onTogglePin: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.speciesActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${item.displayName}`}
-        floating
-        onOpenChange={setActionMenuOpen}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          {
-            label: 'Sinkron ke Tokopedia',
-            onPress: () => onSyncStock(['tokopedia']),
-          },
-          {
-            label: 'Sinkron ke Shopee',
-            onPress: () => onSyncStock(['shopee']),
-          },
-          {
-            label: 'Sinkron ke Keduanya',
-            onPress: () => onSyncStock(['tokopedia', 'shopee']),
-          },
-          {
-            label: 'Samakan harga ke Tokopedia',
-            onPress: () => onSyncPrice(['tokopedia']),
-          },
-          {
-            label: 'Samakan harga ke Shopee',
-            onPress: () => onSyncPrice(['shopee']),
-          },
-          {
-            label: 'Samakan harga ke Keduanya',
-            onPress: () => onSyncPrice(['tokopedia', 'shopee']),
-          },
-          { disabled: !item.sku, label: 'Salin SKU', onPress: onCopySku },
-          { disabled: !item.sku, label: 'Buat barcode', onPress: onBarcode },
-          { label: 'Duplikasi data', onPress: onDuplicate },
-          { label: item.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${item.displayName}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        {
+          label: 'Sinkron ke Tokopedia',
+          onPress: () => onSyncStock(['tokopedia']),
+        },
+        {
+          label: 'Sinkron ke Shopee',
+          onPress: () => onSyncStock(['shopee']),
+        },
+        {
+          label: 'Sinkron ke Keduanya',
+          onPress: () => onSyncStock(['tokopedia', 'shopee']),
+        },
+        {
+          label: 'Samakan harga ke Tokopedia',
+          onPress: () => onSyncPrice(['tokopedia']),
+        },
+        {
+          label: 'Samakan harga ke Shopee',
+          onPress: () => onSyncPrice(['shopee']),
+        },
+        {
+          label: 'Samakan harga ke Keduanya',
+          onPress: () => onSyncPrice(['tokopedia', 'shopee']),
+        },
+        { disabled: !item.sku, label: 'Salin SKU', onPress: onCopySku },
+        { disabled: !item.sku, label: 'Buat barcode', onPress: onBarcode },
+        { label: 'Duplikasi data', onPress: onDuplicate },
+        { label: item.isPinned ? 'Lepas Pin' : 'Pin', onPress: onTogglePin },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

@@ -36,7 +36,7 @@ import {
 } from './kolam-detail-media-preview';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -1000,7 +1000,7 @@ function KolamCustomerListActions({
   const customerRouteId = encodeURIComponent(customer.id);
 
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${customer.name}`}
       actions={[
         {

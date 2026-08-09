@@ -24,7 +24,7 @@ import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -233,7 +233,7 @@ function KolamVoucherList({
           total: controller.total,
         }}
         renderActions={voucher => (
-          <KolamOverflowMenuButton
+          <KolamTableRowActionMenu
             accessibilityLabel={`Menu ${voucher.code}`}
             actions={[
               {

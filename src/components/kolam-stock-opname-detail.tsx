@@ -49,7 +49,7 @@ import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
@@ -1185,7 +1185,6 @@ function StockOpnameLineActionsMenu({
   onRequestRevision: () => void;
   onResubmit: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const actions = [
     ...(canEdit ? [{ label: 'Rubah', onPress: onEdit }] : []),
     ...(canApprove ? [{ label: 'Setujui', onPress: onApprove }] : []),
@@ -1202,18 +1201,14 @@ function StockOpnameLineActionsMenu({
   ];
 
   return (
-    <View style={actionMenuOpen ? styles.activeActionRow : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Aksi baris ${line.lineNo}`}
-        actions={
-          actions.length
-            ? actions
-            : [{ disabled: true, label: 'Tidak ada aksi', onPress: () => {} }]
-        }
-        floating
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Aksi baris ${line.lineNo}`}
+      actions={
+        actions.length
+          ? actions
+          : [{ disabled: true, label: 'Tidak ada aksi', onPress: () => {} }]
+      }
+    />
   );
 }
 

@@ -23,7 +23,7 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDateField } from './kolam-date-field';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
@@ -505,30 +505,25 @@ function StockOpnameActionsMenu({
   onDelete: () => void;
   onOpen: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.activeActionRow : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Aksi ${item.documentNumber}`}
-        actions={[
-          {
-            label: 'Lihat',
-            onPress: onOpen,
-          },
-          ...(item.status === 'cancelled' && canDelete
-            ? [
-                {
-                  label: 'Hapus',
-                  tone: 'danger' as const,
-                  onPress: onDelete,
-                },
-              ]
-            : []),
-        ]}
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Aksi ${item.documentNumber}`}
+      actions={[
+        {
+          label: 'Lihat',
+          onPress: onOpen,
+        },
+        ...(item.status === 'cancelled' && canDelete
+          ? [
+              {
+                label: 'Hapus',
+                tone: 'danger' as const,
+                onPress: onDelete,
+              },
+            ]
+          : []),
+      ]}
+    />
   );
 }
 

@@ -29,7 +29,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamLayananExecutionDetail } from './kolam-layanan-execution-detail';
@@ -928,7 +928,7 @@ function KolamLayananServiceActionsMenu({
   onSelect: () => void;
 }) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       actions={[
         { label: 'Lihat', onPress: onSelect },
         { label: 'Rubah', onPress: onEdit },
@@ -942,7 +942,7 @@ function KolamLayananSimpleActionsMenu({
 }: {
   onSelect: () => void;
 }) {
-  return <KolamOverflowMenuButton actions={[{ label: 'Lihat', onPress: onSelect }]} />;
+  return <KolamTableRowActionMenu actions={[{ label: 'Lihat', onPress: onSelect }]} />;
 }
 
 function formatLayananBrandLabel(service: KolamLayananService) {

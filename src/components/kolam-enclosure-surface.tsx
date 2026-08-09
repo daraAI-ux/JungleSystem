@@ -70,7 +70,7 @@ import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline'
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -1355,7 +1355,7 @@ function KolamEnclosureActionsMenu({
   onSelect: () => void;
 }) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={'Aksi ' + (enclosure.name || enclosure.code)}
       actions={[{ label: 'Lihat', onPress: onSelect }]}
     />
@@ -1917,7 +1917,7 @@ function DashboardDeathActions({
       : '/stock-transaction';
 
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Aksi kematian ${event.enclosureCode || event.speciesName || ''}`}
       actions={[
         {

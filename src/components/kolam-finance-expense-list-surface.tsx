@@ -45,7 +45,7 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -466,7 +466,7 @@ function AssetPurchaseRowActions({
 
   return (
     <View style={styles.rowActions}>
-      <KolamOverflowMenuButton
+      <KolamTableRowActionMenu
         accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
         actions={actions}
       />
@@ -501,7 +501,7 @@ function UnexpectedExpenseRowActions({
 
   return (
     <View style={styles.rowActions}>
-      <KolamOverflowMenuButton
+      <KolamTableRowActionMenu
         accessibilityLabel={`Menu ${item.name || item.code || item.id}`}
         actions={actions}
       />

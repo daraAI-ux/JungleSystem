@@ -41,7 +41,7 @@ import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDateField } from './kolam-date-field';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -1769,7 +1769,7 @@ function renderTaskListActions(
   onRouteChange?: (route: string) => void,
 ) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       actions={[
         {
           label: 'Detail',

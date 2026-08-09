@@ -21,7 +21,7 @@ import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -495,20 +495,15 @@ function KolamUnitActionsMenu({
   onSelect: () => void;
   unit: KolamUnit;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.unitActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${unit.name}`}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${unit.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

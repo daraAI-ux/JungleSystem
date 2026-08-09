@@ -27,7 +27,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import {KolamPageIdentityHeader} from './kolam-page-identity-header';
@@ -819,26 +819,20 @@ function TeranuraActionsMenu({
   onEdit: () => void;
   onSelect: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.activeActionRow : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${item.name}`}
-        floating
-        onOpenChange={setActionMenuOpen}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          {
-            disabled: true,
-            label: 'Hapus',
-            onPress: () => undefined,
-            tone: 'danger',
-          },
-        ]}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${item.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        {
+          disabled: true,
+          label: 'Hapus',
+          onPress: () => undefined,
+          tone: 'danger',
+        },
+      ]}
+    />
   );
 }
 

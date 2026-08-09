@@ -21,7 +21,7 @@ import {KolamEditButton} from './kolam-edit-button';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
@@ -517,20 +517,15 @@ function KolamIucnActionsMenu({
   onEdit: () => void;
   onSelect: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.iucnActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${item.name}`}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${item.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

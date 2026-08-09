@@ -32,7 +32,7 @@ import { KolamCategoryIcon } from './kolam-category-icon';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -436,26 +436,22 @@ function KolamCategoryActionsMenu({
   onEdit: () => void;
   onSelect: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const canAddChild = category.level < 2;
 
   return (
-    <View style={actionMenuOpen ? styles.categoryActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${category.name}`}
-        onOpenChange={setActionMenuOpen}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          {
-            disabled: !canAddChild,
-            label: 'Subkategori',
-            onPress: onAddChild,
-          },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${category.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        {
+          disabled: !canAddChild,
+          label: 'Subkategori',
+          onPress: onAddChild,
+        },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

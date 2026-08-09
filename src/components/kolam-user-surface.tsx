@@ -61,7 +61,7 @@ import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import {KolamDateField} from './kolam-date-field';
 import {KolamEmptyState} from './kolam-empty-state';
@@ -2922,7 +2922,7 @@ function KolamUserListActions({
     isSettingsSuperAdminRoleKey(user.role?.key ?? '');
 
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${user.displayName}`}
       actions={[
         {

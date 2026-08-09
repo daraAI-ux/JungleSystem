@@ -36,7 +36,7 @@ import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDateField } from './kolam-date-field';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import { KolamTableRowActionMenu } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
@@ -534,8 +534,6 @@ function PayableList({
   onRouteChange?: (route: string) => void;
 }) {
   const safePage = Math.max(1, controller.pagination.page);
-  const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
-
   const columns = React.useMemo(
     () => [
       {
@@ -668,20 +666,12 @@ function PayableList({
         render: (item: KolamPayable) => {
           const canPayRow =
             controller.canPay && item.status === 'open' && Boolean(item.id);
-          const actionMenuOpen = actionMenuOpenId === item.id;
-
           return (
-            <View
-              style={[
-                styles.actionCell,
-                actionMenuOpen ? styles.activeActionCell : null,
-              ]}
-            >
-              <KolamOverflowMenuButton
+            <View style={styles.actionCell}>
+              <KolamTableRowActionMenu
                 accessibilityLabel={`Menu ${
                   item.code || item.name || 'hutang'
                 }`}
-                onOpenChange={open => setActionMenuOpenId(open ? item.id : null)}
                 actions={[
                   {
                     label: 'Lihat detail',
@@ -723,7 +713,7 @@ function PayableList({
         },
       },
     ],
-    [actionMenuOpenId, controller, onRouteChange],
+    [controller, onRouteChange],
   );
 
   return (

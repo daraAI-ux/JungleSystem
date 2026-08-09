@@ -69,7 +69,7 @@ import { KolamComplaintCreateForm } from './kolam-complaint-create-form';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -688,7 +688,7 @@ function KolamComplaintActionsMenu({
   onSelect: () => void;
 }) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${complaint.ticketCode}`}
       actions={[{ label: 'Lihat', onPress: onSelect }]}
     />

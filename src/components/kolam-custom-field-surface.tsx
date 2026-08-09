@@ -26,7 +26,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
@@ -551,25 +551,21 @@ function KolamCustomFieldActionsMenu({
   onSelect: () => void;
   onSetStatus: (status: KolamCustomFieldStatus) => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
   const isInactive = field.status === 'inactive';
 
   return (
-    <View style={actionMenuOpen ? styles.customFieldActionMenuRaised : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${field.fieldLabel}`}
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          {
-            label: isInactive ? 'Pulihkan' : 'Nonaktifkan',
-            onPress: () => onSetStatus(isInactive ? 'active' : 'inactive'),
-          },
-          { label: 'Hapus', onPress: onDelete, tone: 'danger' },
-        ]}
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${field.fieldLabel}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        {
+          label: isInactive ? 'Pulihkan' : 'Nonaktifkan',
+          onPress: () => onSetStatus(isInactive ? 'active' : 'inactive'),
+        },
+        { label: 'Hapus', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

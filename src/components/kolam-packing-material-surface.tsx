@@ -40,7 +40,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import type { KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import {
@@ -638,21 +638,15 @@ function KolamPackingMaterialActionsMenu({
   onEdit: () => void;
   onSelect: () => void;
 }) {
-  const [actionMenuOpen, setActionMenuOpen] = React.useState(false);
-
   return (
-    <View style={actionMenuOpen ? styles.activeActionRow : null}>
-      <KolamOverflowMenuButton
-        accessibilityLabel={`Menu ${item.name}`}
-        floating
-        actions={[
-          { label: 'Lihat', onPress: onSelect },
-          { label: 'Rubah', onPress: onEdit },
-          { label: 'Nonaktifkan', onPress: onDelete, tone: 'danger' },
-        ]}
-        onOpenChange={setActionMenuOpen}
-      />
-    </View>
+    <KolamTableRowActionMenu
+      accessibilityLabel={`Menu ${item.name}`}
+      actions={[
+        { label: 'Lihat', onPress: onSelect },
+        { label: 'Rubah', onPress: onEdit },
+        { label: 'Nonaktifkan', onPress: onDelete, tone: 'danger' },
+      ]}
+    />
   );
 }
 

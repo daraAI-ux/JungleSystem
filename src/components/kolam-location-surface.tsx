@@ -43,7 +43,7 @@ import {KolamCardFrame} from './kolam-card-frame';
 import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
@@ -1335,7 +1335,7 @@ function KolamLocationActionsMenu({
   onSelect: () => void;
 }) {
   return (
-    <KolamOverflowMenuButton
+    <KolamTableRowActionMenu
       accessibilityLabel={`Menu ${location.name}`}
       actions={[
         {label: 'Lihat', onPress: onSelect},

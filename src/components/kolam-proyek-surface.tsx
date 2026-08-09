@@ -59,7 +59,7 @@ import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { kolamDetailMetaStripStyles } from './kolam-detail-meta-strip';
 import {
   KolamDropdownSelect,
-  KolamOverflowMenuButton,
+  KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
@@ -228,7 +228,7 @@ function KolamProyekList({
         renderActions={item => {
           const label = item.quotationNumber || item.id;
           return (
-            <KolamOverflowMenuButton
+            <KolamTableRowActionMenu
               accessibilityLabel={`Menu ${label}`}
               actions={[{ label: 'Lihat', onPress: () => controller.onOpenItem(item) }]}
             />
