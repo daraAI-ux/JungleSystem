@@ -1176,6 +1176,7 @@ function PackingUsageCard({
         ),
       },
       {
+        align: 'center',
         flex: 1,
         id: 'variant',
         label: 'Varian',
@@ -1186,7 +1187,7 @@ function PackingUsageCard({
         ),
       },
       {
-        align: 'right',
+        align: 'center',
         flex: 0.6,
         id: 'quantity',
         label: 'Qty',
@@ -2432,7 +2433,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 18,
-    textAlign: 'right',
+    textAlign: 'center',
     width: '100%',
   },
   usageTable: {
