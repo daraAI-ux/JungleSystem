@@ -229,113 +229,117 @@ function KolamStockTransactionOpname({
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Target penyesuaian</Text>
-        <View style={styles.filterGrid}>
-          <View style={styles.filterItem}>
-            <KolamDropdownSelect
-              label="Tipe target"
-              onChange={value =>
-                controller.onChangeOpnameForm({
-                  targetType: value as typeof form.targetType,
-                })
-              }
-              options={[
-                { label: 'Produk', value: 'product' },
-                { label: 'Bahan baku', value: 'raw' },
-                { label: 'Life stock', value: 'species' },
-                { label: 'Freyer', value: 'freyer' },
-                { label: 'Teranura', value: 'teranura' },
-              ]}
-              value={form.targetType}
-            />
-          </View>
-          <View style={styles.filterItem}>
-            <KolamDropdownSelect
-              label={KOLAM_STOCK_OPNAME_TARGET_LABELS[form.targetType]}
-              onChange={value =>
-                controller.onChangeOpnameForm({ targetId: value })
-              }
-              options={[{ label: 'Pilih item…', value: '' }, ...targetOptions]}
-              searchable
-              searchPlaceholder="Cari item…"
-              value={form.targetId || ''}
-            />
-          </View>
-          {hasVariants ? (
+        <View style={styles.opnameInnerBox}>
+          <View style={styles.filterGrid}>
             <View style={styles.filterItem}>
               <KolamDropdownSelect
-                label="Varian"
+                label="Tipe target"
                 onChange={value =>
-                  controller.onChangeOpnameForm({ variantId: value })
+                  controller.onChangeOpnameForm({
+                    targetType: value as typeof form.targetType,
+                  })
                 }
                 options={[
-                  { label: 'Pilih varian…', value: '' },
-                  ...variantOptions,
+                  { label: 'Produk', value: 'product' },
+                  { label: 'Bahan baku', value: 'raw' },
+                  { label: 'Life stock', value: 'species' },
+                  { label: 'Freyer', value: 'freyer' },
+                  { label: 'Teranura', value: 'teranura' },
                 ]}
-                searchable
-                searchPlaceholder="Cari varian…"
-                value={form.variantId || ''}
+                value={form.targetType}
               />
             </View>
+            <View style={styles.filterItem}>
+              <KolamDropdownSelect
+                label={KOLAM_STOCK_OPNAME_TARGET_LABELS[form.targetType]}
+                onChange={value =>
+                  controller.onChangeOpnameForm({ targetId: value })
+                }
+                options={[{ label: 'Pilih item…', value: '' }, ...targetOptions]}
+                searchable
+                searchPlaceholder="Cari item…"
+                value={form.targetId || ''}
+              />
+            </View>
+            {hasVariants ? (
+              <View style={styles.filterItem}>
+                <KolamDropdownSelect
+                  label="Varian"
+                  onChange={value =>
+                    controller.onChangeOpnameForm({ variantId: value })
+                  }
+                  options={[
+                    { label: 'Pilih varian…', value: '' },
+                    ...variantOptions,
+                  ]}
+                  searchable
+                  searchPlaceholder="Cari varian…"
+                  value={form.variantId || ''}
+                />
+              </View>
+            ) : null}
+          </View>
+          {hasVariants ? (
+            <Text style={styles.metaText}>
+              Item ini punya varian — pilih varian. Stok utama tidak bisa
+              disesuaikan langsung.
+            </Text>
           ) : null}
         </View>
-        {hasVariants ? (
-          <Text style={styles.metaText}>
-            Item ini punya varian — pilih varian. Stok utama tidak bisa
-            disesuaikan langsung.
-          </Text>
-        ) : null}
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Penyesuaian stok</Text>
-        <View style={styles.stockSummary}>
-          <View style={styles.stockSummaryItem}>
-            <Text style={styles.metaText}>Stok sekarang</Text>
-            <Text style={styles.primaryText}>
-              {controller.opnameCurrentStock == null
-                ? '—'
-                : formatNumber(controller.opnameCurrentStock)}
-            </Text>
+        <View style={styles.opnameInnerBox}>
+          <View style={styles.stockSummary}>
+            <View style={styles.stockSummaryItem}>
+              <Text style={styles.metaText}>Stok sekarang</Text>
+              <Text style={styles.primaryText}>
+                {controller.opnameCurrentStock == null
+                  ? '—'
+                  : formatNumber(controller.opnameCurrentStock)}
+              </Text>
+            </View>
+            <View style={styles.stockSummaryItem}>
+              <Text style={styles.metaText}>Stok sesudah</Text>
+              <KolamFormTextField
+                keyboardType="numeric"
+                onChangeText={value =>
+                  controller.onChangeOpnameForm({ adjustedStock: value })
+                }
+                placeholder="0"
+                value={form.adjustedStock}
+              />
+            </View>
+            <View style={styles.stockSummaryItem}>
+              <Text style={styles.metaText}>Selisih</Text>
+              <Text
+                style={[
+                  styles.primaryText,
+                  (controller.opnameDiff ?? 0) > 0
+                    ? styles.deltaPositive
+                    : (controller.opnameDiff ?? 0) < 0
+                    ? styles.deltaNegative
+                    : null,
+                ]}
+              >
+                {controller.opnameDiff == null
+                  ? '—'
+                  : formatSigned(controller.opnameDiff)}
+              </Text>
+            </View>
           </View>
-          <View style={styles.stockSummaryItem}>
-            <Text style={styles.metaText}>Stok sesudah</Text>
-            <KolamFormTextField
-              keyboardType="numeric"
-              onChangeText={value =>
-                controller.onChangeOpnameForm({ adjustedStock: value })
-              }
-              placeholder="0"
-              value={form.adjustedStock}
-            />
-          </View>
-          <View style={styles.stockSummaryItem}>
-            <Text style={styles.metaText}>Selisih</Text>
-            <Text
-              style={[
-                styles.primaryText,
-                (controller.opnameDiff ?? 0) > 0
-                  ? styles.deltaPositive
-                  : (controller.opnameDiff ?? 0) < 0
-                  ? styles.deltaNegative
-                  : null,
-              ]}
-            >
-              {controller.opnameDiff == null
-                ? '—'
-                : formatSigned(controller.opnameDiff)}
-            </Text>
-          </View>
+          <Text style={styles.filterLabel}>Alasan</Text>
+          <KolamFormTextField
+            multiline
+            numberOfLines={3}
+            onChangeText={value =>
+              controller.onChangeOpnameForm({ reason: value })
+            }
+            placeholder="Opsional"
+            value={form.reason}
+          />
         </View>
-        <Text style={styles.filterLabel}>Alasan</Text>
-        <KolamFormTextField
-          multiline
-          numberOfLines={3}
-          onChangeText={value =>
-            controller.onChangeOpnameForm({ reason: value })
-          }
-          placeholder="Opsional"
-          value={form.reason}
-        />
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
@@ -1721,6 +1725,14 @@ const styles = StyleSheet.create({
   },
   detailCard: {
     gap: 8,
+  },
+  opnameInnerBox: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
   },
   sectionTitle: {
     color: V.colors.fg,
