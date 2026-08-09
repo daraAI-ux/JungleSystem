@@ -649,16 +649,6 @@ function KolamPurchaseOrderForm({
           </View>
         </View>
 
-        <FieldShell label="Catatan">
-          <KolamFormTextField
-            multiline
-            onChangeText={notes => controller.onChangeForm({ notes })}
-            placeholder="Catatan PO (opsional)"
-            style={styles.notesInput}
-            value={form.notes}
-          />
-        </FieldShell>
-
         {controller.mode === 'create' ? (
           <FieldShell label="Kirim langsung">
             <View style={styles.switchRow}>
@@ -707,6 +697,19 @@ function KolamPurchaseOrderForm({
             value={formatRupiah(controller.breakdown.finalTotal)}
           />
         </View>
+      </KolamContentFrame>
+
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+        <Text style={styles.sectionTitle}>Catatan PO</Text>
+        <FieldShell label="Catatan">
+          <KolamFormTextField
+            multiline
+            onChangeText={notes => controller.onChangeForm({ notes })}
+            placeholder="Catatan PO (opsional)"
+            style={styles.notesInput}
+            value={form.notes}
+          />
+        </FieldShell>
       </KolamContentFrame>
 
       </KolamDetailScrollSurface>
