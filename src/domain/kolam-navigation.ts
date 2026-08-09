@@ -40,6 +40,7 @@ export type KolamNavigationModuleIcon =
   | 'production'
   | 'purchaseOrder'
   | 'raw'
+  | 'receivable'
   | 'sales'
   | 'salesSource'
   | 'service'
@@ -631,6 +632,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/receivable',
         description: 'Piutang usaha dan invoice yang belum dibayar customer',
         group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'receivable',
         requiredAccess: ['kolam'],
       },
       {
@@ -1036,6 +1038,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/receivable', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Piutang',
+        moduleIcon: 'receivable',
       }),
       sidebarItem('/routine-expenses', {
         group: 'Pengeluaran & Pemasukan',

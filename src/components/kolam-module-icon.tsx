@@ -25,6 +25,7 @@ import {KOLAM_PROJECT_MODULE_ICON_SVG} from '../assets/icons/project-module-icon
 import {KOLAM_PRODUCTION_MODULE_ICON_SVG} from '../assets/icons/production-module-icon-svg';
 import {KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG} from '../assets/icons/purchase-order-module-icon-svg';
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
+import {KOLAM_RECEIVABLE_MODULE_ICON_SVG} from '../assets/icons/receivable-module-icon-svg';
 import {KOLAM_SALES_SOURCE_MODULE_ICON_SVG} from '../assets/icons/sales-source-module-icon-svg';
 import {KOLAM_SALES_MODULE_ICON_SVG} from '../assets/icons/sales-module-icon-svg';
 import {KOLAM_SERVICE_MODULE_ICON_SVG} from '../assets/icons/service-module-icon-svg';
@@ -75,6 +76,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   production: 'Icon Produksi',
   purchaseOrder: 'Icon Pesanan Pembelian',
   raw: 'Icon Bahan Baku',
+  receivable: 'Icon Piutang',
   sales: 'Icon Penjualan',
   salesSource: 'Icon Sumber Penjualan',
   service: 'Icon Layanan',
@@ -127,6 +129,7 @@ const PURCHASE_ORDER_ICON_PATHS = getSvgPathData(
   KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG,
 );
 const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
+const RECEIVABLE_ICON_PATHS = getSvgPathData(KOLAM_RECEIVABLE_MODULE_ICON_SVG);
 const SALES_SOURCE_ICON_PATHS = getSvgPathData(
   KOLAM_SALES_SOURCE_MODULE_ICON_SVG,
 );
@@ -357,6 +360,12 @@ export function KolamModuleIcon({
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {RAW_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'receivable' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {RECEIVABLE_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
       ) : kind === 'sales' ? (
