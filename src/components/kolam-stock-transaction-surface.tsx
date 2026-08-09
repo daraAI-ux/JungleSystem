@@ -37,6 +37,7 @@ import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockCrossSyncObservabilityHost } from './kolam-stock-cross-sync-observability-host';
 import { KolamStockTransactionSourceIcon } from './kolam-stock-transaction-source-icon';
@@ -297,6 +298,17 @@ function KolamStockTransactionOpname({
             </Text>
           </View>
           <View style={styles.stockSummaryItem}>
+            <Text style={styles.metaText}>Stok sesudah</Text>
+            <KolamFormTextField
+              keyboardType="numeric"
+              onChangeText={value =>
+                controller.onChangeOpnameForm({ adjustedStock: value })
+              }
+              placeholder="0"
+              value={form.adjustedStock}
+            />
+          </View>
+          <View style={styles.stockSummaryItem}>
             <Text style={styles.metaText}>Selisih</Text>
             <Text
               style={[
@@ -314,15 +326,6 @@ function KolamStockTransactionOpname({
             </Text>
           </View>
         </View>
-        <Text style={styles.filterLabel}>Stok sesudah</Text>
-        <KolamFormTextField
-          keyboardType="numeric"
-          onChangeText={value =>
-            controller.onChangeOpnameForm({ adjustedStock: value })
-          }
-          placeholder="0"
-          value={form.adjustedStock}
-        />
         <Text style={styles.filterLabel}>Alasan</Text>
         <KolamFormTextField
           multiline
@@ -336,16 +339,20 @@ function KolamStockTransactionOpname({
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Foto bukti</Text>
-        <View style={styles.headerActions}>
-          <KolamButton
-            disabled={controller.mutating}
-            label="Tambah foto"
-            onPress={() => {
-              void controller.onAddOpnamePhoto();
-            }}
-          />
-        </View>
+        <KolamSettingsWebFileField
+          accessibilityLabel="Foto bukti opname"
+          actionLabel="Pilih file"
+          disabled={controller.mutating}
+          emptyLabel="Foto belum dipilih"
+          fileCount={Math.min(form.photoUris.length, 10)}
+          fileMax={10}
+          onUpload={() => {
+            void controller.onAddOpnamePhoto();
+          }}
+          scope="stock-opname-photo"
+          title="Foto bukti"
+          value=""
+        />
         {form.photoUris.length ? (
           <View style={styles.photoGrid}>
             {form.photoUris.map((uri, index) => (
@@ -1743,7 +1750,7 @@ const styles = StyleSheet.create({
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   photoItem: {
     gap: 6,
@@ -1759,10 +1766,12 @@ const styles = StyleSheet.create({
   stockSummary: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 12,
   },
   stockSummaryItem: {
-    minWidth: 120,
+    flexBasis: 180,
+    flexGrow: 1,
     gap: 2,
+    minWidth: 160,
   },
 });
