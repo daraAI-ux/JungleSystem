@@ -374,20 +374,26 @@ export function KolamStockOpnameDetail({
         </Text>
         {controller.isDraft && canUpdate ? (
           <>
-            <KolamDropdownSelect
-              label="PIC"
-              onChange={controller.setDraftOwnerId}
-              options={staffOptions}
-              searchable
-              value={controller.draftOwnerId}
-            />
-            <KolamDropdownSelect
-              label="Pelaksana"
-              onChange={controller.setDraftConductedId}
-              options={staffOptions}
-              searchable
-              value={controller.draftConductedId}
-            />
+            <View style={styles.accountabilityRow}>
+              <View style={styles.accountabilityBox}>
+                <KolamDropdownSelect
+                  label="PIC"
+                  onChange={controller.setDraftOwnerId}
+                  options={staffOptions}
+                  searchable
+                  value={controller.draftOwnerId}
+                />
+              </View>
+              <View style={styles.accountabilityBox}>
+                <KolamDropdownSelect
+                  label="Pelaksana"
+                  onChange={controller.setDraftConductedId}
+                  options={staffOptions}
+                  searchable
+                  value={controller.draftConductedId}
+                />
+              </View>
+            </View>
             <KolamButton
               disabled={controller.acting}
               label="Simpan PIC / pelaksana"
@@ -397,15 +403,20 @@ export function KolamStockOpnameDetail({
             />
           </>
         ) : (
-          <>
-            <Text style={styles.meta}>
-              PIC: {stockOpnameUserDisplayName(header.owner) || '—'}
-            </Text>
-            <Text style={styles.meta}>
-              Pelaksana:{' '}
-              {stockOpnameUserDisplayName(header.conductedBy) || '—'}
-            </Text>
-          </>
+          <View style={styles.accountabilityRow}>
+            <View style={styles.accountabilityBox}>
+              <Text style={styles.fieldLabel}>PIC</Text>
+              <Text style={styles.meta}>
+                {stockOpnameUserDisplayName(header.owner) || '—'}
+              </Text>
+            </View>
+            <View style={styles.accountabilityBox}>
+              <Text style={styles.fieldLabel}>Pelaksana</Text>
+              <Text style={styles.meta}>
+                {stockOpnameUserDisplayName(header.conductedBy) || '—'}
+              </Text>
+            </View>
+          </View>
         )}
         <Text style={styles.fieldLabel}>Catatan</Text>
         <KolamFormTextField
@@ -1122,6 +1133,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  accountabilityRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  accountabilityBox: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 8,
+    minWidth: 240,
+    padding: 10,
   },
   toolbarDocumentNumber: {
     color: V.colors.fg,
