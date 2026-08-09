@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, type StyleProp, type ViewStyle} from 'react-native';
 import {type KolamFormSection} from '../domain/kolam-form';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamContentFrame} from './kolam-content-frame';
@@ -8,14 +8,16 @@ import {KolamCopyStack} from './kolam-copy-stack';
 export interface KolamNativeFormSectionProps {
   children: React.ReactNode;
   section: KolamFormSection;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function KolamNativeFormSection({
   children,
   section,
+  style,
 }: KolamNativeFormSectionProps) {
   return (
-    <KolamContentFrame variant="nativeFormSection">
+    <KolamContentFrame style={style} variant="nativeFormSection">
       <KolamCopyStack
         containerStyle={styles.nativeFormCopy}
         items={[

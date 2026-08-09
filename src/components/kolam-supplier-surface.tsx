@@ -1648,7 +1648,10 @@ function KolamSupplierForm({
   );
 
   return (
-    <KolamNativeFormSection section={getKolamFormSection('supplier-detail')}>
+    <KolamNativeFormSection
+      section={getKolamFormSection('supplier-detail')}
+      style={styles.supplierNativeFormSection}
+    >
       <View
         style={[
           settingsWebFormStyles.settingsWebFormFields,
@@ -2678,6 +2681,11 @@ const styles = StyleSheet.create({
   photoRemove: {
     minHeight: 30,
   },
+  supplierNativeFormSection: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
+  },
   supplierFormFields: {
     alignSelf: 'stretch',
     minWidth: 0,
@@ -2692,7 +2700,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: 12,
     minWidth: 0,
-    padding: 14,
+    paddingVertical: 14,
     width: '100%',
   },
   supplierEditSectionHeader: {
