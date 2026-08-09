@@ -581,9 +581,6 @@ function KolamSupplierDetail({
             <View
               style={[kolamTableToolbarStyles.filters, styles.detailToolbarFilters]}
             >
-              <Text numberOfLines={1} style={styles.detailToolbarContext}>
-                {vendor.name}
-              </Text>
               <View style={styles.detailToolbarDropdownTrack}>
                 <KolamTableFilterTrigger
                   active={
@@ -598,6 +595,7 @@ function KolamSupplierDetail({
                   }
                   open={activeAnalyticsFilter === 'period'}
                   style={styles.detailToolbarDropdown}
+                  textStyle={styles.detailToolbarDropdownText}
                   variant="quiet"
                 />
                 <KolamTableFilterTrigger
@@ -613,6 +611,7 @@ function KolamSupplierDetail({
                   }
                   open={activeAnalyticsFilter === 'year'}
                   style={styles.detailToolbarDropdown}
+                  textStyle={styles.detailToolbarDropdownText}
                   variant="quiet"
                 />
                 <KolamTableFilterTrigger
@@ -631,6 +630,7 @@ function KolamSupplierDetail({
                   }
                   open={activeAnalyticsFilter === 'month'}
                   style={styles.detailToolbarDropdown}
+                  textStyle={styles.detailToolbarDropdownText}
                   variant="quiet"
                 />
               </View>
@@ -2145,6 +2145,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     maxWidth: 10000,
     minWidth: 104,
+  },
+  detailToolbarDropdownText: {
+    flexGrow: 1,
+    minWidth: 0,
   },
   listRoot: {
     gap: 14,
