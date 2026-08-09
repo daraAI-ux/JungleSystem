@@ -512,10 +512,6 @@ function KolamPurchaseOrderForm({
 }) {
   const form = controller.form;
   const vendorLocked = controller.mode === 'edit' && controller.selectedPO?.status === 'sent';
-  const contextLabel =
-    controller.mode === 'create'
-      ? 'Buat purchase order'
-      : `Rubah purchase order · ${controller.selectedPO?.poCode ?? ''}`;
   const handleCancel = () => {
     controller.onBackToList();
     onRouteChange?.(
@@ -536,11 +532,7 @@ function KolamPurchaseOrderForm({
     <View style={styles.detailSurface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
             <KolamCancelButton
               disabled={controller.mutating}
