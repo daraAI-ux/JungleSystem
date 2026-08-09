@@ -734,24 +734,45 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Metode pembayaran</Text>
-      <View style={styles.poPaymentTypeCard}>
-        <FieldShell label="Tipe pembayaran">
-          <KolamDropdownSelect
-            accessibilityLabel="Pilih metode pembayaran"
-            label="Metode pembayaran"
-            onChange={paymentType =>
-              controller.onChangeForm({
-                paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
-              })
-            }
-            options={[
-              { label: paymentTypeLabel('cash'), value: 'cash' },
-              { label: paymentTypeLabel('tempo'), value: 'tempo' },
-              { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
-            ]}
-            value={form.paymentType}
-          />
-        </FieldShell>
+      <View style={styles.formSplitRow}>
+        <View style={styles.formSplitCell}>
+          <View style={styles.poPaymentTypeCard}>
+            <FieldShell label="Gunakan uang muka (DP)">
+              <View style={styles.switchRow}>
+                <Text style={styles.switchHint}>
+                  Aktifkan bila pemasok mensyaratkan uang muka sebelum pelunasan/cicilan.
+                </Text>
+                <KolamSwitch
+                  active={form.downPaymentEnabled}
+                  onPress={() =>
+                    controller.onChangeForm({ downPaymentEnabled: !form.downPaymentEnabled })
+                  }
+                />
+              </View>
+            </FieldShell>
+          </View>
+        </View>
+        <View style={styles.formSplitCell}>
+          <View style={styles.poPaymentTypeCard}>
+            <FieldShell label="Tipe pembayaran">
+              <KolamDropdownSelect
+                accessibilityLabel="Pilih metode pembayaran"
+                label="Metode pembayaran"
+                onChange={paymentType =>
+                  controller.onChangeForm({
+                    paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
+                  })
+                }
+                options={[
+                  { label: paymentTypeLabel('cash'), value: 'cash' },
+                  { label: paymentTypeLabel('tempo'), value: 'tempo' },
+                  { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
+                ]}
+                value={form.paymentType}
+              />
+            </FieldShell>
+          </View>
+        </View>
       </View>
 
       {form.paymentType === 'tempo' ? (
@@ -805,20 +826,6 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
           />
         </FieldShell>
       ) : null}
-
-      <FieldShell label="Uang muka (DP)">
-        <View style={styles.switchRow}>
-          <Text style={styles.switchHint}>
-            Aktifkan bila pemasok mensyaratkan uang muka sebelum pelunasan/cicilan.
-          </Text>
-          <KolamSwitch
-            active={form.downPaymentEnabled}
-            onPress={() =>
-              controller.onChangeForm({ downPaymentEnabled: !form.downPaymentEnabled })
-            }
-          />
-        </View>
-      </FieldShell>
 
       {form.downPaymentEnabled ? (
         <View style={styles.formSplitRow}>
