@@ -52,6 +52,7 @@ import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamStatusBadge } from './kolam-status-badge';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 /**
  * Detail dokumen stock opname — FE `/stock-opname/[id]`.
@@ -215,150 +216,154 @@ export function KolamStockOpnameDetail({
       ) : null}
 
       <KolamCardFrame style={styles.card} variant="compact">
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>
-              {header.documentNumber || header.id}
-            </Text>
-            <KolamStatusBadge
-              intent={statusIntent(header.status)}
-              label={header.statusLabel}
-            />
-            {lineCountsLabel ? (
-              <Text style={styles.muted}>{lineCountsLabel}</Text>
-            ) : null}
-            {header.parentOpname ? (
-              <Pressable
-                onPress={() =>
-                  onRouteChange?.(
-                    `${KOLAM_STOCK_OPNAME_ROOT}/${header.parentOpname!.id}`,
-                  )
-                }
-              >
-                <Text style={styles.linkText}>
-                  Lanjutan dari {header.parentOpname.documentNumber}
-                </Text>
-              </Pressable>
-            ) : null}
-            {header.continuationOpname ? (
-              <Pressable
-                onPress={() =>
-                  onRouteChange?.(
-                    `${KOLAM_STOCK_OPNAME_ROOT}/${header.continuationOpname!.id}`,
-                  )
-                }
-              >
-                <Text style={styles.linkText}>
-                  Draf lanjutan {header.continuationOpname.documentNumber}
-                </Text>
-              </Pressable>
-            ) : null}
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <Text style={styles.toolbarDocumentNumber}>
+                {header.documentNumber || header.id}
+              </Text>
+              <KolamStatusBadge
+                intent={statusIntent(header.status)}
+                label={header.statusLabel}
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamDaftarButton
+                onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
+              />
+              {controller.isPosted ? (
+                <KolamStockTransactionButton
+                  label="Lihat ledger"
+                  onPress={() =>
+                    onRouteChange?.(
+                      `/stock-transaction?stockOpnameId=${encodeURIComponent(
+                        header.id,
+                      )}`,
+                    )
+                  }
+                />
+              ) : null}
+              {controller.isPosted &&
+              marketplaceSyncTargets.productIds.length > 0 ? (
+                <KolamButton
+                  label={`Samakan stok produk (${marketplaceSyncTargets.productIds.length})`}
+                  onPress={() => setSyncRetry('products')}
+                />
+              ) : null}
+              {controller.isPosted &&
+              marketplaceSyncTargets.speciesIds.length > 0 ? (
+                <KolamButton
+                  label={`Samakan stok livestock (${marketplaceSyncTargets.speciesIds.length})`}
+                  onPress={() => setSyncRetry('species')}
+                />
+              ) : null}
+              {controller.isDraft &&
+              controller.lines.length > 0 &&
+              canSubmit ? (
+                <KolamButton
+                  disabled={
+                    controller.acting ||
+                    !controller.draftOwnerId ||
+                    !controller.draftConductedId
+                  }
+                  intent="primary"
+                  label="Kirim untuk review"
+                  onPress={() => {
+                    void controller.onSubmitForReview();
+                  }}
+                />
+              ) : null}
+              {controller.isDraft &&
+              canUpdate &&
+              controller.parentOnlyLineCount > 0 ? (
+                <KolamButton
+                  disabled={controller.acting}
+                  label="Perluas varian"
+                  onPress={() => {
+                    void controller.onExpandVariants();
+                  }}
+                />
+              ) : null}
+              {controller.isReady && canPost ? (
+                <KolamButton
+                  disabled={controller.acting}
+                  intent="primary"
+                  label="Posting ke stok"
+                  onPress={() => {
+                    void controller.onPost().then(result => {
+                      if (result?.continuationId) {
+                        onRouteChange?.(
+                          `${KOLAM_STOCK_OPNAME_ROOT}/${result.continuationId}`,
+                        );
+                      }
+                    });
+                  }}
+                />
+              ) : null}
+              {canUpdate &&
+              ['draft', 'in_review', 'ready_to_post'].includes(header.status) ? (
+                <KolamCancelButton
+                  disabled={controller.acting}
+                  label="Batalkan"
+                  onPress={() => setCancelOpen(true)}
+                />
+              ) : null}
+              {controller.isCancelled && canDelete ? (
+                <KolamDeleteButton
+                  disabled={controller.acting}
+                  intent="danger"
+                  label="Hapus"
+                  onPress={() => setDeleteOpen(true)}
+                />
+              ) : null}
+              <KolamExportXlsButton
+                disabled={controller.acting}
+                label="Ekspor XLSX"
+                onPress={() => {
+                  void controller.onExportXlsx();
+                }}
+              />
+              <KolamPdfDownloadButton
+                disabled={controller.acting}
+                label="Ekspor PDF"
+                onPress={() => {
+                  void controller.onExportPdf();
+                }}
+              />
+            </View>
           </View>
         </View>
 
-        <View style={styles.actionWrap}>
-          <KolamDaftarButton
-            onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
-          />
-          {controller.isPosted ? (
-            <KolamStockTransactionButton
-              label="Lihat ledger"
+        <View style={styles.headerText}>
+          {lineCountsLabel ? (
+            <Text style={styles.muted}>{lineCountsLabel}</Text>
+          ) : null}
+          {header.parentOpname ? (
+            <Pressable
               onPress={() =>
                 onRouteChange?.(
-                  `/stock-transaction?stockOpnameId=${encodeURIComponent(
-                    header.id,
-                  )}`,
+                  `${KOLAM_STOCK_OPNAME_ROOT}/${header.parentOpname!.id}`,
                 )
               }
-            />
+            >
+              <Text style={styles.linkText}>
+                Lanjutan dari {header.parentOpname.documentNumber}
+              </Text>
+            </Pressable>
           ) : null}
-          {controller.isPosted &&
-          marketplaceSyncTargets.productIds.length > 0 ? (
-            <KolamButton
-              label={`Samakan stok produk (${marketplaceSyncTargets.productIds.length})`}
-              onPress={() => setSyncRetry('products')}
-            />
-          ) : null}
-          {controller.isPosted &&
-          marketplaceSyncTargets.speciesIds.length > 0 ? (
-            <KolamButton
-              label={`Samakan stok livestock (${marketplaceSyncTargets.speciesIds.length})`}
-              onPress={() => setSyncRetry('species')}
-            />
-          ) : null}
-          {controller.isDraft &&
-          controller.lines.length > 0 &&
-          canSubmit ? (
-            <KolamButton
-              disabled={
-                controller.acting ||
-                !controller.draftOwnerId ||
-                !controller.draftConductedId
+          {header.continuationOpname ? (
+            <Pressable
+              onPress={() =>
+                onRouteChange?.(
+                  `${KOLAM_STOCK_OPNAME_ROOT}/${header.continuationOpname!.id}`,
+                )
               }
-              intent="primary"
-              label="Kirim untuk review"
-              onPress={() => {
-                void controller.onSubmitForReview();
-              }}
-            />
+            >
+              <Text style={styles.linkText}>
+                Draf lanjutan {header.continuationOpname.documentNumber}
+              </Text>
+            </Pressable>
           ) : null}
-          {controller.isDraft &&
-          canUpdate &&
-          controller.parentOnlyLineCount > 0 ? (
-            <KolamButton
-              disabled={controller.acting}
-              label="Perluas varian"
-              onPress={() => {
-                void controller.onExpandVariants();
-              }}
-            />
-          ) : null}
-          {controller.isReady && canPost ? (
-            <KolamButton
-              disabled={controller.acting}
-              intent="primary"
-              label="Posting ke stok"
-              onPress={() => {
-                void controller.onPost().then(result => {
-                  if (result?.continuationId) {
-                    onRouteChange?.(
-                      `${KOLAM_STOCK_OPNAME_ROOT}/${result.continuationId}`,
-                    );
-                  }
-                });
-              }}
-            />
-          ) : null}
-          {canUpdate &&
-          ['draft', 'in_review', 'ready_to_post'].includes(header.status) ? (
-            <KolamCancelButton
-              disabled={controller.acting}
-              label="Batalkan"
-              onPress={() => setCancelOpen(true)}
-            />
-          ) : null}
-          {controller.isCancelled && canDelete ? (
-            <KolamDeleteButton
-              disabled={controller.acting}
-              intent="danger"
-              label="Hapus"
-              onPress={() => setDeleteOpen(true)}
-            />
-          ) : null}
-          <KolamExportXlsButton
-            disabled={controller.acting}
-            label="Ekspor XLSX"
-            onPress={() => {
-              void controller.onExportXlsx();
-            }}
-          />
-          <KolamPdfDownloadButton
-            disabled={controller.acting}
-            label="Ekspor PDF"
-            onPress={() => {
-              void controller.onExportPdf();
-            }}
-          />
         </View>
       </KolamCardFrame>
 
@@ -1117,6 +1122,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  toolbarDocumentNumber: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
   },
   fieldLabel: {
     color: V.colors.fg,
