@@ -1190,8 +1190,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     labelSuffix: 'Edit',
     label: 'Rubah Bahan Baku',
     route: '/raw-materials/:id/edit',
-    description:
-      'Update raw material information, pricing, inventory, and notes.',
+    description: 'Ubah informasi, harga, inventori, dan keterangan bahan baku.',
   },
   {
     baseRoute: '/species',
