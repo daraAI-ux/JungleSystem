@@ -1534,7 +1534,6 @@ function KolamPackingMaterialForm({
               }
             />
           </FieldShell>
-          <FormDivider title="Harga Supplier" />
           <VendorPriceEditor form={form} controller={controller} />
         </View>
       </View>
@@ -1586,110 +1585,25 @@ function VendorPriceEditor({
   const lines = form.vendorPrices;
 
   return (
-    <View style={styles.vendorStack}>
-      {lines.length ? (
-        lines.map((line, index) => (
-          <View key={line.id || index} style={styles.vendorLine}>
-            <View style={styles.formSplitRow}>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Nama Supplier">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={vendorName =>
-                      updateVendorLine(controller, form, index, { vendorName })
-                    }
-                    placeholder="Supplier"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={line.vendorName}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="ID Supplier">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    onChangeText={vendorId =>
-                      updateVendorLine(controller, form, index, { vendorId })
-                    }
-                    placeholder="ID supplier dari backend"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={line.vendorId}
-                  />
-                </FieldShell>
-              </View>
-            </View>
-            <View style={styles.formSplitRow}>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Harga Beli">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    mode="numeric"
-                    onChangeText={price =>
-                      updateVendorLine(controller, form, index, { price })
-                    }
-                    placeholder="0"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={line.price}
-                  />
-                </FieldShell>
-              </View>
-              <View style={styles.formSplitCell}>
-                <FieldShell label="Ongkir/unit">
-                  <KolamFormTextField
-                    editable={!controller.saving}
-                    mode="numeric"
-                    onChangeText={shippingCost =>
-                      updateVendorLine(controller, form, index, {
-                        shippingCost,
-                      })
-                    }
-                    placeholder="0"
-                    style={settingsWebFormStyles.settingsWebFormFieldValue}
-                    value={line.shippingCost}
-                  />
-                </FieldShell>
-              </View>
-            </View>
-            <FieldShell label="Link Supplier">
-              <KolamFormTextField
-                editable={!controller.saving}
-                mode="url"
-                onChangeText={link =>
-                  updateVendorLine(controller, form, index, { link })
-                }
-                placeholder="https://..."
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={line.link}
-              />
-            </FieldShell>
-            <View style={styles.vendorActions}>
-              <KolamDeleteButton
-                intent="danger"
-                label="Hapus Supplier"
-                onPress={() =>
-                  controller.onChangeForm({
-                    vendorPrices: lines.filter(
-                      (_, lineIndex) => lineIndex !== index,
-                    ),
-                  })
-                }
-              />
-            </View>
-          </View>
-        ))
-      ) : (
+    <View style={styles.vendorPricePanel}>
+      <View style={styles.vendorPriceHeader}>
         <KolamCopyStack
           items={[
             {
-              id: 'empty',
-              text: 'Belum ada harga supplier. HPP akan memakai cost dari backend jika tersedia.',
-              style: styles.emptyVendorText,
+              id: 'title',
+              text: 'Harga Supplier / HPP Utama',
+              style: styles.formDividerTitle,
+            },
+            {
+              id: 'hint',
+              text: 'Harga beli supplier untuk bahan kemasan. Ongkir mengikuti data PO jika tersedia.',
+              style: styles.fieldHint,
             },
           ]}
         />
-      )}
-      <View style={styles.vendorActions}>
         <KolamButton
+          disabled={controller.saving}
+          intent="primary"
           label="Tambah Supplier"
           onPress={() =>
             controller.onChangeForm({
@@ -1708,8 +1622,143 @@ function VendorPriceEditor({
           }
         />
       </View>
+      {lines.length ? (
+        lines.map((line, index) => (
+          <VendorPriceRow
+            controller={controller}
+            form={form}
+            index={index}
+            key={line.id || index}
+            line={line}
+            lines={lines}
+          />
+        ))
+      ) : (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty',
+              text: 'Belum ada harga supplier.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      )}
     </View>
   );
+}
+
+function VendorPriceRow({
+  controller,
+  form,
+  index,
+  line,
+  lines,
+}: {
+  controller: KolamPackingMaterialController;
+  form: KolamPackingMaterialFormState;
+  index: number;
+  line: KolamPackingMaterialFormState['vendorPrices'][number];
+  lines: KolamPackingMaterialFormState['vendorPrices'];
+}) {
+  const shippingCost = parsePackingNumberInput(line.shippingCost);
+  const totalCost = parsePackingNumberInput(line.price) + shippingCost;
+
+  return (
+    <View style={styles.vendorPriceRow}>
+      <View style={styles.vendorPriceHeader}>
+        <KolamCopyStack
+          items={[
+            {
+              id: 'title',
+              text: `Vendor ${index + 1}`,
+              style: styles.rowText,
+            },
+            {
+              id: 'total',
+              text: `Total HPP: ${formatPackingCurrency(totalCost)}`,
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+        <KolamDeleteButton
+          disabled={controller.saving}
+          intent="danger"
+          label="Hapus Supplier"
+          onPress={() =>
+            controller.onChangeForm({
+              vendorPrices: lines.filter(
+                (_, lineIndex) => lineIndex !== index,
+              ),
+            })
+          }
+        />
+      </View>
+      <View style={styles.twoColumnGrid}>
+        <KolamFormTextField
+          editable={!controller.saving}
+          onChangeText={vendorName =>
+            updateVendorLine(controller, form, index, { vendorName })
+          }
+          placeholder="Supplier"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={line.vendorName}
+        />
+        <KolamFormTextField
+          editable={!controller.saving}
+          mode="url"
+          onChangeText={link =>
+            updateVendorLine(controller, form, index, { link })
+          }
+          placeholder="Link produk vendor"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={line.link}
+        />
+      </View>
+      <View style={styles.threeColumnGrid}>
+        <KolamFormTextField
+          editable={!controller.saving}
+          mode="numeric"
+          onChangeText={price =>
+            updateVendorLine(controller, form, index, { price })
+          }
+          placeholder="Harga beli pemasok"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={line.price}
+        />
+        <KolamFormTextField
+          editable={false}
+          placeholder="Ongkir / unit"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={formatPackingCurrency(shippingCost)}
+        />
+        <KolamFormTextField
+          editable={false}
+          placeholder="Total HPP"
+          style={settingsWebFormStyles.settingsWebFormFieldValue}
+          value={formatPackingCurrency(totalCost)}
+        />
+      </View>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'shipping-note',
+            text: 'Ongkir dan total HPP berasal dari PO completed; form manual hanya mengirim vendor, harga, dan link.',
+            style: styles.fieldHint,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+function formatPackingCurrency(value: number) {
+  return value > 0 ? formatRupiah(value) : '-';
+}
+
+function parsePackingNumberInput(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 function updateVendorLine(
@@ -2717,27 +2766,47 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 20,
   },
-  vendorStack: {
-    gap: 12,
-  },
-  vendorLine: {
-    gap: 12,
-    padding: 12,
-    borderRadius: V.radius.lg,
+  vendorPricePanel: {
+    backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
+    borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: V.colors.mutedSoft,
+    gap: 10,
+    padding: 12,
   },
-  vendorActions: {
+  vendorPriceHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'space-between',
   },
-  emptyVendorText: {
-    color: V.colors.mutedFg,
+  vendorPriceRow: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+  },
+  twoColumnGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  threeColumnGrid: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    minWidth: 0,
+    width: '100%',
+  },
+  rowText: {
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '900',
     lineHeight: 18,
   },
 });
