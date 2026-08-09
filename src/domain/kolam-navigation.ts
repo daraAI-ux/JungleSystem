@@ -1084,21 +1084,17 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     title: 'Pengguna',
     items: [
       sidebarItem('/customers', {
-        group: 'Pelanggan',
         label: 'Daftar Pelanggan',
         moduleIcon: 'customer',
       }),
       sidebarItem('/list-of-users', {
-        group: 'Daftar Pengguna',
         label: 'Daftar Pengguna',
         moduleIcon: 'staff',
       }),
       sidebarItem('/list-of-users/hr', {
-        group: 'Daftar Pengguna',
         label: 'HR Sistem',
       }),
       sidebarItem('/list-of-users/kpi', {
-        group: 'Daftar Pengguna',
         label: 'KPI Tim',
       }),
       sidebarItem('/task-manager', {
