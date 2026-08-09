@@ -26,6 +26,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamModuleIcon} from './kolam-module-icon';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -67,8 +68,10 @@ import { KolamControlTabList } from './kolam-control-tab-list';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -940,6 +943,7 @@ function PackingPhotoEditPanel({
     () => createPackingPhotoPreviewItems(item),
     [item],
   );
+  const photoCount = item.photos.length + (pickedPhotoUri.trim() ? 1 : 0);
 
   const uploadPhoto = React.useCallback(async () => {
     setError('');
@@ -983,75 +987,135 @@ function PackingPhotoEditPanel({
   );
 
   return (
-    <FieldShell label="Foto">
-      <View style={styles.variantMediaPanel}>
-        <View style={styles.mediaPickerRow}>
-          <KolamFormTextField
-            editable={false}
-            mode="url"
-            placeholder="Pilih foto untuk ditambahkan"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              styles.mediaPickerInput,
-            ]}
-            value={pickedPhotoUri}
-          />
-          <KolamButton
-            disabled={busy || controller.saving}
-            label={busy ? 'Memproses...' : 'Tambah Foto'}
-            onPress={() => {
-              void uploadPhoto();
-            }}
-          />
-        </View>
-        <KolamCopyStack
-          items={[
-            {
-              id: 'photo-note',
-              text: 'Foto dikirim ke backend saat dipilih.',
-              style: styles.fieldHint,
-            },
-          ]}
-        />
-        {item.photos.length ? (
-          <View style={styles.photoManagerGrid}>
-            {item.photos.map((photo, index) => {
-              const uri = getKolamFileUrl(photo);
-              return (
-                <View key={`${photo}-${index}`} style={styles.photoManagerTile}>
-                  {uri ? (
-                    <KolamRemoteImage
-                      accessibilityLabel={`${item.name} ${index + 1}`}
+    <PackingEditSection
+      description="Foto kemasan. Unggah baru saat dipilih; hapus langsung dari kartu foto."
+      title="Media"
+    >
+      <View style={styles.packingBasicInfoCard}>
+        <View style={styles.mediaPickerStack}>
+          <View style={styles.mediaUploadSection}>
+            <KolamSettingsWebFileField
+              accessibilityLabel="Foto bahan kemasan"
+              actionLabel="Pilih file"
+              disabled={busy || controller.saving}
+              emptyLabel="Foto belum dipilih"
+              fileCount={Math.min(photoCount, 10)}
+              fileMax={10}
+              onLocalValueChange={setPickedPhotoUri}
+              onUpload={() => {
+                void uploadPhoto();
+              }}
+              scope="packing-material-photo"
+              title="Foto"
+              value={pickedPhotoUri}
+            />
+            {item.photos.length ? (
+              <View style={styles.existingMediaGrid}>
+                {item.photos.map((photo, index) => {
+                  const uri = getKolamFileUrl(photo);
+                  if (!uri) {
+                    return null;
+                  }
+                  return (
+                    <PackingImageMediaCard
+                      accessibilityLabel={`${item.name} foto ${index + 1}`}
+                      deleteLabel={`Hapus Foto ${index + 1}`}
+                      disabled={busy || controller.saving}
+                      key={`${photo}-${index}`}
+                      label={`Foto ${index + 1}`}
+                      onDelete={() => {
+                        void deletePhoto(index);
+                      }}
                       previewIndex={index}
                       previewItems={previewItems}
-                      resizeMode="cover"
-                      revision={photo}
-                      scope="packing-material"
+                      revision={`${item.updatedAt ?? ''}-${photo}-${index}`}
                       sourceUri={uri}
-                      style={styles.photoManagerImage}
                     />
-                  ) : (
-                    <View style={styles.photoManagerMissing}>
-                      <Text style={styles.photoManagerMissingText}>-</Text>
-                    </View>
-                  )}
-                  <KolamDeleteButton
-                    disabled={busy || controller.saving}
-                    intent="plain"
-                    label="Hapus"
-                    onPress={() => {
-                      void deletePhoto(index);
-                    }}
-                  />
-                </View>
-              );
-            })}
+                  );
+                })}
+              </View>
+            ) : null}
           </View>
-        ) : null}
-        {error ? <Text style={styles.photoManagerError}>{error}</Text> : null}
+          {error ? <Text style={styles.photoManagerError}>{error}</Text> : null}
+        </View>
       </View>
-    </FieldShell>
+    </PackingEditSection>
   );
+}
+
+function PackingImageMediaCard({
+  accessibilityLabel,
+  deleteLabel,
+  disabled,
+  label,
+  onDelete,
+  previewIndex,
+  previewItems,
+  revision,
+  sourceUri,
+}: {
+  accessibilityLabel: string;
+  deleteLabel: string;
+  disabled: boolean;
+  label: string;
+  onDelete: () => void;
+  previewIndex: number;
+  previewItems: KolamImagePreviewItem[];
+  revision: string;
+  sourceUri: string;
+}) {
+  const displayName = getPackingUploadFileDisplayName(sourceUri) || label;
+
+  return (
+    <View
+      style={[
+        settingsWebFormStyles.settingsWebUploadFileRow,
+        styles.existingMediaItem,
+      ]}
+    >
+      <KolamCardFrame variant="settingsWebLogoPreview">
+        <KolamRemoteImage
+          accessibilityLabel={accessibilityLabel}
+          previewIndex={previewIndex}
+          previewItems={previewItems}
+          resizeMode="contain"
+          revision={revision}
+          scope="packing-material"
+          sourceUri={sourceUri}
+          style={settingsWebFormStyles.settingsWebLogoImage}
+        />
+      </KolamCardFrame>
+      <View style={settingsWebFormStyles.settingsWebUploadFileCopy}>
+        <Text
+          numberOfLines={1}
+          style={settingsWebFormStyles.settingsWebUploadFileName}
+        >
+          {displayName}
+        </Text>
+        <Text style={settingsWebFormStyles.settingsWebUploadFileStatus}>
+          Terunggah
+        </Text>
+      </View>
+      <KolamInteractionFrame
+        accessibilityLabel={deleteLabel}
+        disabled={disabled}
+        onPress={onDelete}
+        style={settingsWebFormStyles.settingsWebUploadDeleteButton}
+      >
+        <KolamUploadDeleteIcon />
+      </KolamInteractionFrame>
+    </View>
+  );
+}
+
+function getPackingUploadFileDisplayName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const withoutQuery = trimmed.split(/[?#]/)[0] ?? trimmed;
+  return withoutQuery.split(/[\\/]/).filter(Boolean).pop() ?? trimmed;
 }
 
 function PackingUsageCard({
@@ -1479,9 +1543,11 @@ function KolamPackingMaterialForm({
 
 function PackingEditSection({
   children,
+  description,
   title,
 }: {
   children: React.ReactNode;
+  description?: string;
   title: string;
 }) {
   return (
@@ -1493,6 +1559,15 @@ function PackingEditSection({
         containerStyle={styles.packingEditSectionHeader}
         items={[
           { id: 'title', text: title, style: styles.packingEditSectionTitle },
+          ...(description
+            ? [
+                {
+                  id: 'description',
+                  text: description,
+                  style: styles.packingEditSectionDescription,
+                },
+              ]
+            : []),
         ]}
       />
       <View style={styles.packingEditSectionBody}>{children}</View>
@@ -2554,6 +2629,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 18,
   },
+  packingEditSectionDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
   packingEditSectionBody: {
     gap: 12,
   },
@@ -2564,6 +2645,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 12,
     padding: 12,
+  },
+  mediaPickerStack: {
+    gap: 12,
+  },
+  mediaUploadSection: {
+    gap: 10,
+  },
+  existingMediaGrid: {
+    gap: 8,
+  },
+  existingMediaItem: {
+    alignSelf: 'stretch',
   },
   hero: {
     width: 160,
