@@ -7,6 +7,7 @@ import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg
 import {KOLAM_CAMPAIGN_MODULE_ICON_SVG} from '../assets/icons/campaign-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
 import {KOLAM_COMPLAINT_MODULE_ICON_SVG} from '../assets/icons/complaint-module-icon-svg';
+import {KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG} from '../assets/icons/dara-market-intel-module-icon-svg';
 import {KOLAM_DARA_SEO_MODULE_ICON_SVG} from '../assets/icons/dara-seo-module-icon-svg';
 import {KOLAM_DISCOUNT_APPROVAL_MODULE_ICON_SVG} from '../assets/icons/discount-approval-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
@@ -46,6 +47,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   cashflowSession: 'Icon Sesi Tunai',
   category: 'Icon Kategori',
   complaint: 'Icon Komplain',
+  daraMarketIntel: 'Icon Intel Pasar',
   daraSeo: 'Icon DARA SEO',
   discountApproval: 'Icon Persetujuan Diskon',
   download: 'Icon Download',
@@ -183,6 +185,12 @@ export function KolamModuleIcon({
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
           ))}
         </Svg>
+      ) : kind === 'daraMarketIntel' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG}
+        />
       ) : kind === 'daraSeo' ? (
         <SvgXml
           height="100%"

@@ -19,6 +19,7 @@ export type KolamNavigationModuleIcon =
   | 'cashflowSession'
   | 'category'
   | 'complaint'
+  | 'daraMarketIntel'
   | 'daraSeo'
   | 'discountApproval'
   | 'download'
@@ -477,6 +478,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Monitor harga & supplier, rekomendasi pricing/pembelian. Semua saran butuh approval — terapkan harga manual di produk setelah disetujui.',
         group: 'Kampanye',
+        moduleIcon: 'daraMarketIntel',
         requiredAccess: ['kolam'],
       },
       {
@@ -977,6 +979,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/campaign/dara-market-intel', {
         group: undefined,
         label: 'Intel Pasar',
+        moduleIcon: 'daraMarketIntel',
       }),
       sidebarItem('/finance/tax', { group: undefined, label: 'DARA Pajak' }),
       sidebarItem('/list-of-users/dara-training', {
