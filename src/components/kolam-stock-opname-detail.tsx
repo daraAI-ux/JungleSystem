@@ -25,6 +25,7 @@ import {
   type KolamStockOpnameLine,
   type KolamStockOpnameLineTargetType,
   type KolamStockOpnameStaffAssignee,
+  type KolamStockOpnameUserRef,
 } from '../domain/kolam-stock-opname';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
@@ -150,6 +151,20 @@ export function KolamStockOpnameDetail({
       })),
     ],
     [controller.staffAssignees],
+  );
+
+  const draftOwnerProfile = useMemo(
+    () =>
+      controller.staffAssignees.find(user => user.id === controller.draftOwnerId) ||
+      null,
+    [controller.draftOwnerId, controller.staffAssignees],
+  );
+  const draftConductedProfile = useMemo(
+    () =>
+      controller.staffAssignees.find(
+        user => user.id === controller.draftConductedId,
+      ) || null,
+    [controller.draftConductedId, controller.staffAssignees],
   );
 
   const targetOptions = useMemo(() => {
@@ -562,7 +577,16 @@ export function KolamStockOpnameDetail({
         {controller.isDraft && canUpdate ? (
           <>
             <View style={styles.accountabilityRow}>
-              <View style={styles.accountabilityBox}>
+              <View
+                style={[styles.accountabilityBox, styles.accountabilityProfileBox]}
+              >
+                <AccountabilityProfileBadge
+                  name={
+                    draftOwnerProfile
+                      ? stockOpnameStaffAssigneeLabel(draftOwnerProfile)
+                      : ''
+                  }
+                />
                 <KolamDropdownSelect
                   label="PIC"
                   onChange={controller.setDraftOwnerId}
@@ -571,7 +595,16 @@ export function KolamStockOpnameDetail({
                   value={controller.draftOwnerId}
                 />
               </View>
-              <View style={styles.accountabilityBox}>
+              <View
+                style={[styles.accountabilityBox, styles.accountabilityProfileBox]}
+              >
+                <AccountabilityProfileBadge
+                  name={
+                    draftConductedProfile
+                      ? stockOpnameStaffAssigneeLabel(draftConductedProfile)
+                      : ''
+                  }
+                />
                 <KolamDropdownSelect
                   label="Pelaksana"
                   onChange={controller.setDraftConductedId}
@@ -584,13 +617,25 @@ export function KolamStockOpnameDetail({
           </>
         ) : (
           <View style={styles.accountabilityRow}>
-            <View style={styles.accountabilityBox}>
+            <View
+              style={[styles.accountabilityBox, styles.accountabilityProfileBox]}
+            >
+              <AccountabilityProfileBadge
+                name={stockOpnameUserDisplayName(header.owner)}
+                photo={header.owner?.photo}
+              />
               <Text style={styles.fieldLabel}>PIC</Text>
               <Text style={styles.meta}>
                 {stockOpnameUserDisplayName(header.owner) || '—'}
               </Text>
             </View>
-            <View style={styles.accountabilityBox}>
+            <View
+              style={[styles.accountabilityBox, styles.accountabilityProfileBox]}
+            >
+              <AccountabilityProfileBadge
+                name={stockOpnameUserDisplayName(header.conductedBy)}
+                photo={header.conductedBy?.photo}
+              />
               <Text style={styles.fieldLabel}>Pelaksana</Text>
               <Text style={styles.meta}>
                 {stockOpnameUserDisplayName(header.conductedBy) || '—'}
@@ -1054,6 +1099,44 @@ function stockOpnameStaffAssigneeLabel(user: KolamStockOpnameStaffAssignee) {
     .join(' ')
     .trim();
   return fullName || user.name || user.username || user.email || user.id;
+}
+
+function AccountabilityProfileBadge({
+  name,
+  photo,
+}: {
+  name: string;
+  photo?: KolamStockOpnameUserRef['photo'];
+}) {
+  const displayName = name.trim();
+  if (!displayName) {
+    return null;
+  }
+  const initials = getAccountabilityInitials(displayName);
+  const photoUri = photo ? getKolamFileUrl(photo) : '';
+
+  return (
+    <View style={styles.accountabilityProfile}>
+      {photoUri ? (
+        <Image
+          accessibilityLabel={displayName}
+          source={{ uri: photoUri }}
+          style={styles.accountabilityProfileImage}
+        />
+      ) : (
+        <Text style={styles.accountabilityProfileInitials}>{initials}</Text>
+      )}
+    </View>
+  );
+}
+
+function getAccountabilityInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() || '')
+    .join('');
 }
 
 function StockOpnameLineActionsMenu({
@@ -1573,6 +1656,33 @@ const styles = StyleSheet.create({
     gap: 8,
     minWidth: 240,
     padding: 10,
+  },
+  accountabilityProfileBox: {
+    overflow: 'hidden',
+    paddingRight: 58,
+    position: 'relative',
+  },
+  accountabilityProfile: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    width: 36,
+  },
+  accountabilityProfileImage: {
+    height: 36,
+    width: 36,
+  },
+  accountabilityProfileInitials: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
   },
   toolbarDocumentNumber: {
     color: V.colors.fg,
