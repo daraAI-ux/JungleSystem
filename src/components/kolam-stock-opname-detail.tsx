@@ -368,7 +368,18 @@ export function KolamStockOpnameDetail({
       </KolamCardFrame>
 
       <KolamCardFrame style={styles.card} variant="compact">
-        <Text style={styles.sectionTitle}>Akuntabilitas</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Akuntabilitas</Text>
+          {controller.isDraft && canUpdate ? (
+            <KolamSaveButton
+              disabled={controller.acting}
+              label="Simpan PIC / pelaksana"
+              onPress={() => {
+                void controller.onSaveAccountability();
+              }}
+            />
+          ) : null}
+        </View>
         <Text style={styles.muted}>
           PIC dan pelaksana wajib sebelum kirim review.
         </Text>
@@ -394,13 +405,6 @@ export function KolamStockOpnameDetail({
                 />
               </View>
             </View>
-            <KolamButton
-              disabled={controller.acting}
-              label="Simpan PIC / pelaksana"
-              onPress={() => {
-                void controller.onSaveAccountability();
-              }}
-            />
           </>
         ) : (
           <View style={styles.accountabilityRow}>
@@ -1106,6 +1110,13 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 14,
     fontWeight: '800',
+  },
+  sectionHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
   },
   muted: {
     color: V.colors.mutedFg,
