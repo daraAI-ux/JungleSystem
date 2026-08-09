@@ -51,6 +51,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import {
   KolamVendorPriceCard,
   type KolamVendorPriceCardItem,
@@ -1404,13 +1405,13 @@ function KolamPackingMaterialForm({
             <View style={styles.packingBasicInfoCard}>
               <FormDivider title="Harga tagih customer" />
               <FieldShell label="Harga Tagih">
-                <KolamFormTextField
+                <KolamRupiahField
                   editable={!controller.saving}
-                  mode="numeric"
-                  onChangeText={price => controller.onChangeForm({ price })}
+                  onChangeValue={price =>
+                    controller.onChangeForm({ price: String(price) })
+                  }
                   placeholder="0"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.price}
+                  value={parsePackingNumberInput(form.price)}
                 />
               </FieldShell>
               <VendorPriceEditor form={form} controller={controller} />
@@ -1769,27 +1770,23 @@ function VendorPriceRow({
         />
       </View>
       <View style={styles.threeColumnGrid}>
-        <KolamFormTextField
+        <KolamRupiahField
           editable={!controller.saving}
-          mode="numeric"
-          onChangeText={price =>
-            updateVendorLine(controller, form, index, { price })
+          onChangeValue={price =>
+            updateVendorLine(controller, form, index, { price: String(price) })
           }
           placeholder="Harga beli pemasok"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={line.price}
+          value={parsePackingNumberInput(line.price)}
         />
-        <KolamFormTextField
+        <KolamRupiahField
           editable={false}
           placeholder="Ongkir / unit"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={formatPackingCurrency(shippingCost)}
+          value={shippingCost}
         />
-        <KolamFormTextField
+        <KolamRupiahField
           editable={false}
           placeholder="Total HPP"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={formatPackingCurrency(totalCost)}
+          value={totalCost}
         />
       </View>
       <KolamCopyStack
@@ -1806,7 +1803,7 @@ function VendorPriceRow({
 }
 
 function formatPackingCurrency(value: number) {
-  return value > 0 ? formatRupiah(value) : '-';
+  return formatRupiah(value);
 }
 
 function parsePackingNumberInput(value: string) {

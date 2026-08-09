@@ -88,6 +88,7 @@ import {
 import { KolamNativeFormSection } from './kolam-native-form-section';
 import { KolamPackingLinksEditor } from './kolam-packing-links-editor';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -2210,11 +2211,12 @@ function SpeciesPriceInput({
       />
       <View style={styles.priceInputRow}>
         {currency ? (
-          <SpeciesCurrencyTextField
-            disabled={disabled}
-            onChangeText={onChangeText}
+          <KolamRupiahField
+            editable={!disabled}
+            onChangeValue={nextValue => onChangeText(String(nextValue))}
             placeholder={placeholder ?? label}
-            value={value}
+            style={styles.priceInputControl}
+            value={Number(value) || 0}
           />
         ) : (
           <KolamFormTextField
@@ -2243,35 +2245,6 @@ function SpeciesPriceInput({
           </View>
         ) : null}
       </View>
-    </View>
-  );
-}
-
-function SpeciesCurrencyTextField({
-  disabled,
-  onChangeText,
-  placeholder,
-  value,
-}: {
-  disabled: boolean;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.currencyInputShell}>
-      <Text style={styles.currencyInputPrefix}>Rp</Text>
-      <KolamFormTextField
-        editable={!disabled}
-        keyboardType="numeric"
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        style={[
-          settingsWebFormStyles.settingsWebFormFieldValue,
-          styles.currencyInputControl,
-        ]}
-        value={value}
-      />
     </View>
   );
 }
@@ -2544,23 +2517,24 @@ function SpeciesRootVendorPriceRow({
         />
       </View>
       <View style={styles.threeColumnGrid}>
-        <SpeciesCurrencyTextField
-          disabled={controller.saving}
-          onChangeText={price => patchRow({ price })}
+        <KolamRupiahField
+          editable={!controller.saving}
+          onChangeValue={price => patchRow({ price: String(price) })}
           placeholder="Harga beli pemasok"
-          value={row.price}
+          value={Number(row.price) || 0}
         />
-        <SpeciesCurrencyTextField
-          disabled={controller.saving}
-          onChangeText={shippingCost => patchRow({ shippingCost })}
+        <KolamRupiahField
+          editable={!controller.saving}
+          onChangeValue={shippingCost =>
+            patchRow({ shippingCost: String(shippingCost) })
+          }
           placeholder="Ongkir / unit"
-          value={row.shippingCost}
+          value={Number(row.shippingCost) || 0}
         />
-        <KolamFormTextField
+        <KolamRupiahField
           editable={false}
           placeholder="Total HPP"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={formatCurrency(totalCost)}
+          value={totalCost}
         />
       </View>
     </View>
@@ -4516,51 +4490,51 @@ function SpeciesVariantFormCard({
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Jual">
-                  <SpeciesCurrencyTextField
-                    disabled={controller.saving}
-                    onChangeText={priceToSell =>
+                  <KolamRupiahField
+                    editable={!controller.saving}
+                    onChangeValue={priceToSell =>
                       updateSpeciesVariantRow(controller, variant.id, {
-                        priceToSell,
+                        priceToSell: String(priceToSell),
                       })
                     }
                     placeholder="Harga jual"
-                    value={variant.priceToSell}
+                    value={Number(variant.priceToSell) || 0}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Pasar">
-                  <SpeciesCurrencyTextField
-                    disabled={controller.saving}
-                    onChangeText={marketPrice =>
+                  <KolamRupiahField
+                    editable={!controller.saving}
+                    onChangeValue={marketPrice =>
                       updateSpeciesVariantRow(controller, variant.id, {
-                        marketPrice,
+                        marketPrice: String(marketPrice),
                       })
                     }
                     placeholder="Harga pasar"
-                    value={variant.marketPrice}
+                    value={Number(variant.marketPrice) || 0}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Daring">
-                  <SpeciesCurrencyTextField
-                    disabled={controller.saving}
-                    onChangeText={onlinePrice =>
+                  <KolamRupiahField
+                    editable={!controller.saving}
+                    onChangeValue={onlinePrice =>
                       updateSpeciesVariantRow(controller, variant.id, {
-                        onlinePrice,
+                        onlinePrice: String(onlinePrice),
                       })
                     }
                     placeholder="Harga daring"
-                    value={variant.onlinePrice}
+                    value={Number(variant.onlinePrice) || 0}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Harga Minimum">
-                  <SpeciesCurrencyTextField
-                    disabled={controller.saving}
-                    onChangeText={minimumPriceToSales =>
+                  <KolamRupiahField
+                    editable={!controller.saving}
+                    onChangeValue={minimumPriceToSales =>
                       updateSpeciesVariantRow(controller, variant.id, {
-                        minimumPriceToSales,
+                        minimumPriceToSales: String(minimumPriceToSales),
                       })
                     }
                     placeholder="Harga minimum"
-                    value={variant.minimumPriceToSales}
+                    value={Number(variant.minimumPriceToSales) || 0}
                   />
                 </VariantCompactField>
                 <VariantCompactField label="Minimum Pesanan">
@@ -5185,27 +5159,25 @@ function SpeciesVariantVendorPriceRow({
         />
       </View>
       <View style={styles.threeColumnGrid}>
-        <SpeciesCurrencyTextField
-          disabled={controller.saving}
-          onChangeText={price =>
+        <KolamRupiahField
+          editable={!controller.saving}
+          onChangeValue={price =>
             updateSpeciesVariantVendorPriceRow(controller, variant.id, row.id, {
-              price,
+              price: String(price),
             })
           }
           placeholder="Harga beli pemasok"
-          value={row.price}
+          value={Number(row.price) || 0}
         />
-        <KolamFormTextField
+        <KolamRupiahField
           editable={false}
           placeholder="Ongkir / unit"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={formatCurrency(shippingCost)}
+          value={shippingCost}
         />
-        <KolamFormTextField
+        <KolamRupiahField
           editable={false}
           placeholder="Total HPP"
-          style={settingsWebFormStyles.settingsWebFormFieldValue}
-          value={formatCurrency(totalCost)}
+          value={totalCost}
         />
       </View>
       <KolamCopyStack
@@ -8163,31 +8135,6 @@ const styles = StyleSheet.create({
   priceInputControl: {
     flex: 1,
     minWidth: 0,
-  },
-  currencyInputShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    flexDirection: 'row',
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-  currencyInputPrefix: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 16,
-    paddingLeft: 12,
-    paddingRight: 8,
-  },
-  currencyInputControl: {
-    borderWidth: 0,
-    flex: 1,
-    minWidth: 0,
-    paddingLeft: 0,
   },
   priceUnitBadge: {
     alignItems: 'center',

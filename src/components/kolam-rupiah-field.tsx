@@ -23,7 +23,7 @@ type KolamRupiahFieldProps = Omit<
 > & {
   inputStyle?: StyleProp<TextStyle>;
   onBlur?: KolamFormTextFieldProps['onBlur'];
-  onChangeValue: (value: number) => void;
+  onChangeValue?: (value: number) => void;
   style?: StyleProp<ViewStyle>;
   value: number;
 };
@@ -60,7 +60,7 @@ export function KolamRupiahField({
         }}
         onChangeText={text => {
           setDraft(text);
-          onChangeValue(parseRupiahAccountingInput(text));
+          onChangeValue?.(parseRupiahAccountingInput(text));
         }}
         onFocus={event => {
           setFocused(true);

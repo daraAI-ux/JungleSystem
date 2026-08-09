@@ -620,11 +620,12 @@ function KolamPurchaseOrderForm({
         <View style={styles.formSplitRow}>
           <View style={styles.formSplitCell}>
             <FieldShell label="Ongkos kirim">
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={shippingCost => controller.onChangeForm({ shippingCost })}
+              <KolamRupiahField
+                onChangeValue={shippingCost =>
+                  controller.onChangeForm({ shippingCost: String(shippingCost) })
+                }
                 placeholder="0"
-                value={form.shippingCost}
+                value={Number(form.shippingCost) || 0}
               />
             </FieldShell>
           </View>
@@ -642,12 +643,22 @@ function KolamPurchaseOrderForm({
                   onPress={() => controller.onChangeForm({ discountType: 'amount' })}
                 />
               </View>
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={discountValue => controller.onChangeForm({ discountValue })}
-                placeholder="0"
-                value={form.discountValue}
-              />
+              {form.discountType === 'amount' ? (
+                <KolamRupiahField
+                  onChangeValue={discountValue =>
+                    controller.onChangeForm({ discountValue: String(discountValue) })
+                  }
+                  placeholder="0"
+                  value={Number(form.discountValue) || 0}
+                />
+              ) : (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={discountValue => controller.onChangeForm({ discountValue })}
+                  placeholder="0"
+                  value={form.discountValue}
+                />
+              )}
             </FieldShell>
           </View>
         </View>
@@ -825,12 +836,22 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
                   onPress={() => controller.onChangeForm({ downPaymentInputType: 'amount' })}
                 />
               </View>
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={downPaymentValue => controller.onChangeForm({ downPaymentValue })}
-                placeholder="0"
-                value={form.downPaymentValue}
-              />
+              {form.downPaymentInputType === 'amount' ? (
+                <KolamRupiahField
+                  onChangeValue={downPaymentValue =>
+                    controller.onChangeForm({ downPaymentValue: String(downPaymentValue) })
+                  }
+                  placeholder="0"
+                  value={Number(form.downPaymentValue) || 0}
+                />
+              ) : (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={downPaymentValue => controller.onChangeForm({ downPaymentValue })}
+                  placeholder="0"
+                  value={form.downPaymentValue}
+                />
+              )}
             </FieldShell>
           </View>
           <View style={styles.formSplitCell}>

@@ -128,6 +128,7 @@ import {
   type KolamVendorPriceCardItem,
 } from './kolam-pricing-detail-widgets';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
 import { KolamSearchField } from './kolam-search-field';
@@ -2750,11 +2751,12 @@ function ProductPriceInput({
       />
       <View style={styles.priceInputRow}>
         {currency ? (
-          <ProductCurrencyTextField
-            disabled={disabled}
-            onChangeText={onChangeText}
+          <KolamRupiahField
+            editable={!disabled}
+            onChangeValue={nextValue => onChangeText(String(nextValue))}
             placeholder={placeholder ?? label}
-            value={value}
+            style={styles.priceInputControl}
+            value={Number(value) || 0}
           />
         ) : (
           <KolamFormTextField
@@ -2783,35 +2785,6 @@ function ProductPriceInput({
           </View>
         ) : null}
       </View>
-    </View>
-  );
-}
-
-function ProductCurrencyTextField({
-  disabled,
-  onChangeText,
-  placeholder,
-  value,
-}: {
-  disabled: boolean;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.currencyInputShell}>
-      <Text style={styles.currencyInputPrefix}>Rp</Text>
-      <KolamFormTextField
-        editable={!disabled}
-        keyboardType="numeric"
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        style={[
-          settingsWebFormStyles.settingsWebFormFieldValue,
-          styles.currencyInputControl,
-        ]}
-        value={value}
-      />
     </View>
   );
 }
@@ -11050,31 +11023,6 @@ const styles = StyleSheet.create({
   priceInputControl: {
     flex: 1,
     minWidth: 0,
-  },
-  currencyInputShell: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    flexDirection: 'row',
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-  currencyInputPrefix: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 16,
-    paddingLeft: 12,
-    paddingRight: 8,
-  },
-  currencyInputControl: {
-    borderWidth: 0,
-    flex: 1,
-    minWidth: 0,
-    paddingLeft: 0,
   },
   priceUnitBadge: {
     alignItems: 'center',

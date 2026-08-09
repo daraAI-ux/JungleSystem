@@ -1,12 +1,6 @@
 const formatter = new Intl.NumberFormat('id-ID', {
   style: 'currency',
   currency: 'IDR',
-  maximumFractionDigits: 0,
-});
-
-const accountingFormatter = new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -17,11 +11,11 @@ const accountingNumberFormatter = new Intl.NumberFormat('id-ID', {
 });
 
 export function formatRupiah(value: number): string {
-  return formatter.format(value);
+  return formatter.format(safeMoneyNumber(value));
 }
 
 export function formatRupiahAccounting(value: number): string {
-  return accountingFormatter.format(safeMoneyNumber(value));
+  return formatRupiah(value);
 }
 
 export function formatRupiahAccountingNumber(value: number): string {
