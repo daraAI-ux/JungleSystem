@@ -1756,6 +1756,32 @@ function KolamPOPaymentSection({
   po: KolamPurchaseOrder;
 }) {
   const downPayment = po.paymentConfig?.downPayment;
+  const actualTotal =
+    po.actualTotal > 0
+      ? po.actualTotal
+      : po.paymentStatus === 'paid' && po.paymentAmount > 0
+        ? po.paymentAmount
+        : 0;
+  const hasActualTotal = actualTotal > 0 || po.paymentStatus === 'paid';
+  const hasShortage = actualTotal > 0 && actualTotal < po.finalTotal;
+  const refundAmount =
+    po.refundAmount > 0 ? po.refundAmount : Math.max(0, po.finalTotal - actualTotal);
+  const downPaymentPaid = Boolean(downPayment?.paidAt);
+  const paymentStatusLabel =
+    po.paymentStatus === 'paid'
+      ? 'Lunas'
+      : po.paymentStatus === 'partial_paid' && downPayment?.enabled && downPaymentPaid
+        ? 'DP Lunas · Sisa Belum Dibayar'
+        : po.paymentStatus === 'partial_paid'
+          ? 'Dibayar Sebagian'
+          : 'Belum Dibayar';
+  const dueDate = po.paymentDueAt ? new Date(po.paymentDueAt) : null;
+  const hasDueDate = dueDate ? !Number.isNaN(dueDate.getTime()) : false;
+  const isDebt =
+    po.status === 'completed' &&
+    po.paymentStatus === 'unpaid';
+  const isOverdue =
+    isDebt && hasDueDate ? dueDate!.getTime() < Date.now() : false;
 
   return (
     <KolamContentFrame
@@ -1794,63 +1820,118 @@ function KolamPOPaymentSection({
         </View>
 
         <View style={styles.poCostPaymentColumn}>
-          <KolamDetailSummaryCard
-            fieldColumns={3}
-            fields={[
-          {
-            id: 'status',
-            label: 'Status bayar',
-            value: getKolamPOPaymentStatusLabel(po.paymentStatus),
-          },
-          {
-            id: 'amount',
-            label: 'Jumlah dibayar',
-            value: (
-              <View style={styles.summaryValueStack}>
-                <Text style={styles.summaryValueText}>
-                  {formatRupiah(po.paymentAmount)}
-                </Text>
-                {po.paidAt ? (
-                  <Text style={styles.summaryMetaText}>
-                    {po.paidByName || ''}
-                    {po.paidByName ? ' · ' : ''}
-                    {formatPODateTime(po.paidAt)}
+          <View style={styles.poPaymentRefundCard}>
+            <View style={styles.poPaymentRefundHeader}>
+              <Text style={styles.sectionTitle}>Pembayaran & Refund</Text>
+              <Text style={styles.metaText}>
+                Status pembayaran, total aktual, dan informasi refund
+              </Text>
+            </View>
+
+            <View style={styles.poPaymentStatusRow}>
+              <Text style={styles.poPaymentStatusLabel}>Status Pembayaran:</Text>
+              <Text
+                style={[
+                  styles.poPaymentStatusValue,
+                  po.paymentStatus === 'paid'
+                    ? styles.poPaymentStatusPaid
+                    : po.paymentStatus === 'partial_paid'
+                      ? styles.poPaymentStatusPartial
+                      : styles.poPaymentStatusUnpaid,
+                ]}
+              >
+                {paymentStatusLabel}
+              </Text>
+              {isDebt ? (
+                <KolamStatusBadge
+                  intent={isOverdue ? 'danger' : 'warning'}
+                  label={`${isOverdue ? 'Hutang · Jatuh Tempo' : 'Hutang'}${
+                    hasDueDate ? ` · ${formatPODate(po.paymentDueAt)}` : ''
+                  }`}
+                />
+              ) : null}
+            </View>
+
+            <View style={styles.poPaymentRefundTotals}>
+              <POBreakdownAmountRow
+                label="Total Pesanan (Diharapkan)"
+                value={formatRupiah(po.finalTotal)}
+              />
+              {hasActualTotal ? (
+                <POBreakdownAmountRow
+                  emphasis
+                  label="Total Diterima (Aktual)"
+                  value={formatRupiah(actualTotal)}
+                />
+              ) : null}
+              {hasShortage &&
+              po.paymentStatus === 'paid' &&
+              po.refundStatus !== 'none' ? (
+                <POBreakdownAmountRow
+                  label="Selisih (Refund)"
+                  tone="deduction"
+                  value={formatRupiah(refundAmount)}
+                />
+              ) : null}
+            </View>
+
+            {downPayment?.enabled ? (
+              <View style={styles.poPaymentRefundDivider}>
+                <View style={styles.poPaymentStatusRow}>
+                  <Text style={styles.poPaymentStatusLabel}>Uang Muka (DP):</Text>
+                  <Text style={styles.poPaymentStatusValue}>
+                    {formatRupiah(downPayment.amount)}
+                  </Text>
+                  <KolamStatusBadge
+                    intent={downPaymentPaid ? 'success' : 'warning'}
+                    label={
+                      downPaymentPaid
+                        ? `Lunas · ${formatPODate(downPayment.paidAt)}`
+                        : 'Belum Dibayar'
+                    }
+                  />
+                </View>
+                {downPayment.dueDate && !downPaymentPaid ? (
+                  <Text style={styles.metaText}>
+                    Jatuh tempo: {formatPODate(downPayment.dueDate)}
                   </Text>
                 ) : null}
               </View>
-            ),
-          },
-          {
-            id: 'refund',
-            label: 'Status refund',
-            value: (
-              <View style={styles.summaryValueStack}>
-                <Text style={styles.summaryValueText}>
-                  {getKolamPORefundStatusLabel(po.refundStatus)}
-                </Text>
-                {po.refundStatus !== 'none' ? (
-                  <Text style={styles.summaryMetaText}>
-                    {formatRupiah(po.refundAmount)}
+            ) : null}
+
+            {po.paymentStatus === 'paid' && po.paidAt ? (
+              <Text style={styles.summaryMetaText}>
+                Dibayar {formatPODateTime(po.paidAt)}
+                {po.paidByName ? ` · ${po.paidByName}` : ''}
+              </Text>
+            ) : null}
+
+            {po.paymentStatus === 'paid' && po.refundStatus !== 'none' ? (
+              <View style={styles.poPaymentRefundDivider}>
+                <View style={styles.poPaymentStatusRow}>
+                  <Text style={styles.poPaymentStatusLabel}>Status Refund:</Text>
+                  <Text
+                    style={[
+                      styles.poPaymentStatusValue,
+                      po.refundStatus === 'refunded'
+                        ? styles.poPaymentStatusPaid
+                        : styles.poPaymentStatusPartial,
+                    ]}
+                  >
+                    {getKolamPORefundStatusLabel(po.refundStatus)}
                   </Text>
+                </View>
+                {refundAmount > 0 ? (
+                  <POBreakdownAmountRow
+                    label="Nominal refund"
+                    value={formatRupiah(refundAmount)}
+                  />
                 ) : null}
               </View>
-            ),
-          },
-            ]}
-            style={styles.poPaymentSummaryCard}
-            title="Pembayaran"
-          />
+            ) : null}
+          </View>
         </View>
       </View>
-
-      {downPayment?.enabled ? (
-        <View style={styles.proofGroup}>
-          <Text style={styles.rowMeta}>
-            Uang muka (DP): {formatRupiah(downPayment.amount)}
-            {downPayment.paidAt ? ` · dibayar ${formatPODateTime(downPayment.paidAt)}` : ' · belum dibayar'}
-          </Text>
-        </View>
-      ) : null}
 
       <View style={styles.headerActions}>
         {po.paymentStatus !== 'paid' ? (
@@ -2838,7 +2919,7 @@ const styles = StyleSheet.create({
   },
   poCostPaymentGrid: {
     alignItems: 'stretch',
-    flexDirection: 'column-reverse',
+    flexDirection: 'column',
     gap: 14,
   },
   poCostPaymentColumn: {
@@ -2850,6 +2931,49 @@ const styles = StyleSheet.create({
   poPaymentSummaryCard: {
     alignSelf: 'stretch',
     width: '100%',
+  },
+  poPaymentRefundCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 14,
+    padding: 14,
+  },
+  poPaymentRefundHeader: {
+    gap: 4,
+  },
+  poPaymentStatusRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  poPaymentStatusLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+  },
+  poPaymentStatusValue: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  poPaymentStatusPaid: {
+    color: V.colors.success,
+  },
+  poPaymentStatusPartial: {
+    color: V.colors.warning,
+  },
+  poPaymentStatusUnpaid: {
+    color: V.colors.warning,
+  },
+  poPaymentRefundTotals: {
+    gap: 8,
+  },
+  poPaymentRefundDivider: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    paddingTop: 12,
   },
   poBreakdownCard: {
     backgroundColor: V.colors.mutedSoft,
