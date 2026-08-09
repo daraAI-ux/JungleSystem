@@ -11,6 +11,7 @@ import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon
 import {KOLAM_PRODUCTION_MODULE_ICON_SVG} from '../assets/icons/production-module-icon-svg';
 import {KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG} from '../assets/icons/purchase-order-module-icon-svg';
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
+import {KOLAM_SERIAL_MODULE_ICON_SVG} from '../assets/icons/serial-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
 import {KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG} from '../assets/icons/stock-movement-module-icon-svg';
 import {KOLAM_STOCK_OPNAME_MODULE_ICON_SVG} from '../assets/icons/stock-opname-module-icon-svg';
@@ -37,6 +38,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   production: 'Icon Produksi',
   purchaseOrder: 'Icon Pesanan Pembelian',
   raw: 'Icon Bahan Baku',
+  serial: 'Icon Serial Produk',
   species: 'Icon Spesies',
   stockMovement: 'Icon Transaksi Stok',
   stockOpname: 'Icon Stock Opname',
@@ -72,6 +74,7 @@ const PURCHASE_ORDER_ICON_PATHS = getSvgPathData(
   KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG,
 );
 const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
+const SERIAL_ICON_PATHS = getSvgPathData(KOLAM_SERIAL_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
 const STOCK_MOVEMENT_ICON_PATHS = getSvgPathData(
   KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG,
@@ -198,6 +201,12 @@ export function KolamModuleIcon({
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {RAW_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'serial' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {SERIAL_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
       ) : kind === 'species' ? (

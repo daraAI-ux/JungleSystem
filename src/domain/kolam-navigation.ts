@@ -25,6 +25,7 @@ export type KolamNavigationModuleIcon =
   | 'production'
   | 'purchaseOrder'
   | 'raw'
+  | 'serial'
   | 'species'
   | 'stockMovement'
   | 'stockOpname'
@@ -350,6 +351,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/product-serials',
         description: 'Nomor seri dan lisensi per unit hasil produksi',
         group: 'Produksi',
+        moduleIcon: 'serial',
         requiredAccess: ['kolam'],
       },
       {
@@ -857,6 +859,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/product-serials', {
         group: 'Produksi',
         label: 'Serial Produk',
+        moduleIcon: 'serial',
       }),
       sidebarItem('/enclosures', {
         group: 'Produksi',
