@@ -495,14 +495,6 @@ export function KolamStockOpnameDetail({
                   textStyle={styles.postToStockButtonText}
                 />
               ) : null}
-              {controller.isCancelled && canDelete ? (
-                <KolamDeleteButton
-                  disabled={controller.acting}
-                  intent="danger"
-                  label="Hapus"
-                  onPress={() => setDeleteOpen(true)}
-                />
-              ) : null}
               <KolamExportXlsButton
                 disabled={controller.acting}
                 label="Ekspor XLSX"
@@ -523,6 +515,14 @@ export function KolamStockOpnameDetail({
                   disabled={controller.acting}
                   label="Batalkan"
                   onPress={() => setCancelOpen(true)}
+                />
+              ) : null}
+              {controller.isCancelled && canDelete ? (
+                <KolamDeleteButton
+                  disabled={controller.acting}
+                  intent="danger"
+                  label="Hapus"
+                  onPress={() => setDeleteOpen(true)}
                 />
               ) : null}
             </View>
