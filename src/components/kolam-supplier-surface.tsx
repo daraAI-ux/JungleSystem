@@ -1247,7 +1247,7 @@ function KolamSupplierTaxProfileCard({
 
   return (
     <KolamContentFrame
-      style={style ?? styles.detailCard}
+      style={[styles.detailCard, styles.taxProfileCard, style]}
       variant="settingsWebConfig"
     >
       <View style={styles.taxHeader}>
@@ -2409,6 +2409,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'space-between',
+  },
+  taxProfileCard: {
+    backgroundColor: '#f5f0ff',
+    borderColor: '#ddd6fe',
   },
   photoGrid: {
     flexDirection: 'row',
