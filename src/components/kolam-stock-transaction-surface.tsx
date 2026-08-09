@@ -203,6 +203,7 @@ function KolamStockTransactionOpname({
         <KolamPageIdentityHeader
           eyebrow="Transaksi Stok"
           moduleIcon="stockOpname"
+          placement="workspace"
           subtitle="Sesuaikan stok produk dan stok hidup. Sistem akan membuat transaksi dari sumber stok opname."
           title="Opname Cepat"
         />
