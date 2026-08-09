@@ -41,6 +41,7 @@ export type KolamNavigationModuleIcon =
   | 'purchaseOrder'
   | 'raw'
   | 'receivable'
+  | 'routineExpense'
   | 'sales'
   | 'salesSource'
   | 'service'
@@ -640,6 +641,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/routine-expenses',
         description: 'Pengeluaran rutin bulanan',
         group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'routineExpense',
         requiredAccess: ['kolam'],
       },
       {
@@ -1043,6 +1045,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/routine-expenses', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Pengeluaran Rutin',
+        moduleIcon: 'routineExpense',
       }),
       sidebarItem('/unexpected-expense', {
         group: 'Pengeluaran & Pemasukan',
