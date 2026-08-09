@@ -21,6 +21,7 @@ export type KolamNavigationModuleIcon =
   | 'complaint'
   | 'daraMarketIntel'
   | 'daraSeo'
+  | 'daraTax'
   | 'discountApproval'
   | 'download'
   | 'enclosure'
@@ -583,6 +584,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Estimasi compliance per periode. Bukan pelaporan otomatis ke DJP.',
         group: 'Payroll & Tax',
+        moduleIcon: 'daraTax',
         requiredAccess: ['kolam'],
       },
       {
@@ -981,7 +983,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Intel Pasar',
         moduleIcon: 'daraMarketIntel',
       }),
-      sidebarItem('/finance/tax', { group: undefined, label: 'DARA Pajak' }),
+      sidebarItem('/finance/tax', {
+        group: undefined,
+        label: 'DARA Pajak',
+        moduleIcon: 'daraTax',
+      }),
       sidebarItem('/list-of-users/dara-training', {
         group: undefined,
         label: 'Pelatihan DARA',
