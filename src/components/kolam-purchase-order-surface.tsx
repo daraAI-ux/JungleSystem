@@ -1236,8 +1236,8 @@ function KolamPurchaseOrderDetail({
         </View>
       </View>
 
-      <View style={styles.formSplitRow}>
-        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+      <View style={styles.poDetailOverviewRow}>
+        <View style={styles.poDetailMainColumn}>
           <KolamDetailSummaryCard
             style={[styles.detailCard, styles.detailSplitCard]}
             title="Informasi purchase order"
@@ -1313,9 +1313,10 @@ function KolamPurchaseOrderDetail({
                 },
               ]}
             />
+          <KolamPOPaymentSection controller={controller} po={po} />
         </View>
 
-        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
+        <View style={styles.poDetailTimelineColumn}>
           <KolamContentFrame
             style={[styles.detailCard, styles.detailSplitCard]}
             variant="settingsWebConfig"
@@ -1394,8 +1395,6 @@ function KolamPurchaseOrderDetail({
           </KolamContentFrame>
         </View>
       </View>
-
-      <KolamPOPaymentSection controller={controller} po={po} />
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.itemsHeaderRow}>
@@ -2794,6 +2793,23 @@ const styles = StyleSheet.create({
   formSplitCell: {
     flexGrow: 1,
     minWidth: 220,
+  },
+  poDetailOverviewRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  poDetailMainColumn: {
+    flexBasis: 0,
+    flexGrow: 3,
+    gap: 12,
+    minWidth: 560,
+  },
+  poDetailTimelineColumn: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 260,
   },
   detailSplitCell: {
     flex: 1,
