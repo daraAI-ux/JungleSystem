@@ -22,6 +22,7 @@ export type KolamNavigationModuleIcon =
   | 'media'
   | 'packing'
   | 'product'
+  | 'purchaseOrder'
   | 'raw'
   | 'species'
   | 'stockMovement'
@@ -332,6 +333,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/purchase-order',
         description: 'Create and manage purchase orders',
         group: 'Pengadaan',
+        moduleIcon: 'purchaseOrder',
         requiredAccess: ['kolam'],
       },
       {
@@ -843,6 +845,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/purchase-order', {
         group: 'Pengadaan',
         label: 'Pesanan Pembelian',
+        moduleIcon: 'purchaseOrder',
       }),
       sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
       sidebarItem('/product-serials', {
