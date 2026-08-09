@@ -1214,8 +1214,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   detailRoot: {
-    width: '100%',
+    alignSelf: 'stretch',
+    flexGrow: 1,
     gap: 16,
+    minHeight: 0,
+    overflow: 'visible',
+    width: '100%',
   },
   detailHeaderRow: {
     flexDirection: 'row',
