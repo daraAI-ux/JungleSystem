@@ -398,7 +398,11 @@ export function KolamProductSurface({
                   value={controller.filters.search}
                 />
                 <View style={styles.listToolbarFilterRow}>
-                  <View ref={categoryTriggerRef} collapsable={false}>
+                  <View
+                    ref={categoryTriggerRef}
+                    collapsable={false}
+                    style={styles.listToolbarFilterItem}
+                  >
                     <KolamTableFilterTrigger
                       active={
                         activeFilterPanel === 'category' ||
@@ -410,7 +414,11 @@ export function KolamProductSurface({
                       variant="quiet"
                     />
                   </View>
-                  <View ref={brandTriggerRef} collapsable={false}>
+                  <View
+                    ref={brandTriggerRef}
+                    collapsable={false}
+                    style={styles.listToolbarFilterItem}
+                  >
                     <KolamTableFilterTrigger
                       active={
                         activeFilterPanel === 'brand' || selectedBrand !== 'all'
@@ -422,7 +430,11 @@ export function KolamProductSurface({
                     />
                   </View>
                   {!isRawCatalog ? (
-                    <View ref={stockTriggerRef} collapsable={false}>
+                    <View
+                      ref={stockTriggerRef}
+                      collapsable={false}
+                      style={styles.listToolbarFilterItem}
+                    >
                       <KolamTableFilterTrigger
                         active={
                           activeFilterPanel === 'stock' ||
@@ -10112,6 +10124,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 4,
     minWidth: 0,
+  },
+  listToolbarFilterItem: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 120,
   },
   listToolbarSearch: {
     flexGrow: 1,
