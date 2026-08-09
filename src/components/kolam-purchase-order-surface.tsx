@@ -48,7 +48,6 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
-import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
   KolamTableRowActionMenu,
@@ -659,39 +658,27 @@ function KolamPurchaseOrderForm({
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
-        <KolamDescriptionList
-          accessibilityLabel="Ringkasan biaya PO"
-          rows={[
-            {
-              id: 'subtotal',
-              label: 'Subtotal',
-              value: formatRupiah(controller.breakdown.subtotal),
-              meta: `${controller.breakdown.totalQty} qty`,
-              tone: 'default',
-            },
-            {
-              id: 'discount',
-              label: 'Diskon',
-              value: `- ${formatRupiah(controller.breakdown.discountAmount)}`,
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'shipping',
-              label: 'Ongkos kirim',
-              value: formatRupiah(Number(form.shippingCost) || 0),
-              meta: '',
-              tone: 'default',
-            },
-            {
-              id: 'final',
-              label: 'Total akhir',
-              value: formatRupiah(controller.breakdown.finalTotal),
-              meta: '',
-              tone: 'success',
-            },
-          ]}
-        />
+        <View style={styles.poBreakdownCard}>
+          <POBreakdownAmountRow
+            label={`Subtotal (${controller.breakdown.totalQty} qty)`}
+            value={formatRupiah(controller.breakdown.subtotal)}
+          />
+          <POBreakdownAmountRow
+            label="Diskon"
+            tone="deduction"
+            value={`- ${formatRupiah(controller.breakdown.discountAmount)}`}
+          />
+          <POBreakdownAmountRow
+            label="Ongkos kirim"
+            value={formatRupiah(Number(form.shippingCost) || 0)}
+          />
+          <POBreakdownAmountRow
+            emphasis
+            label="Total akhir"
+            tone="profit"
+            value={formatRupiah(controller.breakdown.finalTotal)}
+          />
+        </View>
       </KolamContentFrame>
 
       <View style={styles.formActions}>
@@ -889,7 +876,11 @@ function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderContr
           value={type}
         />
       </View>
-      <View style={styles.itemResultList}>
+      <ScrollView
+        nestedScrollEnabled
+        style={styles.itemResultList}
+        contentContainerStyle={styles.itemResultListContent}
+      >
         {controller.itemPickerLoading ? (
           <Text style={styles.metaText}>Memuat item…</Text>
         ) : results.length ? (
@@ -906,17 +897,19 @@ function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderContr
                   },
                 ]}
               />
-              <Text style={styles.numText}>{formatRupiah(item.price)}</Text>
+              <Text style={styles.itemResultPrice}>{formatRupiah(item.price)}</Text>
               {item.variants.length ? (
                 <KolamButton
                   label="Pilih varian"
                   onPress={() => setPendingVariantItem(item)}
+                  style={styles.itemResultAction}
                 />
               ) : (
                 <KolamButton
                   intent="primary"
                   label="Tambah"
                   onPress={() => controller.onAddItemLine(item, null)}
+                  style={styles.itemResultAction}
                 />
               )}
             </View>
@@ -924,7 +917,7 @@ function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderContr
         ) : (
           <Text style={styles.metaText}>Tidak ada hasil.</Text>
         )}
-      </View>
+      </ScrollView>
 
       {pendingVariantItem ? (
         <View style={styles.variantPickerPanel}>
@@ -2627,27 +2620,6 @@ function getKolamPOPaymentStatusIntent(status: string): POStatusIntent {
   }
 }
 
-function getKolamPORefundStatusIntent(status: string): POStatusIntent {
-  switch (status) {
-    case 'refunded':
-      return 'success';
-    case 'pending':
-      return 'warning';
-    case 'none':
-    default:
-      return 'muted';
-  }
-}
-
-function getKolamDescriptionTone(
-  intent: POStatusIntent,
-): 'default' | 'success' | 'warning' | 'danger' {
-  if (intent === 'success' || intent === 'warning' || intent === 'danger') {
-    return intent;
-  }
-  return 'default';
-}
-
 function toLocalImageUri(uri: string) {
   if (uri.startsWith('file://') || uri.startsWith('http://') || uri.startsWith('https://')) {
     return uri;
@@ -3113,8 +3085,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   itemResultList: {
-    gap: 6,
     maxHeight: 260,
+  },
+  itemResultListContent: {
+    gap: 6,
   },
   itemResultRow: {
     alignItems: 'center',
@@ -3129,6 +3103,20 @@ const styles = StyleSheet.create({
   itemResultCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  itemResultPrice: {
+    color: V.colors.fg,
+    flexShrink: 0,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+    minWidth: 96,
+    textAlign: 'right',
+  },
+  itemResultAction: {
+    flexShrink: 0,
+    minWidth: 96,
   },
   variantPickerPanel: {
     borderColor: V.colors.border,
