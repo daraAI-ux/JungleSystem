@@ -1330,16 +1330,6 @@ function KolamPackingMaterialForm({
                   value={form.description}
                 />
               </FieldShell>
-            </View>
-          </PackingEditSection>
-          {controller.selectedMaterial ? (
-            <PackingPhotoEditPanel
-              controller={controller}
-              item={controller.selectedMaterial}
-            />
-          ) : null}
-          <View style={styles.formSplitRow}>
-            <View style={styles.formSplitCell}>
               <FieldShell label="Kategori" required>
                 <KolamDropdownSelect
                   label="Kategori"
@@ -1349,7 +1339,13 @@ function KolamPackingMaterialForm({
                 />
               </FieldShell>
             </View>
-          </View>
+          </PackingEditSection>
+          {controller.selectedMaterial ? (
+            <PackingPhotoEditPanel
+              controller={controller}
+              item={controller.selectedMaterial}
+            />
+          ) : null}
           <FormDivider title="Harga tagih customer" />
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
