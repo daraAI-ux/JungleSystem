@@ -1841,7 +1841,7 @@ function KolamSupplierForm({
                     }}
                     scope="vendor-photo"
                     title="Foto"
-                    value={toLocalImageUri(controller.pendingPhotoUris[0] ?? '')}
+                    value=""
                   />
                   {controller.pendingPhotoUris.length ? (
                     <View style={styles.existingMediaGrid}>
