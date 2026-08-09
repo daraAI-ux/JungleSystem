@@ -343,39 +343,41 @@ function KolamStockTransactionOpname({
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <KolamSettingsWebFileField
-          accessibilityLabel="Foto bukti opname"
-          actionLabel="Pilih file"
-          disabled={controller.mutating}
-          emptyLabel="Foto belum dipilih"
-          fileCount={Math.min(form.photoUris.length, 10)}
-          fileMax={10}
-          onUpload={() => {
-            void controller.onAddOpnamePhoto();
-          }}
-          scope="stock-opname-photo"
-          title="Foto bukti"
-          value=""
-        />
-        {form.photoUris.length ? (
-          <View style={styles.photoGrid}>
-            {form.photoUris.map((uri, index) => (
-              <View key={`${uri}-${index}`} style={styles.photoItem}>
-                <KolamRemoteImage
-                  accessibilityLabel={`Foto opname ${index + 1}`}
-                  sourceUri={uri}
-                  style={styles.photoThumb}
-                />
-                <KolamDeleteButton
-                  label="Hapus"
-                  onPress={() => controller.onRemoveOpnamePhoto(index)}
-                />
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.metaText}>Belum ada foto.</Text>
-        )}
+        <View style={styles.opnameInnerBox}>
+          <KolamSettingsWebFileField
+            accessibilityLabel="Foto bukti opname"
+            actionLabel="Pilih file"
+            disabled={controller.mutating}
+            emptyLabel="Foto belum dipilih"
+            fileCount={Math.min(form.photoUris.length, 10)}
+            fileMax={10}
+            onUpload={() => {
+              void controller.onAddOpnamePhoto();
+            }}
+            scope="stock-opname-photo"
+            title="Foto bukti"
+            value=""
+          />
+          {form.photoUris.length ? (
+            <View style={styles.photoGrid}>
+              {form.photoUris.map((uri, index) => (
+                <View key={`${uri}-${index}`} style={styles.photoItem}>
+                  <KolamRemoteImage
+                    accessibilityLabel={`Foto opname ${index + 1}`}
+                    sourceUri={uri}
+                    style={styles.photoThumb}
+                  />
+                  <KolamDeleteButton
+                    label="Hapus"
+                    onPress={() => controller.onRemoveOpnamePhoto(index)}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.metaText}>Belum ada foto.</Text>
+          )}
+        </View>
       </KolamContentFrame>
 
       {walletModalOpen ? (
