@@ -1835,12 +1835,13 @@ function KolamSupplierForm({
                       5,
                     )}
                     fileMax={5}
+                    onLocalValueChange={controller.onAddPendingPhoto}
                     onUpload={() => {
                       void controller.onPickPhoto();
                     }}
                     scope="vendor-photo"
                     title="Foto"
-                    value={controller.pendingPhotoUris[0] ?? ''}
+                    value={toLocalImageUri(controller.pendingPhotoUris[0] ?? '')}
                   />
                   {controller.pendingPhotoUris.length ? (
                     <View style={styles.existingMediaGrid}>
@@ -2225,6 +2226,9 @@ function SupplierEditSection({
 }
 
 function toLocalImageUri(uri: string) {
+  if (!uri.trim()) {
+    return '';
+  }
   if (uri.startsWith('file://') || uri.startsWith('http://') || uri.startsWith('https://')) {
     return uri;
   }

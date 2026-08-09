@@ -68,6 +68,7 @@ export interface KolamSupplierController {
   ) => Promise<void>;
   onChangeForm: (patch: Partial<KolamVendorFormState>) => void;
   onChangeTaxProfile: (patch: Partial<KolamTaxPartyProfileFormState>) => void;
+  onAddPendingPhoto: (photoLocalUri: string) => void;
   onCreateNew: () => void;
   onDeleteExistingPhoto: (index: number) => Promise<boolean>;
   onDeleteVendor: (vendor: KolamVendor) => Promise<boolean>;
@@ -384,6 +385,20 @@ export function useKolamSupplierController(
     }
   }, [pendingPhotoUris.length]);
 
+  const onAddPendingPhoto = useCallback((photoLocalUri: string) => {
+    const trimmed = photoLocalUri.trim();
+    if (!trimmed) {
+      return;
+    }
+    setError(null);
+    setPendingPhotoUris(current => {
+      if (current.length >= 5 || current.includes(trimmed)) {
+        return current;
+      }
+      return [...current, trimmed];
+    });
+  }, []);
+
   const onRemovePendingPhoto = useCallback((index: number) => {
     setPendingPhotoUris(current => current.filter((_, i) => i !== index));
   }, []);
@@ -520,6 +535,7 @@ export function useKolamSupplierController(
     taxProfileSaving,
     vendors,
     onBackToList,
+    onAddPendingPhoto,
     onChangeAnalyticsFilters,
     onChangeForm,
     onChangeTaxProfile,
