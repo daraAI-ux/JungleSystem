@@ -1314,6 +1314,7 @@ function KolamPurchaseOrderDetail({
               ]}
             />
           <KolamPOPaymentSection controller={controller} po={po} />
+          <KolamPOFakturPajakSection controller={controller} po={po} />
         </View>
 
         <View style={styles.poDetailTimelineColumn}>
@@ -1420,7 +1421,6 @@ function KolamPurchaseOrderDetail({
       </KolamContentFrame>
 
       <KolamPOInstallmentSection controller={controller} po={po} />
-      <KolamPOFakturPajakSection controller={controller} po={po} />
 
       {activeDialog === 'receive' ? (
         <KolamPOReceiveDialog controller={controller} onClose={() => setActiveDialog(null)} />
