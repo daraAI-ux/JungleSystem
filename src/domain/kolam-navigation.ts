@@ -30,6 +30,7 @@ export type KolamNavigationModuleIcon =
   | 'raw'
   | 'sales'
   | 'salesSource'
+  | 'service'
   | 'serial'
   | 'species'
   | 'stockMovement'
@@ -263,6 +264,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Ringkasan operasional, katalog paket, dan langganan pelanggan.',
         group: 'Layanan',
+        moduleIcon: 'service',
         requiredAccess: ['kolam'],
       },
       {
@@ -904,7 +906,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         moduleIcon: 'complaint',
       }),
       // FE sales section: Layanan sits with Sales cluster (RNW = Penjualan group).
-      sidebarItem('/layanan', { group: 'Penjualan', label: 'Layanan' }),
+      sidebarItem('/layanan', {
+        group: 'Penjualan',
+        label: 'Layanan',
+        moduleIcon: 'service',
+      }),
       sidebarItem('/terms-templates', {
         group: 'Penjualan',
         label: 'Syarat & Ketentuan',
@@ -1056,6 +1062,7 @@ const dashboardRuntimeRouteContexts: KolamNavigationItem[] = [
     description:
       'Ringkasan operasional, katalog paket, dan langganan pelanggan.',
     group: 'Layanan',
+    moduleIcon: 'service',
     requiredAccess: ['kolam'],
   },
 ];
