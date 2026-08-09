@@ -807,8 +807,8 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       }),
       sidebarItem('/products/archive', {
         group: 'Produk',
-        label: 'Arsip',
-        moduleIcon: 'archive',
+        label: 'Arsip Produk',
+        moduleIcon: 'product',
       }),
       sidebarItem('/raw-materials', {
         group: 'Produk',
@@ -1169,6 +1169,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/products',
     labelSuffix: 'Arsip',
+    label: 'Arsip Produk',
     route: '/products/archive',
     description: 'Halaman arsip produk dari Kolam live',
   },
@@ -1187,8 +1188,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/raw-materials',
     labelSuffix: 'Edit',
+    label: 'Rubah Bahan Baku',
     route: '/raw-materials/:id/edit',
-    description: 'Edit raw material page from live Kolam',
+    description:
+      'Update raw material information, pricing, inventory, and notes.',
   },
   {
     baseRoute: '/species',
