@@ -414,6 +414,8 @@ export function KolamStockOpnameDetail({
                   intent="success"
                   label={controller.statusMessage}
                   numberOfLines={2}
+                  style={styles.toolbarStatusMessage}
+                  textStyle={styles.toolbarStatusMessageText}
                 />
               ) : null}
             </View>
@@ -1712,6 +1714,13 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '900',
+  },
+  toolbarStatusMessage: {
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  toolbarStatusMessageText: {
+    textAlign: 'left',
   },
   fieldLabel: {
     color: V.colors.fg,
