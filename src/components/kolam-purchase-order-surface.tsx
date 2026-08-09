@@ -734,23 +734,25 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Metode pembayaran</Text>
-      <FieldShell label="Tipe pembayaran">
-        <KolamDropdownSelect
-          accessibilityLabel="Pilih metode pembayaran"
-          label="Metode pembayaran"
-          onChange={paymentType =>
-            controller.onChangeForm({
-              paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
-            })
-          }
-          options={[
-            { label: paymentTypeLabel('cash'), value: 'cash' },
-            { label: paymentTypeLabel('tempo'), value: 'tempo' },
-            { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
-          ]}
-          value={form.paymentType}
-        />
-      </FieldShell>
+      <View style={styles.poPaymentTypeCard}>
+        <FieldShell label="Tipe pembayaran">
+          <KolamDropdownSelect
+            accessibilityLabel="Pilih metode pembayaran"
+            label="Metode pembayaran"
+            onChange={paymentType =>
+              controller.onChangeForm({
+                paymentType: paymentType as 'cash' | 'tempo' | 'cicilan',
+              })
+            }
+            options={[
+              { label: paymentTypeLabel('cash'), value: 'cash' },
+              { label: paymentTypeLabel('tempo'), value: 'tempo' },
+              { label: paymentTypeLabel('cicilan'), value: 'cicilan' },
+            ]}
+            value={form.paymentType}
+          />
+        </FieldShell>
+      </View>
 
       {form.paymentType === 'tempo' ? (
         <View style={styles.formSplitRow}>
@@ -2863,6 +2865,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
     padding: 12,
     width: '100%',
+  },
+  poPaymentTypeCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 10,
   },
   headerActions: {
     flexDirection: 'row',
