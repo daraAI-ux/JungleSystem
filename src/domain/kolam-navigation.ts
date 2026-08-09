@@ -27,6 +27,7 @@ export type KolamNavigationModuleIcon =
   | 'production'
   | 'purchaseOrder'
   | 'raw'
+  | 'sales'
   | 'serial'
   | 'species'
   | 'stockMovement'
@@ -399,6 +400,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Kelola invoice penjualan dan status pembayaran serta pengiriman.',
         group: 'Penjualan',
+        moduleIcon: 'sales',
         requiredAccess: ['kolam', 'pos'],
       },
       {
@@ -882,7 +884,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     id: 'sales',
     title: 'Penjualan & Arus Kas',
     items: [
-      sidebarItem('/sales', { group: 'Penjualan', label: 'Penjualan' }),
+      sidebarItem('/sales', {
+        group: 'Penjualan',
+        label: 'Penjualan',
+        moduleIcon: 'sales',
+      }),
       sidebarItem('/source', { group: 'Penjualan', label: 'Sumber' }),
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
       // FE sales section: Layanan sits with Sales cluster (RNW = Penjualan group).
