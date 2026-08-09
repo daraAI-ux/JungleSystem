@@ -1381,19 +1381,24 @@ function KolamProductDetailView({
   if (!product) {
     return (
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
-        <View style={styles.detailHeaderRow}>
-          <KolamPageIdentityHeader
-            eyebrow={shellLabels.eyebrow}
-            moduleIcon={isRawCatalog ? 'raw' : 'product'}
-            placement="workspace"
-            subtitle={
-              controller.loading
-                ? shellLabels.loadingDetail
-                : shellLabels.emptyDetail
-            }
-            title={shellLabels.detailTitle}
-          />
-          <KolamDaftarButton onPress={onBack} />
+        <KolamPageIdentityHeader
+          eyebrow={shellLabels.eyebrow}
+          moduleIcon={isRawCatalog ? 'raw' : 'product'}
+          placement="workspace"
+          subtitle={
+            controller.loading
+              ? shellLabels.loadingDetail
+              : shellLabels.emptyDetail
+          }
+          title={shellLabels.detailTitle}
+        />
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters} />
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamDaftarButton onPress={onBack} />
+            </View>
+          </View>
         </View>
       </KolamDetailScrollSurface>
     );
@@ -1567,21 +1572,24 @@ function ProductEditFormPage({
   if (!form) {
     return (
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
-        <View style={styles.detailHeaderRow}>
-          <KolamPageIdentityHeader
-            eyebrow={shellLabels.eyebrow}
-            moduleIcon={
-              controller.selectedProduct?.type === 'raw' ? 'raw' : 'product'
-            }
-            placement="workspace"
-            subtitle={
-              controller.loading
-                ? shellLabels.loadingDetail
-                : shellLabels.emptyForm
-            }
-            title={shellLabels.editTitle}
-          />
-          <KolamCancelButton onPress={onCancel} />
+        <KolamPageIdentityHeader
+          eyebrow={shellLabels.eyebrow}
+          moduleIcon={
+            controller.selectedProduct?.type === 'raw' ? 'raw' : 'product'
+          }
+          placement="workspace"
+          subtitle={
+            controller.loading ? shellLabels.loadingDetail : shellLabels.emptyForm
+          }
+          title={shellLabels.editTitle}
+        />
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters} />
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamCancelButton onPress={onCancel} />
+            </View>
+          </View>
         </View>
       </KolamDetailScrollSurface>
     );
@@ -11521,16 +11529,6 @@ const styles = StyleSheet.create({
   },
   archiveButtonText: {
     color: V.colors.primaryFg,
-  },
-  detailHeaderRow: {
-    alignItems: 'flex-start',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    gap: 16,
-    justifyContent: 'space-between',
-    marginTop: -88,
-    minWidth: 0,
-    width: '100%',
   },
   detailGrid: {
     alignItems: 'flex-start',
