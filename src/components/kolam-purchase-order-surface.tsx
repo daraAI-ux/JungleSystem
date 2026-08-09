@@ -1105,7 +1105,7 @@ function KolamPurchaseOrderDetail({
   if (!po && controller.loading) {
     return (
       <View style={styles.placeholder}>
-        <KolamEmptyState compact message="Mengambil data purchase order." title="Memuat detail…" />
+        <KolamEmptyState compact message="Mengambil data PO." title="Memuat detail…" />
       </View>
     );
   }
@@ -1115,7 +1115,7 @@ function KolamPurchaseOrderDetail({
       <View style={styles.placeholder}>
         <KolamEmptyState
           compact
-          message="Purchase order tidak ditemukan atau gagal dimuat."
+          message="PO tidak ditemukan atau gagal dimuat."
           title="Detail tidak tersedia"
         />
         <KolamButton
@@ -1172,7 +1172,7 @@ function KolamPurchaseOrderDetail({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
             <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {po.poCode || 'Purchase order'}
+              {po.poCode || 'PO'}
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
@@ -1247,7 +1247,7 @@ function KolamPurchaseOrderDetail({
         <View style={styles.poDetailMainColumn}>
           <KolamDetailSummaryCard
             style={[styles.detailCard, styles.detailSplitCard]}
-            title="Informasi purchase order"
+            title="Informasi PO"
             fields={[
                 { id: 'code', label: 'Kode PO', value: po.poCode || '—' },
                 {

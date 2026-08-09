@@ -1765,9 +1765,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/purchase-order',
-    labelSuffix: 'Detail',
+    label: 'Detail PO',
+    labelSuffix: 'Detail PO',
     route: '/purchase-order/:id',
-    description: 'Purchase order detail page from live Kolam',
+    description: 'Rincian pesanan pembelian, penerimaan, dan pembayaran.',
   },
   {
     baseRoute: '/purchase-order',
