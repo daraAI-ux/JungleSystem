@@ -25,6 +25,7 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
+import {KolamModuleIcon} from './kolam-module-icon';
 import { KolamCheckmarkIcon } from './kolam-checkmark-icon';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -706,25 +707,30 @@ function KolamPackingMaterialDetail({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.stack}>
-      <View style={styles.detailPageHeader}>
-        <View style={styles.detailHeading}>
-          <Text style={styles.detailPageTitle}>{item.name}</Text>
-          <Text style={styles.detailPageMeta}>
-            {createPackingDetailTimestamp(item)}
-          </Text>
+      <View style={styles.detailHeaderRow}>
+        <View style={styles.detailHeaderIdentity}>
+          <KolamModuleIcon kind="packing" size="header" />
+          <View style={[styles.detailHeading, styles.detailHeaderCopy]}>
+            <Text style={styles.eyebrow}>Detail Bahan Kemasan</Text>
+            <Text style={styles.detailPageTitle}>{item.name}</Text>
+            <Text style={styles.detailPageMeta}>
+              {createPackingDetailTimestamp(item)}
+            </Text>
+          </View>
         </View>
-        <View style={styles.detailTopActions}>
-          <KolamDaftarButton onPress={goBackToList} />
-          <KolamEditButton
-            intent="primary"
-            onPress={controller.onEdit}
-          />
-          <KolamButton
-            disabled={item.status !== 'active' || controller.saving}
-            intent="danger"
-            label="Nonaktifkan"
-            onPress={() => setDeleteCandidate(item)}
-          />
+      </View>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters} />
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamDaftarButton onPress={goBackToList} />
+            <KolamEditButton intent="primary" onPress={controller.onEdit} />
+            <KolamCancelButton
+              disabled={item.status !== 'active' || controller.saving}
+              label="Nonaktifkan"
+              onPress={() => setDeleteCandidate(item)}
+            />
+          </View>
         </View>
       </View>
       <KolamControlTabList
@@ -1972,6 +1978,29 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
+  },
+  detailHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
+  },
+  detailHeaderIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 14,
+    minWidth: 0,
+  },
+  detailHeaderCopy: {
+    minWidth: 0,
+  },
+  eyebrow: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0,
+    lineHeight: 16,
   },
   detailPageHeader: {
     alignItems: 'flex-start',
