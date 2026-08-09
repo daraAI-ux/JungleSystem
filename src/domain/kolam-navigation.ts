@@ -34,6 +34,7 @@ export type KolamNavigationModuleIcon =
   | 'location'
   | 'media'
   | 'packing'
+  | 'payable'
   | 'product'
   | 'project'
   | 'production'
@@ -622,6 +623,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Kewajiban pembayaran (akrual) — PO belum lunas, pinjaman, utang mendatang',
         group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'payable',
         requiredAccess: ['kolam'],
       },
       {
@@ -1028,7 +1030,8 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       }),
       sidebarItem('/payable', {
         group: 'Pengeluaran & Pemasukan',
-        label: 'Utang',
+        label: 'Hutang',
+        moduleIcon: 'payable',
       }),
       sidebarItem('/receivable', {
         group: 'Pengeluaran & Pemasukan',
