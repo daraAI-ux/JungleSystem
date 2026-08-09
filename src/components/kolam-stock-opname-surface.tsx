@@ -145,7 +145,7 @@ function KolamStockOpnameCreateForm({
   return (
     <View style={styles.createRoot}>
       <KolamCardFrame style={styles.createCard} variant="compact">
-        <Text style={styles.createTitle}>Stock opname baru</Text>
+        <Text style={styles.createTitle}>Stok Opname Baru</Text>
         <Text style={styles.createHint}>
           Halaman ini hanya membuat nomor dokumen (draf). Barang / SKU diisi di
           langkah berikutnya.
@@ -155,7 +155,7 @@ function KolamStockOpnameCreateForm({
             1. Isi catatan (opsional) lalu klik Buat draf.
           </Text>
           <Text style={styles.createStep}>
-            2. Isi PIC dan pelaksana, lalu tambah baris barang.
+            2. Isi PIC dan pelaksana, lalu tambahkan baris barang.
           </Text>
           <Text style={styles.createStep}>
             3. Kirim untuk review, lalu posting ke stok saat siap.

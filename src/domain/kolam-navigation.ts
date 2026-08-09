@@ -1686,9 +1686,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/stock-opname',
-    labelSuffix: 'New',
+    label: 'Stok Opname Baru',
+    labelSuffix: 'Baru',
     route: '/stock-opname/new',
-    description: 'New stock opname page from live Kolam',
+    description: 'Buat draf stok opname baru.',
   },
   {
     baseRoute: '/stock-opname',
