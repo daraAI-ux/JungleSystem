@@ -8,6 +8,7 @@ import {
   type KolamBarcodeLabelItem,
 } from '../domain/kolam-barcode';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { formatRupiah } from '../lib/money';
 import { KolamButton } from './kolam-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import {KolamModalDialog} from './kolam-modal-dialog';
@@ -372,11 +373,7 @@ function createBarcodePrintHtml({
 }
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(value || 0);
+  return formatRupiah(value || 0);
 }
 
 function escapeHtml(value: string) {

@@ -33,6 +33,7 @@ import {
   type KolamEntityDetailAsset,
 } from './kolam-entity-detail-assets-panel';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import {
   KolamGrocerPricingTiersEditor,
   createEmptyGrocerPricingTierRow,
@@ -367,20 +368,12 @@ export function TeranuraPriceInput({
   value: string;
 }) {
   return (
-    <View style={styles.priceInputShell}>
-      <Text style={styles.priceInputPrefix}>Rp</Text>
-      <KolamFormTextField
-        editable={!disabled}
-        keyboardType="numeric"
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        style={[
-          settingsWebFormStyles.settingsWebFormFieldValue,
-          styles.priceInputField,
-        ]}
-        value={value}
-      />
-    </View>
+    <KolamRupiahField
+      editable={!disabled}
+      onChangeValue={nextValue => onChangeText(String(nextValue))}
+      placeholder={placeholder}
+      value={Number(value) || 0}
+    />
   );
 }
 

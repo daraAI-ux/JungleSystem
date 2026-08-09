@@ -31,6 +31,7 @@ import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-sec
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -2988,23 +2989,41 @@ export function KolamSettingsWebConfigSurface({
                 />
                 <KolamTextFieldRow
                   variant="settingsForm"
-                  label="Denda telat tier 2 (Rp)"
+                  label="Denda telat tier 2"
                   description="Nominal denda tier 2."
                   value={draft.staffAttendanceLateFineTier2}
                   onChangeText={value =>
                     setDraftField('staffAttendanceLateFineTier2', value)
                   }
                   placeholder="50000"
+                  renderInput={() => (
+                    <KolamRupiahField
+                      onChangeValue={value =>
+                        setDraftField('staffAttendanceLateFineTier2', String(value))
+                      }
+                      style={{ width: 230 }}
+                      value={Number(draft.staffAttendanceLateFineTier2) || 0}
+                    />
+                  )}
                 />
                 <KolamTextFieldRow
                   variant="settingsForm"
-                  label="Denda telat tier 3 (Rp)"
+                  label="Denda telat tier 3"
                   description="Nominal denda tier 3."
                   value={draft.staffAttendanceLateFineTier3}
                   onChangeText={value =>
                     setDraftField('staffAttendanceLateFineTier3', value)
                   }
                   placeholder="100000"
+                  renderInput={() => (
+                    <KolamRupiahField
+                      onChangeValue={value =>
+                        setDraftField('staffAttendanceLateFineTier3', String(value))
+                      }
+                      style={{ width: 230 }}
+                      value={Number(draft.staffAttendanceLateFineTier3) || 0}
+                    />
+                  )}
                 />
                 <KolamTextFieldRow
                   variant="settingsForm"
@@ -6451,6 +6470,15 @@ function KpiSettingsPanel({
                 value={row.amountRp}
                 onChangeText={value => setRewardRow(index, { amountRp: value })}
                 placeholder="250000"
+                renderInput={() => (
+                  <KolamRupiahField
+                    onChangeValue={value =>
+                      setRewardRow(index, { amountRp: String(value) })
+                    }
+                    style={{ width: 180 }}
+                    value={Number(row.amountRp) || 0}
+                  />
+                )}
               />
             </View>
             <KolamActionControlButton

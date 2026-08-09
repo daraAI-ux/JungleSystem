@@ -17,6 +17,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -156,7 +157,7 @@ function UnexpectedExpenseFormBody({
           <KolamContentFrame variant="nativeFormControls">
             <View style={settingsWebFormStyles.settingsWebFormFields}>
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Nama / Catatan" />
+                <KolamSettingsWebFieldLabel label="Nama / Catatan" required={false} />
                 <KolamFormTextField
                   onChangeText={value =>
                     controller.onChangeForm({ name: value })
@@ -167,19 +168,18 @@ function UnexpectedExpenseFormBody({
               </View>
 
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Jumlah (Rp)" required />
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={value =>
-                    controller.onChangeForm({ amountText: value })
+                <KolamSettingsWebFieldLabel label="Jumlah" required />
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onChangeForm({ amountText: String(value) })
                   }
                   placeholder="0"
-                  value={form.amountText}
+                  value={Number(form.amountText) || 0}
                 />
               </View>
 
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Dompet" />
+                <KolamSettingsWebFieldLabel label="Dompet" required={false} />
                 <KolamDropdownSelect
                   label="Dompet"
                   onChange={value =>
@@ -206,7 +206,7 @@ function UnexpectedExpenseFormBody({
               </View>
 
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Alasan" />
+                <KolamSettingsWebFieldLabel label="Alasan" required={false} />
                 <KolamFormTextField
                   multiline
                   onChangeText={value =>

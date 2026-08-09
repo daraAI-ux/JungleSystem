@@ -31,6 +31,7 @@ import type {
   KolamSpecies,
   KolamSpeciesCommissionType,
 } from '../domain/kolam-species';
+import { formatRupiah } from '../lib/money';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   type KolamLabelFieldDetailSection,
@@ -1753,11 +1754,7 @@ function formatVariantCommission(
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(Number(value) || 0);
+  return formatRupiah(Number(value) || 0);
 }
 
 function formatNumber(value: number) {

@@ -6,6 +6,7 @@
 
 import type { KolamBadgeIntent } from './kolam-badge';
 import { formatKolamIsoDate, isKolamIsoDate, parseKolamIsoDate } from './kolam-date';
+import { formatRupiah, formatRupiahCompactCurrency } from '../lib/money';
 
 export const KOLAM_CAMPAIGN_ROOT = '/campaign';
 export const KOLAM_CAMPAIGN_CREATE_ROUTE = `${KOLAM_CAMPAIGN_ROOT}/create`;
@@ -259,12 +260,7 @@ export function formatKolamCampaignDiscountLabel(campaign: {
   if (String(campaign.discountType || '').toLowerCase() === 'percentage') {
     return `${amount}% diskon`;
   }
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatRupiah(amount);
 }
 
 /** Compact discount for detail header (FE notation compact for fixed). */
@@ -277,12 +273,7 @@ export function formatKolamCampaignDiscountCompact(campaign: {
   if (String(campaign.discountType || '').toLowerCase() === 'percentage') {
     return `${amount}%`;
   }
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    notation: 'compact',
-  }).format(amount);
+  return formatRupiahCompactCurrency(amount);
 }
 
 /** FE list Durasi — ceil(|end−start| / day). */
@@ -546,13 +537,7 @@ export function formatKolamCampaignPriceRange(
   const discounted = prices.map(price =>
     calculateKolamCampaignPrice(price, campaign),
   );
-  const formatMoney = (value: number) =>
-    new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+  const formatMoney = (value: number) => formatRupiah(value);
 
   const formatRange = (min: number, max: number) =>
     min === max ? formatMoney(min) : `${formatMoney(min)} - ${formatMoney(max)}`;
@@ -595,13 +580,7 @@ export function mapKolamProductToCampaignOption(product: {
     if (variantPrices.length > 0) {
       const min = Math.min(...variantPrices);
       const max = Math.max(...variantPrices);
-      const formatMoney = (value: number) =>
-        new Intl.NumberFormat('id-ID', {
-          style: 'currency',
-          currency: 'IDR',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(value);
+      const formatMoney = (value: number) => formatRupiah(value);
       priceLabel =
         min === max
           ? formatMoney(min)
@@ -610,12 +589,7 @@ export function mapKolamProductToCampaignOption(product: {
   } else {
     const single = getKolamCampaignDisplayPrice(product);
     if (single != null) {
-      priceLabel = new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(single);
+      priceLabel = formatRupiah(single);
     }
   }
 

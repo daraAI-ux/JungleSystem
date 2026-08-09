@@ -1,5 +1,6 @@
 ﻿import {formatRupiah} from '../lib/money';
 import type {KolamSalesGraphPoint} from '../services/kolam-api';
+import {formatRupiahCompact} from '../lib/money';
 import type {UnifiedDataset} from '../services/unified-data';
 import type {SaleSummary} from './pos';
 
@@ -440,19 +441,7 @@ function formatGraphLabel(value: string, range: DashboardSalesGraphRange) {
 }
 
 function formatRupiahShort(value: number) {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}M`;
-  }
-
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}Jt`;
-  }
-
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(0)}Rb`;
-  }
-
-  return `${value}`;
+  return formatRupiahCompact(value);
 }
 
 export function getDashboardSalesGraphVisualContract(): DashboardSalesGraphVisualContract {

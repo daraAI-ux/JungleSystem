@@ -16,6 +16,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -153,19 +154,18 @@ function RoutineExpenseFormBody({
               </View>
 
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Jumlah (Rp)" required />
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={value =>
-                    controller.onChangeForm({ amountText: value })
+                <KolamSettingsWebFieldLabel label="Jumlah" required />
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onChangeForm({ amountText: String(value) })
                   }
                   placeholder="0"
-                  value={form.amountText}
+                  value={Number(form.amountText) || 0}
                 />
               </View>
 
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Dompet" />
+                <KolamSettingsWebFieldLabel label="Dompet" required={false} />
                 <KolamDropdownSelect
                   label="Dompet"
                   onChange={value =>
@@ -192,7 +192,7 @@ function RoutineExpenseFormBody({
               </View>
 
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Catatan" />
+                <KolamSettingsWebFieldLabel label="Catatan" required={false} />
                 <KolamFormTextField
                   multiline
                   onChangeText={value =>

@@ -22,6 +22,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -528,15 +529,14 @@ export function KolamLayananSubscriptionDetail({
                     }
                   />
                 </View>
-                <FieldShell label="Biaya transport default (Rp)">
-                  <KolamFormTextField
-                    mode="numeric"
-                    onChangeText={value =>
+                <FieldShell label="Biaya transport default">
+                  <KolamRupiahField
+                    onChangeValue={value =>
                       controller.onChangeContractForm({
-                        transportCostDefault: value.replace(/[^\d]/g, ''),
+                        transportCostDefault: String(value),
                       })
                     }
-                    value={form.transportCostDefault}
+                    value={Number(form.transportCostDefault) || 0}
                   />
                 </FieldShell>
                 <FieldShell label="Catatan">

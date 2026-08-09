@@ -3,6 +3,7 @@ import type {CartLine} from '../domain/pos';
 import {KolamChoiceSegment} from './kolam-choice-segment';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamListFrame} from './kolam-list-frame';
+import {KolamRupiahField} from './kolam-rupiah-field';
 import {cartRowStyles as styles} from './kolam-cart-row-styles';
 
 export function KolamCartRowDiscountControls({
@@ -31,13 +32,24 @@ export function KolamCartRowDiscountControls({
         selectedId={line.discountType}
         onSelect={discountType => onDiscountTypeChange(line.itemId, discountType)}
       />
-      <KolamFormTextField
-        value={String(line.discountAmount)}
-        onChangeText={value => onDiscountAmountChange(line.itemId, value)}
-        mode="numeric"
-        placeholder="0"
-        style={styles.lineDiscountInput}
-      />
+      {line.discountType === 'fixed' ? (
+        <KolamRupiahField
+          value={Number(line.discountAmount) || 0}
+          onChangeValue={value =>
+            onDiscountAmountChange(line.itemId, String(value))
+          }
+          placeholder="0"
+          style={styles.lineDiscountInput}
+        />
+      ) : (
+        <KolamFormTextField
+          value={String(line.discountAmount)}
+          onChangeText={value => onDiscountAmountChange(line.itemId, value)}
+          mode="numeric"
+          placeholder="0"
+          style={styles.lineDiscountInput}
+        />
+      )}
     </KolamListFrame>
   );
 }

@@ -1,4 +1,5 @@
 import { getKolamFileUrl } from '../lib/file-url';
+import { formatRupiah } from '../lib/money';
 import {
   KOLAM_CATALOG_DEFAULT_LOCALE,
   KOLAM_CATALOG_LOCALE_LABELS,
@@ -2225,7 +2226,7 @@ function formatCurrencyPlain(value: number) {
     return '-';
   }
 
-  return `Rp ${value.toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 function normalizeStatus(record: Record<string, unknown>) {
@@ -2556,7 +2557,6 @@ function createStableHash(value: unknown) {
 
   return String(hash);
 }
-
 
 
 

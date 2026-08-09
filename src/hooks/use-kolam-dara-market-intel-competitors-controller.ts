@@ -12,6 +12,7 @@ import {
   type KolamDaraMarketIntelCompetitorLink,
 } from '../domain/kolam-dara-market-intel';
 import {sanitizeApiErrorMessage} from '../lib/api-error';
+import {formatRupiah} from '../lib/money';
 import {
   deleteKolamDaraMarketIntelCompetitorLink,
   fetchKolamDaraMarketIntelActiveBrands,
@@ -235,7 +236,7 @@ export function useKolamDaraMarketIntelCompetitorsController(
         if (result.ok) {
           setNotice(
             result.price != null
-              ? `Rp ${Math.round(result.price).toLocaleString('id-ID')}`
+              ? formatRupiah(result.price)
               : 'Fetch OK',
           );
         } else {

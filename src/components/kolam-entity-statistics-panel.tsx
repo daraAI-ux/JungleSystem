@@ -10,6 +10,7 @@ import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamContentFrame } from './kolam-content-frame';
+import { formatRupiah } from '../lib/money';
 
 export function KolamEntityStatisticsPanel({
   description,
@@ -203,11 +204,7 @@ function StatisticsCompactCard({
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(Number(value) || 0);
+  return formatRupiah(Number(value) || 0);
 }
 
 function formatNumber(value: number) {

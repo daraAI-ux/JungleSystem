@@ -22,7 +22,7 @@ import {
 } from '../domain/kolam-purchase-order';
 import { KOLAM_SUPPLIER_ROOT } from '../domain/kolam-vendor';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
-import { formatRupiah, formatRupiahAccounting } from '../lib/money';
+import { formatRupiah } from '../lib/money';
 import { getKolamFileUrl } from '../lib/file-url';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
@@ -823,7 +823,7 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
       {form.downPaymentEnabled ? (
         <View style={styles.formSplitRow}>
           <View style={styles.formSplitCell}>
-            <FieldShell label={form.downPaymentInputType === 'percent' ? 'Nilai DP (%)' : 'Nilai DP (Rp)'}>
+            <FieldShell label={form.downPaymentInputType === 'percent' ? 'Nilai DP (%)' : 'Nilai DP'}>
               <View style={styles.segmentRow}>
                 <KolamButton
                   intent={form.downPaymentInputType === 'percent' ? 'primary' : 'outline'}
@@ -1011,7 +1011,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
 
               <View style={[styles.poItemSubtotalBlock, styles.poItemCellSubtotal]}>
                 <Text style={styles.poItemSubtotalText}>
-                  {formatRupiahAccounting(subtotal)}
+                  {formatRupiah(subtotal)}
                 </Text>
               </View>
 

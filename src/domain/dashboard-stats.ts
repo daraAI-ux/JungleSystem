@@ -1,4 +1,4 @@
-import {formatRupiahCompact} from '../lib/money';
+import {formatRupiahCompactCurrency} from '../lib/money';
 import type {
   KolamDashboardSourceBreakdown,
   KolamDashboardSummary,
@@ -346,7 +346,7 @@ function formatSummaryValue(
     return `${value.toLocaleString('id-ID')} order`;
   }
 
-  return `Rp ${formatRupiahCompact(value)}`;
+  return formatRupiahCompactCurrency(value);
 }
 
 function formatFallbackChannelValue(
@@ -360,7 +360,7 @@ function formatFallbackChannelValue(
     return `${channelValue.toLocaleString('id-ID')} order`;
   }
 
-  return formatRupiahCompact(channelValue);
+    return formatRupiahCompactCurrency(channelValue);
 }
 
 function getBreakdownTitle(metric: KolamDashboardSummaryMetric) {

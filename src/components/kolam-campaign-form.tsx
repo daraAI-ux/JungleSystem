@@ -20,6 +20,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -168,24 +169,30 @@ export function KolamCampaignForm({
         <FieldShell
           label={
             form.discountType === 'fixed'
-              ? 'Nominal Diskon (Rp)'
+              ? 'Nominal Diskon'
               : 'Persentase Diskon (%)'
           }
           required
         >
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onChangeForm({ discountValue: value })
-            }
-            placeholder={
-              form.discountType === 'fixed'
-                ? 'Masukkan nominal (mis. 5000)'
-                : 'Masukkan persentase (mis. 10)'
-            }
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.discountValue}
-          />
+          {form.discountType === 'fixed' ? (
+            <KolamRupiahField
+              onChangeValue={value =>
+                controller.onChangeForm({ discountValue: String(value) })
+              }
+              placeholder="Masukkan nominal"
+              value={Number(form.discountValue) || 0}
+            />
+          ) : (
+            <KolamFormTextField
+              mode="numeric"
+              onChangeText={value =>
+                controller.onChangeForm({ discountValue: value })
+              }
+              placeholder="Masukkan persentase (mis. 10)"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.discountValue}
+            />
+          )}
         </FieldShell>
       </CampaignFormSection>
 

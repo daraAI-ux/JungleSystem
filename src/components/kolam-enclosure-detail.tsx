@@ -31,6 +31,7 @@ import {
   type KolamEnclosureStatisticsEvent,
   type KolamSpeciesTaxonomyProduction,
 } from '../domain/kolam-enclosure';
+import { formatRupiah } from '../lib/money';
 import type {KolamBarcodeLabelItem} from '../domain/kolam-barcode';
 import type {KolamSpecies} from '../domain/kolam-species';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -59,6 +60,7 @@ import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline'
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamFormTextField} from './kolam-form-text-field';
+import {KolamRupiahField} from './kolam-rupiah-field';
 import {KolamHtmlContent} from './kolam-html-content';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -1535,12 +1537,11 @@ function EnclosureSaleListingOperation({
       ) : null}
       {showListForm ? (
         <View style={styles.operationGrid}>
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={setPrice}
-            placeholder="Harga jual (Rp)"
+          <KolamRupiahField
+            onChangeValue={value => setPrice(String(value))}
+            placeholder="Harga jual"
             style={styles.operationInput}
-            value={price}
+            value={Number(price) || 0}
           />
           <KolamButton
             disabled={
@@ -2718,11 +2719,7 @@ function countProductionBirthQty(enclosure: KolamEnclosure) {
 }
 
 function formatKolamCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(Number(value) || 0);
+  return formatRupiah(Number(value) || 0);
 }
 
 function getStatisticsHealthIntent(tone: string) {

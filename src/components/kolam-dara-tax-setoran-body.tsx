@@ -30,6 +30,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamRupiahField} from './kolam-rupiah-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 
 /** FE `TaxSettlementPanel` (tab Setoran / pelunasan). */
@@ -247,8 +248,8 @@ export function KolamDaraTaxSetoranBody() {
                 value={title}
               />
               <Field
-                keyboardType="numeric"
-                label="Jumlah (Rp)"
+                currency
+                label="Jumlah"
                 onChangeText={setAmount}
                 value={amount}
               />
@@ -302,6 +303,7 @@ export function KolamDaraTaxSetoranBody() {
 }
 
 function Field({
+  currency,
   keyboardType,
   label,
   multiline,
@@ -309,6 +311,7 @@ function Field({
   placeholder,
   value,
 }: {
+  currency?: boolean;
   keyboardType?: 'numeric';
   label: string;
   multiline?: boolean;
@@ -319,17 +322,26 @@ function Field({
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        numberOfLines={multiline ? 3 : 1}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={V.colors.mutedFg}
-        style={[styles.input, multiline ? styles.inputMultiline : null]}
-        value={value}
-      />
+      {currency ? (
+        <KolamRupiahField
+          accessibilityLabel={label}
+          onChangeValue={nextValue => onChangeText(String(nextValue))}
+          placeholder={placeholder}
+          value={Number(value) || 0}
+        />
+      ) : (
+        <TextInput
+          accessibilityLabel={label}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          numberOfLines={multiline ? 3 : 1}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={V.colors.mutedFg}
+          style={[styles.input, multiline ? styles.inputMultiline : null]}
+          value={value}
+        />
+      )}
     </View>
   );
 }

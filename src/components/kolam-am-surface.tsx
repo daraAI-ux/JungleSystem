@@ -14,7 +14,7 @@ import {
 } from '../domain/app-shell';
 import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {formatRupiah} from '../lib/money';
+import {formatRupiah, formatRupiahCompactCurrency} from '../lib/money';
 import {getAccessToken} from '../lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
@@ -4101,7 +4101,7 @@ function AmTransfersPage({
       return;
     }
     if (parsedTransferAmount !== undefined && parsedTransferAmount > 0 && parsedTransferAmount < 10000) {
-      setError('Minimal amount Rp 10.000');
+      setError(`Minimal amount ${formatRupiah(10000)}`);
       return;
     }
     if (isInterBankTransfer && !formTransferMethod) {
@@ -6985,10 +6985,7 @@ function formatShortDate(value: string) {
 }
 
 function formatCompactRupiah(value: number) {
-  if (value >= 1_000_000_000) return `Rp${Math.round(value / 1_000_000_000)}M`;
-  if (value >= 1_000_000) return `Rp${Math.round(value / 1_000_000)}jt`;
-  if (value >= 1_000) return `Rp${Math.round(value / 1_000)}rb`;
-  return formatRupiah(value);
+  return formatRupiahCompactCurrency(value);
 }
 
 function formatAmDuration(value: number | null | undefined) {

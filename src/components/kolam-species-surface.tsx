@@ -27,6 +27,7 @@ import {
   type KolamSpeciesVendorPriceFormRow,
 } from '../domain/kolam-species';
 import { getKolamFileUrl } from '../lib/file-url';
+import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import type { KolamMarketplacePlatform } from '../services/kolam-marketplace-sync-api';
@@ -4397,7 +4398,7 @@ function SpeciesVariantFormCard({
     : 0;
   const stockValue = Number(liveVariant?.stock ?? 0);
   const priceValue = Number(variant.priceToSell || 0);
-  const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : 'Rp 0';
+  const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : formatRupiah(0);
   const vendorCost = getCheapestSpeciesVendorCost(variant.vendorPrices);
   const displayCost = vendorCost ?? parseCurrencyInput(variant.price);
   const skuLabel = variant.sku?.trim() || '-';
@@ -7212,27 +7213,7 @@ function getCheapestSpeciesVendorCost(rows: KolamSpeciesVendorPriceFormRow[]) {
   return Math.min(...totals);
 }
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(value || 0);
-}
-
-function formatPriceRb(value: number) {
-  const parsed = Math.round(Number(value) || 0);
-  if (parsed <= 0) {
-    return '';
-  }
-
-  const thousands = parsed / 1000;
-  if (Number.isInteger(thousands)) {
-    return `${formatNumber(thousands)} rb`;
-  }
-
-  return `${thousands.toLocaleString('id-ID', {
-    maximumFractionDigits: 1,
-  })} rb`;
+  return formatRupiah(value);
 }
 
 function getSpeciesListPriceLabel(item: KolamSpecies) {
@@ -7249,14 +7230,14 @@ function getSpeciesListPriceLabel(item: KolamSpecies) {
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     if (minPrice === maxPrice) {
-      return formatPriceRb(minPrice);
+      return formatCurrency(minPrice);
     }
 
-    return `${formatPriceRb(minPrice)} -\n${formatPriceRb(maxPrice)}`;
+    return `${formatCurrency(minPrice)} -\n${formatCurrency(maxPrice)}`;
   }
 
   const priceToSell = getSpeciesRootListPriceToSell(item);
-  return priceToSell > 0 ? formatPriceRb(priceToSell) : 'Belum ada harga';
+  return priceToSell > 0 ? formatCurrency(priceToSell) : 'Belum ada harga';
 }
 
 function getSpeciesRootListPriceToSell(item: KolamSpecies) {

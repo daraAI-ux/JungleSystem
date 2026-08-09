@@ -12,6 +12,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -180,14 +181,13 @@ export function KolamProyekQuotationForm({
           />
         </Field>
 
-        <Field label="Nilai kontrak (Rp)" required>
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onFormChange({ contractValueText: value })
+        <Field label="Nilai kontrak" required>
+          <KolamRupiahField
+            onChangeValue={value =>
+              controller.onFormChange({ contractValueText: String(value) })
             }
             placeholder="0"
-            value={form.contractValueText}
+            value={Number(form.contractValueText) || 0}
           />
         </Field>
 
@@ -232,18 +232,28 @@ export function KolamProyekQuotationForm({
               label={
                 form.minDpType === 'percentage'
                   ? 'DP minimum (%)'
-                  : 'DP minimum (Rp)'
+                  : 'DP minimum'
               }
               required
             >
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  controller.onFormChange({ minDpValueText: value })
-                }
-                placeholder={form.minDpType === 'percentage' ? '50' : '0'}
-                value={form.minDpValueText}
-              />
+              {form.minDpType === 'percentage' ? (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    controller.onFormChange({ minDpValueText: value })
+                  }
+                  placeholder="50"
+                  value={form.minDpValueText}
+                />
+              ) : (
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onFormChange({ minDpValueText: String(value) })
+                  }
+                  placeholder="0"
+                  value={Number(form.minDpValueText) || 0}
+                />
+              )}
               {contractValue > 0 ? (
                 <Text style={styles.hint}>
                   ≈ {formatRupiah(dpPreview)} · min.{' '}
@@ -344,14 +354,23 @@ export function KolamProyekQuotationForm({
             </Field>
           </View>
           <View style={styles.col}>
-            <Field label={form.daType === 'percentage' ? 'Nilai DA (%)' : 'Nilai DA (Rp)'}>
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  controller.onFormChange({ daValueText: value })
-                }
-                value={form.daValueText}
-              />
+            <Field label={form.daType === 'percentage' ? 'Nilai DA (%)' : 'Nilai DA'}>
+              {form.daType === 'percentage' ? (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    controller.onFormChange({ daValueText: value })
+                  }
+                  value={form.daValueText}
+                />
+              ) : (
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onFormChange({ daValueText: String(value) })
+                  }
+                  value={Number(form.daValueText) || 0}
+                />
+              )}
             </Field>
           </View>
         </View>
@@ -380,16 +399,25 @@ export function KolamProyekQuotationForm({
               label={
                 form.designerType === 'percentage'
                   ? 'Nilai PIC (%)'
-                  : 'Nilai PIC (Rp)'
+                  : 'Nilai PIC'
               }
             >
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  controller.onFormChange({ designerValueText: value })
-                }
-                value={form.designerValueText}
-              />
+              {form.designerType === 'percentage' ? (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    controller.onFormChange({ designerValueText: value })
+                  }
+                  value={form.designerValueText}
+                />
+              ) : (
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onFormChange({ designerValueText: String(value) })
+                  }
+                  value={Number(form.designerValueText) || 0}
+                />
+              )}
             </Field>
           </View>
         </View>

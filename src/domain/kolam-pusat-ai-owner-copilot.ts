@@ -3,6 +3,8 @@
  * SoT: FE `OwnerCopilotDashboardPanel` + BE `getOwnerCopilotDashboard`.
  */
 
+import {formatRupiah} from '../lib/money';
+
 export type KolamOwnerCopilotNightOpsStatus =
   | 'ok'
   | 'fail'
@@ -86,7 +88,7 @@ export function formatKolamOwnerCopilotIdr(value: unknown) {
   if (!Number.isFinite(n)) {
     return '—';
   }
-  return `Rp ${Math.round(n).toLocaleString('id-ID')}`;
+  return formatRupiah(n);
 }
 
 export function formatKolamOwnerCopilotWib(iso: string | null | undefined) {

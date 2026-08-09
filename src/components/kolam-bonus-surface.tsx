@@ -21,6 +21,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamListTableComposition } from './kolam-list-table-composition';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -282,14 +283,13 @@ function BonusCreatePage({
             </View>
 
             <View style={settingsWebFormStyles.settingsWebFormField}>
-              <KolamSettingsWebFieldLabel label="Jumlah (Rp)" required />
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  controller.onCreateDraftChange({ amount: value })
+              <KolamSettingsWebFieldLabel label="Jumlah" required />
+              <KolamRupiahField
+                onChangeValue={value =>
+                  controller.onCreateDraftChange({ amount: String(value) })
                 }
                 placeholder="0"
-                value={controller.createDraft.amount}
+                value={Number(controller.createDraft.amount) || 0}
               />
             </View>
 

@@ -17,6 +17,7 @@ import {
 } from '../domain/kolam-stock-transaction';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { getKolamFileUrl } from '../lib/file-url';
+import { formatRupiah } from '../lib/money';
 import {
   useKolamStockTransactionController,
   type KolamStockTransactionController,
@@ -1419,7 +1420,7 @@ function formatSigned(value: number) {
 }
 
 function formatCurrency(value: number) {
-  return `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+  return formatRupiah(Number(value || 0));
 }
 
 function formatDateTime(value: string) {

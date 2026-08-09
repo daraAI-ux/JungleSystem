@@ -1,4 +1,5 @@
 import { getKolamFileUrl } from '../lib/file-url';
+import { formatRupiah } from '../lib/money';
 
 export type KolamStockTransactionType = 'in' | 'out' | 'adjust';
 export type KolamStockTransactionStatus = 'unverified' | 'verified';
@@ -1120,7 +1121,7 @@ function formatWalletDebitSummary(wallet: KolamStockTransactionWallet) {
 }
 
 function formatWalletAmount(amount: number) {
-  return `Rp ${Math.round(Number(amount) || 0).toLocaleString('id-ID')}`;
+  return formatRupiah(Number(amount) || 0);
 }
 
 function normalizeStatus(value: string): KolamStockTransactionStatus | '' {

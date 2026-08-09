@@ -6,6 +6,7 @@ import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {settingsWebFormStyles} from './kolam-settings-web-form-styles';
+import {formatRupiah} from '../lib/money';
 
 export interface KolamGrocerPricingTierEditorRow {
   id: string;
@@ -182,11 +183,7 @@ function getTierSummary(row: KolamGrocerPricingTierEditorRow) {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(value || 0);
+  return formatRupiah(value || 0);
 }
 function toNumber(value: string) {
   const parsed = Number(value);

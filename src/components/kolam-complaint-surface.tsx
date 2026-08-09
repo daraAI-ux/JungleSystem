@@ -77,6 +77,7 @@ import {
   type KolamFilterPanelAnchor,
 } from './kolam-filter-panel-anchor';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -1459,11 +1460,10 @@ function KolamComplaintWorkflowPanel({
             value={decision}
           />
           {needsRefundAmount ? (
-            <KolamFormTextField
-              mode="numeric"
-              onChangeText={setRefundAmount}
-              placeholder="Jumlah refund (Rp)"
-              value={refundAmount}
+            <KolamRupiahField
+              onChangeValue={value => setRefundAmount(String(value))}
+              placeholder="Jumlah refund"
+              value={Number(refundAmount) || 0}
             />
           ) : null}
           <KolamFormTextField

@@ -4,6 +4,7 @@
  */
 
 import type { KolamBadgeIntent } from './kolam-badge';
+import { formatRupiah } from '../lib/money';
 
 export const KOLAM_ROUTINE_EXPENSE_ROOT = '/routine-expenses';
 export const KOLAM_UNEXPECTED_EXPENSE_ROOT = '/unexpected-expense';
@@ -411,11 +412,7 @@ export function buildKolamAssetPurchaseHistoryItems(
 }
 
 function formatAssetPurchaseHistoryMoney(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+  return formatRupiah(value || 0);
 }
 
 export function createEmptyKolamAssetPurchaseForm(

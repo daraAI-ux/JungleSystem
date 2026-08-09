@@ -3,6 +3,8 @@
  * SoT: FE bulk-pricing-tools-panel + `/dara-pricing/equipment/*`.
  */
 
+import { formatRupiah } from '../lib/money';
+
 export type KolamDaraPricingEquipmentOperation =
   | 'kolam'
   | 'marketplace_db'
@@ -85,11 +87,7 @@ export function formatKolamDaraPricingEquipmentIdr(value?: number | null) {
   if (value == null || !Number.isFinite(value) || value <= 0) {
     return '—';
   }
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatRupiah(value);
 }
 
 export function buildKolamDaraPricingEquipmentConsoleLines(

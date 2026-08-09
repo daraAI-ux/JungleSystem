@@ -26,6 +26,7 @@ import {
   type KolamUserRoleOption,
 } from '../domain/kolam-user';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {formatRupiah, formatRupiahCompactCurrency} from '../lib/money';
 import {
   hasSettingsPermission,
   isSettingsSuperAdminRoleKey,
@@ -2991,11 +2992,7 @@ function formatUserCurrency(value?: number | null) {
     return '-';
   }
 
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(value);
+  return formatRupiah(value);
 }
 
 function formatPayrollStatus(value?: string | null) {
@@ -3502,9 +3499,9 @@ function formatAttendanceStatus(value?: string | null) {
     case 'present':
       return 'Hadir';
     case 'late_tier2':
-      return 'Telat (Rp 50rb)';
+      return `Telat (${formatRupiahCompactCurrency(50000)})`;
     case 'late_tier3':
-      return 'Telat >=2j (Rp 100rb)';
+      return `Telat >=2j (${formatRupiahCompactCurrency(100000)})`;
     case 'absent':
       return 'Absen';
     case 'holiday':

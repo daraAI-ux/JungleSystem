@@ -55,6 +55,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import {
   KolamListTableComposition,
@@ -1217,22 +1218,33 @@ function KolamSalesOpsCreateForm({
                       />
                       <View style={styles.itemDiscountAmount}>
                         {item.discountType === 'fixed' ? (
-                          <Text style={styles.itemDiscountPrefix}>Rp</Text>
-                        ) : null}
-                        <KolamFormTextField
-                          mode="numeric"
-                          onChangeText={discountAmount =>
-                            controller.onChangeCreateItem(item.key, {
-                              discountAmount,
-                            })
-                          }
-                          placeholder="0"
-                          style={styles.itemPlainInput}
-                          value={item.discountAmount}
-                        />
-                        {item.discountType === 'percentage' ? (
-                          <Text style={styles.itemDiscountPrefix}>%</Text>
-                        ) : null}
+                          <KolamRupiahField
+                            onChangeValue={discountAmount =>
+                              controller.onChangeCreateItem(item.key, {
+                                discountAmount: String(discountAmount),
+                              })
+                            }
+                            placeholder="0"
+                            inputStyle={styles.itemPlainInput}
+                            style={styles.itemDiscountRupiahField}
+                            value={Number(item.discountAmount) || 0}
+                          />
+                        ) : (
+                          <>
+                            <KolamFormTextField
+                              mode="numeric"
+                              onChangeText={discountAmount =>
+                                controller.onChangeCreateItem(item.key, {
+                                  discountAmount,
+                                })
+                              }
+                              placeholder="0"
+                              style={styles.itemPlainInput}
+                              value={item.discountAmount}
+                            />
+                            <Text style={styles.itemDiscountPrefix}>%</Text>
+                          </>
+                        )}
                       </View>
                     </View>
                   </View>
@@ -1317,14 +1329,13 @@ function KolamSalesOpsCreateForm({
         <View style={styles.formBottomCol}>
           <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
             <Text style={styles.sectionTitle}>Total biaya pengiriman</Text>
-            <FieldShell label="Jumlah (Rp)">
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={shippingCost =>
-                  controller.onChangeForm({ shippingCost })
+            <FieldShell label="Jumlah">
+              <KolamRupiahField
+                onChangeValue={shippingCost =>
+                  controller.onChangeForm({ shippingCost: String(shippingCost) })
                 }
                 placeholder="0"
-                value={form.shippingCost}
+                value={Number(form.shippingCost) || 0}
               />
             </FieldShell>
             <Text style={styles.shippingTotalHint}>
@@ -2783,6 +2794,12 @@ const styles = StyleSheet.create({
     minWidth: 36,
     paddingHorizontal: 0,
     paddingVertical: 0,
+  },
+  itemDiscountRupiahField: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    flex: 1,
+    minWidth: 36,
   },
   itemControlFill: {
     width: '100%',

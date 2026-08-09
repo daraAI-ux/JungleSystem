@@ -4,6 +4,7 @@ import type {
   KolamDashboardActionRequiredReason,
   KolamDashboardActionRequiredSale,
 } from '../services/kolam-api';
+import {formatRupiahCompactCurrency} from '../lib/money';
 import type {UnifiedDataset} from '../services/unified-data';
 import type {SaleSummary} from './pos';
 
@@ -473,19 +474,7 @@ function formatDateId(iso: string) {
 }
 
 function formatRupiahShort(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `Rp ${(value / 1_000_000_000).toFixed(1)}M`;
-  }
-
-  if (value >= 1_000_000) {
-    return `Rp ${(value / 1_000_000).toFixed(1)}Jt`;
-  }
-
-  if (value >= 1_000) {
-    return `Rp ${(value / 1_000).toFixed(1)}Rb`;
-  }
-
-  return `Rp ${value.toLocaleString('id-ID')}`;
+  return formatRupiahCompactCurrency(value);
 }
 
 function formatPaymentStatus(status: string) {

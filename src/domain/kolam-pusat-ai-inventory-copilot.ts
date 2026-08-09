@@ -4,6 +4,7 @@
  */
 
 import {formatKolamOwnerCopilotWib} from './kolam-pusat-ai-owner-copilot';
+import {formatRupiah} from '../lib/money';
 
 export const KOLAM_INVENTORY_COPILOT_DESCRIPTION =
   'Gabungan kesehatan stok (SKU) & antrian gudang — read-only. Koreksi via Products / Stock Opname / PO / Packing.';
@@ -127,7 +128,7 @@ export function formatKolamInventoryCopilotIdr(value?: number | null) {
   if (value == null || !Number.isFinite(value)) {
     return '—';
   }
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 /** Map FE web link paths to RNW routes when known. */

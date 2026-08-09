@@ -1,4 +1,5 @@
 import { getKolamFileUrl } from '../lib/file-url';
+import { formatRupiah } from '../lib/money';
 
 export const KOLAM_SOURCE_ROOT = '/source';
 
@@ -578,11 +579,7 @@ function formatUserLabel(value: unknown): string {
 }
 
 function formatIdr(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount);
+  return formatRupiah(amount);
 }
 
 function unwrapData(payload: unknown): unknown {

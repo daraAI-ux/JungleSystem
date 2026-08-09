@@ -43,6 +43,7 @@ import {
   type KolamEnclosureStatisticsEvent,
   type KolamSpeciesTaxonomyProduction,
 } from '../domain/kolam-enclosure';
+import { formatRupiah } from '../lib/money';
 import type {KolamBarcodeLabelItem} from '../domain/kolam-barcode';
 import type {KolamSpecies} from '../domain/kolam-species';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
@@ -2508,11 +2509,7 @@ function collectAllocationEnclosureLinks(
 
 
 function formatKolamCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(Number(value) || 0);
+  return formatRupiah(Number(value) || 0);
 }
 
 function getStatisticsHealthIntent(tone: string) {

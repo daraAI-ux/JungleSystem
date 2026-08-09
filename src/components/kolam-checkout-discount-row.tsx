@@ -4,6 +4,7 @@ import {KolamChoiceSegment} from './kolam-choice-segment';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamListFrame} from './kolam-list-frame';
+import {KolamRupiahField} from './kolam-rupiah-field';
 import {checkoutSummaryStyles as styles} from './kolam-checkout-summary-styles';
 
 export function KolamCheckoutDiscountRow({
@@ -37,13 +38,22 @@ export function KolamCheckoutDiscountRow({
           selectedId={checkout.globalDiscountType}
           onSelect={onGlobalDiscountTypeChange}
         />
-        <KolamFormTextField
-          value={String(checkout.globalDiscount)}
-          onChangeText={onGlobalDiscountChange}
-          mode="numeric"
-          placeholder="0"
-          style={styles.adjustmentInput}
-        />
+        {checkout.globalDiscountType === 'fixed' ? (
+          <KolamRupiahField
+            value={Number(checkout.globalDiscount) || 0}
+            onChangeValue={value => onGlobalDiscountChange(String(value))}
+            placeholder="0"
+            style={styles.adjustmentInput}
+          />
+        ) : (
+          <KolamFormTextField
+            value={String(checkout.globalDiscount)}
+            onChangeText={onGlobalDiscountChange}
+            mode="numeric"
+            placeholder="0"
+            style={styles.adjustmentInput}
+          />
+        )}
       </KolamListFrame>
     </>
   );

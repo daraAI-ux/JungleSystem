@@ -3,6 +3,8 @@
  * SoT: DA-Dara-Plugin market pages + FE layout tabs + BE `/dara-market-intel/*`.
  */
 
+import {formatRupiah} from '../lib/money';
+
 export const KOLAM_DARA_MARKET_INTEL_ROOT = '/campaign/dara-market-intel';
 export const KOLAM_DARA_MARKET_INTEL_JOBS_HREF = '/pusat-ai';
 
@@ -417,7 +419,7 @@ export function formatKolamDaraMarketIntelIdr(value?: number | null) {
   if (value == null || !Number.isFinite(value)) {
     return '—';
   }
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 /** FE `taxSourceLabel`. */
@@ -596,7 +598,7 @@ function formatMetricIdr(value?: number | null) {
   if (value == null || !Number.isFinite(value) || value === 0) {
     return null;
   }
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 function formatMetricPct(value?: number | null) {

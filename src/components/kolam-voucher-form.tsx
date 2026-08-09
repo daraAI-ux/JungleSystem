@@ -19,6 +19,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -197,36 +198,43 @@ export function KolamVoucherForm({
           label={
             form.discountType === 'percentage'
               ? 'Persentase Diskon (%)'
-              : 'Nominal Diskon (Rp)'
+              : 'Nominal Diskon'
           }
         >
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onChangeForm('discountValue', value)
-            }
-            value={form.discountValue}
-          />
-        </LabeledField>
-        {form.discountType === 'percentage' ? (
-          <LabeledField label="Batas Maksimum Diskon (Rp)">
+          {form.discountType === 'percentage' ? (
             <KolamFormTextField
               mode="numeric"
               onChangeText={value =>
-                controller.onChangeForm('maxDiscountAmount', value)
+                controller.onChangeForm('discountValue', value)
               }
-              value={form.maxDiscountAmount}
+              value={form.discountValue}
+            />
+          ) : (
+            <KolamRupiahField
+              onChangeValue={value =>
+                controller.onChangeForm('discountValue', String(value))
+              }
+              value={Number(form.discountValue) || 0}
+            />
+          )}
+        </LabeledField>
+        {form.discountType === 'percentage' ? (
+          <LabeledField label="Batas Maksimum Diskon">
+            <KolamRupiahField
+              onChangeValue={value =>
+                controller.onChangeForm('maxDiscountAmount', String(value))
+              }
+              value={Number(form.maxDiscountAmount) || 0}
             />
             <Text style={styles.hint}>0 = tanpa batas maksimum.</Text>
           </LabeledField>
         ) : null}
-        <LabeledField label="Minimum Pembelian (Rp)">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onChangeForm('minPurchaseAmount', value)
+        <LabeledField label="Minimum Pembelian">
+          <KolamRupiahField
+            onChangeValue={value =>
+              controller.onChangeForm('minPurchaseAmount', String(value))
             }
-            value={form.minPurchaseAmount}
+            value={Number(form.minPurchaseAmount) || 0}
           />
           <Text style={styles.hint}>0 = tanpa minimum pembelian.</Text>
         </LabeledField>
@@ -461,7 +469,7 @@ function LabeledField({
 }) {
   return (
     <View style={settingsWebFormStyles.settingsWebFormField}>
-      <KolamSettingsWebFieldLabel label={label} />
+      <KolamSettingsWebFieldLabel label={label} required={false} />
       {children}
     </View>
   );

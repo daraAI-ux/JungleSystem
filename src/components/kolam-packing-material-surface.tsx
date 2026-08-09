@@ -1730,7 +1730,7 @@ function VendorPriceRow({
             },
             {
               id: 'total',
-              text: `Total HPP: ${formatPackingCurrency(totalCost)}`,
+              text: `Total HPP: ${formatRupiah(totalCost)}`,
               style: styles.fieldHint,
             },
           ]}
@@ -1800,10 +1800,6 @@ function VendorPriceRow({
       />
     </View>
   );
-}
-
-function formatPackingCurrency(value: number) {
-  return formatRupiah(value);
 }
 
 function parsePackingNumberInput(value: string) {

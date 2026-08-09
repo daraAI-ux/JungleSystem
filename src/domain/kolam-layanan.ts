@@ -4,6 +4,8 @@
  * Batch 1: route helpers + service catalog list normalizers.
  */
 
+import {formatRupiah} from '../lib/money';
+
 export const KOLAM_LAYANAN_ROOT = '/layanan';
 
 export const KOLAM_LAYANAN_LIST_TABS = [
@@ -1094,7 +1096,7 @@ export function calcKolamLayananVolumeM3FromUnitLabel(
 }
 
 export function formatKolamLayananIdr(value: number) {
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 export interface KolamLayananVoucherAuditEntry {
@@ -1465,7 +1467,7 @@ export function getKolamLayananStandardPrice(service: KolamLayananService) {
 }
 
 function formatRupiahAmount(value: number) {
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 function formatCompactIdr(value: number) {

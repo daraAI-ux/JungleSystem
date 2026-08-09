@@ -1,3 +1,5 @@
+import { formatRupiah } from '../lib/money';
+
 export interface KolamDetailListItem {
   badge?: string;
   meta?: string;
@@ -108,11 +110,7 @@ function asDetailRecord(value: unknown): Record<string, unknown> {
 }
 
 function formatDetailMoney(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(value);
+  return formatRupiah(value);
 }
 
 function stripHtmlText(value: string) {

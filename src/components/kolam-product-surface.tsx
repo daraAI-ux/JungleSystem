@@ -12,6 +12,7 @@ import {SvgXml} from 'react-native-svg';
 import { appConfig } from '../config/app';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
+import { formatRupiah } from '../lib/money';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
 import {
   getCustomFieldTypeLabel,
@@ -3761,7 +3762,7 @@ function ProductVariantFormCard({
   const vendorCost = getCheapestProductVendorCost(variant.vendorPrices);
   const displayCost = vendorCost ?? parseNumberInput(variant.price);
   const priceValue = parseNumberInput(variant.priceToSell);
-  const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : 'Rp 0';
+  const priceLabel = priceValue > 0 ? formatCurrency(priceValue) : formatRupiah(0);
   const liveVariant = controller.selectedProduct?.variants.find(
     item => item.id === variant.id,
   );
@@ -9848,7 +9849,7 @@ function formatCurrency(value: number) {
     return '-';
   }
 
-  return `Rp ${value.toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 function parseNumberInput(value: string) {

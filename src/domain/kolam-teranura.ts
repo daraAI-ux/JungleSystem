@@ -1,5 +1,6 @@
 import type { KolamBrand } from './kolam-brand';
 import type { KolamCategory } from './kolam-category';
+import { formatRupiah } from '../lib/money';
 
 export interface KolamTeranuraVariant {
   id: string;
@@ -738,8 +739,8 @@ function normalizeShippingMethods(
       pricingPrice,
       priceLabel:
         pricingType === 'per_kg'
-          ? `Rp ${pricingPrice.toLocaleString('id-ID')}/kg`
-          : `Rp ${pricingPrice.toLocaleString('id-ID')} (fixed)`,
+          ? `${formatRupiah(pricingPrice)}/kg`
+          : `${formatRupiah(pricingPrice)} (fixed)`,
       etaLabel:
         minDays === maxDays
           ? `${minDays || '-'} hari`

@@ -46,6 +46,7 @@ import { KolamDetailTermsTemplatesPanel } from './kolam-detail-more-panels';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamHtmlContent } from './kolam-html-content';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import {
@@ -1108,44 +1109,34 @@ function KolamLayananServiceForm({
       </FormSection>
 
       <FormSection description="Harga dasar dan harga per volume/jarak." title="Harga">
-        <FieldShell label="Harga dasar (Rp)">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value => controller.onChangeForm({ price: value })}
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.price}
+        <FieldShell label="Harga dasar">
+          <KolamRupiahField
+            onChangeValue={value => controller.onChangeForm({ price: String(value) })}
+            value={Number(form.price) || 0}
           />
         </FieldShell>
         <FieldShell label="Jual /m³">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value => controller.onChangeForm({ priceM3: value })}
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.priceM3}
+          <KolamRupiahField
+            onChangeValue={value => controller.onChangeForm({ priceM3: String(value) })}
+            value={Number(form.priceM3) || 0}
           />
         </FieldShell>
         <FieldShell label="Jual /km">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value => controller.onChangeForm({ priceKm: value })}
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.priceKm}
+          <KolamRupiahField
+            onChangeValue={value => controller.onChangeForm({ priceKm: String(value) })}
+            value={Number(form.priceKm) || 0}
           />
         </FieldShell>
         <FieldShell label="HPP /m³">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value => controller.onChangeForm({ costM3: value })}
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.costM3}
+          <KolamRupiahField
+            onChangeValue={value => controller.onChangeForm({ costM3: String(value) })}
+            value={Number(form.costM3) || 0}
           />
         </FieldShell>
         <FieldShell label="HPP /km">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value => controller.onChangeForm({ costKm: value })}
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.costKm}
+          <KolamRupiahField
+            onChangeValue={value => controller.onChangeForm({ costKm: String(value) })}
+            value={Number(form.costKm) || 0}
           />
         </FieldShell>
       </FormSection>
@@ -1182,18 +1173,27 @@ function KolamLayananServiceForm({
             <FieldShell
               label={
                 form.commissionType === 'fixed'
-                  ? 'Nilai komisi (Rp)'
+                  ? 'Nilai komisi'
                   : 'Nilai komisi (%)'
               }
             >
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  controller.onChangeForm({ commissionValue: value })
-                }
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.commissionValue}
-              />
+              {form.commissionType === 'fixed' ? (
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onChangeForm({ commissionValue: String(value) })
+                  }
+                  value={Number(form.commissionValue) || 0}
+                />
+              ) : (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    controller.onChangeForm({ commissionValue: value })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.commissionValue}
+                />
+              )}
             </FieldShell>
           </>
         ) : null}

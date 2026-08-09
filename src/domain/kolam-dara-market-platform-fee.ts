@@ -3,6 +3,8 @@
  * SoT: DA-Dara-Plugin platform-fee-api + PlatformFeeMonitorPanel / KalkulasiTab.
  */
 
+import { formatRupiah } from '../lib/money';
+
 export type KolamDaraMarketPlatformId = 'shopee' | 'tokopedia';
 
 export type KolamDaraMarketPlatformFeePrograms = {
@@ -155,11 +157,7 @@ export function formatKolamDaraMarketPlatformFeeIdr(value?: number | null) {
   if (value == null || !Number.isFinite(value)) {
     return '—';
   }
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatRupiah(value);
 }
 
 export function formatKolamDaraMarketPlatformFeeCheckedAt(iso?: string | null) {

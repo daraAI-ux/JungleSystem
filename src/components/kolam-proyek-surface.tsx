@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type DimensionValue,
 } from 'react-native';
 import {
   buildKolamProyekActivityEntries,
@@ -65,6 +66,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { containsHtmlMarkup, KolamHtmlContent } from './kolam-html-content';
 import { openKolamImagePreview } from './kolam-image-preview-dialog';
 import {
@@ -516,7 +518,7 @@ function KolamProyekDetailRead({
       ? detail.linkedTask.workProgressPercent
       : detail.progressPercent || 0,
   );
-  const progressBarWidth = `${Math.min(100, Math.max(0, progressNow))}%`;
+  const progressBarWidth = `${Math.min(100, Math.max(0, progressNow))}%` as DimensionValue;
   const adminLifecycleTargets = getKolamProyekHappyPathNext(
     detail.lifecycleStatus,
   );
@@ -1662,12 +1664,11 @@ function KolamProyekDetailRead({
                   )}`
                 : 'Konfirmasi pembayaran baris DP.'}
             </Text>
-            <KolamSettingsWebFieldLabel label="Jumlah diterima (Rp)" required />
-            <KolamFormTextField
-              mode="numeric"
-              onChangeText={setConfirmDpAmount}
+            <KolamSettingsWebFieldLabel label="Jumlah diterima" required />
+            <KolamRupiahField
+              onChangeValue={value => setConfirmDpAmount(String(value))}
               placeholder="0"
-              value={confirmDpAmount}
+              value={Number(confirmDpAmount) || 0}
             />
             <KolamSettingsWebFieldLabel label="Catatan" required={false} />
             <KolamFormTextField

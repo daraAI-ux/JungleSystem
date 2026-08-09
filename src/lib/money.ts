@@ -80,3 +80,7 @@ export function formatRupiahCompact(value: number): string {
 
   return value.toLocaleString('id-ID');
 }
+
+export function formatRupiahCompactCurrency(value: number): string {
+  return `Rp ${formatRupiahCompact(safeMoneyNumber(value))}`;
+}

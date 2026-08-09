@@ -39,6 +39,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   KolamListTableComposition,
@@ -915,14 +916,12 @@ function KolamSourceForm({
             value={form.markupPercent}
           />
         </FieldShell>
-        <FieldShell label="Markup tetap (Rp)">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onChangeForm({ markupFixed: value })
+        <FieldShell label="Markup tetap">
+          <KolamRupiahField
+            onChangeValue={value =>
+              controller.onChangeForm({ markupFixed: String(value) })
             }
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.markupFixed}
+            value={Number(form.markupFixed) || 0}
           />
         </FieldShell>
       </SourceFormSection>
@@ -954,18 +953,27 @@ function KolamSourceForm({
               value={field.type}
             />
             <FieldShell
-              label={field.type === 'percentage' ? 'Nilai (%)' : 'Nilai (Rp)'}
+              label={field.type === 'percentage' ? 'Nilai (%)' : 'Nilai'}
             >
-              <KolamFormTextField
-                mode="numeric"
-                onChangeText={value =>
-                  updateCostField(index, {
-                    value: Number(value.replace(/[^\d.-]/g, '')) || 0,
-                  })
-                }
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={String(field.value)}
-              />
+              {field.type === 'percentage' ? (
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    updateCostField(index, {
+                      value: Number(value.replace(/[^\d.-]/g, '')) || 0,
+                    })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={String(field.value)}
+                />
+              ) : (
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    updateCostField(index, { value })
+                  }
+                  value={Number(field.value) || 0}
+                />
+              )}
             </FieldShell>
             <KolamDeleteButton
               intent="danger"

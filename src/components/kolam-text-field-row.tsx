@@ -14,20 +14,25 @@ export function KolamTextFieldRow({
   numberOfLines,
   onChangeText,
   placeholder,
+  renderInput,
   variant,
   value,
 }: KolamTextFieldRowProps) {
   return (
     <KolamRowFrame variant={variant}>
       <KolamTextFieldRowCopy description={description} label={label} />
-      <KolamTextFieldRowInput
-        fieldWidth={fieldWidth}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        value={value}
-      />
+      {renderInput ? (
+        renderInput()
+      ) : (
+        <KolamTextFieldRowInput
+          fieldWidth={fieldWidth}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          value={value}
+        />
+      )}
     </KolamRowFrame>
   );
 }

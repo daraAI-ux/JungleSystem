@@ -4,6 +4,7 @@
  */
 
 import type {KolamDaraTaxPeriod} from './kolam-finance-tax';
+import {formatRupiah} from '../lib/money';
 
 export type KolamDaraTaxPpnSplit = {
   dpp: number;
@@ -167,7 +168,7 @@ export function formatKolamDaraTaxIdr(value?: number | null) {
   if (value == null || !Number.isFinite(value)) {
     return '—';
   }
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  return formatRupiah(value);
 }
 
 export function formatKolamDaraTaxDateId(iso?: string | null) {
