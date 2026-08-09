@@ -35,7 +35,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
-import { KolamModuleIcon } from './kolam-module-icon';
+import {KolamPageIdentityHeader} from './kolam-page-identity-header';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
@@ -200,17 +200,12 @@ function KolamStockTransactionOpname({
   return (
     <View style={styles.detailRoot}>
       <View style={styles.opnameHeaderRow}>
-        <View style={styles.opnameHeaderIdentity}>
-          <KolamModuleIcon kind="stockOpname" size="header" />
-          <View style={styles.opnameHeaderCopy}>
-            <Text style={styles.eyebrow}>Transaksi Stok</Text>
-            <Text style={styles.title}>Opname Cepat</Text>
-            <Text style={styles.subtitle}>
-              Sesuaikan stok produk dan stok hidup. Sistem akan membuat
-              transaksi dari sumber stok opname.
-            </Text>
-          </View>
-        </View>
+        <KolamPageIdentityHeader
+          eyebrow="Transaksi Stok"
+          moduleIcon="stockOpname"
+          subtitle="Sesuaikan stok produk dan stok hidup. Sistem akan membuat transaksi dari sumber stok opname."
+          title="Opname Cepat"
+        />
       </View>
 
       <View style={kolamTableToolbarStyles.shell}>
@@ -1497,25 +1492,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   opnameHeaderRow: {
-    alignItems: 'flex-start',
     alignSelf: 'stretch',
-    flexDirection: 'row',
-    gap: 16,
-    justifyContent: 'space-between',
-    marginTop: -88,
     minWidth: 0,
     width: '100%',
-  },
-  opnameHeaderIdentity: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 12,
-    minWidth: 0,
-  },
-  opnameHeaderCopy: {
-    flex: 1,
-    minWidth: 0,
   },
   stockOpnameButton: {
     backgroundColor: KOLAM_ACTION_BUTTON_BG,
