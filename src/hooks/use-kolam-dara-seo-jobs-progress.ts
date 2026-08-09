@@ -25,14 +25,21 @@ export interface KolamDaraSeoJobsProgressController {
   onRefreshJobs: () => Promise<void>;
 }
 
+export interface UseKolamDaraSeoJobsProgressOptions {
+  /** Poll/start SEO jobs outside DARA SEO routes (e.g. product list toolbar). */
+  forceEnabled?: boolean;
+}
+
 /**
  * FE parity: `DaraJobsProvider module="seo"` + `DaraJobProgressBar`
- * (poll active SEO jobs while any DARA SEO route is open).
+ * (poll active SEO jobs while any DARA SEO route is open, or when forceEnabled).
  */
 export function useKolamDaraSeoJobsProgress(
   route: string,
+  options?: UseKolamDaraSeoJobsProgressOptions,
 ): KolamDaraSeoJobsProgressController {
-  const enabled = isKolamDaraSeoRoute(route);
+  const enabled =
+    options?.forceEnabled === true || isKolamDaraSeoRoute(route);
   const [jobs, setJobs] = useState<KolamDaraAsyncJob[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const jobsRef = useRef(jobs);

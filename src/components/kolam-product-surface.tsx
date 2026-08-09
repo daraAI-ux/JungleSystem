@@ -17,11 +17,19 @@ import {
   getCustomFieldTypeLabel,
   type KolamCustomField,
 } from '../domain/kolam-custom-field';
-import { resolveKolamDaraSeoAccess } from '../domain/kolam-dara-seo';
+import {
+  KOLAM_DARA_SEO_JOBS_HREF,
+  resolveKolamDaraSeoAccess,
+} from '../domain/kolam-dara-seo';
 import {
   createEmptyKolamProductVendorPriceFormRow,
   getKolamProductCatalogKind,
 } from '../domain/kolam-product';
+import {
+  formatKolamDaraJobProgressLabel,
+  getKolamDaraJobProgressPercent,
+  type KolamDaraAsyncJob,
+} from '../domain/kolam-pusat-ai-jobs';
 import type {
   KolamProduct,
   KolamProductExternalLinkFormRow,
@@ -43,9 +51,8 @@ import {
   type KolamTaxEstimate,
 } from '../services/kolam-pricing-analysis-api';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { useKolamDaraSeoJobsProgress } from '../hooks/use-kolam-dara-seo-jobs-progress';
 import { useKolamProductController } from '../hooks/use-kolam-product-controller';
-import { sanitizeApiErrorMessage } from '../lib/api-error';
-import { startKolamDaraJob } from '../services/kolam-dara-jobs-api';
 import {
   deleteKolamProductAsset,
   getKolamProductUsedIn,
@@ -239,11 +246,6 @@ export function KolamProductSurface({
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<ProductListFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
-  const [seoJobBusy, setSeoJobBusy] = React.useState(false);
-  const [seoNotice, setSeoNotice] = React.useState<{
-    text: string;
-    tone: 'ok' | 'err';
-  } | null>(null);
   const productIds = React.useMemo(
     () => controller.products.map(product => product.id).filter(Boolean),
     [controller.products],
@@ -257,34 +259,21 @@ export function KolamProductSurface({
       }),
     [authUser],
   );
-  const onSeoAuditPage = React.useCallback(async () => {
-    if (!productIds.length || seoJobBusy) {
+  const seoJobsProgress = useKolamDaraSeoJobsProgress(route, {
+    forceEnabled: !isRawCatalog && seoAccess.canDraft,
+  });
+  const seoBulkRunning = seoJobsProgress.isRunning('seo.bulk_products');
+  const onStartSeoJob = seoJobsProgress.onStartSeoJob;
+  const onSeoAuditPage = React.useCallback(() => {
+    if (!productIds.length || seoBulkRunning) {
       return;
     }
-
-    setSeoJobBusy(true);
-    setSeoNotice(null);
-    const label = `Audit SEO ${productIds.length} produk`;
-    try {
-      await startKolamDaraJob({
-        module: 'seo',
-        jobType: 'seo.bulk_products',
-        params: { productIds, generateDraft: true },
-        label,
-      });
-      setSeoNotice({ text: `${label} dimulai`, tone: 'ok' });
-    } catch (err) {
-      setSeoNotice({
-        text:
-          err instanceof Error && err.message.trim()
-            ? sanitizeApiErrorMessage(err.message)
-            : `Gagal memulai ${label}`,
-        tone: 'err',
-      });
-    } finally {
-      setSeoJobBusy(false);
-    }
-  }, [productIds, seoJobBusy]);
+    void onStartSeoJob(
+      'seo.bulk_products',
+      { productIds, generateDraft: true },
+      `Audit SEO ${productIds.length} produk`,
+    );
+  }, [onStartSeoJob, productIds, seoBulkRunning]);
   const barcodeItems = React.useMemo(
     () => createBarcodeItems(controller.products),
     [controller.products],
@@ -530,11 +519,9 @@ export function KolamProductSurface({
                     />
                     {seoAccess.canDraft && productIds.length > 0 ? (
                       <KolamSeoAuditButton
-                        disabled={seoJobBusy}
-                        label={seoJobBusy ? 'SEO audit…' : 'SEO audit'}
-                        onPress={() => {
-                          void onSeoAuditPage();
-                        }}
+                        disabled={seoBulkRunning}
+                        label={seoBulkRunning ? 'SEO audit…' : 'SEO audit'}
+                        onPress={onSeoAuditPage}
                       />
                     ) : null}
                     <KolamStockSyncButton
@@ -601,12 +588,18 @@ export function KolamProductSurface({
         {controller.error ? (
           <Text style={styles.error}>{controller.error}</Text>
         ) : null}
-        {seoNotice ? (
-          <Text
-            style={seoNotice.tone === 'err' ? styles.error : styles.fieldHint}
-          >
-            {seoNotice.text}
-          </Text>
+        {!isRawCatalog ? (
+          <ProductSeoJobsProgressStrip
+            jobs={seoJobsProgress.activeJobs}
+            onOpenJobs={
+              onRouteChange
+                ? () => onRouteChange(KOLAM_DARA_SEO_JOBS_HREF)
+                : undefined
+            }
+          />
+        ) : null}
+        {seoJobsProgress.notice ? (
+          <Text style={styles.fieldHint}>{seoJobsProgress.notice}</Text>
         ) : null}
 
         <KolamListTableComposition
@@ -909,6 +902,67 @@ function ProductFilterOverlayPanel({
       </View>
     </View>
   );
+}
+
+function ProductSeoJobsProgressStrip({
+  jobs,
+  onOpenJobs,
+}: {
+  jobs: KolamDaraAsyncJob[];
+  onOpenJobs?: () => void;
+}) {
+  if (!jobs.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.seoJobsStrip}>
+      {jobs.map(job => {
+        const percent = getKolamDaraJobProgressPercent(job);
+        return (
+          <Pressable
+            accessibilityRole="button"
+            key={job.id}
+            onPress={onOpenJobs}
+            style={styles.seoJobPanel}
+          >
+            <View style={styles.seoJobHead}>
+              <View style={styles.seoJobHeadText}>
+                <Text style={styles.seoJobTitle}>{job.label}</Text>
+                <Text style={styles.seoJobMeta}>
+                  {formatProductSeoJobStatusLabel(job.status)}
+                  {job.progressMessage ? ` · ${job.progressMessage}` : ''}
+                  {job.progressTotal > 0
+                    ? ` · ${formatKolamDaraJobProgressLabel(job)}`
+                    : ''}
+                </Text>
+              </View>
+              <Text style={styles.seoJobPct}>{`${percent}%`}</Text>
+            </View>
+            <View style={styles.seoProgressTrack}>
+              <View style={[styles.seoProgressFill, { width: `${percent}%` }]} />
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function formatProductSeoJobStatusLabel(status: string) {
+  if (status === 'queued') {
+    return 'Antrian';
+  }
+  if (status === 'running') {
+    return 'Berjalan';
+  }
+  if (status === 'completed') {
+    return 'Selesai';
+  }
+  if (status === 'failed') {
+    return 'Gagal';
+  }
+  return status;
 }
 
 function getProductFilterLabel(
@@ -10283,6 +10337,57 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 12,
+  },
+  seoJobsStrip: {
+    gap: 8,
+    marginBottom: 4,
+  },
+  seoJobPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  seoJobHead: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  seoJobHeadText: {
+    flex: 1,
+    gap: 2,
+  },
+  seoJobTitle: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  seoJobMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+  },
+  seoJobPct: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  seoProgressTrack: {
+    backgroundColor: V.colors.muted,
+    borderRadius: 999,
+    height: 8,
+    overflow: 'hidden',
+  },
+  seoProgressFill: {
+    backgroundColor: V.colors.primary,
+    borderRadius: 999,
+    height: 8,
   },
   sectionGrid: {
     alignSelf: 'stretch',
