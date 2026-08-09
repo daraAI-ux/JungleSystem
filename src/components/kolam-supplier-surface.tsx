@@ -45,14 +45,13 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
-import { KolamDescriptionList } from './kolam-description-list';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamDropdownSelect,
   KolamTableRowActionMenu,
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
-import { KolamLabelFieldDetailOverview } from './kolam-label-field-detail-overview';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -822,8 +821,87 @@ function KolamSupplierDetail({
           </View>
         ) : null}
       </View>
-      <KolamLabelFieldDetailOverview
-        hero={
+      <KolamDetailSummaryCard
+        fieldColumns={3}
+        fields={[
+          {
+            id: 'status',
+            label: 'Status',
+            value: (
+              <KolamStatusBadge
+                intent={getKolamVendorStatusIntent(vendor.status)}
+                label={getKolamVendorStatusLabel(vendor.status)}
+              />
+            ),
+          },
+          { id: 'name', label: 'Nama', value: vendor.name },
+          { id: 'phone', label: 'Telepon', value: vendor.phone || '-' },
+          { id: 'email', label: 'Email', value: vendor.email || '-' },
+          {
+            id: 'bank',
+            label: 'Bank',
+            value: (
+              <View style={styles.supplierSummaryValueStack}>
+                <Text style={styles.supplierSummaryFieldText}>
+                  {vendor.bankName || '-'}
+                </Text>
+                {vendor.bankAccountNumber ? (
+                  <Text style={styles.supplierSummaryMetaText}>
+                    {vendor.bankAccountNumber}
+                  </Text>
+                ) : null}
+              </View>
+            ),
+          },
+          { id: 'address', label: 'Alamat', value: address || '-' },
+          {
+            id: 'distributor',
+            label: 'Distributor',
+            value: vendor.isOfficialDistributor ? 'Resmi' : '-',
+          },
+          {
+            id: 'warranty',
+            label: 'Catatan garansi',
+            value: vendor.warrantyContactNote || '-',
+          },
+          {
+            id: 'created-by',
+            label: 'Dibuat oleh',
+            value: vendor.createdByName || '-',
+          },
+          {
+            id: 'total-po',
+            label: 'Total PO',
+            value:
+              vendor.purchaseStatistics?.overall.totalOrders ?? vendor.poCount,
+          },
+          {
+            id: 'total-value',
+            label: 'Nilai Total',
+            value: vendor.purchaseStatistics
+              ? formatRupiah(vendor.purchaseStatistics.overall.totalValue)
+              : '-',
+          },
+          {
+            id: 'average-po',
+            label: 'Rata-rata PO',
+            value: vendor.purchaseStatistics
+              ? formatRupiah(
+                  vendor.purchaseStatistics.overall.averageOrderValue,
+                )
+              : '-',
+          },
+          {
+            id: 'growth',
+            label: 'Pertumbuhan',
+            value: vendor.purchaseStatistics
+              ? `${
+                  vendor.purchaseStatistics.yearly.growthRate > 0 ? '+' : ''
+                }${vendor.purchaseStatistics.yearly.growthRate.toFixed(1)}%`
+              : '-',
+          },
+        ]}
+        leading={
           heroUri ? (
             <KolamRemoteImage
               accessibilityLabel={`Foto ${vendor.name}`}
@@ -840,135 +918,11 @@ function KolamSupplierDetail({
             </View>
           )
         }
-        meta={[]}
-        metrics={[
-          {
-            label: 'Total PO',
-            value:
-              vendor.purchaseStatistics?.overall.totalOrders ?? vendor.poCount,
-          },
-          {
-            label: 'Nilai total',
-            value: vendor.purchaseStatistics
-              ? formatRupiah(vendor.purchaseStatistics.overall.totalValue)
-              : '—',
-          },
-          {
-            label: 'Rata-rata PO',
-            value: vendor.purchaseStatistics
-              ? formatRupiah(
-                  vendor.purchaseStatistics.overall.averageOrderValue,
-                )
-              : '—',
-          },
-          {
-            label: 'Pertumbuhan',
-            value: vendor.purchaseStatistics
-              ? `${
-                  vendor.purchaseStatistics.yearly.growthRate > 0 ? '+' : ''
-                }${vendor.purchaseStatistics.yearly.growthRate.toFixed(1)}%`
-              : '—',
-          },
-        ]}
-        sections={[]}
-        status={{
-          intent: getKolamVendorStatusIntent(vendor.status),
-          label: getKolamVendorStatusLabel(vendor.status),
-        }}
+        leadingStyle={styles.supplierSummaryLeadingSlot}
+        title="Ringkasan pemasok"
       />
 
       <View style={styles.detailInfoRow}>
-        <KolamContentFrame
-          style={[styles.detailCard, styles.detailInfoCard]}
-          variant="settingsWebConfig"
-        >
-          <Text style={styles.sectionTitle}>Informasi pemasok</Text>
-          <KolamDescriptionList
-            accessibilityLabel="Informasi pemasok"
-            rows={[
-              {
-                id: 'name',
-                label: 'Nama',
-                value: vendor.name,
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'description',
-                label: 'Deskripsi',
-                value: vendor.description || '—',
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'bank',
-                label: 'Bank',
-                value: vendor.bankName || '—',
-                meta: vendor.bankAccountNumber || '',
-                tone: 'default',
-              },
-              {
-                id: 'warranty',
-                label: 'Catatan garansi',
-                value: vendor.warrantyContactNote || '—',
-                meta: '',
-                tone: 'default',
-              },
-              ...(vendor.isOfficialDistributor
-                ? [
-                    {
-                      id: 'distributor',
-                      label: 'Distributor',
-                      value: 'Resmi',
-                      meta: '',
-                      tone: 'default' as const,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        </KolamContentFrame>
-
-        <KolamContentFrame
-          style={[styles.detailCard, styles.detailInfoCard]}
-          variant="settingsWebConfig"
-        >
-          <Text style={styles.sectionTitle}>Kontak</Text>
-          <KolamDescriptionList
-            accessibilityLabel="Kontak pemasok"
-            rows={[
-              {
-                id: 'phone',
-                label: 'Telepon',
-                value: vendor.phone || '—',
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'email',
-                label: 'Email',
-                value: vendor.email || '—',
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'address',
-                label: 'Alamat',
-                value: address || '—',
-                meta: '',
-                tone: 'default',
-              },
-              {
-                id: 'created-by',
-                label: 'Dibuat oleh',
-                value: vendor.createdByName || '—',
-                meta: '',
-                tone: 'default',
-              },
-            ]}
-          />
-        </KolamContentFrame>
-
         <KolamSupplierTaxProfileCard
           controller={controller}
           style={[styles.detailCard, styles.detailInfoCard]}
@@ -2345,6 +2299,24 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 36,
     fontWeight: '700',
+  },
+  supplierSummaryLeadingSlot: {
+    minHeight: 128,
+  },
+  supplierSummaryValueStack: {
+    gap: 2,
+  },
+  supplierSummaryFieldText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  supplierSummaryMetaText: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   brandChipRow: {
     flexDirection: 'row',
