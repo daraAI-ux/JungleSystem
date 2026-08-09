@@ -2,13 +2,11 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   createEmptyKolamTeranuraVariantFormRow,
-  createEmptyKolamTeranuraVendorPriceFormRow,
-  type KolamTeranuraExternalLinkFormRow,
+  createKolamTeranuraVariantCombinationRows,
   type KolamTeranuraFormState,
-  type KolamTeranuraLinkName,
   type KolamTeranuraVariantFormRow,
-  type KolamTeranuraVendorPriceFormRow,
 } from '../domain/kolam-teranura-form';
+import type { KolamTeranura } from '../domain/kolam-teranura';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { type KolamTeranuraController } from '../hooks/use-kolam-teranura-controller';
 import { KolamBadge } from './kolam-badge';
@@ -20,27 +18,28 @@ import { KolamComponentOverridesEditor } from './kolam-component-overrides-edito
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
+import { KolamDetailTermsTemplatesPanel } from './kolam-detail-more-panels';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
 import { KolamNativeFormSection } from './kolam-native-form-section';
-import { KolamRemoteImage } from './kolam-remote-image';
-import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
-import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
+import { KolamSaveButton } from './kolam-save-button';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-
-const EXTERNAL_LINK_OPTIONS: Array<{
-  label: string;
-  value: KolamTeranuraLinkName;
-}> = [
-  { label: 'Pilih tipe tautan', value: '' },
-  { label: 'Shopee', value: 'shopee' },
-  { label: 'Tokopedia', value: 'tokopedia' },
-  { label: 'Situs Web', value: 'website' },
-  { label: 'Tautan POS', value: 'link_pos' },
-  { label: 'Tautan Lain', value: 'other_link' },
-];
+import {
+  TeranuraCustomFieldRowsEditor,
+  TeranuraExternalLinksRowsEditor,
+  TeranuraFieldShell,
+  TeranuraLinkedProductAssetsPanel,
+  TeranuraMediaSection,
+  TeranuraMultiSelectField,
+  TeranuraPackingLinksPanel,
+  TeranuraPriceInput,
+  TeranuraVariantCard,
+  TeranuraVariantConfiguratorCard,
+  TeranuraVendorPricesEditor,
+} from './kolam-teranura-edit-panels';
 
 export function TeranuraEditFormPage({
   controller,
@@ -72,6 +71,8 @@ export function TeranuraEditFormPage({
 
   const disabled = controller.saving;
   const hasVariants = form.hasVariants || form.variants.length > 0;
+  const selectedItem = controller.selectedItem;
+
   const categoryOptions = controller.categories.filter(
     category => !form.categoryIds.includes(category.id),
   );
@@ -90,13 +91,6 @@ export function TeranuraEditFormPage({
   const selectedTags = controller.tags.filter(tag =>
     form.tagIds.includes(tag.id),
   );
-  const unitOptions = [
-    { label: 'Pilih satuan', value: '' },
-    ...controller.units.map(unit => ({
-      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
-      value: unit.id,
-    })),
-  ];
   const locationOptions = [
     { label: 'Pilih lokasi', value: '' },
     ...controller.locations.map(location => ({
@@ -104,33 +98,9 @@ export function TeranuraEditFormPage({
       value: location.id,
     })),
   ];
-  const shippingOptions = [
-    { label: 'Tambah metode pengiriman', value: '' },
-    ...controller.shippingMethods
-      .filter(method => !form.availableShippingMethodIds.includes(method.id))
-      .map(method => ({ label: method.displayName, value: method.id })),
-  ];
-  const selectedShippingMethods = controller.shippingMethods.filter(method =>
-    form.availableShippingMethodIds.includes(method.id),
-  );
-  const weightUnits = controller.units.filter(unit => unit.type === 'weight');
-  const weightUnitSource = weightUnits.length ? weightUnits : controller.units;
-  const dimensionUnits = controller.units.filter(
-    unit => unit.type === 'length',
-  );
-  const dimensionUnitSource = dimensionUnits.length
-    ? dimensionUnits
-    : controller.units;
-  const weightUnitOptions = [
+  const unitOptions = [
     { label: 'Pilih satuan', value: '' },
-    ...weightUnitSource.map(unit => ({
-      label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
-      value: unit.id,
-    })),
-  ];
-  const dimensionUnitOptions = [
-    { label: 'Pilih satuan', value: '' },
-    ...dimensionUnitSource.map(unit => ({
+    ...controller.units.map(unit => ({
       label: unit.initial ? `${unit.name} (${unit.initial})` : unit.name,
       value: unit.id,
     })),
@@ -142,20 +112,8 @@ export function TeranuraEditFormPage({
       value: vendor.id,
     })),
   ];
-  const packingNames =
-    controller.selectedItem?.packings
-      .map(line => line.name.trim())
-      .filter(Boolean) ?? [];
-  const attachedNames =
-    controller.selectedItem?.attachedItems
-      .map(item => item.targetName.trim() || item.typeLabel.trim())
-      .filter(Boolean) ?? [];
-  const existingPhotos = controller.selectedItem?.photos ?? [];
-  const existingVideos = controller.selectedItem?.videos ?? [];
-  const photoCount =
-    existingPhotos.length + (form.photoLocalUri.trim() ? 1 : 0);
-  const videoCount =
-    existingVideos.length + (form.videoLocalUri.trim() ? 1 : 0);
+  const weightUnitOptions = unitOptions;
+  const dimensionUnitOptions = unitOptions;
 
   const patchForm = (patch: Partial<KolamTeranuraFormState>) => {
     controller.onChangeForm(patch);
@@ -172,6 +130,54 @@ export function TeranuraEditFormPage({
     });
   };
 
+  const toggleVariants = () => {
+    if (hasVariants) {
+      patchForm({
+        hasVariants: false,
+        selectedVariantId: '',
+        variantConfigTier1Name: 'Varian',
+        variantConfigTier2Name: '',
+        variantConfigTier1Values: [],
+        variantConfigTier2Values: [],
+        variantConfigTier2Enabled: false,
+        variants: [],
+      });
+      return;
+    }
+    patchForm({ hasVariants: true });
+  };
+
+  const applyVariantCombinations = (
+    tier1Values: string[],
+    tier2Values: string[],
+  ) => {
+    patchForm({
+      hasVariants: true,
+      variantConfigTier1Values: tier1Values,
+      variantConfigTier2Values: tier2Values,
+      variants: createKolamTeranuraVariantCombinationRows(
+        form.sku,
+        tier1Values,
+        form.variantConfigTier2Enabled,
+        tier2Values,
+        form.variants,
+      ),
+    });
+  };
+
+  const findVariantPhotos = (variantId: string): string[] =>
+    selectedItem?.variants.find(variant => variant.id === variantId)
+      ?.photos ?? [];
+
+  const packingVariantOptions = form.variants.map((variant, index) => ({
+    id: variant.id,
+    label:
+      [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') ||
+      `Varian ${index + 1}`,
+  }));
+
+  const termsItemId = selectedItem?.linkedProductId || selectedItem?.id || '';
+
   const handleSave = () => {
     void controller.onSave().then(result => {
       if (result) {
@@ -187,9 +193,8 @@ export function TeranuraEditFormPage({
           <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
             <KolamCancelButton disabled={disabled} onPress={onCancel} />
-            <KolamButton
+            <KolamSaveButton
               disabled={disabled}
-              intent="primary"
               label={disabled ? 'Menyimpan...' : 'Simpan'}
               onPress={handleSave}
             />
@@ -203,14 +208,18 @@ export function TeranuraEditFormPage({
 
       <KolamNativeFormSection
         section={{
-          description: '',
+          description:
+            'Kelola data utama, relasi master, penjualan, dan deskripsi produk.',
           id: 'catalog-translations',
           title: 'Data Produk',
         }}
       >
         <View style={settingsWebFormStyles.settingsWebFormFields}>
           <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
-            <TeranuraEditSection title="Informasi Dasar">
+            <TeranuraEditSection
+              description="Kode identitas internal. Nama dan deskripsi diatur per bahasa di tab Konten Marketplace."
+              title="Informasi Dasar"
+            >
               <View style={styles.productBasicInfoCard}>
                 <View style={styles.twoColumnGrid}>
                   <View style={styles.productBasicInfoHalfField}>
@@ -224,21 +233,7 @@ export function TeranuraEditFormPage({
                       />
                     </TeranuraFieldShell>
                   </View>
-                  <View style={styles.productBasicInfoHalfField}>
-                    <TeranuraFieldShell label="Satuan" required>
-                      <KolamDropdownSelect
-                        accessibilityLabel="Pilih satuan"
-                        label="Satuan"
-                        menuStyle={styles.longDropdownMenu}
-                        onChange={unitId => patchForm({ unitId })}
-                        options={unitOptions}
-                        searchable
-                        searchPlaceholder="Cari satuan..."
-                        showLabelInTrigger={false}
-                        value={form.unitId}
-                      />
-                    </TeranuraFieldShell>
-                  </View>
+                  <View style={styles.productBasicInfoHalfField} />
                 </View>
 
                 <View style={styles.twoColumnGrid}>
@@ -267,6 +262,7 @@ export function TeranuraEditFormPage({
                         id: category.id,
                         label: category.name,
                       }))}
+                      tone="category"
                       triggerLabel="Tambah kategori"
                     />
                   </View>
@@ -351,89 +347,48 @@ export function TeranuraEditFormPage({
                       />
                     </TeranuraFieldShell>
                   </View>
+                  <View style={styles.productBasicInfoHalfField} />
                 </View>
               </View>
             </TeranuraEditSection>
 
-            <TeranuraEditSection title="Media">
+            <TeranuraEditSection
+              description="Thumbnail, foto, dan video produk utama."
+              title="Media"
+            >
               <View style={styles.productBasicInfoCard}>
-                <View style={styles.mediaPickerStack}>
-                  <View style={styles.mediaUploadSection}>
-                    <KolamSettingsWebFileField
-                      accessibilityLabel="Foto produk"
-                      actionLabel="Pilih file"
-                      disabled={disabled}
-                      emptyLabel="Foto belum dipilih"
-                      fileCount={Math.min(photoCount, 10)}
-                      fileMax={10}
-                      onLocalValueChange={photoLocalUri =>
-                        patchForm({ photoLocalUri })
-                      }
-                      onUpload={() => {
-                        void controller.onPickPhoto();
-                      }}
-                      scope="teranura-photo"
-                      title="Foto"
-                      value={form.photoLocalUri}
-                    />
-                    {existingPhotos.length ? (
-                      <View style={styles.existingMediaGrid}>
-                        {existingPhotos.map((photoUri, index) => (
-                          <KolamRemoteImage
-                            accessibilityLabel={`Foto ${index + 1}`}
-                            key={`${photoUri}-${index}`}
-                            revision={`${controller.selectedItem?.id ?? ''}-${index}`}
-                            scope="teranura"
-                            sourceUri={photoUri}
-                            style={styles.existingMediaImage}
-                          />
-                        ))}
-                      </View>
-                    ) : null}
-                  </View>
-
-                  <View style={styles.mediaUploadSection}>
-                    <KolamSettingsWebFileField
-                      accessibilityLabel="Video produk"
-                      actionLabel="Pilih file"
-                      disabled={disabled}
-                      emptyLabel="Video belum dipilih"
-                      fileCount={Math.min(videoCount, 1)}
-                      fileMax={1}
-                      fileTypeLabel="Tipe file yang diterima: MP4, MOV, WEBM"
-                      onLocalValueChange={videoLocalUri =>
-                        patchForm({ videoLocalUri })
-                      }
-                      onUpload={() => {
-                        void controller.onPickVideo();
-                      }}
-                      previewKind="file"
-                      scope="teranura-video"
-                      title="Video"
-                      value={form.videoLocalUri}
-                    />
-                    {existingVideos.length ? (
-                      <View style={styles.existingMediaGrid}>
-                        {existingVideos.map((videoUri, index) => (
-                          <KolamCopyStack
-                            key={`${videoUri}-${index}`}
-                            items={[
-                              {
-                                id: `video-${index}`,
-                                text: videoUri,
-                                style: styles.fieldHint,
-                              },
-                            ]}
-                          />
-                        ))}
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
+                <TeranuraMediaSection
+                  disabled={disabled}
+                  existingPhotos={selectedItem?.photos ?? []}
+                  existingVideos={selectedItem?.videos ?? []}
+                  onChangePhotoLocalUri={photoLocalUri =>
+                    patchForm({ photoLocalUri })
+                  }
+                  onChangeVideoLocalUri={videoLocalUri =>
+                    patchForm({ videoLocalUri })
+                  }
+                  onDeletePhoto={index => {
+                    void controller.onDeletePhoto(index);
+                  }}
+                  onDeleteVideo={index => {
+                    void controller.onDeleteVideo(index);
+                  }}
+                  onPickPhoto={() => {
+                    void controller.onPickPhoto();
+                  }}
+                  onPickVideo={() => {
+                    void controller.onPickVideo();
+                  }}
+                  photoLocalUri={form.photoLocalUri}
+                  videoLocalUri={form.videoLocalUri}
+                />
               </View>
             </TeranuraEditSection>
 
-            <TeranuraEditSection title="Varian">
+            <TeranuraEditSection
+              description="Aktifkan varian jika produk memiliki beberapa variasi atau beberapa SKU."
+              title="Varian"
+            >
               <View style={styles.productBasicInfoCard}>
                 <View style={styles.variantEditorPanel}>
                   <View style={styles.variantSwitchPanel}>
@@ -445,67 +400,72 @@ export function TeranuraEditFormPage({
                           text: 'Produk ini memiliki varian',
                           style: styles.variantTitle,
                         },
+                        {
+                          id: 'hint',
+                          text: 'Beberapa SKU untuk ukuran, warna, tipe, atau kemasan berbeda.',
+                          style: styles.fieldHint,
+                        },
                       ]}
                     />
                     <KolamSwitch
                       accessibilityLabel="Aktifkan varian produk"
                       active={hasVariants}
                       disabled={disabled}
-                      onPress={() => {
-                        if (hasVariants) {
-                          patchForm({
-                            hasVariants: false,
-                            variantConfigTier1Name: 'Varian',
-                            variantConfigTier2Name: '',
-                            variants: [],
-                          });
-                          return;
-                        }
-                        patchForm({
-                          hasVariants: true,
-                          variants:
-                            form.variants.length > 0
-                              ? form.variants
-                              : [createEmptyKolamTeranuraVariantFormRow()],
-                        });
-                      }}
+                      onPress={toggleVariants}
                     />
                   </View>
 
                   {hasVariants ? (
-                    <View style={styles.variantConfiguratorCard}>
-                      <View style={styles.twoColumnGrid}>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Varian Utama" required>
-                            <KolamFormTextField
-                              editable={!disabled}
-                              onChangeText={variantConfigTier1Name =>
-                                patchForm({ variantConfigTier1Name })
-                              }
-                              placeholder="Contoh: Ukuran"
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.variantConfigTier1Name}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Varian Kedua">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              onChangeText={variantConfigTier2Name =>
-                                patchForm({ variantConfigTier2Name })
-                              }
-                              placeholder="Contoh: Warna"
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.variantConfigTier2Name}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                      </View>
+                    <View style={styles.variantInfoPanel}>
+                      <KolamCopyStack
+                        items={[
+                          {
+                            id: 'title',
+                            text: 'Harga dikelola oleh varian',
+                            style: styles.variantInfoTitle,
+                          },
+                          {
+                            id: 'hint',
+                            text: 'Saat varian aktif, harga dan pemasok root disembunyikan. Atur harga dan pemasok per varian di bawah.',
+                            style: styles.variantInfoHint,
+                          },
+                        ]}
+                      />
+                    </View>
+                  ) : null}
+
+                  {hasVariants ? (
+                    <>
+                      <TeranuraVariantConfiguratorCard
+                        baseSku={form.sku}
+                        disabled={disabled}
+                        onApplyCombinations={() =>
+                          applyVariantCombinations(
+                            form.variantConfigTier1Values,
+                            form.variantConfigTier2Values,
+                          )
+                        }
+                        onChangeTier1Name={variantConfigTier1Name =>
+                          patchForm({ variantConfigTier1Name })
+                        }
+                        onChangeTier1Values={variantConfigTier1Values =>
+                          patchForm({ variantConfigTier1Values })
+                        }
+                        onChangeTier2Enabled={variantConfigTier2Enabled =>
+                          patchForm({ variantConfigTier2Enabled })
+                        }
+                        onChangeTier2Name={variantConfigTier2Name =>
+                          patchForm({ variantConfigTier2Name })
+                        }
+                        onChangeTier2Values={variantConfigTier2Values =>
+                          patchForm({ variantConfigTier2Values })
+                        }
+                        tier1Name={form.variantConfigTier1Name}
+                        tier1Values={form.variantConfigTier1Values}
+                        tier2Enabled={form.variantConfigTier2Enabled}
+                        tier2Name={form.variantConfigTier2Name}
+                        tier2Values={form.variantConfigTier2Values}
+                      />
 
                       <View style={styles.variantManagerHeader}>
                         <KolamCopyStack
@@ -542,216 +502,46 @@ export function TeranuraEditFormPage({
                       {form.variants.length ? (
                         <View style={styles.variantListShell}>
                           {form.variants.map((variant, index) => (
-                            <View key={variant.id} style={styles.variantCard}>
-                              <View style={styles.variantManagerHeader}>
-                                <Text style={styles.variantTitle}>
-                                  Varian {index + 1}
-                                </Text>
-                                <KolamButton
-                                  disabled={disabled}
-                                  intent="outline"
-                                  label="Hapus"
-                                  onPress={() => {
-                                    const next = form.variants.filter(
-                                      row => row.id !== variant.id,
-                                    );
-                                    patchForm({
-                                      variants: next,
-                                      hasVariants: next.length > 0,
-                                    });
-                                  }}
-                                />
-                              </View>
-                              <View style={styles.twoColumnGrid}>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Nilai Varian 1">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      onChangeText={tier1Value =>
-                                        patchVariant(variant.id, { tier1Value })
-                                      }
-                                      placeholder="Nilai varian 1"
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.tier1Value}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Nilai Varian 2">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      onChangeText={tier2Value =>
-                                        patchVariant(variant.id, { tier2Value })
-                                      }
-                                      placeholder="Nilai varian 2"
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.tier2Value}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                              </View>
-                              <View style={styles.twoColumnGrid}>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="SKU">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      onChangeText={sku =>
-                                        patchVariant(variant.id, { sku })
-                                      }
-                                      placeholder="SKU"
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.sku}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Ambang Stok Rendah">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      keyboardType="numeric"
-                                      onChangeText={lowStockThreshold =>
-                                        patchVariant(variant.id, {
-                                          lowStockThreshold,
-                                        })
-                                      }
-                                      placeholder="0"
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.lowStockThreshold}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                              </View>
-                              <View style={styles.twoColumnGrid}>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Harga">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      keyboardType="numeric"
-                                      onChangeText={price =>
-                                        patchVariant(variant.id, { price })
-                                      }
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.price}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Harga Jual">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      keyboardType="numeric"
-                                      onChangeText={priceToSell =>
-                                        patchVariant(variant.id, {
-                                          priceToSell,
-                                        })
-                                      }
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.priceToSell}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Harga Pasar">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      keyboardType="numeric"
-                                      onChangeText={marketPrice =>
-                                        patchVariant(variant.id, {
-                                          marketPrice,
-                                        })
-                                      }
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.marketPrice}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Harga Daring">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      keyboardType="numeric"
-                                      onChangeText={onlinePrice =>
-                                        patchVariant(variant.id, {
-                                          onlinePrice,
-                                        })
-                                      }
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.onlinePrice}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                                <View style={styles.productBasicInfoHalfField}>
-                                  <TeranuraFieldShell label="Harga Minimum">
-                                    <KolamFormTextField
-                                      editable={!disabled}
-                                      keyboardType="numeric"
-                                      onChangeText={minimumPriceToSales =>
-                                        patchVariant(variant.id, {
-                                          minimumPriceToSales,
-                                        })
-                                      }
-                                      style={
-                                        settingsWebFormStyles.settingsWebFormFieldValue
-                                      }
-                                      value={variant.minimumPriceToSales}
-                                    />
-                                  </TeranuraFieldShell>
-                                </View>
-                              </View>
-                              <View style={styles.sellableSwitchRow}>
-                                <KolamCopyStack
-                                  items={[
-                                    {
-                                      id: 'points-label',
-                                      text: 'Poin anggota',
-                                      style: styles.variantTitle,
-                                    },
-                                  ]}
-                                />
-                                <KolamSwitch
-                                  accessibilityLabel="Poin anggota varian"
-                                  active={variant.memberPointsEnabled}
-                                  disabled={disabled}
-                                  onPress={() =>
-                                    patchVariant(variant.id, {
-                                      memberPointsEnabled:
-                                        !variant.memberPointsEnabled,
-                                    })
-                                  }
-                                />
-                              </View>
-                              {variant.memberPointsEnabled ? (
-                                <TeranuraFieldShell label="Poin">
-                                  <KolamFormTextField
-                                    editable={!disabled}
-                                    keyboardType="numeric"
-                                    onChangeText={memberPoints =>
-                                      patchVariant(variant.id, { memberPoints })
-                                    }
-                                    style={
-                                      settingsWebFormStyles.settingsWebFormFieldValue
-                                    }
-                                    value={variant.memberPoints}
-                                  />
-                                </TeranuraFieldShell>
-                              ) : null}
-                            </View>
+                            <TeranuraVariantCard
+                              componentProducts={controller.componentProducts}
+                              customFields={controller.customFields}
+                              disabled={disabled}
+                              existingPhotos={findVariantPhotos(variant.id)}
+                              index={index}
+                              isMediaSelected={
+                                form.selectedVariantId === variant.id
+                              }
+                              key={variant.id}
+                              onChangeVariantPhotoLocalUri={variantPhotoLocalUri =>
+                                patchForm({ variantPhotoLocalUri })
+                              }
+                              onDelete={() => {
+                                const next = form.variants.filter(
+                                  row => row.id !== variant.id,
+                                );
+                                patchForm({
+                                  variants: next,
+                                  hasVariants: next.length > 0,
+                                });
+                              }}
+                              onPatch={patch =>
+                                patchVariant(variant.id, patch)
+                              }
+                              onSelectForMedia={() =>
+                                patchForm({
+                                  selectedVariantId: variant.id,
+                                  variantPhotoLocalUri: '',
+                                })
+                              }
+                              variant={variant}
+                              variantPhotoLocalUri={
+                                form.selectedVariantId === variant.id
+                                  ? form.variantPhotoLocalUri
+                                  : ''
+                              }
+                              vendorOptions={vendorOptions}
+                              weightUnitOptions={weightUnitOptions}
+                            />
                           ))}
                         </View>
                       ) : (
@@ -765,7 +555,7 @@ export function TeranuraEditFormPage({
                           ]}
                         />
                       )}
-                    </View>
+                    </>
                   ) : null}
                 </View>
               </View>
@@ -773,135 +563,42 @@ export function TeranuraEditFormPage({
 
             <View style={styles.productEditTwoColumnSections}>
               <View style={styles.productEditTwoColumnSection}>
-                <TeranuraEditSection title="Field Kustom">
+                <TeranuraEditSection
+                  description="Pilih profil spesifikasi atau field manual untuk produk ini."
+                  title="Field Kustom"
+                >
                   <View style={styles.productBasicInfoCard}>
-                    <KolamCopyStack
-                      items={[
-                        {
-                          id: 'empty-custom-fields',
-                          text: 'Belum ada editor field kustom aktif.',
-                          style: styles.fieldHint,
-                        },
-                      ]}
+                    <TeranuraCustomFieldRowsEditor
+                      customFields={controller.customFields}
+                      disabled={disabled}
+                      onChange={customFieldValues =>
+                        patchForm({ customFieldValues })
+                      }
+                      values={form.customFieldValues}
                     />
                   </View>
                 </TeranuraEditSection>
               </View>
 
               <View style={styles.productEditTwoColumnSection}>
-                <TeranuraEditSection title="Penjualan dan Inventori">
+                <TeranuraEditSection
+                  description="Aktifkan penjualan, pilih satuan, dan metode pengiriman."
+                  title="Penjualan dan Inventori"
+                >
                   <View style={styles.productBasicInfoCard}>
-                    <TeranuraFieldShell label="Penjualan">
-                      <View style={styles.grocerPricingPanel}>
-                        <View style={styles.sellableSwitchRow}>
-                          <KolamCopyStack
-                            items={[
-                              {
-                                id: 'label',
-                                text: 'Produk dijual',
-                                style: styles.variantTitle,
-                              },
-                            ]}
-                          />
-                          <KolamSwitch
-                            accessibilityLabel="Produk dijual"
-                            active={form.sellable}
-                            disabled={disabled}
-                            onPress={() =>
-                              patchForm({ sellable: !form.sellable })
-                            }
-                          />
-                        </View>
-
-                        <KolamDropdownSelect
-                          accessibilityLabel="Tambah metode pengiriman"
-                          label="Metode pengiriman tersedia"
-                          menuStyle={styles.longDropdownMenu}
-                          onChange={methodId => {
-                            if (
-                              !methodId ||
-                              form.availableShippingMethodIds.includes(
-                                methodId,
-                              )
-                            ) {
-                              return;
-                            }
-                            patchForm({
-                              availableShippingMethodIds: [
-                                ...form.availableShippingMethodIds,
-                                methodId,
-                              ],
-                            });
-                          }}
-                          options={shippingOptions}
-                          searchable
-                          searchPlaceholder="Cari metode pengiriman..."
-                          showLabelInTrigger={false}
-                          value=""
-                        />
-                        <View style={styles.selectedCategoryRow}>
-                          {selectedShippingMethods.length ? (
-                            selectedShippingMethods.map(method => (
-                              <KolamButton
-                                disabled={disabled}
-                                intent="outline"
-                                key={method.id}
-                                label={`${method.displayName} x`}
-                                onPress={() =>
-                                  patchForm({
-                                    availableShippingMethodIds:
-                                      form.availableShippingMethodIds.filter(
-                                        methodId => methodId !== method.id,
-                                      ),
-                                  })
-                                }
-                                style={styles.selectedCategoryButton}
-                              />
-                            ))
-                          ) : (
-                            <KolamCopyStack
-                              items={[
-                                {
-                                  id: 'empty-shipping',
-                                  text: 'Belum ada metode pengiriman dipilih.',
-                                  style: styles.fieldHint,
-                                },
-                              ]}
-                            />
-                          )}
-                        </View>
-                      </View>
-                    </TeranuraFieldShell>
-
+                    <TeranuraRootSalesPanel
+                      controller={controller}
+                      disabled={disabled}
+                      form={form}
+                      patchForm={patchForm}
+                      unitOptions={unitOptions}
+                    />
                     {!hasVariants ? (
-                      <TeranuraFieldShell label="Inventori Produk">
-                        <View style={styles.pricingPanelStack}>
-                          <View style={styles.variantFieldPanel}>
-                            <KolamCopyStack
-                              items={[
-                                {
-                                  id: 'title',
-                                  text: 'Stok dan Peringatan',
-                                  style: styles.variantFieldPanelTitle,
-                                },
-                              ]}
-                            />
-                            <TeranuraFieldShell label="Ambang Stok Rendah">
-                              <KolamFormTextField
-                                editable={!disabled}
-                                keyboardType="numeric"
-                                onChangeText={lowStockThreshold =>
-                                  patchForm({ lowStockThreshold })
-                                }
-                                style={
-                                  settingsWebFormStyles.settingsWebFormFieldValue
-                                }
-                                value={form.lowStockThreshold}
-                              />
-                            </TeranuraFieldShell>
-                          </View>
-                        </View>
-                      </TeranuraFieldShell>
+                      <TeranuraRootInventoryPanel
+                        disabled={disabled}
+                        form={form}
+                        patchForm={patchForm}
+                      />
                     ) : null}
                   </View>
                 </TeranuraEditSection>
@@ -909,332 +606,265 @@ export function TeranuraEditFormPage({
             </View>
 
             {!hasVariants ? (
-              <TeranuraEditSection title="Bahan Penyusun">
+              <TeranuraEditSection
+                description="Komponen produksi untuk produk tanpa varian."
+                title="Bahan Penyusun"
+              >
                 <View style={styles.productBasicInfoCard}>
-                  <KolamComponentOverridesEditor
+                  <TeranuraFieldShell label="Bahan Penyusun Root">
+                    <View style={styles.grocerPricingPanel}>
+                      <KolamComponentOverridesEditor
+                        disabled={disabled}
+                        onChange={componentRows => patchForm({ componentRows })}
+                        products={controller.componentProducts}
+                        rows={form.componentRows}
+                      />
+                    </View>
+                  </TeranuraFieldShell>
+                </View>
+              </TeranuraEditSection>
+            ) : null}
+
+            {!hasVariants ? (
+              <TeranuraEditSection
+                description="Harga jual, aturan pesanan, dan harga grosir untuk produk tanpa varian."
+                title="Harga"
+              >
+                <View style={styles.productBasicInfoCard}>
+                  <TeranuraFieldShell label="Harga Produk">
+                    <View style={styles.pricingPanelStack}>
+                      <TeranuraFieldPanel
+                        description="Harga yang dipakai katalog, POS, toko daring, dan pembanding marketplace."
+                        title="Harga Penjualan"
+                      >
+                        <View style={styles.twoColumnGrid}>
+                          <TeranuraPriceField
+                            disabled={disabled}
+                            hint="Harga utama yang tampil di katalog dan POS."
+                            label="Harga Jual"
+                            onChangeText={priceToSell =>
+                              patchForm({ priceToSell })
+                            }
+                            value={form.priceToSell}
+                          />
+                          <TeranuraPriceField
+                            disabled={disabled}
+                            hint="Harga daring untuk toko daring atau kanal digital."
+                            label="Harga Daring"
+                            onChangeText={onlinePrice =>
+                              patchForm({ onlinePrice })
+                            }
+                            value={form.onlinePrice}
+                          />
+                          <TeranuraPriceField
+                            disabled={disabled}
+                            hint="Harga pembanding pasar, bukan harga jual utama."
+                            label="Harga Pasar"
+                            onChangeText={marketPrice =>
+                              patchForm({ marketPrice })
+                            }
+                            value={form.marketPrice}
+                          />
+                          <TeranuraPriceField
+                            disabled={disabled}
+                            hint="Batas harga terendah yang masih boleh dijual."
+                            label="Harga Minimum"
+                            onChangeText={minimumPriceToSales =>
+                              patchForm({ minimumPriceToSales })
+                            }
+                            value={form.minimumPriceToSales}
+                          />
+                        </View>
+                      </TeranuraFieldPanel>
+                    </View>
+                  </TeranuraFieldShell>
+
+                  <View style={styles.pricingHalfRow}>
+                    <View style={styles.pricingHalfColumn}>
+                      <TeranuraFieldPanel
+                        description="Aturan jumlah minimum saat produk dibeli."
+                        title="Aturan Pesanan"
+                      >
+                        <View style={styles.twoColumnGrid}>
+                          <TeranuraCompactField label="Minimum Pesanan">
+                            <KolamFormTextField
+                              editable={!disabled}
+                              keyboardType="numeric"
+                              onChangeText={minimumOrderQty =>
+                                patchForm({ minimumOrderQty })
+                              }
+                              style={
+                                settingsWebFormStyles.settingsWebFormFieldValue
+                              }
+                              value={form.minimumOrderQty}
+                            />
+                          </TeranuraCompactField>
+                        </View>
+                      </TeranuraFieldPanel>
+                    </View>
+                    <View style={styles.pricingHalfColumn}>
+                      <TeranuraFieldPanel
+                        description="Harga per unit berdasarkan jumlah pembelian. Berlaku untuk produk tanpa varian."
+                        title="Harga Bertingkat / Grosir Produk"
+                      >
+                        <KolamGrocerPricingTiersEditor
+                          disabled={disabled}
+                          onChange={grocerPricingTiers =>
+                            patchForm({ grocerPricingTiers })
+                          }
+                          rows={form.grocerPricingTiers}
+                        />
+                      </TeranuraFieldPanel>
+                    </View>
+                  </View>
+
+                  <TeranuraVendorPricesEditor
                     disabled={disabled}
-                    onChange={componentRows => patchForm({ componentRows })}
-                    products={controller.componentProducts}
-                    rows={form.componentRows}
+                    onChange={vendorPrices => patchForm({ vendorPrices })}
+                    rows={form.vendorPrices}
+                    vendorOptions={vendorOptions}
+                  />
+
+                  <KolamCommercialPolicyEditor
+                    disabled={disabled}
+                    memberPointsDisabled={!form.sellable}
+                    onChange={value =>
+                      patchForm({
+                        commissionEnabled: value.commissionEnabled,
+                        commissionType: value.commissionType,
+                        commissionValue: value.commissionValue,
+                        memberPointsEnabled: value.memberPointsEnabled,
+                        memberPoints: value.memberPoints,
+                      })
+                    }
+                    value={{
+                      commissionEnabled: form.commissionEnabled,
+                      commissionType: form.commissionType,
+                      commissionValue: form.commissionValue,
+                      memberPointsEnabled: form.memberPointsEnabled,
+                      memberPoints: form.memberPoints,
+                    }}
                   />
                 </View>
               </TeranuraEditSection>
             ) : null}
 
             {!hasVariants ? (
-              <TeranuraEditSection title="Harga">
+              <TeranuraEditSection
+                description="Berat dan dimensi produk tanpa varian."
+                title="Logistik"
+              >
                 <View style={styles.productBasicInfoCard}>
                   <View style={styles.pricingPanelStack}>
-                    <View style={styles.variantFieldPanel}>
-                      <KolamCopyStack
-                        items={[
-                          {
-                            id: 'title',
-                            text: 'Harga Penjualan',
-                            style: styles.variantFieldPanelTitle,
-                          },
-                        ]}
-                      />
+                    <TeranuraFieldPanel
+                      description="Opsional untuk pengiriman dan logistik."
+                      title="Berat"
+                    >
                       <View style={styles.twoColumnGrid}>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Harga">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={price => patchForm({ price })}
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.price}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Harga Jual">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={priceToSell =>
-                                patchForm({ priceToSell })
-                              }
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.priceToSell}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Harga Pasar">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={marketPrice =>
-                                patchForm({ marketPrice })
-                              }
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.marketPrice}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Harga Daring">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={onlinePrice =>
-                                patchForm({ onlinePrice })
-                              }
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.onlinePrice}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Harga Minimum">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={minimumPriceToSales =>
-                                patchForm({ minimumPriceToSales })
-                              }
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.minimumPriceToSales}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                      </View>
-                    </View>
-
-                    <View style={styles.vendorPricePanel}>
-                      <View style={styles.variantManagerHeader}>
-                        <KolamCopyStack
-                          items={[
-                            {
-                              id: 'title',
-                              text: 'Harga Pemasok',
-                              style: styles.variantTitle,
-                            },
-                          ]}
-                        />
-                        <KolamButton
-                          disabled={disabled}
-                          intent="primary"
-                          label="Tambah Pemasok"
-                          onPress={() =>
-                            patchForm({
-                              vendorPrices: [
-                                ...form.vendorPrices,
-                                createEmptyKolamTeranuraVendorPriceFormRow(),
-                              ],
-                            })
-                          }
-                        />
-                      </View>
-                      {form.vendorPrices.length ? (
-                        form.vendorPrices.map((row, index) => (
-                          <TeranuraVendorPriceRow
-                            disabled={disabled}
-                            index={index}
-                            key={row.id}
-                            onPatch={patch =>
-                              patchForm({
-                                vendorPrices: form.vendorPrices.map(item =>
-                                  item.id === row.id
-                                    ? { ...item, ...patch }
-                                    : item,
-                                ),
-                              })
+                        <TeranuraCompactField label="Nilai berat">
+                          <KolamFormTextField
+                            editable={!disabled}
+                            keyboardType="numeric"
+                            onChangeText={weightValue =>
+                              patchForm({ weightValue })
                             }
-                            onRemove={() =>
-                              patchForm({
-                                vendorPrices: form.vendorPrices.filter(
-                                  item => item.id !== row.id,
-                                ),
-                              })
+                            placeholder="Nilai berat"
+                            style={
+                              settingsWebFormStyles.settingsWebFormFieldValue
                             }
-                            row={row}
-                            vendorOptions={vendorOptions}
+                            value={form.weightValue}
                           />
-                        ))
-                      ) : (
-                        <KolamCopyStack
-                          items={[
-                            {
-                              id: 'empty-vendors',
-                              text: 'Belum ada harga pemasok.',
-                              style: styles.fieldHint,
-                            },
-                          ]}
-                        />
-                      )}
-                    </View>
-
-                    <KolamCommercialPolicyEditor
-                      disabled={disabled}
-                      memberPointsDisabled={!form.sellable}
-                      onChange={value =>
-                        patchForm({
-                          commissionEnabled: value.commissionEnabled,
-                          commissionType: value.commissionType,
-                          commissionValue: value.commissionValue,
-                          memberPointsEnabled: value.memberPointsEnabled,
-                          memberPoints: value.memberPoints,
-                        })
-                      }
-                      value={{
-                        commissionEnabled: form.commissionEnabled,
-                        commissionType: form.commissionType,
-                        commissionValue: form.commissionValue,
-                        memberPointsEnabled: form.memberPointsEnabled,
-                        memberPoints: form.memberPoints,
-                      }}
-                    />
-                  </View>
-                </View>
-              </TeranuraEditSection>
-            ) : null}
-
-            {!hasVariants ? (
-              <TeranuraEditSection title="Logistik">
-                <View style={styles.productBasicInfoCard}>
-                  <View style={styles.pricingPanelStack}>
-                    <View style={styles.variantFieldPanel}>
-                      <KolamCopyStack
-                        items={[
-                          {
-                            id: 'title',
-                            text: 'Berat',
-                            style: styles.variantFieldPanelTitle,
-                          },
-                        ]}
-                      />
-                      <View style={styles.twoColumnGrid}>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Nilai berat">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={weightValue =>
-                                patchForm({ weightValue })
-                              }
-                              placeholder="Nilai berat"
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.weightValue}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.productBasicInfoHalfField}>
-                          <TeranuraFieldShell label="Satuan berat">
-                            <KolamDropdownSelect
-                              label="Satuan berat"
-                              menuStyle={styles.longDropdownMenu}
-                              onChange={weightUnitId =>
-                                patchForm({ weightUnitId })
-                              }
-                              options={weightUnitOptions}
-                              searchable
-                              searchPlaceholder="Cari satuan..."
-                              showLabelInTrigger={false}
-                              value={form.weightUnitId}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
+                        </TeranuraCompactField>
+                        <TeranuraCompactField label="Satuan berat">
+                          <KolamDropdownSelect
+                            label="Satuan berat"
+                            menuStyle={styles.longDropdownMenu}
+                            onChange={weightUnitId =>
+                              patchForm({ weightUnitId })
+                            }
+                            options={weightUnitOptions}
+                            searchable
+                            searchPlaceholder="Cari satuan..."
+                            showLabelInTrigger={false}
+                            value={form.weightUnitId}
+                          />
+                        </TeranuraCompactField>
                       </View>
-                    </View>
+                    </TeranuraFieldPanel>
 
-                    <View style={styles.variantFieldPanel}>
-                      <KolamCopyStack
-                        items={[
-                          {
-                            id: 'title',
-                            text: 'Dimensi',
-                            style: styles.variantFieldPanelTitle,
-                          },
-                        ]}
-                      />
+                    <TeranuraFieldPanel
+                      description="Opsional untuk kemasan dan penyimpanan."
+                      title="Dimensi"
+                    >
                       <View style={styles.logisticsDimensionGrid}>
-                        <View style={styles.dimensionField}>
-                          <TeranuraFieldShell label="Panjang">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={dimensionLength =>
-                                patchForm({ dimensionLength })
-                              }
-                              placeholder="Panjang"
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.dimensionLength}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.dimensionField}>
-                          <TeranuraFieldShell label="Lebar">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={dimensionWidth =>
-                                patchForm({ dimensionWidth })
-                              }
-                              placeholder="Lebar"
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.dimensionWidth}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.dimensionField}>
-                          <TeranuraFieldShell label="Tinggi">
-                            <KolamFormTextField
-                              editable={!disabled}
-                              keyboardType="numeric"
-                              onChangeText={dimensionHeight =>
-                                patchForm({ dimensionHeight })
-                              }
-                              placeholder="Tinggi"
-                              style={
-                                settingsWebFormStyles.settingsWebFormFieldValue
-                              }
-                              value={form.dimensionHeight}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
-                        <View style={styles.dimensionField}>
-                          <TeranuraFieldShell label="Satuan dimensi">
-                            <KolamDropdownSelect
-                              label="Satuan dimensi"
-                              menuStyle={styles.longDropdownMenu}
-                              onChange={dimensionUnitId =>
-                                patchForm({ dimensionUnitId })
-                              }
-                              options={dimensionUnitOptions}
-                              searchable
-                              searchPlaceholder="Cari satuan..."
-                              showLabelInTrigger={false}
-                              value={form.dimensionUnitId}
-                            />
-                          </TeranuraFieldShell>
-                        </View>
+                        <TeranuraCompactField label="Panjang">
+                          <KolamFormTextField
+                            editable={!disabled}
+                            keyboardType="numeric"
+                            onChangeText={dimensionLength =>
+                              patchForm({ dimensionLength })
+                            }
+                            placeholder="Panjang"
+                            style={
+                              settingsWebFormStyles.settingsWebFormFieldValue
+                            }
+                            value={form.dimensionLength}
+                          />
+                        </TeranuraCompactField>
+                        <TeranuraCompactField label="Lebar">
+                          <KolamFormTextField
+                            editable={!disabled}
+                            keyboardType="numeric"
+                            onChangeText={dimensionWidth =>
+                              patchForm({ dimensionWidth })
+                            }
+                            placeholder="Lebar"
+                            style={
+                              settingsWebFormStyles.settingsWebFormFieldValue
+                            }
+                            value={form.dimensionWidth}
+                          />
+                        </TeranuraCompactField>
+                        <TeranuraCompactField label="Tinggi">
+                          <KolamFormTextField
+                            editable={!disabled}
+                            keyboardType="numeric"
+                            onChangeText={dimensionHeight =>
+                              patchForm({ dimensionHeight })
+                            }
+                            placeholder="Tinggi"
+                            style={
+                              settingsWebFormStyles.settingsWebFormFieldValue
+                            }
+                            value={form.dimensionHeight}
+                          />
+                        </TeranuraCompactField>
+                        <TeranuraCompactField label="Satuan dimensi">
+                          <KolamDropdownSelect
+                            label="Satuan dimensi"
+                            menuStyle={styles.longDropdownMenu}
+                            onChange={dimensionUnitId =>
+                              patchForm({ dimensionUnitId })
+                            }
+                            options={dimensionUnitOptions}
+                            searchable
+                            searchPlaceholder="Cari satuan..."
+                            showLabelInTrigger={false}
+                            value={form.dimensionUnitId}
+                          />
+                        </TeranuraCompactField>
                       </View>
-                    </View>
+                    </TeranuraFieldPanel>
                   </View>
                 </View>
               </TeranuraEditSection>
             ) : null}
 
             {hasVariants ? (
-              <TeranuraEditSection title="Komisi">
+              <TeranuraEditSection
+                description="Komisi transaksi produk."
+                title="Komisi"
+              >
                 <KolamCommercialPolicyEditor
                   disabled={disabled}
                   memberPointsDisabled={!form.sellable || hasVariants}
@@ -1259,95 +889,164 @@ export function TeranuraEditFormPage({
               </TeranuraEditSection>
             ) : null}
 
-            <TeranuraEditSection title="SEO Google">
+            <TeranuraEditSection
+              description="Judul, kata kunci, dan deskripsi SEO Google."
+              title="SEO Google"
+            >
               <View style={styles.productBasicInfoCard}>
-                <View style={styles.twoColumnGrid}>
-                  <View style={styles.productBasicInfoHalfField}>
-                    <TeranuraFieldShell label="Judul SEO">
-                      <KolamFormTextField
-                        editable={!disabled}
-                        onChangeText={seoMetaTitle =>
-                          patchForm({ seoMetaTitle })
-                        }
-                        placeholder="Judul SEO"
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.seoMetaTitle}
+                <View style={styles.variantPricingPanel}>
+                  <View style={styles.variantTabHeader}>
+                    <KolamCopyStack
+                      items={[
+                        {
+                          id: 'summary',
+                          text: selectedItem?.seo.lastSeoScore
+                            ? `Skor SEO terakhir: ${selectedItem.seo.lastSeoScore}/100`
+                            : 'Skor SEO belum tersedia.',
+                          style: styles.fieldHint,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.twoColumnGrid}>
+                    <View style={styles.productBasicInfoHalfField}>
+                      <TeranuraFieldShell label="Judul SEO">
+                        <KolamFormTextField
+                          editable={!disabled}
+                          onChangeText={seoMetaTitle =>
+                            patchForm({ seoMetaTitle })
+                          }
+                          placeholder="Judul SEO"
+                          style={settingsWebFormStyles.settingsWebFormFieldValue}
+                          value={form.seoMetaTitle}
+                        />
+                      </TeranuraFieldShell>
+                    </View>
+                    <View style={styles.productBasicInfoHalfField}>
+                      <TeranuraFieldShell label="Kata Kunci">
+                        <KolamFormTextField
+                          editable={!disabled}
+                          onChangeText={seoKeywords =>
+                            patchForm({ seoKeywords })
+                          }
+                          placeholder="Kata kunci, pisahkan dengan koma"
+                          style={settingsWebFormStyles.settingsWebFormFieldValue}
+                          value={form.seoKeywords}
+                        />
+                      </TeranuraFieldShell>
+                    </View>
+                  </View>
+                  <TeranuraFieldShell label="Deskripsi SEO">
+                    <KolamFormTextField
+                      editable={!disabled}
+                      multiline
+                      onChangeText={seoMetaDescription =>
+                        patchForm({ seoMetaDescription })
+                      }
+                      placeholder="Deskripsi SEO"
+                      style={[
+                        settingsWebFormStyles.settingsWebFormFieldValue,
+                        styles.seoTextArea,
+                      ]}
+                      value={form.seoMetaDescription}
+                    />
+                  </TeranuraFieldShell>
+                </View>
+              </View>
+            </TeranuraEditSection>
+
+            <TeranuraEditSection
+              description="Item terlampir, kemasan, dan syarat ketentuan produk."
+              title="Keterangan tambahan"
+            >
+              <View style={styles.productBasicInfoCard}>
+                <View style={styles.pricingHalfRow}>
+                  <View style={styles.pricingHalfColumn}>
+                    <TeranuraAttachedItemsPanel item={selectedItem} />
+                  </View>
+                  <View style={styles.pricingHalfColumn}>
+                    {termsItemId ? (
+                      <KolamDetailTermsTemplatesPanel
+                        itemId={termsItemId}
+                        itemLabel="produk"
+                        itemType="product"
                       />
+                    ) : (
+                      <TeranuraFieldShell label="Syarat dan Ketentuan">
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'empty-terms',
+                              text: 'Simpan Teranura terlebih dahulu untuk melihat template S&K aktif.',
+                              style: styles.fieldHint,
+                            },
+                          ]}
+                        />
+                      </TeranuraFieldShell>
+                    )}
+                  </View>
+                </View>
+                <View style={styles.pricingHalfRow}>
+                  <View style={styles.pricingHalfColumn}>
+                    <TeranuraFieldShell label="Bahan Kemasan">
+                      <View style={styles.grocerPricingPanel}>
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'hint',
+                              text: 'Kemasan default untuk checkout.',
+                              style: styles.fieldHint,
+                            },
+                          ]}
+                        />
+                        <TeranuraPackingLinksPanel
+                          disabled={disabled}
+                          onChange={packingLinks => patchForm({ packingLinks })}
+                          packings={controller.packingOptions}
+                          rows={form.packingLinks}
+                          variants={packingVariantOptions}
+                        />
+                      </View>
                     </TeranuraFieldShell>
                   </View>
-                  <View style={styles.productBasicInfoHalfField}>
-                    <TeranuraFieldShell label="Kata Kunci">
-                      <KolamFormTextField
-                        editable={!disabled}
-                        onChangeText={seoKeywords =>
-                          patchForm({ seoKeywords })
-                        }
-                        placeholder="Kata kunci, pisahkan dengan koma"
-                        style={settingsWebFormStyles.settingsWebFormFieldValue}
-                        value={form.seoKeywords}
-                      />
+                  <View style={styles.pricingHalfColumn}>
+                    <TeranuraFieldShell label="Aset Produk Terhubung">
+                      {selectedItem?.linkedProductId ? (
+                        <TeranuraLinkedProductAssetsPanel
+                          linkedProductId={selectedItem.linkedProductId}
+                        />
+                      ) : (
+                        <KolamCopyStack
+                          items={[
+                            {
+                              id: 'empty-assets',
+                              text: 'Teranura ini belum terhubung ke produk. Aset tidak tersedia.',
+                              style: styles.fieldHint,
+                            },
+                          ]}
+                        />
+                      )}
                     </TeranuraFieldShell>
                   </View>
                 </View>
-                <TeranuraFieldShell label="Deskripsi SEO">
-                  <KolamFormTextField
-                    editable={!disabled}
-                    multiline
-                    onChangeText={seoMetaDescription =>
-                      patchForm({ seoMetaDescription })
-                    }
-                    placeholder="Deskripsi SEO"
-                    style={[
-                      settingsWebFormStyles.settingsWebFormFieldValue,
-                      styles.seoTextArea,
-                    ]}
-                    value={form.seoMetaDescription}
-                  />
-                </TeranuraFieldShell>
               </View>
             </TeranuraEditSection>
 
-            <TeranuraEditSection title="Keterangan tambahan">
-              <View style={styles.productBasicInfoCard}>
-                <TeranuraFieldShell label="Kemasan">
-                  {packingNames.length ? (
-                    packingNames.map((name, index) => (
-                      <Text key={`packing-${index}`} style={styles.rowText}>
-                        {name}
-                      </Text>
-                    ))
-                  ) : (
-                    <Text style={styles.fieldHint}>Belum ada kemasan.</Text>
-                  )}
-                </TeranuraFieldShell>
-                <TeranuraFieldShell label="Item Terlampir">
-                  {attachedNames.length ? (
-                    attachedNames.map((name, index) => (
-                      <Text key={`attached-${index}`} style={styles.rowText}>
-                        {name}
-                      </Text>
-                    ))
-                  ) : (
-                    <Text style={styles.fieldHint}>
-                      Belum ada item terlampir.
-                    </Text>
-                  )}
-                </TeranuraFieldShell>
-              </View>
-            </TeranuraEditSection>
-
-            <TeranuraEditSection title="Konten marketplace">
+            <TeranuraEditSection
+              description="Terjemahan katalog untuk webstore dan marketplace."
+              title="Konten marketplace"
+            >
               <KolamCatalogTranslationsEditor
                 editable={!disabled}
                 kind="product"
-                onChange={() => undefined}
+                onChange={translations => patchForm({ translations })}
                 primaryProductLocale={{
                   name: form.name,
                   shortDescription: form.shortDescription,
                   description: form.description,
                   onChange: patch => patchForm(patch),
                 }}
-                translations={{}}
+                translations={form.translations}
               />
             </TeranuraEditSection>
           </View>
@@ -1359,9 +1058,11 @@ export function TeranuraEditFormPage({
 
 function TeranuraEditSection({
   children,
+  description,
   title,
 }: {
   children: React.ReactNode;
+  description?: string;
   title: string;
 }) {
   return (
@@ -1373,6 +1074,15 @@ function TeranuraEditSection({
         containerStyle={styles.productEditSectionHeader}
         items={[
           { id: 'title', text: title, style: styles.productEditSectionTitle },
+          ...(description
+            ? [
+                {
+                  id: 'description',
+                  text: description,
+                  style: styles.productEditSectionDescription,
+                },
+              ]
+            : []),
         ]}
       />
       <View style={styles.productEditSectionBody}>{children}</View>
@@ -1380,74 +1090,175 @@ function TeranuraEditSection({
   );
 }
 
-function TeranuraFieldShell({
+function TeranuraFieldPanel({
   children,
-  label,
-  required = false,
+  description,
+  title,
 }: {
   children: React.ReactNode;
-  label: string;
-  required?: boolean;
+  description?: string;
+  title: string;
 }) {
   return (
-    <View style={settingsWebFormStyles.settingsWebFormField}>
-      <KolamSettingsWebFieldLabel label={label} required={required} />
-      {children}
+    <View style={styles.variantFieldPanel}>
+      <KolamCopyStack
+        items={[
+          { id: 'title', text: title, style: styles.variantFieldPanelTitle },
+          ...(description
+            ? [{ id: 'description', text: description, style: styles.fieldHint }]
+            : []),
+        ]}
+      />
+      <View style={styles.variantFieldPanelBody}>{children}</View>
     </View>
   );
 }
 
-function TeranuraMultiSelectField({
+function TeranuraPriceField({
   disabled,
-  emptyText,
+  hint,
   label,
-  onAdd,
-  onRemove,
-  options,
-  selected,
-  triggerLabel,
+  onChangeText,
+  value,
 }: {
   disabled: boolean;
-  emptyText: string;
+  hint?: string;
   label: string;
-  onAdd: (id: string) => void;
-  onRemove: (id: string) => void;
-  options: Array<{ id: string; label: string }>;
-  selected: Array<{ id: string; label: string }>;
-  triggerLabel: string;
+  onChangeText: (value: string) => void;
+  value: string;
 }) {
   return (
-    <TeranuraFieldShell label={label}>
-      <View style={styles.categoryPickerStack}>
+    <View style={styles.productBasicInfoHalfField}>
+      <TeranuraFieldShell label={label}>
+        <TeranuraPriceInput
+          disabled={disabled}
+          onChangeText={onChangeText}
+          value={value}
+        />
+        {hint ? (
+          <KolamCopyStack
+            items={[{ id: 'hint', text: hint, style: styles.fieldHint }]}
+          />
+        ) : null}
+      </TeranuraFieldShell>
+    </View>
+  );
+}
+
+function TeranuraCompactField({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.productBasicInfoHalfField}>
+      <TeranuraFieldShell label={label}>{children}</TeranuraFieldShell>
+    </View>
+  );
+}
+
+function TeranuraRootSalesPanel({
+  controller,
+  disabled,
+  form,
+  patchForm,
+  unitOptions,
+}: {
+  controller: KolamTeranuraController;
+  disabled: boolean;
+  form: KolamTeranuraFormState;
+  patchForm: (patch: Partial<KolamTeranuraFormState>) => void;
+  unitOptions: Array<{ label: string; value: string }>;
+}) {
+  const shippingOptions = [
+    { label: 'Tambah metode pengiriman', value: '' },
+    ...controller.shippingMethods
+      .filter(method => !form.availableShippingMethodIds.includes(method.id))
+      .map(method => ({ label: method.displayName, value: method.id })),
+  ];
+  const selectedMethods = controller.shippingMethods.filter(method =>
+    form.availableShippingMethodIds.includes(method.id),
+  );
+
+  return (
+    <TeranuraFieldShell label="Penjualan dan Satuan">
+      <View style={styles.grocerPricingPanel}>
+        <View style={styles.twoColumnGrid}>
+          <View style={styles.inlineFieldGroup}>
+            <View style={styles.sellableSwitchRow}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'label',
+                    text: 'Produk dijual',
+                    style: styles.variantTitle,
+                  },
+                ]}
+              />
+              <KolamSwitch
+                accessibilityLabel="Produk dijual"
+                active={form.sellable}
+                disabled={disabled}
+                onPress={() => patchForm({ sellable: !form.sellable })}
+              />
+            </View>
+          </View>
+          <View style={styles.inlineFieldGroup}>
+            <KolamDropdownSelect
+              accessibilityLabel="Pilih satuan"
+              label="Satuan"
+              menuStyle={styles.longDropdownMenu}
+              onChange={unitId => patchForm({ unitId })}
+              options={unitOptions}
+              searchable
+              searchPlaceholder="Cari satuan..."
+              showLabelInTrigger={false}
+              value={form.unitId}
+            />
+            <KolamCopyStack
+              items={[{ id: 'unit-hint', text: 'Satuan.', style: styles.fieldHint }]}
+            />
+          </View>
+        </View>
         <KolamDropdownSelect
-          label={triggerLabel}
+          accessibilityLabel="Tambah metode pengiriman"
+          label="Metode pengiriman tersedia"
           menuStyle={styles.longDropdownMenu}
-          onChange={value => {
-            if (value) {
-              onAdd(value);
+          onChange={methodId => {
+            if (!methodId || form.availableShippingMethodIds.includes(methodId)) {
+              return;
             }
+            patchForm({
+              availableShippingMethodIds: [
+                ...form.availableShippingMethodIds,
+                methodId,
+              ],
+            });
           }}
-          options={[
-            { label: triggerLabel, value: '' },
-            ...options.map(option => ({
-              label: option.label,
-              value: option.id,
-            })),
-          ]}
+          options={shippingOptions}
           searchable
-          searchPlaceholder={`Cari ${label.toLowerCase()}...`}
+          searchPlaceholder="Cari metode pengiriman..."
           showLabelInTrigger={false}
           value=""
         />
         <View style={styles.selectedCategoryRow}>
-          {selected.length ? (
-            selected.map(item => (
+          {selectedMethods.length ? (
+            selectedMethods.map(method => (
               <KolamButton
                 disabled={disabled}
                 intent="outline"
-                key={item.id}
-                label={`${item.label} x`}
-                onPress={() => onRemove(item.id)}
+                key={method.id}
+                label={`${method.displayName} x`}
+                onPress={() =>
+                  patchForm({
+                    availableShippingMethodIds:
+                      form.availableShippingMethodIds.filter(
+                        methodId => methodId !== method.id,
+                      ),
+                  })
+                }
                 style={styles.selectedCategoryButton}
               />
             ))
@@ -1455,8 +1266,8 @@ function TeranuraMultiSelectField({
             <KolamCopyStack
               items={[
                 {
-                  id: `empty-${label}`,
-                  text: emptyText,
+                  id: 'empty-shipping',
+                  text: 'Belum ada metode pengiriman dipilih.',
                   style: styles.fieldHint,
                 },
               ]}
@@ -1468,160 +1279,87 @@ function TeranuraMultiSelectField({
   );
 }
 
-function TeranuraExternalLinksRowsEditor({
+function TeranuraRootInventoryPanel({
   disabled,
-  links,
-  onChange,
+  form,
+  patchForm,
 }: {
   disabled: boolean;
-  links: KolamTeranuraExternalLinkFormRow[];
-  onChange: (links: KolamTeranuraExternalLinkFormRow[]) => void;
+  form: KolamTeranuraFormState;
+  patchForm: (patch: Partial<KolamTeranuraFormState>) => void;
 }) {
-  const updateRow = (
-    index: number,
-    patch: Partial<KolamTeranuraExternalLinkFormRow>,
-  ) => {
-    onChange(
-      links.map((link, linkIndex) =>
-        linkIndex === index ? { ...link, ...patch } : link,
-      ),
-    );
-  };
+  return (
+    <TeranuraFieldShell label="Inventori Produk">
+      <View style={styles.pricingPanelStack}>
+        <TeranuraFieldPanel
+          description="Batas peringatan stok rendah untuk produk tanpa varian."
+          title="Stok dan Peringatan"
+        >
+          <View style={styles.twoColumnGrid}>
+            <TeranuraCompactField label="Ambang Stok Rendah">
+              <KolamFormTextField
+                editable={!disabled}
+                keyboardType="numeric"
+                onChangeText={lowStockThreshold =>
+                  patchForm({ lowStockThreshold })
+                }
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.lowStockThreshold}
+              />
+            </TeranuraCompactField>
+          </View>
+        </TeranuraFieldPanel>
+      </View>
+    </TeranuraFieldShell>
+  );
+}
+
+function TeranuraAttachedItemsPanel({ item }: { item: KolamTeranura | null }) {
+  const attachedItems = item?.attachedItems ?? [];
 
   return (
-    <View style={styles.externalLinksStack}>
-      {links.length ? (
-        links.map((link, index) => (
-          <View key={`${index}-${link.name}`} style={styles.externalLinkRow}>
-            <View style={styles.externalLinkTypeSelect}>
-              <KolamDropdownSelect<KolamTeranuraLinkName>
-                label="Tipe tautan"
-                onChange={name => updateRow(index, { name })}
-                options={EXTERNAL_LINK_OPTIONS}
-                showLabelInTrigger={false}
-                style={styles.externalLinkDropdown}
-                triggerStyle={styles.externalLinkDropdownTrigger}
-                triggerTextStyle={styles.externalLinkDropdownTriggerText}
-                value={link.name}
-              />
-            </View>
-            <KolamFormTextField
-              editable={!disabled}
-              mode="url"
-              onChangeText={value => updateRow(index, { value })}
-              placeholder="https://contoh.com"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                styles.externalLinkInput,
-              ]}
-              value={link.value}
-            />
-            <KolamButton
-              disabled={disabled}
-              intent="outline"
-              label="Hapus"
-              onPress={() =>
-                onChange(links.filter((_, linkIndex) => linkIndex !== index))
-              }
-              style={styles.externalLinkRemoveButton}
-            />
-          </View>
-        ))
-      ) : (
+    <TeranuraFieldShell label="Produk Kompatibel">
+      <View style={styles.variantPricingPanel}>
         <KolamCopyStack
           items={[
             {
-              id: 'empty-links',
-              text: 'Belum ada tautan eksternal.',
+              id: 'summary',
+              text: attachedItems.length
+                ? `${attachedItems.length} item terhubung ke Teranura ini.`
+                : item
+                ? 'Belum ada produk kompatibel atau pengganti.'
+                : 'Simpan Teranura terlebih dahulu untuk menambahkan item terlampir.',
               style: styles.fieldHint,
             },
           ]}
         />
-      )}
-      <KolamButton
-        disabled={disabled}
-        intent="secondary"
-        label="Tambah tautan"
-        onPress={() => onChange([...links, { name: '', value: '' }])}
-        style={styles.externalLinkAddButton}
-      />
-    </View>
-  );
-}
-
-function TeranuraVendorPriceRow({
-  disabled,
-  index,
-  onPatch,
-  onRemove,
-  row,
-  vendorOptions,
-}: {
-  disabled: boolean;
-  index: number;
-  onPatch: (patch: Partial<KolamTeranuraVendorPriceFormRow>) => void;
-  onRemove: () => void;
-  row: KolamTeranuraVendorPriceFormRow;
-  vendorOptions: Array<{ label: string; value: string }>;
-}) {
-  return (
-    <View style={styles.vendorPriceRow}>
-      <View style={styles.variantManagerHeader}>
-        <Text style={styles.rowText}>{`Vendor ${index + 1}`}</Text>
-        <KolamButton
-          disabled={disabled}
-          intent="outline"
-          label="Hapus"
-          onPress={onRemove}
-        />
+        {attachedItems.map(entry => (
+          <View key={entry.id} style={styles.attachedItemRow}>
+            <KolamCopyStack
+              items={[
+                {
+                  id: 'name',
+                  text: entry.targetName || entry.typeLabel,
+                  style: styles.variantTitle,
+                },
+                {
+                  id: 'meta',
+                  text: [
+                    entry.typeLabel,
+                    entry.itemType === 'species' ? 'Spesies' : 'Produk',
+                    entry.targetSku ? `SKU: ${entry.targetSku}` : '',
+                    entry.note,
+                  ]
+                    .filter(Boolean)
+                    .join(' - '),
+                  style: styles.fieldHint,
+                },
+              ]}
+            />
+          </View>
+        ))}
       </View>
-      <View style={styles.twoColumnGrid}>
-        <View style={styles.productBasicInfoHalfField}>
-          <KolamDropdownSelect
-            label="Vendor"
-            menuStyle={styles.longDropdownMenu}
-            onChange={vendorId => onPatch({ vendorId })}
-            options={vendorOptions}
-            searchable
-            searchPlaceholder="Cari pemasok..."
-            showLabelInTrigger={false}
-            value={row.vendorId}
-          />
-        </View>
-        <View style={styles.productBasicInfoHalfField}>
-          <KolamFormTextField
-            editable={!disabled}
-            mode="url"
-            onChangeText={link => onPatch({ link })}
-            placeholder="Link produk vendor"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={row.link}
-          />
-        </View>
-      </View>
-      <View style={styles.twoColumnGrid}>
-        <View style={styles.productBasicInfoHalfField}>
-          <KolamFormTextField
-            editable={!disabled}
-            keyboardType="numeric"
-            onChangeText={price => onPatch({ price })}
-            placeholder="Harga"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={row.price}
-          />
-        </View>
-        <View style={styles.productBasicInfoHalfField}>
-          <KolamFormTextField
-            editable={!disabled}
-            keyboardType="numeric"
-            onChangeText={shippingCost => onPatch({ shippingCost })}
-            placeholder="Ongkir"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={row.shippingCost}
-          />
-        </View>
-      </View>
-    </View>
+    </TeranuraFieldShell>
   );
 }
 
@@ -1687,6 +1425,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 18,
   },
+  productEditSectionDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
+  },
   productEditSectionBody: {
     gap: 12,
   },
@@ -1721,9 +1465,6 @@ const styles = StyleSheet.create({
   longDropdownMenu: {
     width: 320,
   },
-  categoryPickerStack: {
-    gap: 8,
-  },
   selectedCategoryRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -1742,6 +1483,12 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 12,
   },
+  inlineFieldGroup: {
+    flexBasis: 0,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 220,
+  },
   sellableSwitchRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -1752,12 +1499,6 @@ const styles = StyleSheet.create({
   fieldHint: {
     color: V.colors.mutedFg,
     fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  rowText: {
-    color: V.colors.fg,
-    fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
   },
@@ -1787,13 +1528,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
   },
-  variantConfiguratorCard: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
+  variantInfoPanel: {
+    backgroundColor: V.colors.infoSoft,
+    borderColor: V.colors.info,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 16,
-    padding: 14,
+    gap: 4,
+    padding: 12,
+  },
+  variantInfoTitle: {
+    color: V.colors.info,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  variantInfoHint: {
+    color: V.colors.info,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
   },
   variantManagerHeader: {
     alignItems: 'center',
@@ -1809,14 +1562,6 @@ const styles = StyleSheet.create({
   },
   variantListShell: {
     gap: 12,
-  },
-  variantCard: {
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    padding: 12,
   },
   variantFieldPanel: {
     alignSelf: 'stretch',
@@ -1835,100 +1580,51 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 18,
   },
+  variantFieldPanelBody: {
+    gap: 10,
+  },
+  variantPricingPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
+  variantTabHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  attachedItemRow: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 4,
+    padding: 10,
+  },
   pricingPanelStack: {
     alignSelf: 'stretch',
     gap: 12,
     minWidth: 0,
     width: '100%',
   },
+  pricingHalfRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  pricingHalfColumn: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 280,
+  },
   logisticsDimensionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-  },
-  dimensionField: {
-    flexBasis: 0,
-    flexGrow: 1,
-    minWidth: 140,
-  },
-  mediaPickerStack: {
-    gap: 14,
-  },
-  mediaUploadSection: {
-    gap: 8,
-  },
-  existingMediaGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  existingMediaImage: {
-    borderRadius: 6,
-    height: 72,
-    width: 116,
-  },
-  vendorPricePanel: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    padding: 12,
-  },
-  vendorPriceRow: {
-    backgroundColor: V.colors.secondary,
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    gap: 10,
-    padding: 10,
-  },
-  externalLinksStack: {
-    alignSelf: 'stretch',
-    gap: 8,
-    minWidth: 0,
-    width: '100%',
-  },
-  externalLinkRow: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 8,
-    minWidth: 0,
-    width: '100%',
-  },
-  externalLinkTypeSelect: {
-    flexBasis: 128,
-    flexShrink: 0,
-    minWidth: 120,
-  },
-  externalLinkDropdown: {
-    alignSelf: 'stretch',
-    maxWidth: '100%',
-    minWidth: 0,
-    width: '100%',
-  },
-  externalLinkDropdownTrigger: {
-    maxWidth: '100%',
-    minWidth: 0,
-    width: '100%',
-  },
-  externalLinkDropdownTriggerText: {
-    flexShrink: 1,
-    maxWidth: '100%',
-  },
-  externalLinkInput: {
-    flex: 1,
-    minWidth: 80,
-  },
-  externalLinkRemoveButton: {
-    flexShrink: 0,
-    minHeight: 34,
-  },
-  externalLinkAddButton: {
-    alignSelf: 'flex-start',
-    minHeight: 34,
   },
   seoTextArea: {
     minHeight: 84,

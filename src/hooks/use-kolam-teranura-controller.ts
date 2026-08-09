@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { flattenAllCategories, type KolamCategory } from '../domain/kolam-category';
 import type { KolamBrand } from '../domain/kolam-brand';
+import type { KolamCustomField } from '../domain/kolam-custom-field';
+import type { KolamPackingOption } from '../domain/kolam-packing-option';
 import type { KolamProductOption } from '../domain/kolam-product-option';
 import type { KolamShippingMethod } from '../domain/kolam-shipping-method';
 import type { KolamTag } from '../domain/kolam-tag';
@@ -23,10 +25,12 @@ import {
 } from '../domain/kolam-teranura';
 import { getKolamBrands } from '../services/kolam-brand-api';
 import { getKolamCategories } from '../services/kolam-category-api';
+import { getKolamCustomFields } from '../services/kolam-custom-field-api';
 import {
   getKolamLocations,
   type KolamLocationOption,
 } from '../services/kolam-location-api';
+import { getKolamPackingOptions } from '../services/kolam-packing-option-api';
 import {
   getKolamProductOptions,
   getKolamRawProductOptions,
@@ -35,6 +39,8 @@ import { getKolamActiveShippingMethods } from '../services/kolam-shipping-method
 import { getKolamTags } from '../services/kolam-tag-api';
 import {
   createKolamTeranura,
+  deleteKolamTeranuraPhoto,
+  deleteKolamTeranuraVideo,
   getKolamTeranuraDetail,
   getKolamTeranuras,
   updateKolamTeranura,
@@ -66,6 +72,7 @@ export interface KolamTeranuraController {
   brands: KolamBrand[];
   categories: KolamCategory[];
   componentProducts: KolamProductOption[];
+  customFields: KolamCustomField[];
   dataSource: KolamTeranuraDataSource;
   error: string | null;
   filters: KolamTeranuraListFilters;
@@ -75,6 +82,7 @@ export interface KolamTeranuraController {
   loading: boolean;
   locations: KolamLocationOption[];
   mode: KolamTeranuraSurfaceMode;
+  packingOptions: KolamPackingOption[];
   pagination: KolamTeranuraPagination;
   saving: boolean;
   selectedItem: KolamTeranura | null;
@@ -84,6 +92,8 @@ export interface KolamTeranuraController {
   vendors: KolamVendor[];
   onChangeFilters: (patch: Partial<KolamTeranuraListFilters>) => void;
   onChangeForm: (patch: Partial<KolamTeranuraFormState>) => void;
+  onDeletePhoto: (index: number) => Promise<boolean>;
+  onDeleteVideo: (index: number) => Promise<boolean>;
   onLimitChange: (limit: number) => void;
   onPageChange: (page: number) => void;
   onPickPhoto: () => Promise<void>;
@@ -134,6 +144,10 @@ export function useKolamTeranuraController(
   const [componentProducts, setComponentProducts] = useState<
     KolamProductOption[]
   >([]);
+  const [customFields, setCustomFields] = useState<KolamCustomField[]>([]);
+  const [packingOptions, setPackingOptions] = useState<KolamPackingOption[]>(
+    [],
+  );
   const [filters, setFilters] =
     useState<KolamTeranuraListFilters>(DEFAULT_FILTERS);
   const [pagination, setPagination] =
@@ -154,6 +168,8 @@ export function useKolamTeranuraController(
       shippingList,
       productOptions,
       rawOptions,
+      customFieldList,
+      packingList,
     ] = await Promise.all([
       getKolamCategories(),
       getKolamBrands(),
@@ -164,6 +180,8 @@ export function useKolamTeranuraController(
       getKolamActiveShippingMethods(),
       getKolamProductOptions(),
       getKolamRawProductOptions(),
+      getKolamCustomFields(),
+      getKolamPackingOptions(),
     ]);
 
     setCategories(flattenAllCategories(categoryList));
@@ -173,6 +191,8 @@ export function useKolamTeranuraController(
     setVendors(vendorList);
     setLocations(locationList);
     setShippingMethods(shippingList);
+    setCustomFields(customFieldList);
+    setPackingOptions(packingList);
     const byId = new Map<string, KolamProductOption>();
     [...rawOptions, ...productOptions].forEach(option => {
       if (option.id) {
@@ -285,6 +305,64 @@ export function useKolamTeranuraController(
     }
   }, [onChangeForm]);
 
+  const onDeletePhoto = useCallback(
+    async (index: number) => {
+      const item = selectedItem;
+      if (!item) {
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextItem = await deleteKolamTeranuraPhoto(item.id, index);
+        setSelectedItem(nextItem);
+        setForm(createKolamTeranuraFormState(nextItem));
+        setDataSource('live');
+        return true;
+      } catch (deleteError) {
+        setError(
+          deleteError instanceof Error
+            ? deleteError.message
+            : 'Gagal menghapus foto Teranura.',
+        );
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [selectedItem],
+  );
+
+  const onDeleteVideo = useCallback(
+    async (index: number) => {
+      const item = selectedItem;
+      if (!item) {
+        return false;
+      }
+
+      setSaving(true);
+      setError(null);
+      try {
+        const nextItem = await deleteKolamTeranuraVideo(item.id, index);
+        setSelectedItem(nextItem);
+        setForm(createKolamTeranuraFormState(nextItem));
+        setDataSource('live');
+        return true;
+      } catch (deleteError) {
+        setError(
+          deleteError instanceof Error
+            ? deleteError.message
+            : 'Gagal menghapus video Teranura.',
+        );
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [selectedItem],
+  );
+
   const onSave = useCallback(async () => {
     if (!form) {
       return null;
@@ -311,6 +389,20 @@ export function useKolamTeranuraController(
           form.videoLocalUri.trim(),
         );
       }
+      if (form.variantPhotoLocalUri.trim() && form.selectedVariantId.trim()) {
+        const resolvedVariantId = resolveSavedVariantId(
+          form.selectedVariantId,
+          form,
+          saved,
+        );
+        if (resolvedVariantId) {
+          saved = await uploadKolamTeranuraPhoto(
+            saved.id,
+            form.variantPhotoLocalUri.trim(),
+            resolvedVariantId,
+          );
+        }
+      }
 
       setSelectedItem(saved);
       setForm(createKolamTeranuraFormState(saved));
@@ -330,6 +422,7 @@ export function useKolamTeranuraController(
     brands,
     categories,
     componentProducts,
+    customFields,
     dataSource,
     error,
     filters,
@@ -339,6 +432,7 @@ export function useKolamTeranuraController(
     loading,
     locations,
     mode,
+    packingOptions,
     pagination,
     saving,
     selectedItem,
@@ -348,6 +442,8 @@ export function useKolamTeranuraController(
     vendors,
     onChangeFilters,
     onChangeForm,
+    onDeletePhoto,
+    onDeleteVideo,
     onLimitChange,
     onPageChange,
     onPickPhoto,
@@ -356,4 +452,21 @@ export function useKolamTeranuraController(
     onSave,
     onSearchChange,
   };
+}
+
+function resolveSavedVariantId(
+  selectedVariantId: string,
+  form: KolamTeranuraFormState,
+  saved: KolamTeranura,
+): string {
+  const cleanId = selectedVariantId.trim();
+  if (!cleanId) {
+    return '';
+  }
+  if (!cleanId.startsWith('variant-draft-')) {
+    return cleanId;
+  }
+
+  const formIndex = form.variants.findIndex(variant => variant.id === cleanId);
+  return formIndex >= 0 ? saved.variants[formIndex]?.id ?? '' : '';
 }

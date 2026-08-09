@@ -1,3 +1,9 @@
+import {
+  normalizeKolamTranslationsForSave,
+  normalizeKolamTranslationsFromRecord,
+  type KolamCatalogTranslationsMap,
+} from './kolam-catalog-locale';
+import type { KolamProductLocaleFields } from './kolam-product';
 import type { KolamTeranura } from './kolam-teranura';
 
 export type KolamTeranuraLinkName =
@@ -29,6 +35,20 @@ export interface KolamTeranuraComponentFormRow {
   quantity: string;
 }
 
+export interface KolamTeranuraGrocerPricingTierFormRow {
+  id: string;
+  minQty: string;
+  price: string;
+  onlinePrice: string;
+}
+
+export interface KolamTeranuraPackingLinkFormRow {
+  id: string;
+  packingId: string;
+  variantId: string;
+  quantity: string;
+}
+
 export interface KolamTeranuraVariantFormRow {
   id: string;
   tier1Value: string;
@@ -40,10 +60,13 @@ export interface KolamTeranuraVariantFormRow {
   marketPrice: string;
   onlinePrice: string;
   minimumPriceToSales: string;
+  minimumOrderQty: string;
   lowStockThreshold: string;
   vendorPrices: KolamTeranuraVendorPriceFormRow[];
   componentOverrides: KolamTeranuraComponentFormRow[];
   externalLinks: KolamTeranuraExternalLinkFormRow[];
+  grocerPricingTiers: KolamTeranuraGrocerPricingTierFormRow[];
+  customFieldValues: unknown[];
   weightValue: string;
   weightUnitId: string;
   dimensionLength: string;
@@ -78,6 +101,8 @@ export interface KolamTeranuraFormState {
   marketPrice: string;
   onlinePrice: string;
   minimumPriceToSales: string;
+  minimumOrderQty: string;
+  grocerPricingTiers: KolamTeranuraGrocerPricingTierFormRow[];
   weightValue: string;
   weightUnitId: string;
   dimensionLength: string;
@@ -93,12 +118,20 @@ export interface KolamTeranuraFormState {
   componentRows: KolamTeranuraComponentFormRow[];
   vendorPrices: KolamTeranuraVendorPriceFormRow[];
   externalLinks: KolamTeranuraExternalLinkFormRow[];
+  packingLinks: KolamTeranuraPackingLinkFormRow[];
+  translations: KolamCatalogTranslationsMap<KolamProductLocaleFields>;
   hasVariants: boolean;
   variantConfigTier1Name: string;
   variantConfigTier2Name: string;
+  variantConfigTier1Values: string[];
+  variantConfigTier2Values: string[];
+  variantConfigTier2Enabled: boolean;
   variants: KolamTeranuraVariantFormRow[];
   photoLocalUri: string;
   videoLocalUri: string;
+  thumbnailLocalUri: string;
+  selectedVariantId: string;
+  variantPhotoLocalUri: string;
 }
 
 export function createEmptyKolamTeranuraFormState(): KolamTeranuraFormState {
@@ -125,6 +158,8 @@ export function createEmptyKolamTeranuraFormState(): KolamTeranuraFormState {
     marketPrice: '0',
     onlinePrice: '0',
     minimumPriceToSales: '0',
+    minimumOrderQty: '1',
+    grocerPricingTiers: [],
     weightValue: '',
     weightUnitId: '',
     dimensionLength: '',
@@ -140,12 +175,20 @@ export function createEmptyKolamTeranuraFormState(): KolamTeranuraFormState {
     componentRows: [],
     vendorPrices: [],
     externalLinks: [],
+    packingLinks: [],
+    translations: {},
     hasVariants: false,
     variantConfigTier1Name: 'Varian',
     variantConfigTier2Name: '',
+    variantConfigTier1Values: [],
+    variantConfigTier2Values: [],
+    variantConfigTier2Enabled: false,
     variants: [],
     photoLocalUri: '',
     videoLocalUri: '',
+    thumbnailLocalUri: '',
+    selectedVariantId: '',
+    variantPhotoLocalUri: '',
   };
 }
 
@@ -160,6 +203,9 @@ export function createKolamTeranuraFormState(
   const seo = asRecord(raw.seo);
   const variants = Array.isArray(raw.variants) ? raw.variants : [];
   const hasVariants = variants.length > 0 || getBoolean(raw, 'hasVariants');
+  const variantFormRows = variants.map(createVariantFormRow);
+  const configTier1Values = getStringArray(variantConfig.tier1Values);
+  const configTier2Values = getStringArray(variantConfig.tier2Values);
 
   return {
     id: item.id,
@@ -190,6 +236,10 @@ export function createKolamTeranuraFormState(
     marketPrice: String(item.marketPrice || 0),
     onlinePrice: String(item.onlinePrice || 0),
     minimumPriceToSales: String(item.minimumPriceToSales || 0),
+    minimumOrderQty: String(item.minimumOrderQty || 1),
+    grocerPricingTiers: normalizeGrocerPricingTierFormRows(
+      raw.grocerPricingTiers,
+    ),
     weightValue:
       getNumber(weight, 'value') > 0
         ? String(getNumber(weight, 'value'))
@@ -236,13 +286,30 @@ export function createKolamTeranuraFormState(
     componentRows: normalizeComponentRows(raw.components),
     vendorPrices: normalizeVendorRows(raw.vendorPrices),
     externalLinks: normalizeLinkRows(raw.link ?? raw.links ?? raw.externalLinks),
+    packingLinks: normalizePackingLinkFormRows(raw.packings ?? raw.packingLinks),
+    translations: normalizeKolamTranslationsFromRecord<KolamProductLocaleFields>(
+      raw.translations,
+    ),
     hasVariants,
     variantConfigTier1Name:
       getString(variantConfig, 'tier1Name') || 'Varian',
     variantConfigTier2Name: getString(variantConfig, 'tier2Name'),
-    variants: variants.map(createVariantFormRow),
+    variantConfigTier1Values: configTier1Values.length
+      ? configTier1Values
+      : uniqueStrings(variantFormRows.map(variant => variant.tier1Value)),
+    variantConfigTier2Values: configTier2Values.length
+      ? configTier2Values
+      : uniqueStrings(variantFormRows.map(variant => variant.tier2Value)),
+    variantConfigTier2Enabled:
+      Boolean(getString(variantConfig, 'tier2Name')) ||
+      configTier2Values.length > 0 ||
+      variantFormRows.some(variant => variant.tier2Value.trim().length > 0),
+    variants: variantFormRows,
     photoLocalUri: '',
     videoLocalUri: '',
+    thumbnailLocalUri: '',
+    selectedVariantId: '',
+    variantPhotoLocalUri: '',
   };
 }
 
@@ -268,10 +335,13 @@ export function createEmptyKolamTeranuraVariantFormRow(): KolamTeranuraVariantFo
     marketPrice: '0',
     onlinePrice: '0',
     minimumPriceToSales: '0',
+    minimumOrderQty: '1',
     lowStockThreshold: '0',
     vendorPrices: [],
     componentOverrides: [],
     externalLinks: [],
+    grocerPricingTiers: [],
+    customFieldValues: [],
     weightValue: '',
     weightUnitId: '',
     dimensionLength: '',
@@ -281,6 +351,85 @@ export function createEmptyKolamTeranuraVariantFormRow(): KolamTeranuraVariantFo
     memberPointsEnabled: false,
     memberPoints: '0',
     raw: null,
+  };
+}
+
+/**
+ * Cartesian product of the configurator chip values, mirroring Product's
+ * `createProductVariantCombinationRows` SKU scheme (BASE-TIER1-TIER2).
+ */
+export function createKolamTeranuraVariantCombinationRows(
+  baseSku: string,
+  tier1Values: string[],
+  tier2Enabled: boolean,
+  tier2Values: string[],
+  existingRows: KolamTeranuraVariantFormRow[],
+): KolamTeranuraVariantFormRow[] {
+  const cleanTier1 = uniqueStrings(tier1Values);
+  const cleanTier2 = tier2Enabled ? uniqueStrings(tier2Values) : [];
+  const base = baseSku.trim().toUpperCase().replace(/\s+/g, '-');
+
+  if (!cleanTier1.length) {
+    return existingRows;
+  }
+
+  const combinations: Array<{ tier1Value: string; tier2Value: string }> = [];
+  cleanTier1.forEach(tier1Value => {
+    if (cleanTier2.length) {
+      cleanTier2.forEach(tier2Value => {
+        combinations.push({ tier1Value, tier2Value });
+      });
+    } else {
+      combinations.push({ tier1Value, tier2Value: '' });
+    }
+  });
+
+  return combinations.map(combo => {
+    const existing = existingRows.find(
+      row =>
+        row.tier1Value.trim() === combo.tier1Value &&
+        row.tier2Value.trim() === combo.tier2Value,
+    );
+    if (existing) {
+      return existing;
+    }
+
+    const slugParts = [base, slugifyVariantValue(combo.tier1Value)];
+    if (combo.tier2Value) {
+      slugParts.push(slugifyVariantValue(combo.tier2Value));
+    }
+
+    return {
+      ...createEmptyKolamTeranuraVariantFormRow(),
+      tier1Value: combo.tier1Value,
+      tier2Value: combo.tier2Value,
+      sku: slugParts.filter(Boolean).join('-'),
+    };
+  });
+}
+
+export function createEmptyKolamTeranuraGrocerPricingTierFormRow(
+  rows: KolamTeranuraGrocerPricingTierFormRow[],
+): KolamTeranuraGrocerPricingTierFormRow {
+  const maxQty = rows.reduce(
+    (max, row) => Math.max(max, toNonNegativeNumber(row.minQty)),
+    0,
+  );
+
+  return {
+    id: createDraftId('tier'),
+    minQty: String(maxQty + 1),
+    price: '0',
+    onlinePrice: '0',
+  };
+}
+
+export function createEmptyKolamTeranuraPackingLinkFormRow(): KolamTeranuraPackingLinkFormRow {
+  return {
+    id: createDraftId('packing'),
+    packingId: '',
+    variantId: '',
+    quantity: '1',
   };
 }
 
@@ -294,6 +443,10 @@ export function createKolamTeranuraSavePayload(form: KolamTeranuraFormState) {
   }
 
   const hasVariants = form.hasVariants || form.variants.length > 0;
+  const keywords = form.seoKeywords
+    .split(',')
+    .map(keyword => keyword.trim())
+    .filter(Boolean);
 
   return {
     name,
@@ -301,6 +454,10 @@ export function createKolamTeranuraSavePayload(form: KolamTeranuraFormState) {
     productCode: form.productCode.trim() || undefined,
     description: form.description,
     shortDescription: form.shortDescription.trim() || undefined,
+    translations:
+      normalizeKolamTranslationsForSave<KolamProductLocaleFields>(
+        form.translations,
+      ) ?? {},
     brand: form.brandIds,
     category: form.categoryIds,
     unit: form.unitId.trim(),
@@ -310,7 +467,13 @@ export function createKolamTeranuraSavePayload(form: KolamTeranuraFormState) {
     availableShippingMethods: form.availableShippingMethodIds,
     lowStockThreshold: toNonNegativeNumber(form.lowStockThreshold),
     link: createLinkPayload(form.externalLinks),
+    packings: createPackingLinkPayload(form.packingLinks),
     customFieldValues: form.customFieldValues,
+    seo: {
+      metaTitle: form.seoMetaTitle.trim(),
+      metaDescription: form.seoMetaDescription.trim(),
+      keywords,
+    },
     ...(form.commissionEnabled
       ? {
           commissionEnabled: true,
@@ -325,6 +488,10 @@ export function createKolamTeranuraSavePayload(form: KolamTeranuraFormState) {
           marketPrice: toNonNegativeNumber(form.marketPrice),
           onlinePrice: toNonNegativeNumber(form.onlinePrice),
           minimum_price_to_sales: toNonNegativeNumber(form.minimumPriceToSales),
+          minimumOrderQty: Math.max(1, toNonNegativeNumber(form.minimumOrderQty)),
+          grocerPricingTiers: createGrocerPricingTierPayload(
+            form.grocerPricingTiers,
+          ),
           components: createComponentPayload(form.componentRows),
           vendorPrices: createVendorPayload(form.vendorPrices),
           ...createWeightPayload(form.weightValue, form.weightUnitId),
@@ -344,15 +511,22 @@ export function createKolamTeranuraSavePayload(form: KolamTeranuraFormState) {
             : { memberPoints: { enabled: false, points: 0 } }),
         }
       : {
+          grocerPricingTiers: [],
           variantConfig: {
             tier1Name: form.variantConfigTier1Name.trim() || 'Varian',
-            tier1Values: uniqueStrings(
-              form.variants.map(variant => variant.tier1Value.trim()),
-            ),
+            tier1Values: form.variantConfigTier1Values.length
+              ? uniqueStrings(form.variantConfigTier1Values)
+              : uniqueStrings(
+                  form.variants.map(variant => variant.tier1Value.trim()),
+                ),
             tier2Name: form.variantConfigTier2Name.trim() || undefined,
-            tier2Values: uniqueStrings(
-              form.variants.map(variant => variant.tier2Value.trim()),
-            ),
+            tier2Values: form.variantConfigTier2Enabled
+              ? form.variantConfigTier2Values.length
+                ? uniqueStrings(form.variantConfigTier2Values)
+                : uniqueStrings(
+                    form.variants.map(variant => variant.tier2Value.trim()),
+                  )
+              : [],
           },
           variants: form.variants.map(createVariantPayload),
         }),
@@ -388,10 +562,17 @@ function createVariantFormRow(value: unknown): KolamTeranuraVariantFormRow {
         getNumber(variant, 'minimumPriceToSales') ||
         0,
     ),
+    minimumOrderQty: String(getNumber(variant, 'minimumOrderQty') || 1),
     lowStockThreshold: String(getNumber(variant, 'lowStockThreshold') || 0),
     vendorPrices: normalizeVendorRows(variant.vendorPrices),
     componentOverrides: normalizeComponentRows(variant.componentOverrides),
     externalLinks: normalizeLinkRows(variant.link ?? variant.links),
+    grocerPricingTiers: normalizeGrocerPricingTierFormRows(
+      variant.grocerPricingTiers,
+    ),
+    customFieldValues: Array.isArray(variant.customFieldValues)
+      ? variant.customFieldValues
+      : [],
     weightValue:
       getNumber(weight, 'value') > 0 ? String(getNumber(weight, 'value')) : '',
     weightUnitId: getObjectIdString(weight.unit),
@@ -426,10 +607,13 @@ function createVariantPayload(row: KolamTeranuraVariantFormRow) {
     marketPrice: toNonNegativeNumber(row.marketPrice),
     onlinePrice: toNonNegativeNumber(row.onlinePrice),
     minimum_price_to_sales: toNonNegativeNumber(row.minimumPriceToSales),
+    minimumOrderQty: Math.max(1, toNonNegativeNumber(row.minimumOrderQty)),
     lowStockThreshold: toNonNegativeNumber(row.lowStockThreshold),
     vendorPrices: createVendorPayload(row.vendorPrices),
     componentOverrides: createComponentPayload(row.componentOverrides),
     link: createLinkPayload(row.externalLinks),
+    grocerPricingTiers: createGrocerPricingTierPayload(row.grocerPricingTiers),
+    customFieldValues: row.customFieldValues,
     ...createWeightPayload(row.weightValue, row.weightUnitId),
     ...createDimensionPayload(
       row.dimensionLength,
@@ -504,6 +688,75 @@ function createComponentPayload(rows: KolamTeranuraComponentFormRow[]) {
       return {
         product,
         quantity: toNonNegativeNumber(row.quantity),
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeGrocerPricingTierFormRows(
+  value: unknown,
+): KolamTeranuraGrocerPricingTierFormRow[] {
+  const rows = Array.isArray(value) ? value : [];
+  return rows.map((entry, index) => {
+    const row = asRecord(entry);
+    return {
+      id: `tier-${index + 1}`,
+      minQty: String(getNumber(row, 'minQty') || 0),
+      price: String(getNumber(row, 'price') || 0),
+      onlinePrice: String(getNumber(row, 'onlinePrice') || 0),
+    };
+  });
+}
+
+function createGrocerPricingTierPayload(
+  rows: KolamTeranuraGrocerPricingTierFormRow[],
+) {
+  return rows
+    .map(row => ({
+      minQty: toNonNegativeNumber(row.minQty),
+      price: toNonNegativeNumber(row.price),
+      onlinePrice: toNonNegativeNumber(row.onlinePrice),
+    }))
+    .filter(row => row.minQty > 0 && (row.price > 0 || row.onlinePrice > 0));
+}
+
+function normalizePackingLinkFormRows(
+  value: unknown,
+): KolamTeranuraPackingLinkFormRow[] {
+  const rows = Array.isArray(value) ? value : [];
+  return rows
+    .map((entry, index) => {
+      const row = asRecord(entry);
+      const packingId = getObjectIdString(
+        row.packing ?? row.packingMaterial ?? row.product,
+      );
+      if (!packingId) {
+        return null;
+      }
+      return {
+        id: getString(row, '_id') || getString(row, 'id') || `packing-${index + 1}`,
+        packingId,
+        variantId: getObjectIdString(row.variant),
+        quantity: String(getNumber(row, 'quantity') || 1),
+      };
+    })
+    .filter(Boolean) as KolamTeranuraPackingLinkFormRow[];
+}
+
+function createPackingLinkPayload(rows: KolamTeranuraPackingLinkFormRow[]) {
+  return rows
+    .map(row => {
+      const packing = row.packingId.trim();
+      if (!packing) {
+        return null;
+      }
+      const variantId = row.variantId.trim();
+      const variant =
+        variantId && !variantId.startsWith('variant-draft-') ? variantId : null;
+      return {
+        packing,
+        variant,
+        quantity: Math.max(0, toNonNegativeNumber(row.quantity)),
       };
     })
     .filter(Boolean);
@@ -600,8 +853,16 @@ function getObjectIdString(value: unknown): string {
   return getString(record, '_id') || getString(record, 'id');
 }
 
+function slugifyVariantValue(value: string) {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function uniqueStrings(values: string[]) {
-  return [...new Set(values.filter(Boolean))];
+  return [...new Set(values.map(value => value.trim()).filter(Boolean))];
 }
 
 function toNonNegativeNumber(value: string) {
@@ -627,6 +888,12 @@ function asRecord(value: unknown): Record<string, unknown> {
 function getString(record: Record<string, unknown>, key: string) {
   const value = record[key];
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function getStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map(entry => String(entry).trim()).filter(Boolean)
+    : [];
 }
 
 function getNumber(record: Record<string, unknown>, key: string) {
