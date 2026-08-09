@@ -56,6 +56,7 @@ export type KolamNavigationModuleIcon =
   | 'terms'
   | 'taxonomy'
   | 'teranura'
+  | 'unexpectedExpense'
   | 'unit'
   | 'voucher'
   | 'wallet';
@@ -649,6 +650,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/unexpected-expense',
         description: 'Pengeluaran tak terduga',
         group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'unexpectedExpense',
         requiredAccess: ['kolam'],
       },
       {
@@ -1050,6 +1052,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/unexpected-expense', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Pengeluaran Tak Terduga',
+        moduleIcon: 'unexpectedExpense',
       }),
       sidebarItem('/unexpected-income', {
         group: 'Pengeluaran & Pemasukan',
