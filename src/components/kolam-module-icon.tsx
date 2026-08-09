@@ -15,6 +15,7 @@ import {KOLAM_DARA_TAX_MODULE_ICON_SVG} from '../assets/icons/dara-tax-module-ic
 import {KOLAM_DARA_TRAINING_MODULE_ICON_SVG} from '../assets/icons/dara-training-module-icon-svg';
 import {KOLAM_DISCOUNT_APPROVAL_MODULE_ICON_SVG} from '../assets/icons/discount-approval-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
+import {KOLAM_EMPLOYEE_BONUS_MODULE_ICON_SVG} from '../assets/icons/employee-bonus-module-icon-svg';
 import {KOLAM_FINANCE_SUMMARY_MODULE_ICON_SVG} from '../assets/icons/finance-summary-module-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
@@ -65,6 +66,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   daraTraining: 'Icon Pelatihan DARA',
   discountApproval: 'Icon Persetujuan Diskon',
   download: 'Icon Download',
+  employeeBonus: 'Icon Bonus Karyawan',
   enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
   financeSummary: 'Icon Ringkasan Keuangan',
@@ -122,6 +124,9 @@ const CASHFLOW_SESSION_ICON_PATHS = getSvgPathData(
 const COMMISSION_ICON_PATHS = getSvgPathData(KOLAM_COMMISSION_MODULE_ICON_SVG);
 const COMPLAINT_ICON_PATHS = getSvgPathData(KOLAM_COMPLAINT_MODULE_ICON_SVG);
 const DOWNLOAD_ICON_PATHS = getSvgPathData(KOLAM_DOWNLOAD_TOPBAR_ICON_SVG);
+const EMPLOYEE_BONUS_ICON_PATHS = getSvgPathData(
+  KOLAM_EMPLOYEE_BONUS_MODULE_ICON_SVG,
+);
 const LOCATION_ICON_PATHS = getSvgPathData(KOLAM_LOCATION_MODULE_ICON_SVG);
 const MEDIA_ICON_PATHS = getSvgPathData(KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG);
 const PACKING_ICON_PATHS = getSvgPathData(KOLAM_PACKING_MODULE_ICON_SVG);
@@ -263,6 +268,12 @@ export function KolamModuleIcon({
       ) : kind === 'download' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {DOWNLOAD_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
+        </Svg>
+      ) : kind === 'employeeBonus' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {EMPLOYEE_BONUS_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>

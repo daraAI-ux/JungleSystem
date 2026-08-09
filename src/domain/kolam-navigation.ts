@@ -27,6 +27,7 @@ export type KolamNavigationModuleIcon =
   | 'daraTraining'
   | 'discountApproval'
   | 'download'
+  | 'employeeBonus'
   | 'enclosure'
   | 'fieldcustom'
   | 'financeSummary'
@@ -572,6 +573,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/finance/bonus',
         description: 'Bonus gaji karyawan untuk penggajian',
         group: 'Payroll & Tax',
+        moduleIcon: 'employeeBonus',
         requiredAccess: ['kolam'],
       },
       {
@@ -1061,6 +1063,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/finance/bonus', {
         group: 'Pengeluaran & Pemasukan',
         label: 'Bonus Karyawan',
+        moduleIcon: 'employeeBonus',
       }),
       sidebarItem('/finance/payroll', { label: 'Penggajian' }),
     ],
