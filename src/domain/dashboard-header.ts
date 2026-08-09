@@ -357,6 +357,12 @@ function getProductDashboardHeaderCopy(routePath: string): {
   title: string;
   subtitle: string;
 } | null {
+  if (routePath === '/products/archive') {
+    return {
+      title: 'Arsip Produk',
+      subtitle: 'Riwayat produk yang diarsipkan.',
+    };
+  }
   if (routePath === '/products/create' || routePath === '/products/baru') {
     return {
       title: 'Produk Baru',
@@ -374,7 +380,8 @@ function getProductDashboardHeaderCopy(routePath: string): {
 
 function isInlineCatalogDetailHeaderRoute(routePath: string) {
   return (
-    /^\/products\/[^/]+$/.test(routePath) ||
+    (/^\/products\/[^/]+$/.test(routePath) &&
+      routePath !== '/products/archive') ||
     /^\/raw-materials\/[^/]+$/.test(routePath) ||
     /^\/species\/[^/]+$/.test(routePath)
   );
