@@ -47,6 +47,7 @@ import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -1237,59 +1238,81 @@ function KolamPurchaseOrderDetail({
 
       <View style={styles.formSplitRow}>
         <View style={[styles.formSplitCell, styles.detailSplitCell]}>
-          <KolamContentFrame
+          <KolamDetailSummaryCard
             style={[styles.detailCard, styles.detailSplitCard]}
-            variant="settingsWebConfig"
-          >
-            <Text style={styles.sectionTitle}>Informasi purchase order</Text>
-            <KolamDescriptionList
-              accessibilityLabel="Informasi purchase order"
-              rows={[
-                { id: 'code', label: 'Kode PO', value: po.poCode || '—', meta: '', tone: 'default' },
+            title="Informasi purchase order"
+            fields={[
+                { id: 'code', label: 'Kode PO', value: po.poCode || '—' },
                 {
                   id: 'vendor',
                   label: 'Pemasok',
-                  value: po.vendor?.name || '—',
-                  meta: '',
-                  tone: 'default',
-                  ...(po.vendor?.id
-                    ? {
-                        onPress: () =>
-                          onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${po.vendor!.id}`),
+                  value: po.vendor?.id ? (
+                    <Pressable
+                      onPress={() =>
+                        onRouteChange?.(`${KOLAM_SUPPLIER_ROOT}/${po.vendor!.id}`)
                       }
-                    : {}),
+                    >
+                      <Text style={styles.summaryLinkText}>
+                        {po.vendor?.name || '—'}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    po.vendor?.name || '—'
+                  ),
                 },
                 {
                   id: 'wallet',
                   label: 'Dompet',
-                  value: po.wallet?.name || '—',
-                  meta: po.wallet?.type || '',
-                  tone: 'default',
+                  value: (
+                    <View style={styles.summaryValueStack}>
+                      <Text style={styles.summaryValueText}>
+                        {po.wallet?.name || '—'}
+                      </Text>
+                      {po.wallet?.type ? (
+                        <Text style={styles.summaryMetaText}>
+                          {po.wallet.type}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ),
                 },
                 {
                   id: 'status',
                   label: 'Status',
-                  value: getKolamPOStatusLabel(po.status),
-                  meta: po.isPartial ? 'Partial' : '',
-                  tone: po.isPartial ? 'warning' : 'default',
+                  value: (
+                    <View style={styles.summaryValueStack}>
+                      <Text style={styles.summaryValueText}>
+                        {getKolamPOStatusLabel(po.status)}
+                      </Text>
+                      {po.isPartial ? (
+                        <Text style={styles.summaryWarningText}>Partial</Text>
+                      ) : null}
+                    </View>
+                  ),
                 },
                 {
                   id: 'notes',
                   label: 'Catatan',
                   value: po.notes || '—',
-                  meta: '',
-                  tone: 'default',
                 },
                 {
                   id: 'created',
                   label: 'Dibuat',
-                  value: formatPODateTime(po.createdAt),
-                  meta: po.createdByName || '',
-                  tone: 'default',
+                  value: (
+                    <View style={styles.summaryValueStack}>
+                      <Text style={styles.summaryValueText}>
+                        {formatPODateTime(po.createdAt)}
+                      </Text>
+                      {po.createdByName ? (
+                        <Text style={styles.summaryMetaText}>
+                          {po.createdByName}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ),
                 },
               ]}
             />
-          </KolamContentFrame>
         </View>
 
         <View style={[styles.formSplitCell, styles.detailSplitCell]}>
@@ -2739,6 +2762,29 @@ const styles = StyleSheet.create({
   metaText: {
     color: V.colors.mutedFg,
     fontSize: 12,
+  },
+  summaryValueStack: {
+    gap: 3,
+  },
+  summaryValueText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  summaryMetaText: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  summaryWarningText: {
+    color: V.colors.warning,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  summaryLinkText: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '800',
   },
   poItemRow: {
     alignItems: 'center',
