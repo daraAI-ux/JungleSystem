@@ -4,6 +4,7 @@ import Svg, {Path} from 'react-native-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
+import {KOLAM_COMPLAINT_MODULE_ICON_SVG} from '../assets/icons/complaint-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
@@ -33,6 +34,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   brand: 'Icon Merek',
   cashflowSession: 'Icon Sesi Tunai',
   category: 'Icon Kategori',
+  complaint: 'Icon Komplain',
   download: 'Icon Download',
   enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
@@ -73,6 +75,7 @@ const ARCHIVE_ICON_PATHS = getSvgPathData(KOLAM_ARCHIVE_MODULE_ICON_SVG);
 const CASHFLOW_SESSION_ICON_PATHS = getSvgPathData(
   KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG,
 );
+const COMPLAINT_ICON_PATHS = getSvgPathData(KOLAM_COMPLAINT_MODULE_ICON_SVG);
 const DOWNLOAD_ICON_PATHS = getSvgPathData(KOLAM_DOWNLOAD_TOPBAR_ICON_SVG);
 const LOCATION_ICON_PATHS = getSvgPathData(KOLAM_LOCATION_MODULE_ICON_SVG);
 const MEDIA_ICON_PATHS = getSvgPathData(KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG);
@@ -139,6 +142,12 @@ export function KolamModuleIcon({
       ) : kind === 'category' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={CATEGORY_ICON_PATH} fill="#1a1a1a" fillRule="evenodd" />
+        </Svg>
+      ) : kind === 'complaint' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {COMPLAINT_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
         </Svg>
       ) : kind === 'download' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">

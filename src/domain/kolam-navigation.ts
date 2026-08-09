@@ -16,6 +16,7 @@ export type KolamNavigationModuleIcon =
   | 'brand'
   | 'cashflowSession'
   | 'category'
+  | 'complaint'
   | 'download'
   | 'enclosure'
   | 'fieldcustom'
@@ -433,6 +434,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/complaints',
         description: 'Kelola semua tiket komplain dan penyelesaiannya.',
         group: 'Penjualan',
+        moduleIcon: 'complaint',
         requiredAccess: ['kolam'],
       },
       {
@@ -896,7 +898,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Sumber',
         moduleIcon: 'salesSource',
       }),
-      sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
+      sidebarItem('/complaints', {
+        group: 'Penjualan',
+        label: 'Komplain',
+        moduleIcon: 'complaint',
+      }),
       // FE sales section: Layanan sits with Sales cluster (RNW = Penjualan group).
       sidebarItem('/layanan', { group: 'Penjualan', label: 'Layanan' }),
       sidebarItem('/terms-templates', {
