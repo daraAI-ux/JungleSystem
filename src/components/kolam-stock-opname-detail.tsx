@@ -398,15 +398,6 @@ export function KolamStockOpnameDetail({
           style={styles.banner}
         />
       ) : null}
-      {controller.statusMessage ? (
-        <KolamStatusBadge
-          intent="success"
-          label={controller.statusMessage}
-          numberOfLines={2}
-          style={styles.banner}
-        />
-      ) : null}
-
       <KolamCardFrame style={styles.card} variant="compact">
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -418,8 +409,12 @@ export function KolamStockOpnameDetail({
                 intent={statusIntent(header.status)}
                 label={header.statusLabel}
               />
-              {lineCountsLabel ? (
-                <Text style={styles.toolbarLineCounts}>{lineCountsLabel}</Text>
+              {controller.statusMessage ? (
+                <KolamStatusBadge
+                  intent="success"
+                  label={controller.statusMessage}
+                  numberOfLines={2}
+                />
               ) : null}
             </View>
             <View style={kolamTableToolbarStyles.actions}>
@@ -533,6 +528,9 @@ export function KolamStockOpnameDetail({
         </View>
 
         <View style={styles.headerText}>
+          {lineCountsLabel ? (
+            <Text style={styles.muted}>{lineCountsLabel}</Text>
+          ) : null}
           {header.parentOpname ? (
             <Pressable
               onPress={() =>
@@ -1714,12 +1712,6 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '900',
-  },
-  toolbarLineCounts: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
   },
   fieldLabel: {
     color: V.colors.fg,
