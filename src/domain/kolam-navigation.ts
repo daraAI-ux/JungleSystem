@@ -21,6 +21,7 @@ export type KolamNavigationModuleIcon =
   | 'category'
   | 'commission'
   | 'complaint'
+  | 'customer'
   | 'daraMarketIntel'
   | 'daraSeo'
   | 'daraTax'
@@ -682,6 +683,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/customers',
         description: 'Data pelanggan dan riwayat transaksi',
         group: 'Pelanggan',
+        moduleIcon: 'customer',
         requiredAccess: ['kolam', 'pos'],
       },
       {
@@ -1082,6 +1084,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/customers', {
         group: 'Pelanggan',
         label: 'Daftar Pelanggan',
+        moduleIcon: 'customer',
       }),
       sidebarItem('/list-of-users', {
         group: 'Daftar Pengguna',
