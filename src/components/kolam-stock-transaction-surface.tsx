@@ -1,5 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
+import { KOLAM_STOCK_OPNAME_MODULE_ICON_SVG } from '../assets/icons/stock-opname-module-icon-svg';
 import type { KolamStockTransaction } from '../domain/kolam-stock-transaction';
 import {
   KOLAM_STOCK_TRANSACTION_ROOT,
@@ -47,6 +49,11 @@ import {
 } from './kolam-list-table-composition';
 
 type StockTxFilterPanel = 'target' | 'status';
+const KOLAM_ACTION_BUTTON_BG = '#374151';
+const STOCK_OPNAME_BUTTON_ICON_XML = KOLAM_STOCK_OPNAME_MODULE_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.primaryFg,
+);
 
 export function KolamStockTransactionSurface({
   onRouteChange,
@@ -1007,12 +1014,19 @@ function KolamStockTransactionList({
                 style={styles.toolbarButton}
               />
               <KolamButton
-                intent="primary"
+                icon={
+                  <SvgXml
+                    height="100%"
+                    width="100%"
+                    xml={STOCK_OPNAME_BUTTON_ICON_XML}
+                  />
+                }
                 label="Opname cepat"
                 onPress={() =>
                   onRouteChange?.(`${KOLAM_STOCK_TRANSACTION_ROOT}/opname`)
                 }
-                style={styles.toolbarButton}
+                style={[styles.stockOpnameButton, styles.toolbarButton]}
+                textStyle={styles.stockOpnameButtonText}
               />
             </View>
           </View>
@@ -1466,6 +1480,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  stockOpnameButton: {
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
+  },
+  stockOpnameButtonText: {
+    color: V.colors.primaryFg,
   },
   title: {
     color: V.colors.fg,
