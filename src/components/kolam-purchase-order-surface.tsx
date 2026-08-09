@@ -710,7 +710,7 @@ function KolamPurchaseOrderForm({
 
       <KolamPOPaymentConfigCard controller={controller} />
 
-      <KolamContentFrame style={[styles.detailCard, styles.poNotesCard]} variant="settingsWebConfig">
+      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Catatan PO</Text>
         <View style={styles.fieldShell}>
           <KolamFormTextField
@@ -2880,10 +2880,6 @@ const styles = StyleSheet.create({
   },
   detailCard: {
     gap: 8,
-  },
-  poNotesCard: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
   },
   sectionTitle: {
     color: V.colors.fg,
