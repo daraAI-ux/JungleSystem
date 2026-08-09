@@ -10,6 +10,7 @@ import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-ic
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
 import {KOLAM_PACKING_MODULE_ICON_SVG} from '../assets/icons/packing-module-icon-svg';
 import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon-svg';
+import {KOLAM_PROJECT_MODULE_ICON_SVG} from '../assets/icons/project-module-icon-svg';
 import {KOLAM_PRODUCTION_MODULE_ICON_SVG} from '../assets/icons/production-module-icon-svg';
 import {KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG} from '../assets/icons/purchase-order-module-icon-svg';
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
@@ -45,6 +46,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   media: 'Icon Media',
   packing: 'Icon Bahan Kemasan',
   product: 'Icon Produk',
+  project: 'Icon Proyek',
   production: 'Icon Produksi',
   purchaseOrder: 'Icon Pesanan Pembelian',
   raw: 'Icon Bahan Baku',
@@ -85,6 +87,7 @@ const LOCATION_ICON_PATHS = getSvgPathData(KOLAM_LOCATION_MODULE_ICON_SVG);
 const MEDIA_ICON_PATHS = getSvgPathData(KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG);
 const PACKING_ICON_PATHS = getSvgPathData(KOLAM_PACKING_MODULE_ICON_SVG);
 const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
+const PROJECT_ICON_PATHS = getSvgPathData(KOLAM_PROJECT_MODULE_ICON_SVG);
 const PRODUCTION_ICON_PATHS = getSvgPathData(KOLAM_PRODUCTION_MODULE_ICON_SVG);
 const PURCHASE_ORDER_ICON_PATHS = getSvgPathData(
   KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG,
@@ -229,6 +232,12 @@ export function KolamModuleIcon({
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {PRODUCT_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'project' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {PROJECT_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
       ) : kind === 'production' ? (

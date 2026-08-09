@@ -25,6 +25,7 @@ export type KolamNavigationModuleIcon =
   | 'media'
   | 'packing'
   | 'product'
+  | 'project'
   | 'production'
   | 'purchaseOrder'
   | 'raw'
@@ -518,6 +519,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/proyek',
         description: 'Detil proyek & surat penawaran',
         group: 'Penjualan',
+        moduleIcon: 'project',
         requiredAccess: ['kolam'],
       },
       {
@@ -918,7 +920,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Syarat & Ketentuan',
         moduleIcon: 'terms',
       }),
-      sidebarItem('/proyek', { group: 'Penjualan', label: 'Proyek' }),
+      sidebarItem('/proyek', {
+        group: 'Penjualan',
+        label: 'Proyek',
+        moduleIcon: 'project',
+      }),
       sidebarItem('/campaign', { group: 'Kampanye', label: 'Daftar' }),
       sidebarItem('/sales/discount-approval', {
         group: 'Kampanye',
