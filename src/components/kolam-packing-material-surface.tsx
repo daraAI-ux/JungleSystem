@@ -710,10 +710,10 @@ function KolamPackingMaterialDetail({
       <View style={styles.detailHeaderRow}>
         <View style={styles.detailHeaderIdentity}>
           <KolamModuleIcon kind="packing" size="header" />
-          <View style={[styles.detailHeading, styles.detailHeaderCopy]}>
+          <View style={[styles.headingCopy, styles.detailHeaderCopy]}>
             <Text style={styles.eyebrow}>Detail Bahan Kemasan</Text>
-            <Text style={styles.detailPageTitle}>{item.name}</Text>
-            <Text style={styles.detailPageMeta}>
+            <Text style={styles.detailHeaderTitle}>{item.name}</Text>
+            <Text style={styles.detailHeaderDescription}>
               {createPackingDetailTimestamp(item)}
             </Text>
           </View>
@@ -725,11 +725,13 @@ function KolamPackingMaterialDetail({
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton onPress={goBackToList} />
             <KolamEditButton intent="primary" onPress={controller.onEdit} />
-            <KolamCancelButton
-              disabled={item.status !== 'active' || controller.saving}
-              label="Nonaktifkan"
-              onPress={() => setDeleteCandidate(item)}
-            />
+            {item.status === 'active' ? (
+              <KolamCancelButton
+                disabled={controller.saving}
+                label="Nonaktifkan"
+                onPress={() => setDeleteCandidate(item)}
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -1980,27 +1982,47 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   detailHeaderRow: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     gap: 16,
+    justifyContent: 'space-between',
+    marginTop: -88,
+    minWidth: 0,
+    width: '100%',
   },
   detailHeaderIdentity: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
     minWidth: 0,
+  },
+  headingCopy: {
+    flex: 1,
   },
   detailHeaderCopy: {
     minWidth: 0,
   },
   eyebrow: {
     color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0,
-    lineHeight: 16,
+  },
+  detailHeaderTitle: {
+    color: V.colors.fg,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+    marginTop: 2,
+  },
+  detailHeaderDescription: {
+    color: V.colors.mutedFg,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+    marginTop: 4,
   },
   detailPageHeader: {
     alignItems: 'flex-start',

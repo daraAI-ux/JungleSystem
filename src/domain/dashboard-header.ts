@@ -383,6 +383,7 @@ function isInlineCatalogDetailHeaderRoute(routePath: string) {
     (/^\/products\/[^/]+$/.test(routePath) &&
       routePath !== '/products/archive') ||
     /^\/raw-materials\/[^/]+$/.test(routePath) ||
+    /^\/packing-materials\/[^/]+$/.test(routePath) ||
     /^\/species\/[^/]+$/.test(routePath)
   );
 }
