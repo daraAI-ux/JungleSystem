@@ -41,6 +41,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamStockTransactionButton} from './kolam-stock-transaction-button';
+import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -254,14 +255,14 @@ export function KolamStockOpnameDetail({
               ) : null}
               {controller.isPosted &&
               marketplaceSyncTargets.productIds.length > 0 ? (
-                <KolamButton
+                <KolamStockSyncButton
                   label={`Samakan stok produk (${marketplaceSyncTargets.productIds.length})`}
                   onPress={() => setSyncRetry('products')}
                 />
               ) : null}
               {controller.isPosted &&
               marketplaceSyncTargets.speciesIds.length > 0 ? (
-                <KolamButton
+                <KolamStockSyncButton
                   label={`Samakan stok livestock (${marketplaceSyncTargets.speciesIds.length})`}
                   onPress={() => setSyncRetry('species')}
                 />
