@@ -24,6 +24,7 @@ import {
   type KolamOpnameMinusReason,
   type KolamStockOpnameLine,
   type KolamStockOpnameLineTargetType,
+  type KolamStockOpnameStaffAssignee,
 } from '../domain/kolam-stock-opname';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
@@ -39,7 +40,6 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import {KolamStockTransactionButton} from './kolam-stock-transaction-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
@@ -132,7 +132,7 @@ export function KolamStockOpnameDetail({
     () => [
       { label: '— Pilih —', value: '' },
       ...controller.staffAssignees.map(user => ({
-        label: stockOpnameUserDisplayName(user) || user.username || user.id,
+        label: stockOpnameStaffAssigneeLabel(user),
         value: user.id,
       })),
     ],
@@ -258,16 +258,7 @@ export function KolamStockOpnameDetail({
 
         <View style={styles.actionWrap}>
           <KolamDaftarButton
-            muted
             onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
-          />
-          <KolamRefreshButton
-            accessibilityLabel="Muat ulang"
-            disabled={controller.loading || controller.acting}
-
-            onPress={() => {
-              void controller.onRefresh();
-            }}
           />
           {controller.isPosted ? (
             <KolamStockTransactionButton
@@ -340,9 +331,8 @@ export function KolamStockOpnameDetail({
           ) : null}
           {canUpdate &&
           ['draft', 'in_review', 'ready_to_post'].includes(header.status) ? (
-            <KolamButton
+            <KolamCancelButton
               disabled={controller.acting}
-              intent="danger"
               label="Batalkan"
               onPress={() => setCancelOpen(true)}
             />
@@ -742,6 +732,14 @@ export function KolamStockOpnameDetail({
     />
     </>
   );
+}
+
+function stockOpnameStaffAssigneeLabel(user: KolamStockOpnameStaffAssignee) {
+  const fullName = [user.firstName, user.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  return fullName || user.name || user.username || user.email || user.id;
 }
 
 function AddLineForm({
