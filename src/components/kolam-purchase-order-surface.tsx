@@ -719,8 +719,8 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Metode pembayaran</Text>
       <View style={styles.poPaymentConfigBox}>
-        <View style={styles.formSplitRow}>
-          <View style={styles.formSplitCell}>
+        <View style={[styles.formSplitRow, styles.poPaymentTypeRow]}>
+          <View style={[styles.formSplitCell, styles.poPaymentTypeCell]}>
             <View style={styles.poPaymentTypeCard}>
               <FieldShell label="Gunakan uang muka (DP)">
                 <View style={styles.switchRow}>
@@ -737,7 +737,7 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
               </FieldShell>
             </View>
           </View>
-          <View style={styles.formSplitCell}>
+          <View style={[styles.formSplitCell, styles.poPaymentTypeCell]}>
             <View style={styles.poPaymentTypeCard}>
               <FieldShell label="Tipe pembayaran">
                 <KolamDropdownSelect
@@ -2865,7 +2865,14 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
+    flex: 1,
     padding: 10,
+  },
+  poPaymentTypeRow: {
+    alignItems: 'stretch',
+  },
+  poPaymentTypeCell: {
+    alignSelf: 'stretch',
   },
   poPaymentConfigBox: {
     alignSelf: 'stretch',
