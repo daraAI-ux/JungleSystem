@@ -1097,10 +1097,24 @@ function KolamPurchaseOrderDetail({
   const [pendingSimpleTransition, setPendingSimpleTransition] = React.useState<
     Exclude<KolamPOStatus, 'received' | 'on_check' | 'sent'> | null
   >(null);
+  const [itemPage, setItemPage] = React.useState(1);
   const itemColumns = React.useMemo(
     () => buildPODetailItemColumns({ onRouteChange }),
     [onRouteChange],
   );
+  const itemPageSize = 10;
+  const detailItems = po?.items ?? [];
+  const itemTotal = detailItems.length;
+  const itemPageCount = Math.max(1, Math.ceil(itemTotal / itemPageSize));
+  const safeItemPage = Math.min(Math.max(itemPage, 1), itemPageCount);
+  const pagedItems = detailItems.slice(
+    (safeItemPage - 1) * itemPageSize,
+    safeItemPage * itemPageSize,
+  );
+
+  React.useEffect(() => {
+    setItemPage(1);
+  }, [po?.id, itemTotal]);
 
   if (!po && controller.loading) {
     return (
@@ -1404,8 +1418,13 @@ function KolamPurchaseOrderDetail({
           getRowKey={(item, index) =>
             item.id || `${item.itemType}-${item.refId}-${index}`
           }
-          rows={po.items}
-          showFooter={false}
+          pagination={{
+            onPageChange: setItemPage,
+            page: safeItemPage,
+            pageSize: itemPageSize,
+            total: itemTotal,
+          }}
+          rows={pagedItems}
           style={styles.poItemsTable}
         />
       </KolamContentFrame>
