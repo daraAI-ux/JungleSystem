@@ -27,6 +27,7 @@ export type KolamNavigationModuleIcon =
   | 'download'
   | 'enclosure'
   | 'fieldcustom'
+  | 'financeSummary'
   | 'iucn'
   | 'location'
   | 'media'
@@ -556,6 +557,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Ringkasan Keuangan',
         route: '/finance',
         description: 'Ringkasan keuangan dan laporan',
+        moduleIcon: 'financeSummary',
         requiredAccess: ['kolam'],
       },
       {
@@ -1000,7 +1002,10 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     id: 'finance',
     title: 'Keuangan',
     items: [
-      sidebarItem('/finance', { label: 'Ringkasan Keuangan' }),
+      sidebarItem('/finance', {
+        label: 'Ringkasan Keuangan',
+        moduleIcon: 'financeSummary',
+      }),
       sidebarItem('/wallet', { label: 'Dompet' }),
       sidebarItem('/asset-purchase', {
         group: 'Pengeluaran & Pemasukan',

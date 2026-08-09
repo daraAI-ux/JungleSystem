@@ -13,6 +13,7 @@ import {KOLAM_DARA_TAX_MODULE_ICON_SVG} from '../assets/icons/dara-tax-module-ic
 import {KOLAM_DARA_TRAINING_MODULE_ICON_SVG} from '../assets/icons/dara-training-module-icon-svg';
 import {KOLAM_DISCOUNT_APPROVAL_MODULE_ICON_SVG} from '../assets/icons/discount-approval-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
+import {KOLAM_FINANCE_SUMMARY_MODULE_ICON_SVG} from '../assets/icons/finance-summary-module-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
 import {KOLAM_PACKING_MODULE_ICON_SVG} from '../assets/icons/packing-module-icon-svg';
@@ -57,6 +58,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   download: 'Icon Download',
   enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
+  financeSummary: 'Icon Ringkasan Keuangan',
   iucn: 'Icon Status IUCN',
   location: 'Icon Lokasi',
   media: 'Icon Media',
@@ -265,6 +267,12 @@ export function KolamModuleIcon({
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
           ))}
         </Svg>
+      ) : kind === 'financeSummary' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_FINANCE_SUMMARY_MODULE_ICON_SVG}
+        />
       ) : kind === 'iucn' ? (
         <Image
           resizeMode="contain"
