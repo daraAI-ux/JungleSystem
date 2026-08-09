@@ -172,6 +172,17 @@ function KolamStockTransactionOpname({
     Boolean(form.targetId) &&
     (!hasVariants || Boolean(form.variantId)) &&
     !controller.mutating;
+  const submitOpname = () => {
+    void controller.onSubmitOpname().then(result => {
+      if (result === 'wallet') {
+        setWalletModalOpen(true);
+        return;
+      }
+      if (result === 'done') {
+        onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT);
+      }
+    });
+  };
 
   return (
     <View style={styles.detailRoot}>
@@ -181,30 +192,26 @@ function KolamStockTransactionOpname({
             { id: 'title', text: 'Opname cepat', style: styles.title },
             {
               id: 'desc',
-              text: 'Sesuaikan stok produk/life stock. Backend membuat transaksi sumber stock-opname.',
+              text: 'Sesuaikan stok produk dan stok hidup. Sistem akan membuat transaksi dari sumber stok opname.',
               style: styles.subtitle,
             },
           ]}
         />
-        <View style={styles.headerActions}>
-          <KolamCancelButton
-            onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
-          />
-          <KolamSaveButton
-            disabled={!canSave}
-            label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
-            onPress={() => {
-              void controller.onSubmitOpname().then(result => {
-                if (result === 'wallet') {
-                  setWalletModalOpen(true);
-                  return;
-                }
-                if (result === 'done') {
-                  onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT);
-                }
-              });
-            }}
-          />
+      </View>
+
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters} />
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamCancelButton
+              onPress={() => onRouteChange?.(KOLAM_STOCK_TRANSACTION_ROOT)}
+            />
+            <KolamSaveButton
+              disabled={!canSave}
+              label={controller.mutating ? 'Menyimpan...' : 'Simpan'}
+              onPress={submitOpname}
+            />
+          </View>
         </View>
       </View>
 
@@ -378,7 +385,7 @@ function KolamStockTransactionOpname({
             <KolamButton
               disabled={!form.walletId || controller.mutating}
               intent="primary"
-              label={controller.mutating ? 'Menyimpan…' : 'Lanjut simpan'}
+              label={controller.mutating ? 'Menyimpan...' : 'Lanjut simpan'}
               onPress={() => {
                 void controller.onConfirmOpnameWallet().then(ok => {
                   if (ok) {
