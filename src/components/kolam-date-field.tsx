@@ -34,7 +34,7 @@ export function KolamDateField({
   accessibilityLabel,
   label,
   onChange,
-  panelVariant = 'dialog',
+  panelVariant = 'dropdown',
   placeholder = 'Pilih tanggal',
   showLabelInTrigger = true,
   style,

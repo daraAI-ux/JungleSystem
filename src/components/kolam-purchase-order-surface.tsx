@@ -790,6 +790,7 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
                   <KolamDateField
                     label="Tanggal"
                     onChange={specificDate => controller.onChangeForm({ specificDate })}
+                    showLabelInTrigger={false}
                     value={form.specificDate}
                   />
                 </FieldShell>
@@ -856,6 +857,7 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
                     onChange={downPaymentDueDate =>
                       controller.onChangeForm({ downPaymentDueDate })
                     }
+                    showLabelInTrigger={false}
                     value={form.downPaymentDueDate}
                   />
                 </FieldShell>
