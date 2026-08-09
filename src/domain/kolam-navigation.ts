@@ -366,7 +366,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Purchase Order',
         route: '/purchase-order',
-        description: 'Create and manage purchase orders',
+        description: 'Buat dan kelola pesanan pembelian',
         group: 'Pengadaan',
         moduleIcon: 'purchaseOrder',
         requiredAccess: ['kolam'],
