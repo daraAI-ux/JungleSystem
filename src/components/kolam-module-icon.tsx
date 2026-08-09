@@ -5,6 +5,7 @@ import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
+import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
 import {KOLAM_PACKING_MODULE_ICON_SVG} from '../assets/icons/packing-module-icon-svg';
 import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon-svg';
@@ -34,6 +35,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
   iucn: 'Icon Status IUCN',
+  location: 'Icon Lokasi',
   media: 'Icon Media',
   packing: 'Icon Bahan Kemasan',
   product: 'Icon Produk',
@@ -68,6 +70,7 @@ const CASHFLOW_SESSION_ICON_PATHS = getSvgPathData(
   KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG,
 );
 const DOWNLOAD_ICON_PATHS = getSvgPathData(KOLAM_DOWNLOAD_TOPBAR_ICON_SVG);
+const LOCATION_ICON_PATHS = getSvgPathData(KOLAM_LOCATION_MODULE_ICON_SVG);
 const MEDIA_ICON_PATHS = getSvgPathData(KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG);
 const PACKING_ICON_PATHS = getSvgPathData(KOLAM_PACKING_MODULE_ICON_SVG);
 const PRODUCT_ICON_PATHS = getSvgPathData(KOLAM_PRODUCT_MODULE_ICON_SVG);
@@ -175,6 +178,12 @@ export function KolamModuleIcon({
           source={IUCN_MODULE_ICON_SOURCE}
           style={styles.imageIcon}
         />
+      ) : kind === 'location' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {LOCATION_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
+        </Svg>
       ) : kind === 'media' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {MEDIA_ICON_PATHS.map(path => (

@@ -20,6 +20,7 @@ export type KolamNavigationModuleIcon =
   | 'enclosure'
   | 'fieldcustom'
   | 'iucn'
+  | 'location'
   | 'media'
   | 'packing'
   | 'product'
@@ -298,6 +299,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/locations',
         description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
         group: 'Inventory',
+        moduleIcon: 'location',
         requiredAccess: ['kolam'],
       },
       {
@@ -872,6 +874,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
         group: undefined,
         label: 'Lokasi',
+        moduleIcon: 'location',
       }),
     ],
   },
