@@ -418,6 +418,9 @@ export function KolamStockOpnameDetail({
                 intent={statusIntent(header.status)}
                 label={header.statusLabel}
               />
+              {lineCountsLabel ? (
+                <Text style={styles.toolbarLineCounts}>{lineCountsLabel}</Text>
+              ) : null}
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               <KolamDaftarButton
@@ -530,9 +533,6 @@ export function KolamStockOpnameDetail({
         </View>
 
         <View style={styles.headerText}>
-          {lineCountsLabel ? (
-            <Text style={styles.muted}>{lineCountsLabel}</Text>
-          ) : null}
           {header.parentOpname ? (
             <Pressable
               onPress={() =>
@@ -1714,6 +1714,12 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '900',
+  },
+  toolbarLineCounts: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   fieldLabel: {
     color: V.colors.fg,
