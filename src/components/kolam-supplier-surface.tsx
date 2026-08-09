@@ -52,6 +52,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -65,6 +66,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 type SupplierSortMode = 'name-asc' | 'name-desc' | 'po-desc' | 'newest';
 type SupplierStatusFilter = 'all' | 'active' | 'inactive' | 'blacklisted';
@@ -1686,35 +1688,42 @@ function KolamSupplierForm({
             </View>
           </View>
 
-          <FieldShell label="Deskripsi">
-            <KolamFormTextField
-              editable={!controller.saving}
-              multiline
-              onChangeText={description =>
-                controller.onChangeForm({ description })
-              }
-              placeholder="Deskripsi singkat"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              ]}
-              value={form.description}
-            />
-          </FieldShell>
-
-          <FieldShell label="Alamat">
-            <KolamFormTextField
-              editable={!controller.saving}
-              multiline
-              onChangeText={address => controller.onChangeForm({ address })}
-              placeholder="Alamat lengkap"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              ]}
-              value={form.address}
-            />
-          </FieldShell>
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Deskripsi">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  multiline
+                  onChangeText={description =>
+                    controller.onChangeForm({ description })
+                  }
+                  placeholder="Deskripsi singkat"
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                  ]}
+                  value={form.description}
+                />
+              </FieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <FieldShell label="Alamat">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  multiline
+                  onChangeText={address =>
+                    controller.onChangeForm({ address })
+                  }
+                  placeholder="Alamat lengkap"
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    settingsWebFormStyles.settingsWebFormFieldValueTextarea,
+                  ]}
+                  value={form.address}
+                />
+              </FieldShell>
+            </View>
+          </View>
 
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
@@ -1810,20 +1819,6 @@ function KolamSupplierForm({
           </View>
 
 
-          <FieldShell label="Tautan">
-            <KolamFormTextField
-              editable={!controller.saving}
-              multiline
-              onChangeText={linkText => controller.onChangeForm({ linkText })}
-              placeholder="Satu tautan per baris"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-              ]}
-              value={form.linkText}
-            />
-          </FieldShell>
-
               <FieldShell label="Foto">
                 <View style={styles.photoEditor}>
                   <Text style={styles.switchHint}>
@@ -1896,51 +1891,55 @@ function KolamSupplierForm({
             <View style={styles.supplierBasicInfoCard}>
               <View style={styles.formSplitRow}>
                 <View style={styles.formSplitCell}>
-                  <FieldShell label="Status" required>
-                    <KolamDropdownSelect
-                      label="Status"
-                      onChange={status =>
-                        controller.onChangeForm({
-                          status: status as KolamVendorStatus,
-                        })
-                      }
-                      options={[
-                        {
-                          label: getKolamVendorStatusLabel('active'),
-                          value: 'active',
-                        },
-                        {
-                          label: getKolamVendorStatusLabel('inactive'),
-                          value: 'inactive',
-                        },
-                        {
-                          label: getKolamVendorStatusLabel('blacklisted'),
-                          value: 'blacklisted',
-                        },
-                      ]}
-                      showLabelInTrigger={false}
-                      value={form.status}
-                    />
-                  </FieldShell>
-                </View>
-                <View style={styles.formSplitCell}>
-                  <FieldShell label="Distributor resmi">
-                    <View style={styles.switchRow}>
-                      <Text style={styles.switchHint}>
-                        Tandai jika pemasok adalah distributor resmi merek.
-                      </Text>
-                      <KolamSwitch
-                        active={form.isOfficialDistributor}
-                        disabled={controller.saving}
-                        onPress={() =>
+                  <View style={styles.supplierStatusTile}>
+                    <FieldShell label="Status" required>
+                      <KolamDropdownSelect
+                        label="Status"
+                        onChange={status =>
                           controller.onChangeForm({
-                            isOfficialDistributor:
-                              !form.isOfficialDistributor,
+                            status: status as KolamVendorStatus,
                           })
                         }
+                        options={[
+                          {
+                            label: getKolamVendorStatusLabel('active'),
+                            value: 'active',
+                          },
+                          {
+                            label: getKolamVendorStatusLabel('inactive'),
+                            value: 'inactive',
+                          },
+                          {
+                            label: getKolamVendorStatusLabel('blacklisted'),
+                            value: 'blacklisted',
+                          },
+                        ]}
+                        showLabelInTrigger={false}
+                        value={form.status}
                       />
-                    </View>
-                  </FieldShell>
+                    </FieldShell>
+                  </View>
+                </View>
+                <View style={styles.formSplitCell}>
+                  <View style={styles.supplierStatusTile}>
+                    <FieldShell label="Distributor resmi">
+                      <View style={styles.switchRow}>
+                        <Text style={styles.switchHint}>
+                          Tandai jika pemasok adalah distributor resmi merek.
+                        </Text>
+                        <KolamSwitch
+                          active={form.isOfficialDistributor}
+                          disabled={controller.saving}
+                          onPress={() =>
+                            controller.onChangeForm({
+                              isOfficialDistributor:
+                                !form.isOfficialDistributor,
+                            })
+                          }
+                        />
+                      </View>
+                    </FieldShell>
+                  </View>
                 </View>
               </View>
 
@@ -1994,6 +1993,14 @@ function KolamSupplierForm({
                 </View>
               </FieldShell>
 
+              <FieldShell label="Tautan eksternal">
+                <SupplierExternalLinksEditor
+                  disabled={controller.saving}
+                  linkText={form.linkText}
+                  onChange={linkText => controller.onChangeForm({ linkText })}
+                />
+              </FieldShell>
+
               {form.isOfficialDistributor ? (
                 <FieldShell label="Catatan kontak garansi">
                   <KolamFormTextField
@@ -2016,6 +2023,81 @@ function KolamSupplierForm({
         </View>
       </View>
     </KolamNativeFormSection>
+  );
+}
+
+function SupplierExternalLinksEditor({
+  disabled,
+  linkText,
+  onChange,
+}: {
+  disabled: boolean;
+  linkText: string;
+  onChange: (value: string) => void;
+}) {
+  const links = React.useMemo(() => {
+    const rows = linkText.split('\n');
+    return rows.length ? rows : [''];
+  }, [linkText]);
+  const updateLink = (index: number, value: string) => {
+    onChange(
+      links
+        .map((link, linkIndex) => (linkIndex === index ? value : link))
+        .join('\n'),
+    );
+  };
+  const removeLink = (index: number) => {
+    onChange(links.filter((_, linkIndex) => linkIndex !== index).join('\n'));
+  };
+
+  return (
+    <View style={styles.externalLinksStack}>
+      {links.length ? (
+        links.map((link, index) => (
+          <View key={`${index}-${link}`} style={styles.externalLinkRow}>
+            <KolamFormTextField
+              editable={!disabled}
+              mode="url"
+              onChangeText={value => updateLink(index, value)}
+              placeholder="https://contoh.com"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                styles.externalLinkInput,
+              ]}
+              value={link}
+            />
+            <KolamInteractionFrame
+              accessibilityLabel="Hapus tautan"
+              disabled={disabled}
+              onPress={() => removeLink(index)}
+              style={[
+                settingsWebFormStyles.settingsWebUploadDeleteButton,
+                styles.externalLinkRemoveButton,
+              ]}
+            >
+              <KolamUploadDeleteIcon />
+            </KolamInteractionFrame>
+          </View>
+        ))
+      ) : (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'empty-links',
+              text: 'Belum ada tautan eksternal.',
+              style: styles.fieldHint,
+            },
+          ]}
+        />
+      )}
+      <KolamButton
+        disabled={disabled}
+        intent="secondary"
+        label="Tambah tautan"
+        onPress={() => onChange([...links, ''].join('\n'))}
+        style={styles.externalLinkAddButton}
+      />
+    </View>
   );
 }
 
@@ -2520,6 +2602,13 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 12,
   },
+  supplierStatusTile: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
   formSplitRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2528,6 +2617,38 @@ const styles = StyleSheet.create({
   formSplitCell: {
     flexGrow: 1,
     minWidth: 220,
+  },
+  fieldHint: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  externalLinksStack: {
+    alignSelf: 'stretch',
+    gap: 8,
+    minWidth: 0,
+    width: '100%',
+  },
+  externalLinkRow: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 8,
+    minWidth: 0,
+    width: '100%',
+  },
+  externalLinkInput: {
+    flex: 1,
+    minWidth: 80,
+  },
+  externalLinkRemoveButton: {
+    flexShrink: 0,
+    marginLeft: 0,
+  },
+  externalLinkAddButton: {
+    alignSelf: 'flex-start',
+    minHeight: 34,
   },
   segmentRow: {
     flexDirection: 'row',
