@@ -1649,8 +1649,18 @@ function KolamSupplierForm({
 
   return (
     <KolamNativeFormSection section={getKolamFormSection('supplier-detail')}>
-      <View style={settingsWebFormStyles.settingsWebFormFields}>
-        <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+      <View
+        style={[
+          settingsWebFormStyles.settingsWebFormFields,
+          styles.supplierFormFields,
+        ]}
+      >
+        <View
+          style={[
+            settingsWebFormStyles.settingsWebFormFieldsGrid,
+            styles.supplierFormFieldsGrid,
+          ]}
+        >
           <SupplierEditSection title="Informasi Dasar">
             <View style={styles.supplierBasicInfoCard}>
               <FieldShell label="Nama Pemasok" required>
@@ -2668,6 +2678,16 @@ const styles = StyleSheet.create({
   photoRemove: {
     minHeight: 30,
   },
+  supplierFormFields: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
+  },
+  supplierFormFieldsGrid: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+    width: '100%',
+  },
   supplierEditSection: {
     alignSelf: 'stretch',
     gap: 12,
@@ -2688,12 +2708,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   supplierBasicInfoCard: {
+    alignSelf: 'stretch',
     backgroundColor: '#f9fafb',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     gap: 12,
+    minWidth: 0,
     padding: 12,
+    width: '100%',
   },
   supplierStatusTile: {
     alignSelf: 'stretch',
