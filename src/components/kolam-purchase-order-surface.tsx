@@ -1310,84 +1310,85 @@ function KolamPurchaseOrderDetail({
                 },
               ]}
             />
+          <KolamDetailSummaryCard
+            body={
+              <ScrollView
+                contentContainerStyle={styles.poTimelineScroll}
+                nestedScrollEnabled
+                style={styles.poTimelineScrollView}
+              >
+                <View style={styles.poTimeline}>
+                  {[
+                    {
+                      id: 'ordered',
+                      label: 'Dipesan',
+                      value: formatPODateTime(po.orderedAt),
+                    },
+                    {
+                      id: 'delivery',
+                      label: 'Pengiriman',
+                      value: formatPODateTime(po.deliveryAt),
+                    },
+                    {
+                      id: 'received',
+                      label: 'Diterima',
+                      meta: po.receivedByName || '',
+                      value: formatPODateTime(po.receivedAt),
+                    },
+                    {
+                      id: 'checked',
+                      label: 'Diperiksa',
+                      meta: po.checkedByName || '',
+                      value: formatPODateTime(po.onCheckAt),
+                    },
+                    {
+                      id: 'completed',
+                      label: 'Selesai',
+                      value: formatPODateTime(po.completedAt),
+                    },
+                    {
+                      id: 'cancelled',
+                      label: 'Dibatalkan',
+                      value: formatPODateTime(po.cancelledAt),
+                    },
+                  ].map(entry => {
+                    const hasValue = entry.value !== '—';
+                    return (
+                      <View key={entry.id} style={styles.poTimelineItem}>
+                        <View
+                          style={[
+                            styles.poTimelineDot,
+                            entry.id === 'cancelled' && hasValue
+                              ? styles.poTimelineDotDanger
+                              : hasValue
+                                ? styles.poTimelineDotSuccess
+                                : styles.poTimelineDotSecondary,
+                          ]}
+                        />
+                        <View style={styles.poTimelineBody}>
+                          <Text style={styles.poTimelineTitle}>
+                            {entry.label}
+                          </Text>
+                          <Text style={styles.metaText}>
+                            {entry.value}
+                            {entry.meta ? ` · ${entry.meta}` : ''}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            }
+            fields={[]}
+            style={[styles.detailCard, styles.detailSplitCard]}
+            title="Timeline pengadaan"
+          />
           <KolamPOPaymentSection controller={controller} po={po} />
           <KolamPOFakturPajakSection controller={controller} po={po} />
         </View>
 
         <View style={styles.poDetailTimelineColumn}>
-          <KolamContentFrame
-            style={styles.detailCard}
-            variant="settingsWebConfig"
-          >
-            <Text style={styles.sectionTitle}>Timeline pengadaan</Text>
-            <ScrollView
-              contentContainerStyle={styles.poTimelineScroll}
-              nestedScrollEnabled
-              style={styles.poTimelineScrollView}
-            >
-              <View style={styles.poTimeline}>
-                {[
-                  {
-                    id: 'ordered',
-                    label: 'Dipesan',
-                    value: formatPODateTime(po.orderedAt),
-                  },
-                  {
-                    id: 'delivery',
-                    label: 'Pengiriman',
-                    value: formatPODateTime(po.deliveryAt),
-                  },
-                  {
-                    id: 'received',
-                    label: 'Diterima',
-                    meta: po.receivedByName || '',
-                    value: formatPODateTime(po.receivedAt),
-                  },
-                  {
-                    id: 'checked',
-                    label: 'Diperiksa',
-                    meta: po.checkedByName || '',
-                    value: formatPODateTime(po.onCheckAt),
-                  },
-                  {
-                    id: 'completed',
-                    label: 'Selesai',
-                    value: formatPODateTime(po.completedAt),
-                  },
-                  {
-                    id: 'cancelled',
-                    label: 'Dibatalkan',
-                    value: formatPODateTime(po.cancelledAt),
-                  },
-                ].map(entry => {
-                  const hasValue = entry.value !== '—';
-                  return (
-                    <View key={entry.id} style={styles.poTimelineItem}>
-                      <View
-                        style={[
-                          styles.poTimelineDot,
-                          entry.id === 'cancelled' && hasValue
-                            ? styles.poTimelineDotDanger
-                            : hasValue
-                              ? styles.poTimelineDotSuccess
-                              : styles.poTimelineDotSecondary,
-                        ]}
-                      />
-                      <View style={styles.poTimelineBody}>
-                        <Text style={styles.poTimelineTitle}>
-                          {entry.label}
-                        </Text>
-                        <Text style={styles.metaText}>
-                          {entry.value}
-                          {entry.meta ? ` · ${entry.meta}` : ''}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </ScrollView>
-          </KolamContentFrame>
           <KolamPOProofsCard compact po={po} />
         </View>
       </View>
