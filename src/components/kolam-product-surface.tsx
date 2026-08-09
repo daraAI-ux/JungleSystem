@@ -1464,6 +1464,19 @@ function ProductEditFormPage({
     label: location.label,
     value: location.id,
   }));
+  const rawShippingMethods = mergeProductShippingMethods(
+    controller.shippingMethods,
+    controller.selectedProduct?.logistics.shippingMethods ?? [],
+  );
+  const rawShippingOptions = [
+    { label: 'Tambah metode pengiriman', value: '' },
+    ...rawShippingMethods
+      .filter(method => !form.availableShippingMethodIds.includes(method.id))
+      .map(method => ({ label: method.displayName, value: method.id })),
+  ];
+  const selectedRawShippingMethods = rawShippingMethods.filter(method =>
+    form.availableShippingMethodIds.includes(method.id),
+  );
 
   if (isRawForm) {
     return (
@@ -1669,8 +1682,89 @@ function ProductEditFormPage({
                               ]}
                             />
                           </View>
+                          <KolamDropdownSelect
+                            accessibilityLabel="Tambah metode pengiriman"
+                            label="Metode pengiriman tersedia"
+                            menuStyle={styles.longDropdownMenu}
+                            onChange={methodId => {
+                              if (
+                                !methodId ||
+                                form.availableShippingMethodIds.includes(
+                                  methodId,
+                                )
+                              ) {
+                                return;
+                              }
+                              controller.onChangeForm({
+                                availableShippingMethodIds: [
+                                  ...form.availableShippingMethodIds,
+                                  methodId,
+                                ],
+                              });
+                            }}
+                            options={rawShippingOptions}
+                            searchable
+                            searchPlaceholder="Cari metode pengiriman..."
+                            showLabelInTrigger={false}
+                            value=""
+                          />
+                          <View style={styles.selectedCategoryRow}>
+                            {selectedRawShippingMethods.length ? (
+                              selectedRawShippingMethods.map(method => (
+                                <KolamButton
+                                  disabled={controller.saving}
+                                  intent="outline"
+                                  key={method.id}
+                                  label={`${method.displayName} x`}
+                                  onPress={() =>
+                                    controller.onChangeForm({
+                                      availableShippingMethodIds:
+                                        form.availableShippingMethodIds.filter(
+                                          methodId => methodId !== method.id,
+                                        ),
+                                    })
+                                  }
+                                  style={styles.selectedCategoryButton}
+                                />
+                              ))
+                            ) : (
+                              <KolamCopyStack
+                                items={[
+                                  {
+                                    id: 'empty-shipping',
+                                    text: 'Belum ada metode pengiriman dipilih atau daftar metode belum tersedia dari detail/cache.',
+                                    style: styles.fieldHint,
+                                  },
+                                ]}
+                              />
+                            )}
+                          </View>
                         </View>
                       </ProductFieldShell>
+                      {!hasVariants ? (
+                        <ProductFieldShell label="Inventori Produk">
+                          <View style={styles.pricingPanelStack}>
+                            <ProductPricingFieldPanel
+                              description="Batas peringatan stok rendah untuk bahan baku tanpa varian."
+                              title="Stok dan Peringatan"
+                            >
+                              <View style={styles.twoColumnGrid}>
+                                <ProductPriceInput
+                                  disabled={controller.saving}
+                                  hint="Aplikasi memberi tanda saat stok mencapai angka ini."
+                                  label="Ambang Stok Rendah"
+                                  onChangeText={lowStockThreshold =>
+                                    controller.onChangeForm({
+                                      lowStockThreshold,
+                                    })
+                                  }
+                                  value={form.lowStockThreshold}
+                                />
+                              </View>
+                            </ProductPricingFieldPanel>
+                          </View>
+                        </ProductFieldShell>
+                      ) : null}
                     </View>
                   </ProductEditSection>
                 </View>
@@ -1691,26 +1785,6 @@ function ProductEditFormPage({
                       hasVariants={hasVariants}
                     />
                   </View>
-                </ProductEditSection>
-              ) : null}
-
-              {!hasVariants ? (
-                <ProductEditSection
-                  description="Batas stok rendah untuk peringatan inventory."
-                  title="Persediaan"
-                >
-                  <ProductFieldShell label="Batas Stok Rendah">
-                    <KolamFormTextField
-                      editable={!disabled}
-                      keyboardType="numeric"
-                      onChangeText={lowStockThreshold =>
-                        controller.onChangeForm({ lowStockThreshold })
-                      }
-                      placeholder="Batas stok rendah"
-                      style={settingsWebFormStyles.settingsWebFormFieldValue}
-                      value={form.lowStockThreshold}
-                    />
-                  </ProductFieldShell>
                 </ProductEditSection>
               ) : null}
 
@@ -1830,13 +1904,6 @@ function ProductEditFormPage({
                   </View>
                 </ProductEditSection>
               ) : null}
-
-              <ProductEditSection
-                description="Metode pengiriman yang tersedia untuk bahan baku ini."
-                title="Metode Pengiriman"
-              >
-                <ProductShippingMethodsPanel controller={controller} />
-              </ProductEditSection>
 
               <ProductEditSection
                 description="Link marketplace, webstore, POS, atau dokumentasi bahan baku."
