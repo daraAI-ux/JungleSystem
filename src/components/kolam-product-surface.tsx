@@ -11,11 +11,13 @@ import {
 import {SvgXml} from 'react-native-svg';
 import { appConfig } from '../config/app';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import type { KolamBarcodeLabelItem } from '../domain/kolam-barcode';
 import {
   getCustomFieldTypeLabel,
   type KolamCustomField,
 } from '../domain/kolam-custom-field';
+import { resolveKolamDaraSeoAccess } from '../domain/kolam-dara-seo';
 import {
   createEmptyKolamProductVendorPriceFormRow,
   getKolamProductCatalogKind,
@@ -42,6 +44,8 @@ import {
 } from '../services/kolam-pricing-analysis-api';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamProductController } from '../hooks/use-kolam-product-controller';
+import { sanitizeApiErrorMessage } from '../lib/api-error';
+import { startKolamDaraJob } from '../services/kolam-dara-jobs-api';
 import {
   deleteKolamProductAsset,
   getKolamProductUsedIn,
@@ -206,6 +210,7 @@ export function KolamProductSurface({
   route: string;
 }) {
   const controller = useKolamProductController(route);
+  const { authUser } = useKolamAuthContext();
   const catalogKind = getKolamProductCatalogKind(route);
   const isRawCatalog = catalogKind === 'raw';
   const listRoute = isRawCatalog ? '/raw-materials' : '/products';
@@ -234,10 +239,52 @@ export function KolamProductSurface({
   const [activeFilterPanel, setActiveFilterPanel] =
     React.useState<ProductListFilterPanel | null>(null);
   const [filterPanelQuery, setFilterPanelQuery] = React.useState('');
+  const [seoJobBusy, setSeoJobBusy] = React.useState(false);
+  const [seoNotice, setSeoNotice] = React.useState<{
+    text: string;
+    tone: 'ok' | 'err';
+  } | null>(null);
   const productIds = React.useMemo(
     () => controller.products.map(product => product.id).filter(Boolean),
     [controller.products],
   );
+  const seoAccess = React.useMemo(
+    () =>
+      resolveKolamDaraSeoAccess({
+        roleKey: authUser?.roleKey,
+        permissions: authUser?.permissions,
+        isOwner: (authUser as { isOwner?: boolean } | null | undefined)?.isOwner,
+      }),
+    [authUser],
+  );
+  const onSeoAuditPage = React.useCallback(async () => {
+    if (!productIds.length || seoJobBusy) {
+      return;
+    }
+
+    setSeoJobBusy(true);
+    setSeoNotice(null);
+    const label = `Audit SEO ${productIds.length} produk`;
+    try {
+      await startKolamDaraJob({
+        module: 'seo',
+        jobType: 'seo.bulk_products',
+        params: { productIds, generateDraft: true },
+        label,
+      });
+      setSeoNotice({ text: `${label} dimulai`, tone: 'ok' });
+    } catch (err) {
+      setSeoNotice({
+        text:
+          err instanceof Error && err.message.trim()
+            ? sanitizeApiErrorMessage(err.message)
+            : `Gagal memulai ${label}`,
+        tone: 'err',
+      });
+    } finally {
+      setSeoJobBusy(false);
+    }
+  }, [productIds, seoJobBusy]);
   const barcodeItems = React.useMemo(
     () => createBarcodeItems(controller.products),
     [controller.products],
@@ -481,7 +528,15 @@ export function KolamProductSurface({
                         setBarcodeOpen(true);
                       }}
                     />
-                    <KolamSeoAuditButton label="SEO audit" />
+                    {seoAccess.canDraft && productIds.length > 0 ? (
+                      <KolamSeoAuditButton
+                        disabled={seoJobBusy}
+                        label={seoJobBusy ? 'SEO audit…' : 'SEO audit'}
+                        onPress={() => {
+                          void onSeoAuditPage();
+                        }}
+                      />
+                    ) : null}
                     <KolamStockSyncButton
                       label="Sinkron Harga"
                       onPress={() => setSyncPriceOpen(true)}
@@ -545,6 +600,13 @@ export function KolamProductSurface({
 
         {controller.error ? (
           <Text style={styles.error}>{controller.error}</Text>
+        ) : null}
+        {seoNotice ? (
+          <Text
+            style={seoNotice.tone === 'err' ? styles.error : styles.fieldHint}
+          >
+            {seoNotice.text}
+          </Text>
         ) : null}
 
         <KolamListTableComposition
