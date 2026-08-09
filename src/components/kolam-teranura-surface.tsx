@@ -547,12 +547,16 @@ function KolamTeranuraDetail({
         onSelect={selectTab}
         selectedId={activeTab}
       />
-      <KolamContentFrame
-        style={styles.detailTabPanel}
-        variant="settingsWebConfig"
-      >
-        {tabBody}
-      </KolamContentFrame>
+      {activeTab === 'overview' || activeTab === 'statistics' ? (
+        tabBody
+      ) : (
+        <KolamContentFrame
+          style={styles.detailTabPanel}
+          variant="settingsWebConfig"
+        >
+          {tabBody}
+        </KolamContentFrame>
+      )}
     </KolamDetailScrollSurface>
   );
 }

@@ -1,24 +1,32 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, StyleSheet, Text, View } from 'react-native';
 import type { KolamTeranura } from '../domain/kolam-teranura';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { copyTextToClipboard } from '../lib/native-clipboard';
 import { formatRupiah } from '../lib/money';
 import { KolamBadge } from './kolam-badge';
 import { KolamBarcodePanel } from './kolam-barcode-panel';
+import { KolamButton } from './kolam-button';
+import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDescriptionList } from './kolam-description-list';
+import { KolamDetailLocaleTabs } from './kolam-detail-locale-tabs';
 import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
 } from './kolam-detail-media-preview';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamEntityStatisticsPanel } from './kolam-entity-statistics-panel';
-import { KolamHtmlContent } from './kolam-html-content';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
+import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
 import {
   KolamPricingMetric,
   KolamPricingMetricsGrid,
 } from './kolam-pricing-metric-grid';
 import { KolamRemoteImage } from './kolam-remote-image';
+
+const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
+const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 
 function formatMoneyRange(values: number[]) {
   const positive = values.filter(value => value > 0);
@@ -44,6 +52,12 @@ function formatDimension(item: {
 }
 
 export function TeranuraSummaryTab({ item }: { item: KolamTeranura }) {
+  const productCode = (item.sku || item.productCode || '').trim();
+  const categories = item.categories.length
+    ? item.categories
+    : item.category
+    ? [item.category]
+    : [];
   const mediaItems = React.useMemo(() => {
     const photos: KolamDetailMediaItem[] = item.photos.map((uri, index) => ({
       badgeLabel: 'Foto',
@@ -81,29 +95,83 @@ export function TeranuraSummaryTab({ item }: { item: KolamTeranura }) {
       ? 'warning'
       : 'success';
 
+  const sidebarLinks = React.useMemo(
+    () => createTeranuraSidebarLinks(item),
+    [item],
+  );
+
+  const localeItems = React.useMemo(
+    () =>
+      item.localeBlocks.map(block => ({
+        badge: block.locale.toUpperCase(),
+        fields: [
+          { label: 'Nama produk', value: block.name || item.name },
+          { label: 'Deskripsi singkat', value: block.shortDescription },
+          { label: 'Deskripsi lengkap', value: block.description },
+        ],
+        title: block.localeLabel,
+      })),
+    [item.localeBlocks, item.name],
+  );
+
   return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Ringkasan</Text>
+    <View style={styles.detailPanel}>
+      <View style={styles.panelTitleRow}>
+        <Text style={styles.detailPanelTitle}>Ringkasan</Text>
+        {item.deviceLine === 'freyer' ? (
+          <KolamBadge intent="info" label="Freyer" />
+        ) : null}
+      </View>
+
       <View style={styles.overviewGrid}>
         <View style={styles.overviewSidebar}>
           {mediaItems.length ? (
             <KolamDetailMediaPreview items={mediaItems} title={item.name} />
           ) : (
-            <View style={styles.mediaPlaceholder}>
+            <View style={styles.detailHeroPlaceholder}>
               <Text style={styles.emptyText}>Belum ada foto</Text>
             </View>
           )}
+
           <KolamBarcodePanel
             name={item.name}
             priceLabel={formatRupiah(item.priceToSell)}
-            sku={item.sku || item.productCode || item.name}
+            sku={productCode || item.name}
           />
-          <View style={styles.miniGrid}>
+
+          <View style={styles.sidebarMiniGrid}>
             <MiniTile label="Status">
               <KolamBadge
                 intent={item.sellable ? 'success' : 'secondary'}
                 label={item.sellable ? 'Dijual' : 'Tidak dijual'}
               />
+            </MiniTile>
+            <MiniTile label="Daftar Keinginan">
+              <Text style={styles.miniMutedValue}>-</Text>
+            </MiniTile>
+            <MiniTile label="Merek">
+              {item.brand ? (
+                <View style={styles.miniBrandRow}>
+                  <View style={styles.miniBrandLogoFrame}>
+                    {item.brand.logoUrl ? (
+                      <KolamRemoteImage
+                        accessibilityLabel={`Logo ${item.brand.name}`}
+                        resizeMode="contain"
+                        revision={item.brand.logoUrl}
+                        scope="product-brand"
+                        sourceUri={item.brand.logoUrl}
+                        style={styles.miniBrandLogoImage}
+                      />
+                    ) : (
+                      <Text numberOfLines={1} style={styles.miniBrandInitials}>
+                        {getBrandInitials(item.brand.name)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.miniMutedValue}>-</Text>
+              )}
             </MiniTile>
             <MiniTile label="Stok">
               <KolamBadge
@@ -111,91 +179,236 @@ export function TeranuraSummaryTab({ item }: { item: KolamTeranura }) {
                 label={item.stock <= 0 ? 'Habis' : String(item.stock)}
               />
             </MiniTile>
-            <MiniTile label="SKU">
-              <Text style={styles.miniValue}>
-                {item.sku || item.productCode || '—'}
-              </Text>
+            <MiniTile label="(-)Stok">
+              {item.lowStockThreshold > 0 &&
+              item.stock <= item.lowStockThreshold ? (
+                <KolamBadge intent="warning" label="Rendah" />
+              ) : (
+                <Text style={styles.miniMutedValue}>
+                  {item.lowStockThreshold || '-'}
+                </Text>
+              )}
             </MiniTile>
             <MiniTile label="Satuan">
               <Text style={styles.miniValue}>
-                {item.unitInitial || item.unitLabel || '—'}
+                {item.unitLabel || item.unitInitial || '-'}
               </Text>
             </MiniTile>
-            <MiniTile label="Merek">
-              <Text style={styles.miniValue}>{item.brand?.name || '—'}</Text>
-            </MiniTile>
-            <MiniTile label="Line">
-              {item.deviceLine === 'freyer' ? (
-                <KolamBadge intent="info" label="Freyer" />
+          </View>
+
+          <View style={styles.externalTileGrid}>
+            {sidebarLinks.map(link => {
+              const content = (
+                <MiniTile label={link.label}>
+                  {link.url ? (
+                    <View style={styles.externalTileMarketIcon}>
+                      {link.logo ? (
+                        <Image
+                          resizeMode="cover"
+                          source={link.logo}
+                          style={styles.externalTileLogo}
+                        />
+                      ) : (
+                        <Text style={styles.externalTileMark}>{link.mark}</Text>
+                      )}
+                    </View>
+                  ) : (
+                    <Text style={styles.miniMutedValue}>-</Text>
+                  )}
+                </MiniTile>
+              );
+
+              return link.url ? (
+                <KolamInteractionFrame
+                  accessibilityLabel={`Buka ${link.label}`}
+                  key={link.id}
+                  onPress={() => void Linking.openURL(normalizeUrl(link.url))}
+                  style={styles.externalTilePressable}
+                >
+                  {content}
+                </KolamInteractionFrame>
               ) : (
-                <Text style={styles.miniValue}>Teranura</Text>
+                <View key={link.id} style={styles.externalTilePressable}>
+                  {content}
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Kategori</Text>
+            <View style={styles.sidebarChipWrap}>
+              {categories.length ? (
+                categories.map(category => (
+                  <KolamCategoryLabel
+                    key={category.id || category.name}
+                    label={category.name}
+                    style={styles.sidebarCategoryChip}
+                    textStyle={styles.sidebarCategoryChipText}
+                  />
+                ))
+              ) : (
+                <Text style={styles.metaValue}>-</Text>
               )}
-            </MiniTile>
+            </View>
+          </View>
+
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Tag</Text>
+            <View style={styles.sidebarChipWrap}>
+              {item.tags.length ? (
+                item.tags.map(tag => (
+                  <View key={tag} style={styles.sidebarChip}>
+                    <View style={styles.sidebarChipContent}>
+                      <Text numberOfLines={2} style={styles.sidebarChipText}>
+                        {tag}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.metaValue}>-</Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Lokasi</Text>
+            <Text style={styles.metaValue}>{item.locationLabel || '-'}</Text>
+          </View>
+
+          <View style={styles.metaBlock}>
+            <Text style={styles.metaLabel}>Sinkron Stok</Text>
+            <KolamMarketplaceSyncPlatformList
+              platforms={item.marketplaceSyncPlatforms}
+            />
           </View>
         </View>
 
-        <View style={styles.overviewMain}>
-          {(item.categories.length || item.category) && (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Kategori</Text>
-              <View style={styles.chipWrap}>
-                {(item.categories.length
-                  ? item.categories
-                  : item.category
-                  ? [item.category]
-                  : []
-                ).map(category => (
-                  <KolamBadge
-                    key={category.id || category.name}
-                    intent="secondary"
-                    label={category.name}
-                  />
-                ))}
-              </View>
-            </View>
-          )}
-          {item.locationLabel ? (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Lokasi</Text>
-              <Text style={styles.blockValue}>{item.locationLabel}</Text>
-            </View>
+        <View style={styles.overviewContent}>
+          {productCode ? (
+            <TeranuraCopyableCodeChip code={productCode} label="SKU" />
           ) : null}
-          {item.shortDescription ? (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Deskripsi singkat</Text>
-              <Text style={styles.blockValue}>{item.shortDescription}</Text>
-            </View>
-          ) : null}
-          {item.description ? (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Deskripsi</Text>
-              <KolamHtmlContent html={item.description} />
-            </View>
-          ) : null}
-          {item.tags.length ? (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Tag</Text>
-              <View style={styles.chipWrap}>
-                {item.tags.map(tag => (
-                  <KolamBadge key={tag} intent="muted" label={tag} />
-                ))}
-              </View>
-            </View>
-          ) : null}
-          {item.links.length ? (
-            <View style={styles.block}>
-              <Text style={styles.blockLabel}>Tautan</Text>
-              {item.links.map(link => (
-                <Text key={link.id} selectable style={styles.linkText}>
-                  {link.label}: {link.url}
-                </Text>
-              ))}
-            </View>
-          ) : null}
+          <View style={styles.localeTitleRow}>
+            <Text style={styles.detailSectionTitle}>Konten per bahasa</Text>
+          </View>
+          <KolamDetailLocaleTabs
+            emptyText="Belum ada konten Teranura."
+            items={localeItems}
+          />
         </View>
       </View>
     </View>
   );
+}
+
+function TeranuraCopyableCodeChip({
+  code,
+  label,
+}: {
+  code: string;
+  label: string;
+}) {
+  const [copied, setCopied] = React.useState(false);
+  const safeCode = code.trim();
+  const copyCode = () => {
+    if (!safeCode) {
+      return;
+    }
+    void copyTextToClipboard(safeCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
+  };
+
+  if (!safeCode) {
+    return null;
+  }
+
+  return (
+    <View style={styles.copyCodeWrap}>
+      <KolamInteractionFrame
+        accessibilityLabel={`Salin ${label} ${safeCode}`}
+        onPress={copyCode}
+        style={styles.titleCodeChip}
+      >
+        <Text style={styles.titleCodeText}>
+          {label}: {safeCode}
+        </Text>
+      </KolamInteractionFrame>
+      <KolamButton
+        accessibilityLabel={`Salin ${label} ${safeCode}`}
+        intent={copied ? 'primary' : 'outline'}
+        label={copied ? 'Disalin' : 'Salin'}
+        onPress={copyCode}
+        style={styles.copyCodeButton}
+      />
+    </View>
+  );
+}
+
+function createTeranuraSidebarLinks(item: KolamTeranura) {
+  const shopee = findTeranuraLink(item, 'shopee');
+  const tokopedia = findTeranuraLink(item, 'tokopedia');
+  const webstore =
+    findTeranuraLink(item, 'webstore') ||
+    findTeranuraLink(item, 'website') ||
+    (item.slug.trim()
+      ? {
+          id: 'webstore-slug',
+          label: 'Toko Web',
+          url: `https://dunia-anura.com/id/products/${encodeURIComponent(
+            item.slug.trim(),
+          )}`,
+        }
+      : null);
+
+  return [
+    {
+      id: 'shopee',
+      label: 'Shopee',
+      logo: SHOPEE_LOGO,
+      mark: 'S',
+      url: shopee?.url || '',
+    },
+    {
+      id: 'tokopedia',
+      label: 'Tokopedia',
+      logo: TOKOPEDIA_LOGO,
+      mark: 'T',
+      url: tokopedia?.url || '',
+    },
+    {
+      id: 'webstore',
+      label: 'Toko Web',
+      logo: null as null,
+      mark: 'W',
+      url: webstore?.url || '',
+    },
+  ];
+}
+
+function findTeranuraLink(item: KolamTeranura, key: string) {
+  return item.links.find(link => {
+    const label = link.label.trim().toLowerCase();
+    const url = link.url.trim().toLowerCase();
+    return label.includes(key) || url.includes(key);
+  });
+}
+
+function normalizeUrl(value: string) {
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+function getBrandInitials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return '-';
+  }
+  return words
+    .slice(0, 2)
+    .map(word => word[0])
+    .join('')
+    .toUpperCase();
 }
 
 export function TeranuraPricingTab({ item }: { item: KolamTeranura }) {
@@ -601,14 +814,265 @@ function MiniTile({
   label: string;
 }) {
   return (
-    <View style={styles.miniTile}>
-      <Text style={styles.miniLabel}>{label}</Text>
-      {children}
+    <View style={styles.sidebarMiniTile}>
+      <Text style={styles.sidebarMiniLabel}>{label}</Text>
+      <View style={styles.sidebarMiniContent}>{children}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  detailPanel: {
+    alignSelf: 'stretch',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 16,
+    width: '100%',
+  },
+  panelTitleRow: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minWidth: 0,
+    width: '100%',
+  },
+  detailPanelTitle: {
+    color: V.colors.fg,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  overviewGrid: {
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    gap: 24,
+    minWidth: 0,
+    width: '100%',
+  },
+  overviewSidebar: {
+    gap: 12,
+    width: 320,
+  },
+  overviewContent: {
+    alignSelf: 'stretch',
+    flex: 1,
+    gap: 12,
+    minWidth: 0,
+    width: '100%',
+  },
+  detailHeroPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 180,
+    width: '100%',
+  },
+  emptyText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  sidebarMiniGrid: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    minWidth: 0,
+    width: '100%',
+  },
+  sidebarMiniTile: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 94,
+    flexGrow: 1,
+    justifyContent: 'center',
+    minHeight: 70,
+    padding: 8,
+  },
+  sidebarMiniLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  sidebarMiniContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    minHeight: 22,
+  },
+  miniValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  miniMutedValue: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  miniBrandRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    justifyContent: 'center',
+  },
+  miniBrandLogoFrame: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 24,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 28,
+  },
+  miniBrandLogoImage: {
+    height: '100%',
+    width: '100%',
+  },
+  miniBrandInitials: {
+    color: V.colors.fg,
+    fontSize: 9,
+    fontWeight: '900',
+    lineHeight: 11,
+  },
+  externalTileGrid: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    minWidth: 0,
+    width: '100%',
+  },
+  externalTilePressable: {
+    flex: 1,
+    minWidth: 94,
+  },
+  externalTileMarketIcon: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 32,
+  },
+  externalTileLogo: {
+    height: '100%',
+    width: '100%',
+  },
+  externalTileMark: {
+    color: '#16a34a',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  metaBlock: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    padding: 10,
+  },
+  metaLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  metaValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 19,
+  },
+  sidebarChipWrap: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  sidebarChip: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: '100%',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  sidebarChipContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    maxWidth: '100%',
+  },
+  sidebarChipText: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  sidebarCategoryChip: {
+    alignSelf: 'flex-start',
+  },
+  sidebarCategoryChipText: {
+    fontSize: 11,
+  },
+  localeTitleRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  detailSectionTitle: {
+    color: V.colors.fg,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  copyCodeWrap: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  titleCodeChip: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  titleCodeText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  copyCodeButton: {
+    alignSelf: 'center',
+  },
   panel: {
     gap: 12,
     width: '100%',
@@ -626,92 +1090,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 15,
     fontWeight: '800',
-  },
-  overviewGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    width: '100%',
-  },
-  overviewSidebar: {
-    flexGrow: 1,
-    flexShrink: 1,
-    gap: 12,
-    maxWidth: 360,
-    minWidth: 240,
-  },
-  overviewMain: {
-    flexGrow: 2,
-    flexShrink: 1,
-    gap: 14,
-    minWidth: 260,
-  },
-  mediaPlaceholder: {
-    alignItems: 'center',
-    backgroundColor: V.colors.secondary,
-    borderRadius: V.radius.md,
-    justifyContent: 'center',
-    minHeight: 180,
-  },
-  emptyText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  miniGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  miniTile: {
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 6,
-    minWidth: 100,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  miniLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  miniValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  block: {
-    gap: 6,
-  },
-  blockLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  blockValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  chipWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  linkText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '600',
   },
   metricValue: {
     color: V.colors.fg,

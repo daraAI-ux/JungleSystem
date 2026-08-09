@@ -79,6 +79,22 @@ export interface KolamTeranuraLink {
   url: string;
 }
 
+export interface KolamTeranuraLocaleBlock {
+  description: string;
+  locale: string;
+  localeLabel: string;
+  name: string;
+  shortDescription: string;
+}
+
+export interface KolamTeranuraMarketplaceSyncPlatform {
+  label?: string;
+  lastSyncedAt?: string;
+  platform: string;
+  status: string;
+  statusLabel?: string;
+}
+
 export interface KolamTeranura {
   id: string;
   slug: string;
@@ -112,6 +128,8 @@ export interface KolamTeranura {
   shippingMethods: KolamTeranuraShippingMethod[];
   assets: KolamTeranuraAsset[];
   links: KolamTeranuraLink[];
+  localeBlocks: KolamTeranuraLocaleBlock[];
+  marketplaceSyncPlatforms: KolamTeranuraMarketplaceSyncPlatform[];
   tags: string[];
   locationLabel: string;
   linkedProductId: string;
@@ -406,6 +424,10 @@ export function normalizeKolamTeranura(value: unknown): KolamTeranura {
     ),
     assets: normalizeAssets(record.assets),
     links: normalizeLinks(record.links ?? record.externalLinks),
+    localeBlocks: normalizeLocaleBlocks(record, getString(record, 'name')),
+    marketplaceSyncPlatforms: normalizeMarketplaceSyncPlatforms(
+      asRecord(record.marketplaceSync).platforms ?? record.marketplaceSync,
+    ),
     tags: normalizeTags(record.tags),
     locationLabel: normalizeLocationLabel(record.location),
     linkedProductId: normalizeLinkedProductId(record.linkedProductId),
@@ -713,7 +735,8 @@ function normalizeLinks(value: unknown): KolamTeranuraLink[] {
       const url =
         getString(row, 'url') ||
         getString(row, 'href') ||
-        getString(row, 'link');
+        getString(row, 'link') ||
+        getString(row, 'value');
       if (!url) {
         return null;
       }
@@ -728,6 +751,66 @@ function normalizeLinks(value: unknown): KolamTeranuraLink[] {
       };
     })
     .filter(Boolean) as KolamTeranuraLink[];
+}
+
+function normalizeLocaleBlocks(
+  record: Record<string, unknown>,
+  fallbackName: string,
+): KolamTeranuraLocaleBlock[] {
+  const translations = asRecord(record.translations);
+  const blocks: KolamTeranuraLocaleBlock[] = [
+    {
+      description:
+        getString(record, 'description') ||
+        getString(record, 'longDescription'),
+      locale: 'id',
+      localeLabel: 'Bahasa Indonesia',
+      name: fallbackName,
+      shortDescription:
+        getString(record, 'shortDescription') ||
+        getString(record, 'short_description'),
+    },
+  ];
+
+  Object.keys(translations).forEach(locale => {
+    const block = asRecord(translations[locale]);
+    const name = getString(block, 'name');
+    const shortDescription = getString(block, 'shortDescription');
+    const description = getString(block, 'description');
+    if (!name && !shortDescription && !description) {
+      return;
+    }
+    blocks.push({
+      description,
+      locale,
+      localeLabel: locale.toUpperCase(),
+      name,
+      shortDescription,
+    });
+  });
+
+  return blocks;
+}
+
+function normalizeMarketplaceSyncPlatforms(
+  value: unknown,
+): KolamTeranuraMarketplaceSyncPlatform[] {
+  const list = Array.isArray(value) ? value : [];
+  return list.map((entry, index) => {
+    const row = asRecord(entry);
+    const platform =
+      getString(row, 'platform') ||
+      getString(row, 'name') ||
+      `platform-${index + 1}`;
+    return {
+      label: getString(row, 'label') || platform,
+      lastSyncedAt:
+        getString(row, 'lastSyncedAt') || getString(row, 'syncedAt'),
+      platform,
+      status: getString(row, 'status') || 'unknown',
+      statusLabel: getString(row, 'statusLabel'),
+    };
+  });
 }
 
 function normalizeTags(value: unknown): string[] {
