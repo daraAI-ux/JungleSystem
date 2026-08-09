@@ -29,6 +29,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamStockOpnameDetail } from './kolam-stock-opname-detail';
@@ -171,12 +172,10 @@ function KolamStockOpnameCreateForm({
         />
         <View style={styles.createActions}>
           <KolamCancelButton
-            muted
             onPress={() => onRouteChange?.(KOLAM_STOCK_OPNAME_ROOT)}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.creating}
-            intent="primary"
             label={
               controller.creating ? 'Membuat…' : 'Buat draf & lanjut isi barang'
             }
