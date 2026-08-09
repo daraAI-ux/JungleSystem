@@ -12,6 +12,7 @@ import {KOLAM_PRODUCT_MODULE_ICON_SVG} from '../assets/icons/product-module-icon
 import {KOLAM_PRODUCTION_MODULE_ICON_SVG} from '../assets/icons/production-module-icon-svg';
 import {KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG} from '../assets/icons/purchase-order-module-icon-svg';
 import {KOLAM_RAW_MODULE_ICON_SVG} from '../assets/icons/raw-module-icon-svg';
+import {KOLAM_SALES_SOURCE_MODULE_ICON_SVG} from '../assets/icons/sales-source-module-icon-svg';
 import {KOLAM_SALES_MODULE_ICON_SVG} from '../assets/icons/sales-module-icon-svg';
 import {KOLAM_SERIAL_MODULE_ICON_SVG} from '../assets/icons/serial-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
@@ -44,6 +45,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   purchaseOrder: 'Icon Pesanan Pembelian',
   raw: 'Icon Bahan Baku',
   sales: 'Icon Penjualan',
+  salesSource: 'Icon Sumber Penjualan',
   serial: 'Icon Serial Produk',
   species: 'Icon Spesies',
   stockMovement: 'Icon Transaksi Stok',
@@ -81,6 +83,9 @@ const PURCHASE_ORDER_ICON_PATHS = getSvgPathData(
   KOLAM_PURCHASE_ORDER_MODULE_ICON_SVG,
 );
 const RAW_ICON_PATHS = getSvgPathData(KOLAM_RAW_MODULE_ICON_SVG);
+const SALES_SOURCE_ICON_PATHS = getSvgPathData(
+  KOLAM_SALES_SOURCE_MODULE_ICON_SVG,
+);
 const SALES_ICON_PATHS = getSvgPathData(KOLAM_SALES_MODULE_ICON_SVG);
 const SERIAL_ICON_PATHS = getSvgPathData(KOLAM_SERIAL_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
@@ -226,6 +231,12 @@ export function KolamModuleIcon({
       ) : kind === 'sales' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {SALES_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
+        </Svg>
+      ) : kind === 'salesSource' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {SALES_SOURCE_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>

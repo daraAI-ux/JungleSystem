@@ -28,6 +28,7 @@ export type KolamNavigationModuleIcon =
   | 'purchaseOrder'
   | 'raw'
   | 'sales'
+  | 'salesSource'
   | 'serial'
   | 'species'
   | 'stockMovement'
@@ -409,6 +410,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Kelola sumber penjualan (Shopee, Tokopedia, toko offline, dll.) dengan field biaya dinamis untuk perhitungan profit.',
         group: 'Penjualan',
+        moduleIcon: 'salesSource',
         requiredAccess: ['kolam'],
       },
       {
@@ -889,7 +891,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Penjualan',
         moduleIcon: 'sales',
       }),
-      sidebarItem('/source', { group: 'Penjualan', label: 'Sumber' }),
+      sidebarItem('/source', {
+        group: 'Penjualan',
+        label: 'Sumber',
+        moduleIcon: 'salesSource',
+      }),
       sidebarItem('/complaints', { group: 'Penjualan', label: 'Komplain' }),
       // FE sales section: Layanan sits with Sales cluster (RNW = Penjualan group).
       sidebarItem('/layanan', { group: 'Penjualan', label: 'Layanan' }),
