@@ -1192,7 +1192,7 @@ function normalizePOAllocationDiscount(
 
 export interface KolamPOFormLineItem {
   key: string;
-  itemType: KolamPurchaseOrderItemType;
+  itemType: KolamPurchaseOrderItemType | '';
   refId: string;
   variantId: string;
   variantLabel: string;
@@ -1201,6 +1201,9 @@ export interface KolamPOFormLineItem {
   unitLabel: string;
   quantity: string;
   unitPrice: number;
+  vendorPrice: number;
+  priceOverridden: boolean;
+  priceEditing: boolean;
 }
 
 export interface KolamPOFormState {
@@ -1225,6 +1228,26 @@ export interface KolamPOFormState {
   downPaymentDueDate: string;
 }
 
+export function createEmptyKolamPOFormLineItem(
+  key = `po-line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+): KolamPOFormLineItem {
+  return {
+    key,
+    itemType: '',
+    refId: '',
+    variantId: '',
+    variantLabel: '',
+    title: '',
+    sku: '',
+    unitLabel: '',
+    quantity: '1',
+    unitPrice: 0,
+    vendorPrice: 0,
+    priceOverridden: false,
+    priceEditing: false,
+  };
+}
+
 export function createEmptyKolamPOFormState(): KolamPOFormState {
   return {
     vendorId: '',
@@ -1235,7 +1258,7 @@ export function createEmptyKolamPOFormState(): KolamPOFormState {
     discountType: 'percent',
     discountValue: '0',
     sendImmediately: false,
-    items: [],
+    items: [createEmptyKolamPOFormLineItem()],
     paymentType: 'cash',
     tempoMode: 'net_days',
     netDays: '30',
@@ -1273,6 +1296,9 @@ export function createKolamPOFormStateFromPO(
       unitLabel: getKolamPOItemUnitLabel(item),
       quantity: String(item.quantity),
       unitPrice: item.unitPrice,
+      vendorPrice: item.unitPrice,
+      priceOverridden: false,
+      priceEditing: false,
     })),
     paymentType:
       (po.paymentConfig?.type as KolamPOPaymentType | undefined) ?? 'cash',
@@ -1394,10 +1420,12 @@ function buildKolamPOPaymentConfig(
     const count = Math.max(2, Math.min(24, Number(form.installmentCount) || 2));
     config.installmentCount = count;
     const breakdown = calculateKolamPOBreakdown({
-      items: form.items.map(item => ({
-        unitPrice: item.unitPrice,
-        quantity: Number(item.quantity) || 0,
-      })),
+      items: form.items
+        .filter(item => item.refId)
+        .map(item => ({
+          unitPrice: item.unitPrice,
+          quantity: Number(item.quantity) || 0,
+        })),
       shippingCost: Number(form.shippingCost) || 0,
       discount: {
         type: form.discountType,

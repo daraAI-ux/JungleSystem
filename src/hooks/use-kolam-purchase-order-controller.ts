@@ -4,6 +4,7 @@ import {
   buildUpdatePOContentBody,
   calculateKolamPOBreakdown,
   createEmptyKolamPOFormState,
+  createEmptyKolamPOFormLineItem,
   createInitialKolamPurchaseOrderListFilters,
   createKolamPOFormStateFromPO,
   getKolamPurchaseOrderBreadcrumbPath,
@@ -84,6 +85,47 @@ const EMPTY_ITEM_PICKER_RESULT: KolamGetItemsForPOResult = {
   packings: [],
 };
 
+function getPOSelectableItems(result: KolamGetItemsForPOResult) {
+  return [...result.products, ...result.species, ...result.packings];
+}
+
+function getPOSelectionVariantLabel(variant?: KolamPOItemForSelectionVariant | null) {
+  if (!variant) {
+    return '';
+  }
+  return (
+    [variant.tier1Value, variant.tier2Value]
+      .map(part => part?.trim())
+      .filter(Boolean)
+      .join(' – ') ||
+    variant.sku ||
+    ''
+  );
+}
+
+function createPOFormLineFromSelection(
+  key: string,
+  item: KolamPOItemForSelection,
+  variant?: KolamPOItemForSelectionVariant | null,
+): KolamPOFormLineItem {
+  const vendorPrice = variant?.price || item.price || 0;
+  return {
+    key,
+    itemType: item.itemType,
+    refId: item.id,
+    variantId: variant?.id ?? '',
+    variantLabel: getPOSelectionVariantLabel(variant),
+    title: item.title,
+    sku: variant?.sku || item.sku || item.productCode || '',
+    unitLabel: item.unitLabel || '',
+    quantity: '1',
+    unitPrice: vendorPrice,
+    vendorPrice,
+    priceOverridden: false,
+    priceEditing: false,
+  };
+}
+
 export interface KolamPurchaseOrderController {
   breadcrumbPath: string;
   breakdown: KolamPOAllocationResult;
@@ -109,6 +151,7 @@ export interface KolamPurchaseOrderController {
     item: KolamPOItemForSelection,
     variant?: KolamPOItemForSelectionVariant | null,
   ) => void;
+  onAddEmptyItemLine: () => void;
   onBackToList: () => void;
   onChangeFilters: (patch: Partial<KolamPurchaseOrderListFilters>) => void;
   onChangeForm: (patch: Partial<KolamPOFormState>) => void;
@@ -161,6 +204,9 @@ export interface KolamPurchaseOrderController {
     search?: string;
     type?: 'all' | 'product' | 'species' | 'packing';
   }) => Promise<void>;
+  onSelectItemForLine: (key: string, itemId: string) => void;
+  onSelectVariantForLine: (key: string, variantId: string) => void;
+  onResetItemLinePrice: (key: string) => void;
   onSelectPO: (po: KolamPurchaseOrder) => Promise<void>;
   onSyncMarketplace: (platforms: KolamMarketplacePlatform[]) => Promise<boolean>;
   onUpdateStatus: (body: KolamUpdatePOStatusBody) => Promise<boolean>;
@@ -432,30 +478,19 @@ export function useKolamPurchaseOrderController(
     ) => {
       setForm(current => {
         const key = `${item.itemType}-${item.id}-${variant?.id ?? ''}-${Date.now()}-${current.items.length}`;
-        const line: KolamPOFormLineItem = {
-          key,
-          itemType: item.itemType,
-          refId: item.id,
-          variantId: variant?.id ?? '',
-          variantLabel: variant
-            ? [variant.tier1Value, variant.tier2Value]
-                .map(part => part?.trim())
-                .filter(Boolean)
-                .join(' – ') ||
-              variant.sku ||
-              '—'
-            : '—',
-          title: item.title,
-          sku: variant?.sku || item.sku || '—',
-          unitLabel: item.unitLabel || '—',
-          quantity: '1',
-          unitPrice: variant?.price || item.price || 0,
-        };
+        const line = createPOFormLineFromSelection(key, item, variant);
         return { ...current, items: [...current.items, line] };
       });
     },
     [],
   );
+
+  const onAddEmptyItemLine = useCallback(() => {
+    setForm(current => ({
+      ...current,
+      items: [...current.items, createEmptyKolamPOFormLineItem()],
+    }));
+  }, []);
 
   const onRemoveItemLine = useCallback((key: string) => {
     setForm(current => ({
@@ -469,12 +504,133 @@ export function useKolamPurchaseOrderController(
       setForm(current => ({
         ...current,
         items: current.items.map(item =>
-          item.key === key ? { ...item, ...patch } : item,
+          item.key === key
+            ? {
+                ...item,
+                ...patch,
+                ...(patch.unitPrice !== undefined
+                  ? { priceOverridden: patch.unitPrice !== item.vendorPrice }
+                  : {}),
+              }
+            : item,
         ),
       }));
     },
     [],
   );
+
+  const onSelectItemForLine = useCallback(
+    (key: string, itemId: string) => {
+      const item = getPOSelectableItems(itemPickerResult).find(
+        option => option.id === itemId,
+      );
+      if (!item) {
+        return;
+      }
+      setForm(current => {
+        const hasVariants = item.variants.length > 0;
+        if (!hasVariants) {
+          const duplicate = current.items.find(
+            line => line.key !== key && line.refId === item.id && !line.variantId,
+          );
+          if (duplicate) {
+            return {
+              ...current,
+              items: current.items
+                .filter(line => line.key !== key)
+                .map(line =>
+                  line.key === duplicate.key
+                    ? {
+                        ...line,
+                        quantity: String((Number(line.quantity) || 0) + 1),
+                      }
+                    : line,
+                ),
+            };
+          }
+        }
+
+        return {
+          ...current,
+          items: current.items.map(line =>
+            line.key === key
+              ? createPOFormLineFromSelection(key, item, null)
+              : line,
+          ),
+        };
+      });
+    },
+    [itemPickerResult],
+  );
+
+  const onSelectVariantForLine = useCallback(
+    (key: string, variantId: string) => {
+      setForm(current => {
+        const target = current.items.find(line => line.key === key);
+        if (!target?.refId) {
+          return current;
+        }
+        const item = getPOSelectableItems(itemPickerResult).find(
+          option => option.id === target.refId,
+        );
+        const variant = item?.variants.find(option => option.id === variantId);
+        if (!item || !variant) {
+          return current;
+        }
+
+        const duplicate = current.items.find(
+          line =>
+            line.key !== key &&
+            line.refId === item.id &&
+            line.variantId === variant.id,
+        );
+        if (duplicate) {
+          return {
+            ...current,
+            items: current.items
+              .filter(line => line.key !== key)
+              .map(line =>
+                line.key === duplicate.key
+                  ? {
+                      ...line,
+                      quantity: String((Number(line.quantity) || 0) + 1),
+                    }
+                  : line,
+              ),
+          };
+        }
+
+        return {
+          ...current,
+          items: current.items.map(line =>
+            line.key === key
+              ? {
+                  ...createPOFormLineFromSelection(key, item, variant),
+                  quantity: line.quantity || '1',
+                }
+              : line,
+          ),
+        };
+      });
+    },
+    [itemPickerResult],
+  );
+
+  const onResetItemLinePrice = useCallback((key: string) => {
+    setForm(current => ({
+      ...current,
+      items: current.items.map(line =>
+        line.key === key
+          ? {
+              ...line,
+              unitPrice: line.vendorPrice,
+              priceOverridden: false,
+              priceEditing: false,
+            }
+          : line,
+      ),
+    }));
+  }, []);
 
   const onSearchItemsForPO = useCallback(
     async (params: {
@@ -501,10 +657,12 @@ export function useKolamPurchaseOrderController(
   const breakdown = useMemo(
     () =>
       calculateKolamPOBreakdown({
-        items: form.items.map(item => ({
-          unitPrice: item.unitPrice,
-          quantity: Number(item.quantity) || 0,
-        })),
+        items: form.items
+          .filter(item => item.refId)
+          .map(item => ({
+            unitPrice: item.unitPrice,
+            quantity: Number(item.quantity) || 0,
+          })),
         shippingCost: Number(form.shippingCost) || 0,
         discount: {
           type: form.discountType,
@@ -519,9 +677,20 @@ export function useKolamPurchaseOrderController(
       setError('Pilih pemasok terlebih dahulu.');
       return null;
     }
-    if (!form.items.length) {
+    const selectedItems = form.items.filter(item => item.refId);
+    if (!selectedItems.length) {
       setError('Tambahkan minimal 1 item PO.');
       return null;
+    }
+    for (const item of selectedItems) {
+      if (Number(item.quantity) <= 0) {
+        setError('Lengkapi jumlah item PO.');
+        return null;
+      }
+      if (item.unitPrice <= 0) {
+        setError('Harga item PO harus lebih dari 0.');
+        return null;
+      }
     }
 
     setMutating(true);
@@ -1150,6 +1319,7 @@ export function useKolamPurchaseOrderController(
     vendors,
     walletOptions,
     onAddItemLine,
+    onAddEmptyItemLine,
     onBackToList,
     onChangeFilters,
     onChangeForm,
@@ -1180,6 +1350,9 @@ export function useKolamPurchaseOrderController(
     onSaveFakturPajak,
     onSearchChange,
     onSearchItemsForPO,
+    onSelectItemForLine,
+    onSelectVariantForLine,
+    onResetItemLinePrice,
     onSelectPO,
     onSyncMarketplace,
     onUpdateStatus,
