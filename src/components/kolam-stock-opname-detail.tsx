@@ -842,21 +842,29 @@ function AddLineForm({
           value={controller.addDraft.variantId}
         />
       ) : null}
-      <Text style={styles.meta}>
-        Qty sistem:{' '}
-        {controller.addLineSystemQty == null
-          ? '—'
-          : String(controller.addLineSystemQty)}
-        {controller.addLineDiff != null
-          ? ` · Selisih: ${controller.addLineDiff}`
-          : ''}
-      </Text>
-      <Text style={styles.fieldLabel}>Qty fisik</Text>
-      <KolamFormTextField
-        mode="numeric"
-        onChangeText={value => controller.setAddDraft({ physicalQty: value })}
-        value={controller.addDraft.physicalQty}
-      />
+      <View style={styles.accountabilityRow}>
+        <View style={styles.accountabilityBox}>
+          <Text style={styles.fieldLabel}>Qty sistem</Text>
+          <Text style={styles.meta}>
+            {controller.addLineSystemQty == null
+              ? '—'
+              : String(controller.addLineSystemQty)}
+            {controller.addLineDiff != null
+              ? ` · Selisih: ${controller.addLineDiff}`
+              : ''}
+          </Text>
+        </View>
+        <View style={styles.accountabilityBox}>
+          <Text style={styles.fieldLabel}>Qty fisik</Text>
+          <KolamFormTextField
+            mode="numeric"
+            onChangeText={value =>
+              controller.setAddDraft({ physicalQty: value })
+            }
+            value={controller.addDraft.physicalQty}
+          />
+        </View>
+      </View>
       {controller.addLineNeedsMinusReason ? (
         <KolamDropdownSelect
           label="Alasan selisih minus"
