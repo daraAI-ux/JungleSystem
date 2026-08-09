@@ -813,50 +813,56 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
         ) : null}
 
         {form.downPaymentEnabled ? (
-          <View style={styles.formSplitRow}>
-            <View style={styles.formSplitCell}>
-              <FieldShell
-                label={form.downPaymentInputType === 'percent' ? 'Nilai DP (%)' : 'Nilai DP'}>
-                <View style={styles.segmentRow}>
-                  <KolamButton
-                    intent={form.downPaymentInputType === 'percent' ? 'primary' : 'outline'}
-                    label="Persen"
-                    onPress={() => controller.onChangeForm({ downPaymentInputType: 'percent' })}
-                  />
-                  <KolamButton
-                    intent={form.downPaymentInputType === 'amount' ? 'primary' : 'outline'}
-                    label="Nominal"
-                    onPress={() => controller.onChangeForm({ downPaymentInputType: 'amount' })}
-                  />
-                </View>
-                {form.downPaymentInputType === 'amount' ? (
-                  <KolamRupiahField
-                    onChangeValue={downPaymentValue =>
-                      controller.onChangeForm({ downPaymentValue: String(downPaymentValue) })
-                    }
-                    placeholder="0"
-                    value={Number(form.downPaymentValue) || 0}
-                  />
-                ) : (
-                  <KolamFormTextField
-                    mode="numeric"
-                    onChangeText={downPaymentValue => controller.onChangeForm({ downPaymentValue })}
-                    placeholder="0"
-                    value={form.downPaymentValue}
-                  />
-                )}
-              </FieldShell>
+          <View style={[styles.formSplitRow, styles.poPaymentTypeRow]}>
+            <View style={[styles.formSplitCell, styles.poPaymentTypeCell]}>
+              <View style={styles.poPaymentTypeCard}>
+                <FieldShell
+                  label={form.downPaymentInputType === 'percent' ? 'Nilai DP (%)' : 'Nilai DP'}>
+                  <View style={styles.segmentRow}>
+                    <KolamButton
+                      intent={form.downPaymentInputType === 'percent' ? 'primary' : 'outline'}
+                      label="Persen"
+                      onPress={() => controller.onChangeForm({ downPaymentInputType: 'percent' })}
+                    />
+                    <KolamButton
+                      intent={form.downPaymentInputType === 'amount' ? 'primary' : 'outline'}
+                      label="Nominal"
+                      onPress={() => controller.onChangeForm({ downPaymentInputType: 'amount' })}
+                    />
+                  </View>
+                  {form.downPaymentInputType === 'amount' ? (
+                    <KolamRupiahField
+                      onChangeValue={downPaymentValue =>
+                        controller.onChangeForm({ downPaymentValue: String(downPaymentValue) })
+                      }
+                      placeholder="0"
+                      value={Number(form.downPaymentValue) || 0}
+                    />
+                  ) : (
+                    <KolamFormTextField
+                      mode="numeric"
+                      onChangeText={downPaymentValue =>
+                        controller.onChangeForm({ downPaymentValue })
+                      }
+                      placeholder="0"
+                      value={form.downPaymentValue}
+                    />
+                  )}
+                </FieldShell>
+              </View>
             </View>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Jatuh tempo DP">
-                <KolamDateField
-                  label="Tanggal"
-                  onChange={downPaymentDueDate =>
-                    controller.onChangeForm({ downPaymentDueDate })
-                  }
-                  value={form.downPaymentDueDate}
-                />
-              </FieldShell>
+            <View style={[styles.formSplitCell, styles.poPaymentTypeCell]}>
+              <View style={styles.poPaymentTypeCard}>
+                <FieldShell label="Jatuh tempo DP">
+                  <KolamDateField
+                    label="Tanggal"
+                    onChange={downPaymentDueDate =>
+                      controller.onChangeForm({ downPaymentDueDate })
+                    }
+                    value={form.downPaymentDueDate}
+                  />
+                </FieldShell>
+              </View>
             </View>
           </View>
         ) : null}
