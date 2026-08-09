@@ -1889,7 +1889,7 @@ function KolamSupplierForm({
 
           <SupplierEditSection title="Status & Merek">
             <View style={styles.supplierBasicInfoCard}>
-              <View style={styles.formSplitRow}>
+              <View style={styles.formEqualSplitRow}>
                 <View style={styles.formEqualSplitCell}>
                   <View style={styles.supplierStatusTile}>
                     <FieldShell label="Status" required>
@@ -1993,7 +1993,7 @@ function KolamSupplierForm({
                 </View>
               </FieldShell>
 
-              <View style={styles.formSplitRow}>
+              <View style={styles.formEqualSplitRow}>
                 <View style={styles.formEqualSplitCell}>
                   <View style={styles.supplierStatusTile}>
                     <FieldShell label="Tautan eksternal">
@@ -2692,13 +2692,21 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   supplierStatusTile: {
+    alignSelf: 'stretch',
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    flex: 1,
     padding: 12,
   },
   formSplitRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formEqualSplitRow: {
+    alignItems: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -2708,6 +2716,7 @@ const styles = StyleSheet.create({
     minWidth: 220,
   },
   formEqualSplitCell: {
+    alignSelf: 'stretch',
     flexBasis: 0,
     flexGrow: 1,
     flexShrink: 1,
