@@ -36,6 +36,7 @@ export type KolamNavigationModuleIcon =
   | 'media'
   | 'packing'
   | 'payable'
+  | 'payroll'
   | 'product'
   | 'project'
   | 'production'
@@ -573,7 +574,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Bonus',
         route: '/finance/bonus',
         description: 'Bonus gaji karyawan untuk penggajian',
-        group: 'Payroll & Tax',
+        group: 'Pengeluaran & Pemasukan',
         moduleIcon: 'employeeBonus',
         requiredAccess: ['kolam'],
       },
@@ -581,14 +582,14 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Penggajian',
         route: '/finance/payroll',
         description: 'Slip gaji bulanan, PPh 21, dan gaji bersih',
-        group: 'Payroll & Tax',
+        group: 'Pengeluaran & Pemasukan',
+        moduleIcon: 'payroll',
         requiredAccess: ['kolam'],
       },
       {
         label: 'Tax Profile',
         route: '/finance/settings/tax-profile',
         description: 'Pengaturan profil pajak untuk keuangan dan penggajian',
-        group: 'Payroll & Tax',
         requiredAccess: ['kolam'],
       },
       {
@@ -596,7 +597,6 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/finance/tax',
         description:
           'Estimasi compliance per periode. Bukan pelaporan otomatis ke DJP.',
-        group: 'Payroll & Tax',
         moduleIcon: 'daraTax',
         requiredAccess: ['kolam'],
       },
@@ -1068,7 +1068,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Bonus Karyawan',
         moduleIcon: 'employeeBonus',
       }),
-      sidebarItem('/finance/payroll', { label: 'Penggajian' }),
+      sidebarItem('/finance/payroll', {
+        group: 'Pengeluaran & Pemasukan',
+        label: 'Penggajian',
+        moduleIcon: 'payroll',
+      }),
     ],
   },
   {

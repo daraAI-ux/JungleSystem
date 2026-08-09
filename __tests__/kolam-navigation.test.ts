@@ -285,7 +285,6 @@ describe('kolamNavigationSections', () => {
       'Produksi',
     ]);
     expect(getKolamNavigationLiveGroups(byId('finance'))).toEqual([
-      'Payroll & Tax',
       'Pengeluaran & Pemasukan',
       'Pengaturan Keuangan',
     ]);
