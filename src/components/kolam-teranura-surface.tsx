@@ -30,6 +30,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamPageIdentityHeader} from './kolam-page-identity-header';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import {
@@ -516,28 +517,26 @@ function KolamTeranuraDetail({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.detailRoot}>
-      <View style={styles.detailHeaderRow}>
-        <View style={styles.headingCopy}>
-          <View style={styles.detailEyebrowRow}>
-            <Text style={styles.eyebrow}>TERANURA</Text>
-            {item?.deviceLine === 'freyer' ? (
-              <KolamBadge intent="info" label="Freyer" />
-            ) : null}
-          </View>
-          <Text style={styles.detailTitle}>
-            {item?.name || 'Detail Teranura'}
-          </Text>
-          <Text style={styles.description}>
-            {item
-              ? `Dibuat ${formatDateTime(item.createdAt)} | Diperbarui ${formatDateTime(
-                  item.updatedAt,
-                )}`
-              : loading
-              ? 'Memuat detail Teranura...'
-              : 'Detail Teranura tidak ditemukan.'}
-          </Text>
-        </View>
-      </View>
+      <KolamPageIdentityHeader
+        eyebrow="TERANURA"
+        eyebrowAccessory={
+          item?.deviceLine === 'freyer' ? (
+            <KolamBadge intent="info" label="Freyer" />
+          ) : null
+        }
+        moduleIcon="teranura"
+        placement="workspace"
+        subtitle={
+          item
+            ? `Dibuat ${formatDateTime(item.createdAt)} | Diperbarui ${formatDateTime(
+                item.updatedAt,
+              )}`
+            : loading
+            ? 'Memuat detail Teranura...'
+            : 'Detail Teranura tidak ditemukan.'
+        }
+        title={item?.name || 'Detail Teranura'}
+      />
       <KolamControlTabList
         accessibilityLabel="Tab detail Teranura"
         items={tabItems}
@@ -1192,45 +1191,6 @@ const styles = StyleSheet.create({
     minHeight: 0,
     overflow: 'visible',
     width: '100%',
-  },
-  detailHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  headingCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 6,
-  },
-  detailEyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  eyebrow: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0,
-    lineHeight: 14,
-  },
-  detailTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: 0,
-    lineHeight: 32,
-  },
-  description: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
   },
   iotPanel: {
     gap: 12,

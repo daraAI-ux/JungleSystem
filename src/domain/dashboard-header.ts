@@ -385,6 +385,9 @@ function isInlineCatalogDetailHeaderRoute(routePath: string) {
     /^\/raw-materials\/[^/]+$/.test(routePath) ||
     /^\/packing-materials\/[^/]+$/.test(routePath) ||
     /^\/species\/[^/]+$/.test(routePath) ||
+    (routePath !== '/teranura/create' &&
+      routePath !== '/teranura/freyr' &&
+      /^\/teranura\/[^/]+$/.test(routePath)) ||
     routePath === '/stock-transaction/opname'
   );
 }
