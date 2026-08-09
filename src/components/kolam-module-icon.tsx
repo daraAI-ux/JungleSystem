@@ -36,6 +36,7 @@ import {KOLAM_SERVICE_MODULE_ICON_SVG} from '../assets/icons/service-module-icon
 import {KOLAM_SHIPPING_METHOD_MODULE_ICON_SVG} from '../assets/icons/shipping-method-module-icon-svg';
 import {KOLAM_SERIAL_MODULE_ICON_SVG} from '../assets/icons/serial-module-icon-svg';
 import {KOLAM_SPECIES_MODULE_ICON_SVG} from '../assets/icons/species-module-icon-svg';
+import {KOLAM_STAFF_MODULE_ICON_SVG} from '../assets/icons/staff-module-icon-svg';
 import {KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG} from '../assets/icons/stock-movement-module-icon-svg';
 import {KOLAM_STOCK_OPNAME_MODULE_ICON_SVG} from '../assets/icons/stock-opname-module-icon-svg';
 import {KOLAM_SUPPLIER_MODULE_ICON_SVG} from '../assets/icons/supplier-module-icon-svg';
@@ -93,6 +94,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   shippingMethod: 'Icon Metode Pengiriman',
   serial: 'Icon Serial Produk',
   species: 'Icon Spesies',
+  staff: 'Icon Daftar Pengguna',
   stockMovement: 'Icon Transaksi Stok',
   stockOpname: 'Icon Stock Opname',
   supplier: 'Icon Pemasok',
@@ -159,6 +161,7 @@ const SHIPPING_METHOD_ICON_PATHS = getSvgPathData(
 );
 const SERIAL_ICON_PATHS = getSvgPathData(KOLAM_SERIAL_MODULE_ICON_SVG);
 const SPECIES_ICON_PATHS = getSvgPathData(KOLAM_SPECIES_MODULE_ICON_SVG);
+const STAFF_ICON_PATHS = getSvgPathData(KOLAM_STAFF_MODULE_ICON_SVG);
 const STOCK_MOVEMENT_ICON_PATHS = getSvgPathData(
   KOLAM_STOCK_MOVEMENT_MODULE_ICON_SVG,
 );
@@ -447,6 +450,12 @@ export function KolamModuleIcon({
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {SPECIES_ICON_PATHS.map(path => (
             <Path key={path} d={path} fill="#1a1a1a" fillRule="evenodd" />
+          ))}
+        </Svg>
+      ) : kind === 'staff' ? (
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {STAFF_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
       ) : kind === 'stockMovement' ? (

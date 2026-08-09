@@ -51,6 +51,7 @@ export type KolamNavigationModuleIcon =
   | 'shippingMethod'
   | 'serial'
   | 'species'
+  | 'staff'
   | 'stockMovement'
   | 'stockOpname'
   | 'supplier'
@@ -712,6 +713,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/list-of-users',
         description:
           'Kelola semua pengguna sistem, termasuk data pribadi, peran, dan status akun.',
+        moduleIcon: 'staff',
         requiredAccess: ['kolam'],
       },
       {
@@ -1089,6 +1091,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/list-of-users', {
         group: 'Daftar Pengguna',
         label: 'Daftar Pengguna',
+        moduleIcon: 'staff',
       }),
       sidebarItem('/list-of-users/hr', {
         group: 'Daftar Pengguna',
