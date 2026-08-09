@@ -308,10 +308,10 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Stock Opname',
+        label: 'Stok Opname',
         route: '/stock-opname',
         description:
-          'Penghitungan fisik multi-baris dengan alur review dan posting',
+          'Penghitungan fisik multi-baris dengan alur pemeriksaan dan pencatatan',
         group: 'Stok',
         moduleIcon: 'stockOpname',
         requiredAccess: ['kolam'],
@@ -882,7 +882,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       }),
       sidebarItem('/stock-opname', {
         group: 'Stok',
-        label: 'Stock Opname',
+        label: 'Stok Opname',
         moduleIcon: 'stockOpname',
       }),
       sidebarItem('/suppliers', {
@@ -1794,9 +1794,11 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/stock-opname',
+    label: 'Detail Stok Opname',
     labelSuffix: 'Detail',
     route: '/stock-opname/:id',
-    description: 'Stock opname detail page from live Kolam',
+    description:
+      'Rincian dokumen stok opname, baris penyesuaian, dan status pemeriksaan',
   },
   {
     baseRoute: '/stock-transaction',
