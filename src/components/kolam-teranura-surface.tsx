@@ -5,8 +5,6 @@ import {
   buildKolamTeranuraDetailRoute,
   buildKolamTeranuraShellRoute,
   getKolamTeranuraDetailTab,
-  getKolamTeranuraProductIdQuery,
-  getKolamTeranuraShellTab,
   type KolamTeranura,
   type KolamTeranuraDetailTab,
 } from '../domain/kolam-teranura';
@@ -64,40 +62,14 @@ export function KolamTeranuraSurface({
   route?: string;
 }) {
   const controller = useKolamTeranuraController(route);
-  const shellTab = getKolamTeranuraShellTab(route);
-  const shellProductFilter = getKolamTeranuraProductIdQuery(route);
 
   return (
     <KolamTeranuraShell controller={controller} onRouteChange={onRouteChange}>
       {controller.mode === 'list' ? (
-        <View style={styles.shellStack}>
-          <KolamControlTabList
-            accessibilityLabel="Tab Teranura"
-            items={[
-              { id: 'katalog', label: 'Katalog' },
-              { id: 'perangkat-iot', label: 'Perangkat IoT' },
-            ]}
-            onSelect={tabId => {
-              onRouteChange?.(
-                buildKolamTeranuraShellRoute(
-                  tabId === 'perangkat-iot' ? 'perangkat-iot' : 'katalog',
-                  tabId === 'perangkat-iot' ? shellProductFilter : undefined,
-                ),
-              );
-            }}
-            selectedId={shellTab}
-          />
-          {shellTab === 'perangkat-iot' ? (
-            <TeranuraIotDevicesPanel
-              teranuraProductId={shellProductFilter || undefined}
-            />
-          ) : (
-            <KolamTeranuraList
-              controller={controller}
-              onRouteChange={onRouteChange}
-            />
-          )}
-        </View>
+        <KolamTeranuraList
+          controller={controller}
+          onRouteChange={onRouteChange}
+        />
       ) : (
         <KolamTeranuraDetail
           controller={controller}
@@ -498,9 +470,6 @@ function KolamTeranuraDetail({
   ) : activeTab === 'perangkat-iot' && showPerangkatIot ? (
     <TeranuraIotDevicesPanel
       catalogName={item.name}
-      onOpenGlobalList={() =>
-        onRouteChange?.(buildKolamTeranuraShellRoute('perangkat-iot', item.id))
-      }
       teranuraProductId={item.id}
     />
   ) : activeTab === 'logistics' ? (
@@ -554,21 +523,18 @@ function KolamTeranuraDetail({
 
 function TeranuraIotDevicesPanel({
   catalogName,
-  onOpenGlobalList,
   teranuraProductId,
 }: {
   catalogName?: string;
-  onOpenGlobalList?: () => void;
   teranuraProductId?: string;
 }) {
   const iot = useKolamTeranuraIotDevices(teranuraProductId);
   const columns = React.useMemo(() => buildTeranuraIotDeviceColumns(), []);
   const filteredByCatalog = Boolean(teranuraProductId?.trim());
-  const showCatalogHeader = Boolean(catalogName?.trim() || onOpenGlobalList);
 
   return (
     <View style={styles.iotPanel}>
-      {showCatalogHeader ? (
+      {catalogName?.trim() ? (
         <View style={styles.iotHeaderBlock}>
           <KolamCopyStack
             items={[
@@ -579,20 +545,11 @@ function TeranuraIotDevicesPanel({
               },
               {
                 id: 'description',
-                text: catalogName?.trim()
-                  ? `Instance alat Freyr untuk katalog “${catalogName.trim()}”.`
-                  : 'Instance alat Freyr untuk katalog ini.',
+                text: `Instance alat Freyr untuk katalog “${catalogName.trim()}”.`,
                 style: styles.iotPanelDescription,
               },
             ]}
           />
-          {onOpenGlobalList ? (
-            <KolamButton
-              intent="outline"
-              label="Lihat di daftar global"
-              onPress={onOpenGlobalList}
-            />
-          ) : null}
         </View>
       ) : null}
       <View style={kolamTableToolbarStyles.shell}>
@@ -1022,10 +979,6 @@ function formatDateTime(value: string | null | undefined) {
 const styles = StyleSheet.create({
   surface: {
     gap: 16,
-  },
-  shellStack: {
-    gap: 16,
-    width: '100%',
   },
   detailToolbarContext: {
     color: V.colors.fg,

@@ -192,7 +192,6 @@ export interface KolamTeranuraListResult {
 }
 
 export type KolamTeranuraSurfaceMode = 'list' | 'detail' | 'unsupported';
-export type KolamTeranuraShellTab = 'katalog' | 'perangkat-iot';
 export type KolamTeranuraDetailTab =
   | 'overview'
   | 'pricing'
@@ -258,33 +257,9 @@ export function getKolamTeranuraRouteId(route: string) {
   return id ? decodeURIComponent(id) : '';
 }
 
-/** FE shell `?tab=` — `devices` alias → perangkat-iot; else katalog. */
-export function getKolamTeranuraShellTab(route: string): KolamTeranuraShellTab {
-  const raw = getTeranuraQueryParam(route, 'tab').toLowerCase();
-  if (raw === 'perangkat-iot' || raw === 'devices') {
-    return 'perangkat-iot';
-  }
-  return 'katalog';
-}
-
-export function getKolamTeranuraProductIdQuery(route: string) {
-  return getTeranuraQueryParam(route, 'teranuraProductId');
-}
-
-export function buildKolamTeranuraShellRoute(
-  tab: KolamTeranuraShellTab = 'katalog',
-  teranuraProductId?: string | null,
-): string {
-  const params = new URLSearchParams();
-  if (tab === 'perangkat-iot') {
-    params.set('tab', 'perangkat-iot');
-  }
-  const productId = teranuraProductId?.trim() || '';
-  if (productId) {
-    params.set('teranuraProductId', productId);
-  }
-  const query = params.toString();
-  return query ? `${TERANURA_SHELL_ROOT}?${query}` : TERANURA_SHELL_ROOT;
+/** List root `/teranura` (IoT hidup di detail Freyer, bukan shell list). */
+export function buildKolamTeranuraShellRoute(): string {
+  return TERANURA_SHELL_ROOT;
 }
 
 /** FE detail `?tab=` — Product sibling tabs + optional Freyer IoT. */

@@ -26,8 +26,8 @@ const DEFAULT_PAGINATION: KolamFreyerIotDevicePagination = {
 };
 
 /**
- * FE parity: `useIotFreyerDevices({ teranuraProductId? })` for shell IoT tab
- * and detail Perangkat IoT (page size 10 + shared table footer).
+ * FE parity: `useIotFreyerDevices({ teranuraProductId? })` for detail
+ * Perangkat IoT (page size 10 + shared table footer).
  */
 export function useKolamTeranuraIotDevices(
   teranuraProductId?: string | null,
