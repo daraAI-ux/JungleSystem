@@ -718,14 +718,14 @@ function KolamPurchaseOrderForm({
         </View>
       </KolamContentFrame>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <KolamContentFrame style={[styles.detailCard, styles.poNotesCard]} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Catatan PO</Text>
         <View style={styles.fieldShell}>
           <KolamFormTextField
             multiline
             onChangeText={notes => controller.onChangeForm({ notes })}
             placeholder="Catatan PO (opsional)"
-            style={styles.notesInput}
+            style={[styles.notesInput, styles.poNotesInput]}
             value={form.notes}
           />
         </View>
@@ -2873,6 +2873,10 @@ const styles = StyleSheet.create({
   detailCard: {
     gap: 8,
   },
+  poNotesCard: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
+  },
   sectionTitle: {
     color: V.colors.fg,
     fontSize: 15,
@@ -3114,6 +3118,10 @@ const styles = StyleSheet.create({
   },
   notesInput: {
     minHeight: 64,
+  },
+  poNotesInput: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
   },
   disabledControl: {
     opacity: 0.55,
