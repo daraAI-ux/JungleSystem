@@ -1315,6 +1315,14 @@ function KolamPackingMaterialForm({
                   </FieldShell>
                 </View>
               </View>
+              <FieldShell label="Kategori" required>
+                <KolamDropdownSelect
+                  label="Kategori"
+                  onChange={category => controller.onChangeForm({ category })}
+                  options={[...KOLAM_PACKING_CATEGORY_OPTIONS]}
+                  value={form.category}
+                />
+              </FieldShell>
               <FieldShell label="Deskripsi">
                 <KolamFormTextField
                   editable={!controller.saving}
@@ -1328,14 +1336,6 @@ function KolamPackingMaterialForm({
                     styles.textArea,
                   ]}
                   value={form.description}
-                />
-              </FieldShell>
-              <FieldShell label="Kategori" required>
-                <KolamDropdownSelect
-                  label="Kategori"
-                  onChange={category => controller.onChangeForm({ category })}
-                  options={[...KOLAM_PACKING_CATEGORY_OPTIONS]}
-                  value={form.category}
                 />
               </FieldShell>
             </View>
