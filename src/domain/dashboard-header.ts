@@ -384,7 +384,8 @@ function isInlineCatalogDetailHeaderRoute(routePath: string) {
       routePath !== '/products/archive') ||
     /^\/raw-materials\/[^/]+$/.test(routePath) ||
     /^\/packing-materials\/[^/]+$/.test(routePath) ||
-    /^\/species\/[^/]+$/.test(routePath)
+    /^\/species\/[^/]+$/.test(routePath) ||
+    routePath === '/stock-transaction/opname'
   );
 }
 
