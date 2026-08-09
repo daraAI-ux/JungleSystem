@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -41,6 +40,7 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
+import { KolamCardFrame } from './kolam-card-frame';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDashboardSalesGraphPlot } from './kolam-dashboard-sales-graph-plot';
@@ -1843,47 +1843,38 @@ function KolamSupplierForm({
                     value={controller.pendingPhotoUris[0] ?? ''}
                   />
                   {controller.pendingPhotoUris.length ? (
-                    <View style={styles.photoGrid}>
+                    <View style={styles.existingMediaGrid}>
                       {controller.pendingPhotoUris.map((uri, index) => (
-                        <View key={`pending-${uri}-${index}`} style={styles.photoItem}>
-                          <Image
-                            accessibilityLabel={`Foto baru ${index + 1}`}
-                            resizeMode="cover"
-                            source={{ uri: toLocalImageUri(uri) }}
-                            style={styles.photoThumb}
-                          />
-                          <KolamButton
-                            disabled={controller.saving}
-                            intent="danger"
-                            label="Buang"
-                            onPress={() => controller.onRemovePendingPhoto(index)}
-                            style={styles.photoRemove}
-                          />
-                        </View>
+                        <SupplierImageMediaCard
+                          accessibilityLabel={`Foto baru ${index + 1}`}
+                          deleteLabel={`Buang Foto ${index + 1}`}
+                          disabled={controller.saving}
+                          key={`pending-${uri}-${index}`}
+                          label={`Foto baru ${index + 1}`}
+                          onDelete={() => controller.onRemovePendingPhoto(index)}
+                          revision={uri}
+                          sourceUri={toLocalImageUri(uri)}
+                          status="Menunggu simpan"
+                        />
                       ))}
                     </View>
                   ) : null}
                   {controller.selectedVendor?.photoUrls.length ? (
-                    <View style={styles.photoGrid}>
+                    <View style={styles.existingMediaGrid}>
                       {controller.selectedVendor.photoUrls.map((uri, index) => (
-                        <View key={`existing-${uri}-${index}`} style={styles.photoItem}>
-                          <KolamRemoteImage
-                            accessibilityLabel={`Foto tersimpan ${index + 1}`}
-                            resizeMode="cover"
-                            scope="vendor"
-                            sourceUri={uri}
-                            style={styles.photoThumb}
-                          />
-                          <KolamDeleteButton
-                            disabled={controller.saving}
-                            intent="danger"
-                            label="Hapus"
-                            onPress={() => {
-                              void controller.onDeleteExistingPhoto(index);
-                            }}
-                            style={styles.photoRemove}
-                          />
-                        </View>
+                        <SupplierImageMediaCard
+                          accessibilityLabel={`Foto tersimpan ${index + 1}`}
+                          deleteLabel={`Hapus Foto ${index + 1}`}
+                          disabled={controller.saving}
+                          key={`existing-${uri}-${index}`}
+                          label={`Foto ${index + 1}`}
+                          onDelete={() => {
+                            void controller.onDeleteExistingPhoto(index);
+                          }}
+                          revision={uri}
+                          scope="vendor"
+                          sourceUri={uri}
+                        />
                       ))}
                     </View>
                   ) : (
@@ -2119,6 +2110,78 @@ function SupplierExternalLinksEditor({
       />
     </View>
   );
+}
+
+function SupplierImageMediaCard({
+  accessibilityLabel,
+  deleteLabel,
+  disabled,
+  label,
+  onDelete,
+  revision,
+  scope = 'vendor-photo',
+  sourceUri,
+  status = 'Terunggah',
+}: {
+  accessibilityLabel: string;
+  deleteLabel: string;
+  disabled: boolean;
+  label: string;
+  onDelete: () => void;
+  revision: string;
+  scope?: string;
+  sourceUri: string;
+  status?: string;
+}) {
+  const displayName = getSupplierUploadFileDisplayName(sourceUri) || label;
+
+  return (
+    <View
+      style={[
+        settingsWebFormStyles.settingsWebUploadFileRow,
+        styles.existingMediaItem,
+      ]}
+    >
+      <KolamCardFrame variant="settingsWebLogoPreview">
+        <KolamRemoteImage
+          accessibilityLabel={accessibilityLabel}
+          resizeMode="contain"
+          revision={revision}
+          scope={scope}
+          sourceUri={sourceUri}
+          style={settingsWebFormStyles.settingsWebLogoImage}
+        />
+      </KolamCardFrame>
+      <View style={settingsWebFormStyles.settingsWebUploadFileCopy}>
+        <Text
+          numberOfLines={1}
+          style={settingsWebFormStyles.settingsWebUploadFileName}
+        >
+          {displayName}
+        </Text>
+        <Text style={settingsWebFormStyles.settingsWebUploadFileStatus}>
+          {status}
+        </Text>
+      </View>
+      <KolamInteractionFrame
+        accessibilityLabel={deleteLabel}
+        disabled={disabled}
+        onPress={onDelete}
+        style={settingsWebFormStyles.settingsWebUploadDeleteButton}
+      >
+        <KolamUploadDeleteIcon />
+      </KolamInteractionFrame>
+    </View>
+  );
+}
+
+function getSupplierUploadFileDisplayName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const withoutQuery = trimmed.split(/[?#]/)[0] ?? trimmed;
+  return withoutQuery.split(/[\\/]/).filter(Boolean).pop() ?? trimmed;
 }
 
 function FieldShell({
@@ -2587,6 +2650,12 @@ const styles = StyleSheet.create({
   },
   photoEditor: {
     gap: 8,
+  },
+  existingMediaGrid: {
+    gap: 8,
+  },
+  existingMediaItem: {
+    width: '100%',
   },
   photoItem: {
     gap: 6,
