@@ -10,7 +10,7 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { KolamButton } from './kolam-button';
 import { KolamCopyStack } from './kolam-copy-stack';
-import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamModalDialog} from './kolam-modal-dialog';
 
 const KolamWebView = WebView as unknown as React.ComponentType<any>;
 
@@ -76,22 +76,32 @@ export function KolamBarcodePrintDialog({
   const allSelected = selectedIds.size === barcodeItems.length;
 
   return (
-    <View style={styles.overlay}>
-      <KolamModalBackdrop onPress={close} />
-      <View accessibilityLabel={title} style={styles.dialog}>
-        <View style={styles.header}>
+    <KolamModalDialog
+      description={description}
+      dialogStyle={styles.dialog}
+      height={560}
+      maxWidth="92%"
+      onClose={close}
+      title={title}
+      visible={visible}
+      width={820}
+      footer={
+        <>
           <KolamCopyStack
+            containerStyle={styles.footerMeta}
             items={[
-              { id: 'title', text: title, style: styles.title },
               {
-                id: 'description',
-                text: description,
-                style: styles.description,
+                id: 'meta',
+                text: selectedItems.length
+                  ? 'Gunakan tombol Cetak untuk membuka dialog printer Windows.'
+                  : 'Pilih minimal satu SKU untuk dicetak.',
+                style: styles.footerText,
               },
             ]}
           />
-        </View>
-
+          <KolamButton label="Tutup" onPress={close} />
+        </>
+      }>
         <View style={styles.controls}>
           <KolamButton
             label={allSelected ? 'Kosongkan' : 'Pilih Semua'}
@@ -193,24 +203,7 @@ export function KolamBarcodePrintDialog({
             />
           </View>
         </View>
-
-        <View style={styles.footer}>
-          <KolamCopyStack
-            containerStyle={styles.footerMeta}
-            items={[
-              {
-                id: 'meta',
-                text: selectedItems.length
-                  ? 'Gunakan tombol Cetak untuk membuka dialog printer Windows.'
-                  : 'Pilih minimal satu SKU untuk dicetak.',
-                style: styles.footerText,
-              },
-            ]}
-          />
-          <KolamButton label="Tutup" onPress={close} />
-        </View>
-      </View>
-    </View>
+    </KolamModalDialog>
   );
 }
 
@@ -396,54 +389,8 @@ function escapeHtml(value: string) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.42)',
-    bottom: 0,
-    elevation: 1450,
-    justifyContent: 'center',
-    left: 0,
-    padding: 24,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    zIndex: 145000,
-  },
   dialog: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    elevation: 1451,
-    gap: 12,
-    height: 560,
     overflow: 'hidden',
-    maxWidth: '92%',
-    padding: 16,
-    shadowColor: V.colors.fg,
-    shadowOffset: { height: 16, width: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    width: 820,
-    zIndex: 145001,
-  },
-  header: {
-    gap: 8,
-  },
-  title: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 18,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  description: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 20,
-    marginTop: 4,
   },
   controls: {
     alignItems: 'center',
@@ -573,15 +520,6 @@ const styles = StyleSheet.create({
   webView: {
     backgroundColor: V.colors.bg,
     flex: 1,
-  },
-  footer: {
-    alignItems: 'center',
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    paddingTop: 12,
   },
   footerMeta: {
     flex: 1,

@@ -15,7 +15,7 @@ import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
-import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamModalDialog} from './kolam-modal-dialog';
 
 interface KolamExportDialogProps {
   catalogEndpoint: string;
@@ -159,26 +159,42 @@ export function KolamExportDialog({
   }
 
   return (
-    <View style={styles.overlay}>
-      <KolamModalBackdrop onPress={close} />
-      <View accessibilityLabel={title} style={styles.dialog}>
-        <View style={styles.header}>
+    <KolamModalDialog
+      description={description}
+      height={560}
+      maxWidth="88%"
+      onClose={close}
+      title={title}
+      visible={visible}
+      width={780}
+      footer={
+        <>
           <KolamCopyStack
+            containerStyle={styles.footerMeta}
             items={[
-              { id: 'title', text: title, style: styles.title },
-              ...(description
-                ? [
-                    {
-                      id: 'description',
-                      text: description,
-                      style: styles.description,
-                    },
-                  ]
-                : []),
+              {
+                id: 'count',
+                text: catalog
+                  ? `${validSelectedFields.length} / ${
+                      catalog.fields.length
+                    } field dipilih - max ${formatNumber(
+                      catalog.maxRows,
+                    )} baris`
+                  : 'Field export belum dimuat.',
+                style: styles.footerText,
+              },
             ]}
           />
-        </View>
-
+          <KolamCancelButton disabled={downloading} onPress={close} />
+          <KolamExportXlsButton
+            disabled={downloading || loading || !validSelectedFields.length}
+            label={downloading ? 'Mengekspor...' : 'Export XLSX'}
+            onPress={() => {
+              void handleExport();
+            }}
+          />
+        </>
+      }>
         {loading ? (
           <KolamCopyStack
             items={[
@@ -277,35 +293,7 @@ export function KolamExportDialog({
             </View>
           </View>
         ) : null}
-
-        <View style={styles.footer}>
-          <KolamCopyStack
-            containerStyle={styles.footerMeta}
-            items={[
-              {
-                id: 'count',
-                text: catalog
-                  ? `${validSelectedFields.length} / ${
-                      catalog.fields.length
-                    } field dipilih - max ${formatNumber(
-                      catalog.maxRows,
-                    )} baris`
-                  : 'Field export belum dimuat.',
-                style: styles.footerText,
-              },
-            ]}
-          />
-          <KolamCancelButton disabled={downloading} onPress={close} />
-          <KolamExportXlsButton
-            disabled={downloading || loading || !validSelectedFields.length}
-            label={downloading ? 'Mengekspor...' : 'Export XLSX'}
-            onPress={() => {
-              void handleExport();
-            }}
-          />
-        </View>
-      </View>
-    </View>
+    </KolamModalDialog>
   );
 }
 
@@ -547,54 +535,6 @@ function formatNumber(value: number) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.42)',
-    bottom: 0,
-    elevation: 1400,
-    justifyContent: 'center',
-    left: 0,
-    padding: 24,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    zIndex: 140000,
-  },
-  dialog: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    elevation: 1401,
-    gap: 12,
-    height: 560,
-    maxWidth: '88%',
-    padding: 16,
-    shadowColor: V.colors.fg,
-    shadowOffset: { height: 16, width: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    width: 780,
-    zIndex: 140001,
-  },
-  header: {
-    gap: 8,
-  },
-  title: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 18,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  description: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 20,
-    marginTop: 4,
-  },
   mutedText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -729,17 +669,6 @@ const styles = StyleSheet.create({
   },
   fieldButtonText: {
     textAlign: 'left',
-  },
-  footer: {
-    alignItems: 'center',
-    backgroundColor: V.colors.bg,
-    flexShrink: 0,
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    paddingTop: 12,
   },
   footerMeta: {
     flex: 1,
