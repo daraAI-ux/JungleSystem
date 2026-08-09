@@ -697,8 +697,23 @@ function KolamPackingMaterialDetail({
           <View style={styles.detailHeading}>
             <Text style={styles.detailPageTitle}>{formTitle}</Text>
           </View>
-          <View style={styles.detailTopActions}>
-            <KolamDaftarButton onPress={goBackToList} />
+        </View>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters} />
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamCancelButton
+                disabled={controller.saving}
+                onPress={goBackToList}
+              />
+              <KolamSaveButton
+                disabled={controller.saving}
+                label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                onPress={() => {
+                  void controller.onSave();
+                }}
+              />
+            </View>
           </View>
         </View>
         <KolamPackingMaterialForm controller={controller} />
@@ -1270,30 +1285,53 @@ function KolamPackingMaterialForm({
     >
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
-          <FieldShell label="Nama" required>
-            <KolamFormTextField
-              editable={!controller.saving}
-              onChangeText={name => controller.onChangeForm({ name })}
-              placeholder="contoh: Box Kayu Kecil"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
-              value={form.name}
-            />
-          </FieldShell>
-          <FieldShell label="Deskripsi">
-            <KolamFormTextField
-              editable={!controller.saving}
-              multiline
-              onChangeText={description =>
-                controller.onChangeForm({ description })
-              }
-              placeholder="Catatan bahan, kegunaan, atau batas ukuran barang."
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                styles.textArea,
-              ]}
-              value={form.description}
-            />
-          </FieldShell>
+          <PackingEditSection title="Informasi Dasar">
+            <View style={styles.packingBasicInfoCard}>
+              <View style={styles.formSplitRow}>
+                <View style={styles.formSplitCell}>
+                  <FieldShell label="Nama" required>
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      onChangeText={name => controller.onChangeForm({ name })}
+                      placeholder="contoh: Box Kayu Kecil"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.name}
+                    />
+                  </FieldShell>
+                </View>
+                <View style={styles.formSplitCell}>
+                  <FieldShell label="Status" required>
+                    <KolamDropdownSelect
+                      label="Status"
+                      onChange={enabled =>
+                        controller.onChangeForm({ enabled: enabled === 'true' })
+                      }
+                      options={[
+                        { label: 'Aktif', value: 'true' },
+                        { label: 'Nonaktif', value: 'false' },
+                      ]}
+                      value={String(form.enabled)}
+                    />
+                  </FieldShell>
+                </View>
+              </View>
+              <FieldShell label="Deskripsi">
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  multiline
+                  onChangeText={description =>
+                    controller.onChangeForm({ description })
+                  }
+                  placeholder="Catatan bahan, kegunaan, atau batas ukuran barang."
+                  style={[
+                    settingsWebFormStyles.settingsWebFormFieldValue,
+                    styles.textArea,
+                  ]}
+                  value={form.description}
+                />
+              </FieldShell>
+            </View>
+          </PackingEditSection>
           {controller.selectedMaterial ? (
             <PackingPhotoEditPanel
               controller={controller}
@@ -1308,21 +1346,6 @@ function KolamPackingMaterialForm({
                   onChange={category => controller.onChangeForm({ category })}
                   options={[...KOLAM_PACKING_CATEGORY_OPTIONS]}
                   value={form.category}
-                />
-              </FieldShell>
-            </View>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Status" required>
-                <KolamDropdownSelect
-                  label="Status"
-                  onChange={enabled =>
-                    controller.onChangeForm({ enabled: enabled === 'true' })
-                  }
-                  options={[
-                    { label: 'Aktif', value: 'true' },
-                    { label: 'Nonaktif', value: 'false' },
-                  ]}
-                  value={String(form.enabled)}
                 />
               </FieldShell>
             </View>
@@ -1452,22 +1475,32 @@ function KolamPackingMaterialForm({
           </FieldShell>
           <FormDivider title="Harga Supplier" />
           <VendorPriceEditor form={form} controller={controller} />
-          <View style={styles.formActions}>
-            <KolamCancelButton
-              disabled={controller.saving}
-              onPress={controller.onBackToList}
-            />
-            <KolamSaveButton
-              disabled={controller.saving}
-              label={controller.saving ? 'Menyimpan...' : 'Simpan'}
-              onPress={() => {
-                void controller.onSave();
-              }}
-            />
-          </View>
         </View>
       </View>
     </KolamNativeFormSection>
+  );
+}
+
+function PackingEditSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <KolamContentFrame
+      style={styles.packingEditSection}
+      variant="settingsWebConfig"
+    >
+      <KolamCopyStack
+        containerStyle={styles.packingEditSectionHeader}
+        items={[
+          { id: 'title', text: title, style: styles.packingEditSectionTitle },
+        ]}
+      />
+      <View style={styles.packingEditSectionBody}>{children}</View>
+    </KolamContentFrame>
   );
 }
 
@@ -2509,6 +2542,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
+  packingEditSection: {
+    alignSelf: 'stretch',
+    gap: 12,
+    minWidth: 0,
+    padding: 14,
+    width: '100%',
+  },
+  packingEditSectionHeader: {
+    gap: 3,
+  },
+  packingEditSectionTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  packingEditSectionBody: {
+    gap: 12,
+  },
+  packingBasicInfoCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
   hero: {
     width: 160,
     minHeight: 124,
@@ -2566,12 +2626,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
-  },
-  formActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingTop: 8,
   },
   vendorStack: {
     gap: 12,
