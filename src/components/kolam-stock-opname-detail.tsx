@@ -422,25 +422,27 @@ export function KolamStockOpnameDetail({
             </View>
           </View>
         )}
-        <Text style={styles.fieldLabel}>Catatan</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.fieldLabel}>Catatan</Text>
+          {controller.isDraft && canUpdate ? (
+            <KolamSaveButton
+              disabled={controller.acting}
+              label="Simpan catatan"
+              onPress={() => {
+                void controller.onUpdateNote(noteDraft);
+              }}
+            />
+          ) : null}
+        </View>
         <KolamFormTextField
           editable={controller.isDraft && canUpdate}
           multiline
           numberOfLines={3}
           onChangeText={setNoteDraft}
           placeholder="Catatan dokumen"
-          style={styles.multiline}
+          style={[styles.multiline, styles.noteField]}
           value={noteDraft}
         />
-        {controller.isDraft && canUpdate ? (
-          <KolamButton
-            disabled={controller.acting}
-            label="Simpan catatan"
-            onPress={() => {
-              void controller.onUpdateNote(noteDraft);
-            }}
-          />
-        ) : null}
       </KolamCardFrame>
 
       {controller.showAddLineForm && canUpdate ? (
@@ -661,7 +663,7 @@ export function KolamStockOpnameDetail({
               numberOfLines={2}
               onChangeText={setEditNote}
               placeholder="Catatan baris"
-              style={styles.multiline}
+              style={[styles.multiline, styles.noteField]}
               value={editNote}
             />
             <View style={styles.modalActions}>
@@ -872,7 +874,7 @@ function AddLineForm({
         numberOfLines={2}
         onChangeText={value => controller.setAddDraft({ lineNote: value })}
         placeholder="Catatan baris (opsional)"
-        style={styles.multiline}
+        style={[styles.multiline, styles.noteField]}
         value={controller.addDraft.lineNote}
       />
       <View style={styles.actionWrap}>
@@ -1172,6 +1174,10 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 72,
     textAlignVertical: 'top',
+  },
+  noteField: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
   },
   lineCard: {
     borderColor: V.colors.border,
