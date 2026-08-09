@@ -22,6 +22,7 @@ export type KolamNavigationModuleIcon =
   | 'media'
   | 'packing'
   | 'product'
+  | 'production'
   | 'purchaseOrder'
   | 'raw'
   | 'species'
@@ -341,6 +342,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/production',
         description: 'Kelola proses produksi dan manufaktur',
         group: 'Produksi',
+        moduleIcon: 'production',
         requiredAccess: ['kolam'],
       },
       {
@@ -847,7 +849,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Pesanan Pembelian',
         moduleIcon: 'purchaseOrder',
       }),
-      sidebarItem('/production', { group: 'Produksi', label: 'Produksi' }),
+      sidebarItem('/production', {
+        group: 'Produksi',
+        label: 'Produksi',
+        moduleIcon: 'production',
+      }),
       sidebarItem('/product-serials', {
         group: 'Produksi',
         label: 'Serial Produk',
