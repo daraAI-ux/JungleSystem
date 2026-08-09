@@ -35,6 +35,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamModuleIcon } from './kolam-module-icon';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
@@ -198,17 +199,18 @@ function KolamStockTransactionOpname({
 
   return (
     <View style={styles.detailRoot}>
-      <View style={styles.headerBlock}>
-        <KolamCopyStack
-          items={[
-            { id: 'title', text: 'Opname cepat', style: styles.title },
-            {
-              id: 'desc',
-              text: 'Sesuaikan stok produk dan stok hidup. Sistem akan membuat transaksi dari sumber stok opname.',
-              style: styles.subtitle,
-            },
-          ]}
-        />
+      <View style={styles.opnameHeaderRow}>
+        <View style={styles.opnameHeaderIdentity}>
+          <KolamModuleIcon kind="stockOpname" size="header" />
+          <View style={styles.opnameHeaderCopy}>
+            <Text style={styles.eyebrow}>Transaksi Stok</Text>
+            <Text style={styles.title}>Opname Cepat</Text>
+            <Text style={styles.subtitle}>
+              Sesuaikan stok produk dan stok hidup. Sistem akan membuat
+              transaksi dari sumber stok opname.
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View style={kolamTableToolbarStyles.shell}>
@@ -1494,6 +1496,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  opnameHeaderRow: {
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    gap: 16,
+    justifyContent: 'space-between',
+    minWidth: 0,
+    width: '100%',
+  },
+  opnameHeaderIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    minWidth: 0,
+  },
+  opnameHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
   stockOpnameButton: {
     backgroundColor: KOLAM_ACTION_BUTTON_BG,
     borderColor: KOLAM_ACTION_BUTTON_BG,
@@ -1509,6 +1531,13 @@ const styles = StyleSheet.create({
   subtitle: {
     color: V.colors.mutedFg,
     fontSize: 13,
+  },
+  eyebrow: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0,
+    textTransform: 'uppercase',
   },
   toolbarWrap: {
     position: 'relative',
