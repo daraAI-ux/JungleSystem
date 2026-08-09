@@ -1339,42 +1339,7 @@ function KolamPurchaseOrderDetail({
         </View>
       </View>
 
-      <View style={styles.formSplitRow}>
-        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
-          <KolamContentFrame
-            style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
-            variant="settingsWebConfig"
-          >
-            <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
-            <KolamDescriptionList
-              accessibilityLabel="Ringkasan biaya PO"
-              rows={[
-                { id: 'total', label: 'Total', value: formatRupiah(po.total), meta: '', tone: 'default' },
-                { id: 'shipping', label: 'Ongkos kirim', value: formatRupiah(po.shippingCost), meta: '', tone: 'default' },
-                {
-                  id: 'discount',
-                  label: 'Diskon',
-                  value: po.discount ? `${po.discount.value}${po.discount.type === 'percent' ? '%' : ''}` : '—',
-                  meta: '',
-                  tone: 'default',
-                },
-                { id: 'final', label: 'Total akhir', value: formatRupiah(po.finalTotal), meta: '', tone: 'success' },
-                {
-                  id: 'actual',
-                  label: 'Total aktual (setelah cek)',
-                  value: po.actualTotal ? formatRupiah(po.actualTotal) : '—',
-                  meta: '',
-                  tone: 'default',
-                },
-              ]}
-            />
-          </KolamContentFrame>
-        </View>
-
-        <View style={[styles.formSplitCell, styles.detailSplitCell]}>
-          <KolamPOPaymentSection controller={controller} po={po} />
-        </View>
-      </View>
+      <KolamPOPaymentSection controller={controller} po={po} />
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.itemsHeaderRow}>
@@ -1682,6 +1647,48 @@ function ProofImageRow({ label, uri }: { label: string; uri: string }) {
   );
 }
 
+function POBreakdownAmountRow({
+  emphasis = false,
+  label,
+  tone = 'default',
+  value,
+}: {
+  emphasis?: boolean;
+  label: string;
+  tone?: 'default' | 'muted' | 'deduction' | 'profit';
+  value: string;
+}) {
+  const valueStyle =
+    tone === 'deduction'
+      ? styles.poBreakdownDeduction
+      : tone === 'profit'
+        ? styles.poBreakdownProfit
+        : tone === 'muted'
+          ? styles.poBreakdownMuted
+          : styles.poBreakdownValue;
+
+  return (
+    <View style={styles.poBreakdownRow}>
+      <Text
+        style={[
+          styles.poBreakdownLabel,
+          emphasis ? styles.poBreakdownLabelEmphasis : null,
+        ]}
+      >
+        {label}
+      </Text>
+      <Text
+        style={[
+          valueStyle,
+          emphasis ? styles.poBreakdownValueEmphasis : null,
+        ]}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 function KolamPOPaymentSection({
   controller,
   po,
@@ -1693,10 +1700,42 @@ function KolamPOPaymentSection({
 
   return (
     <KolamContentFrame
-      style={[styles.detailCard, styles.detailSplitCard, styles.proofBorderCard]}
+      style={[styles.detailCard, styles.proofBorderCard]}
       variant="settingsWebConfig"
     >
-      <Text style={styles.sectionTitle}>Pembayaran</Text>
+      <View style={styles.poCostPaymentGrid}>
+        <View style={styles.poCostPaymentColumn}>
+          <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
+          <View style={styles.poBreakdownCard}>
+            <POBreakdownAmountRow label="Total" value={formatRupiah(po.total)} />
+            <POBreakdownAmountRow
+              label="Ongkos kirim"
+              value={formatRupiah(po.shippingCost)}
+            />
+            <POBreakdownAmountRow
+              label="Diskon"
+              tone={po.discount ? 'deduction' : 'muted'}
+              value={
+                po.discount
+                  ? `${po.discount.value}${po.discount.type === 'percent' ? '%' : ''}`
+                  : '—'
+              }
+            />
+            <POBreakdownAmountRow
+              emphasis
+              label="Total akhir"
+              tone="profit"
+              value={formatRupiah(po.finalTotal)}
+            />
+            <POBreakdownAmountRow
+              label="Total aktual (setelah cek)"
+              value={po.actualTotal ? formatRupiah(po.actualTotal) : '—'}
+            />
+          </View>
+        </View>
+
+        <View style={styles.poCostPaymentColumn}>
+          <Text style={styles.sectionTitle}>Pembayaran</Text>
       <KolamDescriptionList
         accessibilityLabel="Detail pembayaran PO"
         rows={[
@@ -1723,6 +1762,8 @@ function KolamPOPaymentSection({
           },
         ]}
       />
+        </View>
+      </View>
 
       {downPayment?.enabled ? (
         <View style={styles.proofGroup}>
@@ -2685,6 +2726,65 @@ const styles = StyleSheet.create({
   },
   detailSplitCard: {
     flex: 1,
+  },
+  poCostPaymentGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  poCostPaymentColumn: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 280,
+    gap: 8,
+  },
+  poBreakdownCard: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  poBreakdownRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  poBreakdownLabel: {
+    color: V.colors.mutedFg,
+    flex: 1,
+    fontSize: 12,
+  },
+  poBreakdownLabelEmphasis: {
+    color: V.colors.fg,
+    fontWeight: '600',
+  },
+  poBreakdownValue: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  poBreakdownValueEmphasis: {
+    fontWeight: '700',
+  },
+  poBreakdownMuted: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  poBreakdownDeduction: {
+    color: V.colors.danger,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  poBreakdownProfit: {
+    color: V.colors.success,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
   segmentRow: {
     flexDirection: 'row',
