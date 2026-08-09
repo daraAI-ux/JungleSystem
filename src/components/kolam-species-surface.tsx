@@ -66,7 +66,7 @@ import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamMarketplaceSyncPlatformList } from './kolam-marketplace-sync-platform-list';
-import {KolamModuleIcon} from './kolam-module-icon';
+import {KolamPageIdentityHeader} from './kolam-page-identity-header';
 import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
@@ -5927,40 +5927,35 @@ function KolamSpeciesDetail({
 
   return (
     <>
-      <View style={styles.detailHeaderRow}>
-        <View style={styles.detailHeaderIdentity}>
-          <KolamModuleIcon kind="species" size="header" />
-          <View style={[styles.headingCopy, styles.detailHeaderCopy]}>
-            <Text style={styles.eyebrow}>Spesies Detail Spesies</Text>
-            <Text style={styles.title}>
-              {item.scientificName || item.displayName}
-            </Text>
-            {item.commonName || item.localName ? (
-              <View style={styles.nameLine}>
-                {item.commonName ? (
-                  <Text style={styles.commonName}>{item.commonName}</Text>
-                ) : null}
-                {item.commonName && item.localName ? (
-                  <Text style={styles.nameSeparator}>|</Text>
-                ) : null}
-                {item.localName ? (
-                  <Text style={styles.localName}>{item.localName}</Text>
-                ) : null}
-              </View>
+      <KolamPageIdentityHeader
+        eyebrow="Spesies Detail Spesies"
+        moduleIcon="species"
+        placement="workspace"
+        title={item.scientificName || item.displayName}>
+        {item.commonName || item.localName ? (
+          <View style={styles.nameLine}>
+            {item.commonName ? (
+              <Text style={styles.commonName}>{item.commonName}</Text>
             ) : null}
-            <Text style={styles.description}>
-              {[
-                item.createdAt ? `Dibuat ${formatShortDate(item.createdAt)}` : '',
-                item.updatedAt
-                  ? `Diperbarui ${formatShortDate(item.updatedAt)}`
-                  : '',
-              ]
-                .filter(Boolean)
-                .join(' | ')}
-            </Text>
+            {item.commonName && item.localName ? (
+              <Text style={styles.nameSeparator}>|</Text>
+            ) : null}
+            {item.localName ? (
+              <Text style={styles.localName}>{item.localName}</Text>
+            ) : null}
           </View>
-        </View>
-      </View>
+        ) : null}
+        <Text style={styles.description}>
+          {[
+            item.createdAt ? `Dibuat ${formatShortDate(item.createdAt)}` : '',
+            item.updatedAt
+              ? `Diperbarui ${formatShortDate(item.updatedAt)}`
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' | ')}
+        </Text>
+      </KolamPageIdentityHeader>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters} />
@@ -7493,47 +7488,12 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'flex-end',
   },
-  detailHeaderRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'space-between',
-    marginTop: -88,
-  },
-  detailHeaderIdentity: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 12,
-    minWidth: 0,
-  },
   detailHeaderActions: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
-  },
-  headingCopy: {
-    flex: 1,
-    minWidth: 260,
-  },
-  detailHeaderCopy: {
-    minWidth: 0,
-  },
-  eyebrow: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0,
-  },
-  title: {
-    color: V.colors.fg,
-    fontSize: 24,
-    fontWeight: '800',
-    lineHeight: 30,
-    marginTop: 2,
   },
   nameLine: {
     alignItems: 'center',

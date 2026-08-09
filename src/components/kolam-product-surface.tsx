@@ -87,7 +87,7 @@ import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamExportDialog } from './kolam-export-dialog';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
-import {KolamModuleIcon} from './kolam-module-icon';
+import {KolamPageIdentityHeader} from './kolam-page-identity-header';
 import {KolamStockSyncButton} from './kolam-stock-sync-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
@@ -1382,15 +1382,17 @@ function KolamProductDetailView({
     return (
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
-          <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
-            <Text style={styles.title}>{shellLabels.detailTitle}</Text>
-            <Text style={styles.description}>
-              {controller.loading
+          <KolamPageIdentityHeader
+            eyebrow={shellLabels.eyebrow}
+            moduleIcon={isRawCatalog ? 'raw' : 'product'}
+            placement="workspace"
+            subtitle={
+              controller.loading
                 ? shellLabels.loadingDetail
-                : shellLabels.emptyDetail}
-            </Text>
-          </View>
+                : shellLabels.emptyDetail
+            }
+            title={shellLabels.detailTitle}
+          />
           <KolamDaftarButton onPress={onBack} />
         </View>
       </KolamDetailScrollSurface>
@@ -1444,19 +1446,13 @@ function KolamProductDetailView({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
-      <View style={styles.detailHeaderRow}>
-        <View style={styles.detailHeaderIdentity}>
-          <KolamModuleIcon kind={isRawDetail ? 'raw' : 'product'} size="header" />
-          <View style={[styles.headingCopy, styles.detailHeaderCopy]}>
-            <Text style={styles.eyebrow}>{shellLabels.detailTitle}</Text>
-            <Text style={styles.title}>{product.name}</Text>
-            <Text style={styles.description}>
-              Dibuat {formatDateTime(product.createdAt)} | Diperbarui{' '}
-              {formatDateTime(product.updatedAt)}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <KolamPageIdentityHeader
+        eyebrow={shellLabels.detailTitle}
+        moduleIcon={isRawDetail ? 'raw' : 'product'}
+        placement="workspace"
+        subtitle={`Dibuat ${formatDateTime(product.createdAt)} | Diperbarui ${formatDateTime(product.updatedAt)}`}
+        title={product.name}
+      />
 
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
@@ -1572,15 +1568,19 @@ function ProductEditFormPage({
     return (
       <KolamDetailScrollSurface contentContainerStyle={styles.root}>
         <View style={styles.detailHeaderRow}>
-          <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>{shellLabels.eyebrow}</Text>
-            <Text style={styles.title}>{shellLabels.editTitle}</Text>
-            <Text style={styles.description}>
-              {controller.loading
+          <KolamPageIdentityHeader
+            eyebrow={shellLabels.eyebrow}
+            moduleIcon={
+              controller.selectedProduct?.type === 'raw' ? 'raw' : 'product'
+            }
+            placement="workspace"
+            subtitle={
+              controller.loading
                 ? shellLabels.loadingDetail
-                : shellLabels.emptyForm}
-            </Text>
-          </View>
+                : shellLabels.emptyForm
+            }
+            title={shellLabels.editTitle}
+          />
           <KolamCancelButton onPress={onCancel} />
         </View>
       </KolamDetailScrollSurface>
@@ -10164,25 +10164,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     overflow: 'visible',
   },
-  headingCopy: {
-    flex: 1,
-  },
-  detailHeaderCopy: {
-    minWidth: 0,
-  },
-  eyebrow: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0,
-  },
-  title: {
-    color: V.colors.fg,
-    fontSize: 24,
-    fontWeight: '800',
-    lineHeight: 30,
-    marginTop: 2,
-  },
   copyCodeWrap: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -11550,20 +11531,6 @@ const styles = StyleSheet.create({
     marginTop: -88,
     minWidth: 0,
     width: '100%',
-  },
-  detailHeaderIdentity: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 12,
-    minWidth: 0,
-  },
-  detailHeaderActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
   detailGrid: {
     alignItems: 'flex-start',

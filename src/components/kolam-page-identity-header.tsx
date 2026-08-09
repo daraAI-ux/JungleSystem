@@ -6,6 +6,7 @@ import {dashboardHeaderStyles as styles} from './kolam-dashboard-header-styles';
 import {KolamModuleIcon} from './kolam-module-icon';
 
 export function KolamPageIdentityHeader({
+  children,
   containerStyle,
   eyebrow,
   moduleIcon,
@@ -13,6 +14,7 @@ export function KolamPageIdentityHeader({
   subtitle,
   title,
 }: {
+  children?: React.ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
   eyebrow?: string;
   moduleIcon?: KolamNavigationModuleIcon;
@@ -39,6 +41,7 @@ export function KolamPageIdentityHeader({
       {moduleIcon ? <KolamModuleIcon kind={moduleIcon} size="header" /> : null}
       <View style={moduleIcon ? styles.headerCopyText : undefined}>
         <KolamCopyStack items={items} />
+        {children}
       </View>
     </View>
   );
