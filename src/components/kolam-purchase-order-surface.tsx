@@ -676,13 +676,13 @@ function KolamPurchaseOrderForm({
         ) : null}
       </KolamContentFrame>
 
-      <KolamPOPaymentConfigCard controller={controller} />
-
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Detail Item</Text>
         <KolamPOItemPicker controller={controller} />
         <KolamPOItemLinesTable controller={controller} />
       </KolamContentFrame>
+
+      <KolamPOPaymentConfigCard controller={controller} />
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <Text style={styles.sectionTitle}>Ringkasan biaya</Text>
