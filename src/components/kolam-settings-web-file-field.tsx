@@ -78,10 +78,11 @@ export function KolamSettingsWebFileField({
   previewKind?: 'file' | 'image';
   scope?: string;
   title?: string;
-  value: string;
+  value?: string | null;
 }) {
-  const logoUri = getLogoPreviewUri(value);
-  const displayName = getUploadDisplayName(value);
+  const safeValue = typeof value === 'string' ? value : '';
+  const logoUri = getLogoPreviewUri(safeValue);
+  const displayName = getUploadDisplayName(safeValue);
   const disabled = disabledProp || (!onUpload && !onLocalValueChange);
   const resolvedFileLimitLabel =
     fileLimitLabel ??
@@ -104,17 +105,21 @@ export function KolamSettingsWebFileField({
       if (!canConsumeNativeDrop(targetId)) {
         return;
       }
-      void consumeNativeDroppedImage().then(dropped => {
-        const droppedUri = dropped.uri ?? dropped.path ?? '';
-        if (disposed || dropped.cancelled || !droppedUri) {
-          return;
-        }
-        if (!canConsumeNativeDrop(targetId)) {
-          return;
-        }
-        onLocalValueChangeRef.current?.(droppedUri);
-        releaseNativeDropTarget(targetId);
-      });
+      void consumeNativeDroppedImage()
+        .then(dropped => {
+          const droppedUri = readDroppedNativeUri(dropped);
+          if (disposed || !droppedUri) {
+            return;
+          }
+          if (!canConsumeNativeDrop(targetId)) {
+            return;
+          }
+          onLocalValueChangeRef.current?.(droppedUri);
+          releaseNativeDropTarget(targetId);
+        })
+        .catch(() => {
+          // Ignore bridge failures so a bad drop payload cannot white-screen the form.
+        });
     }, 500);
 
     return () => {
@@ -135,28 +140,31 @@ export function KolamSettingsWebFileField({
     (event: unknown) => {
       preventDefaultDropEvent(event);
       claimDropTarget();
-      void getDroppedImageValue(event).then(dropped => {
-        if (dropped) {
-          onLocalValueChange?.(dropped);
-          void drainNativeDroppedImageQueue();
-          releaseNativeDropTarget(targetIdRef.current);
-          return;
-        }
-        // Event path empty — try native queue only if this field is the owner.
-        if (!canConsumeNativeDrop(targetIdRef.current)) {
-          return;
-        }
-        void consumeNativeDroppedImage().then(nativeDropped => {
-          const droppedUri =
-            nativeDropped.uri ?? nativeDropped.path ?? '';
-          if (!nativeDropped.cancelled && droppedUri) {
-            onLocalValueChange?.(droppedUri);
+      void getDroppedImageValue(event)
+        .then(dropped => {
+          if (dropped) {
+            onLocalValueChangeRef.current?.(dropped);
+            void drainNativeDroppedImageQueue();
+            releaseNativeDropTarget(targetIdRef.current);
+            return;
           }
+          // Event path empty — try native queue only if this field is the owner.
+          if (!canConsumeNativeDrop(targetIdRef.current)) {
+            return;
+          }
+          return consumeNativeDroppedImage().then(nativeDropped => {
+            const droppedUri = readDroppedNativeUri(nativeDropped);
+            if (droppedUri) {
+              onLocalValueChangeRef.current?.(droppedUri);
+            }
+            releaseNativeDropTarget(targetIdRef.current);
+          });
+        })
+        .catch(() => {
           releaseNativeDropTarget(targetIdRef.current);
         });
-      });
     },
-    [claimDropTarget, onLocalValueChange],
+    [claimDropTarget],
   );
 
   const dropzoneProps = React.useMemo(
@@ -244,8 +252,27 @@ export function KolamSettingsWebFileField({
   );
 }
 
+function readDroppedNativeUri(dropped: unknown) {
+  if (!dropped || typeof dropped !== 'object') {
+    return '';
+  }
+  const record = dropped as {
+    cancelled?: unknown;
+    path?: unknown;
+    uri?: unknown;
+  };
+  if (record.cancelled) {
+    return '';
+  }
+  const uri = typeof record.uri === 'string' ? record.uri.trim() : '';
+  if (uri) {
+    return uri;
+  }
+  return typeof record.path === 'string' ? record.path.trim() : '';
+}
+
 function getLogoPreviewUri(value: string) {
-  const trimmed = value.trim();
+  const trimmed = (value ?? '').trim();
 
   if (!trimmed || trimmed === 'Logo belum diatur') {
     return null;
@@ -263,7 +290,7 @@ function getLogoPreviewUri(value: string) {
 }
 
 function getUploadDisplayName(value: string) {
-  const trimmed = value.trim();
+  const trimmed = (value ?? '').trim();
   if (!trimmed || trimmed === 'Logo belum diatur') {
     return '';
   }

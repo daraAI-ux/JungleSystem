@@ -41,7 +41,15 @@ export async function consumeNativeDroppedImage(): Promise<NativeImagePickerResu
     return { cancelled: true };
   }
 
-  return bridge.consumeDroppedImage();
+  try {
+    const result = await bridge.consumeDroppedImage();
+    if (!result || typeof result !== 'object') {
+      return { cancelled: true };
+    }
+    return result;
+  } catch {
+    return { cancelled: true };
+  }
 }
 
 export async function pickNativeVideoFile(): Promise<NativeImagePickerResult> {
