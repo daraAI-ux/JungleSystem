@@ -61,6 +61,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
+import {KolamStockTransactionButton} from './kolam-stock-transaction-button';
 import {KolamCasesReportedIcon} from './kolam-cases-reported-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
@@ -1599,7 +1600,7 @@ function KolamEnclosureDeathHistoryPanel({
         />
       </View>
       <View style={styles.deathHistoryToolbar}>
-        <KolamButton
+        <KolamStockTransactionButton
           label="Pergerakan stok"
           onPress={() => onRouteChange?.('/stock-transaction')}
           style={styles.toolbarButton}

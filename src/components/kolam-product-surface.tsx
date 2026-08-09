@@ -60,6 +60,7 @@ import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamSeoAuditButton} from './kolam-seo-audit-button';
+import {KolamStockTransactionButton} from './kolam-stock-transaction-button';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCommercialPolicyEditor } from './kolam-commercial-policy-editor';
@@ -1311,8 +1312,7 @@ function KolamProductDetailView({
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton onPress={onBack} />
             {isRawDetail && onRouteChange ? (
-              <KolamButton
-                label="Transaksi Stok"
+              <KolamStockTransactionButton
                 onPress={() =>
                   onRouteChange(`/stock-transaction?productId=${product.id}`)
                 }

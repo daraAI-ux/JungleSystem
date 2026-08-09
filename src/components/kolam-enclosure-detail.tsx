@@ -52,6 +52,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
+import {KolamStockTransactionButton} from './kolam-stock-transaction-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
@@ -1062,7 +1063,7 @@ function KolamEnclosureDetailStatisticsTab({
                   </View>
                 </View>
               ))}
-              <KolamButton
+              <KolamStockTransactionButton
                 label="Lihat semua"
                 onPress={() =>
                   onRouteChange?.(

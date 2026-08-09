@@ -40,6 +40,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
+import {KolamStockTransactionButton} from './kolam-stock-transaction-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
@@ -269,7 +270,7 @@ export function KolamStockOpnameDetail({
             }}
           />
           {controller.isPosted ? (
-            <KolamButton
+            <KolamStockTransactionButton
               label="Lihat ledger"
               onPress={() =>
                 onRouteChange?.(
