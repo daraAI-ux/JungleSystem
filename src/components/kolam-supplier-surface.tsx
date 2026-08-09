@@ -1648,15 +1648,17 @@ function KolamSupplierForm({
     <KolamNativeFormSection section={getKolamFormSection('supplier-detail')}>
       <View style={settingsWebFormStyles.settingsWebFormFields}>
         <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
-          <FieldShell label="Nama pemasok" required>
-            <KolamFormTextField
-              editable={!controller.saving}
-              onChangeText={name => controller.onChangeForm({ name })}
-              placeholder="Nama perusahaan / pemasok"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
-              value={form.name}
-            />
-          </FieldShell>
+          <SupplierEditSection title="Informasi Dasar">
+            <View style={styles.supplierBasicInfoCard}>
+              <FieldShell label="Nama Pemasok" required>
+                <KolamFormTextField
+                  editable={!controller.saving}
+                  onChangeText={name => controller.onChangeForm({ name })}
+                  placeholder="Nama perusahaan / pemasok"
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.name}
+                />
+              </FieldShell>
 
           <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
@@ -1917,71 +1919,73 @@ function KolamSupplierForm({
             />
           </FieldShell>
 
-          <FieldShell label="Foto">
-            <View style={styles.photoEditor}>
-              <Text style={styles.switchHint}>
-                Pilih hingga 5 foto baru. Foto tersimpan dihapus langsung; foto baru diunggah saat Simpan.
-              </Text>
-              <KolamButton
-                disabled={
-                  controller.saving || controller.pendingPhotoUris.length >= 5
-                }
-                label="Tambah foto"
-                onPress={() => {
-                  void controller.onPickPhoto();
-                }}
-              />
-              {controller.pendingPhotoUris.length ? (
-                <View style={styles.photoGrid}>
-                  {controller.pendingPhotoUris.map((uri, index) => (
-                    <View key={`pending-${uri}-${index}`} style={styles.photoItem}>
-                      <Image
-                        accessibilityLabel={`Foto baru ${index + 1}`}
-                        resizeMode="cover"
-                        source={{ uri: toLocalImageUri(uri) }}
-                        style={styles.photoThumb}
-                      />
-                      <KolamButton
-                        disabled={controller.saving}
-                        intent="danger"
-                        label="Buang"
-                        onPress={() => controller.onRemovePendingPhoto(index)}
-                        style={styles.photoRemove}
-                      />
+              <FieldShell label="Foto">
+                <View style={styles.photoEditor}>
+                  <Text style={styles.switchHint}>
+                    Pilih hingga 5 foto baru. Foto tersimpan dihapus langsung; foto baru diunggah saat Simpan.
+                  </Text>
+                  <KolamButton
+                    disabled={
+                      controller.saving || controller.pendingPhotoUris.length >= 5
+                    }
+                    label="Tambah foto"
+                    onPress={() => {
+                      void controller.onPickPhoto();
+                    }}
+                  />
+                  {controller.pendingPhotoUris.length ? (
+                    <View style={styles.photoGrid}>
+                      {controller.pendingPhotoUris.map((uri, index) => (
+                        <View key={`pending-${uri}-${index}`} style={styles.photoItem}>
+                          <Image
+                            accessibilityLabel={`Foto baru ${index + 1}`}
+                            resizeMode="cover"
+                            source={{ uri: toLocalImageUri(uri) }}
+                            style={styles.photoThumb}
+                          />
+                          <KolamButton
+                            disabled={controller.saving}
+                            intent="danger"
+                            label="Buang"
+                            onPress={() => controller.onRemovePendingPhoto(index)}
+                            style={styles.photoRemove}
+                          />
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
-              ) : null}
-              {controller.selectedVendor?.photoUrls.length ? (
-                <View style={styles.photoGrid}>
-                  {controller.selectedVendor.photoUrls.map((uri, index) => (
-                    <View key={`existing-${uri}-${index}`} style={styles.photoItem}>
-                      <KolamRemoteImage
-                        accessibilityLabel={`Foto tersimpan ${index + 1}`}
-                        resizeMode="cover"
-                        scope="vendor"
-                        sourceUri={uri}
-                        style={styles.photoThumb}
-                      />
-                      <KolamDeleteButton
-                        disabled={controller.saving}
-                        intent="danger"
-                        label="Hapus"
-                        onPress={() => {
-                          void controller.onDeleteExistingPhoto(index);
-                        }}
-                        style={styles.photoRemove}
-                      />
+                  ) : null}
+                  {controller.selectedVendor?.photoUrls.length ? (
+                    <View style={styles.photoGrid}>
+                      {controller.selectedVendor.photoUrls.map((uri, index) => (
+                        <View key={`existing-${uri}-${index}`} style={styles.photoItem}>
+                          <KolamRemoteImage
+                            accessibilityLabel={`Foto tersimpan ${index + 1}`}
+                            resizeMode="cover"
+                            scope="vendor"
+                            sourceUri={uri}
+                            style={styles.photoThumb}
+                          />
+                          <KolamDeleteButton
+                            disabled={controller.saving}
+                            intent="danger"
+                            label="Hapus"
+                            onPress={() => {
+                              void controller.onDeleteExistingPhoto(index);
+                            }}
+                            style={styles.photoRemove}
+                          />
+                        </View>
+                      ))}
                     </View>
-                  ))}
+                  ) : (
+                    <Text style={styles.switchHint}>
+                      Belum ada foto tersimpan untuk pemasok ini.
+                    </Text>
+                  )}
                 </View>
-              ) : (
-                <Text style={styles.switchHint}>
-                  Belum ada foto tersimpan untuk pemasok ini.
-                </Text>
-              )}
+              </FieldShell>
             </View>
-          </FieldShell>
+          </SupplierEditSection>
         </View>
       </View>
     </KolamNativeFormSection>
@@ -2002,6 +2006,29 @@ function FieldShell({
       <KolamSettingsWebFieldLabel label={label} required={required} />
       {children}
     </View>
+  );
+}
+
+function SupplierEditSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <KolamContentFrame
+      style={styles.supplierEditSection}
+      variant="settingsWebConfig"
+    >
+      <KolamCopyStack
+        containerStyle={styles.supplierEditSectionHeader}
+        items={[
+          { id: 'title', text: title, style: styles.supplierEditSectionTitle },
+        ]}
+      />
+      <View style={styles.supplierEditSectionBody}>{children}</View>
+    </KolamContentFrame>
   );
 }
 
@@ -2438,6 +2465,33 @@ const styles = StyleSheet.create({
   },
   photoRemove: {
     minHeight: 30,
+  },
+  supplierEditSection: {
+    alignSelf: 'stretch',
+    gap: 12,
+    minWidth: 0,
+    padding: 14,
+    width: '100%',
+  },
+  supplierEditSectionHeader: {
+    gap: 3,
+  },
+  supplierEditSectionTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  supplierEditSectionBody: {
+    gap: 12,
+  },
+  supplierBasicInfoCard: {
+    backgroundColor: '#f9fafb',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
   },
   formSplitRow: {
     flexDirection: 'row',
