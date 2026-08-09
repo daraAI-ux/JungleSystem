@@ -72,6 +72,7 @@ import {
 } from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 type SalesFilterPanel = 'lifecycle' | 'status' | 'delivery' | null;
 
@@ -317,24 +318,20 @@ function KolamSalesOpsList({
                   variant="quiet"
                 />
               </View>
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal mulai"
                 label="Dari"
                 onChange={value =>
                   controller.onChangeFilters({ startDate: value })
                 }
                 placeholder="Dari"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.startDate}
               />
-              <KolamDateField
+              <KolamToolbarDateFilter
                 accessibilityLabel="Tanggal sampai"
                 label="Sampai"
                 onChange={value => controller.onChangeFilters({ endDate: value })}
                 placeholder="Sampai"
-                showLabelInTrigger={false}
-                style={styles.dateField}
                 value={controller.filters.endDate}
               />
               <KolamButton
@@ -2129,11 +2126,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: 8,
     paddingVertical: 8,
-  },
-  dateField: {
-    maxWidth: 140,
-    minWidth: 108,
-    width: 120,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
