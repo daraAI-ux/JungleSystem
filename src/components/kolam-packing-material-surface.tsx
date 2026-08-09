@@ -1427,116 +1427,122 @@ function KolamPackingMaterialForm({
               <VendorPriceEditor form={form} controller={controller} />
             </View>
           </PackingEditSection>
-          <View style={styles.formSplitRow}>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Stok">
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  mode="numeric"
-                  onChangeText={stock => controller.onChangeForm({ stock })}
-                  placeholder="0"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.stock}
-                />
-              </FieldShell>
+          <PackingEditSection title="Penjualan dan Inventori">
+            <View style={styles.packingInventoryStack}>
+              <PackingFieldPanel title="Inventori">
+                <PackingCompactField label="Stok">
+                  <KolamFormTextField
+                    editable={!controller.saving}
+                    mode="numeric"
+                    onChangeText={stock => controller.onChangeForm({ stock })}
+                    placeholder="0"
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={form.stock}
+                  />
+                </PackingCompactField>
+              </PackingFieldPanel>
+
+              <PackingFieldPanel
+                description="Opsional untuk pengiriman dan logistik."
+                title="Berat"
+              >
+                <View style={styles.twoColumnGrid}>
+                  <PackingCompactField label="Nilai berat">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      mode="numeric"
+                      onChangeText={weightValue =>
+                        controller.onChangeForm({ weightValue })
+                      }
+                      placeholder="Nilai berat"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.weightValue}
+                    />
+                  </PackingCompactField>
+                  <PackingCompactField label="Satuan berat">
+                    <KolamDropdownSelect
+                      label="Satuan berat"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={weightUnit =>
+                        controller.onChangeForm({ weightUnit })
+                      }
+                      options={createUnitOptions(weightUnits)}
+                      searchable
+                      searchPlaceholder="Cari satuan..."
+                      showLabelInTrigger={false}
+                      value={
+                        form.weightUnit ||
+                        createUnitOptions(weightUnits)[0]?.value ||
+                        ''
+                      }
+                    />
+                  </PackingCompactField>
+                </View>
+              </PackingFieldPanel>
+
+              <PackingFieldPanel
+                description="Opsional untuk kemasan dan penyimpanan."
+                title="Dimensi"
+              >
+                <View style={styles.logisticsDimensionGrid}>
+                  <PackingCompactField label="Panjang">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      mode="numeric"
+                      onChangeText={dimensionLength =>
+                        controller.onChangeForm({ dimensionLength })
+                      }
+                      placeholder="Panjang"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.dimensionLength}
+                    />
+                  </PackingCompactField>
+                  <PackingCompactField label="Lebar">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      mode="numeric"
+                      onChangeText={dimensionWidth =>
+                        controller.onChangeForm({ dimensionWidth })
+                      }
+                      placeholder="Lebar"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.dimensionWidth}
+                    />
+                  </PackingCompactField>
+                  <PackingCompactField label="Tinggi">
+                    <KolamFormTextField
+                      editable={!controller.saving}
+                      mode="numeric"
+                      onChangeText={dimensionHeight =>
+                        controller.onChangeForm({ dimensionHeight })
+                      }
+                      placeholder="Tinggi"
+                      style={settingsWebFormStyles.settingsWebFormFieldValue}
+                      value={form.dimensionHeight}
+                    />
+                  </PackingCompactField>
+                  <PackingCompactField label="Satuan dimensi">
+                    <KolamDropdownSelect
+                      label="Satuan dimensi"
+                      menuStyle={styles.longDropdownMenu}
+                      onChange={dimensionUnit =>
+                        controller.onChangeForm({ dimensionUnit })
+                      }
+                      options={createUnitOptions(dimensionUnits)}
+                      searchable
+                      searchPlaceholder="Cari satuan..."
+                      showLabelInTrigger={false}
+                      value={
+                        form.dimensionUnit ||
+                        createUnitOptions(dimensionUnits)[0]?.value ||
+                        ''
+                      }
+                    />
+                  </PackingCompactField>
+                </View>
+              </PackingFieldPanel>
             </View>
-          </View>
-          <FormDivider title="Berat" />
-          <View style={styles.formSplitRow}>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Nilai Berat">
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  mode="numeric"
-                  onChangeText={weightValue =>
-                    controller.onChangeForm({ weightValue })
-                  }
-                  placeholder="contoh: 0.5"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.weightValue}
-                />
-              </FieldShell>
-            </View>
-            <View style={styles.formSplitCell}>
-              <FieldShell label="Satuan Berat">
-                <KolamDropdownSelect
-                  label="Satuan"
-                  onChange={weightUnit =>
-                    controller.onChangeForm({ weightUnit })
-                  }
-                  options={createUnitOptions(weightUnits)}
-                  searchable
-                  searchPlaceholder="Cari satuan..."
-                  value={
-                    form.weightUnit ||
-                    createUnitOptions(weightUnits)[0]?.value ||
-                    ''
-                  }
-                />
-              </FieldShell>
-            </View>
-          </View>
-          <FormDivider title="Dimensi" />
-          <View style={styles.formSplitRow}>
-            <View style={styles.formThirdCell}>
-              <FieldShell label="Panjang">
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  mode="numeric"
-                  onChangeText={dimensionLength =>
-                    controller.onChangeForm({ dimensionLength })
-                  }
-                  placeholder="P"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.dimensionLength}
-                />
-              </FieldShell>
-            </View>
-            <View style={styles.formThirdCell}>
-              <FieldShell label="Lebar">
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  mode="numeric"
-                  onChangeText={dimensionWidth =>
-                    controller.onChangeForm({ dimensionWidth })
-                  }
-                  placeholder="L"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.dimensionWidth}
-                />
-              </FieldShell>
-            </View>
-            <View style={styles.formThirdCell}>
-              <FieldShell label="Tinggi">
-                <KolamFormTextField
-                  editable={!controller.saving}
-                  mode="numeric"
-                  onChangeText={dimensionHeight =>
-                    controller.onChangeForm({ dimensionHeight })
-                  }
-                  placeholder="T"
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.dimensionHeight}
-                />
-              </FieldShell>
-            </View>
-          </View>
-          <FieldShell label="Satuan Dimensi">
-            <KolamDropdownSelect
-              label="Satuan"
-              onChange={dimensionUnit =>
-                controller.onChangeForm({ dimensionUnit })
-              }
-              options={createUnitOptions(dimensionUnits)}
-              searchable
-              searchPlaceholder="Cari satuan..."
-              value={
-                form.dimensionUnit ||
-                createUnitOptions(dimensionUnits)[0]?.value ||
-                ''
-              }
-            />
-          </FieldShell>
+          </PackingEditSection>
         </View>
       </View>
     </KolamNativeFormSection>
@@ -1574,6 +1580,58 @@ function PackingEditSection({
       />
       <View style={styles.packingEditSectionBody}>{children}</View>
     </KolamContentFrame>
+  );
+}
+
+function PackingFieldPanel({
+  children,
+  description,
+  title,
+}: {
+  children: React.ReactNode;
+  description?: string;
+  title: string;
+}) {
+  return (
+    <View style={styles.packingFieldPanel}>
+      <KolamCopyStack
+        items={[
+          { id: 'title', text: title, style: styles.packingFieldPanelTitle },
+          ...(description
+            ? [{ id: 'description', text: description, style: styles.fieldHint }]
+            : []),
+        ]}
+      />
+      <View style={styles.packingFieldPanelBody}>{children}</View>
+    </View>
+  );
+}
+
+function PackingCompactField({
+  children,
+  hint,
+  label,
+}: {
+  children: React.ReactNode;
+  hint?: string;
+  label: string;
+}) {
+  return (
+    <View style={styles.packingCompactField}>
+      <KolamCopyStack
+        items={[
+          {
+            id: 'label',
+            text: label,
+            style: settingsWebFormStyles.settingsWebFormFieldLabel,
+          },
+          ...(hint
+            ? [{ id: 'hint', text: hint, style: styles.packingCompactHint }]
+            : []),
+        ]}
+      />
+      {children}
+    </View>
   );
 }
 
@@ -2697,6 +2755,55 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 12,
     padding: 12,
+  },
+  packingInventoryStack: {
+    alignSelf: 'stretch',
+    gap: 12,
+    minWidth: 0,
+    width: '100%',
+  },
+  packingFieldPanel: {
+    alignSelf: 'stretch',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    minWidth: 0,
+    padding: 12,
+    width: '100%',
+  },
+  packingFieldPanelTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  packingFieldPanelBody: {
+    alignSelf: 'stretch',
+    gap: 10,
+    minWidth: 0,
+    width: '100%',
+  },
+  packingCompactField: {
+    flexBasis: 180,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 150,
+  },
+  packingCompactHint: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 13,
+  },
+  longDropdownMenu: {
+    width: 320,
+  },
+  logisticsDimensionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   mediaPickerStack: {
     gap: 12,
