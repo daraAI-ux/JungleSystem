@@ -1482,7 +1482,7 @@ function lineStatusIntent(
     case 'approved':
       return 'success';
     case 'pending_review':
-      return 'primary';
+      return 'warning';
     case 'revision':
     case 'draft':
       return 'warning';
