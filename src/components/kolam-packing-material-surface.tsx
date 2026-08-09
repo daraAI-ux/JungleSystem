@@ -1411,9 +1411,9 @@ function KolamPackingMaterialForm({
               item={controller.selectedMaterial}
             />
           ) : null}
-          <FormDivider title="Harga tagih customer" />
-          <View style={styles.formSplitRow}>
-            <View style={styles.formSplitCell}>
+          <PackingEditSection title="Harga">
+            <View style={styles.packingBasicInfoCard}>
+              <FormDivider title="Harga tagih customer" />
               <FieldShell label="Harga Tagih">
                 <KolamFormTextField
                   editable={!controller.saving}
@@ -1424,7 +1424,10 @@ function KolamPackingMaterialForm({
                   value={form.price}
                 />
               </FieldShell>
+              <VendorPriceEditor form={form} controller={controller} />
             </View>
+          </PackingEditSection>
+          <View style={styles.formSplitRow}>
             <View style={styles.formSplitCell}>
               <FieldShell label="Stok">
                 <KolamFormTextField
@@ -1534,7 +1537,6 @@ function KolamPackingMaterialForm({
               }
             />
           </FieldShell>
-          <VendorPriceEditor form={form} controller={controller} />
         </View>
       </View>
     </KolamNativeFormSection>
