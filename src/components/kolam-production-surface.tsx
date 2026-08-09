@@ -569,22 +569,23 @@ function KolamProductionForm({
       }]
     : [];
 
-  const contextLabel =
-    controller.mode === 'create'
-      ? 'Produksi baru'
-      : `Edit · ${controller.selectedProduction?.batchId ?? ''}`;
-
   return (
     <View style={styles.detailSurface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {contextLabel}
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
+            <KolamSaveButton
+              disabled={controller.mutating}
+              label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
+              onPress={() =>
+                void controller.onSave().then(id => {
+                  if (id) onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${id}`);
+                })
+              }
+              style={styles.toolbarButton}
+            />
+            <KolamCancelButton
               onPress={() => {
                 if (isEdit && controller.selectedProduction) {
                   onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${controller.selectedProduction.id}`);
@@ -601,8 +602,6 @@ function KolamProductionForm({
 
       <KolamDetailScrollSurface contentContainerStyle={styles.formScroll}>
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>{isEdit ? 'Edit Produksi' : 'Produksi Baru'}</Text>
-
         {!isEdit ? (
           <View style={styles.formSection}>
             <Text style={styles.sectionSubtitle}>Mode Serial (Freyer)</Text>
@@ -842,27 +841,6 @@ function KolamProductionForm({
           </View>
         ) : null}
 
-        <View style={styles.formActions}>
-          <KolamCancelButton
-            onPress={() => {
-              if (isEdit && controller.selectedProduction) {
-                onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${controller.selectedProduction.id}`);
-                return;
-              }
-              controller.onBackToList();
-              onRouteChange?.(KOLAM_PRODUCTION_ROOT);
-            }}
-          />
-          <KolamSaveButton
-            disabled={controller.mutating}
-            label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
-            onPress={() =>
-              void controller.onSave().then(id => {
-                if (id) onRouteChange?.(`${KOLAM_PRODUCTION_ROOT}/${id}`);
-              })
-            }
-          />
-        </View>
       </KolamContentFrame>
     </KolamDetailScrollSurface>
     </View>
