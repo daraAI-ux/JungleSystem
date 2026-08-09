@@ -16,7 +16,6 @@ import {
   isKolamPOStatus,
   isKolamPurchaseOrderListRoute,
   type KolamPOCheckItemInput,
-  type KolamPOFormLineItem,
   type KolamPOStatus,
   type KolamPurchaseOrder,
   type KolamPurchaseOrderItem,
@@ -667,9 +666,15 @@ function KolamPurchaseOrderForm({
       </KolamContentFrame>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Detail Item</Text>
-        <KolamPOItemPicker controller={controller} />
-        <KolamPOItemLinesTable controller={controller} />
+        <View style={styles.itemsHeaderRow}>
+          <View style={styles.sectionTitleWrap}>
+            <Text style={styles.sectionTitle}>Item Pesanan</Text>
+            <Text style={styles.metaText}>
+              Tambahkan produk, ternak, atau bahan kemasan.
+            </Text>
+          </View>
+        </View>
+        <KolamPOItemRowsEditor controller={controller} />
       </KolamContentFrame>
 
       <KolamPOPaymentConfigCard controller={controller} />
@@ -841,238 +846,201 @@ function KolamPOPaymentConfigCard({ controller }: { controller: KolamPurchaseOrd
   );
 }
 
-function KolamPOItemPicker({ controller }: { controller: KolamPurchaseOrderController }) {
-  const [type, setType] = React.useState<'all' | 'product' | 'species' | 'packing'>('all');
-  const [search, setSearch] = React.useState('');
-  const [pendingVariantItem, setPendingVariantItem] =
-    React.useState<KolamPOItemForSelection | null>(null);
-
+function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderController }) {
   React.useEffect(() => {
-    const handle = setTimeout(() => {
-      void controller.onSearchItemsForPO({ search, type });
-    }, 300);
-    return () => clearTimeout(handle);
+    void controller.onSearchItemsForPO({ type: 'all' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, type]);
+  }, [controller.form.vendorId]);
 
   const results: KolamPOItemForSelection[] = [
-    ...(type === 'all' || type === 'product' ? controller.itemPickerResult.products : []),
-    ...(type === 'all' || type === 'species' ? controller.itemPickerResult.species : []),
-    ...(type === 'all' || type === 'packing' ? controller.itemPickerResult.packings : []),
+    ...controller.itemPickerResult.products,
+    ...controller.itemPickerResult.species,
+    ...controller.itemPickerResult.packings,
+  ];
+  const itemOptions = [
+    { label: 'Pilih item...', value: '' },
+    ...results.map(item => ({
+      label: getPOSelectionOptionLabel(item),
+      value: item.id,
+    })),
   ];
 
   return (
-    <View style={styles.itemPicker}>
-      <View style={styles.filterRowInline}>
-        <KolamFormTextField
-          onChangeText={setSearch}
-          placeholder="Cari produk / species / packing…"
-          style={styles.searchInput}
-          value={search}
-        />
-        <KolamDropdownSelect
-          accessibilityLabel="Tipe item"
-          label="Tipe"
-          onChange={value => setType(value as typeof type)}
-          options={[
-            { label: 'Semua', value: 'all' },
-            { label: 'Produk', value: 'product' },
-            { label: 'Species', value: 'species' },
-            { label: 'Packing', value: 'packing' },
-          ]}
-          value={type}
-        />
+    <View style={styles.poItemRowsEditor}>
+      {controller.itemPickerLoading ? (
+        <Text style={styles.metaText}>Memuat item...</Text>
+      ) : null}
+      <View style={styles.poItemHeaderGrid}>
+        <Text style={[styles.poItemHeaderText, styles.poItemCellItem]}>Item</Text>
+        <Text style={[styles.poItemHeaderText, styles.poItemCellVariant]}>Varian</Text>
+        <Text style={[styles.poItemHeaderText, styles.poItemCellQty]}>Jumlah</Text>
+        <Text style={[styles.poItemHeaderText, styles.poItemCellPrice]}>Harga Satuan</Text>
+        <Text style={[styles.poItemHeaderText, styles.poItemCellSubtotal]}>Subtotal</Text>
+        <Text style={[styles.poItemHeaderText, styles.poItemCellAction]}>Aksi</Text>
       </View>
-      <ScrollView
-        nestedScrollEnabled
-        style={styles.itemResultList}
-        contentContainerStyle={styles.itemResultListContent}
-      >
-        {controller.itemPickerLoading ? (
-          <Text style={styles.metaText}>Memuat item…</Text>
-        ) : results.length ? (
-          results.map(item => (
-            <View key={`${item.itemType}-${item.id}`} style={styles.itemResultRow}>
-              <KolamCopyStack
-                containerStyle={styles.itemResultCopy}
-                items={[
-                  { id: 'title', text: item.title, style: styles.rowTitle },
-                  {
-                    id: 'meta',
-                    text: [item.sku, item.commonName].filter(Boolean).join(' · ') || '—',
-                    style: styles.rowMeta,
-                  },
-                ]}
-              />
-              <Text style={styles.itemResultPrice}>{formatRupiah(item.price)}</Text>
-              {item.variants.length ? (
-                <KolamButton
-                  label="Pilih varian"
-                  onPress={() => setPendingVariantItem(item)}
-                  style={styles.itemResultAction}
-                />
-              ) : (
-                <KolamButton
-                  intent="primary"
-                  label="Tambah"
-                  onPress={() => controller.onAddItemLine(item, null)}
-                  style={styles.itemResultAction}
-                />
-              )}
-            </View>
-          ))
-        ) : (
-          <Text style={styles.metaText}>Tidak ada hasil.</Text>
-        )}
-      </ScrollView>
+      {controller.form.items.map((line, index) => {
+        const selectedItem = results.find(item => item.id === line.refId);
+        const hasVariants = Boolean(
+          selectedItem?.variants.length && selectedItem.itemType !== 'packing',
+        );
+        const variantOptions = [
+          { label: line.refId ? 'Pilih varian...' : 'Pilih item dulu', value: '' },
+          ...(selectedItem?.variants ?? []).map(variant => ({
+            label: getPOVariantOptionLabel(variant),
+            value: variant.id,
+          })),
+        ];
+        const subtotal = (Number(line.quantity) || 0) * line.unitPrice;
+        const removeDisabled = controller.form.items.length <= 1;
 
-      {pendingVariantItem ? (
-        <View style={styles.variantPickerPanel}>
-          <Text style={styles.sectionTitle}>Pilih varian — {pendingVariantItem.title}</Text>
-          {pendingVariantItem.variants.map((variant: KolamPOItemForSelectionVariant) => (
-            <KolamButton
-              key={variant.id}
-              label={`${
-                [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') ||
-                variant.sku ||
-                'Varian'
-              } · ${formatRupiah(variant.price)}`}
-              onPress={() => {
-                controller.onAddItemLine(pendingVariantItem, variant);
-                setPendingVariantItem(null);
-              }}
-              style={styles.filterPanelOption}
-            />
-          ))}
-          <KolamCancelButton onPress={() => setPendingVariantItem(null)} />
+        return (
+          <View key={line.key} style={styles.poItemLineCard}>
+            <View style={styles.poItemLineGrid}>
+              <View style={[styles.poItemFieldBlock, styles.poItemCellItem]}>
+                <KolamDropdownSelect
+                  accessibilityLabel={`Item PO ${index + 1}`}
+                  label="Item"
+                  onChange={itemId => controller.onSelectItemForLine(line.key, itemId)}
+                  options={itemOptions}
+                  searchable
+                  searchPlaceholder="Cari item..."
+                  value={line.refId}
+                />
+                {line.refId ? (
+                  <View style={styles.poItemMetaRow}>
+                    <Text style={styles.rowMeta}>
+                      {line.sku || '-'}
+                    </Text>
+                    {line.unitLabel ? (
+                      <Text style={styles.rowMeta}>{line.unitLabel}</Text>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={[styles.poItemFieldBlock, styles.poItemCellVariant]}>
+                {hasVariants ? (
+                  <KolamDropdownSelect
+                    accessibilityLabel={`Varian PO ${index + 1}`}
+                    label="Varian"
+                    onChange={variantId =>
+                      controller.onSelectVariantForLine(line.key, variantId)
+                    }
+                    options={variantOptions}
+                    searchable
+                    searchPlaceholder="Cari varian..."
+                    value={line.variantId}
+                  />
+                ) : (
+                  <View style={styles.poItemReadonlyField}>
+                    <Text style={styles.poItemReadonlyLabel}>Varian</Text>
+                    <Text style={styles.poItemReadonlyText}>
+                      {line.refId ? 'Tidak ada varian' : 'Pilih item dulu'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={[styles.poItemFieldBlock, styles.poItemCellQty]}>
+                <FieldShell label="Jumlah">
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={quantity =>
+                      controller.onChangeItemLine(line.key, { quantity })
+                    }
+                    value={line.quantity}
+                  />
+                </FieldShell>
+              </View>
+
+              <View style={[styles.poItemFieldBlock, styles.poItemCellPrice]}>
+                <FieldShell label="Harga Satuan">
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={value =>
+                      controller.onChangeItemLine(line.key, {
+                        unitPrice: Number(value) || 0,
+                      })
+                    }
+                    value={String(line.unitPrice)}
+                  />
+                </FieldShell>
+                {line.priceOverridden && line.vendorPrice > 0 ? (
+                  <View style={styles.poItemPriceMetaRow}>
+                    <Text style={styles.rowMeta}>
+                      Pemasok: {formatRupiah(line.vendorPrice)}
+                    </Text>
+                    <KolamButton
+                      label="Reset"
+                      onPress={() => controller.onResetItemLinePrice(line.key)}
+                      size="sm"
+                    />
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={[styles.poItemSubtotalBlock, styles.poItemCellSubtotal]}>
+                <Text style={styles.poItemReadonlyLabel}>Subtotal</Text>
+                <Text style={styles.poItemSubtotalText}>{formatRupiah(subtotal)}</Text>
+              </View>
+
+              <View style={[styles.poItemActionBlock, styles.poItemCellAction]}>
+                <KolamDeleteButton
+                  disabled={removeDisabled}
+                  intent="danger"
+                  label="Hapus"
+                  onPress={() => controller.onRemoveItemLine(line.key)}
+                />
+              </View>
+            </View>
+          </View>
+        );
+      })}
+      {!controller.form.items.length ? (
+        <View style={styles.poItemLineCard}>
+          <KolamEmptyState
+            compact
+            message="Tekan Tambah Item Lain untuk menambahkan baris."
+            title="Belum ada item."
+          />
         </View>
       ) : null}
+      <View style={styles.poItemAddRow}>
+        <KolamButton
+          intent="primary"
+          label="Tambah Item Lain"
+          onPress={controller.onAddEmptyItemLine}
+        />
+      </View>
     </View>
   );
 }
 
-function KolamPOItemLinesTable({ controller }: { controller: KolamPurchaseOrderController }) {
-  const columns = React.useMemo(
-    () => buildPOFormItemColumns(controller),
-    [controller],
-  );
-
-  return (
-    <KolamListTableComposition
-      columns={columns}
-      emptyTitle="Belum ada item ditambahkan."
-      getRowKey={item => item.key}
-      rows={controller.form.items}
-      showFooter={false}
-      style={styles.poItemsTable}
-    />
-  );
+function getPOSelectionOptionLabel(item: KolamPOItemForSelection) {
+  const code = item.sku || item.productCode || '-';
+  const stock = `Stok: ${item.stock || 0}`;
+  const type = getPOSelectionTypeLabel(item.itemType);
+  return `${item.title || '-'} · ${code} · ${type} · ${stock}`;
 }
 
-function buildPOFormItemColumns(
-  controller: KolamPurchaseOrderController,
-): Array<KolamListTableColumn<KolamPOFormLineItem>> {
-  return [
-    {
-      flex: 1.3,
-      id: 'item',
-      label: 'Item',
-      render: item => (
-        <View style={styles.identityCell}>
-          <Text numberOfLines={2} style={styles.rowTitle}>
-            {item.title || '—'}
-          </Text>
-        </View>
-      ),
-    },
-    {
-      align: 'center',
-      flex: 0.8,
-      id: 'sku',
-      label: 'SKU',
-      render: item => (
-        <Text numberOfLines={2} style={styles.cellText}>
-          {item.sku || '—'}
-        </Text>
-      ),
-    },
-    {
-      align: 'center',
-      flex: 0.9,
-      id: 'variant',
-      label: 'Varian',
-      render: item => (
-        <Text numberOfLines={2} style={styles.cellText}>
-          {item.variantLabel || '—'}
-        </Text>
-      ),
-    },
-    {
-      align: 'center',
-      flex: 0.74,
-      id: 'quantity',
-      label: 'Qty',
-      render: item => (
-        <KolamFormTextField
-          mode="numeric"
-          onChangeText={quantity =>
-            controller.onChangeItemLine(item.key, { quantity })
-          }
-          style={styles.qtyInput}
-          value={item.quantity}
-        />
-      ),
-    },
-    {
-      align: 'center',
-      flex: 0.62,
-      id: 'unit',
-      label: 'Satuan',
-      render: item => <Text style={styles.cellText}>{item.unitLabel || '—'}</Text>,
-    },
-    {
-      align: 'center',
-      flex: 0.95,
-      id: 'unitPrice',
-      label: 'Harga Satuan',
-      render: item => (
-        <KolamFormTextField
-          mode="numeric"
-          onChangeText={value =>
-            controller.onChangeItemLine(item.key, {
-              unitPrice: Number(value) || 0,
-            })
-          }
-          style={styles.priceInput}
-          value={String(item.unitPrice)}
-        />
-      ),
-    },
-    {
-      align: 'center',
-      flex: 0.9,
-      id: 'subtotal',
-      label: 'Subtotal',
-      render: item => (
-        <Text style={styles.numText}>
-          {formatRupiah((Number(item.quantity) || 0) * item.unitPrice)}
-        </Text>
-      ),
-    },
-    {
-      align: 'center',
-      flex: 0.62,
-      id: 'actions',
-      label: 'Aksi',
-      render: item => (
-        <KolamDeleteButton
-          intent="danger"
-          label="Hapus"
-          onPress={() => controller.onRemoveItemLine(item.key)}
-        />
-      ),
-    },
-  ];
+function getPOSelectionTypeLabel(itemType: KolamPOItemForSelection['itemType']) {
+  switch (itemType) {
+    case 'species':
+      return 'Ternak';
+    case 'packing':
+      return 'Kemasan';
+    case 'product':
+    default:
+      return 'Produk';
+  }
+}
+
+function getPOVariantOptionLabel(variant: KolamPOItemForSelectionVariant) {
+  const name =
+    [variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') ||
+    variant.sku ||
+    'Varian';
+  return `${name} · ${variant.sku || '-'} · Stok: ${variant.stock || 0} · ${formatRupiah(variant.price)}`;
 }
 
 /* ──────────────────────────────────────────
@@ -2856,6 +2824,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  sectionTitleWrap: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
+  },
   itemsHeaderRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -3078,6 +3051,119 @@ const styles = StyleSheet.create({
   },
   disabledControl: {
     opacity: 0.55,
+  },
+  poItemRowsEditor: {
+    gap: 10,
+  },
+  poItemHeaderGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingHorizontal: 12,
+  },
+  poItemHeaderText: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  poItemLineCard: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
+  poItemLineGrid: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  poItemFieldBlock: {
+    gap: 6,
+  },
+  poItemCellItem: {
+    flexBasis: 280,
+    flexGrow: 3,
+    minWidth: 240,
+  },
+  poItemCellVariant: {
+    flexBasis: 150,
+    flexGrow: 1,
+    minWidth: 140,
+  },
+  poItemCellQty: {
+    flexBasis: 104,
+    flexGrow: 1,
+    minWidth: 96,
+  },
+  poItemCellPrice: {
+    flexBasis: 150,
+    flexGrow: 1,
+    minWidth: 132,
+  },
+  poItemCellSubtotal: {
+    flexBasis: 128,
+    flexGrow: 1,
+    minWidth: 118,
+  },
+  poItemCellAction: {
+    flexBasis: 92,
+    flexGrow: 0,
+    minWidth: 88,
+  },
+  poItemMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  poItemReadonlyField: {
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+    minHeight: 58,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  poItemReadonlyLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  poItemReadonlyText: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  poItemPriceMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  poItemSubtotalBlock: {
+    alignItems: 'flex-end',
+    gap: 6,
+    paddingTop: 22,
+  },
+  poItemSubtotalText: {
+    color: V.colors.primary,
+    fontSize: 14,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+  poItemActionBlock: {
+    alignItems: 'flex-end',
+    paddingTop: 22,
+  },
+  poItemAddRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 2,
   },
   itemPicker: {
     gap: 8,
