@@ -49,6 +49,10 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
@@ -175,6 +179,165 @@ export function KolamStockOpnameDetail({
     controller.rawOptions,
     controller.speciesOptions,
   ]);
+
+  const openLinePhotos = React.useCallback((line: KolamStockOpnameLine) => {
+    setPhotoLine(line);
+    setPhotoDraftUris([]);
+    setPhotoKeepUris(line.photos);
+  }, []);
+
+  const lineColumns = useMemo<Array<KolamListTableColumn<KolamStockOpnameLine>>>(
+    () => [
+      {
+        flex: 2.2,
+        id: 'item',
+        label: 'Barang',
+        render: line => (
+          <View style={styles.tableItemCell}>
+            <Text style={styles.lineTitle}>
+              #{line.lineNo} · {line.targetTypeLabel}
+            </Text>
+            <Text numberOfLines={2} style={styles.tableItemName}>
+              {stockOpnameLineTargetLabel(line)}
+            </Text>
+            {line.variantLabel ? (
+              <Text numberOfLines={1} style={styles.meta}>
+                Varian: {line.variantLabel}
+              </Text>
+            ) : null}
+            {line.rejectReason ? (
+              <Text numberOfLines={2} style={styles.meta}>
+                Catatan review: {line.rejectReason}
+              </Text>
+            ) : null}
+          </View>
+        ),
+      },
+      {
+        align: 'right',
+        flex: 0.8,
+        id: 'systemQty',
+        label: 'Sistem',
+        render: line => {
+          const usingLiveSystem =
+            (line.systemQty == null || !Number.isFinite(line.systemQty)) &&
+            line.liveSystemQty != null;
+          const systemBaseline = stockOpnameLineSystemBaseline(line);
+          return (
+            <Text style={styles.tableNumber}>
+              {systemBaseline ?? '—'}
+              {usingLiveSystem ? ' live' : ''}
+            </Text>
+          );
+        },
+      },
+      {
+        align: 'right',
+        flex: 0.8,
+        id: 'physicalQty',
+        label: 'Fisik',
+        render: line => (
+          <Text style={styles.tableNumber}>{line.physicalQty}</Text>
+        ),
+      },
+      {
+        align: 'right',
+        flex: 0.8,
+        id: 'diff',
+        label: 'Selisih',
+        render: line => {
+          const diff = stockOpnameLineDiff(line);
+          return (
+            <Text
+              style={[
+                styles.tableNumber,
+                diff != null && diff < 0 ? styles.minusMissing : null,
+              ]}
+            >
+              {diff ?? '—'}
+            </Text>
+          );
+        },
+      },
+      {
+        flex: 1.4,
+        id: 'reason',
+        label: 'Alasan',
+        render: line => {
+          const canEdit =
+            canUpdate &&
+            (controller.canEditDraftLine(line) ||
+              controller.canEditRevisionLine(line));
+          const needsMinus = stockOpnameLineNeedsMinusReason(line);
+          if (needsMinus && canEdit) {
+            return (
+              <KolamDropdownSelect
+                label="Alasan"
+                onChange={value =>
+                  void controller.onUpdateLine({
+                    lineId: line.id,
+                    keepPhotos: line.photos,
+                    minusReason: value
+                      ? (value as KolamOpnameMinusReason)
+                      : null,
+                  })
+                }
+                options={[
+                  { label: '— Pilih —', value: '' },
+                  ...KOLAM_OPNAME_MINUS_REASON_OPTIONS.map(option => ({
+                    label: option.label,
+                    value: option.value,
+                  })),
+                ]}
+                value={line.minusReason || ''}
+              />
+            );
+          }
+          return (
+            <Text
+              numberOfLines={2}
+              style={line.minusReasonLabel ? styles.meta : styles.minusMissing}
+            >
+              {needsMinus ? line.minusReasonLabel || 'Belum diisi' : line.minusReasonLabel || '—'}
+            </Text>
+          );
+        },
+      },
+      {
+        align: 'center',
+        flex: 0.9,
+        id: 'photos',
+        label: 'Foto',
+        render: line => {
+          const canEdit =
+            canUpdate &&
+            (controller.canEditDraftLine(line) ||
+              controller.canEditRevisionLine(line));
+          return canEdit ? (
+            <KolamButton
+              label={`Foto (${line.photos.length})`}
+              onPress={() => openLinePhotos(line)}
+            />
+          ) : (
+            <Text style={styles.meta}>{line.photos.length}</Text>
+          );
+        },
+      },
+      {
+        align: 'center',
+        flex: 1,
+        id: 'status',
+        label: 'Status',
+        render: line => (
+          <KolamStatusBadge
+            intent={lineStatusIntent(line.lineStatus)}
+            label={line.lineStatusLabel}
+          />
+        ),
+      },
+    ],
+    [canUpdate, controller, openLinePhotos],
+  );
 
   if (controller.loading && !controller.header) {
     return (
@@ -462,81 +625,114 @@ export function KolamStockOpnameDetail({
         />
       ) : null}
 
-      <KolamCardFrame style={styles.card} variant="compact">
+      <View style={styles.linesSection}>
         <Text style={styles.sectionTitle}>
           Baris ({controller.lines.length})
         </Text>
-        {controller.lines.length === 0 ? (
-          <KolamEmptyState
-            compact
-            message="Belum ada baris. Tambahkan barang di atas."
-            title="Kosong"
-          />
-        ) : (
-          controller.lines.map(line => (
-            <LineCard
-              canApprove={
-                canReview &&
-                controller.isReview &&
-                line.lineStatus === 'pending_review'
-              }
-              canEdit={
-                canUpdate &&
-                (controller.canEditDraftLine(line) ||
-                  controller.canEditRevisionLine(line))
-              }
-              canRemove={
-                canUpdate && controller.canRemoveLine(line)
-              }
-              canResubmit={
-                canUpdate &&
-                controller.isReview &&
-                line.lineStatus === 'revision'
-              }
-              canReview={
-                canReview &&
-                controller.isReview &&
-                line.lineStatus === 'pending_review'
-              }
-              key={line.id}
-              line={line}
-              onApprove={() => {
-                void controller.onApproveLine(line.id);
-              }}
-              onEdit={() => {
-                setEditLine(line);
-                setEditQty(String(line.physicalQty));
-                setEditMinus(line.minusReason || '');
-                setEditNote(line.lineNote || '');
-              }}
-              onManagePhotos={() => {
-                setPhotoLine(line);
-                setPhotoDraftUris([]);
-                setPhotoKeepUris(line.photos);
-              }}
-              onReject={() =>
-                setReviewTarget({ lineId: line.id, decision: 'rejected' })
-              }
-              onRemove={() => {
-                void controller.onDeleteLine(line.id);
-              }}
-              onRequestRevision={() =>
-                setReviewTarget({ lineId: line.id, decision: 'revision' })
-              }
-              onResubmit={() => {
-                void controller.onResubmitLine(line.id);
-              }}
-              onSaveMinusReason={reason => {
-                void controller.onUpdateLine({
-                  lineId: line.id,
-                  minusReason: reason,
-                  keepPhotos: line.photos,
-                });
-              }}
-            />
-          ))
-        )}
-      </KolamCardFrame>
+        <KolamListTableComposition
+          actionsColumn
+          columns={lineColumns}
+          emptyTitle={
+            controller.loading
+              ? 'Memuat baris...'
+              : 'Belum ada baris'
+          }
+          footer={
+            <View style={styles.tableFooterRow}>
+              <Text style={styles.meta}>
+                Total {controller.lines.length} baris
+              </Text>
+            </View>
+          }
+          getRowKey={line => line.id}
+          loading={controller.loading}
+          renderActions={line => {
+            const canEdit =
+              canUpdate &&
+              (controller.canEditDraftLine(line) ||
+                controller.canEditRevisionLine(line));
+            const canRemove = canUpdate && controller.canRemoveLine(line);
+            const canApproveLine =
+              canReview &&
+              controller.isReview &&
+              line.lineStatus === 'pending_review';
+            const canReviewLine =
+              canReview &&
+              controller.isReview &&
+              line.lineStatus === 'pending_review';
+            const canResubmitLine =
+              canUpdate &&
+              controller.isReview &&
+              line.lineStatus === 'revision';
+
+            return (
+              <View style={styles.tableActions}>
+                {canEdit ? (
+                  <KolamEditButton
+                    onPress={() => {
+                      setEditLine(line);
+                      setEditQty(String(line.physicalQty));
+                      setEditMinus(line.minusReason || '');
+                      setEditNote(line.lineNote || '');
+                    }}
+                  />
+                ) : null}
+                {canRemove ? (
+                  <KolamDeleteButton
+                    intent="danger"
+                    label="Hapus"
+                    onPress={() => {
+                      void controller.onDeleteLine(line.id);
+                    }}
+                  />
+                ) : null}
+                {canApproveLine ? (
+                  <KolamButton
+                    intent="primary"
+                    label="Setujui"
+                    onPress={() => {
+                      void controller.onApproveLine(line.id);
+                    }}
+                  />
+                ) : null}
+                {canReviewLine ? (
+                  <>
+                    <KolamButton
+                      label="Revisi"
+                      onPress={() =>
+                        setReviewTarget({
+                          lineId: line.id,
+                          decision: 'revision',
+                        })
+                      }
+                    />
+                    <KolamButton
+                      intent="danger"
+                      label="Tolak"
+                      onPress={() =>
+                        setReviewTarget({
+                          lineId: line.id,
+                          decision: 'rejected',
+                        })
+                      }
+                    />
+                  </>
+                ) : null}
+                {canResubmitLine ? (
+                  <KolamButton
+                    intent="primary"
+                    label="Kirim ulang"
+                    onPress={() => {
+                      void controller.onResubmitLine(line.id);
+                    }}
+                  />
+                ) : null}
+              </View>
+            );
+          }}
+          rows={controller.lines}
+        />
+      </View>
 
       <KolamConfirmDialog
         cancelLabel="Tidak"
@@ -1368,6 +1564,33 @@ const styles = StyleSheet.create({
   noteField: {
     backgroundColor: V.colors.warningSoft,
     borderColor: V.colors.warning,
+  },
+  linesSection: {
+    gap: 10,
+  },
+  tableItemCell: {
+    gap: 3,
+  },
+  tableItemName: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  tableNumber: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  tableFooterRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tableActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'flex-end',
   },
   uploadCard: {
     borderColor: V.colors.border,
