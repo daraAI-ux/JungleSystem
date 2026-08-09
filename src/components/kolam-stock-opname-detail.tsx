@@ -51,6 +51,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
+import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -105,6 +106,9 @@ export function KolamStockOpnameDetail({
   const [editQty, setEditQty] = useState('');
   const [editMinus, setEditMinus] = useState<KolamOpnameMinusReason | ''>('');
   const [editNote, setEditNote] = useState('');
+  const [photoLine, setPhotoLine] = useState<KolamStockOpnameLine | null>(null);
+  const [photoDraftUris, setPhotoDraftUris] = useState<string[]>([]);
+  const [photoKeepUris, setPhotoKeepUris] = useState<string[]>([]);
   const [syncRetry, setSyncRetry] = useState<'products' | 'species' | null>(
     null,
   );
@@ -194,6 +198,11 @@ export function KolamStockOpnameDetail({
 
   const header = controller.header;
   const lineCountsLabel = formatStockOpnameLineCounts(header.lineCounts);
+  const closePhotoModal = () => {
+    setPhotoLine(null);
+    setPhotoDraftUris([]);
+    setPhotoKeepUris([]);
+  };
 
   return (
     <>
@@ -499,6 +508,11 @@ export function KolamStockOpnameDetail({
                 setEditMinus(line.minusReason || '');
                 setEditNote(line.lineNote || '');
               }}
+              onManagePhotos={() => {
+                setPhotoLine(line);
+                setPhotoDraftUris([]);
+                setPhotoKeepUris(line.photos);
+              }}
               onReject={() =>
                 setReviewTarget({ lineId: line.id, decision: 'rejected' })
               }
@@ -725,6 +739,119 @@ export function KolamStockOpnameDetail({
           </View>
         </View>
       </Modal>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={closePhotoModal}
+        transparent
+        visible={Boolean(photoLine)}
+      >
+        <View style={styles.modalOverlay}>
+          <KolamModalBackdrop onPress={closePhotoModal} />
+          <View style={styles.modalCard}>
+            <Text style={styles.sectionTitle}>Foto line</Text>
+            <Text style={styles.meta}>
+              {photoKeepUris.length + photoDraftUris.length} / 5 foto
+            </Text>
+            <View style={styles.uploadActions}>
+              <KolamButton
+                disabled={photoKeepUris.length + photoDraftUris.length >= 5}
+                label="Pilih foto"
+                onPress={() => {
+                  if (photoKeepUris.length + photoDraftUris.length >= 5) {
+                    return;
+                  }
+                  void pickNativeImageFile().then(result => {
+                    const uri = result?.uri;
+                    if (!uri) {
+                      return;
+                    }
+                    setPhotoDraftUris(current => [...current, uri]);
+                  });
+                }}
+              />
+            </View>
+            {photoLine ? (
+              <ScrollView style={styles.photoModalScroll}>
+                <View style={styles.uploadPreviewGrid}>
+                  {photoLine.photos.map((photo, index) => {
+                    const uri = getKolamFileUrl(photo) ?? photo;
+                    const kept = photoKeepUris.includes(photo);
+                    return (
+                      <View
+                        key={photo}
+                        style={[
+                          styles.uploadPreviewItem,
+                          !kept && styles.photoMarkedRemove,
+                        ]}
+                      >
+                        <KolamRemoteImage
+                          accessibilityLabel={`Foto ${index + 1}`}
+                          sourceUri={uri}
+                          style={styles.uploadPreviewImage}
+                        />
+                        <KolamDeleteButton
+                          label={kept ? 'Hapus' : 'Batal'}
+                          onPress={() =>
+                            setPhotoKeepUris(current =>
+                              kept
+                                ? current.filter(item => item !== photo)
+                                : [...current, photo],
+                            )
+                          }
+                          style={styles.uploadPreviewDelete}
+                        />
+                      </View>
+                    );
+                  })}
+                  {photoDraftUris.map((uri, index) => (
+                    <View
+                      key={`${uri}-${index}`}
+                      style={styles.uploadPreviewItem}
+                    >
+                      <Image
+                        source={{ uri }}
+                        style={styles.uploadPreviewImage}
+                      />
+                      <KolamDeleteButton
+                        label="Hapus"
+                        onPress={() =>
+                          setPhotoDraftUris(current =>
+                            current.filter((_, itemIndex) => itemIndex !== index),
+                          )
+                        }
+                        style={styles.uploadPreviewDelete}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            ) : null}
+            <View style={styles.modalActions}>
+              <KolamCancelButton muted onPress={closePhotoModal} />
+              <KolamSaveButton
+                disabled={controller.acting || !photoLine}
+                onPress={() => {
+                  if (!photoLine) {
+                    return;
+                  }
+                  void controller
+                    .onUpdateLine({
+                      lineId: photoLine.id,
+                      keepPhotos: photoKeepUris,
+                      photoUris: photoDraftUris,
+                    })
+                    .then(ok => {
+                      if (ok) {
+                        closePhotoModal();
+                      }
+                    });
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KolamDetailScrollSurface>
     <KolamMarketplacePriceSyncDialog
       itemCount={marketplaceSyncTargets.productIds.length}
@@ -777,6 +904,28 @@ function AddLineForm({
     label: KOLAM_STOCK_OPNAME_LINE_TARGET_LABELS[key],
     value: key,
   }));
+  const photoUris = controller.addDraft.photoUris;
+
+  const handlePickPhoto = () => {
+    if (photoUris.length >= 5) {
+      return;
+    }
+    void pickNativeImageFile().then(result => {
+      const uri = result?.uri;
+      if (!uri) {
+        return;
+      }
+      controller.setAddDraft({
+        photoUris: [...photoUris, uri],
+      });
+    });
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    controller.setAddDraft({
+      photoUris: photoUris.filter((_, itemIndex) => itemIndex !== index),
+    });
+  };
 
   return (
     <KolamCardFrame style={styles.card} variant="compact">
@@ -891,24 +1040,42 @@ function AddLineForm({
         style={[styles.multiline, styles.noteField]}
         value={controller.addDraft.lineNote}
       />
+      <View style={styles.uploadCard}>
+        <View style={styles.uploadHeader}>
+          <View>
+            <Text style={styles.fieldLabel}>Foto bukti</Text>
+            <Text style={styles.meta}>{photoUris.length} / 5 dipilih</Text>
+          </View>
+          <View style={styles.uploadActions}>
+            {photoUris.length > 0 ? (
+              <KolamDeleteButton
+                label="Hapus semua"
+                onPress={() => controller.setAddDraft({ photoUris: [] })}
+              />
+            ) : null}
+            <KolamButton
+              disabled={photoUris.length >= 5}
+              label="Pilih foto"
+              onPress={handlePickPhoto}
+            />
+          </View>
+        </View>
+        {photoUris.length > 0 ? (
+          <View style={styles.uploadPreviewGrid}>
+            {photoUris.map((uri, index) => (
+              <View key={`${uri}-${index}`} style={styles.uploadPreviewItem}>
+                <Image source={{ uri }} style={styles.uploadPreviewImage} />
+                <KolamDeleteButton
+                  label="Hapus"
+                  onPress={() => handleRemovePhoto(index)}
+                  style={styles.uploadPreviewDelete}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
       <View style={styles.actionWrap}>
-        <KolamButton
-          label={`Foto (${controller.addDraft.photoUris.length}/5)`}
-          onPress={() => {
-            void pickNativeImageFile().then(result => {
-              if (!result?.uri) {
-                return;
-              }
-              const current = controller.addDraft.photoUris;
-              if (current.length >= 5) {
-                return;
-              }
-              controller.setAddDraft({
-                photoUris: [...current, result.uri],
-              });
-            });
-          }}
-        />
         <KolamButton
           disabled={controller.acting}
           intent="primary"
@@ -931,6 +1098,7 @@ function LineCard({
   line,
   onApprove,
   onEdit,
+  onManagePhotos,
   onReject,
   onRemove,
   onRequestRevision,
@@ -945,6 +1113,7 @@ function LineCard({
   line: KolamStockOpnameLine;
   onApprove: () => void;
   onEdit: () => void;
+  onManagePhotos: () => void;
   onReject: () => void;
   onRemove: () => void;
   onRequestRevision: () => void;
@@ -1029,6 +1198,12 @@ function LineCard({
         </ScrollView>
       ) : null}
       <View style={styles.actionWrap}>
+        {canEdit ? (
+          <KolamButton
+            label={`Foto (${line.photos.length})`}
+            onPress={onManagePhotos}
+          />
+        ) : null}
         {canEdit ? (
           <KolamEditButton onPress={onEdit} />
         ) : null}
@@ -1192,6 +1367,53 @@ const styles = StyleSheet.create({
   noteField: {
     backgroundColor: V.colors.warningSoft,
     borderColor: V.colors.warning,
+  },
+  uploadCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+  },
+  uploadHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  uploadActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
+  uploadPreviewGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  uploadPreviewItem: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  uploadPreviewImage: {
+    height: 92,
+    width: 128,
+  },
+  uploadPreviewDelete: {
+    position: 'absolute',
+    right: 6,
+    top: 6,
+  },
+  photoModalScroll: {
+    maxHeight: 340,
+  },
+  photoMarkedRemove: {
+    opacity: 0.45,
   },
   lineCard: {
     borderColor: V.colors.border,
