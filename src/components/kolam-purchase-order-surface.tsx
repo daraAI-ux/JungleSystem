@@ -54,6 +54,7 @@ import {
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -67,6 +68,8 @@ import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
+import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
+import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 
 type POStatusFilterPanel = 'status' | 'payment' | null;
 type POStatusIntent = 'primary' | 'success' | 'warning' | 'danger' | 'muted';
@@ -904,6 +907,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
                   options={itemOptions}
                   searchable
                   searchPlaceholder="Cari item..."
+                  showLabelInTrigger={false}
                   value={line.refId}
                 />
                 {line.refId ? (
@@ -929,6 +933,7 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
                     options={variantOptions}
                     searchable
                     searchPlaceholder="Cari varian..."
+                    showLabelInTrigger={false}
                     value={line.variantId}
                   />
                 ) : (
@@ -981,12 +986,16 @@ function KolamPOItemRowsEditor({ controller }: { controller: KolamPurchaseOrderC
               </View>
 
               <View style={[styles.poItemActionBlock, styles.poItemCellAction]}>
-                <KolamDeleteButton
+                <KolamInteractionFrame
+                  accessibilityLabel={`Hapus item PO ${index + 1}`}
                   disabled={removeDisabled}
-                  intent="danger"
-                  label="Hapus"
                   onPress={() => controller.onRemoveItemLine(line.key)}
-                />
+                  style={[
+                    settingsWebFormStyles.settingsWebUploadDeleteButton,
+                    removeDisabled ? styles.poItemDeleteButtonDisabled : null,
+                  ]}>
+                  <KolamUploadDeleteIcon />
+                </KolamInteractionFrame>
               </View>
             </View>
           </View>
@@ -3115,14 +3124,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   poItemReadonlyField: {
-    backgroundColor: V.colors.secondary,
+    backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     gap: 4,
-    minHeight: 58,
+    justifyContent: 'center',
+    minHeight: 38,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   poItemReadonlyLabel: {
     color: V.colors.mutedFg,
@@ -3133,6 +3143,7 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     fontWeight: '600',
+    lineHeight: 16,
   },
   poItemPriceMetaRow: {
     alignItems: 'center',
@@ -3141,20 +3152,24 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   poItemSubtotalBlock: {
-    alignItems: 'flex-end',
-    gap: 6,
-    paddingTop: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 38,
   },
   poItemSubtotalText: {
     color: V.colors.primary,
     fontSize: 14,
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
-    textAlign: 'right',
+    textAlign: 'center',
   },
   poItemActionBlock: {
-    alignItems: 'flex-end',
-    paddingTop: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 38,
+  },
+  poItemDeleteButtonDisabled: {
+    opacity: 0.45,
   },
   poItemAddRow: {
     alignItems: 'center',
