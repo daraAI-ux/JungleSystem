@@ -577,58 +577,67 @@ function KolamSupplierDetail({
     <View style={styles.detailSurface}>
       <View style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
-          <View style={kolamTableToolbarStyles.row}>
-            <View style={kolamTableToolbarStyles.filters}>
+          <View style={[kolamTableToolbarStyles.row, styles.detailToolbarRow]}>
+            <View
+              style={[kolamTableToolbarStyles.filters, styles.detailToolbarFilters]}
+            >
               <Text numberOfLines={1} style={styles.detailToolbarContext}>
                 {vendor.name}
               </Text>
-              <KolamTableFilterTrigger
-                active={
-                  activeAnalyticsFilter === 'period' ||
-                  Boolean(analyticsFilters.filterType)
-                }
-                label={periodLabel}
-                onPress={() =>
-                  setActiveAnalyticsFilter(current =>
-                    current === 'period' ? null : 'period',
-                  )
-                }
-                open={activeAnalyticsFilter === 'period'}
-                variant="quiet"
-              />
-              <KolamTableFilterTrigger
-                active={
-                  activeAnalyticsFilter === 'year' ||
-                  Boolean(analyticsFilters.year)
-                }
-                label={yearLabel}
-                onPress={() =>
-                  setActiveAnalyticsFilter(current =>
-                    current === 'year' ? null : 'year',
-                  )
-                }
-                open={activeAnalyticsFilter === 'year'}
-                variant="quiet"
-              />
-              <KolamTableFilterTrigger
-                active={
-                  activeAnalyticsFilter === 'month' ||
-                  Boolean(
-                    analyticsFilters.month &&
-                      analyticsFilters.filterType !== 'yearly',
-                  )
-                }
-                label={monthLabel}
-                onPress={() =>
-                  setActiveAnalyticsFilter(current =>
-                    current === 'month' ? null : 'month',
-                  )
-                }
-                open={activeAnalyticsFilter === 'month'}
-                variant="quiet"
-              />
+              <View style={styles.detailToolbarDropdownTrack}>
+                <KolamTableFilterTrigger
+                  active={
+                    activeAnalyticsFilter === 'period' ||
+                    Boolean(analyticsFilters.filterType)
+                  }
+                  label={periodLabel}
+                  onPress={() =>
+                    setActiveAnalyticsFilter(current =>
+                      current === 'period' ? null : 'period',
+                    )
+                  }
+                  open={activeAnalyticsFilter === 'period'}
+                  style={styles.detailToolbarDropdown}
+                  variant="quiet"
+                />
+                <KolamTableFilterTrigger
+                  active={
+                    activeAnalyticsFilter === 'year' ||
+                    Boolean(analyticsFilters.year)
+                  }
+                  label={yearLabel}
+                  onPress={() =>
+                    setActiveAnalyticsFilter(current =>
+                      current === 'year' ? null : 'year',
+                    )
+                  }
+                  open={activeAnalyticsFilter === 'year'}
+                  style={styles.detailToolbarDropdown}
+                  variant="quiet"
+                />
+                <KolamTableFilterTrigger
+                  active={
+                    activeAnalyticsFilter === 'month' ||
+                    Boolean(
+                      analyticsFilters.month &&
+                        analyticsFilters.filterType !== 'yearly',
+                    )
+                  }
+                  label={monthLabel}
+                  onPress={() =>
+                    setActiveAnalyticsFilter(current =>
+                      current === 'month' ? null : 'month',
+                    )
+                  }
+                  open={activeAnalyticsFilter === 'month'}
+                  style={styles.detailToolbarDropdown}
+                  variant="quiet"
+                />
+              </View>
             </View>
-            <View style={kolamTableToolbarStyles.actions}>
+            <View
+              style={[kolamTableToolbarStyles.actions, styles.detailToolbarActions]}
+            >
               <KolamDaftarButton
                 onPress={() => {
                   controller.onBackToList();
@@ -2112,6 +2121,30 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: 8,
     paddingVertical: 8,
+  },
+  detailToolbarRow: {
+    flexWrap: 'nowrap',
+  },
+  detailToolbarFilters: {
+    flexWrap: 'nowrap',
+  },
+  detailToolbarActions: {
+    flexWrap: 'nowrap',
+  },
+  detailToolbarDropdownTrack: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexGrow: 1,
+    flexShrink: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  detailToolbarDropdown: {
+    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    maxWidth: 10000,
+    minWidth: 104,
   },
   listRoot: {
     gap: 14,
