@@ -225,6 +225,7 @@ export function KolamDateField({
                 }
                 const selected = cell.iso === value;
                 const isToday = cell.iso === todayIso;
+                const isFuture = cell.iso > todayIso;
                 return (
                   <Pressable
                     key={cell.iso}
@@ -238,11 +239,13 @@ export function KolamDateField({
                       styles.dayPressable,
                       selected ? styles.daySelected : null,
                       isToday && !selected ? styles.dayToday : null,
+                      isFuture && !selected ? styles.dayFuture : null,
                     ]}
                   >
                     <Text
                       style={[
                         styles.dayText,
+                        isFuture && !selected ? styles.dayTextFuture : null,
                         isToday && !selected ? styles.dayTextToday : null,
                         selected ? styles.dayTextSelected : null,
                       ]}
@@ -387,6 +390,9 @@ const styles = StyleSheet.create({
   dayToday: {
     backgroundColor: 'transparent',
   },
+  dayFuture: {
+    opacity: 0.55,
+  },
   dayText: {
     color: V.colors.fg,
     fontSize: 13,
@@ -395,6 +401,9 @@ const styles = StyleSheet.create({
   dayTextToday: {
     color: V.colors.success,
     fontWeight: '700',
+  },
+  dayTextFuture: {
+    color: V.colors.mutedFg,
   },
   dayTextSelected: {
     color: V.colors.primaryFg,
