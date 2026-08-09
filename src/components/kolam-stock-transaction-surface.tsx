@@ -1177,12 +1177,14 @@ function buildStockTransactionListColumns(
       label: 'Sumber',
       render: item => (
         <StockTransactionCellButton center item={item} onOpen={onOpen}>
-          <KolamStockTransactionSourceIcon
-            label={item.sourceLabel}
-            logoUri={item.salesSource?.logoUri}
-            salesSourceName={item.salesSource?.name}
-            source={item.source}
-          />
+          <View style={styles.stockTxSourceCellContent}>
+            <KolamStockTransactionSourceIcon
+              label={item.sourceLabel}
+              logoUri={item.salesSource?.logoUri}
+              salesSourceName={item.salesSource?.name}
+              source={item.source}
+            />
+          </View>
         </StockTransactionCellButton>
       ),
     },
@@ -1652,6 +1654,11 @@ const styles = StyleSheet.create({
   },
   stockTxCellButtonCenter: {
     alignItems: 'center',
+  },
+  stockTxSourceCellContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   primaryText: {
     color: V.colors.fg,
