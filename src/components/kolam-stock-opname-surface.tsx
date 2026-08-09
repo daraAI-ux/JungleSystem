@@ -312,7 +312,7 @@ function KolamStockOpnameList({
                 style={styles.toolbarButton}
               />
               {canCreate ? (
-                <KolamButton
+                <KolamExportXlsButton
                   disabled={controller.importing}
                   label="Impor"
                   onPress={() => {
