@@ -30,21 +30,26 @@ function releaseNativeDropTarget(id: string) {
   }
 }
 
+function getFirstMountedNativeDropTargetId() {
+  for (const id of mountedNativeDropTargets) {
+    return id;
+  }
+  return null;
+}
+
 function canConsumeNativeDrop(id: string) {
   if (activeNativeDropTargetId === id) {
     return true;
   }
-  return (
-    activeNativeDropTargetId == null && mountedNativeDropTargets.size === 1
-  );
-}
-
-async function drainNativeDroppedImageQueue() {
-  try {
-    await consumeNativeDroppedImage();
-  } catch {
-    // Ignore when bridge is unavailable.
+  if (activeNativeDropTargetId != null) {
+    return false;
   }
+  // No hover claim yet: sole field, or first mounted (Thumbnail / default).
+  // Hover/drag still redirects ownership to Foto/Video when those events fire.
+  if (mountedNativeDropTargets.size <= 1) {
+    return true;
+  }
+  return getFirstMountedNativeDropTargetId() === id;
 }
 
 export function KolamSettingsWebFileField({
@@ -140,29 +145,33 @@ export function KolamSettingsWebFileField({
     (event: unknown) => {
       preventDefaultDropEvent(event);
       claimDropTarget();
-      void getDroppedImageValue(event)
-        .then(dropped => {
-          if (dropped) {
-            onLocalValueChangeRef.current?.(dropped);
-            void drainNativeDroppedImageQueue();
-            releaseNativeDropTarget(targetIdRef.current);
-            return;
-          }
-          // Event path empty — try native queue only if this field is the owner.
-          if (!canConsumeNativeDrop(targetIdRef.current)) {
-            return;
-          }
-          return consumeNativeDroppedImage().then(nativeDropped => {
-            const droppedUri = readDroppedNativeUri(nativeDropped);
-            if (droppedUri) {
-              onLocalValueChangeRef.current?.(droppedUri);
+      const targetId = targetIdRef.current;
+      void (async () => {
+        try {
+          // Windows native queue holds the real filesystem path. Prefer it over
+          // flaky event/blob URLs that cannot preview in KolamRemoteImage.
+          if (canConsumeNativeDrop(targetId)) {
+            const nativeUri = readDroppedNativeUri(
+              await consumeNativeDroppedImage(),
+            );
+            if (nativeUri) {
+              onLocalValueChangeRef.current?.(nativeUri);
+              return;
             }
-            releaseNativeDropTarget(targetIdRef.current);
-          });
-        })
-        .catch(() => {
-          releaseNativeDropTarget(targetIdRef.current);
-        });
+          }
+
+          const eventUri = asUsableDroppedPreviewUri(
+            await getDroppedImageValue(event),
+          );
+          if (eventUri) {
+            onLocalValueChangeRef.current?.(eventUri);
+          }
+        } catch {
+          // Ignore bridge/event failures so drop handling cannot white-screen.
+        } finally {
+          releaseNativeDropTarget(targetId);
+        }
+      })();
     },
     [claimDropTarget],
   );
@@ -261,7 +270,7 @@ function readDroppedNativeUri(dropped: unknown) {
     path?: unknown;
     uri?: unknown;
   };
-  if (record.cancelled) {
+  if (record.cancelled === true) {
     return '';
   }
   const uri = typeof record.uri === 'string' ? record.uri.trim() : '';
@@ -269,6 +278,24 @@ function readDroppedNativeUri(dropped: unknown) {
     return uri;
   }
   return typeof record.path === 'string' ? record.path.trim() : '';
+}
+
+function asUsableDroppedPreviewUri(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+  // blob: object URLs from the DOM drop path do not preview reliably on RNW.
+  if (/^(file:|data:|https?:)/i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[a-zA-Z]:[\\/]/.test(trimmed) || trimmed.startsWith('\\\\')) {
+    return trimmed;
+  }
+  return '';
 }
 
 function getLogoPreviewUri(value: string) {
