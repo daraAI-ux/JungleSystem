@@ -621,23 +621,23 @@ function KolamProductionForm({
 
         {!isEdit && !form.serialEnabled ? (
           <View style={styles.formSection}>
-            <View style={styles.chipRow}>
-              {(['product', 'species'] as const).map(type => (
-                <KolamButton
-                  key={type}
-                  intent={form.targetType === type ? 'primary' : 'plain'}
-                  label={type === 'product' ? 'Produk' : 'Spesies'}
-                  onPress={() =>
-                    controller.onChangeForm({
-                      targetType: type,
-                      productId: '',
-                      speciesId: '',
-                      variantId: '',
-                    })
-                  }
-                />
-              ))}
-            </View>
+            <KolamDropdownSelect
+              label="Tipe target"
+              onChange={value =>
+                controller.onChangeForm({
+                  targetType: value as 'product' | 'species',
+                  productId: '',
+                  speciesId: '',
+                  variantId: '',
+                })
+              }
+              options={[
+                { value: 'product', label: 'Produk' },
+                { value: 'species', label: 'Spesies' },
+              ]}
+              showLabelInTrigger={false}
+              value={form.targetType}
+            />
           </View>
         ) : null}
 
