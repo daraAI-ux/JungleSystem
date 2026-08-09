@@ -44,7 +44,8 @@ export type KolamNavigationModuleIcon =
   | 'terms'
   | 'taxonomy'
   | 'teranura'
-  | 'unit';
+  | 'unit'
+  | 'voucher';
 
 export interface KolamNavigationSection {
   id: string;
@@ -494,6 +495,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/vouchers',
         description: 'Discount codes for marketplace customers',
         group: 'Kampanye',
+        moduleIcon: 'voucher',
         requiredAccess: ['kolam'],
       },
       {
@@ -939,7 +941,11 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Persetujuan Diskon',
         moduleIcon: 'discountApproval',
       }),
-      sidebarItem('/vouchers', { group: 'Kampanye', label: 'Voucher' }),
+      sidebarItem('/vouchers', {
+        group: 'Kampanye',
+        label: 'Voucher',
+        moduleIcon: 'voucher',
+      }),
       sidebarItem('/metode-pengiriman', {
         group: undefined,
         label: 'Metode Pengiriman',
