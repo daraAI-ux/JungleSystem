@@ -51,10 +51,10 @@ import {KOLAM_UNEXPECTED_INCOME_MODULE_ICON_SVG} from '../assets/icons/unexpecte
 import {KOLAM_VOUCHER_MODULE_ICON_SVG} from '../assets/icons/voucher-module-icon-svg';
 import {KOLAM_WALLET_MODULE_ICON_SVG} from '../assets/icons/wallet-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
+import {KolamKandangEnclosureIcon} from './kolam-kandang-enclosure-icon';
 
 const IUCN_MODULE_ICON_SOURCE = require('../assets/icons/iucn-module-icon.png');
 const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-icon.png');
-const ENCLOSURE_MODULE_ICON_SOURCE = require('../assets/icons/enclosure-module-icon.png');
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   ai: 'Icon Pusat AI',
@@ -303,11 +303,7 @@ export function KolamModuleIcon({
           xml={KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG}
         />
       ) : kind === 'enclosure' ? (
-        <Image
-          resizeMode="contain"
-          source={ENCLOSURE_MODULE_ICON_SOURCE}
-          style={styles.imageIcon}
-        />
+        <KolamKandangEnclosureIcon style={styles.imageIcon} />
       ) : kind === 'tag' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={TAG_ICON_PATH} fill="#1a1a1a" fillRule="nonzero" />
