@@ -764,7 +764,7 @@ function ModuleCard({
     <View style={[styles.moduleCard, artworkSource && styles.moduleCardCover]}>
       {artworkSource ? (
         <Image
-          resizeMode="contain"
+          resizeMode="stretch"
           source={artworkSource}
           style={styles.moduleCardCoverImage}
         />
@@ -1316,22 +1316,18 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   moduleCardCover: {
-    minHeight: 170,
+    flexBasis: 380,
+    minHeight: 178,
     overflow: 'hidden',
   },
   moduleCardCoverImage: {
-    bottom: -54,
-    height: 260,
-    opacity: 0.16,
-    position: 'absolute',
-    right: -34,
-    width: 190,
+    ...StyleSheet.absoluteFillObject,
   },
   moduleCardContent: {
     gap: 6,
   },
   moduleCardContentCover: {
-    paddingRight: 74,
+    paddingRight: 142,
   },
   moduleTitle: {
     color: V.colors.mutedFg,
