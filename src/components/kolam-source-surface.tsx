@@ -763,7 +763,7 @@ function KolamSourceForm({
           </View>
           <View style={styles.twoColumnItem}>
             <KolamDropdownSelect
-              label="Tipe"
+              label="Tipe penjualan"
               onChange={value =>
                 controller.onChangeForm({
                   type: value as 'online' | 'offline',
