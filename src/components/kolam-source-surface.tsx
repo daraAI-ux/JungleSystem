@@ -111,7 +111,11 @@ function SourceFormSection({
             : []),
         ]}
       />
-      <KolamContentFrame variant="nativeFormControls">{children}</KolamContentFrame>
+      <KolamContentFrame variant="nativeFormControls">
+        <View style={settingsWebFormStyles.settingsWebFormFieldsGrid}>
+          {children}
+        </View>
+      </KolamContentFrame>
     </KolamContentFrame>
   );
 }
