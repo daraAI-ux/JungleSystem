@@ -417,8 +417,9 @@ export function useKolamEnclosureController(
       }
 
       if (currentMode === 'new') {
-        const [assignees, locations, units] = await Promise.all([
+        const [assignees, brands, locations, units] = await Promise.all([
           getKolamEnclosureStaffAssignees({limit: 200}).catch(() => []),
+          getKolamBrands().catch(() => [] as KolamBrand[]),
           getKolamLocations().catch(() => [] as KolamLocationOption[]),
           getKolamUnits().catch(() => [] as KolamUnit[]),
         ]);
@@ -427,7 +428,7 @@ export function useKolamEnclosureController(
         }
         setSelectedEnclosure(null);
         setStaffAssignees(assignees);
-        setEditBrands([]);
+        setEditBrands(brands);
         setEditLocations(locations);
         setEditUnits(units);
         setDataSource('live');

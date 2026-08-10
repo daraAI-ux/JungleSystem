@@ -434,6 +434,7 @@ function KolamEnclosureEditSurface({
       }
       const created = await controller.onCreateEnclosure({
         assignedTo: form.assignedTo || '',
+        brandId: form.brandId || undefined,
         enclosure_code: code,
         enclosure_name: code,
         enclosure_size: {

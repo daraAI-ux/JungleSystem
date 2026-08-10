@@ -54,6 +54,7 @@ export interface KolamEnclosureCreateBody {
   note?: string;
   locationId: string;
   assignedTo: string;
+  brandId?: string | null;
   livestockPurpose?: 'saleable' | 'production';
 }
 
@@ -720,6 +721,7 @@ function createKolamEnclosurePayload(body: KolamEnclosureCreateBody) {
     note: body.note?.trim() || undefined,
     locationId: body.locationId,
     assignedTo: body.assignedTo,
+    brandId: body.brandId,
     livestockPurpose: body.livestockPurpose ?? 'saleable',
   };
 }
