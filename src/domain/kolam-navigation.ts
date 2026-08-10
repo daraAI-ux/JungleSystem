@@ -676,6 +676,18 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
     ],
   },
   {
+    id: 'employee-management',
+    title: 'Manajemen Karyawan',
+    items: [
+      {
+        label: 'Pengaturan Karyawan',
+        route: '/list-of-users/hr',
+        description: 'Absensi harian, cuti, dan lembur karyawan',
+        requiredAccess: ['kolam'],
+      },
+    ],
+  },
+  {
     id: 'user',
     title: 'Pengguna',
     items: [
@@ -710,13 +722,6 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         description:
           'Kelola semua pengguna sistem, termasuk data pribadi, peran, dan status akun.',
         moduleIcon: 'staff',
-        requiredAccess: ['kolam'],
-      },
-      {
-        label: 'HR',
-        route: '/list-of-users/hr',
-        description: 'HR profile and employment data from live Kolam',
-        group: 'Staff',
         requiredAccess: ['kolam'],
       },
       {
@@ -1076,6 +1081,15 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     ],
   },
   {
+    id: 'employee-management',
+    title: 'Manajemen Karyawan',
+    items: [
+      sidebarItem('/list-of-users/hr', {
+        label: 'Pengaturan Karyawan',
+      }),
+    ],
+  },
+  {
     id: 'user',
     title: 'Pengguna',
     items: [
@@ -1086,9 +1100,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/list-of-users', {
         label: 'Daftar Pengguna',
         moduleIcon: 'staff',
-      }),
-      sidebarItem('/list-of-users/hr', {
-        label: 'HR Sistem',
       }),
       sidebarItem('/list-of-users/kpi', {
         label: 'KPI Tim',

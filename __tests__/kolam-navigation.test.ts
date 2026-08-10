@@ -21,6 +21,7 @@ describe('kolamNavigationSections', () => {
       'Inventori',
       'Penjualan & Arus Kas',
       'Keuangan',
+      'Manajemen Karyawan',
       'Pengguna',
       'Enclonura',
     ]);
