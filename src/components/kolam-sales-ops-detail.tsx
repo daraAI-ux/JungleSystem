@@ -250,6 +250,7 @@ export function KolamSalesOpsDetail({
                 <KolamStatusBadge
                   intent="warning"
                   label={livestockPendingLabel}
+                  style={styles.detailToolbarBadge}
                 />
               ) : null}
             </View>
@@ -1678,6 +1679,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingHorizontal: 8,
     paddingVertical: 0,
+  },
+  detailToolbarBadge: {
+    alignSelf: 'center',
   },
   complaintBanner: {
     gap: 8,
