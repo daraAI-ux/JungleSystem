@@ -2,6 +2,7 @@
 
 export interface KolamStatsCardItem {
   detail: string;
+  iconSvg?: string;
   id: string;
   label: string;
   tone: KolamStatsCardTone;

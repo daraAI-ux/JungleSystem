@@ -41,6 +41,16 @@ export const statsCardStripStyles = StyleSheet.create({
     padding: 12,
     ...CARD_SHADOW,
   },
+  cardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  iconWrap: {
+    height: 28,
+    width: 28,
+  },
   label: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,

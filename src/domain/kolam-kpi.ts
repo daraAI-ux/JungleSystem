@@ -3,6 +3,7 @@
  * SoT: DA-KPI-Plugin `pages/team.tsx` + BE `/api/kpi/team/*`.
  */
 
+import {KOLAM_ACTIVE_STAFF_ICON_SVG} from '../assets/icons/active-staff-icon-svg';
 import {
   hasSettingsPermission,
   isSettingsSuperAdminRoleKey,
@@ -11,6 +12,7 @@ import {
 
 export type KolamKpiStatsCardItem = {
   detail: string;
+  iconSvg?: string;
   id: string;
   label: string;
   tone: 'default' | 'success' | 'warning' | 'muted';
@@ -498,6 +500,7 @@ export function buildKolamKpiSummaryCards(
       label: 'Staff aktif',
       value: formatKolamKpiPoints(summary.activeStaffCount),
       detail: 'Punya poin ≠ 0',
+      iconSvg: KOLAM_ACTIVE_STAFF_ICON_SVG,
       tone: 'default',
     },
     {
