@@ -36,6 +36,7 @@ import {
   type KolamEnclosureDashboardDeathEvent,
   type KolamEnclosureDashboardSpeciesRow,
   type KolamEnclosureLivestockFilter,
+  type KolamEnclosureListTab,
   type KolamEnclosureLivestockPurpose,
   type KolamEnclosureProductionEvent,
   type KolamEnclosureSpeciesRef,
@@ -90,6 +91,7 @@ import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamStokTotalIcon} from './kolam-stok-total-icon';
+import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -937,6 +939,14 @@ function KolamEnclosureList({
     controller.filters.livestockPurpose === 'all'
       ? 'Livestock'
       : getLivestockPurposeLabel(controller.filters.livestockPurpose);
+  const listTabs = React.useMemo(
+    () =>
+      KOLAM_ENCLOSURE_LIST_TABS.map(tab => ({
+        id: tab.id,
+        label: tab.label,
+      })),
+    [],
+  );
 
   const getFilterTriggerRef = (panel: Exclude<EnclosureFilterPanel, null>) =>
     panel === 'type' ? typeTriggerRef : livestockTriggerRef;
@@ -987,15 +997,6 @@ function KolamEnclosureList({
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
-              {KOLAM_ENCLOSURE_LIST_TABS.map(tab => (
-                <KolamButton
-                  intent={controller.activeTab === tab.id ? 'primary' : 'outline'}
-                  key={tab.id}
-                  label={tab.label}
-                  onPress={() => controller.onTabChange(tab.id)}
-                  style={styles.toolbarButton}
-                />
-              ))}
               <KolamSearchField
                 containerStyle={kolamTableToolbarStyles.searchInput}
                 onChangeText={setSearchInput}
@@ -1030,6 +1031,13 @@ function KolamEnclosureList({
             <View style={kolamTableToolbarStyles.actions}>
             </View>
           </View>
+        </View>
+        <View style={styles.listTabsRow}>
+          <KolamSurfacePanelTabs<KolamEnclosureListTab>
+            onSelectTab={controller.onTabChange}
+            selectedTabId={controller.activeTab}
+            tabs={listTabs}
+          />
         </View>
 
         {activeFilterPanel === 'type' && panelAnchor ? (
@@ -2696,6 +2704,9 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  listTabsRow: {
+    alignSelf: 'flex-start',
   },
   toolbarButton: {
     flexShrink: 0,
