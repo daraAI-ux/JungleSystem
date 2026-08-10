@@ -555,7 +555,17 @@ function KolamProductSerialOpname({
       </View>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Pindai / Input Nomor Seri</Text>
+        <View style={styles.opnameTitleRow}>
+          <Text style={styles.sectionTitle}>Pindai / Input Nomor Seri</Text>
+          <View style={styles.opnameStats}>
+            <KolamStatusBadge intent="success" label={`Ditemukan: ${foundCount}`} />
+            <KolamStatusBadge intent="danger" label={`Hilang: ${missingCount}`} />
+            <KolamStatusBadge
+              intent="muted"
+              label={`Total pindai: ${controller.sessionItems.length}`}
+            />
+          </View>
+        </View>
         <Text style={styles.helperText}>
           Pindai atau ketik nomor seri untuk memverifikasi keberadaan fisik unit. Tekan Enter
           setelah setiap nomor seri.
@@ -575,14 +585,6 @@ function KolamProductSerialOpname({
             label={controller.opnameSubmitting ? 'Memproses…' : 'Verifikasi'}
             onPress={() => void controller.onSubmitOpname()}
           />
-          <View style={styles.opnameStats}>
-            <KolamStatusBadge intent="success" label={`Ditemukan: ${foundCount}`} />
-            <KolamStatusBadge intent="danger" label={`Hilang: ${missingCount}`} />
-            <KolamStatusBadge
-              intent="muted"
-              label={`Total pindai: ${controller.sessionItems.length}`}
-            />
-          </View>
         </View>
       </KolamContentFrame>
 
@@ -817,6 +819,13 @@ const styles = StyleSheet.create({
     height: 220,
   },
   opnameRoot: { gap: 14 },
+  opnameTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
   opnameInputRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
