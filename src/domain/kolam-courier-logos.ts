@@ -24,14 +24,14 @@ type ImageSource = number;
  * Metro needs static requires — do not use dynamic paths.
  */
 const COURIER_LOGO_SOURCES: Partial<Record<string, ImageSource>> = {
-  // jne: require('../assets/couriers/jne.png'),
-  // jnt: require('../assets/couriers/jnt.png'),
-  // sicepat: require('../assets/couriers/sicepat.png'),
-  // tiki: require('../assets/couriers/tiki.png'),
-  // lion: require('../assets/couriers/lion.png'),
-  // anteraja: require('../assets/couriers/anteraja.png'),
-  // grab: require('../assets/couriers/grab.png'),
-  // gojek: require('../assets/couriers/gojek.png'),
+  anteraja: require('../assets/couriers/anteraja.png'),
+  gojek: require('../assets/couriers/gojek.png'),
+  grab: require('../assets/couriers/grab.png'),
+  jne: require('../assets/couriers/jne.png'),
+  jnt: require('../assets/couriers/jnt.png'),
+  lion: require('../assets/couriers/lion.png'),
+  sicepat: require('../assets/couriers/sicepat.png'),
+  tiki: require('../assets/couriers/tiki.png'),
 };
 
 export function getKolamCourierLogoSource(
