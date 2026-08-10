@@ -2735,7 +2735,8 @@ const styles = StyleSheet.create({
     color: V.colors.primaryFg,
   },
   toolbarStatusSelect: {
-    flexShrink: 0,
+    flexGrow: 1,
+    flexShrink: 1,
     minWidth: 150,
   },
   toolbarStatusTrigger: {
