@@ -1,12 +1,5 @@
 import React, {useMemo} from 'react';
-import {
-  Image,
-  type ImageSourcePropType,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   buildKolamPusatAiHubRoute,
@@ -82,8 +75,6 @@ import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 const LOG_DARA_VIOLET = '#7c3aed';
 const LOG_DARA_VIOLET_SOFT = '#f5f3ff';
 const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
-const DARA_SEO_CARD_COVER =
-  require('../assets/images/dara-seo-card-cover.png') as ImageSourcePropType;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -679,7 +670,6 @@ function KolamPusatAiRingkasanBody({
           <View style={styles.modules}>
             <ModuleCard
               actionLabel="Buka SEO"
-              artworkSource={DARA_SEO_CARD_COVER}
               href="/campaign/dara-seo"
               metric={hub.seo != null ? String(hub.seo.seoScore) : '—'}
               onRouteChange={onRouteChange}
@@ -741,7 +731,6 @@ function KolamPusatAiRingkasanBody({
 
 function ModuleCard({
   actionLabel,
-  artworkSource,
   href,
   metric,
   onRouteChange,
@@ -751,7 +740,6 @@ function ModuleCard({
   title,
 }: {
   actionLabel: string;
-  artworkSource?: ImageSourcePropType;
   href: string;
   metric: string;
   onRouteChange?: (route: string) => void;
@@ -761,19 +749,8 @@ function ModuleCard({
   title: string;
 }) {
   return (
-    <View style={[styles.moduleCard, artworkSource && styles.moduleCardCover]}>
-      {artworkSource ? (
-        <Image
-          resizeMode="stretch"
-          source={artworkSource}
-          style={styles.moduleCardCoverImage}
-        />
-      ) : null}
-      <View
-        style={[
-          styles.moduleCardContent,
-          artworkSource && styles.moduleCardContentCover,
-        ]}>
+    <View style={styles.moduleCard}>
+      <View style={styles.moduleCardContent}>
         <Text style={styles.moduleTitle}>{title}</Text>
         <Text style={styles.moduleMetric}>{metric}</Text>
         <Text style={styles.moduleSubtitle}>{subtitle}</Text>
@@ -1315,19 +1292,8 @@ const styles = StyleSheet.create({
     minWidth: 240,
     padding: 14,
   },
-  moduleCardCover: {
-    flexBasis: 380,
-    minHeight: 178,
-    overflow: 'hidden',
-  },
-  moduleCardCoverImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
   moduleCardContent: {
     gap: 6,
-  },
-  moduleCardContentCover: {
-    paddingRight: 142,
   },
   moduleTitle: {
     color: V.colors.mutedFg,
