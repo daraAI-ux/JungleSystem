@@ -50,6 +50,7 @@ const PRODUCT_TYPE_OPTIONS: KolamProductSerialProductType[] = [
   'general',
 ];
 const STATUS_OPTIONS: KolamProductSerialStatus[] = ['in-stock', 'sold', 'void'];
+const KOLAM_ACTION_BUTTON_BG = '#374151';
 
 export function KolamProductSerialSurface({
   onRouteChange,
@@ -540,7 +541,6 @@ function KolamProductSerialOpname({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
-              muted
               onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
               style={styles.toolbarButton}
             />
@@ -548,7 +548,8 @@ function KolamProductSerialOpname({
               disabled={!controller.sessionItems.length}
               label="Reset sesi"
               onPress={() => controller.onResetSession()}
-              style={styles.toolbarButton}
+              style={[styles.toolbarButton, styles.actionButton]}
+              textStyle={styles.actionButtonText}
             />
           </View>
         </View>
@@ -697,6 +698,13 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  actionButton: {
+    backgroundColor: KOLAM_ACTION_BUTTON_BG,
+    borderColor: KOLAM_ACTION_BUTTON_BG,
+  },
+  actionButtonText: {
+    color: V.colors.primaryFg,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
