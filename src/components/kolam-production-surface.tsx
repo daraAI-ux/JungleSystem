@@ -938,14 +938,6 @@ function KolamProductionDetail({
   const targetHref = getKolamProductionTargetHref(production);
   const nextStatuses = getAllowedNextProductionStatuses(production.status);
   const productionBasicDescription = production.batchId || undefined;
-  const productionCostSummary = [
-    `Estimasi: ${formatRupiah(production.estimatedCost)}`,
-    production.status === 'completed'
-      ? `Biaya aktual: ${formatRupiah(production.actualCost)}`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
   const productionBasicFields = [
     {
       id: 'target',
@@ -998,9 +990,17 @@ function KolamProductionDetail({
         : '—',
     },
     {
-      id: 'costSummary',
-      label: 'Biaya',
-      value: productionCostSummary,
+      id: 'estimatedCost',
+      label: 'Biaya estimasi',
+      value: formatRupiah(production.estimatedCost),
+    },
+    {
+      id: 'actualCost',
+      label: 'Biaya aktual',
+      value:
+        production.status === 'completed'
+          ? formatRupiah(production.actualCost)
+          : '—',
     },
     {
       id: 'description',
