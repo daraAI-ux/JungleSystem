@@ -4,7 +4,9 @@ import {
   type KolamHrDailyAttendanceSummary,
 } from '../domain/kolam-hr';
 import {ApiError} from '../lib/api-error';
+import {resolveProfilePhotoUrl} from '../services/auth-api';
 import {fetchKolamHrDailyAttendanceSummary} from '../services/kolam-hr-attendance-api';
+import {getKolamUserList} from '../services/kolam-user-api';
 
 export function useKolamHrAttendanceController(options: {enabled: boolean}) {
   const [dateKey, setDateKey] = useState(kolamHrTodayDateKey);
@@ -22,7 +24,29 @@ export function useKolamHrAttendanceController(options: {enabled: boolean}) {
     setError('');
     try {
       const next = await fetchKolamHrDailyAttendanceSummary(dateKey);
-      setSummary(next);
+      const employees = await getKolamUserList({
+        isEmployee: 'true',
+        limit: 500,
+        page: 1,
+      });
+      const photoByUser = new Map(
+        employees.items.map(user => [
+          user.id,
+          resolveProfilePhotoUrl(user.profilePicture),
+        ]),
+      );
+      setSummary(
+        next
+          ? {
+              ...next,
+              rows: next.rows.map(row => ({
+                ...row,
+                userPhoto:
+                  row.userPhoto || photoByUser.get(row.userId) || null,
+              })),
+            }
+          : next,
+      );
       if (!next) {
         setError('Gagal memuat ringkasan absensi.');
       }
