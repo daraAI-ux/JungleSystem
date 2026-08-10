@@ -28,7 +28,6 @@ import {
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
   getKolamSaleCouriers,
-  getKolamSaleDeliveryStatusIntent,
   getKolamSaleItemDiscountAmount,
   getKolamSaleItemVoucherDiscountApplied,
   formatKolamSaleItemVoucherLabel,
@@ -192,6 +191,22 @@ export function KolamSalesOpsDetail({
     label: formatKolamSalePaymentStatusLabel(status),
     onPress: () => setPendingStatus(status),
     tone: status === 'cancelled' ? 'danger' : 'default',
+  })) satisfies React.ComponentProps<
+    typeof KolamOverflowMenuButton
+  >['actions'];
+  const deliveryStatusLabel =
+    sale.status === 'cancelled'
+      ? 'Dibatalkan'
+      : skipShipping
+        ? getKolamNoShippingDeliveryLabel(sale)
+        : formatKolamSaleDeliveryStatusLabel(
+            sale.deliveryStatus,
+            sale.status,
+            sale,
+          );
+  const deliveryStatusActions = allowedDeliveryTransitions.map(target => ({
+    label: formatKolamSaleDeliveryFilterLabel(target),
+    onPress: () => setPendingDelivery(target),
   })) satisfies React.ComponentProps<
     typeof KolamOverflowMenuButton
   >['actions'];
@@ -406,29 +421,32 @@ export function KolamSalesOpsDetail({
         <KolamDetailMetaStripItem
           label={skipShipping ? (posSale ? 'POS' : 'Layanan') : 'Pengiriman'}
         >
-          <KolamStatusBadge
-            intent={
-              sale.status === 'cancelled'
-                ? 'danger'
-                : skipShipping
-                  ? 'info'
-                  : getKolamSaleDeliveryStatusIntent(
-                      sale.deliveryStatus,
-                      sale.status,
-                    )
-            }
-            label={
-              sale.status === 'cancelled'
-                ? 'Dibatalkan'
-                : skipShipping
-                  ? getKolamNoShippingDeliveryLabel(sale)
-                  : formatKolamSaleDeliveryStatusLabel(
-                      sale.deliveryStatus,
-                      sale.status,
-                      sale,
-                    )
-            }
-          />
+          {skipShipping ? (
+            <KolamStatusBadge
+              intent={sale.status === 'cancelled' ? 'danger' : 'info'}
+              label={deliveryStatusLabel}
+            />
+          ) : (
+            <KolamOverflowMenuButton
+              accessibilityLabel="Status pengiriman"
+              actions={deliveryStatusActions}
+              disabled={
+                !showDeliveryActions || allowedDeliveryTransitions.length === 0
+              }
+              floating
+              label={deliveryStatusLabel}
+              menuAlign="left"
+              menuWidth={210}
+              style={[
+                styles.deliveryStatusTrigger,
+                !showDeliveryActions || allowedDeliveryTransitions.length === 0
+                  ? styles.paymentStatusTriggerMuted
+                  : null,
+              ]}
+              textStyle={styles.paymentStatusTriggerText}
+              variant="select"
+            />
+          )}
         </KolamDetailMetaStripItem>
         <KolamDetailMetaStripItem label="Total">
           <Text style={kolamDetailMetaStripStyles.stripValue}>
@@ -707,19 +725,7 @@ export function KolamSalesOpsDetail({
                     <Text style={styles.metaText}>
                       Tidak ada transisi pengiriman yang tersedia.
                     </Text>
-                  ) : (
-                    <View style={styles.actionButtons}>
-                      {allowedDeliveryTransitions.map(target => (
-                        <KolamButton
-                          disabled={controller.mutating}
-                          intent="primary"
-                          key={target}
-                          label={formatKolamSaleDeliveryFilterLabel(target)}
-                          onPress={() => setPendingDelivery(target)}
-                        />
-                      ))}
-                    </View>
-                  )}
+                  ) : null}
                   {canRequestBiteshipPickup ? (
                     <KolamButton
                       disabled={controller.mutating}
@@ -1548,6 +1554,12 @@ const styles = StyleSheet.create({
   paymentStatusTrigger: {
     minHeight: 30,
     minWidth: 190,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  deliveryStatusTrigger: {
+    minHeight: 30,
+    minWidth: 210,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
