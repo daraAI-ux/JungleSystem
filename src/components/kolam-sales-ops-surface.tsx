@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {SvgXml} from 'react-native-svg';
 import {
   estimateKolamSaleCreateItemLineTotal,
   estimateKolamSaleCreateItemShippingCost,
@@ -18,6 +19,7 @@ import {
   formatKolamSaleItemVoucherLabel,
   getKolamSaleListComplaintDisplay,
   getKolamSalePaymentStatusIntent,
+  isKolamSaleShippingAutomationActive,
   kolamSaleSkipsShippingFlow,
   isKolamSalesAddItemsRoute,
   isKolamSalesDiscountApprovalRoute,
@@ -552,9 +554,16 @@ function buildSalesOpsListColumns({
         const deliveryBadgeIntent = skipShipping
           ? 'info'
           : getKolamSaleDeliveryStatusIntent(sale.deliveryStatus, sale.status);
+        const showDeliveryAutomationIcon =
+          !skipShipping && isKolamSaleShippingAutomationActive(sale);
         return (
           <View style={styles.statusCell}>
             <KolamStatusBadge
+              icon={
+                showDeliveryAutomationIcon ? (
+                  <KolamSalesListDeliveryRobotIcon />
+                ) : undefined
+              }
               intent={deliveryBadgeIntent}
               label={deliveryBadgeLabel}
               numberOfLines={2}
@@ -590,6 +599,28 @@ function buildSalesOpsListColumns({
       },
     },
   ];
+}
+
+const KOLAM_SALES_LIST_DELIVERY_ROBOT_ICON_XML = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="#0369A1" d="M11 2h2v3h3.5A3.5 3.5 0 0 1 20 8.5v7A3.5 3.5 0 0 1 16.5 19h-9A3.5 3.5 0 0 1 4 15.5v-7A3.5 3.5 0 0 1 7.5 5H11V2Zm-3.5 5A1.5 1.5 0 0 0 6 8.5v7A1.5 1.5 0 0 0 7.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 16.5 7h-9Zm1 4a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm6.5-1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM9 14h6v2H9v-2Z"/>
+  <path fill="#075985" d="M6.5 20h11a1 1 0 1 1 0 2h-11a1 1 0 1 1 0-2Z"/>
+</svg>`;
+
+function KolamSalesListDeliveryRobotIcon() {
+  return (
+    <View
+      accessibilityLabel="Automasi : On"
+      accessibilityRole="image"
+      style={styles.deliveryRobotIcon}
+    >
+      <SvgXml
+        height="100%"
+        width="100%"
+        xml={KOLAM_SALES_LIST_DELIVERY_ROBOT_ICON_XML}
+      />
+    </View>
+  );
 }
 
 function KolamSalesOpsCreateForm({
@@ -2227,6 +2258,10 @@ const styles = StyleSheet.create({
   invoicePendingBadgeText: {
     fontSize: 10,
     lineHeight: 13,
+  },
+  deliveryRobotIcon: {
+    height: 15,
+    width: 15,
   },
   primaryText: {
     color: V.colors.fg,

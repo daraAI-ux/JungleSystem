@@ -1289,8 +1289,8 @@ export function KolamSalesOpsDetail({
 
 const KOLAM_SALE_DELIVERY_ROBOT_ICON_XML = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path fill="#38BDF8" d="M11 2h2v3h3.5A3.5 3.5 0 0 1 20 8.5v7A3.5 3.5 0 0 1 16.5 19h-9A3.5 3.5 0 0 1 4 15.5v-7A3.5 3.5 0 0 1 7.5 5H11V2Zm-3.5 5A1.5 1.5 0 0 0 6 8.5v7A1.5 1.5 0 0 0 7.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 16.5 7h-9Zm1 4a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm6.5-1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM9 14h6v2H9v-2Z"/>
-  <path fill="#7DD3FC" d="M6.5 20h11a1 1 0 1 1 0 2h-11a1 1 0 1 1 0-2Z"/>
+  <path fill="#0369A1" d="M11 2h2v3h3.5A3.5 3.5 0 0 1 20 8.5v7A3.5 3.5 0 0 1 16.5 19h-9A3.5 3.5 0 0 1 4 15.5v-7A3.5 3.5 0 0 1 7.5 5H11V2Zm-3.5 5A1.5 1.5 0 0 0 6 8.5v7A1.5 1.5 0 0 0 7.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 16.5 7h-9Zm1 4a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm6.5-1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM9 14h6v2H9v-2Z"/>
+  <path fill="#075985" d="M6.5 20h11a1 1 0 1 1 0 2h-11a1 1 0 1 1 0-2Z"/>
 </svg>`;
 
 function KolamSaleDeliveryRobotIcon() {
