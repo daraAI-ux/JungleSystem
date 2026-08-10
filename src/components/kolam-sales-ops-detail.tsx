@@ -1316,7 +1316,7 @@ function KolamSalesEnclosureAllocationPanel({
   return (
     <>
       <KolamCardFrame
-        style={[styles.fulfillmentCard, styles.allocationCard]}
+        style={styles.fulfillmentCard}
         variant="compact"
       >
         <View style={styles.allocationHeader}>
@@ -2091,9 +2091,6 @@ const styles = StyleSheet.create({
     flexBasis: 360,
     gap: 8,
     minWidth: 280,
-  },
-  allocationCard: {
-    borderColor: '#f59e0b',
   },
   allocationHeader: {
     gap: 6,
