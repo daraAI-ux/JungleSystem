@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   KOLAM_PURCHASE_ORDER_ROOT,
   filterPoStatusOptions,
@@ -61,6 +61,7 @@ import {
 } from './kolam-list-table-composition';
 import {KolamNotesDisplay, KolamNotesField} from './kolam-notes-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
+import { KolamPdfFileIcon } from './kolam-pdf-file-icon';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSearchField } from './kolam-search-field';
@@ -96,6 +97,19 @@ const PO_VENDOR_INVOICE_UPLOAD_STATUSES: KolamPOStatus[] = [
   'on_check',
   'completed',
 ];
+
+export function getKolamPOVendorInvoiceFileName(uri: string) {
+  const cleanPath = uri.split(/[?#]/)[0]?.trim() ?? '';
+  const rawName = cleanPath.split(/[\\/]/).filter(Boolean).pop();
+  if (!rawName) {
+    return 'Invoice vendor.pdf';
+  }
+  try {
+    return decodeURIComponent(rawName);
+  } catch {
+    return rawName;
+  }
+}
 
 export function KolamPurchaseOrderSurface({
   onRouteChange,
@@ -1170,6 +1184,12 @@ function KolamPurchaseOrderDetail({
       value: status,
     })),
   ];
+  const vendorInvoiceUrl = po.vendorInvoice
+    ? getKolamFileUrl(po.vendorInvoice) ?? po.vendorInvoice
+    : '';
+  const vendorInvoiceFileName = po.vendorInvoice
+    ? getKolamPOVendorInvoiceFileName(po.vendorInvoice)
+    : '';
 
   const handleTransitionPress = (next: string) => {
     if (next === 'received') {
@@ -1314,6 +1334,26 @@ function KolamPurchaseOrderDetail({
                         </Text>
                       ) : null}
                     </View>
+                  ),
+                },
+                {
+                  id: 'vendorInvoice',
+                  label: 'Invoice vendor',
+                  value: vendorInvoiceUrl ? (
+                    <Pressable
+                      accessibilityLabel={`Buka ${vendorInvoiceFileName}`}
+                      onPress={() => {
+                        void Linking.openURL(vendorInvoiceUrl);
+                      }}
+                      style={styles.vendorInvoiceLink}
+                    >
+                      <KolamPdfFileIcon size={18} />
+                      <Text numberOfLines={1} style={styles.vendorInvoiceLinkText}>
+                        {vendorInvoiceFileName}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    '—'
                   ),
                 },
                 {
@@ -1669,15 +1709,6 @@ function KolamPOProofsCard({
           />
         </View>
       </View>
-
-      {po.vendorInvoice ? (
-        <KolamContentFrame
-          style={[styles.detailCard, styles.proofBorderCard]}
-          variant="settingsWebConfig"
-        >
-          <ProofImageRow label="Invoice vendor" uri={po.vendorInvoice} />
-        </KolamContentFrame>
-      ) : null}
 
       {po.isPartial ? (
         <View style={styles.partialNoteBox}>
@@ -3386,6 +3417,21 @@ const styles = StyleSheet.create({
     color: V.colors.primary,
     fontSize: 13,
     fontWeight: '800',
+  },
+  vendorInvoiceLink: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
+    maxWidth: '100%',
+    minWidth: 0,
+  },
+  vendorInvoiceLinkText: {
+    color: V.colors.primary,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '800',
+    minWidth: 0,
   },
   poItemRow: {
     alignItems: 'center',

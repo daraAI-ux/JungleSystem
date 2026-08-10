@@ -4,6 +4,7 @@ import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamDataTableHeader} from '../src/components/kolam-data-table-header';
 import {KolamDataTableRowFrame} from '../src/components/kolam-data-table-row-frame';
 import {KolamDescriptionList} from '../src/components/kolam-description-list';
+import {getKolamPOVendorInvoiceFileName} from '../src/components/kolam-purchase-order-surface';
 import {
   getKolamPOItemCode,
   getKolamPOItemDisplayTitle,
@@ -18,6 +19,14 @@ import {getKolamTableColumns} from '../src/domain/kolam-table';
 import {formatRupiah} from '../src/lib/money';
 
 describe('purchase order detail item table smoke', () => {
+  it('derives a readable vendor invoice file name from uploaded path', () => {
+    expect(
+      getKolamPOVendorInvoiceFileName(
+        '/uploads/po/PO-001/Invoice%20Vendor%20Agustus.pdf?token=abc',
+      ),
+    ).toBe('Invoice Vendor Agustus.pdf');
+  });
+
   it('renders detail description + items table for a completed PO', () => {
     const po = normalizeKolamPurchaseOrder({
       data: {
