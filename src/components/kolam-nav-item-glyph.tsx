@@ -14,7 +14,7 @@ export function KolamNavItemGlyph({
   return (
     <KolamInlineFrame variant="navItemGlyph">
       {module.moduleIcon ? (
-        <KolamModuleIcon kind={module.moduleIcon} />
+        <KolamModuleIcon kind={module.moduleIcon} size="nav" />
       ) : (
         <ModuleNavIcon kind={module.iconKind} active={active} />
       )}

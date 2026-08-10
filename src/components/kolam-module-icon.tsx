@@ -208,6 +208,7 @@ const WALLET_ICON_PATHS = getSvgPathData(KOLAM_WALLET_MODULE_ICON_SVG);
 const MODULE_ICON_SIZE = {
   header: 64,
   menu: 18,
+  nav: 20,
 } as const;
 
 export function KolamModuleIcon({
