@@ -19,6 +19,7 @@ import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-ic
 import {KOLAM_EMPLOYEE_BONUS_MODULE_ICON_SVG} from '../assets/icons/employee-bonus-module-icon-svg';
 import {KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG} from '../assets/icons/employee-settings-module-icon-svg';
 import {KOLAM_FINANCE_SUMMARY_MODULE_ICON_SVG} from '../assets/icons/finance-summary-module-icon-svg';
+import {KOLAM_KPI_TEAM_MODULE_ICON_SVG} from '../assets/icons/kpi-team-module-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
 import {KOLAM_PACKING_MODULE_ICON_SVG} from '../assets/icons/packing-module-icon-svg';
@@ -78,6 +79,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   fieldcustom: 'Icon Field Kustom',
   financeSummary: 'Icon Ringkasan Keuangan',
   iucn: 'Icon Status IUCN',
+  kpiTeam: 'Icon KPI Tim',
   location: 'Icon Lokasi',
   media: 'Icon Media',
   packing: 'Icon Bahan Kemasan',
@@ -352,6 +354,8 @@ export function KolamModuleIcon({
           source={IUCN_MODULE_ICON_SOURCE}
           style={styles.imageIcon}
         />
+      ) : kind === 'kpiTeam' ? (
+        <SvgXml height="100%" width="100%" xml={KOLAM_KPI_TEAM_MODULE_ICON_SVG} />
       ) : kind === 'location' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {LOCATION_ICON_PATHS.map(path => (

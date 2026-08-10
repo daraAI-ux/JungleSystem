@@ -34,6 +34,7 @@ export type KolamNavigationModuleIcon =
   | 'fieldcustom'
   | 'financeSummary'
   | 'iucn'
+  | 'kpiTeam'
   | 'location'
   | 'media'
   | 'packing'
@@ -691,6 +692,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'KPI Tim',
         route: '/list-of-users/kpi',
         description: 'Dashboard kinerja tim (admin)',
+        moduleIcon: 'kpiTeam',
         requiredAccess: ['kolam'],
       },
     ],
@@ -1098,6 +1100,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       }),
       sidebarItem('/list-of-users/kpi', {
         label: 'KPI Tim',
+        moduleIcon: 'kpiTeam',
       }),
     ],
   },
