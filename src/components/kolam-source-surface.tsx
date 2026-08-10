@@ -526,7 +526,7 @@ function KolamSourceDetail({
         }
         bodyTitle={source.description ? 'Deskripsi' : undefined}
         description="Identitas, harga, dompet, komisi, dan markup."
-        fieldColumns={2}
+        fieldColumns={3}
         fields={[
           {
             id: 'status',
@@ -1092,7 +1092,7 @@ const styles = StyleSheet.create({
   detailContent: {
     gap: 16,
     paddingBottom: 32,
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
   },
   detailHero: {
     alignItems: 'center',
