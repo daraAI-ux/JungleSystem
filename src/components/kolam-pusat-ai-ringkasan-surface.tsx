@@ -840,8 +840,8 @@ const styles = StyleSheet.create({
   },
   logSummaryCard: {
     alignItems: 'center',
-    backgroundColor: LOG_DARA_VIOLET_SOFT,
-    borderColor: LOG_DARA_VIOLET_BORDER,
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
     borderRadius: V.radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
