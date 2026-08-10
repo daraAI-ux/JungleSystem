@@ -1154,6 +1154,22 @@ function KolamPurchaseOrderDetail({
   const canUploadVendorInvoice =
     isKolamPOStatus(po.status) &&
     PO_VENDOR_INVOICE_UPLOAD_STATUSES.includes(po.status);
+  const currentStatusValue: KolamPOStatus = isKolamPOStatus(po.status)
+    ? po.status
+    : 'draft';
+  const statusTransitionOptions: Array<{
+    label: string;
+    value: KolamPOStatus;
+  }> = [
+    {
+      label: getKolamPOStatusLabel(po.status),
+      value: currentStatusValue,
+    },
+    ...allowedNext.filter(isKolamPOStatus).map(status => ({
+      label: getKolamPOStatusLabel(status),
+      value: status,
+    })),
+  ];
 
   const handleTransitionPress = (next: string) => {
     if (next === 'received') {
@@ -1185,6 +1201,21 @@ function KolamPurchaseOrderDetail({
             <Text numberOfLines={1} style={styles.detailToolbarContext}>
               {po.poCode || 'PO'}
             </Text>
+            <KolamDropdownSelect<KolamPOStatus>
+              accessibilityLabel="Status purchase order"
+              label="Status"
+              menuStyle={styles.statusDropdownMenu}
+              onChange={status => {
+                if (controller.mutating || status === po.status) {
+                  return;
+                }
+                handleTransitionPress(status);
+              }}
+              options={statusTransitionOptions}
+              style={styles.toolbarStatusSelect}
+              triggerStyle={styles.toolbarStatusTrigger}
+              value={currentStatusValue}
+            />
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
@@ -1241,15 +1272,6 @@ function KolamPurchaseOrderDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            {allowedNext.map(next => (
-              <KolamButton
-                intent="primary"
-                key={next}
-                label={getKolamPOStatusLabel(next)}
-                onPress={() => handleTransitionPress(next)}
-                style={styles.toolbarButton}
-              />
-            ))}
           </View>
         </View>
       </View>
@@ -2711,6 +2733,16 @@ const styles = StyleSheet.create({
   },
   poToolbarActionButtonText: {
     color: V.colors.primaryFg,
+  },
+  toolbarStatusSelect: {
+    flexShrink: 0,
+    minWidth: 150,
+  },
+  toolbarStatusTrigger: {
+    minHeight: 34,
+  },
+  statusDropdownMenu: {
+    width: 190,
   },
   filterRowInline: {
     alignItems: 'center',
