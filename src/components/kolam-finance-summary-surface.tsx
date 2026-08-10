@@ -42,12 +42,13 @@ import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 const TX_COLUMNS = [
-  { id: 'date', label: 'Tanggal', flex: 1.1, align: 'left' },
-  { id: 'wallet', label: 'Dompet', flex: 1, align: 'left' },
-  { id: 'type', label: 'Tipe', flex: 0.7, align: 'left' },
-  { id: 'amount', label: 'Jumlah', flex: 1, align: 'left' },
-  { id: 'status', label: 'Status', flex: 1, align: 'left' },
-  { id: 'note', label: 'Catatan', flex: 1.2, align: 'left' },
+  { id: 'date', label: 'Tanggal', flex: 1, align: 'left' },
+  { id: 'wallet', label: 'Dompet', flex: 0.72, align: 'left' },
+  { id: 'type', label: 'Tipe', flex: 0.48, align: 'left' },
+  { id: 'amount', label: 'Jumlah', flex: 0.95, align: 'left' },
+  { id: 'status', label: 'Status', flex: 0.8, align: 'left' },
+  { id: 'note', label: 'Catatan', flex: 0.95, align: 'left' },
+  { id: 'actions', label: '', flex: 0.85, align: 'right' },
 ] as const;
 
 type FinanceTxColumnId = (typeof TX_COLUMNS)[number]['id'];
@@ -911,8 +912,8 @@ function FinanceTransactionList({
 }) {
   const safePage = Math.max(1, controller.filters.page);
   const transactionColumns = React.useMemo(
-    () => createFinanceTransactionColumns(),
-    [],
+    () => createFinanceTransactionColumns(controller),
+    [controller],
   );
 
   return (
@@ -928,9 +929,6 @@ function FinanceTransactionList({
           pageSize: controller.filters.limit,
           total: controller.filteredTransactions.length,
         }}
-        renderActions={item => (
-          <FinanceTransactionActions controller={controller} item={item} />
-        )}
         rows={controller.paginatedTransactions}
         style={styles.tableFrame}
       />
@@ -938,18 +936,21 @@ function FinanceTransactionList({
   );
 }
 
-function createFinanceTransactionColumns(): Array<
+function createFinanceTransactionColumns(
+  controller: KolamFinanceSummaryController,
+): Array<
   KolamListTableColumn<KolamFinanceTransaction>
 > {
   return TX_COLUMNS.map(column => ({
     ...column,
-    render: item => renderFinanceTransactionCell(column.id, item),
+    render: item => renderFinanceTransactionCell(column.id, item, controller),
   }));
 }
 
 function renderFinanceTransactionCell(
   columnId: FinanceTxColumnId,
   item: KolamFinanceTransaction,
+  controller: KolamFinanceSummaryController,
 ) {
   switch (columnId) {
     case 'date':
@@ -966,13 +967,15 @@ function renderFinanceTransactionCell(
       );
     case 'type':
       return (
-        <Text style={styles.metaText}>
+        <Text numberOfLines={1} style={styles.metaText}>
           {formatKolamFinanceTxTypeLabel(item.type)}
         </Text>
       );
     case 'amount':
       return (
-        <Text style={styles.primaryText}>{formatRupiah(item.amount)}</Text>
+        <Text numberOfLines={1} style={styles.primaryText}>
+          {formatRupiah(item.amount)}
+        </Text>
       );
     case 'status':
       return (
@@ -987,6 +990,8 @@ function renderFinanceTransactionCell(
           {item.note || item.source || '-'}
         </Text>
       );
+    case 'actions':
+      return <FinanceTransactionActions controller={controller} item={item} />;
   }
 }
 
@@ -1544,6 +1549,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   confirmButton: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
+    minWidth: 96,
   },
 });
