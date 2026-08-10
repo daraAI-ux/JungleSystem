@@ -1320,18 +1320,18 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   moduleCardWithBackground: {
-    flexBasis: 430,
-    minHeight: 176,
     overflow: 'hidden',
   },
   moduleCardBackground: {
     ...StyleSheet.absoluteFillObject,
+    height: '100%',
+    width: '100%',
   },
   moduleCardContent: {
     gap: 6,
   },
   moduleCardContentWithBackground: {
-    maxWidth: 232,
+    maxWidth: 220,
   },
   moduleTitle: {
     color: V.colors.mutedFg,
