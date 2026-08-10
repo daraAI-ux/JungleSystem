@@ -680,9 +680,11 @@ function KolamSalesOpsCreateForm({
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {title}
-            </Text>
+            {mode === 'create' ? null : (
+              <Text numberOfLines={1} style={styles.detailToolbarContext}>
+                {title}
+              </Text>
+            )}
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamCancelButton
