@@ -281,15 +281,6 @@ function KolamPusatAiOwnerCopilotBody({
             </Text>
           </View>
           <View style={styles.copilotActions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={loading}
-              intent="outline"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             {dash?.teamChat.webHref ? (
               <KolamButton
                 intent="primary"
