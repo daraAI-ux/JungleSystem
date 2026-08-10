@@ -619,39 +619,78 @@ function KolamProductionForm({
           </View>
         ) : null}
 
-        {!isEdit && !form.serialEnabled ? (
-          <View style={styles.formSection}>
-            <KolamDropdownSelect
-              label="Tipe target"
-              onChange={value =>
-                controller.onChangeForm({
-                  targetType: value as 'product' | 'species',
-                  productId: '',
-                  speciesId: '',
-                  variantId: '',
-                })
-              }
-              options={[
-                { value: 'product', label: 'Produk' },
-                { value: 'species', label: 'Spesies' },
-              ]}
-              showLabelInTrigger={false}
-              value={form.targetType}
-            />
+        {!isEdit ? (
+          <View style={[styles.formSection, styles.productionTargetRow]}>
+            <View style={styles.productionTargetCell}>
+              <KolamDropdownSelect
+                label="Tipe target"
+                onChange={value =>
+                  controller.onChangeForm({
+                    targetType: value as 'product' | 'species',
+                    productId: '',
+                    speciesId: '',
+                    variantId: '',
+                  })
+                }
+                options={
+                  form.serialEnabled
+                    ? [{ value: 'product', label: 'Produk' }]
+                    : [
+                        { value: 'product', label: 'Produk' },
+                        { value: 'species', label: 'Spesies' },
+                      ]
+                }
+                showLabelInTrigger={false}
+                value={form.serialEnabled ? 'product' : form.targetType}
+              />
+            </View>
+            <View style={styles.productionTargetCell}>
+              {form.targetType === 'product' || form.serialEnabled ? (
+                <KolamDropdownSelect
+                  label={form.serialEnabled ? 'Freyer' : 'Produk'}
+                  onChange={value => controller.onChangeForm({ productId: value, variantId: '' })}
+                  options={selectionSource.map(item => ({
+                    value: item.id,
+                    label: `${item.name} (${item.sku || '—'})`,
+                  }))}
+                  value={form.productId}
+                />
+              ) : (
+                <KolamDropdownSelect
+                  label="Spesies"
+                  onChange={value => controller.onChangeForm({ speciesId: value })}
+                  options={controller.speciesList.map(item => ({
+                    value: item.id,
+                    label: item.scientificName || item.displayName || item.id,
+                  }))}
+                  value={form.speciesId}
+                />
+              )}
+            </View>
+            <View style={styles.productionTargetCell}>
+              <KolamFormTextField
+                keyboardType="numeric"
+                onChangeText={value => controller.onChangeForm({ quantity: value })}
+                placeholder="Kuantitas"
+                value={form.quantity}
+              />
+            </View>
           </View>
         ) : null}
 
         {form.targetType === 'product' || form.serialEnabled ? (
           <View style={styles.formSection}>
-            <KolamDropdownSelect
-              label={form.serialEnabled ? 'Freyer' : 'Produk'}
-              onChange={value => controller.onChangeForm({ productId: value, variantId: '' })}
-              options={selectionSource.map(item => ({
-                value: item.id,
-                label: `${item.name} (${item.sku || '—'})`,
-              }))}
-              value={form.productId}
-            />
+            {isEdit ? (
+              <KolamDropdownSelect
+                label={form.serialEnabled ? 'Freyer' : 'Produk'}
+                onChange={value => controller.onChangeForm({ productId: value, variantId: '' })}
+                options={selectionSource.map(item => ({
+                  value: item.id,
+                  label: `${item.name} (${item.sku || '—'})`,
+                }))}
+                value={form.productId}
+              />
+            ) : null}
             {selectedProduct?.variants.length ? (
               <KolamDropdownSelect
                 label="Varian"
@@ -675,15 +714,17 @@ function KolamProductionForm({
           </View>
         ) : (
           <View style={styles.formSection}>
-            <KolamDropdownSelect
-              label="Spesies"
-              onChange={value => controller.onChangeForm({ speciesId: value })}
-              options={controller.speciesList.map(item => ({
-                value: item.id,
-                label: item.scientificName || item.displayName || item.id,
-              }))}
-              value={form.speciesId}
-            />
+            {isEdit ? (
+              <KolamDropdownSelect
+                label="Spesies"
+                onChange={value => controller.onChangeForm({ speciesId: value })}
+                options={controller.speciesList.map(item => ({
+                  value: item.id,
+                  label: item.scientificName || item.displayName || item.id,
+                }))}
+                value={form.speciesId}
+              />
+            ) : null}
             <Text style={styles.helperText}>
               BE dapat menolak produksi spesies tanpa komponen produk valid.
             </Text>
@@ -735,23 +776,25 @@ function KolamProductionForm({
           </View>
         )}
 
-        <KolamFormTextField
-          editable={
-            !(
+        {isEdit ? (
+          <KolamFormTextField
+            editable={
+              !(
+                isEdit &&
+                controller.selectedProduction?.status === 'waiting_for_po'
+              )
+            }
+            keyboardType="numeric"
+            onChangeText={value => controller.onChangeForm({ quantity: value })}
+            placeholder={
               isEdit &&
               controller.selectedProduction?.status === 'waiting_for_po'
-            )
-          }
-          keyboardType="numeric"
-          onChangeText={value => controller.onChangeForm({ quantity: value })}
-          placeholder={
-            isEdit &&
-            controller.selectedProduction?.status === 'waiting_for_po'
-              ? 'Kuantitas terkunci (menunggu PO)'
-              : 'Kuantitas'
-          }
-          value={form.quantity}
-        />
+                ? 'Kuantitas terkunci (menunggu PO)'
+                : 'Kuantitas'
+            }
+            value={form.quantity}
+          />
+        ) : null}
         <KolamFormTextField
           multiline
           numberOfLines={3}
@@ -1903,6 +1946,14 @@ const styles = StyleSheet.create({
   sectionTitle: { color: V.colors.fg, fontFamily: V.fontFamily, fontSize: 16, fontWeight: '800' },
   sectionSubtitle: { color: V.colors.fg, fontFamily: V.fontFamily, fontSize: 13, fontWeight: '600' },
   formSection: { gap: 8 },
+  productionTargetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  productionTargetCell: {
+    flex: 1,
+    minWidth: 220,
+  },
   serialModeCard: {
     alignItems: 'center',
     backgroundColor: V.colors.bg,
