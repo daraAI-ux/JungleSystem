@@ -750,27 +750,33 @@ function KolamSourceForm({
         description="Nama, tipe saluran, status, dan flag marketplace."
         title="Informasi Dasar"
       >
-        <FieldShell label="Nama" required>
-          <KolamFormTextField
-            onChangeText={value => controller.onChangeForm({ name: value })}
-            placeholder="Contoh: Shopee, Tokopedia, POS"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.name}
-          />
-        </FieldShell>
-        <KolamDropdownSelect
-          label="Tipe"
-          onChange={value =>
-            controller.onChangeForm({
-              type: value as 'online' | 'offline',
-            })
-          }
-          options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
-            label: option.label,
-            value: option.id,
-          }))}
-          value={form.type}
-        />
+        <View style={styles.twoColumnGrid}>
+          <View style={styles.twoColumnItem}>
+            <FieldShell label="Nama" required>
+              <KolamFormTextField
+                onChangeText={value => controller.onChangeForm({ name: value })}
+                placeholder="Contoh: Shopee, Tokopedia, POS"
+                style={settingsWebFormStyles.settingsWebFormFieldValue}
+                value={form.name}
+              />
+            </FieldShell>
+          </View>
+          <View style={styles.twoColumnItem}>
+            <KolamDropdownSelect
+              label="Tipe"
+              onChange={value =>
+                controller.onChangeForm({
+                  type: value as 'online' | 'offline',
+                })
+              }
+              options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
+                label: option.label,
+                value: option.id,
+              }))}
+              value={form.type}
+            />
+          </View>
+        </View>
         <FieldShell label="Deskripsi">
           <KolamFormTextField
             multiline
@@ -1145,6 +1151,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  twoColumnGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  twoColumnItem: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 320,
   },
   switchRow: {
     alignItems: 'center',
