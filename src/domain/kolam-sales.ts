@@ -236,6 +236,7 @@ export type KolamSaleMarketplaceFulfillment = {
 /** Embedded wallet txs on sale detail (FE `walletTransactions`). */
 export type KolamSaleWalletTransactionRef = {
   id: string;
+  walletId: string;
   type: string;
   source: string;
   amount: number;
@@ -3366,8 +3367,14 @@ function normalizeSaleWalletTransactions(
         return null;
       }
       const wallet = asRecord(record.wallet);
+      const walletId =
+        getMongoId(wallet, '_id') ||
+        getMongoId(wallet, 'id') ||
+        getMongoId(record, 'wallet') ||
+        getString(record, 'walletId');
       return {
         id,
+        walletId,
         type: getString(record, 'type'),
         source: getString(record, 'source'),
         amount: getNumber(record, 'amount') ?? 0,

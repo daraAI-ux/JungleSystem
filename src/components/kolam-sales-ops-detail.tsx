@@ -1110,8 +1110,18 @@ export function KolamSalesOpsDetail({
                   <Pressable
                     accessibilityRole="button"
                     key={tx.id}
-                    onPress={() => onRouteChange?.(`/wallet/${tx.id}`)}
-                    style={styles.relatedTxCard}
+                    disabled={!tx.walletId}
+                    onPress={() =>
+                      tx.walletId
+                        ? onRouteChange?.(
+                            `/wallet/${encodeURIComponent(tx.walletId)}`,
+                          )
+                        : undefined
+                    }
+                    style={[
+                      styles.relatedTxCard,
+                      !tx.walletId && styles.relatedTxCardDisabled,
+                    ]}
                   >
                     <View style={styles.relatedTxHeader}>
                       <Text style={styles.primaryText}>
@@ -2381,6 +2391,9 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  relatedTxCardDisabled: {
+    opacity: 0.7,
   },
   relatedTxHeader: {
     alignItems: 'center',
