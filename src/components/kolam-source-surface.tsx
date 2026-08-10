@@ -751,7 +751,7 @@ function KolamSourceForm({
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
       <SourceFormSection
-        description="Nama, tipe saluran, status, dan flag marketplace."
+        description="Nama, tipe saluran, status, dan marketplace eksternal."
         title="Informasi Dasar"
       >
         <View style={styles.twoColumnGrid}>
@@ -816,9 +816,10 @@ function KolamSourceForm({
         </FieldShell>
         <View style={styles.switchRow}>
           <View style={styles.switchCopy}>
-            <Text style={styles.primaryText}>Marketplace / olshop</Text>
+            <Text style={styles.primaryText}>Marketplace Eksternal</Text>
             <Text style={styles.metaText}>
-              Wajib pilih dompet escrow. Komisi dipaksa bagi rata semua karyawan.
+              Aktifkan hanya untuk Tokopedia, Shopee, atau TikTok Shop.
+              Website dan Store biarkan mati.
             </Text>
           </View>
           <KolamSwitch
@@ -828,24 +829,22 @@ function KolamSourceForm({
             }
           />
         </View>
-        {form.isMarketplace || form.walletId ? (
-          <KolamDropdownSelect
-            label={form.isMarketplace ? 'Dompet (wajib)' : 'Dompet'}
-            onChange={value =>
-              controller.onChangeForm({
-                walletId: value === '' ? null : value,
-              })
-            }
-            options={[
-              { label: '— Tidak ada —', value: '' },
-              ...controller.wallets.map(wallet => ({
-                label: `${wallet.name} (${wallet.type})`,
-                value: wallet.id,
-              })),
-            ]}
-            value={form.walletId ?? ''}
-          />
-        ) : null}
+        <KolamDropdownSelect
+          label="Dompet Tujuan"
+          onChange={value =>
+            controller.onChangeForm({
+              walletId: value === '' ? null : value,
+            })
+          }
+          options={[
+            { label: '— Tidak ada —', value: '' },
+            ...controller.wallets.map(wallet => ({
+              label: `${wallet.name} (${wallet.type})`,
+              value: wallet.id,
+            })),
+          ]}
+          value={form.walletId ?? ''}
+        />
       </SourceFormSection>
 
       <SourceFormSection
