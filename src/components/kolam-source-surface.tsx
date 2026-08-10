@@ -620,36 +620,37 @@ function KolamSourceDetail({
           )
         }
         leadingStyle={styles.sourceSummaryLeadingSlot}
+        sections={[
+          {
+            id: 'cost-fields',
+            title: 'Field Biaya',
+            content: source.costFields.length ? (
+              <KolamDescriptionList
+                accessibilityLabel="Field biaya sumber"
+                rows={[
+                  ...source.costFields.map((field, index) =>
+                    descRow(
+                      `fee-${index}`,
+                      field.name,
+                      field.type === 'percentage'
+                        ? `${field.value}%`
+                        : formatRupiah(field.value),
+                    ),
+                  ),
+                  descRow(
+                    'sample',
+                    'Estimasi potongan (Rp 100.000)',
+                    formatRupiah(sampleFee),
+                  ),
+                ]}
+              />
+            ) : (
+              <Text style={styles.metaText}>Belum ada field biaya.</Text>
+            ),
+          },
+        ]}
         title={source.name}
       />
-      <SourceFormSection
-        description="Estimasi potongan legacy. Contoh pada omzet Rp 100.000."
-        title="Field Biaya"
-      >
-        {source.costFields.length ? (
-          <KolamDescriptionList
-            accessibilityLabel="Field biaya sumber"
-            rows={[
-              ...source.costFields.map((field, index) =>
-                descRow(
-                  `fee-${index}`,
-                  field.name,
-                  field.type === 'percentage'
-                    ? `${field.value}%`
-                    : formatRupiah(field.value),
-                ),
-              ),
-              descRow(
-                'sample',
-                'Estimasi potongan (Rp 100.000)',
-                formatRupiah(sampleFee),
-              ),
-            ]}
-          />
-        ) : (
-          <Text style={styles.metaText}>Belum ada field biaya.</Text>
-        )}
-      </SourceFormSection>
 
       <View style={styles.detailActions}>
         <KolamDeleteButton
