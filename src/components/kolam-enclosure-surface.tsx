@@ -544,22 +544,37 @@ function KolamEnclosureEditSurface({
               value={form.enclosure_code}
             />
           </LabeledEditField>
-          <LabeledEditField label="Merek">
-            <KolamDropdownSelect
-              label="Merek"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({
-                  ...current,
-                  brandId: value === ENCLOSURE_EDIT_NONE ? '' : value,
-                }))
-              }
-              options={brandOptions}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.brandId || ENCLOSURE_EDIT_NONE}
-            />
-          </LabeledEditField>
+          <View style={styles.editFormRow}>
+            <LabeledEditField label="Merek" style={styles.editFormCol}>
+              <KolamDropdownSelect
+                label="Merek"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    brandId: value === ENCLOSURE_EDIT_NONE ? '' : value,
+                  }))
+                }
+                options={brandOptions}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.brandId || ENCLOSURE_EDIT_NONE}
+              />
+            </LabeledEditField>
+            <LabeledEditField
+              label="Tanggal ditambahkan"
+              style={styles.editFormCol}
+            >
+              <KolamDateField
+                label="Tanggal ditambahkan"
+                onChange={value =>
+                  setForm(current => ({...current, acquired_date: value}))
+                }
+                style={styles.editFormInput}
+                value={form.acquired_date}
+              />
+            </LabeledEditField>
+          </View>
           {brandBannerUri ? (
             <View style={styles.editBrandBanner}>
               <KolamRemoteImage
@@ -571,16 +586,6 @@ function KolamEnclosureEditSurface({
               />
             </View>
           ) : null}
-          <LabeledEditField label="Tanggal ditambahkan">
-            <KolamDateField
-              label="Tanggal ditambahkan"
-              onChange={value =>
-                setForm(current => ({...current, acquired_date: value}))
-              }
-              style={styles.editFormInput}
-              value={form.acquired_date}
-            />
-          </LabeledEditField>
           <View style={styles.editFormRow}>
             <LabeledEditField
               label="Visibilitas klien"
@@ -669,23 +674,38 @@ function KolamEnclosureEditSurface({
       <DetailSection title="Operasional">
         <Text style={styles.sectionMeta}>Tipe, lokasi, PIC, dan status.</Text>
         <View style={styles.editFormGrid}>
-          <LabeledEditField label="Tipe">
-            <KolamDropdownSelect
-              label="Tipe"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({
-                  ...current,
-                  enclosure_type: value as KolamEnclosureType,
-                  type_aquarium: '',
-                }))
-              }
-              options={typeOptions}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.enclosure_type || typeOptions[0]?.value || 'Terrarium'}
-            />
-          </LabeledEditField>
+          <View style={styles.editFormRow}>
+            <LabeledEditField label="Tipe" style={styles.editFormCol}>
+              <KolamDropdownSelect
+                label="Tipe"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    enclosure_type: value as KolamEnclosureType,
+                    type_aquarium: '',
+                  }))
+                }
+                options={typeOptions}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.enclosure_type || typeOptions[0]?.value || 'Terrarium'}
+              />
+            </LabeledEditField>
+            <LabeledEditField label="Status" style={styles.editFormCol}>
+              <KolamDropdownSelect
+                label="Status"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({...current, status: value}))
+                }
+                options={statusOptions}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.status || 'active'}
+              />
+            </LabeledEditField>
+          </View>
           {form.enclosure_type === 'Aquarium' ? (
             <LabeledEditField label="Tipe air">
               <KolamDropdownSelect
@@ -704,51 +724,40 @@ function KolamEnclosureEditSurface({
               />
             </LabeledEditField>
           ) : null}
-          <LabeledEditField label="Status">
-            <KolamDropdownSelect
-              label="Status"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({...current, status: value}))
-              }
-              options={statusOptions}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.status || 'active'}
-            />
-          </LabeledEditField>
-          <LabeledEditField label="Lokasi">
-            <KolamDropdownSelect
-              label="Lokasi"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({
-                  ...current,
-                  locationId: value === ENCLOSURE_EDIT_NONE ? '' : value,
-                }))
-              }
-              options={locationOptions}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.locationId || ENCLOSURE_EDIT_NONE}
-            />
-          </LabeledEditField>
-          <LabeledEditField label="PIC">
-            <KolamDropdownSelect
-              label="PIC"
-              menuPlacement="inline"
-              onChange={value =>
-                setForm(current => ({
-                  ...current,
-                  assignedTo: value === ENCLOSURE_EDIT_NONE ? '' : value,
-                }))
-              }
-              options={picOptions}
-              showLabelInTrigger={false}
-              style={styles.editFormInput}
-              value={form.assignedTo || ENCLOSURE_EDIT_NONE}
-            />
-          </LabeledEditField>
+          <View style={styles.editFormRow}>
+            <LabeledEditField label="Lokasi" style={styles.editFormCol}>
+              <KolamDropdownSelect
+                label="Lokasi"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    locationId: value === ENCLOSURE_EDIT_NONE ? '' : value,
+                  }))
+                }
+                options={locationOptions}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.locationId || ENCLOSURE_EDIT_NONE}
+              />
+            </LabeledEditField>
+            <LabeledEditField label="PIC" style={styles.editFormCol}>
+              <KolamDropdownSelect
+                label="PIC"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    assignedTo: value === ENCLOSURE_EDIT_NONE ? '' : value,
+                  }))
+                }
+                options={picOptions}
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={form.assignedTo || ENCLOSURE_EDIT_NONE}
+              />
+            </LabeledEditField>
+          </View>
           <LabeledEditField label="Catatan">
             <KolamFormTextField
               multiline
