@@ -1245,7 +1245,7 @@ function buildEnclosureListColumns({
     },
     {
       align: 'center',
-      flex: 0.58,
+      flex: 0.82,
       id: 'code',
       label: 'Kode',
       render: enclosure => (
@@ -1303,7 +1303,7 @@ function buildEnclosureListColumns({
     },
     {
       align: 'center',
-      flex: 0.78,
+      flex: 0.64,
       id: 'species',
       label: 'Species',
       render: enclosure => (
@@ -1314,7 +1314,7 @@ function buildEnclosureListColumns({
     },
     {
       align: 'center',
-      flex: 0.58,
+      flex: 0.44,
       id: 'pic',
       label: 'PIC',
       render: enclosure => (
@@ -1325,7 +1325,7 @@ function buildEnclosureListColumns({
     },
     {
       align: 'center',
-      flex: 0.82,
+      flex: 0.68,
       id: 'status',
       label: 'Status',
       render: enclosure => (
