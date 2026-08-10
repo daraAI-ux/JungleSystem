@@ -83,6 +83,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -1373,12 +1374,10 @@ function KolamComplaintWorkflowPanel({
           showLabelInTrigger={false}
           value={staffId}
         />
-        <KolamFormTextField
-          multiline
+        <KolamNotesField
           numberOfLines={2}
           onChangeText={setAssignNote}
           placeholder="Catatan penugasan (opsional)"
-          style={styles.workflowNote}
           value={assignNote}
         />
         <KolamButton
@@ -1414,12 +1413,10 @@ function KolamComplaintWorkflowPanel({
           showLabelInTrigger={false}
           value={nextStatus}
         />
-        <KolamFormTextField
-          multiline
+        <KolamNotesField
           numberOfLines={3}
           onChangeText={setStatusNote}
           placeholder="Catatan wajib…"
-          style={styles.workflowNote}
           value={statusNote}
         />
         <KolamButton
@@ -1467,12 +1464,10 @@ function KolamComplaintWorkflowPanel({
               value={Number(refundAmount) || 0}
             />
           ) : null}
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={3}
             onChangeText={setDecisionNote}
             placeholder="Catatan wajib…"
-            style={styles.workflowNote}
             value={decisionNote}
           />
           <KolamButton
@@ -1535,21 +1530,17 @@ function KolamComplaintWorkflowPanel({
             value={courierName}
           />
           {returnNextStatus === 'verified' ? (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setReturnVerifiedNote}
               placeholder="Catatan verifikasi wajib…"
-              style={styles.workflowNote}
               value={returnVerifiedNote}
             />
           ) : (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setReturnNote}
               placeholder="Catatan…"
-              style={styles.workflowNote}
               value={returnNote}
             />
           )}
@@ -1655,21 +1646,17 @@ function KolamComplaintWorkflowPanel({
             </>
           ) : null}
           {replacementNextStatus === 'verified' ? (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setReplacementVerifiedNote}
               placeholder="Catatan verifikasi wajib…"
-              style={styles.workflowNote}
               value={replacementVerifiedNote}
             />
           ) : (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setReplacementNote}
               placeholder="Catatan…"
-              style={styles.workflowNote}
               value={replacementNote}
             />
           )}
@@ -1764,21 +1751,17 @@ function KolamComplaintWorkflowPanel({
             />
           ) : null}
           {replacementReturnNextStatus === 'verified' ? (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setReplacementReturnVerifiedNote}
               placeholder="Catatan verifikasi wajib…"
-              style={styles.workflowNote}
               value={replacementReturnVerifiedNote}
             />
           ) : (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setReplacementReturnNote}
               placeholder="Catatan…"
-              style={styles.workflowNote}
               value={replacementReturnNote}
             />
           )}
@@ -1832,12 +1815,10 @@ function KolamComplaintWorkflowPanel({
       {canCloseKolamComplaint(complaint) ? (
         <View style={styles.workflowBlock}>
           <Text style={styles.workflowBlockTitle}>Tutup tiket</Text>
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={3}
             onChangeText={setCloseNote}
             placeholder="Catatan penutupan wajib…"
-            style={styles.workflowNote}
             value={closeNote}
           />
           <KolamDropdownSelect
@@ -2045,31 +2026,25 @@ function KolamComplaintVendorClaimCard({
           {nextStatus === 'vendor_approved' ||
           nextStatus === 'vendor_rejected' ||
           vendorClaim?.vendorResponseNote ? (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={2}
               onChangeText={setVendorResponseNote}
               placeholder="Catatan respons vendor"
-              style={styles.workflowNote}
               value={vendorResponseNote}
             />
           ) : null}
           {nextStatus === 'resolved' || vendorClaim?.resolutionNote ? (
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={2}
               onChangeText={setResolutionNote}
               placeholder="Catatan penyelesaian"
-              style={styles.workflowNote}
               value={resolutionNote}
             />
           ) : null}
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={3}
             onChangeText={setNote}
             placeholder="Catatan internal (min. 10 karakter)"
-            style={styles.workflowNote}
             value={note}
           />
           <KolamButton
@@ -2358,19 +2333,16 @@ function KolamComplaintReworkWorkflow({
         value={nextStatus}
       />
       {nextStatus === 'in_progress' ? (
-        <KolamFormTextField
-          multiline
+        <KolamNotesField
           numberOfLines={3}
           onChangeText={setNote}
           placeholder="Catatan mulai rework…"
-          style={styles.workflowNote}
           value={note}
         />
       ) : null}
       {nextStatus === 'completed' || nextStatus === 'failed' ? (
         <>
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={3}
             onChangeText={setResultNote}
             placeholder={
@@ -2378,7 +2350,6 @@ function KolamComplaintReworkWorkflow({
                 ? 'Catatan hasil rework…'
                 : 'Alasan gagal…'
             }
-            style={styles.workflowNote}
             value={resultNote}
           />
           <View style={styles.photoActions}>
@@ -2494,12 +2465,10 @@ function KolamComplaintReworkCustomerResponseWorkflow({
           style={styles.banner}
         />
       ) : null}
-      <KolamFormTextField
-        multiline
+      <KolamNotesField
         numberOfLines={2}
         onChangeText={setNote}
         placeholder="Catatan (opsional)"
-        style={styles.workflowNote}
         value={note}
       />
       <KolamButton
@@ -2628,12 +2597,10 @@ function KolamComplaintRefundWorkflow({
             showLabelInTrigger={false}
             value={walletId}
           />
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={2}
             onChangeText={setTransactionNote}
             placeholder="Catatan transaksi (opsional)"
-            style={styles.workflowNote}
             value={transactionNote}
           />
           <KolamButton
@@ -2692,12 +2659,10 @@ function KolamComplaintRefundWorkflow({
             showLabelInTrigger={false}
             value={transferMethod}
           />
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={2}
             onChangeText={setPaymentNote}
             placeholder="Catatan pembayaran (opsional)"
-            style={styles.workflowNote}
             value={paymentNote}
           />
           <View style={styles.photoActions}>
@@ -2771,12 +2736,10 @@ function KolamComplaintRefundWorkflow({
             Periksa detail pembayaran di atas, lalu konfirmasi transaksi wallet.
             Saldo wallet akan dipotong.
           </Text>
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             numberOfLines={2}
             onChangeText={setConfirmNote}
             placeholder="Catatan konfirmasi (opsional)"
-            style={styles.workflowNote}
             value={confirmNote}
           />
           <KolamButton
@@ -3040,10 +3003,6 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     fontWeight: '700',
-  },
-  workflowNote: {
-    minHeight: 72,
-    width: '100%',
   },
   itemCard: {
     borderBottomColor: V.colors.border,
