@@ -764,7 +764,7 @@ function KolamSourceForm({
         </FieldShell>
         <View style={styles.twoColumnGrid}>
           <View style={styles.twoColumnItem}>
-            <View style={styles.switchRow}>
+            <View style={[styles.switchRow, styles.switchCard]}>
               <View style={styles.switchCopy}>
                 <Text style={styles.primaryText}>Aktif</Text>
                 <Text style={styles.metaText}>
@@ -780,7 +780,7 @@ function KolamSourceForm({
             </View>
           </View>
           <View style={styles.twoColumnItem}>
-            <View style={styles.switchRow}>
+            <View style={[styles.switchRow, styles.switchCard]}>
               <View style={styles.switchCopy}>
                 <Text style={styles.primaryText}>Marketplace Eksternal</Text>
                 <Text style={styles.metaText}>
@@ -1181,6 +1181,14 @@ const styles = StyleSheet.create({
   switchCopy: {
     flex: 1,
     gap: 2,
+  },
+  switchCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   formLogo: {
     borderColor: V.colors.border,
