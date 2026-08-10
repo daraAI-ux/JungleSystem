@@ -544,12 +544,6 @@ function KolamProductSerialOpname({
               onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
               style={styles.toolbarButton}
             />
-            <KolamStatusBadge intent="success" label={`Ditemukan: ${foundCount}`} />
-            <KolamStatusBadge intent="danger" label={`Hilang: ${missingCount}`} />
-            <KolamStatusBadge
-              intent="muted"
-              label={`Total pindai: ${controller.sessionItems.length}`}
-            />
             <KolamButton
               disabled={!controller.sessionItems.length}
               label="Reset sesi"
@@ -581,6 +575,14 @@ function KolamProductSerialOpname({
             label={controller.opnameSubmitting ? 'Memproses…' : 'Verifikasi'}
             onPress={() => void controller.onSubmitOpname()}
           />
+          <View style={styles.opnameStats}>
+            <KolamStatusBadge intent="success" label={`Ditemukan: ${foundCount}`} />
+            <KolamStatusBadge intent="danger" label={`Hilang: ${missingCount}`} />
+            <KolamStatusBadge
+              intent="muted"
+              label={`Total pindai: ${controller.sessionItems.length}`}
+            />
+          </View>
         </View>
       </KolamContentFrame>
 
@@ -824,6 +826,13 @@ const styles = StyleSheet.create({
   opnameInput: {
     flexGrow: 1,
     minWidth: 240,
+  },
+  opnameStats: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   opnameRow: {
     borderBottomColor: V.colors.border,
