@@ -44,6 +44,7 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
+import {KolamKandangEnclosureIcon} from './kolam-kandang-enclosure-icon';
 import { KolamCatalogTranslationsEditor } from './kolam-catalog-translations-editor';
 import { KolamCategoryLabel } from './kolam-category-label';
 import { KolamComponentOverridesEditor } from './kolam-component-overrides-editor';
@@ -83,6 +84,7 @@ import {
 import { KolamSpeciesDetailAssetsPanel } from './kolam-species-detail-assets-panel';
 import {
   KolamSpeciesDetailOverview,
+  type DetailTabId,
   type SpeciesDetailMediaItem,
   type SpeciesSidebarGroup,
 } from './kolam-species-detail-overview';
@@ -5857,6 +5859,8 @@ function KolamSpeciesDetail({
   onRouteChange?: (route: string) => void;
 }) {
   const [detailBarcodeOpen, setDetailBarcodeOpen] = React.useState(false);
+  const [detailActiveTab, setDetailActiveTab] =
+    React.useState<DetailTabId>('overview');
   const selectedItem = controller.selectedSpecies;
 
   if (!selectedItem) {
@@ -5917,6 +5921,12 @@ function KolamSpeciesDetail({
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
+            <KolamButton
+              icon={<KolamKandangEnclosureIcon />}
+              label="Alokasi kandang"
+              onPress={() => setDetailActiveTab('location')}
+              style={styles.toolbarButton}
+            />
             <KolamEditButton
               intent="primary"
               onPress={() => {
@@ -5934,6 +5944,7 @@ function KolamSpeciesDetail({
         </View>
       </View>
       <KolamSpeciesDetailOverview
+        activeTab={detailActiveTab}
         commonName={item.commonName}
         createdAt={item.createdAt ? formatShortDate(item.createdAt) : undefined}
         externalLinks={externalLinks}
@@ -5977,6 +5988,7 @@ function KolamSpeciesDetail({
             ? () => setDetailBarcodeOpen(true)
             : undefined
         }
+        onActiveTabChange={setDetailActiveTab}
         priceLabel={formatCurrency(item.priceToSell)}
         species={item}
         sections={[
@@ -7424,6 +7436,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
+  },
+  toolbarButton: {
+    flexShrink: 0,
+    minHeight: 34,
+    paddingHorizontal: 10,
   },
   detailHeaderActions: {
     alignItems: 'center',

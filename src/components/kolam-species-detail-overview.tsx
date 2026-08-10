@@ -103,7 +103,7 @@ export type SpeciesSidebarGroup = {
   label: string;
 };
 
-type DetailTabId =
+export type DetailTabId =
   | 'overview'
   | 'pricing'
   | 'specifications'
@@ -134,6 +134,8 @@ type SpeciesDetailOverviewProps = {
   stock: number;
   unitLabel?: string;
   voiceUri?: string | null;
+  activeTab?: DetailTabId;
+  onActiveTabChange?: (tab: DetailTabId) => void;
   status: Pick<KolamStatusBadgeProps, 'intent' | 'label'>;
   title: string;
   updatedAt?: string;
@@ -173,6 +175,8 @@ export function KolamSpeciesDetailOverview({
   stock,
   unitLabel,
   voiceUri,
+  activeTab: controlledActiveTab,
+  onActiveTabChange,
   status,
   title,
 }: SpeciesDetailOverviewProps) {
@@ -192,7 +196,16 @@ export function KolamSpeciesDetailOverview({
       ] satisfies DetailTabId[],
     [hasVariants],
   );
-  const [activeTab, setActiveTab] = React.useState<DetailTabId>('overview');
+  const [internalActiveTab, setInternalActiveTab] =
+    React.useState<DetailTabId>('overview');
+  const activeTab = controlledActiveTab ?? internalActiveTab;
+  const setActiveTab = React.useCallback(
+    (tab: DetailTabId) => {
+      setInternalActiveTab(tab);
+      onActiveTabChange?.(tab);
+    },
+    [onActiveTabChange],
+  );
   const safeActiveTab = tabs.includes(activeTab) ? activeTab : 'overview';
   const tabItems = tabs.map(tab => ({
     id: tab,
