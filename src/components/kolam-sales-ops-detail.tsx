@@ -650,10 +650,11 @@ export function KolamSalesOpsDetail({
                                 source={logo}
                                 style={styles.courierLogo}
                               />
-                            ) : null}
-                            <Text style={styles.shippingFieldValue}>
-                              {courier.name}
-                            </Text>
+                            ) : (
+                              <Text style={styles.shippingFieldValue}>
+                                {courier.name}
+                              </Text>
+                            )}
                           </View>
                         );
                       })}
