@@ -80,7 +80,7 @@ import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
-import { KolamDescriptionList } from './kolam-description-list';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -428,47 +428,40 @@ export function KolamSalesOpsDetail({
       <View style={styles.detailFrame}>
         <View style={styles.detailFrameRow}>
           <View style={styles.detailFrameMain}>
-            <Text style={styles.sectionTitle}>Informasi Transaksi</Text>
-            <KolamDescriptionList
-              accessibilityLabel="Informasi transaksi"
-              rows={[
+            <KolamDetailSummaryCard
+              title="Informasi Transaksi"
+              fields={[
                 {
                   id: 'buyer',
                   label:
                     sale.buyerInfo && !sale.customer
                       ? 'Pembeli eksternal'
                       : 'Pelanggan',
-                  value: sale.buyerLabel,
-                  meta: [buyerPhone, buyerEmail].filter(Boolean).join(' · '),
-                  tone: 'default',
+                  value: [sale.buyerLabel, buyerPhone, buyerEmail]
+                    .filter(Boolean)
+                    .join(' | '),
                 },
                 {
                   id: 'pic',
                   label: 'PIC',
                   value: sale.createdByName || '—',
-                  meta: '',
-                  tone: 'default',
                 },
                 {
                   id: 'payment-method',
                   label: 'Metode bayar',
-                  value: sale.paymentMethod?.name || '—',
-                  meta: sale.paymentMethod?.type || '',
-                  tone: 'default',
+                  value: [sale.paymentMethod?.name, sale.paymentMethod?.type]
+                    .filter(Boolean)
+                    .join(' | ') || '—',
                 },
                 {
                   id: 'created',
                   label: 'Dibuat',
                   value: formatShortDateTime(sale.createdAt) || '—',
-                  meta: '',
-                  tone: 'default',
                 },
                 {
                   id: 'transaction',
                   label: 'Tanggal transaksi',
                   value: formatShortDateTime(sale.transactionDate) || '—',
-                  meta: '',
-                  tone: 'default',
                 },
                 ...(sale.discountType
                   ? [
@@ -476,8 +469,6 @@ export function KolamSalesOpsDetail({
                         id: 'discount-type',
                         label: 'Tipe diskon',
                         value: sale.discountType,
-                        meta: '',
-                        tone: 'default' as const,
                       },
                     ]
                   : []),
@@ -487,8 +478,6 @@ export function KolamSalesOpsDetail({
                         id: 'notes',
                         label: 'Catatan',
                         value: sale.notes,
-                        meta: '',
-                        tone: 'default' as const,
                       },
                     ]
                   : []),
@@ -967,8 +956,11 @@ export function KolamSalesOpsDetail({
               disabled={controller.mutating}
               intent="primary"
               label="Unggah bukti"
-              onPress={() => {
-                void controller.onUploadPaymentProof();
+              onPress={async () => {
+                const uri = await controller.onPickImage();
+                if (uri) {
+                  void controller.onUploadPaymentProof(uri);
+                }
               }}
             />
           ) : null}
@@ -1000,8 +992,11 @@ export function KolamSalesOpsDetail({
                       <KolamButton
                         disabled={controller.mutating}
                         label="Ganti"
-                        onPress={() => {
-                          void controller.onReplacePaymentProof(proof.id);
+                        onPress={async () => {
+                          const uri = await controller.onPickImage();
+                          if (uri) {
+                            void controller.onReplacePaymentProof(proof.id, uri);
+                          }
                         }}
                       />
                       <KolamDeleteButton
