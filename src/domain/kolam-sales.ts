@@ -297,6 +297,7 @@ export type KolamSale = {
   shippingService: KolamSaleShippingService | null;
   marketplaceLogistics: KolamSaleMarketplaceLogistics | null;
   marketplaceFulfillment: KolamSaleMarketplaceFulfillment | null;
+  shippingAutomationActive: boolean;
   walletTransactions: KolamSaleWalletTransactionRef[];
   stockTransactions: KolamSaleStockTransactionRef[];
   /** Linked complaints from sale detail/list payload (FE `complaints` / `hasComplaints`). */
@@ -1107,6 +1108,12 @@ export function isKolamSaleMarketplaceManaged(sale: {
 }): boolean {
   const source = String(sale.marketplaceSource || '').toLowerCase();
   return source === 'shopee' || source === 'tokopedia';
+}
+
+export function isKolamSaleShippingAutomationActive(sale: {
+  shippingAutomationActive?: boolean | null;
+}): boolean {
+  return sale.shippingAutomationActive === true;
 }
 
 /** Minimal sale shape for FE `fulfillment-display` helpers. */
@@ -3061,6 +3068,11 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
     shopee,
     tokopedia,
   );
+  const autoOlshopFulfillment = asRecord(record.autoOlshopFulfillment);
+  const daraOlshopFulfillment = asRecord(record.daraOlshopFulfillment);
+  const shippingAutomationActive =
+    autoOlshopFulfillment.active === true ||
+    daraOlshopFulfillment.active === true;
 
   return {
     id: getMongoId(record, '_id') || getMongoId(record, 'id'),
@@ -3101,6 +3113,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
       tokopedia,
       shippingService,
     ),
+    shippingAutomationActive,
     walletTransactions: normalizeSaleWalletTransactions(
       record.walletTransactions,
     ),

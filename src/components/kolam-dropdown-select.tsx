@@ -289,6 +289,7 @@ export function KolamOverflowMenuButton({
   accessibilityLabel = 'Menu aksi',
   disabled = false,
   floating = false,
+  icon,
   label = '...',
   menuAlign = 'right',
   menuWidth = 220,
@@ -301,6 +302,7 @@ export function KolamOverflowMenuButton({
   actions: KolamOverflowMenuAction[];
   disabled?: boolean;
   floating?: boolean;
+  icon?: React.ReactNode;
   label?: string;
   menuAlign?: 'left' | 'right';
   menuWidth?: number;
@@ -457,6 +459,7 @@ export function KolamOverflowMenuButton({
           disabled && styles.selectOverflowTriggerDisabled,
         ]}
       >
+        {icon ? <View style={styles.selectOverflowIcon}>{icon}</View> : null}
         <View style={styles.selectOverflowValue}>
           <KolamCopyStack
             items={[
@@ -476,6 +479,7 @@ export function KolamOverflowMenuButton({
       <KolamButton
         accessibilityLabel={accessibilityLabel}
         disabled={disabled}
+        icon={icon}
         intent="outline"
         label={label}
         onPress={toggleMenu}
@@ -685,6 +689,11 @@ const styles = StyleSheet.create({
   selectOverflowValue: {
     flex: 1,
     minWidth: 0,
+  },
+  selectOverflowIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
   },
   selectOverflowText: {
     color: V.colors.fg,
