@@ -8,6 +8,7 @@ import {
   isSettingsSuperAdminRoleKey,
   type SettingsTabVisibilityContext,
 } from './settings-surface';
+import {getKolamFileUrl} from '../lib/file-url';
 
 export const KOLAM_HR_ROOT = '/list-of-users/hr';
 
@@ -269,6 +270,7 @@ export function kolamHrTodayDateKey(now: Date = new Date()): string {
 export type KolamHrDailyAttendanceRow = {
   userId: string;
   userName: string;
+  userPhoto: string | null;
   status: string;
   checkInAt: string | null;
   checkOutAt: string | null;
@@ -385,6 +387,23 @@ function staffId(user: unknown): string {
   return getString(record, '_id') || getString(record, 'id');
 }
 
+function staffPhoto(user: unknown): string | null {
+  const record = asRecord(user);
+  if (!record) {
+    return null;
+  }
+  const hr = asRecord(record.hr);
+  const employee = asRecord(record.employee);
+  const photo =
+    getString(record, 'profilePicture') ||
+    getString(record, 'profile_picture') ||
+    getString(record, 'employeePhoto') ||
+    getString(record, 'photo') ||
+    getString(hr, 'photo') ||
+    getString(employee, 'photo');
+  return photo ? getKolamFileUrl(photo) ?? photo : null;
+}
+
 export function normalizeKolamHrDailyAttendanceSummary(
   payload: unknown,
 ): KolamHrDailyAttendanceSummary | null {
@@ -421,6 +440,7 @@ export function normalizeKolamHrDailyAttendanceSummary(
       return {
         userId,
         userName: staffDisplayName(user),
+        userPhoto: staffPhoto(user),
         status: getString(row, 'status') || 'pending',
         checkInAt: getString(row, 'checkInAt') || null,
         checkOutAt: getString(row, 'checkOutAt') || null,

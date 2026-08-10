@@ -14,6 +14,7 @@ import {useKolamHrAttendanceController} from '../hooks/use-kolam-hr-attendance-c
 import {KolamButton} from './kolam-button';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamListTableComposition} from './kolam-list-table-composition';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -39,7 +40,26 @@ export function KolamHrAttendanceBody({
             onPress={() =>
               onRouteChange?.(buildKolamHrUserDetailRoute(row.userId))
             }>
-            <Text style={styles.linkText}>{row.userName || row.userId}</Text>
+            <View style={styles.employeeCell}>
+              {row.userPhoto ? (
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto ${row.userName || row.userId}`}
+                  resizeMode="cover"
+                  scope="hr-attendance-user"
+                  sourceUri={row.userPhoto}
+                  style={styles.employeePhoto}
+                />
+              ) : (
+                <View style={styles.employeePhotoFallback}>
+                  <Text numberOfLines={1} style={styles.employeeInitials}>
+                    {getEmployeeInitials(row.userName || row.userId)}
+                  </Text>
+                </View>
+              )}
+              <Text numberOfLines={1} style={styles.linkText}>
+                {row.userName || row.userId}
+              </Text>
+            </View>
           </Pressable>
         ),
       },
@@ -186,6 +206,18 @@ export function KolamHrAttendanceBody({
   );
 }
 
+function getEmployeeInitials(value: string) {
+  const parts = value
+    .split(/\s+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+  const initials = parts
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() ?? '')
+    .join('');
+  return initials || '-';
+}
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -228,6 +260,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  employeeCell: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
+  },
+  employeePhoto: {
+    borderRadius: 6,
+    height: 28,
+    width: 28,
+  },
+  employeePhotoFallback: {
+    alignItems: 'center',
+    backgroundColor: V.colors.tableHeader,
+    borderColor: V.colors.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  employeeInitials: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    lineHeight: 14,
   },
   cellText: {
     color: V.colors.fg,
