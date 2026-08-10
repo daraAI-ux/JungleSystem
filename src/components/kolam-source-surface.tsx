@@ -1073,96 +1073,98 @@ function KolamSourceForm({
         description="Logo kotak untuk list penjualan. JPG/PNG/GIF/WEBP."
         title="Logo"
       >
-        <KolamSettingsWebFileField
-          accessibilityLabel="Logo sumber penjualan"
-          actionLabel="Pilih file"
-          disabled={controller.saving}
-          emptyLabel="Logo belum dipilih"
-          fileCount={Math.min(logoCount, 1)}
-          fileMax={1}
-          onLocalValueChange={logoLocalUri => {
-            if (logoLocalUri) {
-              void controller.onUploadLogo(logoLocalUri);
-              return;
-            }
-            controller.onChangeForm({ pendingLogoLocalUri: null });
-          }}
-          onUpload={() => {
-            void handlePickLogo();
-          }}
-          scope="source-logo"
-          title="Logo"
-          value={form.pendingLogoLocalUri}
-        />
-        {existingLogoUri ? (
-          <SourceLogoMediaCard
+        <View style={styles.basicInfoBox}>
+          <KolamSettingsWebFileField
+            accessibilityLabel="Logo sumber penjualan"
+            actionLabel="Pilih file"
             disabled={controller.saving}
-            onDelete={() => {
-              void controller.onDeleteLogo();
+            emptyLabel="Logo belum dipilih"
+            fileCount={Math.min(logoCount, 1)}
+            fileMax={1}
+            onLocalValueChange={logoLocalUri => {
+              if (logoLocalUri) {
+                void controller.onUploadLogo(logoLocalUri);
+                return;
+              }
+              controller.onChangeForm({ pendingLogoLocalUri: null });
             }}
-            revision={controller.selectedSource?.updatedAt ?? existingLogoUri}
-            sourceUri={existingLogoUri}
+            onUpload={() => {
+              void handlePickLogo();
+            }}
+            scope="source-logo"
+            title="Logo"
+            value={form.pendingLogoLocalUri}
           />
-        ) : null}
+          {existingLogoUri ? (
+            <SourceLogoMediaCard
+              disabled={controller.saving}
+              onDelete={() => {
+                void controller.onDeleteLogo();
+              }}
+              revision={controller.selectedSource?.updatedAt ?? existingLogoUri}
+              sourceUri={existingLogoUri}
+            />
+          ) : null}
+        </View>
       </SourceFormSection>
 
       <SourceFormSection
         description="Field biaya dinamis untuk estimasi potongan / profit preview."
         title="Field Biaya"
       >
-        {form.costFields.map((field, index) => (
-          <View key={`cost-${index}`} style={styles.costFieldCard}>
-            <FieldShell label="Nama biaya">
-              <KolamFormTextField
-                onChangeText={value => updateCostField(index, { name: value })}
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={field.name}
-              />
-            </FieldShell>
-            <KolamDropdownSelect
-              label="Tipe"
-              onChange={value =>
-                updateCostField(index, {
-                  type: value as KolamSourceCostFieldType,
-                })
-              }
-              options={[
-                { label: 'Persentase', value: 'percentage' },
-                { label: 'Nominal tetap', value: 'fixed' },
-              ]}
-              value={field.type}
-            />
-            <FieldShell
-              label={field.type === 'percentage' ? 'Nilai (%)' : 'Nilai'}
-            >
-              {field.type === 'percentage' ? (
+        <View style={styles.basicInfoBox}>
+          {form.costFields.map((field, index) => (
+            <View key={`cost-${index}`} style={styles.costFieldCard}>
+              <FieldShell label="Nama biaya">
                 <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={value =>
-                    updateCostField(index, {
-                      value: Number(value.replace(/[^\d.-]/g, '')) || 0,
-                    })
-                  }
+                  onChangeText={value => updateCostField(index, { name: value })}
                   style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={String(field.value)}
+                  value={field.name}
                 />
-              ) : (
-                <KolamRupiahField
-                  onChangeValue={value =>
-                    updateCostField(index, { value })
-                  }
-                  value={Number(field.value) || 0}
-                />
-              )}
-            </FieldShell>
-            <KolamDeleteButton
-              intent="danger"
-              label="Hapus field"
-              onPress={() => removeCostField(index)}
-            />
-          </View>
-        ))}
-        <KolamButton label="Tambah field biaya" onPress={addCostField} />
+              </FieldShell>
+              <KolamDropdownSelect
+                label="Tipe"
+                onChange={value =>
+                  updateCostField(index, {
+                    type: value as KolamSourceCostFieldType,
+                  })
+                }
+                options={[
+                  { label: 'Persentase', value: 'percentage' },
+                  { label: 'Nominal tetap', value: 'fixed' },
+                ]}
+                value={field.type}
+              />
+              <FieldShell
+                label={field.type === 'percentage' ? 'Nilai (%)' : 'Nilai'}
+              >
+                {field.type === 'percentage' ? (
+                  <KolamFormTextField
+                    mode="numeric"
+                    onChangeText={value =>
+                      updateCostField(index, {
+                        value: Number(value.replace(/[^\d.-]/g, '')) || 0,
+                      })
+                    }
+                    style={settingsWebFormStyles.settingsWebFormFieldValue}
+                    value={String(field.value)}
+                  />
+                ) : (
+                  <KolamRupiahField
+                    onChangeValue={value => updateCostField(index, { value })}
+                    value={Number(field.value) || 0}
+                  />
+                )}
+              </FieldShell>
+              <KolamDeleteButton
+                intent="danger"
+                label="Hapus field"
+                onPress={() => removeCostField(index)}
+              />
+            </View>
+          ))}
+          <KolamButton label="Tambah field biaya" onPress={addCostField} />
+        </View>
       </SourceFormSection>
     </KolamDetailScrollSurface>
   );
