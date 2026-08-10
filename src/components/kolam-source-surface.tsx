@@ -1,5 +1,12 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import {
   estimateKolamSourceCostOnAmount,
   formatKolamSourceCostField,
@@ -88,14 +95,16 @@ function descRow(
 function SourceFormSection({
   children,
   description,
+  style,
   title,
 }: {
   children: React.ReactNode;
   description?: string;
+  style?: StyleProp<ViewStyle>;
   title: string;
 }) {
   return (
-    <KolamContentFrame variant="nativeFormSection">
+    <KolamContentFrame style={style} variant="nativeFormSection">
       <KolamCopyStack
         containerStyle={styles.sectionCopy}
         items={[
@@ -763,9 +772,15 @@ function KolamSourceForm({
               value={form.name}
             />
           </FieldShell>
-          <View style={styles.twoColumnGrid}>
-            <View style={styles.twoColumnItem}>
-              <View style={[styles.switchRow, styles.switchCard]}>
+          <View style={[styles.twoColumnGrid, styles.equalHeightGrid]}>
+            <View style={[styles.twoColumnItem, styles.equalHeightItem]}>
+              <View
+                style={[
+                  styles.switchRow,
+                  styles.switchCard,
+                  styles.equalHeightCard,
+                ]}
+              >
                 <View style={styles.switchCopy}>
                   <Text style={styles.primaryText}>Aktif</Text>
                   <Text style={styles.metaText}>
@@ -780,8 +795,14 @@ function KolamSourceForm({
                 />
               </View>
             </View>
-            <View style={styles.twoColumnItem}>
-              <View style={[styles.switchRow, styles.switchCard]}>
+            <View style={[styles.twoColumnItem, styles.equalHeightItem]}>
+              <View
+                style={[
+                  styles.switchRow,
+                  styles.switchCard,
+                  styles.equalHeightCard,
+                ]}
+              >
                 <View style={styles.switchCopy}>
                   <Text style={styles.primaryText}>Marketplace Eksternal</Text>
                   <Text style={styles.metaText}>
@@ -852,13 +873,14 @@ function KolamSourceForm({
         </View>
       </SourceFormSection>
 
-      <View style={styles.twoColumnGrid}>
-        <View style={styles.twoColumnItem}>
+      <View style={[styles.twoColumnGrid, styles.equalHeightGrid]}>
+        <View style={[styles.twoColumnItem, styles.equalHeightItem]}>
           <SourceFormSection
             description="Atur apakah sale dari sumber ini men-accrue komisi karyawan."
+            style={styles.equalHeightSection}
             title="Komisi penjualan"
           >
-            <View style={styles.basicInfoBox}>
+            <View style={[styles.basicInfoBox, styles.equalHeightCard]}>
               <View style={styles.switchRow}>
                 <View style={styles.switchCopy}>
                   <Text style={styles.primaryText}>Komisi aktif</Text>
@@ -949,12 +971,13 @@ function KolamSourceForm({
             </View>
           </SourceFormSection>
         </View>
-        <View style={styles.twoColumnItem}>
+        <View style={[styles.twoColumnItem, styles.equalHeightItem]}>
           <SourceFormSection
             description="Target markup rekomendasi harga channel — tidak mengurangi total invoice."
+            style={styles.equalHeightSection}
             title="Markup Channel (DARA)"
           >
-            <View style={styles.basicInfoBox}>
+            <View style={[styles.basicInfoBox, styles.equalHeightCard]}>
               <FieldShell label="Markup persen (0–100)">
                 <KolamFormTextField
                   mode="numeric"
@@ -1193,10 +1216,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  equalHeightGrid: {
+    alignItems: 'stretch',
+  },
   twoColumnItem: {
     flexBasis: 0,
     flexGrow: 1,
     minWidth: 320,
+  },
+  equalHeightItem: {
+    alignSelf: 'stretch',
+  },
+  equalHeightSection: {
+    flex: 1,
+  },
+  equalHeightCard: {
+    flex: 1,
   },
   switchRow: {
     alignItems: 'center',
