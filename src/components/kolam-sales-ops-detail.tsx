@@ -81,6 +81,7 @@ import {
 } from './kolam-detail-meta-strip';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
+import { KolamComplaintButton } from './kolam-complaint-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
@@ -325,8 +326,7 @@ export function KolamSalesOpsDetail({
                 style={styles.toolbarButton}
               />
             ) : showComplaintCreate ? (
-              <KolamButton
-                label="Ajukan komplain"
+              <KolamComplaintButton
                 onPress={() => onRouteChange?.(complaintCreateRoute)}
                 style={styles.toolbarButton}
               />
@@ -383,7 +383,7 @@ export function KolamSalesOpsDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            <KolamButton
+            <KolamComplaintButton
               label="Komplain"
               onPress={() => onRouteChange?.(complaintCreateRoute)}
               style={styles.toolbarButton}
