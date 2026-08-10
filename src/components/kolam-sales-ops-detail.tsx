@@ -1169,7 +1169,14 @@ export function KolamSalesOpsDetail({
               <ScrollView
                 contentContainerStyle={styles.historyScroll}
                 nestedScrollEnabled
-                style={styles.historyScrollView}
+                style={[
+                  styles.historyScrollView,
+                  {
+                    maxHeight: getSaleHistoryTimelineMaxHeight(
+                      sale.saleHistories,
+                    ),
+                  },
+                ]}
               >
                 <View style={styles.historyTimeline}>
                   {[...sale.saleHistories]
@@ -1968,6 +1975,16 @@ function historyTimelineDotStyle(status: string) {
     return styles.historyTimelineDotWarning;
   }
   return styles.historyTimelineDotSecondary;
+}
+
+function getSaleHistoryTimelineMaxHeight(histories: KolamSaleHistory[]) {
+  const estimatedHeight = histories.reduce((total, history) => {
+    const noteLength = history.note?.trim().length ?? 0;
+    const noteRows = noteLength > 96 ? 2 : noteLength > 0 ? 1 : 0;
+    return total + 44 + noteRows * 18;
+  }, 10);
+
+  return Math.min(320, Math.max(90, estimatedHeight));
 }
 
 const styles = StyleSheet.create({
