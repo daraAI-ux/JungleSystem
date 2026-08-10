@@ -937,6 +937,15 @@ function KolamProductionDetail({
   const progressPercent = plannedQty > 0 ? Math.round((completedQty / plannedQty) * 100) : 0;
   const targetHref = getKolamProductionTargetHref(production);
   const nextStatuses = getAllowedNextProductionStatuses(production.status);
+  const productionCostDescription = [
+    production.batchId,
+    `Estimasi: ${formatRupiah(production.estimatedCost)}`,
+    production.status === 'completed'
+      ? `Biaya aktual: ${formatRupiah(production.actualCost)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const productionBasicFields = [
     {
       id: 'target',
@@ -975,17 +984,6 @@ function KolamProductionDetail({
       id: 'qty',
       label: 'Rencana / Selesai',
       value: `${plannedQty} / ${completedQty} (${progressPercent}%)`,
-    },
-    {
-      id: 'estimated',
-      label: 'Estimasi Biaya',
-      value: formatRupiah(production.estimatedCost),
-    },
-    {
-      id: 'actual',
-      label: 'Biaya Aktual',
-      value:
-        production.status === 'completed' ? formatRupiah(production.actualCost) : '—',
     },
     {
       id: 'assigned',
@@ -1113,7 +1111,7 @@ function KolamProductionDetail({
           <KolamDetailSummaryCard
             style={[styles.detailCard, styles.detailSplitCard]}
             title="Informasi Dasar"
-            description={production.batchId}
+            description={productionCostDescription}
             fieldColumns={3}
             fields={productionBasicFields}
           />
@@ -1350,10 +1348,6 @@ function KolamProductionMaterialsSection({
   return (
     <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
       <Text style={styles.sectionTitle}>Bahan & Biaya Produksi</Text>
-      <Text style={styles.helperText}>Estimasi: {formatRupiah(production.estimatedCost)}</Text>
-      {production.status === 'completed' ? (
-        <Text style={styles.helperText}>Biaya aktual: {formatRupiah(production.actualCost)}</Text>
-      ) : null}
       <KolamListTableComposition
         columns={columns}
         emptyTitle="Belum ada bahan"
