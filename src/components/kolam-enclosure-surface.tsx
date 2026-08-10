@@ -766,7 +766,11 @@ function KolamEnclosureEditSurface({
                 setForm(current => ({...current, note: value}))
               }
               placeholder="Catatan"
-              style={[styles.editFormInput, styles.editFormTextArea]}
+              style={[
+                styles.editFormInput,
+                styles.editFormTextArea,
+                styles.noteField,
+              ]}
               value={form.note}
             />
           </LabeledEditField>
@@ -2784,6 +2788,10 @@ const styles = StyleSheet.create({
   },
   editFormTextArea: {
     minHeight: 84,
+  },
+  noteField: {
+    backgroundColor: V.colors.warningSoft,
+    borderColor: V.colors.warning,
   },
   editBrandBanner: {
     backgroundColor: V.colors.muted,
