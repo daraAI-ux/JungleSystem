@@ -48,6 +48,7 @@ import {
   shouldShowKolamTokopediaDropOffBadge,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
+  type KolamSalePaymentStatus,
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
@@ -80,6 +81,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -131,11 +133,12 @@ export function KolamSalesOpsDetail({
   }
 
   const marketplaceManaged = isKolamSaleMarketplaceManaged(sale);
+  const currentPaymentStatus = sale.status as KolamSalePaymentStatus;
   const skipShipping = kolamSaleSkipsShippingFlow(sale);
   const posSale = isKolamPosSale(sale);
   const allowedTransitions = marketplaceManaged
     ? []
-    : getKolamSaleAllowedStatusTransitions(sale.status);
+    : getKolamSaleAllowedStatusTransitions(currentPaymentStatus);
   const canUploadProof =
     !marketplaceManaged && canUploadKolamSalePaymentProof(sale.status);
   const showDeliveryActions =
@@ -183,6 +186,19 @@ export function KolamSalesOpsDetail({
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
+  const paymentStatusOptions = [
+    {
+      label: formatKolamSalePaymentStatusLabel(currentPaymentStatus),
+      value: currentPaymentStatus,
+    },
+    ...allowedTransitions.map(status => ({
+      label: formatKolamSalePaymentStatusLabel(status),
+      value: status,
+    })),
+  ] satisfies Array<{
+    label: string;
+    value: KolamSalePaymentStatus | KolamSaleStatusTransitionTarget;
+  }>;
   const buyerPhone = sale.customer?.phone || sale.buyerInfo?.phone || '';
   const buyerEmail = sale.customer?.email || sale.buyerInfo?.email || '';
   const mainComplaint = getKolamSaleMainComplaint(sale);
@@ -355,10 +371,36 @@ export function KolamSalesOpsDetail({
         }
       >
         <KolamDetailMetaStripItem label="Pembayaran">
-          <KolamStatusBadge
-            intent={getKolamSalePaymentStatusIntent(sale.status)}
-            label={formatKolamSalePaymentStatusLabel(sale.status)}
-          />
+          <View
+            pointerEvents={
+              marketplaceManaged || allowedTransitions.length === 0
+                ? 'none'
+                : 'auto'
+            }
+          >
+            <KolamDropdownSelect
+              accessibilityLabel="Status pembayaran"
+              label="Status"
+              menuStyle={styles.paymentStatusMenu}
+              onChange={value => {
+                if (value === sale.status || marketplaceManaged) {
+                  return;
+                }
+                setPendingStatus(value as KolamSaleStatusTransitionTarget);
+              }}
+              options={paymentStatusOptions}
+              showLabelInTrigger={false}
+              style={styles.paymentStatusSelect}
+              triggerStyle={[
+                styles.paymentStatusTrigger,
+                marketplaceManaged || allowedTransitions.length === 0
+                  ? styles.paymentStatusTriggerMuted
+                  : null,
+              ]}
+              triggerTextStyle={styles.paymentStatusTriggerText}
+              value={currentPaymentStatus}
+            />
+          </View>
         </KolamDetailMetaStripItem>
         <KolamDetailMetaStripItem
           label={skipShipping ? (posSale ? 'POS' : 'Layanan') : 'Pengiriman'}
@@ -757,40 +799,32 @@ export function KolamSalesOpsDetail({
 
       <View style={styles.columns}>
         <View style={styles.columnMain}>
-          <Text style={styles.sectionTitle}>Aksi status</Text>
-          {marketplaceManaged ? (
-            <Text style={styles.metaText}>
-              Status pembayaran marketplace dikelola otomatis dari platform.
-            </Text>
-          ) : allowedTransitions.length === 0 ? (
+          {marketplaceManaged || allowedTransitions.length === 0 ? (
             <>
-              <Text style={styles.metaText}>
-                {sale.status === 'pending'
-                  ? 'Menunggu persetujuan finance (ubah via Persetujuan Diskon).'
-                  : 'Tidak ada transisi status yang tersedia.'}
-              </Text>
-              {sale.status === 'pending' ? (
-                <KolamButton
-                  label="Ke persetujuan diskon"
-                  onPress={() =>
-                    onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
-                  }
-                />
-              ) : null}
+              <Text style={styles.sectionTitle}>Aksi status</Text>
+              {marketplaceManaged ? (
+                <Text style={styles.metaText}>
+                  Status pembayaran marketplace dikelola otomatis dari platform.
+                </Text>
+              ) : (
+                <>
+                  <Text style={styles.metaText}>
+                    {sale.status === 'pending'
+                      ? 'Menunggu persetujuan finance (ubah via Persetujuan Diskon).'
+                      : 'Tidak ada transisi status yang tersedia.'}
+                  </Text>
+                  {sale.status === 'pending' ? (
+                    <KolamButton
+                      label="Ke persetujuan diskon"
+                      onPress={() =>
+                        onRouteChange?.(KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE)
+                      }
+                    />
+                  ) : null}
+                </>
+              )}
             </>
-          ) : (
-            <View style={styles.actionButtons}>
-              {allowedTransitions.map(status => (
-                <KolamButton
-                  disabled={controller.mutating}
-                  intent={status === 'cancelled' ? 'danger' : 'primary'}
-                  key={status}
-                  label={formatKolamSalePaymentStatusLabel(status)}
-                  onPress={() => setPendingStatus(status)}
-                />
-              ))}
-            </View>
-          )}
+          ) : null}
 
           <Text style={styles.sectionTitle}>Detail Item Penjualan</Text>
           {sale.items.length === 0 ? (
@@ -1529,6 +1563,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 4,
+  },
+  paymentStatusSelect: {
+    minWidth: 126,
+  },
+  paymentStatusTrigger: {
+    minHeight: 30,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  paymentStatusTriggerMuted: {
+    opacity: 0.72,
+  },
+  paymentStatusTriggerText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  paymentStatusMenu: {
+    minWidth: 160,
   },
   paymentProofCard: {
     gap: 10,
