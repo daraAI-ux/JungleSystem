@@ -43,7 +43,6 @@ import {
   KOLAM_OWNER_COPILOT_AUDIT_OFF,
   KOLAM_OWNER_COPILOT_DESCRIPTION,
   KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS,
-  KOLAM_OWNER_COPILOT_EXECUTIVE_SUFFIX,
   type KolamOwnerCopilotDashboard,
 } from '../domain/kolam-pusat-ai-owner-copilot';
 import {isTopNavAdminRole} from '../domain/top-nav';
@@ -326,6 +325,7 @@ function OwnerCopilotDashboardContent({
 }) {
   const nightTotal = computeKolamOwnerCopilotNightOpsTotal(dash.nightOps.counts);
   const counts = dash.nightOps.counts;
+  const executiveNote = dash.executiveNote.trim();
 
   return (
     <View style={styles.ownerBody}>
@@ -452,11 +452,11 @@ function OwnerCopilotDashboardContent({
         </View>
       ) : null}
 
-      <View style={styles.executiveCard}>
-        <Text style={styles.executiveText}>
-          {`${dash.executiveNote}${KOLAM_OWNER_COPILOT_EXECUTIVE_SUFFIX}`}
-        </Text>
-      </View>
+      {executiveNote ? (
+        <View style={styles.executiveCard}>
+          <Text style={styles.executiveText}>{executiveNote}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

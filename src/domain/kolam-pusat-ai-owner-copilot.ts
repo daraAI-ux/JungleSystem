@@ -80,9 +80,6 @@ export const KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS =
 export const KOLAM_OWNER_COPILOT_AUDIT_OFF =
   'Audit log mati di Settings.';
 
-export const KOLAM_OWNER_COPILOT_EXECUTIVE_SUFFIX =
-  ' Sign-off governance & scenario analysis — placeholder P2.';
-
 export function formatKolamOwnerCopilotIdr(value: unknown) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) {
@@ -238,7 +235,7 @@ export function normalizeKolamOwnerCopilotDashboard(
     executiveNote:
       typeof executive.note === 'string' && executive.note.trim()
         ? executive.note.trim()
-        : 'Scenario analysis & governance sign-off — tanya @dara di room Chat dengan DARA (AC1.005–007 runtime P2).',
+        : '',
   };
 }
 
