@@ -1038,6 +1038,25 @@ function KolamProductionDetail({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
+            {canUpdate ? (
+              <KolamDropdownSelect<KolamProductionStatus>
+                accessibilityLabel="Status produksi"
+                label="Status"
+                menuStyle={styles.statusDropdownMenu}
+                onChange={status => {
+                  if (controller.mutating || status === production.status) {
+                    return;
+                  }
+                  if (status === 'in_progress') {
+                    void controller.onStartProduction();
+                  }
+                }}
+                options={statusTransitionOptions}
+                style={styles.toolbarStatusSelect}
+                triggerStyle={styles.toolbarStatusTrigger}
+                value={currentStatusValue}
+              />
+            ) : null}
             <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
@@ -1076,25 +1095,6 @@ function KolamProductionDetail({
                 label="Hitung Ulang"
                 onPress={() => void controller.onRecalculate()}
                 style={styles.toolbarButton}
-              />
-            ) : null}
-            {canUpdate ? (
-              <KolamDropdownSelect<KolamProductionStatus>
-                accessibilityLabel="Status produksi"
-                label="Status"
-                menuStyle={styles.statusDropdownMenu}
-                onChange={status => {
-                  if (controller.mutating || status === production.status) {
-                    return;
-                  }
-                  if (status === 'in_progress') {
-                    void controller.onStartProduction();
-                  }
-                }}
-                options={statusTransitionOptions}
-                style={styles.toolbarStatusSelect}
-                triggerStyle={styles.toolbarStatusTrigger}
-                value={currentStatusValue}
               />
             ) : null}
             {production.status === 'in_progress' && canUpdate ? (
