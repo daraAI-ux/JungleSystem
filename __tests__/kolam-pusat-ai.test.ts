@@ -37,10 +37,10 @@ describe('kolam-pusat-ai domain', () => {
     expect(filterKolamPusatAiHubTabs(true).map(tab => tab.label)).toEqual([
       'Ringkasan',
       'Owner Copilot',
-      'Log DARA',
       'Transaksi Copilot',
       'PO Copilot',
       'Inventory Copilot',
+      'Log DARA',
     ]);
   });
 

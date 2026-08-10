@@ -26,10 +26,10 @@ export const KOLAM_PUSAT_AI_HUB_TABS: Array<{
 }> = [
   {id: 'ringkasan', label: 'Ringkasan', adminOnly: false},
   {id: 'owner-copilot', label: 'Owner Copilot', adminOnly: true},
-  {id: 'log-dara', label: 'Log DARA', adminOnly: true},
   {id: 'transaksi-copilot', label: 'Transaksi Copilot', adminOnly: true},
   {id: 'po-copilot', label: 'PO Copilot', adminOnly: true},
   {id: 'inventory-copilot', label: 'Inventory Copilot', adminOnly: true},
+  {id: 'log-dara', label: 'Log DARA', adminOnly: true},
 ];
 
 export type KolamDaraActiveBrand = {
