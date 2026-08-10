@@ -49,6 +49,7 @@ import {
   shouldShowKolamTokopediaDropOffBadge,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
+  type KolamSale,
   type KolamSalePaymentStatus,
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleHistory,
@@ -826,6 +827,7 @@ export function KolamSalesOpsDetail({
               ) : null}
             </View>
           ) : null}
+
         </View>
       </View>
 
@@ -1192,54 +1194,20 @@ export function KolamSalesOpsDetail({
               </ScrollView>
             </>
           ) : null}
+
+          <KolamSalesEnclosureAllocationPanel
+            disabled={controller.mutating}
+            onResolve={controller.onResolveLivestockAllocation}
+            rows={controller.livestockAllocations}
+          />
+
+          <KolamSalesStockFlowCard
+            onRouteChange={onRouteChange}
+            sale={sale}
+          />
         </View>
       </View>
 
-      <View style={styles.fulfillmentRow}>
-        <KolamSalesEnclosureAllocationPanel
-          disabled={controller.mutating}
-          onResolve={controller.onResolveLivestockAllocation}
-          rows={controller.livestockAllocations}
-        />
-
-        <KolamCardFrame style={styles.fulfillmentCard} variant="compact">
-          <Text style={styles.sectionTitle}>Alur Stok</Text>
-          <Text style={styles.metaText}>
-            Pergerakan stok terkait invoice ini (stok Kolam = acuan utama).
-          </Text>
-          {sale.stockTransactions.length > 0 ? (
-            sale.stockTransactions.map(tx => (
-              <Pressable
-                accessibilityRole="button"
-                key={tx.id}
-                onPress={() => onRouteChange?.(`/stock-transaction/${tx.id}`)}
-                style={styles.relatedTxCard}
-              >
-                <Text style={[styles.primaryText, styles.relatedTxLink]}>
-                  {stockTransactionSourceLabel(tx.source)} ·{' '}
-                  {tx.type || '—'} · qty {tx.quantity}
-                </Text>
-                <Text style={styles.metaText}>
-                  {tx.before ?? '—'} → {tx.after ?? '—'}
-                  {tx.reason ? ` · ${tx.reason}` : ''}
-                </Text>
-                {tx.crossSyncSummary ? (
-                  <Text style={styles.metaText}>
-                    Cross-sync: {tx.crossSyncSummary}
-                  </Text>
-                ) : null}
-                {tx.createdAt ? (
-                  <Text style={styles.metaText}>
-                    {formatShortDateTime(tx.createdAt)}
-                  </Text>
-                ) : null}
-              </Pressable>
-            ))
-          ) : (
-            <Text style={styles.metaText}>Belum ada alur stok.</Text>
-          )}
-        </KolamCardFrame>
-      </View>
     </KolamDetailScrollSurface>
 
       <KolamConfirmDialog
@@ -1286,6 +1254,54 @@ export function KolamSalesOpsDetail({
         visible={Boolean(pendingDelivery)}
       />
     </View>
+  );
+}
+
+function KolamSalesStockFlowCard({
+  onRouteChange,
+  sale,
+}: {
+  onRouteChange?: (route: string) => void;
+  sale: KolamSale;
+}) {
+  return (
+    <KolamCardFrame style={styles.fulfillmentCard} variant="compact">
+      <Text style={styles.sectionTitle}>Alur Stok</Text>
+      <Text style={styles.metaText}>
+        Pergerakan stok terkait invoice ini (stok Kolam = acuan utama).
+      </Text>
+      {sale.stockTransactions.length > 0 ? (
+        sale.stockTransactions.map(tx => (
+          <Pressable
+            accessibilityRole="button"
+            key={tx.id}
+            onPress={() => onRouteChange?.(`/stock-transaction/${tx.id}`)}
+            style={styles.relatedTxCard}
+          >
+            <Text style={[styles.primaryText, styles.relatedTxLink]}>
+              {stockTransactionSourceLabel(tx.source)} · {tx.type || '—'} · qty{' '}
+              {tx.quantity}
+            </Text>
+            <Text style={styles.metaText}>
+              {tx.before ?? '—'} → {tx.after ?? '—'}
+              {tx.reason ? ` · ${tx.reason}` : ''}
+            </Text>
+            {tx.crossSyncSummary ? (
+              <Text style={styles.metaText}>
+                Cross-sync: {tx.crossSyncSummary}
+              </Text>
+            ) : null}
+            {tx.createdAt ? (
+              <Text style={styles.metaText}>
+                {formatShortDateTime(tx.createdAt)}
+              </Text>
+            ) : null}
+          </Pressable>
+        ))
+      ) : (
+        <Text style={styles.metaText}>Belum ada alur stok.</Text>
+      )}
+    </KolamCardFrame>
   );
 }
 
@@ -2081,16 +2097,8 @@ const styles = StyleSheet.create({
     gap: 10,
     minWidth: 240,
   },
-  fulfillmentRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
   fulfillmentCard: {
-    flex: 1,
-    flexBasis: 360,
     gap: 8,
-    minWidth: 280,
   },
   allocationHeader: {
     gap: 6,
