@@ -30,6 +30,7 @@ import {
   advanceKolamEnclosureProductionEggs,
   attachKolamEnclosureSpecies,
   changeKolamEnclosureProductionPhase,
+  createKolamEnclosure,
   createKolamEnclosureComment,
   crossPoolTransferKolamEnclosureSpecies,
   deleteKolamEnclosureComment,
@@ -62,6 +63,7 @@ import {
   uploadKolamEnclosurePhotos,
   upsertKolamEnclosureParameter,
   type KolamEnclosureCrossPoolTransferInput,
+  type KolamEnclosureCreateBody,
   type KolamEnclosureParameterInput,
   type KolamEnclosurePopulationEventInput,
   type KolamEnclosureProductionEggAdvanceInput,
@@ -200,6 +202,7 @@ export interface KolamEnclosureController {
     body: KolamEnclosureUpdateBody;
     assignedTo: string | null;
   }) => Promise<boolean>;
+  onCreateEnclosure?: (body: KolamEnclosureCreateBody) => Promise<KolamEnclosure | null>;
   onUpsertClimateParameter: (body: KolamEnclosureParameterInput) => Promise<void>;
   onSwitchSpeciesVariant: (input: KolamEnclosureVariantSwitchInput) => Promise<void>;
   onTabChange: (tab: KolamEnclosureListTab) => void;
@@ -409,6 +412,24 @@ export function useKolamEnclosureController(
               setEnclosureStockTransactionsLoading(false);
             }
           });
+        setDataSource('live');
+        return;
+      }
+
+      if (currentMode === 'new') {
+        const [assignees, locations, units] = await Promise.all([
+          getKolamEnclosureStaffAssignees({limit: 200}).catch(() => []),
+          getKolamLocations().catch(() => [] as KolamLocationOption[]),
+          getKolamUnits().catch(() => [] as KolamUnit[]),
+        ]);
+        if (requestSeq.current !== activeRequest) {
+          return;
+        }
+        setSelectedEnclosure(null);
+        setStaffAssignees(assignees);
+        setEditBrands([]);
+        setEditLocations(locations);
+        setEditUnits(units);
         setDataSource('live');
         return;
       }
@@ -795,6 +816,25 @@ export function useKolamEnclosureController(
     [refresh, route, selectedEnclosure],
   );
 
+  const onCreateEnclosure = useCallback(
+    async (body: KolamEnclosureCreateBody): Promise<KolamEnclosure | null> => {
+      setOperationLoading(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        const created = await createKolamEnclosure(body);
+        setStatusMessage('Kandang dibuat.');
+        return created;
+      } catch (operationError) {
+        setError(getErrorMessage(operationError));
+        return null;
+      } finally {
+        setOperationLoading(false);
+      }
+    },
+    [],
+  );
+
   const onUploadCoverPhoto = useCallback(
     (localUri: string) =>
       runOperation(async () => {
@@ -1035,6 +1075,7 @@ export function useKolamEnclosureController(
     onSpawnTask,
     onProvisionCode,
     onSaveEnclosureEdit,
+    onCreateEnclosure,
     onUpsertClimateParameter,
     onSwitchSpeciesVariant,
     onTabChange,

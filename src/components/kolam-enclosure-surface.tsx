@@ -42,6 +42,7 @@ import {
   type KolamEnclosureSpeciesRef,
   type KolamEnclosureStatistics,
   type KolamEnclosureStatisticsEvent,
+  type KolamEnclosureType,
   type KolamSpeciesTaxonomyProduction,
 } from '../domain/kolam-enclosure';
 import { formatRupiah } from '../lib/money';
@@ -124,7 +125,7 @@ type EnclosureEditFormState = {
     length: {unit: string; value: number};
     width: {unit: string; value: number};
   };
-  enclosure_type: string;
+  enclosure_type: KolamEnclosureType;
   livestockPurpose: KolamEnclosureLivestockPurpose;
   locationId: string;
   note: string;
@@ -196,7 +197,7 @@ export function KolamEnclosureSurface({
     );
   }
 
-  if (controller.mode === 'edit') {
+  if (controller.mode === 'edit' || controller.mode === 'new') {
     return (
       <KolamEnclosureEditSurface
         controller={controller}
@@ -239,7 +240,8 @@ function KolamEnclosureEditSurface({
   onRouteChange?: (route: string) => void;
 }) {
   const enclosure = controller.selectedEnclosure;
-  const detailRoute = controller.routeEnclosureId
+  const isNew = controller.mode === 'new';
+  const detailRoute = !isNew && controller.routeEnclosureId
     ? `${KOLAM_ENCLOSURE_ROOT}/${encodeURIComponent(controller.routeEnclosureId)}`
     : KOLAM_ENCLOSURE_ROOT;
   const [form, setForm] = React.useState<EnclosureEditFormState>(() =>
@@ -249,6 +251,9 @@ function KolamEnclosureEditSurface({
   const [hydratedId, setHydratedId] = React.useState('');
 
   React.useEffect(() => {
+    if (isNew) {
+      return;
+    }
     if (!enclosure) {
       return;
     }
@@ -258,7 +263,7 @@ function KolamEnclosureEditSurface({
     setForm(createEnclosureEditFormState(enclosure));
     setHydratedId(enclosure.id);
     setFormError(null);
-  }, [enclosure, hydratedId]);
+  }, [enclosure, hydratedId, isNew]);
 
   if (controller.loading && controller.dataSource === 'idle') {
     return <InlineState title="Memuat data kandang..." />;
@@ -284,7 +289,7 @@ function KolamEnclosureEditSurface({
       </View>
     );
   }
-  if (!enclosure) {
+  if (!isNew && !enclosure) {
     return (
       <View style={styles.surface}>
         <InlineState
@@ -310,15 +315,15 @@ function KolamEnclosureEditSurface({
     '';
   const effectiveSizeUnitId = sizeUnitId || sizeUnitOptions[0]?.id || '';
   const needsProvisioning =
-    enclosure.computed.needsProvisioning || !enclosure.code.trim();
+    isNew || enclosure?.computed.needsProvisioning || !enclosure?.code.trim();
   const hasSize =
     Number(form.enclosure_size.high.value) > 0 &&
     Number(form.enclosure_size.width.value) > 0 &&
     Number(form.enclosure_size.length.value) > 0;
   const sizeLocked =
     !needsProvisioning && hasSize && Boolean(form.enclosure_code.trim());
-  const coverUri = getKolamFileUrl(enclosure.coverPhotoUrl);
-  const brandBannerUri = getKolamFileUrl(enclosure.brand?.photos?.[0] || '');
+  const coverUri = getKolamFileUrl(enclosure?.coverPhotoUrl || '');
+  const brandBannerUri = getKolamFileUrl(enclosure?.brand?.photos?.[0] || '');
   const brandOptions = [
     {label: '—', value: ENCLOSURE_EDIT_NONE},
     ...controller.editBrands.map(brand => ({
@@ -390,9 +395,7 @@ function KolamEnclosureEditSurface({
     }
     setFormError(null);
     const code = form.enclosure_code.trim().toUpperCase();
-    const saved = await controller.onSaveEnclosureEdit({
-      assignedTo: form.assignedTo || null,
-      body: {
+    const body = {
         acquired_date: form.acquired_date || undefined,
         brandId: form.brandId || undefined,
         clientScope: form.clientScope,
@@ -423,7 +426,45 @@ function KolamEnclosureEditSurface({
                 },
               },
             }),
-      },
+      };
+    if (isNew) {
+      if (!controller.onCreateEnclosure) {
+        setFormError('Form buat kandang belum siap');
+        return;
+      }
+      const created = await controller.onCreateEnclosure({
+        assignedTo: form.assignedTo || '',
+        enclosure_code: code,
+        enclosure_name: code,
+        enclosure_size: {
+          high: {
+            unit: effectiveSizeUnitId,
+            value: Number(form.enclosure_size.high.value),
+          },
+          length: {
+            unit: effectiveSizeUnitId,
+            value: Number(form.enclosure_size.length.value),
+          },
+          width: {
+            unit: effectiveSizeUnitId,
+            value: Number(form.enclosure_size.width.value),
+          },
+        },
+        enclosure_type: form.enclosure_type,
+        livestockPurpose: form.livestockPurpose,
+        locationId: form.locationId || '',
+        note: form.note.trim() || undefined,
+        type_aquarium:
+          form.enclosure_type === 'Aquarium' ? form.type_aquarium : undefined,
+      });
+      if (created?.id) {
+        onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/${encodeURIComponent(created.id)}`);
+      }
+      return;
+    }
+    const saved = await controller.onSaveEnclosureEdit({
+      assignedTo: form.assignedTo || null,
+      body,
     });
     if (saved) {
       onRouteChange?.(detailRoute);
@@ -571,36 +612,38 @@ function KolamEnclosureEditSurface({
         </View>
       </DetailSection>
 
-      <DetailSection title="Foto sampul">
-        <Text style={styles.sectionMeta}>Gambar utama kandang.</Text>
-        <View style={styles.editCoverPreview}>
-          {coverUri ? (
-            <KolamRemoteImage
-              accessibilityLabel="Cover kandang"
-              resizeMode="cover"
-              scope="enclosure-edit-cover"
-              sourceUri={coverUri}
-              style={styles.editCoverImage}
-            />
-          ) : (
-            <Text style={styles.mutedText}>Belum ada foto</Text>
-          )}
-        </View>
-        <View style={styles.detailActions}>
-          <KolamButton
-            disabled={controller.operationLoading}
-            label="Unggah"
-            onPress={() => void onPickCover()}
-          />
-          {coverUri ? (
-            <KolamDeleteButton
+      {!isNew ? (
+        <DetailSection title="Foto sampul">
+          <Text style={styles.sectionMeta}>Gambar utama kandang.</Text>
+          <View style={styles.editCoverPreview}>
+            {coverUri ? (
+              <KolamRemoteImage
+                accessibilityLabel="Cover kandang"
+                resizeMode="cover"
+                scope="enclosure-edit-cover"
+                sourceUri={coverUri}
+                style={styles.editCoverImage}
+              />
+            ) : (
+              <Text style={styles.mutedText}>Belum ada foto</Text>
+            )}
+          </View>
+          <View style={styles.detailActions}>
+            <KolamButton
               disabled={controller.operationLoading}
-              label="Hapus foto"
-              onPress={() => void controller.onDeleteCoverPhoto()}
+              label="Unggah"
+              onPress={() => void onPickCover()}
             />
-          ) : null}
-        </View>
-      </DetailSection>
+            {coverUri ? (
+              <KolamDeleteButton
+                disabled={controller.operationLoading}
+                label="Hapus foto"
+                onPress={() => void controller.onDeleteCoverPhoto()}
+              />
+            ) : null}
+          </View>
+        </DetailSection>
+      ) : null}
 
       <DetailSection title="Operasional">
         <Text style={styles.sectionMeta}>Tipe, lokasi, PIC, dan status.</Text>
@@ -612,7 +655,7 @@ function KolamEnclosureEditSurface({
               onChange={value =>
                 setForm(current => ({
                   ...current,
-                  enclosure_type: value,
+                  enclosure_type: value as KolamEnclosureType,
                   type_aquarium: '',
                 }))
               }
@@ -830,7 +873,7 @@ function createEmptyEnclosureEditFormState(): EnclosureEditFormState {
       length: {unit: '', value: 0},
       width: {unit: '', value: 0},
     },
-    enclosure_type: '',
+    enclosure_type: 'Terrarium',
     livestockPurpose: 'saleable',
     locationId: '',
     note: '',
@@ -858,7 +901,11 @@ function createEnclosureEditFormState(
       length: {unit: unitId, value: Number(enclosure.size.length.value) || 0},
       width: {unit: unitId, value: Number(enclosure.size.width.value) || 0},
     },
-    enclosure_type: enclosure.type || '',
+    enclosure_type: KOLAM_ENCLOSURE_TYPES.includes(
+      enclosure.type as KolamEnclosureType,
+    )
+      ? (enclosure.type as KolamEnclosureType)
+      : 'Terrarium',
     livestockPurpose:
       enclosure.livestockPurpose === 'production' ? 'production' : 'saleable',
     locationId: enclosure.locationId || enclosure.location?.id || '',
@@ -1029,6 +1076,14 @@ function KolamEnclosureList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
+              {controller.activeTab === 'internal' ? (
+                <KolamButton
+                  intent="primary"
+                  label="Buat kandang"
+                  onPress={() => onRouteChange?.(`${KOLAM_ENCLOSURE_ROOT}/new`)}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
               {controller.activeTab === 'deaths' ? (
                 <KolamStockTransactionButton
                   label="Pergerakan stok"

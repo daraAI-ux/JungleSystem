@@ -29,6 +29,7 @@ export type KolamEnclosureLivestockFilter =
 export type KolamEnclosureTypeFilter = 'all' | KolamEnclosureType;
 export type KolamEnclosureSurfaceMode =
   | 'list'
+  | 'new'
   | 'detail'
   | 'edit'
   | 'customer-list'
@@ -541,6 +542,9 @@ export function getKolamEnclosureSurfaceMode(
   }
   if (path === KOLAM_ENCLOSURE_CUSTOMER_ROOT) {
     return 'customer-list';
+  }
+  if (path === `${KOLAM_ENCLOSURE_ROOT}/new`) {
+    return 'new';
   }
   if (path.startsWith(`${KOLAM_ENCLOSURE_ROOT}/`) && path.endsWith('/edit')) {
     return 'edit';
