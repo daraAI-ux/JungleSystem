@@ -655,24 +655,15 @@ function KolamPusatAiRingkasanBody({
             {hub && !loading
               ? quickLinks.map(item => (
                   <KolamButton
-                    intent="secondary"
                     key={item.href}
                     label={item.label}
                     onPress={() => onRouteChange?.(item.href)}
                     size="sm"
+                    style={styles.quickLinkButton}
+                    textStyle={styles.quickLinkText}
                   />
                 ))
               : null}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={loading || prosesController.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-                void prosesController.onRefresh();
-              }}
-              size="sm"
-            />
           </View>
         </View>
       </View>
@@ -807,6 +798,13 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     paddingBottom: 4,
+  },
+  quickLinkButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  quickLinkText: {
+    color: V.colors.primaryFg,
   },
   logScrollContent: {
     gap: 16,
