@@ -20,6 +20,7 @@ import {
   getKolamProductionTargetTypeLabel,
   getKolamProductionVariantLabel,
   hasKolamProductionPermission,
+  isKolamProductionStatus,
   isKolamProductionListRoute,
   type KolamProduction,
   type KolamProductionComponentUsed,
@@ -1008,6 +1009,24 @@ function KolamProductionDetail({
       value: production.description || '—',
     },
   ];
+  const currentStatusValue: KolamProductionStatus = isKolamProductionStatus(
+    production.status,
+  )
+    ? production.status
+    : 'pending';
+  const statusTransitionOptions: Array<{
+    label: string;
+    value: KolamProductionStatus;
+  }> = [
+    {
+      label: getKolamProductionStatusLabel(production.status),
+      value: currentStatusValue,
+    },
+    ...nextStatuses.map(status => ({
+      label: getKolamProductionStatusLabel(status),
+      value: status,
+    })),
+  ];
 
   return (
     <View style={styles.detailSurface}>
@@ -1059,11 +1078,23 @@ function KolamProductionDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            {nextStatuses.includes('in_progress') && canUpdate ? (
-              <KolamButton
-                label="Mulai Produksi"
-                onPress={() => void controller.onStartProduction()}
-                style={styles.toolbarButton}
+            {nextStatuses.length > 0 && canUpdate ? (
+              <KolamDropdownSelect<KolamProductionStatus>
+                accessibilityLabel="Status produksi"
+                label="Status"
+                menuStyle={styles.statusDropdownMenu}
+                onChange={status => {
+                  if (controller.mutating || status === production.status) {
+                    return;
+                  }
+                  if (status === 'in_progress') {
+                    void controller.onStartProduction();
+                  }
+                }}
+                options={statusTransitionOptions}
+                style={styles.toolbarStatusSelect}
+                triggerStyle={styles.toolbarStatusTrigger}
+                value={currentStatusValue}
               />
             ) : null}
             {production.status === 'in_progress' && canUpdate ? (
@@ -1819,6 +1850,16 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  toolbarStatusSelect: {
+    flexShrink: 0,
+    minWidth: 150,
+  },
+  toolbarStatusTrigger: {
+    minHeight: 34,
+  },
+  statusDropdownMenu: {
+    width: 190,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
