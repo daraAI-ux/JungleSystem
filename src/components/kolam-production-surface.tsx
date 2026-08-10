@@ -66,6 +66,7 @@ import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamRefreshIcon } from './kolam-refresh-icon';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
@@ -1027,6 +1028,8 @@ function KolamProductionDetail({
       value: status,
     })),
   ];
+  const recalculateDisabled =
+    controller.mutating || !canRecalculateKolamProduction(production.status);
 
   return (
     <View style={styles.detailSurface}>
@@ -1089,12 +1092,23 @@ function KolamProductionDetail({
               onPress={() => void controller.onExportDetailPdf()}
               style={styles.toolbarButton}
             />
-            {canRecalculateKolamProduction(production.status) && canUpdate ? (
+            {canUpdate ? (
               <KolamButton
-                disabled={controller.mutating}
+                disabled={recalculateDisabled}
+                icon={
+                  <KolamRefreshIcon
+                    color={V.colors.primaryFg}
+                    size={16}
+                  />
+                }
                 label="Hitung Ulang"
                 onPress={() => void controller.onRecalculate()}
-                style={styles.toolbarButton}
+                style={[
+                  styles.toolbarButton,
+                  styles.recalculateButton,
+                  recalculateDisabled ? styles.recalculateButtonDisabled : null,
+                ]}
+                textStyle={styles.recalculateButtonText}
               />
             ) : null}
             {production.status === 'in_progress' && canUpdate ? (
@@ -1850,6 +1864,16 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  recalculateButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  recalculateButtonDisabled: {
+    opacity: 0.55,
+  },
+  recalculateButtonText: {
+    color: V.colors.primaryFg,
   },
   toolbarStatusSelect: {
     flexShrink: 0,
