@@ -88,6 +88,7 @@ import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
 import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamPressable} from './kolam-pressable';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamResetButton} from './kolam-reset-button';
@@ -5325,15 +5326,12 @@ function KolamInboxActionStrip({
       </View>
       {handoverNoteOpen ? (
         <View style={styles.inboxHandoverNotePanel}>
-          <Text style={styles.inboxHandoverNoteTitle}>Catatan handover</Text>
-          <TextInput
+          <KolamNotesField
             accessibilityLabel="Catatan handover inbox"
             editable={!detail.sending}
-            multiline
+            label="Catatan handover"
             onChangeText={setHandoverNoteDraft}
             placeholder="Tulis konteks singkat untuk CS berikutnya"
-            placeholderTextColor={V.colors.mutedFg}
-            style={styles.inboxHandoverNoteInput}
             value={handoverNoteDraft}
           />
           <View style={styles.inboxHandoverNoteActions}>
@@ -8997,26 +8995,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 7,
-  },
-  inboxHandoverNoteTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  inboxHandoverNoteInput: {
-    minHeight: 62,
-    borderRadius: V.radius.md,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.secondary,
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    paddingHorizontal: 9,
-    paddingVertical: 7,
-    textAlignVertical: 'top',
   },
   inboxHandoverNoteActions: {
     flexDirection: 'row',
