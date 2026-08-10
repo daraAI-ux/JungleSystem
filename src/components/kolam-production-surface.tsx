@@ -1008,7 +1008,6 @@ function KolamProductionDetail({
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
-              muted
               onPress={() => {
                 controller.onBackToList();
                 onRouteChange?.(KOLAM_PRODUCTION_ROOT);
