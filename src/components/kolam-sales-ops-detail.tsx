@@ -392,7 +392,7 @@ export function KolamSalesOpsDetail({
             floating
             label={paymentStatusLabel}
             menuAlign="left"
-            menuWidth={180}
+            menuWidth={190}
             style={[
               styles.paymentStatusTrigger,
               marketplaceManaged || allowedTransitions.length === 0
@@ -1547,7 +1547,7 @@ const styles = StyleSheet.create({
   },
   paymentStatusTrigger: {
     minHeight: 30,
-    minWidth: 126,
+    minWidth: 190,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
