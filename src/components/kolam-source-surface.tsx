@@ -224,7 +224,7 @@ function KolamSourceShell({
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
-            {controller.mode === 'new' ? null : (
+            {controller.mode === 'new' || controller.mode === 'detail' ? null : (
               <Text numberOfLines={1} style={styles.detailToolbarContext}>
                 {contextLabel}
               </Text>
