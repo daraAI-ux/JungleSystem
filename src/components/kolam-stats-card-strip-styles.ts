@@ -53,7 +53,7 @@ export const statsCardStripStyles = StyleSheet.create({
     height: 64,
     position: 'absolute',
     right: 18,
-    top: 12,
+    top: 9,
     width: 64,
   },
   label: {
