@@ -903,8 +903,14 @@ function KolamSourceForm({
             style={styles.equalHeightSection}
             title="Komisi penjualan"
           >
-            <View style={[styles.basicInfoBox, styles.equalHeightCard]}>
-              <View style={styles.switchRow}>
+            <View
+              style={[
+                styles.basicInfoBox,
+                styles.equalHeightCard,
+                styles.sourcePricingCard,
+              ]}
+            >
+              <View style={[styles.switchRow, styles.sourcePricingCardTop]}>
                 <View style={styles.switchCopy}>
                   <Text style={styles.primaryText}>Komisi aktif</Text>
                   <Text style={styles.metaText}>
@@ -1000,9 +1006,15 @@ function KolamSourceForm({
             style={styles.equalHeightSection}
             title="Markup Channel (DARA)"
           >
-            <View style={[styles.basicInfoBox, styles.equalHeightCard]}>
-              <View style={styles.twoColumnGrid}>
-                <View style={styles.twoColumnItem}>
+            <View
+              style={[
+                styles.basicInfoBox,
+                styles.equalHeightCard,
+                styles.sourcePricingCard,
+              ]}
+            >
+              <View style={styles.sourceMarkupStack}>
+                <View>
                   <KolamDropdownSelect
                     label="Tipe markup"
                     onChange={value => {
@@ -1018,7 +1030,7 @@ function KolamSourceForm({
                     value={markupMode}
                   />
                 </View>
-                <View style={styles.twoColumnItem}>
+                <View>
                   {markupMode === 'percentage' ? (
                     <FieldShell label="Nilai markup">
                       <KolamFormTextField
@@ -1303,6 +1315,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  sourcePricingCard: {
+    minHeight: 128,
+  },
+  sourcePricingCardTop: {
+    minHeight: 44,
+  },
+  sourceMarkupStack: {
+    gap: 12,
   },
   fullWidthDropdownText: {
     maxWidth: '100%',
