@@ -5919,14 +5919,15 @@ function KolamSpeciesDetail({
       />
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters} />
-          <View style={kolamTableToolbarStyles.actions}>
+          <View style={kolamTableToolbarStyles.filters}>
             <KolamButton
               icon={<KolamKandangEnclosureIcon />}
               label="Alokasi kandang"
               onPress={() => setDetailActiveTab('location')}
               style={styles.toolbarButton}
             />
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamEditButton
               intent="primary"
               onPress={() => {
