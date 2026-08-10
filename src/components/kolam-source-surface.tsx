@@ -584,6 +584,26 @@ function KolamSourceDetail({
             label: 'Markup tetap',
             value: formatRupiah(source.markupFixed),
           },
+          {
+            id: 'created',
+            label: 'Dibuat',
+            value: [
+              source.createdAt || '-',
+              source.createdByLabel ? `oleh ${source.createdByLabel}` : '',
+            ]
+              .filter(Boolean)
+              .join(' '),
+          },
+          {
+            id: 'updated',
+            label: 'Diperbarui',
+            value: [
+              source.updatedAt || '-',
+              source.updatedByLabel ? `oleh ${source.updatedByLabel}` : '',
+            ]
+              .filter(Boolean)
+              .join(' '),
+          },
         ]}
         leading={
           source.logoUri ? (
@@ -629,34 +649,6 @@ function KolamSourceDetail({
         ) : (
           <Text style={styles.metaText}>Belum ada field biaya.</Text>
         )}
-      </SourceFormSection>
-
-      <SourceFormSection title="Aktivitas">
-        <KolamDescriptionList
-          accessibilityLabel="Aktivitas sumber"
-          rows={[
-            descRow(
-              'created',
-              'Dibuat',
-              [
-                source.createdAt || '—',
-                source.createdByLabel ? `oleh ${source.createdByLabel}` : '',
-              ]
-                .filter(Boolean)
-                .join(' '),
-            ),
-            descRow(
-              'updated',
-              'Diperbarui',
-              [
-                source.updatedAt || '—',
-                source.updatedByLabel ? `oleh ${source.updatedByLabel}` : '',
-              ]
-                .filter(Boolean)
-                .join(' '),
-            ),
-          ]}
-        />
       </SourceFormSection>
 
       <View style={styles.detailActions}>
