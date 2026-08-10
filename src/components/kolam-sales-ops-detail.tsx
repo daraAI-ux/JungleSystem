@@ -2464,8 +2464,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   courierLogo: {
-    height: 24,
-    width: 42,
+    height: 34,
+    width: 78,
   },
   trackingMono: {
     fontFamily: 'Consolas',
