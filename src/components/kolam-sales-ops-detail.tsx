@@ -9,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import {SvgXml} from 'react-native-svg';
-import {KOLAM_NEW_BUTTON_ICON_SVG} from '../assets/icons/new-button-icon-svg';
 import {
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
@@ -89,6 +88,7 @@ import {
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamComplaintButton } from './kolam-complaint-button';
+import {KolamDashboardHeaderActionIcon} from './kolam-dashboard-header-action-icon';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
@@ -283,7 +283,12 @@ export function KolamSalesOpsDetail({
             ) : null}
             {canAddItemsToKolamSale(sale) ? (
               <KolamButton
-                icon={<KolamSalesAddItemIcon />}
+                icon={
+                  <KolamDashboardHeaderActionIcon
+                    intent="primary"
+                    kind="plus"
+                  />
+                }
                 label="Tambah item"
                 onPress={() =>
                   onRouteChange?.(
@@ -1309,21 +1314,6 @@ function KolamSalesStockFlowCard({
         <Text style={styles.metaText}>Belum ada alur stok.</Text>
       )}
     </KolamCardFrame>
-  );
-}
-
-const KOLAM_SALES_ADD_ITEM_ICON_XML = KOLAM_NEW_BUTTON_ICON_SVG.replace(
-  /#000000/g,
-  V.colors.primaryFg,
-);
-
-function KolamSalesAddItemIcon() {
-  return (
-    <SvgXml
-      height="100%"
-      width="100%"
-      xml={KOLAM_SALES_ADD_ITEM_ICON_XML}
-    />
   );
 }
 
