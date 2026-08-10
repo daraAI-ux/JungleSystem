@@ -1,5 +1,12 @@
 import React, {useMemo} from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {
+  Image,
+  type ImageSourcePropType,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   buildKolamPusatAiHubRoute,
@@ -75,6 +82,15 @@ import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 const LOG_DARA_VIOLET = '#7c3aed';
 const LOG_DARA_VIOLET_SOFT = '#f5f3ff';
 const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
+const DARA_SEO_CARD_COVER =
+  require('../assets/images/dara-seo-card-cover.png') as ImageSourcePropType;
+const DARA_SEO_CARD_SCRIM_STOPS = [
+  {flex: 26, opacity: 1},
+  {flex: 18, opacity: 0.92},
+  {flex: 16, opacity: 0.68},
+  {flex: 14, opacity: 0.34},
+  {flex: 26, opacity: 0.06},
+] as const;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -670,6 +686,7 @@ function KolamPusatAiRingkasanBody({
           <View style={styles.modules}>
             <ModuleCard
               actionLabel="Buka SEO"
+              artworkSource={DARA_SEO_CARD_COVER}
               href="/campaign/dara-seo"
               metric={hub.seo != null ? String(hub.seo.seoScore) : '—'}
               onRouteChange={onRouteChange}
@@ -731,6 +748,7 @@ function KolamPusatAiRingkasanBody({
 
 function ModuleCard({
   actionLabel,
+  artworkSource,
   href,
   metric,
   onRouteChange,
@@ -740,6 +758,7 @@ function ModuleCard({
   title,
 }: {
   actionLabel: string;
+  artworkSource?: ImageSourcePropType;
   href: string;
   metric: string;
   onRouteChange?: (route: string) => void;
@@ -749,32 +768,58 @@ function ModuleCard({
   title: string;
 }) {
   return (
-    <View style={styles.moduleCard}>
-      <Text style={styles.moduleTitle}>{title}</Text>
-      <Text style={styles.moduleMetric}>{metric}</Text>
-      <Text style={styles.moduleSubtitle}>{subtitle}</Text>
-      <View style={styles.moduleStats}>
-        {stats.map((stat, index) => {
-          const online = statusOnline?.[index];
-          return (
-            <Text
-              key={stat}
-              style={[
-                styles.moduleStat,
-                online === true ? styles.statusOnline : null,
-                online === false ? styles.statusOffline : null,
-              ]}>
-              {stat}
-            </Text>
-          );
-        })}
-      </View>
-      <View style={styles.moduleAction}>
-        <KolamButton
-          intent="outline"
-          label={actionLabel}
-          onPress={() => onRouteChange?.(href)}
-        />
+    <View style={[styles.moduleCard, artworkSource && styles.moduleCardCover]}>
+      {artworkSource ? (
+        <>
+          <Image
+            resizeMode="cover"
+            source={artworkSource}
+            style={styles.moduleCardCoverImage}
+          />
+          <View pointerEvents="none" style={styles.moduleCardCoverScrim}>
+            {DARA_SEO_CARD_SCRIM_STOPS.map(stop => (
+              <View
+                key={`${stop.flex}-${stop.opacity}`}
+                style={[
+                  styles.moduleCardCoverScrimStop,
+                  {flex: stop.flex, opacity: stop.opacity},
+                ]}
+              />
+            ))}
+          </View>
+        </>
+      ) : null}
+      <View
+        style={[
+          styles.moduleCardContent,
+          artworkSource && styles.moduleCardContentCover,
+        ]}>
+        <Text style={styles.moduleTitle}>{title}</Text>
+        <Text style={styles.moduleMetric}>{metric}</Text>
+        <Text style={styles.moduleSubtitle}>{subtitle}</Text>
+        <View style={styles.moduleStats}>
+          {stats.map((stat, index) => {
+            const online = statusOnline?.[index];
+            return (
+              <Text
+                key={stat}
+                style={[
+                  styles.moduleStat,
+                  online === true ? styles.statusOnline : null,
+                  online === false ? styles.statusOffline : null,
+                ]}>
+                {stat}
+              </Text>
+            );
+          })}
+        </View>
+        <View style={styles.moduleAction}>
+          <KolamButton
+            intent="outline"
+            label={actionLabel}
+            onPress={() => onRouteChange?.(href)}
+          />
+        </View>
       </View>
     </View>
   );
@@ -1289,6 +1334,26 @@ const styles = StyleSheet.create({
     gap: 6,
     minWidth: 240,
     padding: 14,
+  },
+  moduleCardCover: {
+    minHeight: 172,
+    overflow: 'hidden',
+  },
+  moduleCardCoverImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  moduleCardCoverScrim: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+  },
+  moduleCardCoverScrimStop: {
+    backgroundColor: V.colors.bg,
+  },
+  moduleCardContent: {
+    gap: 6,
+  },
+  moduleCardContentCover: {
+    maxWidth: 260,
   },
   moduleTitle: {
     color: V.colors.mutedFg,
