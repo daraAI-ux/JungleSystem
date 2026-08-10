@@ -1187,6 +1187,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   twoColumnGrid: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
