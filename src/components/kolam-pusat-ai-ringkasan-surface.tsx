@@ -87,6 +87,8 @@ const DARA_SEO_CARD_BACKGROUND =
   require('../assets/images/dara-seo-card-background.png') as ImageSourcePropType;
 const DARA_MARKET_INTEL_CARD_BACKGROUND =
   require('../assets/images/dara-market-intel-card-background.png') as ImageSourcePropType;
+const DARA_SERP_CARD_BACKGROUND =
+  require('../assets/images/dara-serp-card-background.png') as ImageSourcePropType;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -709,6 +711,7 @@ function KolamPusatAiRingkasanBody({
             />
             <ModuleCard
               actionLabel="Lihat ranking SERP"
+              backgroundSource={DARA_SERP_CARD_BACKGROUND}
               href="/campaign/dara-seo/rankings"
               metric={String(hub.serpSnapshotsStored)}
               onRouteChange={onRouteChange}
