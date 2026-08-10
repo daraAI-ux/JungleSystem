@@ -14,7 +14,6 @@ import {useKolamHrAttendanceController} from '../hooks/use-kolam-hr-attendance-c
 import {KolamButton} from './kolam-button';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamListTableComposition} from './kolam-list-table-composition';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -131,14 +130,6 @@ export function KolamHrAttendanceBody({
                 onPress={() =>
                   onRouteChange?.(KOLAM_HR_ATTENDANCE_SETTINGS_ROUTE)
                 }
-                size="sm"
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
                 size="sm"
               />
             </View>
