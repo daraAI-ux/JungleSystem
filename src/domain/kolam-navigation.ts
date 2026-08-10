@@ -687,6 +687,12 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         moduleIcon: 'employeeSettings',
         requiredAccess: ['kolam'],
       },
+      {
+        label: 'KPI Tim',
+        route: '/list-of-users/kpi',
+        description: 'Dashboard kinerja tim (admin)',
+        requiredAccess: ['kolam'],
+      },
     ],
   },
   {
@@ -1090,6 +1096,9 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
         label: 'Pengaturan Karyawan',
         moduleIcon: 'employeeSettings',
       }),
+      sidebarItem('/list-of-users/kpi', {
+        label: 'KPI Tim',
+      }),
     ],
   },
   {
@@ -1103,9 +1112,6 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
       sidebarItem('/list-of-users', {
         label: 'Daftar Pengguna',
         moduleIcon: 'staff',
-      }),
-      sidebarItem('/list-of-users/kpi', {
-        label: 'KPI Tim',
       }),
       sidebarItem('/task-manager', {
         group: 'Manajemen Tugas',
