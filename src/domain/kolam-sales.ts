@@ -3725,10 +3725,6 @@ function normalizeSaleItemVoucherFields(record: Record<string, unknown>): {
 }
 
 function firstEntityPhotoPath(entity: Record<string, unknown>): string {
-  const thumbnail = getString(entity, 'thumbnailImage');
-  if (thumbnail) {
-    return thumbnail;
-  }
   const photos = entity.photos;
   if (Array.isArray(photos)) {
     for (const photo of photos) {
@@ -3744,6 +3740,10 @@ function firstEntityPhotoPath(entity: Record<string, unknown>): string {
         return path;
       }
     }
+  }
+  const thumbnail = getString(entity, 'thumbnailImage');
+  if (thumbnail) {
+    return thumbnail;
   }
   return '';
 }
