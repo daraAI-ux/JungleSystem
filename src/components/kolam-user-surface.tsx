@@ -2875,28 +2875,11 @@ function renderUserListCell(
       );
     case 'employee':
       return (
-        <View style={styles.userEmployeeCellContent}>
-          {profilePhotoUrl ? (
-            <KolamRemoteImage
-              accessibilityLabel={`Foto profil ${user.displayName}`}
-              resizeMode="cover"
-              scope="user-profile-list"
-              sourceUri={profilePhotoUrl}
-              style={styles.userEmployeeAvatarImage}
-            />
-          ) : (
-            <View style={styles.userEmployeeAvatarFallback}>
-              <Text numberOfLines={1} style={styles.userEmployeeAvatarInitials}>
-                {getUserInitials(user.displayName)}
-              </Text>
-            </View>
-          )}
-          <KolamStatusBadge
-            intent={user.isEmployee ? 'success' : 'secondary'}
-            label={user.isEmployee ? 'Karyawan' : 'Bukan karyawan'}
-            numberOfLines={1}
-          />
-        </View>
+        <KolamStatusBadge
+          intent={user.isEmployee ? 'success' : 'secondary'}
+          label={user.isEmployee ? 'Karyawan' : 'Bukan karyawan'}
+          numberOfLines={1}
+        />
       );
     case 'access':
       return user.accessBadges.length ? (
@@ -3704,34 +3687,6 @@ const styles = StyleSheet.create({
   userKasbonBadge: {
     alignSelf: 'flex-start',
     marginTop: 4,
-  },
-  userEmployeeCellContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    minWidth: 0,
-  },
-  userEmployeeAvatarImage: {
-    borderRadius: 6,
-    height: 28,
-    width: 28,
-  },
-  userEmployeeAvatarFallback: {
-    alignItems: 'center',
-    backgroundColor: V.colors.tableHeader,
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
-  userEmployeeAvatarInitials: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-    lineHeight: 14,
   },
   accessBadgeRow: {
     alignItems: 'center',
