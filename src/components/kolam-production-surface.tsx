@@ -1039,8 +1039,6 @@ function KolamProductionDetail({
             <Text numberOfLines={1} style={styles.detailToolbarContext}>
               {production.batchId || getKolamProductionTargetLabel(production)}
             </Text>
-          </View>
-          <View style={kolamTableToolbarStyles.actions}>
             {canUpdate ? (
               <KolamDropdownSelect<KolamProductionStatus>
                 accessibilityLabel="Status produksi"
@@ -1060,6 +1058,8 @@ function KolamProductionDetail({
                 value={currentStatusValue}
               />
             ) : null}
+          </View>
+          <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
               onPress={() => {
                 controller.onBackToList();
