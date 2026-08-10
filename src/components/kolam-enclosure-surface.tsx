@@ -109,7 +109,7 @@ const ENCLOSURE_EDIT_STATUS_OPTIONS = [
   'quarantine',
 ] as const;
 const ENCLOSURE_EDIT_SIZE_UNIT_INITIALS = new Set(['Cm', 'Mm', 'M']);
-const ENCLOSURE_LIST_SPECIES_THUMB_LIMIT = 4;
+const ENCLOSURE_LIST_SPECIES_THUMB_LIMIT = 2;
 
 type EnclosureEditFormState = {
   acquired_date: string;
