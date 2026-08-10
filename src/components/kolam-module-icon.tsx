@@ -19,6 +19,7 @@ import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-ic
 import {KOLAM_EMPLOYEE_BONUS_MODULE_ICON_SVG} from '../assets/icons/employee-bonus-module-icon-svg';
 import {KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG} from '../assets/icons/employee-settings-module-icon-svg';
 import {KOLAM_FINANCE_SUMMARY_MODULE_ICON_SVG} from '../assets/icons/finance-summary-module-icon-svg';
+import {KOLAM_KANDANG_ENCLOSURE_ICON_SVG} from '../assets/icons/kandang-enclosure-icon-svg';
 import {KOLAM_KPI_TEAM_MODULE_ICON_SVG} from '../assets/icons/kpi-team-module-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
@@ -51,7 +52,6 @@ import {KOLAM_UNEXPECTED_INCOME_MODULE_ICON_SVG} from '../assets/icons/unexpecte
 import {KOLAM_VOUCHER_MODULE_ICON_SVG} from '../assets/icons/voucher-module-icon-svg';
 import {KOLAM_WALLET_MODULE_ICON_SVG} from '../assets/icons/wallet-module-icon-svg';
 import type {KolamNavigationModuleIcon} from '../domain/kolam-navigation';
-import {KolamKandangEnclosureIcon} from './kolam-kandang-enclosure-icon';
 
 const IUCN_MODULE_ICON_SOURCE = require('../assets/icons/iucn-module-icon.png');
 const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-icon.png');
@@ -303,7 +303,11 @@ export function KolamModuleIcon({
           xml={KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG}
         />
       ) : kind === 'enclosure' ? (
-        <KolamKandangEnclosureIcon style={styles.imageIcon} />
+        <SvgXml
+          height={dimension}
+          width={dimension}
+          xml={KOLAM_KANDANG_ENCLOSURE_ICON_SVG}
+        />
       ) : kind === 'tag' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={TAG_ICON_PATH} fill="#1a1a1a" fillRule="nonzero" />
