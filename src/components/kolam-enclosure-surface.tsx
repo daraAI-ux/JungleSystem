@@ -480,31 +480,51 @@ function KolamEnclosureEditSurface({
   };
 
   return (
-    <KolamDetailScrollSurface contentContainerStyle={styles.editFormContent}>
-      {controller.error ? (
-        <KolamStatusBadge
-          intent="danger"
-          label={controller.error}
-          numberOfLines={3}
-          style={styles.errorBadge}
-        />
-      ) : null}
-      {formError ? (
-        <KolamStatusBadge
-          intent="danger"
-          label={formError}
-          numberOfLines={2}
-          style={styles.errorBadge}
-        />
-      ) : null}
-      {controller.statusMessage ? (
-        <KolamStatusBadge
-          intent="success"
-          label={controller.statusMessage}
-          numberOfLines={2}
-          style={styles.errorBadge}
-        />
-      ) : null}
+    <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters} />
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamSaveButton
+              disabled={controller.operationLoading}
+              label={controller.operationLoading ? 'Menyimpan...' : 'Simpan'}
+              onPress={() => void onSave()}
+              style={styles.toolbarButton}
+            />
+            <KolamCancelButton
+              disabled={controller.operationLoading}
+              onPress={() => onRouteChange?.(detailRoute)}
+              style={styles.toolbarButton}
+            />
+          </View>
+        </View>
+      </View>
+
+      <KolamDetailScrollSurface contentContainerStyle={styles.editFormContent}>
+        {controller.error ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={controller.error}
+            numberOfLines={3}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {formError ? (
+          <KolamStatusBadge
+            intent="danger"
+            label={formError}
+            numberOfLines={2}
+            style={styles.errorBadge}
+          />
+        ) : null}
+        {controller.statusMessage ? (
+          <KolamStatusBadge
+            intent="success"
+            label={controller.statusMessage}
+            numberOfLines={2}
+            style={styles.errorBadge}
+          />
+        ) : null}
 
       <DetailSection title="Identitas">
         <Text style={styles.sectionMeta}>
@@ -831,17 +851,8 @@ function KolamEnclosureEditSurface({
         )}
       </DetailSection>
 
-      <View style={styles.detailActions}>
-        <KolamSaveButton
-          disabled={controller.operationLoading}
-          onPress={() => void onSave()}
-        />
-        <KolamCancelButton
-          disabled={controller.operationLoading}
-          onPress={() => onRouteChange?.(detailRoute)}
-        />
-      </View>
-    </KolamDetailScrollSurface>
+      </KolamDetailScrollSurface>
+    </View>
   );
 }
 

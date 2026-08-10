@@ -2062,6 +2062,13 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/enclosures',
+    label: 'Buat kandang',
+    labelSuffix: 'Buat',
+    route: '/enclosures/new',
+    description: 'Buat kandang dari live Kolam',
+  },
+  {
+    baseRoute: '/enclosures',
     labelSuffix: 'Detail',
     route: '/enclosures/:id',
     description: 'Detail kandang dari live Kolam',
