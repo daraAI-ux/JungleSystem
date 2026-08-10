@@ -685,37 +685,6 @@ function KolamSalesOpsCreateForm({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <View style={styles.toolbarPointsWrap}>
-              <KolamDropdownSelect
-                accessibilityLabel="Pilih metode poin"
-                label="Metode poin"
-                menuPlacement="inline"
-                onChange={pointsMethod =>
-                  controller.onChangeForm({
-                    pointsMethod: pointsMethod as 'manual' | 'product_based',
-                  })
-                }
-                options={[
-                  { label: 'Berdasarkan produk', value: 'product_based' },
-                  { label: 'Manual', value: 'manual' },
-                ]}
-                showLabelInTrigger={false}
-                style={styles.toolbarPointsDropdown}
-                triggerStyle={styles.toolbarPointsTrigger}
-                value={form.pointsMethod || 'product_based'}
-              />
-              {form.pointsMethod === 'manual' ? (
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={manualPoints =>
-                    controller.onChangeForm({ manualPoints })
-                  }
-                  placeholder="Poin"
-                  style={styles.toolbarPointsInput}
-                  value={form.manualPoints}
-                />
-              ) : null}
-            </View>
             <KolamCancelButton
               onPress={() => onRouteChange?.(backRoute)}
               style={styles.toolbarButton}
@@ -1433,6 +1402,47 @@ function KolamSalesOpsCreateForm({
           </KolamContentFrame>
 
           <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+            <View style={styles.pointsConfigBlock}>
+              <View style={styles.pointsConfigHeader}>
+                <Text style={styles.fieldLabel}>Poin anggota</Text>
+                <Text style={styles.tosHint}>
+                  Tentukan cara perhitungan poin untuk invoice ini.
+                </Text>
+              </View>
+              <View style={styles.pointsConfigRow}>
+                <View style={styles.pointsConfigDropdown}>
+                  <KolamDropdownSelect
+                    accessibilityLabel="Pilih metode poin"
+                    label="Metode poin"
+                    menuPlacement="inline"
+                    onChange={pointsMethod =>
+                      controller.onChangeForm({
+                        pointsMethod:
+                          pointsMethod as 'manual' | 'product_based',
+                      })
+                    }
+                    options={[
+                      { label: 'Berdasarkan produk', value: 'product_based' },
+                      { label: 'Manual', value: 'manual' },
+                    ]}
+                    value={form.pointsMethod || 'product_based'}
+                  />
+                </View>
+                {form.pointsMethod === 'manual' ? (
+                  <View style={styles.pointsConfigInput}>
+                    <KolamFormTextField
+                      mode="numeric"
+                      onChangeText={manualPoints =>
+                        controller.onChangeForm({ manualPoints })
+                      }
+                      placeholder="Poin"
+                      value={form.manualPoints}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
             <KolamNotesField
               label="Catatan invoice"
               numberOfLines={6}
@@ -2860,22 +2870,26 @@ const styles = StyleSheet.create({
   itemControlFill: {
     width: '100%',
   },
-  toolbarPointsWrap: {
-    alignItems: 'center',
+  pointsConfigBlock: {
+    gap: 10,
+  },
+  pointsConfigHeader: {
+    gap: 4,
+  },
+  pointsConfigRow: {
+    alignItems: 'flex-end',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  pointsConfigDropdown: {
+    flex: 1,
+    minWidth: 220,
+  },
+  pointsConfigInput: {
+    flexBasis: 140,
+    flexGrow: 0,
     flexShrink: 0,
-    gap: 8,
-  },
-  toolbarPointsDropdown: {
-    minWidth: 0,
-    width: 168,
-  },
-  toolbarPointsTrigger: {
-    minWidth: 0,
-    width: '100%',
-  },
-  toolbarPointsInput: {
-    width: 88,
   },
   tosBlock: {
     gap: 8,
