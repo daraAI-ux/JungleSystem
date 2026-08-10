@@ -754,17 +754,15 @@ function KolamSourceForm({
         description="Nama, tipe saluran, status, dan marketplace eksternal."
         title="Informasi Dasar"
       >
+        <FieldShell label="Nama" required>
+          <KolamFormTextField
+            onChangeText={value => controller.onChangeForm({ name: value })}
+            placeholder="Contoh: Shopee, Tokopedia, POS"
+            style={settingsWebFormStyles.settingsWebFormFieldValue}
+            value={form.name}
+          />
+        </FieldShell>
         <View style={styles.twoColumnGrid}>
-          <View style={styles.twoColumnItem}>
-            <FieldShell label="Nama" required>
-              <KolamFormTextField
-                onChangeText={value => controller.onChangeForm({ name: value })}
-                placeholder="Contoh: Shopee, Tokopedia, POS"
-                style={settingsWebFormStyles.settingsWebFormFieldValue}
-                value={form.name}
-              />
-            </FieldShell>
-          </View>
           <View style={styles.twoColumnItem}>
             <View style={styles.switchRow}>
               <View style={styles.switchCopy}>
@@ -777,6 +775,23 @@ function KolamSourceForm({
                 active={form.isActive}
                 onPress={() =>
                   controller.onChangeForm({ isActive: !form.isActive })
+                }
+              />
+            </View>
+          </View>
+          <View style={styles.twoColumnItem}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchCopy}>
+                <Text style={styles.primaryText}>Marketplace Eksternal</Text>
+                <Text style={styles.metaText}>
+                  Aktifkan hanya untuk Tokopedia, Shopee, atau TikTok Shop.
+                  Website dan Store biarkan mati.
+                </Text>
+              </View>
+              <KolamSwitch
+                active={form.isMarketplace}
+                onPress={() =>
+                  controller.onChangeForm({ isMarketplace: !form.isMarketplace })
                 }
               />
             </View>
@@ -798,7 +813,24 @@ function KolamSourceForm({
               value={form.type}
             />
           </View>
-          <View style={styles.twoColumnItem} />
+          <View style={styles.twoColumnItem}>
+            <KolamDropdownSelect
+              label="Dompet Tujuan"
+              onChange={value =>
+                controller.onChangeForm({
+                  walletId: value === '' ? null : value,
+                })
+              }
+              options={[
+                { label: '— Tidak ada —', value: '' },
+                ...controller.wallets.map(wallet => ({
+                  label: `${wallet.name} (${wallet.type})`,
+                  value: wallet.id,
+                })),
+              ]}
+              value={form.walletId ?? ''}
+            />
+          </View>
         </View>
         <FieldShell label="Deskripsi">
           <KolamFormTextField
@@ -814,37 +846,6 @@ function KolamSourceForm({
             value={form.description}
           />
         </FieldShell>
-        <View style={styles.switchRow}>
-          <View style={styles.switchCopy}>
-            <Text style={styles.primaryText}>Marketplace Eksternal</Text>
-            <Text style={styles.metaText}>
-              Aktifkan hanya untuk Tokopedia, Shopee, atau TikTok Shop.
-              Website dan Store biarkan mati.
-            </Text>
-          </View>
-          <KolamSwitch
-            active={form.isMarketplace}
-            onPress={() =>
-              controller.onChangeForm({ isMarketplace: !form.isMarketplace })
-            }
-          />
-        </View>
-        <KolamDropdownSelect
-          label="Dompet Tujuan"
-          onChange={value =>
-            controller.onChangeForm({
-              walletId: value === '' ? null : value,
-            })
-          }
-          options={[
-            { label: '— Tidak ada —', value: '' },
-            ...controller.wallets.map(wallet => ({
-              label: `${wallet.name} (${wallet.type})`,
-              value: wallet.id,
-            })),
-          ]}
-          value={form.walletId ?? ''}
-        />
       </SourceFormSection>
 
       <SourceFormSection
