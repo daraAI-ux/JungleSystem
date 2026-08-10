@@ -30,44 +30,6 @@ export function KolamKpiSummaryBody({
 }) {
   const controller = useKolamKpiSummaryController({enabled: canView});
 
-  const leaderboardColumns = useMemo(
-    () => [
-      {
-        id: 'rank',
-        label: '#',
-        flex: 0.4,
-        render: (row: KolamKpiLeaderboardRow) => (
-          <Text style={styles.cellText}>{row.rank}</Text>
-        ),
-      },
-      {
-        id: 'staff',
-        label: 'Staff',
-        flex: 1.6,
-        render: (row: KolamKpiLeaderboardRow) => (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() =>
-              onRouteChange?.(buildKolamKpiUserDetailRoute(row.userId))
-            }>
-            <Text style={styles.linkText}>
-              {kolamKpiLeaderboardRowLabel(row)}
-            </Text>
-          </Pressable>
-        ),
-      },
-      {
-        id: 'points',
-        label: 'Poin',
-        flex: 0.7,
-        render: (row: KolamKpiLeaderboardRow) => (
-          <Text style={styles.cellText}>{formatKolamKpiPoints(row.points)}</Text>
-        ),
-      },
-    ],
-    [onRouteChange],
-  );
-
   const breakdownColumns = useMemo(
     () => [
       {
@@ -194,17 +156,11 @@ export function KolamKpiSummaryBody({
         {controller.leaderboard?.periodKey ? (
           <Text style={styles.meta}>{controller.leaderboard.periodKey}</Text>
         ) : null}
-        <KolamListTableComposition
-          columns={leaderboardColumns}
-          emptyTitle={
-            controller.leaderboard
-              ? `Belum ada poin pada periode ${controller.leaderboard.periodKey}.`
-              : 'Tidak ada data.'
-          }
-          getRowKey={row => row.userId}
+        <KpiLeaderboardList
           loading={controller.loading}
+          onRouteChange={onRouteChange}
+          periodKey={controller.leaderboard?.periodKey}
           rows={controller.leaderboard?.rows ?? []}
-          showFooter={false}
         />
         {controller.periodView === 'week' &&
         (controller.leaderboard?.rows.length ?? 0) === 0 &&
@@ -323,6 +279,81 @@ function KpiTeamLineChart({
   );
 }
 
+function KpiLeaderboardList({
+  loading,
+  onRouteChange,
+  periodKey,
+  rows,
+}: {
+  loading: boolean;
+  onRouteChange?: (route: string) => void;
+  periodKey?: string;
+  rows: KolamKpiLeaderboardRow[];
+}) {
+  if (loading && rows.length === 0) {
+    return <Text style={styles.meta}>Memuatâ€¦</Text>;
+  }
+
+  if (rows.length === 0) {
+    return (
+      <Text style={styles.meta}>
+        {periodKey
+          ? `Belum ada poin pada periode ${periodKey}.`
+          : 'Tidak ada data.'}
+      </Text>
+    );
+  }
+
+  const [topRow, ...restRows] = rows;
+
+  return (
+    <View style={styles.leaderboardList}>
+      {topRow ? (
+        <Pressable
+          accessibilityRole="link"
+          onPress={() =>
+            onRouteChange?.(buildKolamKpiUserDetailRoute(topRow.userId))
+          }
+          style={styles.leaderboardHero}>
+          <View style={styles.leaderboardHeroRank}>
+            <Text style={styles.leaderboardHeroRankText}>#{topRow.rank}</Text>
+          </View>
+          <View style={styles.leaderboardHeroBody}>
+            <Text numberOfLines={1} style={styles.leaderboardHeroName}>
+              {kolamKpiLeaderboardRowLabel(topRow)}
+            </Text>
+            <Text style={styles.leaderboardHeroPoints}>
+              {formatKolamKpiPoints(topRow.points)} poin
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
+
+      <View style={styles.leaderboardRows}>
+        {restRows.slice(0, 9).map(row => (
+          <Pressable
+            accessibilityRole="link"
+            key={row.userId}
+            onPress={() =>
+              onRouteChange?.(buildKolamKpiUserDetailRoute(row.userId))
+            }
+            style={styles.leaderboardRow}>
+            <View style={styles.leaderboardRank}>
+              <Text style={styles.leaderboardRankText}>{row.rank}</Text>
+            </View>
+            <Text numberOfLines={1} style={styles.leaderboardName}>
+              {kolamKpiLeaderboardRowLabel(row)}
+            </Text>
+            <Text numberOfLines={1} style={styles.leaderboardPoints}>
+              {formatKolamKpiPoints(row.points)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -345,6 +376,95 @@ const styles = StyleSheet.create({
   leaderboardCard: {
     flex: 1,
     minWidth: 0,
+  },
+  leaderboardList: {
+    gap: 8,
+  },
+  leaderboardHero: {
+    alignItems: 'center',
+    backgroundColor: V.colors.secondary,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minWidth: 0,
+    padding: 10,
+  },
+  leaderboardHeroRank: {
+    alignItems: 'center',
+    backgroundColor: V.colors.primary,
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  leaderboardHeroRankText: {
+    color: V.colors.primaryFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  leaderboardHeroBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  leaderboardHeroName: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  leaderboardHeroPoints: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  leaderboardRows: {
+    gap: 6,
+  },
+  leaderboardRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+  },
+  leaderboardRank: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderRadius: 12,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  leaderboardRankText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  leaderboardName: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+    minWidth: 0,
+  },
+  leaderboardPoints: {
+    color: V.colors.primary,
+    flexShrink: 0,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   toolbarWrap: {
     elevation: 1000,
