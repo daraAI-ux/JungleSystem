@@ -96,6 +96,7 @@ import {
 } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamKandangEnclosureIcon} from './kolam-kandang-enclosure-icon';
 import { KolamModalDialog } from './kolam-modal-dialog';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -1337,6 +1338,7 @@ function KolamSalesEnclosureAllocationPanel({
       >
         <View style={styles.allocationHeader}>
           <View style={styles.allocationTitleRow}>
+            <KolamKandangEnclosureIcon style={styles.allocationTitleIcon} />
             <Text style={styles.sectionTitle}>Alokasi enclosure</Text>
             <KolamStatusBadge
               intent="warning"
@@ -2108,6 +2110,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  allocationTitleIcon: {
+    height: 18,
+    width: 18,
   },
   allocationList: {
     borderColor: V.colors.border,
