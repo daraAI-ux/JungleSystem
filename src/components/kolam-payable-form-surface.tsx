@@ -15,6 +15,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -195,13 +196,11 @@ function PayableFormBody({
         </KolamContentFrame>
 
         <KolamContentFrame variant="nativeFormSection">
-          <Text style={styles.sectionTitle}>Catatan</Text>
           <KolamContentFrame variant="nativeFormControls">
             <View style={settingsWebFormStyles.settingsWebFormFields}>
               <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Catatan" />
-                <KolamFormTextField
-                  multiline
+                <KolamNotesField
+                  label="Catatan"
                   onChangeText={value =>
                     controller.onChangeForm({ notes: value })
                   }

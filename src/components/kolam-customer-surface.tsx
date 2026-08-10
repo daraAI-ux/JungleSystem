@@ -45,6 +45,7 @@ import {
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 
@@ -812,9 +813,8 @@ function KolamCustomerFormSurface({
             placeholder="Alamat lengkap"
             value={address}
           />
-          <CustomerTextField
+          <KolamNotesField
             label="Catatan"
-            multiline
             onChangeText={setNotes}
             placeholder="Catatan (opsional)"
             value={notes}

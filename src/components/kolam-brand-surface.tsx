@@ -45,6 +45,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -822,20 +823,13 @@ function KolamBrandForm({ controller }: { controller: KolamBrandController }) {
               </FieldShell>
             </View>
           </View>
-          <FieldShell label="Catatan">
-            <KolamFormTextField
-              editable={!controller.saving}
-              multiline
-              onChangeText={notes => controller.onChangeForm({ notes })}
-              placeholder="Catatan internal"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-                settingsWebFormStyles.settingsWebFormFieldValueNote,
-              ]}
-              value={form.notes}
-            />
-          </FieldShell>
+          <KolamNotesField
+            editable={!controller.saving}
+            label="Catatan"
+            onChangeText={notes => controller.onChangeForm({ notes })}
+            placeholder="Catatan internal"
+            value={form.notes}
+          />
           <View style={styles.brandAssetSettingsGrid}>
             <View style={styles.brandAssetSettingsCard}>
               <FieldShell label="Link">

@@ -62,6 +62,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { type KolamImagePreviewItem } from './kolam-image-preview-dialog';
 import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamNotesDisplay, KolamNotesField} from './kolam-notes-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -264,10 +265,10 @@ function WalletDetailMode({
                   label={wallet.requireDepositProof ? 'Wajib' : 'Opsional'}
                 />
               </View>
-              <WalletInfoItem
+              <KolamNotesDisplay
+                containerStyle={styles.profileItemWide}
                 label="Catatan"
-                value={wallet.note || '—'}
-                wide
+                text={wallet.note}
               />
             </View>
           </KolamCardFrame>
@@ -823,7 +824,7 @@ function WalletCreateMode({
             placeholder="Saldo Awal"
             value={initialBalance}
           />
-          <KolamFormTextField
+          <KolamNotesField
             onChangeText={setNote}
             placeholder="Catatan"
             value={note}
@@ -1002,7 +1003,7 @@ function WalletEditMode({
               placeholder="Nama dompet"
               value={name}
             />
-            <KolamFormTextField
+            <KolamNotesField
               onChangeText={setNote}
               placeholder="Catatan"
               value={note}
@@ -1679,7 +1680,7 @@ function DepositForm({
         placeholder="Jumlah"
         value={amount}
       />
-      <KolamFormTextField
+      <KolamNotesField
         onChangeText={setNote}
         placeholder="Catatan"
         value={note}
@@ -1776,7 +1777,7 @@ function WithdrawForm({
         placeholder="Jumlah"
         value={amount}
       />
-      <KolamFormTextField
+      <KolamNotesField
         onChangeText={setNote}
         placeholder="Catatan"
         value={note}
@@ -1896,7 +1897,7 @@ function TransferForm({
         placeholder="Jumlah Transfer"
         value={amount}
       />
-      <KolamFormTextField
+      <KolamNotesField
         onChangeText={setNote}
         placeholder="Catatan"
         value={note}

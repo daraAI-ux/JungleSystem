@@ -36,6 +36,7 @@ import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
+import {KolamNotesDisplay, KolamNotesField} from './kolam-notes-field';
 import {KolamSettingsWebFieldLabel} from './kolam-settings-web-field-label';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -651,14 +652,12 @@ function UploadVersionForm({
             value={version}
           />
         </Field>
-        <Field label="Catatan rilis" required={false}>
-          <KolamFormTextField
-            multiline
-            onChangeText={setReleaseNotes}
-            placeholder="Opsional"
-            value={releaseNotes}
-          />
-        </Field>
+        <KolamNotesField
+          label="Catatan rilis"
+          onChangeText={setReleaseNotes}
+          placeholder="Opsional"
+          value={releaseNotes}
+        />
       </View>
       <View style={styles.filePickerRow}>
         <KolamButton
@@ -778,9 +777,10 @@ function KolamAppDownloadCard({
           {selectedVersion ? (
             <View style={styles.versionBody}>
               {selectedVersion.releaseNotes ? (
-                <Text style={styles.releaseNotes}>
-                  {selectedVersion.releaseNotes}
-                </Text>
+                <KolamNotesDisplay
+                  label="Catatan rilis"
+                  text={selectedVersion.releaseNotes}
+                />
               ) : null}
 
               {selectedVersion.artifacts.length === 0 ? (
@@ -1216,12 +1216,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '900',
-  },
-  releaseNotes: {
-    color: V.colors.mutedFg,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 19,
   },
   root: {
     flex: 1,

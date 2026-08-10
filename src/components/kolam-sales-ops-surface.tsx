@@ -61,6 +61,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSalesOpsAnalyticsPanel } from './kolam-sales-ops-analytics-panel';
 import { KolamSalesOpsDetail } from './kolam-sales-ops-detail';
@@ -1390,17 +1391,13 @@ function KolamSalesOpsCreateForm({
           </KolamContentFrame>
 
           <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-            <Text style={styles.sectionTitle}>Catatan</Text>
-            <FieldShell label="Catatan invoice">
-              <KolamFormTextField
-                multiline
-                numberOfLines={6}
-                onChangeText={notes => controller.onChangeForm({ notes })}
+            <KolamNotesField
+              label="Catatan invoice"
+              numberOfLines={6}
+              onChangeText={notes => controller.onChangeForm({ notes })}
                 placeholder="Catatan tambahan…"
-                style={styles.notesInput}
-                value={form.notes}
-              />
-            </FieldShell>
+              value={form.notes}
+            />
 
             <View style={styles.tosBlock}>
               <Text style={styles.fieldLabel}>Syarat & Ketentuan (ToS)</Text>
@@ -2812,10 +2809,6 @@ const styles = StyleSheet.create({
   },
   toolbarPointsInput: {
     width: 88,
-  },
-  notesInput: {
-    minHeight: 120,
-    width: '100%',
   },
   tosBlock: {
     gap: 8,
