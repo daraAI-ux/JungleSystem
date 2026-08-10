@@ -468,9 +468,19 @@ function buildSalesOpsListColumns({
       label: 'Invoice',
       render: sale => (
         <Pressable onPress={() => onSelect(sale)} style={styles.identityCell}>
-          <Text numberOfLines={1} style={styles.invoiceCode}>
-            {sale.invoiceCode}
-          </Text>
+          <View style={styles.invoiceTitleRow}>
+            <Text numberOfLines={1} style={styles.invoiceCode}>
+              {sale.invoiceCode}
+            </Text>
+            {sale.openLivestockPendingCount > 0 ? (
+              <KolamStatusBadge
+                intent="warning"
+                label={`${sale.openLivestockPendingCount} spesies perlu atur kandang`}
+                style={styles.invoicePendingBadge}
+                textStyle={styles.invoicePendingBadgeText}
+              />
+            ) : null}
+          </View>
           <Text numberOfLines={1} style={styles.metaText}>
             {formatShortDate(sale.transactionDate || sale.createdAt)}
           </Text>
@@ -2195,10 +2205,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
+  invoiceTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    minWidth: 0,
+  },
   invoiceCode: {
     color: V.colors.fg,
+    flexShrink: 1,
     fontSize: 13,
     fontWeight: '600',
+    minWidth: 0,
+  },
+  invoicePendingBadge: {
+    flexShrink: 0,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  invoicePendingBadgeText: {
+    fontSize: 10,
+    lineHeight: 13,
   },
   primaryText: {
     color: V.colors.fg,

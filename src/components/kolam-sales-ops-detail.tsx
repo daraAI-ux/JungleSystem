@@ -1635,6 +1635,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    minHeight: 34,
     minWidth: 0,
   },
   detailToolbarContext: {
@@ -1645,7 +1646,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     minWidth: 0,
     paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingVertical: 0,
   },
   complaintBanner: {
     gap: 8,
