@@ -754,98 +754,102 @@ function KolamSourceForm({
         description="Nama, tipe saluran, status, dan marketplace eksternal."
         title="Informasi Dasar"
       >
-        <FieldShell label="Nama" required>
-          <KolamFormTextField
-            onChangeText={value => controller.onChangeForm({ name: value })}
-            placeholder="Contoh: Shopee, Tokopedia, POS"
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.name}
-          />
-        </FieldShell>
-        <View style={styles.twoColumnGrid}>
-          <View style={styles.twoColumnItem}>
-            <View style={[styles.switchRow, styles.switchCard]}>
-              <View style={styles.switchCopy}>
-                <Text style={styles.primaryText}>Aktif</Text>
-                <Text style={styles.metaText}>
-                  Sumber nonaktif tidak muncul di picker penjualan.
-                </Text>
-              </View>
-              <KolamSwitch
-                active={form.isActive}
-                onPress={() =>
-                  controller.onChangeForm({ isActive: !form.isActive })
-                }
-              />
-            </View>
-          </View>
-          <View style={styles.twoColumnItem}>
-            <View style={[styles.switchRow, styles.switchCard]}>
-              <View style={styles.switchCopy}>
-                <Text style={styles.primaryText}>Marketplace Eksternal</Text>
-                <Text style={styles.metaText}>
-                  Aktifkan hanya untuk Tokopedia, Shopee, atau TikTok Shop.
-                  Website dan Store biarkan mati.
-                </Text>
-              </View>
-              <KolamSwitch
-                active={form.isMarketplace}
-                onPress={() =>
-                  controller.onChangeForm({ isMarketplace: !form.isMarketplace })
-                }
-              />
-            </View>
-          </View>
-        </View>
-        <View style={styles.twoColumnGrid}>
-          <View style={styles.twoColumnItem}>
-            <KolamDropdownSelect
-              label="Tipe penjualan"
-              onChange={value =>
-                controller.onChangeForm({
-                  type: value as 'online' | 'offline',
-                })
-              }
-              options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
-                label: option.label,
-                value: option.id,
-              }))}
-              value={form.type}
+        <View style={styles.basicInfoBox}>
+          <FieldShell label="Nama" required>
+            <KolamFormTextField
+              onChangeText={value => controller.onChangeForm({ name: value })}
+              placeholder="Contoh: Shopee, Tokopedia, POS"
+              style={settingsWebFormStyles.settingsWebFormFieldValue}
+              value={form.name}
             />
+          </FieldShell>
+          <View style={styles.twoColumnGrid}>
+            <View style={styles.twoColumnItem}>
+              <View style={[styles.switchRow, styles.switchCard]}>
+                <View style={styles.switchCopy}>
+                  <Text style={styles.primaryText}>Aktif</Text>
+                  <Text style={styles.metaText}>
+                    Sumber nonaktif tidak muncul di picker penjualan.
+                  </Text>
+                </View>
+                <KolamSwitch
+                  active={form.isActive}
+                  onPress={() =>
+                    controller.onChangeForm({ isActive: !form.isActive })
+                  }
+                />
+              </View>
+            </View>
+            <View style={styles.twoColumnItem}>
+              <View style={[styles.switchRow, styles.switchCard]}>
+                <View style={styles.switchCopy}>
+                  <Text style={styles.primaryText}>Marketplace Eksternal</Text>
+                  <Text style={styles.metaText}>
+                    Aktifkan hanya untuk Tokopedia, Shopee, atau TikTok Shop.
+                    Website dan Store biarkan mati.
+                  </Text>
+                </View>
+                <KolamSwitch
+                  active={form.isMarketplace}
+                  onPress={() =>
+                    controller.onChangeForm({
+                      isMarketplace: !form.isMarketplace,
+                    })
+                  }
+                />
+              </View>
+            </View>
           </View>
-          <View style={styles.twoColumnItem}>
-            <KolamDropdownSelect
-              label="Dompet Tujuan"
-              onChange={value =>
-                controller.onChangeForm({
-                  walletId: value === '' ? null : value,
-                })
+          <View style={styles.twoColumnGrid}>
+            <View style={styles.twoColumnItem}>
+              <KolamDropdownSelect
+                label="Tipe penjualan"
+                onChange={value =>
+                  controller.onChangeForm({
+                    type: value as 'online' | 'offline',
+                  })
+                }
+                options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
+                  label: option.label,
+                  value: option.id,
+                }))}
+                value={form.type}
+              />
+            </View>
+            <View style={styles.twoColumnItem}>
+              <KolamDropdownSelect
+                label="Dompet Tujuan"
+                onChange={value =>
+                  controller.onChangeForm({
+                    walletId: value === '' ? null : value,
+                  })
+                }
+                options={[
+                  { label: '— Tidak ada —', value: '' },
+                  ...controller.wallets.map(wallet => ({
+                    label: `${wallet.name} (${wallet.type})`,
+                    value: wallet.id,
+                  })),
+                ]}
+                value={form.walletId ?? ''}
+              />
+            </View>
+          </View>
+          <FieldShell label="Deskripsi">
+            <KolamFormTextField
+              multiline
+              onChangeText={value =>
+                controller.onChangeForm({ description: value })
               }
-              options={[
-                { label: '— Tidak ada —', value: '' },
-                ...controller.wallets.map(wallet => ({
-                  label: `${wallet.name} (${wallet.type})`,
-                  value: wallet.id,
-                })),
+              placeholder="Opsional"
+              style={[
+                settingsWebFormStyles.settingsWebFormFieldValue,
+                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
               ]}
-              value={form.walletId ?? ''}
+              value={form.description}
             />
-          </View>
+          </FieldShell>
         </View>
-        <FieldShell label="Deskripsi">
-          <KolamFormTextField
-            multiline
-            onChangeText={value =>
-              controller.onChangeForm({ description: value })
-            }
-            placeholder="Opsional"
-            style={[
-              settingsWebFormStyles.settingsWebFormFieldValue,
-              settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-            ]}
-            value={form.description}
-          />
-        </FieldShell>
       </SourceFormSection>
 
       <SourceFormSection
@@ -1160,6 +1164,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  basicInfoBox: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 14,
+    padding: 12,
   },
   twoColumnGrid: {
     flexDirection: 'row',
