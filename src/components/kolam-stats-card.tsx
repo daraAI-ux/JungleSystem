@@ -12,8 +12,10 @@ export function KolamStatsCard({card}: {card: KolamStatsCardItem}) {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.label}>{card.label}</Text>
-          <View style={styles.iconWrap}>
-            <SvgXml height="100%" width="100%" xml={card.iconSvg} />
+          <View style={styles.iconSlot}>
+            <View style={styles.iconWrap}>
+              <SvgXml height="100%" width="100%" xml={card.iconSvg} />
+            </View>
           </View>
         </View>
         <Text style={[styles.value, getStatsCardValueToneStyle(card.tone)]}>

@@ -49,11 +49,17 @@ export const statsCardStripStyles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingRight: 78,
   },
-  iconWrap: {
-    height: 64,
+  iconSlot: {
+    alignItems: 'center',
+    bottom: 0,
+    justifyContent: 'center',
     position: 'absolute',
     right: 18,
-    top: 9,
+    top: 0,
+    width: 64,
+  },
+  iconWrap: {
+    height: 64,
     width: 64,
   },
   label: {
