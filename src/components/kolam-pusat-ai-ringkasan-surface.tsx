@@ -85,6 +85,8 @@ const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
 
 const DARA_SEO_CARD_BACKGROUND =
   require('../assets/images/dara-seo-card-background.png') as ImageSourcePropType;
+const DARA_MARKET_INTEL_CARD_BACKGROUND =
+  require('../assets/images/dara-market-intel-card-background.png') as ImageSourcePropType;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -693,6 +695,7 @@ function KolamPusatAiRingkasanBody({
             />
             <ModuleCard
               actionLabel="Buka Market Intel"
+              backgroundSource={DARA_MARKET_INTEL_CARD_BACKGROUND}
               href="/campaign/dara-market-intel"
               metric={String(hub.market.pendingApprovals)}
               onRouteChange={onRouteChange}
