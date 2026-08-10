@@ -778,19 +778,24 @@ function KolamSourceForm({
             </View>
           </View>
         </View>
-        <KolamDropdownSelect
-          label="Tipe penjualan"
-          onChange={value =>
-            controller.onChangeForm({
-              type: value as 'online' | 'offline',
-            })
-          }
-          options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
-            label: option.label,
-            value: option.id,
-          }))}
-          value={form.type}
-        />
+        <View style={styles.twoColumnGrid}>
+          <View style={styles.twoColumnItem}>
+            <KolamDropdownSelect
+              label="Tipe penjualan"
+              onChange={value =>
+                controller.onChangeForm({
+                  type: value as 'online' | 'offline',
+                })
+              }
+              options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
+                label: option.label,
+                value: option.id,
+              }))}
+              value={form.type}
+            />
+          </View>
+          <View style={styles.twoColumnItem} />
+        </View>
         <FieldShell label="Deskripsi">
           <KolamFormTextField
             multiline
