@@ -1,12 +1,5 @@
 import React, {useMemo} from 'react';
-import {
-  Image,
-  type ImageSourcePropType,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   buildKolamPusatAiHubRoute,
@@ -82,8 +75,6 @@ import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 const LOG_DARA_VIOLET = '#7c3aed';
 const LOG_DARA_VIOLET_SOFT = '#f5f3ff';
 const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
-const DARA_SEO_CARD_BACKGROUND =
-  require('../assets/images/dara-seo-card-background.png') as ImageSourcePropType;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -679,7 +670,6 @@ function KolamPusatAiRingkasanBody({
           <View style={styles.modules}>
             <ModuleCard
               actionLabel="Buka SEO"
-              artworkSource={DARA_SEO_CARD_BACKGROUND}
               href="/campaign/dara-seo"
               metric={hub.seo != null ? String(hub.seo.seoScore) : '—'}
               onRouteChange={onRouteChange}
@@ -741,7 +731,6 @@ function KolamPusatAiRingkasanBody({
 
 function ModuleCard({
   actionLabel,
-  artworkSource,
   href,
   metric,
   onRouteChange,
@@ -751,7 +740,6 @@ function ModuleCard({
   title,
 }: {
   actionLabel: string;
-  artworkSource?: ImageSourcePropType;
   href: string;
   metric: string;
   onRouteChange?: (route: string) => void;
@@ -761,45 +749,32 @@ function ModuleCard({
   title: string;
 }) {
   return (
-    <View style={[styles.moduleCard, artworkSource && styles.moduleCardArtful]}>
-      {artworkSource ? (
-        <Image
-          resizeMode="contain"
-          source={artworkSource}
-          style={styles.moduleCardArtwork}
+    <View style={styles.moduleCard}>
+      <Text style={styles.moduleTitle}>{title}</Text>
+      <Text style={styles.moduleMetric}>{metric}</Text>
+      <Text style={styles.moduleSubtitle}>{subtitle}</Text>
+      <View style={styles.moduleStats}>
+        {stats.map((stat, index) => {
+          const online = statusOnline?.[index];
+          return (
+            <Text
+              key={stat}
+              style={[
+                styles.moduleStat,
+                online === true ? styles.statusOnline : null,
+                online === false ? styles.statusOffline : null,
+              ]}>
+              {stat}
+            </Text>
+          );
+        })}
+      </View>
+      <View style={styles.moduleAction}>
+        <KolamButton
+          intent="outline"
+          label={actionLabel}
+          onPress={() => onRouteChange?.(href)}
         />
-      ) : null}
-      <View
-        style={[
-          styles.moduleCardContent,
-          artworkSource && styles.moduleCardContentArtful,
-        ]}>
-        <Text style={styles.moduleTitle}>{title}</Text>
-        <Text style={styles.moduleMetric}>{metric}</Text>
-        <Text style={styles.moduleSubtitle}>{subtitle}</Text>
-        <View style={styles.moduleStats}>
-          {stats.map((stat, index) => {
-            const online = statusOnline?.[index];
-            return (
-              <Text
-                key={stat}
-                style={[
-                  styles.moduleStat,
-                  online === true ? styles.statusOnline : null,
-                  online === false ? styles.statusOffline : null,
-                ]}>
-                {stat}
-              </Text>
-            );
-          })}
-        </View>
-        <View style={styles.moduleAction}>
-          <KolamButton
-            intent="outline"
-            label={actionLabel}
-            onPress={() => onRouteChange?.(href)}
-          />
-        </View>
       </View>
     </View>
   );
@@ -1314,23 +1289,6 @@ const styles = StyleSheet.create({
     gap: 6,
     minWidth: 240,
     padding: 14,
-  },
-  moduleCardArtful: {
-    overflow: 'hidden',
-  },
-  moduleCardArtwork: {
-    bottom: -30,
-    height: 178,
-    opacity: 0.22,
-    position: 'absolute',
-    right: -28,
-    width: 178,
-  },
-  moduleCardContent: {
-    gap: 6,
-  },
-  moduleCardContentArtful: {
-    paddingRight: 84,
   },
   moduleTitle: {
     color: V.colors.mutedFg,
