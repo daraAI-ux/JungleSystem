@@ -937,8 +937,8 @@ function KolamProductionDetail({
   const progressPercent = plannedQty > 0 ? Math.round((completedQty / plannedQty) * 100) : 0;
   const targetHref = getKolamProductionTargetHref(production);
   const nextStatuses = getAllowedNextProductionStatuses(production.status);
-  const productionCostDescription = [
-    production.batchId,
+  const productionBasicDescription = production.batchId || undefined;
+  const productionCostSummary = [
     `Estimasi: ${formatRupiah(production.estimatedCost)}`,
     production.status === 'completed'
       ? `Biaya aktual: ${formatRupiah(production.actualCost)}`
@@ -996,6 +996,11 @@ function KolamProductionDetail({
       value: production.createdAt
         ? production.createdAt.slice(0, 16).replace('T', ' ')
         : '—',
+    },
+    {
+      id: 'costSummary',
+      label: 'Biaya',
+      value: productionCostSummary,
     },
     {
       id: 'description',
@@ -1111,7 +1116,7 @@ function KolamProductionDetail({
           <KolamDetailSummaryCard
             style={[styles.detailCard, styles.detailSplitCard]}
             title="Informasi Dasar"
-            description={productionCostDescription}
+            description={productionBasicDescription}
             fieldColumns={3}
             fields={productionBasicFields}
           />
