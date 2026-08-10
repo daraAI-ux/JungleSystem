@@ -762,21 +762,35 @@ function KolamSourceForm({
             </FieldShell>
           </View>
           <View style={styles.twoColumnItem}>
-            <KolamDropdownSelect
-              label="Tipe penjualan"
-              onChange={value =>
-                controller.onChangeForm({
-                  type: value as 'online' | 'offline',
-                })
-              }
-              options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
-                label: option.label,
-                value: option.id,
-              }))}
-              value={form.type}
-            />
+            <View style={styles.switchRow}>
+              <View style={styles.switchCopy}>
+                <Text style={styles.primaryText}>Aktif</Text>
+                <Text style={styles.metaText}>
+                  Sumber nonaktif tidak muncul di picker penjualan.
+                </Text>
+              </View>
+              <KolamSwitch
+                active={form.isActive}
+                onPress={() =>
+                  controller.onChangeForm({ isActive: !form.isActive })
+                }
+              />
+            </View>
           </View>
         </View>
+        <KolamDropdownSelect
+          label="Tipe penjualan"
+          onChange={value =>
+            controller.onChangeForm({
+              type: value as 'online' | 'offline',
+            })
+          }
+          options={KOLAM_SOURCE_TYPE_OPTIONS.map(option => ({
+            label: option.label,
+            value: option.id,
+          }))}
+          value={form.type}
+        />
         <FieldShell label="Deskripsi">
           <KolamFormTextField
             multiline
@@ -791,20 +805,6 @@ function KolamSourceForm({
             value={form.description}
           />
         </FieldShell>
-        <View style={styles.switchRow}>
-          <View style={styles.switchCopy}>
-            <Text style={styles.primaryText}>Aktif</Text>
-            <Text style={styles.metaText}>
-              Sumber nonaktif tidak muncul di picker penjualan.
-            </Text>
-          </View>
-          <KolamSwitch
-            active={form.isActive}
-            onPress={() =>
-              controller.onChangeForm({ isActive: !form.isActive })
-            }
-          />
-        </View>
         <View style={styles.switchRow}>
           <View style={styles.switchCopy}>
             <Text style={styles.primaryText}>Marketplace / olshop</Text>
