@@ -519,6 +519,7 @@ export function buildKolamKpiSummaryCards(
       label: 'Δ minggu ini',
       value: `${delta > 0 ? '+' : ''}${formatKolamKpiPoints(delta)}`,
       detail: `vs minggu lalu (${formatKolamKpiPoints(summary.prevWeekPoints)})`,
+      iconSvg: KOLAM_TOTAL_POINT_ICON_SVG,
       tone: deltaTone,
     },
   ];
