@@ -71,9 +71,6 @@ export type KolamOwnerCopilotDashboard = {
   executiveNote: string;
 };
 
-export const KOLAM_OWNER_COPILOT_DESCRIPTION =
-  'Snapshot read-only bisnis + Night Ops 24 jam. Detail & simulasi keputusan via Chat dengan DARA — bukan dari tile ini.';
-
 export const KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS =
   'Belum ada event ops dalam 24 jam.';
 

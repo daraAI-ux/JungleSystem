@@ -41,7 +41,6 @@ import {
   formatKolamOwnerCopilotWib,
   getKolamOwnerCopilotStatusIntent,
   KOLAM_OWNER_COPILOT_AUDIT_OFF,
-  KOLAM_OWNER_COPILOT_DESCRIPTION,
   KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS,
   type KolamOwnerCopilotDashboard,
 } from '../domain/kolam-pusat-ai-owner-copilot';
@@ -289,9 +288,6 @@ function KolamPusatAiOwnerCopilotBody({
           <View style={styles.copilotHeading}>
             <Text style={styles.copilotEyebrow}>Copilot</Text>
             <Text style={styles.copilotTitle}>Owner Copilot</Text>
-            <Text style={styles.copilotDesc}>
-              {KOLAM_OWNER_COPILOT_DESCRIPTION}
-            </Text>
           </View>
           <View style={styles.copilotActions}>
             {dash?.teamChat.webHref ? (
