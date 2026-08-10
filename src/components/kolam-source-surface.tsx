@@ -32,6 +32,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDescriptionList } from './kolam-description-list';
 import {
   KolamDropdownSelect,
@@ -517,77 +518,89 @@ function KolamSourceDetail({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.detailContent}>
-      <View style={styles.detailHero}>
-        {source.logoUri ? (
-          <KolamRemoteImage
-            accessibilityLabel={`Logo ${source.name}`}
-            resizeMode="contain"
-            sourceUri={source.logoUri}
-            style={styles.detailLogo}
-          />
-        ) : (
-          <View style={styles.detailLogoPlaceholder}>
-            <Text style={styles.metaText}>Tanpa logo</Text>
-          </View>
-        )}
-        <View style={styles.detailHeroText}>
-          <Text style={styles.detailTitle}>{source.name}</Text>
-          <View style={styles.badgeRow}>
-            <KolamStatusBadge
-              intent={source.type === 'online' ? 'info' : 'secondary'}
-              label={getKolamSourceTypeLabel(source.type)}
-            />
-            <KolamStatusBadge
-              intent={source.isActive ? 'success' : 'danger'}
-              label={getKolamSourceStatusLabel(source.isActive)}
-            />
-            {source.isMarketplace ? (
-              <KolamStatusBadge intent="warning" label="Marketplace" />
-            ) : null}
-          </View>
-          {source.description ? (
+      <KolamDetailSummaryCard
+        body={
+          source.description ? (
             <Text style={styles.metaText}>{source.description}</Text>
-          ) : null}
-        </View>
-      </View>
-
-      <SourceFormSection
-        description="Identitas, harga, dompet, dan komisi sumber ini."
-        title="Ringkasan"
-      >
-        <KolamDescriptionList
-          accessibilityLabel="Ringkasan sumber penjualan"
-          rows={[
-            descRow('pricing', 'Mode harga', `${pricing.label}\n${pricing.detail}`),
-            descRow(
-              'wallet',
-              'Dompet tujuan',
-              source.wallet
-                ? `${source.wallet.name} (${source.wallet.type})`
-                : '—',
+          ) : undefined
+        }
+        bodyTitle={source.description ? 'Deskripsi' : undefined}
+        description="Identitas, harga, dompet, komisi, dan markup."
+        fieldColumns={3}
+        fields={[
+          {
+            id: 'status',
+            label: 'Status',
+            value: (
+              <KolamStatusBadge
+                intent={source.isActive ? 'success' : 'danger'}
+                label={getKolamSourceStatusLabel(source.isActive)}
+              />
             ),
-            descRow(
-              'commission',
-              'Komisi penjualan',
-              getKolamSourceCommissionModeLabel(source),
+          },
+          {
+            id: 'type',
+            label: 'Tipe',
+            value: (
+              <KolamStatusBadge
+                intent={source.type === 'online' ? 'info' : 'secondary'}
+                label={getKolamSourceTypeLabel(source.type)}
+              />
             ),
-          ]}
-        />
-      </SourceFormSection>
-
-      <SourceFormSection
-        description="Target markup rekomendasi harga channel — tidak mengurangi total invoice."
-        title="Markup Channel (DARA)"
-      >
-        <KolamDescriptionList
-          accessibilityLabel="Markup DARA"
-          rows={[
-            descRow('pct', 'Markup persen', `${source.markupPercent}%`),
-            descRow('fixed', 'Markup tetap', formatRupiah(source.markupFixed)),
-          ]}
-        />
-      </SourceFormSection>
-
+          },
+          {
+            id: 'marketplace',
+            label: 'Marketplace',
+            value: source.isMarketplace ? (
+              <KolamStatusBadge intent="warning" label="Marketplace" />
+            ) : (
+              'Tidak'
+            ),
+          },
+          {
+            id: 'pricing',
+            label: 'Mode harga',
+            value: `${pricing.label}\n${pricing.detail}`,
+          },
+          {
+            id: 'wallet',
+            label: 'Dompet tujuan',
+            value: source.wallet
+              ? `${source.wallet.name} (${source.wallet.type})`
+              : '-',
+          },
+          {
+            id: 'commission',
+            label: 'Komisi penjualan',
+            value: getKolamSourceCommissionModeLabel(source),
+          },
+          {
+            id: 'markup-percent',
+            label: 'Markup persen',
+            value: `${source.markupPercent}%`,
+          },
+          {
+            id: 'markup-fixed',
+            label: 'Markup tetap',
+            value: formatRupiah(source.markupFixed),
+          },
+        ]}
+        leading={
+          source.logoUri ? (
+            <KolamRemoteImage
+              accessibilityLabel={`Logo ${source.name}`}
+              resizeMode="contain"
+              sourceUri={source.logoUri}
+              style={styles.detailLogo}
+            />
+          ) : (
+            <View style={styles.detailLogoPlaceholder}>
+              <Text style={styles.metaText}>Tanpa logo</Text>
+            </View>
+          )
+        }
+        title={source.name}
+      />
       <SourceFormSection
         description="Estimasi potongan legacy. Contoh pada omzet Rp 100.000."
         title="Field Biaya"
