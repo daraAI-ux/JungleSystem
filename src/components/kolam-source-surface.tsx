@@ -852,93 +852,130 @@ function KolamSourceForm({
         </View>
       </SourceFormSection>
 
-      <SourceFormSection
-        description="Atur apakah sale dari sumber ini men-accrue komisi karyawan."
-        title="Komisi penjualan"
-      >
-        <View style={styles.switchRow}>
-          <View style={styles.switchCopy}>
-            <Text style={styles.primaryText}>Komisi aktif</Text>
-            <Text style={styles.metaText}>
-              Matikan agar sale eligible tidak accrue komisi.
-            </Text>
-          </View>
-          <KolamSwitch
-            active={form.commissionEnabled}
-            onPress={() =>
-              controller.onChangeForm({
-                commissionEnabled: !form.commissionEnabled,
-              })
-            }
-          />
-        </View>
-        {form.commissionEnabled ? (
-          form.isMarketplace ? (
-            <Text style={styles.metaText}>
-              Olshop / marketplace: pembagian tetap bagi rata semua karyawan
-              eligible.
-            </Text>
-          ) : (
-            <>
-              <KolamDropdownSelect
-                label="Pembagian penerima komisi"
-                onChange={value =>
-                  controller.onChangeForm({
-                    commissionRecipientMode:
-                      value as typeof form.commissionRecipientMode,
-                  })
-                }
-                options={KOLAM_SOURCE_COMMISSION_MODE_OPTIONS.map(option => ({
-                  label: option.label,
-                  value: option.id,
-                }))}
-                value={form.commissionRecipientMode}
-              />
-              {form.commissionRecipientMode === 'selected_users' ? (
-                <View style={styles.recipientList}>
-                  {controller.eligibleUsers.length === 0 ? (
-                    <Text style={styles.metaText}>
-                      Tidak ada user eligible komisi.
-                    </Text>
-                  ) : (
-                    controller.eligibleUsers.map(user => {
-                      const selected =
-                        form.defaultCommissionRecipientIds.includes(user.id);
-                      return (
-                        <KolamInteractionFrame
-                          key={user.id}
-                          onPress={() => toggleRecipient(user.id)}
-                          style={[
-                            styles.recipientRow,
-                            selected && styles.recipientRowSelected,
-                          ]}
-                        >
-                          <Text style={styles.primaryText}>
-                            {user.displayName ||
-                              formatKolamSourceUserDisplayName({
-                                firstName: user.firstName,
-                                lastName: user.lastName,
-                                username: user.username,
-                                email: user.email,
-                              })}
-                          </Text>
-                          <Text style={styles.metaText}>
-                            {user.isOwner
-                              ? 'Pemilik'
-                              : user.isEmployee
-                                ? 'Staf'
-                                : ''}
-                          </Text>
-                        </KolamInteractionFrame>
-                      );
-                    })
-                  )}
+      <View style={styles.twoColumnGrid}>
+        <View style={styles.twoColumnItem}>
+          <SourceFormSection
+            description="Atur apakah sale dari sumber ini men-accrue komisi karyawan."
+            title="Komisi penjualan"
+          >
+            <View style={styles.basicInfoBox}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchCopy}>
+                  <Text style={styles.primaryText}>Komisi aktif</Text>
+                  <Text style={styles.metaText}>
+                    Matikan agar sale eligible tidak accrue komisi.
+                  </Text>
                 </View>
+                <KolamSwitch
+                  active={form.commissionEnabled}
+                  onPress={() =>
+                    controller.onChangeForm({
+                      commissionEnabled: !form.commissionEnabled,
+                    })
+                  }
+                />
+              </View>
+              {form.commissionEnabled ? (
+                form.isMarketplace ? (
+                  <Text style={styles.metaText}>
+                    Olshop / marketplace: pembagian tetap bagi rata semua
+                    karyawan eligible.
+                  </Text>
+                ) : (
+                  <>
+                    <KolamDropdownSelect
+                      label="Pembagian penerima komisi"
+                      onChange={value =>
+                        controller.onChangeForm({
+                          commissionRecipientMode:
+                            value as typeof form.commissionRecipientMode,
+                        })
+                      }
+                      options={KOLAM_SOURCE_COMMISSION_MODE_OPTIONS.map(
+                        option => ({
+                          label: option.label,
+                          value: option.id,
+                        }),
+                      )}
+                      value={form.commissionRecipientMode}
+                    />
+                    {form.commissionRecipientMode === 'selected_users' ? (
+                      <View style={styles.recipientList}>
+                        {controller.eligibleUsers.length === 0 ? (
+                          <Text style={styles.metaText}>
+                            Tidak ada user eligible komisi.
+                          </Text>
+                        ) : (
+                          controller.eligibleUsers.map(user => {
+                            const selected =
+                              form.defaultCommissionRecipientIds.includes(
+                                user.id,
+                              );
+                            return (
+                              <KolamInteractionFrame
+                                key={user.id}
+                                onPress={() => toggleRecipient(user.id)}
+                                style={[
+                                  styles.recipientRow,
+                                  selected && styles.recipientRowSelected,
+                                ]}
+                              >
+                                <Text style={styles.primaryText}>
+                                  {user.displayName ||
+                                    formatKolamSourceUserDisplayName({
+                                      firstName: user.firstName,
+                                      lastName: user.lastName,
+                                      username: user.username,
+                                      email: user.email,
+                                    })}
+                                </Text>
+                                <Text style={styles.metaText}>
+                                  {user.isOwner
+                                    ? 'Pemilik'
+                                    : user.isEmployee
+                                      ? 'Staf'
+                                      : ''}
+                                </Text>
+                              </KolamInteractionFrame>
+                            );
+                          })
+                        )}
+                      </View>
+                    ) : null}
+                  </>
+                )
               ) : null}
-            </>
-          )
-        ) : null}
-      </SourceFormSection>
+            </View>
+          </SourceFormSection>
+        </View>
+        <View style={styles.twoColumnItem}>
+          <SourceFormSection
+            description="Target markup rekomendasi harga channel — tidak mengurangi total invoice."
+            title="Markup Channel (DARA)"
+          >
+            <View style={styles.basicInfoBox}>
+              <FieldShell label="Markup persen (0–100)">
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    controller.onChangeForm({ markupPercent: value })
+                  }
+                  style={settingsWebFormStyles.settingsWebFormFieldValue}
+                  value={form.markupPercent}
+                />
+              </FieldShell>
+              <FieldShell label="Markup tetap">
+                <KolamRupiahField
+                  onChangeValue={value =>
+                    controller.onChangeForm({ markupFixed: String(value) })
+                  }
+                  value={Number(form.markupFixed) || 0}
+                />
+              </FieldShell>
+            </View>
+          </SourceFormSection>
+        </View>
+      </View>
 
       <SourceFormSection
         description="Logo kotak untuk list penjualan. JPG/PNG/GIF/WEBP."
@@ -966,30 +1003,6 @@ function KolamSourceForm({
             />
           ) : null}
         </View>
-      </SourceFormSection>
-
-      <SourceFormSection
-        description="Target markup rekomendasi harga channel — tidak mengurangi total invoice."
-        title="Markup Channel (DARA)"
-      >
-        <FieldShell label="Markup persen (0–100)">
-          <KolamFormTextField
-            mode="numeric"
-            onChangeText={value =>
-              controller.onChangeForm({ markupPercent: value })
-            }
-            style={settingsWebFormStyles.settingsWebFormFieldValue}
-            value={form.markupPercent}
-          />
-        </FieldShell>
-        <FieldShell label="Markup tetap">
-          <KolamRupiahField
-            onChangeValue={value =>
-              controller.onChangeForm({ markupFixed: String(value) })
-            }
-            value={Number(form.markupFixed) || 0}
-          />
-        </FieldShell>
       </SourceFormSection>
 
       <SourceFormSection
