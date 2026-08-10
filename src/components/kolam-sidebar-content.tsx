@@ -115,6 +115,7 @@ export function KolamSidebarContent({
           <KolamSidebarNavGroup
             activeModule={activeModule}
             collapsed={collapsed}
+            compactBottomGap
             label=""
             modules={primaryModules}
             onSelect={onSelectModule}

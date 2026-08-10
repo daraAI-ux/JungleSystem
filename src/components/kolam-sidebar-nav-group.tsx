@@ -9,6 +9,7 @@ import {KolamNavItem} from './kolam-nav-item';
 export function KolamSidebarNavGroup({
   activeModule,
   collapsed = false,
+  compactBottomGap = false,
   label,
   meta,
   modules,
@@ -16,13 +17,19 @@ export function KolamSidebarNavGroup({
 }: {
   activeModule: AppModule;
   collapsed?: boolean;
+  compactBottomGap?: boolean;
   label: string;
   meta?: string;
   modules: ShellModule[];
   onSelect: (module: AppModule) => void;
 }) {
   return (
-    <View style={[styles.navGroup, collapsed && styles.navGroupCollapsed]}>
+    <View
+      style={[
+        styles.navGroup,
+        compactBottomGap && styles.navGroupCompactBottom,
+        collapsed && styles.navGroupCollapsed,
+      ]}>
       {collapsed || (!label && !meta) ? null : (
         <KolamCopyStack
           items={[
@@ -52,6 +59,9 @@ export function KolamSidebarNavGroup({
 const styles = StyleSheet.create({
   navGroup: {
     marginBottom: V.layout.navSectionGap,
+  },
+  navGroupCompactBottom: {
+    marginBottom: 4,
   },
   navGroupCollapsed: {
     alignItems: 'center',
