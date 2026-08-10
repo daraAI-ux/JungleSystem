@@ -642,7 +642,7 @@ export function KolamSalesOpsDetail({
                       {saleCouriers.map(courier => {
                         const logo = getKolamCourierLogoSource(courier.logoKey);
                         return (
-                          <View key={courier.name} style={styles.courierChip}>
+                          <React.Fragment key={courier.name}>
                             {logo ? (
                               <Image
                                 accessibilityLabel={`Logo ${courier.name}`}
@@ -651,11 +651,13 @@ export function KolamSalesOpsDetail({
                                 style={styles.courierLogo}
                               />
                             ) : (
-                              <Text style={styles.shippingFieldValue}>
-                                {courier.name}
-                              </Text>
+                              <View style={styles.courierChip}>
+                                <Text style={styles.shippingFieldValue}>
+                                  {courier.name}
+                                </Text>
+                              </View>
                             )}
-                          </View>
+                          </React.Fragment>
                         );
                       })}
                     </View>
@@ -1667,9 +1669,6 @@ function KolamBiteshipWaybillItem({
     saleStatus,
     saleHistories,
   );
-  const courierLogo = item.biteshipCourierCode
-    ? getKolamCourierLogoSource(item.biteshipCourierCode.toLowerCase())
-    : null;
   const inputDisabled = disabled || submitting || deliveryStatus === 'delivered';
   const saveDisabled =
     inputDisabled ||
@@ -1680,14 +1679,6 @@ function KolamBiteshipWaybillItem({
     <View style={styles.biteshipWaybillCard}>
       <View style={styles.biteshipWaybillHeader}>
         <View style={styles.biteshipWaybillTitleRow}>
-          {courierLogo ? (
-            <Image
-              accessibilityLabel={`Logo ${item.biteshipCourierCode}`}
-              resizeMode="contain"
-              source={courierLogo}
-              style={styles.biteshipWaybillLogo}
-            />
-          ) : null}
           <View style={styles.biteshipWaybillTitleBlock}>
             <Text numberOfLines={1} style={styles.primaryText}>
               {item.title}
@@ -2473,8 +2464,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   courierLogo: {
-    height: 20,
-    width: 20,
+    height: 24,
+    width: 42,
   },
   trackingMono: {
     fontFamily: 'Consolas',
@@ -2503,10 +2494,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     minWidth: 180,
-  },
-  biteshipWaybillLogo: {
-    height: 24,
-    width: 24,
   },
   biteshipWaybillTitleBlock: {
     flex: 1,
