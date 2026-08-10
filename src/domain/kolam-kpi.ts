@@ -5,6 +5,7 @@
 
 import {KOLAM_ACTIVE_STAFF_ICON_SVG} from '../assets/icons/active-staff-icon-svg';
 import {KOLAM_EVENT_KPI_ICON_SVG} from '../assets/icons/event-kpi-icon-svg';
+import {KOLAM_TOTAL_POINT_ICON_SVG} from '../assets/icons/total-point-icon-svg';
 import {
   hasSettingsPermission,
   isSettingsSuperAdminRoleKey,
@@ -493,6 +494,7 @@ export function buildKolamKpiSummaryCards(
       id: 'total',
       label: 'Total poin',
       value: formatKolamKpiPoints(summary.totalPoints),
+      iconSvg: KOLAM_TOTAL_POINT_ICON_SVG,
       detail: summary.periodKey || '—',
       tone: 'default',
     },
