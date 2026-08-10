@@ -17,7 +17,6 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import type { KolamDescriptionListRow } from './kolam-description-list-types';
 import { KolamEmptyState } from './kolam-empty-state';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -189,13 +188,6 @@ function UnexpectedExpenseDetailBody({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              intent="secondary"
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
             {controller.canShowVerify ? (
               <KolamButton
                 disabled={controller.verifying}

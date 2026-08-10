@@ -69,7 +69,6 @@ import { KolamButton } from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import {
   KolamDetailMetaStrip,
@@ -205,15 +204,6 @@ export function KolamSalesOpsDetail({
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
               onPress={() => onRouteChange?.(KOLAM_SALES_ROOT)}
-              style={styles.toolbarButton}
-            />
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading || controller.mutating}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
               style={styles.toolbarButton}
             />
             {canShowKolamSaleEditAction(sale) ? (

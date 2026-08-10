@@ -22,7 +22,6 @@ import { formatRupiah } from '../lib/money';
 import { KolamAssetPurchaseDepreciationTab } from './kolam-asset-purchase-depreciation-tab';
 import { KolamButton } from './kolam-button';
 import {KolamEditButton} from './kolam-edit-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDescriptionList } from './kolam-description-list';
 import type { KolamDescriptionListRow } from './kolam-description-list-types';
@@ -230,16 +229,6 @@ function AssetPurchaseDetailBody({
             </View>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading || controller.verifying}
-              intent="outline"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-              style={styles.toolbarButton}
-            />
             <KolamButton
               intent="outline"
               label="Kembali ke daftar"

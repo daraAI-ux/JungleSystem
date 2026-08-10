@@ -192,13 +192,6 @@ export function KolamEnclosureDetailSurface({
               }
               style={styles.toolbarButton}
             />
-            <KolamRefreshButton
-              accessibilityLabel="Muat ulang"
-              disabled={controller.loading || controller.operationLoading}
-
-              onPress={() => void controller.onRefresh()}
-              style={styles.toolbarButton}
-            />
             <KolamEditButton
               onPress={() =>
                 onRouteChange?.(

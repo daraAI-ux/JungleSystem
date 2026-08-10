@@ -16,7 +16,6 @@ import {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-controller';
 import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDaraTaxLaporanBody} from './kolam-dara-tax-laporan-body';
@@ -201,15 +200,6 @@ export function KolamFinanceTaxSurface({
           />
         ) : null}
         <Text style={styles.title}>Profil pajak perusahaan</Text>
-        <KolamRefreshButton
-          accessibilityLabel="Muat ulang"
-          intent="secondary"
-
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-          style={styles.reloadButton}
-        />
       </View>
 
       {controller.loading && !controller.profile ? (
