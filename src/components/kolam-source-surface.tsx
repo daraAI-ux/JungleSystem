@@ -526,7 +526,7 @@ function KolamSourceDetail({
         }
         bodyTitle={source.description ? 'Deskripsi' : undefined}
         description="Identitas, harga, dompet, komisi, dan markup."
-        fieldColumns={3}
+        fieldColumns={2}
         fields={[
           {
             id: 'status',
@@ -649,6 +649,7 @@ function KolamSourceDetail({
             ),
           },
         ]}
+        style={styles.sourceSummaryCard}
         title={source.name}
       />
 
@@ -1117,8 +1118,15 @@ const styles = StyleSheet.create({
   },
   sourceSummaryLeadingSlot: {
     alignItems: 'center',
-    flexBasis: 148,
+    alignSelf: 'stretch',
+    flexBasis: 180,
+    flexGrow: 0,
     justifyContent: 'center',
+    minWidth: 180,
+  },
+  sourceSummaryCard: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   detailHeroText: {
     flex: 1,
