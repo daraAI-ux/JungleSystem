@@ -49,6 +49,33 @@ describe('kolam notification sound runtime', () => {
     );
   });
 
+  it('forwards data:audio URIs to the native Windows bridge unchanged', async () => {
+    const playNotificationSound = jest.fn().mockResolvedValue({
+      path: 'media-player-data',
+      status: 'opened',
+    });
+    const dataUri =
+      'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+
+    await expect(
+      playKolamRuntimeNotificationSound(
+        dataUri,
+        {intent: 'assigned', volume: 0.5},
+        {
+          nativeModules: {
+            KolamWindowsNotificationSound: {playNotificationSound},
+          },
+          platformOS: 'windows',
+        },
+      ),
+    ).resolves.toBe('native-windows');
+
+    expect(playNotificationSound).toHaveBeenCalledWith(dataUri, {
+      intent: 'assigned',
+      volume: 0.5,
+    });
+  });
+
   it('falls back to headless Audio without rendering a player', async () => {
     const play = jest.fn().mockResolvedValue(undefined);
     const audio = {play};
