@@ -9,19 +9,20 @@ import {getStatsCardValueToneStyle} from './kolam-stats-card-value-style';
 export function KolamStatsCard({card}: {card: KolamStatsCardItem}) {
   if (card.iconSvg) {
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.label}>{card.label}</Text>
-          <View style={styles.iconSlot}>
-            <View style={styles.iconWrap}>
-              <SvgXml height="100%" width="100%" xml={card.iconSvg} />
-            </View>
+      <View style={[styles.card, styles.cardWithIcon]}>
+        <View style={styles.cardAccent} />
+        <View style={styles.cardIconBody}>
+          <View style={styles.cardTextStack}>
+            <Text style={styles.label}>{card.label}</Text>
+            <Text style={[styles.value, getStatsCardValueToneStyle(card.tone)]}>
+              {card.value}
+            </Text>
+            <Text style={styles.detail}>{card.detail}</Text>
+          </View>
+          <View style={styles.iconWrap}>
+            <SvgXml height="100%" width="100%" xml={card.iconSvg} />
           </View>
         </View>
-        <Text style={[styles.value, getStatsCardValueToneStyle(card.tone)]}>
-          {card.value}
-        </Text>
-        <Text style={styles.detail}>{card.detail}</Text>
       </View>
     );
   }
