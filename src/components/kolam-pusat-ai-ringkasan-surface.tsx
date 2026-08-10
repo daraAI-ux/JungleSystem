@@ -84,13 +84,6 @@ const LOG_DARA_VIOLET_SOFT = '#f5f3ff';
 const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
 const DARA_SEO_CARD_COVER =
   require('../assets/images/dara-seo-card-cover.png') as ImageSourcePropType;
-const DARA_SEO_CARD_SCRIM_STOPS = [
-  {flex: 26, opacity: 1},
-  {flex: 18, opacity: 0.92},
-  {flex: 16, opacity: 0.68},
-  {flex: 14, opacity: 0.34},
-  {flex: 26, opacity: 0.06},
-] as const;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -770,24 +763,11 @@ function ModuleCard({
   return (
     <View style={[styles.moduleCard, artworkSource && styles.moduleCardCover]}>
       {artworkSource ? (
-        <>
-          <Image
-            resizeMode="cover"
-            source={artworkSource}
-            style={styles.moduleCardCoverImage}
-          />
-          <View pointerEvents="none" style={styles.moduleCardCoverScrim}>
-            {DARA_SEO_CARD_SCRIM_STOPS.map(stop => (
-              <View
-                key={`${stop.flex}-${stop.opacity}`}
-                style={[
-                  styles.moduleCardCoverScrimStop,
-                  {flex: stop.flex, opacity: stop.opacity},
-                ]}
-              />
-            ))}
-          </View>
-        </>
+        <Image
+          resizeMode="contain"
+          source={artworkSource}
+          style={styles.moduleCardCoverImage}
+        />
       ) : null}
       <View
         style={[
@@ -1336,24 +1316,22 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   moduleCardCover: {
-    minHeight: 172,
+    minHeight: 170,
     overflow: 'hidden',
   },
   moduleCardCoverImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  moduleCardCoverScrim: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'row',
-  },
-  moduleCardCoverScrimStop: {
-    backgroundColor: V.colors.bg,
+    bottom: -54,
+    height: 260,
+    opacity: 0.16,
+    position: 'absolute',
+    right: -34,
+    width: 190,
   },
   moduleCardContent: {
     gap: 6,
   },
   moduleCardContentCover: {
-    maxWidth: 260,
+    paddingRight: 74,
   },
   moduleTitle: {
     color: V.colors.mutedFg,
