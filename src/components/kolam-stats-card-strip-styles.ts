@@ -47,14 +47,13 @@ export const statsCardStripStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'space-between',
-    paddingRight: 70,
+    paddingRight: 78,
   },
   iconWrap: {
     height: 64,
     position: 'absolute',
-    right: 10,
-    top: '50%',
-    transform: [{translateY: -32}],
+    right: 18,
+    top: 12,
     width: 64,
   },
   label: {
