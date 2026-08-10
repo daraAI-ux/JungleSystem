@@ -39,6 +39,7 @@ export const statsCardStripStyles = StyleSheet.create({
     minHeight: 82,
     minWidth: 0,
     padding: 12,
+    position: 'relative',
     ...CARD_SHADOW,
   },
   cardHeader: {
@@ -46,10 +47,15 @@ export const statsCardStripStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'space-between',
+    paddingRight: 70,
   },
   iconWrap: {
-    height: 28,
-    width: 28,
+    height: 64,
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{translateY: -32}],
+    width: 64,
   },
   label: {
     color: V.colors.mutedFg,
