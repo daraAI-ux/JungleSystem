@@ -802,19 +802,25 @@ function KolamProductionForm({
           placeholder="Deskripsi"
           value={form.description}
         />
-        <KolamDateField
-          label="Tanggal produksi"
-          onChange={value => controller.onChangeForm({ productionDate: value })}
-          value={form.productionDate}
-        />
-        {assigneeOptions.length ? (
-          <KolamDropdownSelect
-            label="Penanggung jawab"
-            onChange={value => controller.onChangeForm({ assignedToId: value })}
-            options={assigneeOptions}
-            value={form.assignedToId || assigneeOptions[0]?.value || ''}
-          />
-        ) : null}
+        <View style={[styles.formSection, styles.productionScheduleCard]}>
+          <View style={styles.productionScheduleCell}>
+            <KolamDateField
+              label="Tanggal produksi"
+              onChange={value => controller.onChangeForm({ productionDate: value })}
+              value={form.productionDate}
+            />
+          </View>
+          {assigneeOptions.length ? (
+            <View style={styles.productionScheduleCell}>
+              <KolamDropdownSelect
+                label="Penanggung jawab"
+                onChange={value => controller.onChangeForm({ assignedToId: value })}
+                options={assigneeOptions}
+                value={form.assignedToId || assigneeOptions[0]?.value || ''}
+              />
+            </View>
+          ) : null}
+        </View>
 
         {isEdit && controller.selectedProduction ? (
           <View style={styles.formSection}>
@@ -1953,6 +1959,19 @@ const styles = StyleSheet.create({
   productionTargetCell: {
     flex: 1,
     minWidth: 220,
+  },
+  productionScheduleCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 12,
+  },
+  productionScheduleCell: {
+    flex: 1,
+    minWidth: 240,
   },
   serialModeCard: {
     alignItems: 'center',
