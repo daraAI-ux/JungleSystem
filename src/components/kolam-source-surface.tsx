@@ -599,6 +599,7 @@ function KolamSourceDetail({
             </View>
           )
         }
+        leadingStyle={styles.sourceSummaryLeadingSlot}
         title={source.name}
       />
       <SourceFormSection
@@ -1109,17 +1110,22 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    height: 72,
-    width: 72,
+    height: 128,
+    width: 128,
   },
   detailLogoPlaceholder: {
     alignItems: 'center',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    height: 72,
+    height: 128,
     justifyContent: 'center',
-    width: 72,
+    width: 128,
+  },
+  sourceSummaryLeadingSlot: {
+    alignItems: 'center',
+    flexBasis: 148,
+    justifyContent: 'center',
   },
   detailHeroText: {
     flex: 1,
