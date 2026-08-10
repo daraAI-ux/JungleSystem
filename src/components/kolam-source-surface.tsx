@@ -92,6 +92,16 @@ function descRow(
   return { id, label, meta: '', tone: 'default', value };
 }
 
+type SourceMarkupMode = 'percentage' | 'fixed';
+
+const SOURCE_MARKUP_MODE_OPTIONS: Array<{
+  label: string;
+  value: SourceMarkupMode;
+}> = [
+  { label: 'Persen', value: 'percentage' },
+  { label: 'Nominal', value: 'fixed' },
+];
+
 function SourceFormSection({
   children,
   description,
@@ -705,6 +715,19 @@ function KolamSourceForm({
   const { form } = controller;
   const previewUri =
     form.pendingLogoLocalUri || controller.selectedSource?.logoUri;
+  const [markupMode, setMarkupMode] = React.useState<SourceMarkupMode>(() =>
+    Number(form.markupFixed) > 0 && Number(form.markupPercent) <= 0
+      ? 'fixed'
+      : 'percentage',
+  );
+
+  React.useEffect(() => {
+    setMarkupMode(
+      Number(form.markupFixed) > 0 && Number(form.markupPercent) <= 0
+        ? 'fixed'
+        : 'percentage',
+    );
+  }, [form.id]);
 
   const handlePickLogo = async () => {
     try {
@@ -978,24 +1001,53 @@ function KolamSourceForm({
             title="Markup Channel (DARA)"
           >
             <View style={[styles.basicInfoBox, styles.equalHeightCard]}>
-              <FieldShell label="Markup persen (0–100)">
-                <KolamFormTextField
-                  mode="numeric"
-                  onChangeText={value =>
-                    controller.onChangeForm({ markupPercent: value })
-                  }
-                  style={settingsWebFormStyles.settingsWebFormFieldValue}
-                  value={form.markupPercent}
-                />
-              </FieldShell>
-              <FieldShell label="Markup tetap">
-                <KolamRupiahField
-                  onChangeValue={value =>
-                    controller.onChangeForm({ markupFixed: String(value) })
-                  }
-                  value={Number(form.markupFixed) || 0}
-                />
-              </FieldShell>
+              <View style={styles.twoColumnGrid}>
+                <View style={styles.twoColumnItem}>
+                  <KolamDropdownSelect
+                    label="Tipe markup"
+                    onChange={value => {
+                      const nextMode = value as SourceMarkupMode;
+                      setMarkupMode(nextMode);
+                      controller.onChangeForm(
+                        nextMode === 'percentage'
+                          ? { markupFixed: '0' }
+                          : { markupPercent: '0' },
+                      );
+                    }}
+                    options={SOURCE_MARKUP_MODE_OPTIONS}
+                    value={markupMode}
+                  />
+                </View>
+                <View style={styles.twoColumnItem}>
+                  {markupMode === 'percentage' ? (
+                    <FieldShell label="Nilai markup">
+                      <KolamFormTextField
+                        mode="numeric"
+                        onChangeText={value =>
+                          controller.onChangeForm({
+                            markupFixed: '0',
+                            markupPercent: value,
+                          })
+                        }
+                        style={settingsWebFormStyles.settingsWebFormFieldValue}
+                        value={form.markupPercent}
+                      />
+                    </FieldShell>
+                  ) : (
+                    <FieldShell label="Nilai markup">
+                      <KolamRupiahField
+                        onChangeValue={value =>
+                          controller.onChangeForm({
+                            markupFixed: String(value),
+                            markupPercent: '0',
+                          })
+                        }
+                        value={Number(form.markupFixed) || 0}
+                      />
+                    </FieldShell>
+                  )}
+                </View>
+              </View>
             </View>
           </SourceFormSection>
         </View>
