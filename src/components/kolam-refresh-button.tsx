@@ -1,4 +1,8 @@
-import type {KolamButtonProps} from './kolam-button';
+import React from 'react';
+import {StyleSheet, type TextStyle} from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {KolamButton, type KolamButtonProps} from './kolam-button';
+import {KolamRefreshIcon} from './kolam-refresh-icon';
 
 export interface KolamRefreshButtonProps
   extends Omit<KolamButtonProps, 'icon' | 'label'> {
@@ -8,15 +12,44 @@ export interface KolamRefreshButtonProps
 }
 
 export function KolamRefreshButton({
-  accessibilityLabel: _accessibilityLabel,
-  label: _label = 'Refresh',
-  loading: _loading = false,
-  loadingLabel: _loadingLabel,
-  muted: _muted,
-  size: _size = 'sm',
-  style: _style,
-  textStyle: _textStyle,
-  ..._buttonProps
+  accessibilityLabel,
+  label = 'Refresh',
+  loading = false,
+  loadingLabel,
+  muted,
+  size = 'sm',
+  style,
+  textStyle,
+  ...buttonProps
 }: KolamRefreshButtonProps) {
-  return null;
+  return (
+    <KolamButton
+      {...buttonProps}
+      accessibilityLabel={
+        accessibilityLabel ?? (loading && loadingLabel ? loadingLabel : label)
+      }
+      icon={<KolamRefreshIcon size={size === 'md' ? 20 : 18} />}
+      label=""
+      muted={muted || loading}
+      size={size}
+      style={[styles.iconOnlyButton, style]}
+      textStyle={[styles.iconOnlyText, textStyle]}
+    />
+  );
 }
+
+const styles = StyleSheet.create({
+  iconOnlyButton: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
+    minWidth: 34,
+    paddingHorizontal: 0,
+    width: 34,
+  },
+  iconOnlyText: {
+    color: V.colors.bg,
+    display: 'none',
+    fontSize: 0,
+    lineHeight: 0,
+  } as TextStyle,
+});
