@@ -43,11 +43,11 @@ import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
 
 const TX_COLUMNS = [
   { id: 'date', label: 'Tanggal', flex: 1, align: 'left' },
-  { id: 'wallet', label: 'Dompet', flex: 0.72, align: 'left' },
-  { id: 'type', label: 'Tipe', flex: 0.48, align: 'left' },
+  { id: 'wallet', label: 'Dompet', flex: 0.56, align: 'left' },
+  { id: 'type', label: 'Tipe', flex: 0.36, align: 'left' },
   { id: 'amount', label: 'Jumlah', flex: 0.95, align: 'left' },
   { id: 'status', label: 'Status', flex: 0.8, align: 'left' },
-  { id: 'note', label: 'Catatan', flex: 0.95, align: 'left' },
+  { id: 'note', label: 'Catatan', flex: 1.23, align: 'left' },
   { id: 'actions', label: '', flex: 0.85, align: 'right' },
 ] as const;
 
