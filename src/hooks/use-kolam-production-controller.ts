@@ -58,6 +58,7 @@ import { pickNativeImageFile } from '../services/native-file-picker';
 
 export type KolamProductionSurfaceMode = 'list' | 'detail' | 'create' | 'edit';
 export type KolamProductionDataSource = 'idle' | 'live' | 'error';
+export type KolamProductionExportingState = 'list' | 'pdf' | 'detailPdf' | null;
 
 const DEFAULT_PAGINATION: KolamProductionPagination = {
   page: 1,
@@ -70,7 +71,7 @@ export interface KolamProductionController {
   breadcrumbPath: string;
   dataSource: KolamProductionDataSource;
   error: string | null;
-  exporting: boolean;
+  exporting: KolamProductionExportingState;
   filters: KolamProductionListFilters;
   form: KolamProductionFormState;
   freyersForProduction: KolamProductForProduction[];
@@ -151,7 +152,8 @@ export function useKolamProductionController(
   const [pickerLoading, setPickerLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mutating, setMutating] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] =
+    useState<KolamProductionExportingState>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [insufficientStock, setInsufficientStock] = useState<string[]>([]);
@@ -751,7 +753,7 @@ export function useKolamProductionController(
   }, []);
 
   const onExportList = useCallback(async () => {
-    setExporting(true);
+    setExporting('list');
     setError(null);
     try {
       const result = await downloadKolamProductionListExport(filters);
@@ -759,7 +761,7 @@ export function useKolamProductionController(
     } catch (exportError) {
       setError(getErrorMessage(exportError));
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }, [filters]);
 
@@ -767,7 +769,7 @@ export function useKolamProductionController(
     if (!selectedProduction) {
       return;
     }
-    setExporting(true);
+    setExporting('pdf');
     setError(null);
     try {
       const result = await downloadKolamProductionPdf(
@@ -778,7 +780,7 @@ export function useKolamProductionController(
     } catch (exportError) {
       setError(getErrorMessage(exportError));
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }, [selectedProduction]);
 
@@ -786,7 +788,7 @@ export function useKolamProductionController(
     if (!selectedProduction) {
       return;
     }
-    setExporting(true);
+    setExporting('detailPdf');
     setError(null);
     try {
       const result = await downloadKolamProductionDetailPdf(
@@ -797,7 +799,7 @@ export function useKolamProductionController(
     } catch (exportError) {
       setError(getErrorMessage(exportError));
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }, [selectedProduction]);
 

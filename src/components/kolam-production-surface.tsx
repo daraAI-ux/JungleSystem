@@ -215,9 +215,9 @@ function KolamProductionList({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               <KolamExportXlsButton
-                disabled={controller.exporting || controller.loading}
+                disabled={Boolean(controller.exporting) || controller.loading}
                 label="Ekspor"
-                loading={controller.exporting}
+                loading={controller.exporting === 'list'}
                 onPress={() => void controller.onExportList()}
                 style={styles.toolbarButton}
               />
@@ -1031,17 +1031,17 @@ function KolamProductionDetail({
               />
             ) : null}
             <KolamPdfDownloadButton
-              disabled={controller.exporting}
+              disabled={Boolean(controller.exporting)}
               label="PDF Perintah"
-              loading={controller.exporting}
+              loading={controller.exporting === 'pdf'}
               loadingLabel="Mengekspor…"
               onPress={() => void controller.onExportPdf()}
               style={styles.toolbarButton}
             />
             <KolamPdfDownloadButton
-              disabled={controller.exporting}
+              disabled={Boolean(controller.exporting)}
               label="PDF Detail"
-              loading={controller.exporting}
+              loading={controller.exporting === 'detailPdf'}
               loadingLabel="Mengekspor…"
               onPress={() => void controller.onExportDetailPdf()}
               style={styles.toolbarButton}
