@@ -79,7 +79,6 @@ import {
 } from './kolam-detail-meta-strip';
 import { KolamConfirmDialog } from './kolam-confirm-dialog';
 import { KolamContentFrame } from './kolam-content-frame';
-import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
@@ -229,15 +228,27 @@ export function KolamSalesOpsDetail({
       void controller.onUploadPaymentProof(uri);
     }
   };
+  const livestockPendingLabel =
+    sale.openLivestockPendingCount > 0
+      ? `${sale.openLivestockPendingCount} spesies perlu atur kandang`
+      : '';
 
   return (
     <View style={styles.detailSurface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
           <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {sale.invoiceCode}
-            </Text>
+            <View style={styles.detailToolbarTitleRow}>
+              <Text numberOfLines={1} style={styles.detailToolbarContext}>
+                {sale.invoiceCode}
+              </Text>
+              {livestockPendingLabel ? (
+                <KolamStatusBadge
+                  intent="warning"
+                  label={livestockPendingLabel}
+                />
+              ) : null}
+            </View>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
@@ -318,18 +329,6 @@ export function KolamSalesOpsDetail({
           </View>
         </View>
       </View>
-
-      {sale.openLivestockPendingCount > 0 ? (
-        <KolamCopyStack
-          items={[
-            {
-              id: 'livestock',
-              text: `${sale.openLivestockPendingCount} species perlu atur kandang`,
-              style: styles.warningHint,
-            },
-          ]}
-        />
-      ) : null}
 
       <KolamDetailScrollSurface
         contentContainerStyle={styles.detailContent}
@@ -1631,6 +1630,13 @@ const styles = StyleSheet.create({
   detailSurface: {
     gap: 14,
   },
+  detailToolbarTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    minWidth: 0,
+  },
   detailToolbarContext: {
     color: V.colors.fg,
     flexShrink: 1,
@@ -1688,11 +1694,6 @@ const styles = StyleSheet.create({
   detailSubtitle: {
     color: V.colors.mutedFg,
     fontSize: 13,
-  },
-  warningHint: {
-    color: V.colors.warning,
-    fontSize: 12,
-    fontWeight: '600',
   },
   headerActions: {
     flexDirection: 'row',
