@@ -796,7 +796,11 @@ function KolamEnclosureEditSurface({
           </View>
         ) : (
           <View style={styles.editFormGrid}>
-            <LabeledEditField label="Satuan ukuran">
+            <View style={styles.editFormRow}>
+            <LabeledEditField
+              label="Satuan ukuran"
+              style={[styles.editFormQuarterCol, styles.hiddenField]}
+            >
               <KolamDropdownSelect
                 label="Satuan ukuran"
                 menuPlacement="inline"
@@ -829,7 +833,7 @@ function KolamEnclosureEditSurface({
                 value={effectiveSizeUnitId || unitSelectOptions[0]?.value || ''}
               />
             </LabeledEditField>
-            <LabeledEditField label="Tinggi">
+            <LabeledEditField label="Tinggi" style={styles.editFormQuarterCol}>
               <KolamFormTextField
                 mode="numeric"
                 onChangeText={value => patchSizeValue('high', value)}
@@ -838,7 +842,7 @@ function KolamEnclosureEditSurface({
                 value={String(form.enclosure_size.high.value || 0)}
               />
             </LabeledEditField>
-            <LabeledEditField label="Lebar">
+            <LabeledEditField label="Lebar" style={styles.editFormQuarterCol}>
               <KolamFormTextField
                 mode="numeric"
                 onChangeText={value => patchSizeValue('width', value)}
@@ -847,7 +851,7 @@ function KolamEnclosureEditSurface({
                 value={String(form.enclosure_size.width.value || 0)}
               />
             </LabeledEditField>
-            <LabeledEditField label="Panjang">
+            <LabeledEditField label="Panjang" style={styles.editFormQuarterCol}>
               <KolamFormTextField
                 mode="numeric"
                 onChangeText={value => patchSizeValue('length', value)}
@@ -856,6 +860,43 @@ function KolamEnclosureEditSurface({
                 value={String(form.enclosure_size.length.value || 0)}
               />
             </LabeledEditField>
+            <LabeledEditField
+              label="Satuan ukuran"
+              style={styles.editFormQuarterCol}
+            >
+              <KolamDropdownSelect
+                label="Satuan ukuran"
+                menuPlacement="inline"
+                onChange={value =>
+                  setForm(current => ({
+                    ...current,
+                    enclosure_size: {
+                      high: {
+                        unit: value,
+                        value: Number(current.enclosure_size.high.value) || 0,
+                      },
+                      length: {
+                        unit: value,
+                        value: Number(current.enclosure_size.length.value) || 0,
+                      },
+                      width: {
+                        unit: value,
+                        value: Number(current.enclosure_size.width.value) || 0,
+                      },
+                    },
+                  }))
+                }
+                options={
+                  unitSelectOptions.length
+                    ? unitSelectOptions
+                    : [{label: '—', value: ''}]
+                }
+                showLabelInTrigger={false}
+                style={styles.editFormInput}
+                value={effectiveSizeUnitId || unitSelectOptions[0]?.value || ''}
+              />
+            </LabeledEditField>
+            </View>
           </View>
         )}
       </DetailSection>
@@ -2725,6 +2766,14 @@ const styles = StyleSheet.create({
     flexBasis: '48%',
     flexGrow: 1,
     minWidth: 200,
+  },
+  editFormQuarterCol: {
+    flexBasis: '23%',
+    flexGrow: 1,
+    minWidth: 120,
+  },
+  hiddenField: {
+    display: 'none',
   },
   editFormField: {
     gap: 6,
