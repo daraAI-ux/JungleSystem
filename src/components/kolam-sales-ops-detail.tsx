@@ -86,6 +86,7 @@ import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 
 /**
  * FE `SalesInvoice` Batch A: header, status strip, 2-col info/items | shipping/history,
@@ -484,71 +485,85 @@ export function KolamSalesOpsDetail({
               ]}
             />
 
-            <Text style={styles.sectionTitle}>
-              Bukti pembayaran ({sale.paymentProofs.length})
-            </Text>
-            {canUploadProof ? (
-              <KolamButton
-                disabled={controller.mutating}
-                intent="primary"
-                label="Unggah bukti"
-                onPress={async () => {
-                  const uri = await controller.onPickImage();
-                  if (uri) {
-                    void controller.onUploadPaymentProof(uri);
-                  }
-                }}
-              />
-            ) : null}
-            {sale.paymentProofs.length === 0 ? (
-              <Text style={styles.metaText}>Belum ada bukti pembayaran.</Text>
-            ) : (
-              sale.paymentProofs.map(proof => (
-                <View key={proof.id} style={styles.proofRow}>
-                  {proof.uri ? (
-                    <KolamRemoteImage
-                      accessibilityLabel={proof.note || proof.path}
-                      sourceUri={proof.uri}
-                      style={styles.proofThumb}
-                    />
-                  ) : (
-                    <Text style={styles.metaText}>{proof.path}</Text>
-                  )}
-                  <View style={styles.proofMeta}>
-                    {proof.note ? (
-                      <Text style={styles.metaText}>{proof.note}</Text>
-                    ) : null}
-                    {proof.uploadedAt ? (
-                      <Text style={styles.metaText}>
-                        {formatShortDateTime(proof.uploadedAt)}
-                      </Text>
-                    ) : null}
-                    {!marketplaceManaged ? (
-                      <View style={styles.actionButtons}>
-                        <KolamButton
-                          disabled={controller.mutating}
-                          label="Ganti"
-                          onPress={async () => {
-                            const uri = await controller.onPickImage();
-                            if (uri) {
-                              void controller.onReplacePaymentProof(proof.id, uri);
-                            }
-                          }}
-                        />
-                        <KolamDeleteButton
-                          disabled={controller.mutating}
-                          intent="danger"
-                          label="Hapus"
-                          onPress={() => {
-                            void controller.onDeletePaymentProof(proof.id);
-                          }}
-                        />
-                      </View>
-                    ) : null}
+            <KolamCardFrame style={styles.paymentProofCard} variant="compact">
+              <View style={styles.paymentProofHeader}>
+                <Text style={styles.sectionTitle}>
+                  Bukti pembayaran ({sale.paymentProofs.length})
+                </Text>
+                {canUploadProof ? (
+                  <KolamButton
+                    disabled={controller.mutating}
+                    icon={
+                      <KolamUploadArrowIcon
+                        color={V.colors.primaryFg}
+                        size={16}
+                      />
+                    }
+                    label="Unggah bukti"
+                    onPress={async () => {
+                      const uri = await controller.onPickImage();
+                      if (uri) {
+                        void controller.onUploadPaymentProof(uri);
+                      }
+                    }}
+                    style={styles.paymentProofUploadButton}
+                    textStyle={styles.paymentProofUploadButtonText}
+                  />
+                ) : null}
+              </View>
+              {sale.paymentProofs.length === 0 ? (
+                <Text style={styles.metaText}>Belum ada bukti pembayaran.</Text>
+              ) : (
+                sale.paymentProofs.map(proof => (
+                  <View key={proof.id} style={styles.proofRow}>
+                    {proof.uri ? (
+                      <KolamRemoteImage
+                        accessibilityLabel={proof.note || proof.path}
+                        sourceUri={proof.uri}
+                        style={styles.proofThumb}
+                      />
+                    ) : (
+                      <Text style={styles.metaText}>{proof.path}</Text>
+                    )}
+                    <View style={styles.proofMeta}>
+                      {proof.note ? (
+                        <Text style={styles.metaText}>{proof.note}</Text>
+                      ) : null}
+                      {proof.uploadedAt ? (
+                        <Text style={styles.metaText}>
+                          {formatShortDateTime(proof.uploadedAt)}
+                        </Text>
+                      ) : null}
+                      {!marketplaceManaged ? (
+                        <View style={styles.actionButtons}>
+                          <KolamButton
+                            disabled={controller.mutating}
+                            label="Ganti"
+                            onPress={async () => {
+                              const uri = await controller.onPickImage();
+                              if (uri) {
+                                void controller.onReplacePaymentProof(
+                                  proof.id,
+                                  uri,
+                                );
+                              }
+                            }}
+                          />
+                          <KolamDeleteButton
+                            disabled={controller.mutating}
+                            intent="danger"
+                            label="Hapus"
+                            onPress={() => {
+                              void controller.onDeletePaymentProof(proof.id);
+                            }}
+                          />
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
-                </View>
-              ))
-            )}
+                ))
+              )}
+            </KolamCardFrame>
           </View>
 
           {!skipShipping ? (
@@ -1524,6 +1539,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 4,
+  },
+  paymentProofCard: {
+    gap: 10,
+  },
+  paymentProofHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  paymentProofUploadButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+    flexShrink: 0,
+  },
+  paymentProofUploadButtonText: {
+    color: V.colors.primaryFg,
   },
   actionButtons: {
     flexDirection: 'row',
