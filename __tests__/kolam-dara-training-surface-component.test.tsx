@@ -432,12 +432,7 @@ describe('KolamDaraTrainingSurface', () => {
       total: 2,
     });
     visionProductPhotosMock.mockResolvedValue([]);
-    addVisionProductPhotoMock.mockResolvedValue({
-      id: 'ph1',
-      photoKey: '/media/frog-a.jpg',
-      source: 'catalog',
-      createdAt: '',
-    });
+    addVisionProductPhotoMock.mockResolvedValue(undefined);
     visionFeedbackMock.mockResolvedValue({
       rows: [
         {
@@ -841,7 +836,7 @@ describe('KolamDaraTrainingSurface', () => {
   it('denies access without dara-training or chat view', async () => {
     authMock.mockReturnValue({
       authUser: {roleKey: 'cashier', permissions: []},
-    } as ReturnType<typeof useKolamAuthContext>);
+    } as unknown as ReturnType<typeof useKolamAuthContext>);
 
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {

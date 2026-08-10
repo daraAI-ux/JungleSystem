@@ -938,10 +938,7 @@ export function getKolamComplaintRefundWorkflowStep(
   if (!complaint.refundTransaction) {
     return 'create';
   }
-  if (
-    complaint.refundPaymentStatus !== 'sent' &&
-    complaint.refundPaymentStatus !== 'completed'
-  ) {
+  if (complaint.refundPaymentStatus !== 'sent') {
     return 'send';
   }
   if (

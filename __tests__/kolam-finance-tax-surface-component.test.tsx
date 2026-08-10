@@ -124,7 +124,7 @@ describe('KolamFinanceTaxSurface', () => {
     jest.clearAllMocks();
     authMock.mockReturnValue({
       authUser: {roleKey: 'admin'},
-    } as ReturnType<typeof useKolamAuthContext>);
+    } as unknown as ReturnType<typeof useKolamAuthContext>);
     webSettingMock.mockResolvedValue({
       daraTaxEnabled: true,
     } as Awaited<ReturnType<typeof getKolamWebSetting>>);
@@ -462,7 +462,7 @@ describe('KolamFinanceTaxSurface', () => {
   it('denies access without tax permission', async () => {
     authMock.mockReturnValue({
       authUser: {roleKey: 'cashier', permissions: []},
-    } as ReturnType<typeof useKolamAuthContext>);
+    } as unknown as ReturnType<typeof useKolamAuthContext>);
 
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {

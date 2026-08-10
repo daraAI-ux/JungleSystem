@@ -1,5 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import type {TextInputProps} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {kolamFormControlStyles} from './kolam-form-control-styles';
 import {KolamTextField, type KolamTextFieldProps} from './kolam-text-field';
 
@@ -12,23 +14,27 @@ export type KolamFormTextFieldMode =
   | 'url';
 
 export interface KolamFormTextFieldProps extends KolamTextFieldProps {
+  label?: string;
   mode?: KolamFormTextFieldMode;
+  nestedScrollEnabled?: boolean;
 }
 
 export function KolamFormTextField({
   autoCapitalize,
   keyboardType,
+  label,
   mode = 'text',
   multiline,
+  nestedScrollEnabled,
   secureTextEntry,
   style,
   ...props
 }: KolamFormTextFieldProps) {
   const modeProps = getKolamFormTextFieldModeProps(mode);
-
-  return (
+  const input = (
     <KolamTextField
       {...props}
+      {...({nestedScrollEnabled} as TextInputProps)}
       autoCapitalize={autoCapitalize ?? modeProps.autoCapitalize}
       keyboardType={keyboardType ?? modeProps.keyboardType}
       multiline={multiline}
@@ -42,6 +48,17 @@ export function KolamFormTextField({
         props.textAlignVertical ?? (multiline ? 'top' : 'center')
       }
     />
+  );
+
+  if (!label) {
+    return input;
+  }
+
+  return (
+    <View style={styles.fieldStack}>
+      <Text style={styles.label}>{label}</Text>
+      {input}
+    </View>
   );
 }
 
@@ -64,3 +81,14 @@ function getKolamFormTextFieldModeProps(
       return {};
   }
 }
+
+const styles = StyleSheet.create({
+  fieldStack: {
+    gap: 6,
+  },
+  label: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+});

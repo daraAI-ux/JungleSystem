@@ -746,7 +746,11 @@ export function useKolamProductionController(
 
   const onPickImage = useCallback(async () => {
     try {
-      return await pickNativeImageFile();
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return null;
+      }
+      return picked.uri || picked.path || null;
     } catch {
       return null;
     }

@@ -35,6 +35,12 @@ type KolamMessageEvent = {
   lastEventId?: string;
 };
 
+type KolamBrowserStorageLike = {
+  getItem: (key: string) => string | null;
+  removeItem: (key: string) => void;
+  setItem: (key: string, value: string) => void;
+};
+
 export type KolamChatLiveEvent = {
   contract: KolamChatLiveEventContract;
   eventId?: string;
@@ -269,7 +275,7 @@ export function clearKolamChatLiveLastEventIdsForTest() {
   (['inbox', 'team-chat'] as const).forEach(mode => {
     delete lastEventIdMemory[mode];
     try {
-      (globalThis as {localStorage?: Storage}).localStorage?.removeItem(
+      (globalThis as {localStorage?: KolamBrowserStorageLike}).localStorage?.removeItem(
         getKolamChatLiveLastEventStorageKey(mode),
       );
     } catch {
@@ -473,7 +479,8 @@ function parseKolamChatLiveEventPayload(data: string | undefined) {
 function getStoredKolamChatLiveLastEventId(mode: KolamChatLiveStreamKind) {
   const storageKey = getKolamChatLiveLastEventStorageKey(mode);
   try {
-    const storage = (globalThis as {localStorage?: Storage}).localStorage;
+    const storage = (globalThis as {localStorage?: KolamBrowserStorageLike})
+      .localStorage;
     const stored = storage?.getItem(storageKey);
     if (stored) {
       return stored;
@@ -492,7 +499,7 @@ function rememberKolamChatLiveLastEventId(
   lastEventIdMemory[mode] = eventId;
   const storageKey = getKolamChatLiveLastEventStorageKey(mode);
   try {
-    (globalThis as {localStorage?: Storage}).localStorage?.setItem(
+    (globalThis as {localStorage?: KolamBrowserStorageLike}).localStorage?.setItem(
       storageKey,
       eventId,
     );

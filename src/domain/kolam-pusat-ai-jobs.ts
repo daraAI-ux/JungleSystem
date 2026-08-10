@@ -65,6 +65,11 @@ export const KOLAM_PUSAT_AI_PROSES_EMPTY_COPY =
 const DARA_DISMISSED_JOB_IDS_KEY = 'dara-dismissed-job-ids-v1';
 const dismissedIdsMemory = new Set<string>();
 
+type KolamBrowserStorageLike = {
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+};
+
 const DARA_JOB_LABELS: Record<string, string> = {
   'seo.bulk_products': 'Audit bulk produk',
   'seo.bulk_blogs': 'Audit bulk blog',
@@ -152,7 +157,8 @@ export function filterKolamDaraJobs(
 /** FE `isJobDismissed` / `dismissTrackedJob` (localStorage key parity). */
 export function readKolamDaraDismissedJobIds(): Set<string> {
   try {
-    const storage = (globalThis as {localStorage?: Storage}).localStorage;
+    const storage = (globalThis as {localStorage?: KolamBrowserStorageLike})
+      .localStorage;
     const raw = storage?.getItem(DARA_DISMISSED_JOB_IDS_KEY);
     if (!raw) {
       return new Set(dismissedIdsMemory);
@@ -181,7 +187,7 @@ export function dismissKolamDaraJob(jobId: string) {
   dismissed.add(jobId);
   dismissedIdsMemory.add(jobId);
   try {
-    (globalThis as {localStorage?: Storage}).localStorage?.setItem(
+    (globalThis as {localStorage?: KolamBrowserStorageLike}).localStorage?.setItem(
       DARA_DISMISSED_JOB_IDS_KEY,
       JSON.stringify([...dismissed].slice(0, 200)),
     );

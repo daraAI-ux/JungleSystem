@@ -442,10 +442,12 @@ export function formatKolamDaraSeoWorkflowHint(
 }
 
 export function resolveKolamDaraSeoTargetType(
-  suggestion: Pick<
-    KolamDaraSeoSuggestion,
-    'targetType' | 'blogId' | 'speciesId' | 'productId'
-  > & {targetType?: string},
+  suggestion: {
+    targetType?: string | null;
+    blogId?: string | null;
+    speciesId?: string | null;
+    productId?: string | null;
+  },
 ): KolamDaraSeoTargetType {
   if (suggestion.targetType === 'website') {
     return 'website';
@@ -749,23 +751,22 @@ export function normalizeKolamDaraSeoBulkActionResults(
   const root = asRecord(payload);
   const data = root.data ?? root;
   const rows = Array.isArray(data) ? data : [];
-  return rows
-    .map(item => {
+  return rows.reduce<KolamDaraSeoBulkActionResult[]>((results, item) => {
       const row = asRecord(item);
       const id = String(row.id || row._id || '').trim();
       if (!id) {
-        return null;
+        return results;
       }
-      return {
+      results.push({
         id,
         ok: row.ok === true,
         error:
           typeof row.error === 'string' && row.error.trim()
             ? row.error.trim()
             : undefined,
-      };
-    })
-    .filter((item): item is KolamDaraSeoBulkActionResult => item != null);
+      });
+      return results;
+    }, []);
 }
 
 function normalizeKolamDaraSeoSuggestionRow(
@@ -781,7 +782,7 @@ function normalizeKolamDaraSeoSuggestionRow(
   const speciesId = resolveRelatedId(row.speciesId);
   const targetType = resolveKolamDaraSeoTargetType({
     targetType:
-      typeof row.targetType === 'string' ? row.targetType : undefined,
+      typeof row.targetType === 'string' ? row.targetType : 'product',
     productId,
     blogId,
     speciesId,

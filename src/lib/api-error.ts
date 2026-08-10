@@ -26,12 +26,12 @@ export class ApiError extends Error {
   }
 }
 
-export function getErrorMessage(error: unknown): string {
+export function getErrorMessage(error: unknown, fallback = 'Unknown error'): string {
   if (error instanceof Error) {
     return sanitizeApiErrorMessage(error.message);
   }
 
-  return 'Unknown error';
+  return fallback;
 }
 
 /** Strip HTML bodies so RN empty-states never dump raw markup. */
@@ -75,4 +75,3 @@ function looksLikeHtmlDocument(text: string) {
     (sample.includes('<head') && sample.includes('<style'))
   );
 }
-

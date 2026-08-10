@@ -800,25 +800,22 @@ export function normalizeKolamDaraMarketIntelBulkActionResults(
         : Array.isArray(data.results)
           ? data.results
           : [];
-  return raw
-    .map(item => {
+  return raw.reduce<KolamDaraMarketIntelBulkActionResult[]>((results, item) => {
       const row = asRecord(item);
       const id = String(row.id || row._id || '').trim();
       if (!id) {
-        return null;
+        return results;
       }
-      return {
+      results.push({
         id,
         ok: row.ok === true,
         error:
           typeof row.error === 'string' && row.error.trim()
             ? row.error.trim()
             : undefined,
-      } satisfies KolamDaraMarketIntelBulkActionResult;
-    })
-    .filter(
-      (item): item is KolamDaraMarketIntelBulkActionResult => item != null,
-    );
+      });
+      return results;
+    }, []);
 }
 
 function normalizeEntityRef(

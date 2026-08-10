@@ -5,10 +5,17 @@ import {KolamTextField} from './kolam-text-field';
 
 type SearchInputProps = Pick<
   KolamSearchFieldProps,
-  'autoFocus' | 'inputRef' | 'inputStyle' | 'onChangeText' | 'placeholder' | 'value'
+  | 'accessibilityLabel'
+  | 'autoFocus'
+  | 'inputRef'
+  | 'inputStyle'
+  | 'onChangeText'
+  | 'placeholder'
+  | 'value'
 >;
 
 export function KolamSearchFieldInput({
+  accessibilityLabel,
   autoFocus = false,
   inputRef,
   inputStyle,
@@ -19,6 +26,7 @@ export function KolamSearchFieldInput({
   return (
     <KolamTextField
       ref={inputRef}
+      accessibilityLabel={accessibilityLabel}
       value={value}
       onChangeText={onChangeText}
       autoCapitalize="none"

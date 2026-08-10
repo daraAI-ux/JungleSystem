@@ -9,19 +9,22 @@ import {searchFieldStyles as styles} from './kolam-search-field-styles';
 export type {KolamSearchFieldProps};
 
 export function KolamSearchField({
+  accessibilityLabel,
   value,
   onChangeText,
   placeholder,
   autoFocus = false,
   containerStyle,
+  style,
   inputRef,
   inputStyle,
   trailingLabel,
 }: KolamSearchFieldProps) {
   return (
-    <View style={[styles.field, containerStyle]}>
+    <View style={[styles.field, containerStyle, style]}>
       <KolamSearchFieldIcon />
       <KolamSearchFieldInput
+        accessibilityLabel={accessibilityLabel}
         value={value}
         onChangeText={onChangeText}
         autoFocus={autoFocus}

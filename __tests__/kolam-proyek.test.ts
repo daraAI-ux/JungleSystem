@@ -246,7 +246,17 @@ describe('kolam-proyek domain', () => {
       computeKolamProyekCostBreakdown({
         contractValue: 1000,
         hppMaterials: [
-          { id: '1', label: 'A', quantity: 1, unitCost: 100, subtotal: 100 },
+          {
+            id: '1',
+            label: 'A',
+            quantity: 1,
+            unitCost: 100,
+            subtotal: 100,
+            productId: null,
+            speciesId: null,
+            variantId: null,
+            stockAppliedAt: null,
+          },
         ],
         hppManual: 50,
         items: [],
@@ -366,6 +376,8 @@ describe('kolam-proyek domain', () => {
       paidAt: null,
       dueAt: null,
       kwitansiNumber: null,
+      paymentProofs: [],
+      paymentConfirmations: [],
     };
     expect(getKolamProyekDpRowOutstanding(row)).toBe(750000);
     expect(formatKolamProyekDpRowStatusLabel(row)).toBe('Sebagian');

@@ -14,7 +14,7 @@ import {
   getAccessToken,
   getNativeDeviceIdentity,
 } from '../lib/api-client';
-import { ApiError } from '../lib/api-error';
+import { ApiError, type ApiErrorPayload } from '../lib/api-error';
 import { saveNativeBase64File } from './native-file-saver';
 
 export async function getKolamStockTransactionList(
@@ -223,7 +223,7 @@ export async function downloadKolamStockTransactionExport(
     } catch {
       payload = { message: await response.text() };
     }
-    throw new ApiError(response.status, payload);
+    throw new ApiError(response.status, toApiErrorPayload(payload));
   }
 
   const filename =
@@ -293,10 +293,19 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
-  if (typeof btoa === 'function') {
-    return btoa(binary);
+  const browserBtoa = (globalThis as {btoa?: (value: string) => string}).btoa;
+  if (browserBtoa) {
+    return browserBtoa(binary);
   }
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { Buffer } = require('buffer') as typeof import('buffer');
   return Buffer.from(bytes).toString('base64');
+}
+
+function toApiErrorPayload(payload: unknown): ApiErrorPayload {
+  if (!payload || typeof payload !== 'object') {
+    return {message: String(payload || '')};
+  }
+
+  return payload as ApiErrorPayload;
 }

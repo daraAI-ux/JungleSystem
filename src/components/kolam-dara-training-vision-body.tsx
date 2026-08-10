@@ -792,7 +792,7 @@ export function KolamDaraTrainingVisionBody({
                         : undefined
                     }
                     label="Job"
-                    value={clipJobLabel(clipJob)}
+                    value={clipJob ? clipJobLabel(clipJob) : '-'}
                   />
                 </View>
               </View>

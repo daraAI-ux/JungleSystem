@@ -51,7 +51,10 @@ describe('KolamStatsCardStrip', () => {
   });
 
   it('fills the wrapper with equal flex tiles (no fixed tile sizes or side padding)', () => {
-    const frameStyle = getListFrameStyle('statsCardStrip');
+    const frameStyle = getListFrameStyle('statsCardStrip') as Record<
+      string,
+      unknown
+    >;
     expect(frameStyle).toEqual(
       expect.objectContaining({
         alignSelf: 'stretch',

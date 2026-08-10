@@ -126,7 +126,7 @@ describe('KolamDaraMarketIntelSurface', () => {
     jest.clearAllMocks();
     authMock.mockReturnValue({
       authUser: {roleKey: 'admin'},
-    } as ReturnType<typeof useKolamAuthContext>);
+    } as unknown as ReturnType<typeof useKolamAuthContext>);
     statusMock.mockResolvedValue({
       enabled: true,
       canView: true,
@@ -545,7 +545,7 @@ describe('KolamDaraMarketIntelSurface', () => {
         roleKey: 'staff',
         permissions: [{resource: 'ai-market-intel', actions: ['view']}],
       },
-    } as ReturnType<typeof useKolamAuthContext>);
+    } as unknown as ReturnType<typeof useKolamAuthContext>);
 
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {
@@ -567,7 +567,7 @@ describe('KolamDaraMarketIntelSurface', () => {
   it('denies access without market-intel permission', async () => {
     authMock.mockReturnValue({
       authUser: {roleKey: 'pos', permissions: []},
-    } as ReturnType<typeof useKolamAuthContext>);
+    } as unknown as ReturnType<typeof useKolamAuthContext>);
 
     let tree: ReactTestRenderer.ReactTestRenderer;
     await ReactTestRenderer.act(async () => {

@@ -554,7 +554,12 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
-  return globalThis.btoa(binary);
+  const globalBtoa = (globalThis as {btoa?: (data: string) => string}).btoa;
+  if (typeof globalBtoa === 'function') {
+    return globalBtoa(binary);
+  }
+  const {Buffer} = require('buffer') as typeof import('buffer');
+  return Buffer.from(bytes).toString('base64');
 }
 
 function kolamRequest<T>(

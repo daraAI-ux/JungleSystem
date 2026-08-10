@@ -147,7 +147,8 @@ export function isKolamShippingMethodRoute(route: string) {
 
 export function getKolamShippingMethodBreadcrumbPath(
   mode: 'list' | 'detail' | 'edit' | 'new',
-  method?: Pick<KolamShippingMethod, 'id' | 'displayName'> | null,
+  method?: (Pick<KolamShippingMethod, 'id'> &
+    Partial<Pick<KolamShippingMethod, 'displayName'>>) | null,
 ) {
   if (mode === 'new') {
     return `${KOLAM_SHIPPING_METHOD_BREADCRUMB_ROOT}/create`;
