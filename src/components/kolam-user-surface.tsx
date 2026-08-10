@@ -71,6 +71,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
@@ -2421,14 +2422,12 @@ function KolamUserEditSurface({
                 />
               </View>
               {form.employee.isPkp ? (
-                <UserFormField label="Catatan PKP">
-                  <KolamFormTextField
-                    editable={!formDisabled}
-                    onChangeText={value => setEmployeeField('pkpNotes', value)}
-                    style={styles.formInput}
-                    value={form.employee.pkpNotes}
-                  />
-                </UserFormField>
+                <KolamNotesField
+                  editable={!formDisabled}
+                  label="Catatan PKP"
+                  onChangeText={value => setEmployeeField('pkpNotes', value)}
+                  value={form.employee.pkpNotes}
+                />
               ) : null}
               <View style={styles.formField}>
                 <UserFormField label="Tipe Jadwal">

@@ -3,7 +3,6 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import {
@@ -20,6 +19,7 @@ import {
 import {KolamButton} from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 
 const PAGE_SIZE = 20;
@@ -253,11 +253,9 @@ export function KolamDaraTrainingReviewsBody({
                 <Text style={styles.td}>{active.customerComment}</Text>
               </View>
             ) : null}
-            <Text style={styles.fieldLabel}>Catatan kendala / perbaikan DARA</Text>
-            <TextInput
-              multiline
+            <KolamNotesField
+              label="Catatan kendala / perbaikan DARA"
               onChangeText={setNotes}
-              style={styles.notesInput}
               value={notes}
             />
             <View style={styles.modalFooter}>
@@ -400,19 +398,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 11,
     fontWeight: '700',
-  },
-  notesInput: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    minHeight: 96,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    textAlignVertical: 'top',
   },
   modalFooter: {
     flexDirection: 'row',

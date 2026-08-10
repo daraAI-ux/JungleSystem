@@ -30,6 +30,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamRupiahField} from './kolam-rupiah-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 
@@ -272,9 +273,8 @@ export function KolamDaraTaxSetoranBody() {
                 showLabelInTrigger={false}
                 value={walletId}
               />
-              <Field
+              <KolamNotesField
                 label="Catatan"
-                multiline
                 onChangeText={setNote}
                 value={note}
               />

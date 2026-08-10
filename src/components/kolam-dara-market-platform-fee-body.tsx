@@ -23,6 +23,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
@@ -412,11 +413,9 @@ function ProfileFormCard({
         })}
       </View>
 
-      <Text style={styles.fieldLabel}>Catatan internal</Text>
-      <TextInput
-        multiline
+      <KolamNotesField
+        label="Catatan internal"
         onChangeText={setNotes}
-        style={[styles.input, styles.notes]}
         value={notes}
       />
       <KolamButton
@@ -796,10 +795,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     paddingHorizontal: 10,
     paddingVertical: 8,
-  },
-  notes: {
-    minHeight: 64,
-    textAlignVertical: 'top',
   },
   fieldLabel: {
     color: V.colors.mutedFg,

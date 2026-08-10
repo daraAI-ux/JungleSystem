@@ -29,6 +29,7 @@ import {KolamEditButton} from './kolam-edit-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
 
@@ -329,7 +330,7 @@ export function KolamDaraTrainingFulfillmentBody({
                   onPress={() => setEnabled(current => !current)}
                 />
               </View>
-              <Field
+              <KolamNotesField
                 label="Catatan internal"
                 onChangeText={setNotes}
                 value={notes}
