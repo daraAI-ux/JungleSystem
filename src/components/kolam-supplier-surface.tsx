@@ -58,6 +58,7 @@ import {
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
@@ -2029,21 +2030,15 @@ function KolamSupplierForm({
 
               {form.isOfficialDistributor ? (
                 <View style={styles.supplierStatusTile}>
-                  <FieldShell label="Catatan kontak garansi">
-                    <KolamFormTextField
-                      editable={!controller.saving}
-                      multiline
-                      onChangeText={warrantyContactNote =>
-                        controller.onChangeForm({ warrantyContactNote })
-                      }
-                      placeholder="Kontak / catatan garansi"
-                      style={[
-                        settingsWebFormStyles.settingsWebFormFieldValue,
-                        settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-                      ]}
-                      value={form.warrantyContactNote}
-                    />
-                  </FieldShell>
+                  <KolamNotesField
+                    editable={!controller.saving}
+                    label="Catatan kontak garansi"
+                    onChangeText={warrantyContactNote =>
+                      controller.onChangeForm({ warrantyContactNote })
+                    }
+                    placeholder="Kontak / catatan garansi"
+                    value={form.warrantyContactNote}
+                  />
                 </View>
               ) : null}
             </View>

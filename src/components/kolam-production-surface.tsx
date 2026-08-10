@@ -62,6 +62,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -1735,7 +1736,7 @@ function KolamProductionSubmitCheckPanel({
           </View>
         );
       })}
-      <KolamFormTextField multiline onChangeText={setNote} placeholder="Catatan" value={note} />
+      <KolamNotesField onChangeText={setNote} placeholder="Catatan" value={note} />
       <View style={styles.formActions}>
         <KolamButton
           label={proofUri ? 'Ganti bukti foto' : 'Pilih bukti foto'}

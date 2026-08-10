@@ -132,6 +132,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamGrocerPricingTiersEditor } from './kolam-grocer-pricing-tiers-editor';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
@@ -6487,11 +6488,10 @@ function ProductAttachedItemsEditPanel({
               }
               value={targetId}
             />
-            <KolamFormTextField
+            <KolamNotesField
               editable={!controller.saving}
               onChangeText={setNote}
               placeholder="Catatan"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={note}
             />
             <View style={styles.formActions}>

@@ -87,6 +87,7 @@ import {
   type SpeciesSidebarGroup,
 } from './kolam-species-detail-overview';
 import { KolamNativeFormSection } from './kolam-native-form-section';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamPackingLinksEditor } from './kolam-packing-links-editor';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamRupiahField } from './kolam-rupiah-field';
@@ -3714,11 +3715,10 @@ function SpeciesAttachedItemsEditPanel({
               }
               value={targetId}
             />
-            <KolamFormTextField
+            <KolamNotesField
               editable={!controller.saving}
               onChangeText={setNote}
               placeholder="Catatan"
-              style={settingsWebFormStyles.settingsWebFormFieldValue}
               value={note}
             />
             <View style={styles.formActions}>

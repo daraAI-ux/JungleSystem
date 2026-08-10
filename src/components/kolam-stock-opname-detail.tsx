@@ -60,6 +60,7 @@ import {
 } from './kolam-list-table-composition';
 import { KolamMarketplacePriceSyncDialog } from './kolam-marketplace-price-sync-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -659,13 +660,11 @@ export function KolamStockOpnameDetail({
             />
           ) : null}
         </View>
-        <KolamFormTextField
+        <KolamNotesField
           editable={controller.isDraft && canUpdate}
-          multiline
           numberOfLines={3}
           onChangeText={setNoteDraft}
           placeholder="Catatan dokumen"
-          style={[styles.multiline, styles.noteField]}
           value={noteDraft}
         />
       </KolamCardFrame>
@@ -886,12 +885,10 @@ export function KolamStockOpnameDetail({
                 value={editMinus}
               />
             ) : null}
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={2}
               onChangeText={setEditNote}
               placeholder="Catatan baris"
-              style={[styles.multiline, styles.noteField]}
               value={editNote}
             />
             <View style={styles.modalActions}>
@@ -1353,12 +1350,10 @@ function AddLineForm({
           value={controller.addDraft.minusReason}
         />
       ) : null}
-      <KolamFormTextField
-        multiline
+      <KolamNotesField
         numberOfLines={2}
         onChangeText={value => controller.setAddDraft({ lineNote: value })}
         placeholder="Catatan baris (opsional)"
-        style={[styles.multiline, styles.noteField]}
         value={controller.addDraft.lineNote}
       />
       <View style={styles.uploadCard}>
@@ -1725,10 +1720,6 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 72,
     textAlignVertical: 'top',
-  },
-  noteField: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
   },
   linesSection: {
     gap: 10,

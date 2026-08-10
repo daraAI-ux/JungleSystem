@@ -86,6 +86,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import {KolamSkullEventIcon} from './kolam-skull-event-icon';
 import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
 import {KolamRemoteImage} from './kolam-remote-image';
@@ -758,22 +759,15 @@ function KolamEnclosureEditSurface({
               />
             </LabeledEditField>
           </View>
-          <LabeledEditField label="Catatan">
-            <KolamFormTextField
-              multiline
-              numberOfLines={3}
-              onChangeText={value =>
-                setForm(current => ({...current, note: value}))
-              }
-              placeholder="Catatan"
-              style={[
-                styles.editFormInput,
-                styles.editFormTextArea,
-                styles.noteField,
-              ]}
-              value={form.note}
-            />
-          </LabeledEditField>
+          <KolamNotesField
+            label="Catatan"
+            numberOfLines={3}
+            onChangeText={value =>
+              setForm(current => ({...current, note: value}))
+            }
+            placeholder="Catatan"
+            value={form.note}
+          />
         </View>
       </DetailSection>
 
@@ -2788,10 +2782,6 @@ const styles = StyleSheet.create({
   },
   editFormTextArea: {
     minHeight: 84,
-  },
-  noteField: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
   },
   editBrandBanner: {
     backgroundColor: V.colors.muted,

@@ -59,6 +59,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesDisplay, KolamNotesField} from './kolam-notes-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamRupiahField } from './kolam-rupiah-field';
@@ -692,16 +693,12 @@ function KolamPurchaseOrderForm({
       <KolamPOPaymentConfigCard controller={controller} />
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <Text style={styles.sectionTitle}>Catatan PO</Text>
-        <View style={styles.fieldShell}>
-          <KolamFormTextField
-            multiline
-            onChangeText={notes => controller.onChangeForm({ notes })}
-            placeholder="Catatan PO (opsional)"
-            style={[styles.notesInput, styles.poNotesInput]}
-            value={form.notes}
-          />
-        </View>
+        <KolamNotesField
+          label="Catatan PO"
+          onChangeText={notes => controller.onChangeForm({ notes })}
+          placeholder="Catatan PO (opsional)"
+          value={form.notes}
+        />
       </KolamContentFrame>
 
       </KolamDetailScrollSurface>
@@ -1662,8 +1659,11 @@ function KolamPOProofsCard({
 
       {po.isPartial ? (
         <View style={styles.partialNoteBox}>
-          <Text style={styles.partialNoteTitle}>Catatan Sebagian</Text>
-          <Text style={styles.partialNoteBody}>{po.partialNote || '—'}</Text>
+          <KolamNotesDisplay
+            emptyText="-"
+            label="Catatan Sebagian"
+            text={po.partialNote}
+          />
           {po.partialProofUploadedAt ? (
             <Text style={styles.metaText}>
               Dicatat {formatPODateTime(po.partialProofUploadedAt)}
@@ -2192,13 +2192,12 @@ function KolamPOFakturPajakSection({
         </View>
       </View>
       <View style={styles.taxFakturNoteCard}>
-        <FieldShell label="Catatan">
-          <KolamFormTextField
-            onChangeText={setNotes}
-            placeholder="Catatan faktur"
-            value={notes}
-          />
-        </FieldShell>
+        <KolamNotesField
+          label="Catatan"
+          onChangeText={setNotes}
+          placeholder="Catatan faktur"
+          value={notes}
+        />
       </View>
     </KolamContentFrame>
   );
@@ -2348,8 +2347,7 @@ function KolamPOCheckDialog({
           <Text style={styles.metaText}>
             Kuantitas hasil cek berbeda dari pesanan — akan ditandai sebagai partial.
           </Text>
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             onChangeText={setPartialNote}
             placeholder="Catatan partial"
             value={partialNote}
@@ -2458,8 +2456,7 @@ function KolamPOEditCheckItemsDialog({
       </FieldShell>
       {isPartial ? (
         <View style={styles.proofGroup}>
-          <KolamFormTextField
-            multiline
+          <KolamNotesField
             onChangeText={setPartialNote}
             placeholder="Catatan partial"
             value={partialNote}
@@ -3130,13 +3127,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
   },
-  notesInput: {
-    minHeight: 64,
-  },
-  poNotesInput: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
-  },
   disabledControl: {
     opacity: 0.55,
   },
@@ -3424,23 +3414,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   partialNoteBox: {
-    backgroundColor: V.colors.warningSoft,
-    borderColor: V.colors.warning,
-    borderLeftWidth: 4,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
     gap: 6,
-    padding: 10,
-  },
-  partialNoteTitle: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  partialNoteBody: {
-    color: V.colors.fg,
-    fontSize: 13,
-    lineHeight: 18,
   },
   photoGrid: {
     flexDirection: 'row',
