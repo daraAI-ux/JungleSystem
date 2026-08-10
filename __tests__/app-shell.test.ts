@@ -121,6 +121,16 @@ test('keeps sidebar metadata available for native navigation badges', () => {
     'people',
     'automation',
   ]);
+  expect(shellModules.map(module => module.moduleIcon ?? null)).toEqual([
+    'home',
+    'settings',
+    'pos',
+    null,
+    null,
+    null,
+    null,
+    'automation',
+  ]);
   expect(getShellModule('kolam').routes).toEqual(
     expect.arrayContaining([
       '/',
@@ -180,6 +190,7 @@ test('keeps sidebar metadata available for native navigation badges', () => {
       'customer-storage-logs',
       'list-of-users',
       'list-of-users/hr',
+      'list-of-users/kpi',
       'list-of-users/overtime',
       'staff-attendance',
       'staff-attendance/leaves',

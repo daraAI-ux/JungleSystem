@@ -1,3 +1,5 @@
+import type {KolamNavigationModuleIcon} from './kolam-navigation';
+
 export type AppArea = 'kolam' | 'pos' | 'am' | 'plugins' | 'preparation';
 
 export type AppModule =
@@ -29,6 +31,7 @@ export interface ShellModule {
   area: AppArea;
   label: string;
   iconKind: ShellModuleIconKind;
+  moduleIcon?: KolamNavigationModuleIcon;
   sourceRepo: string;
   summary: string;
   routes: string[];
@@ -98,6 +101,7 @@ export const shellModules: ShellModule[] = [
     area: 'kolam',
     label: 'Beranda',
     iconKind: 'dashboard',
+    moduleIcon: 'home',
     sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
     summary:
       'Operasional internal, inventory, finance, proyek, service, dan panel Kolam.',
@@ -183,6 +187,7 @@ export const shellModules: ShellModule[] = [
       'finance/settings/tax-profile',
       'finance/tax',
       'list-of-users/hr',
+      'list-of-users/kpi',
       'list-of-users/overtime',
       'staff-attendance',
       'staff-attendance/leaves',
@@ -196,6 +201,7 @@ export const shellModules: ShellModule[] = [
     area: 'kolam',
     label: 'Pengaturan',
     iconKind: 'settings',
+    moduleIcon: 'settings',
     sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
     summary:
       'Pengaturan web, role management, activity log, dan audit akses Kolam.',
@@ -206,6 +212,7 @@ export const shellModules: ShellModule[] = [
     area: 'kolam',
     label: 'POS',
     iconKind: 'cart',
+    moduleIcon: 'pos',
     sourceRepo: 'E:\\Projects\\da-pos',
     summary: 'Alur checkout kasir native untuk product dan species sellable.',
     routes: ['/', 'checkout', 'cart', 'payment', 'sale-draft'],
@@ -263,6 +270,7 @@ export const shellModules: ShellModule[] = [
     area: 'am',
     label: 'AM',
     iconKind: 'automation',
+    moduleIcon: 'automation',
     sourceRepo: 'E:\\Projects\\da-automation-management',
     summary:
       'Automation management, workflow otomasi, backend routes, dan dashboard AM.',

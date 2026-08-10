@@ -5,17 +5,14 @@ import {KolamNavItem} from '../src/components/kolam-nav-item';
 import {getShellModule} from '../src/domain/app-shell';
 
 describe('KolamNavItem', () => {
-  it('renders non-Kolam module route count and selected state', async () => {
+  it('renders POS area module route count and selected state', async () => {
     const onPress = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
+    const module = getShellModule('catalog');
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamNavItem
-          active
-          module={getShellModule('checkout')}
-          onPress={onPress}
-        />,
+        <KolamNavItem active module={module} onPress={onPress} />,
       );
     });
 
@@ -29,10 +26,7 @@ describe('KolamNavItem', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(pressable.props.accessibilityState).toEqual({selected: true});
     expect(textNodes.map(node => node.props.children)).toEqual(
-      expect.arrayContaining([
-        'Checkout',
-        getShellModule('checkout').routes.length,
-      ]),
+      expect.arrayContaining([module.label, module.routes.length]),
     );
   });
 
