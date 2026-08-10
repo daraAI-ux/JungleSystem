@@ -207,6 +207,12 @@ export function KolamSalesOpsDetail({
   const complaintCreateRoute = buildKolamComplaintCreateRoute({
     saleId: sale.id,
   });
+  const handleUploadPaymentProof = async () => {
+    const uri = await controller.onPickImage();
+    if (uri) {
+      void controller.onUploadPaymentProof(uri);
+    }
+  };
 
   return (
     <View style={styles.detailSurface}>
@@ -239,6 +245,18 @@ export function KolamSalesOpsDetail({
                   )
                 }
                 style={styles.toolbarButton}
+              />
+            ) : null}
+            {canUploadProof ? (
+              <KolamButton
+                disabled={controller.mutating}
+                icon={
+                  <KolamUploadArrowIcon color={V.colors.primaryFg} size={16} />
+                }
+                label="Unggah bukti"
+                onPress={handleUploadPaymentProof}
+                style={styles.paymentProofUploadButton}
+                textStyle={styles.paymentProofUploadButtonText}
               />
             ) : null}
             <KolamPdfDownloadButton
@@ -522,26 +540,6 @@ export function KolamSalesOpsDetail({
                 <Text style={styles.sectionTitle}>
                   Bukti pembayaran ({sale.paymentProofs.length})
                 </Text>
-                {canUploadProof ? (
-                  <KolamButton
-                    disabled={controller.mutating}
-                    icon={
-                      <KolamUploadArrowIcon
-                        color={V.colors.primaryFg}
-                        size={16}
-                      />
-                    }
-                    label="Unggah bukti"
-                    onPress={async () => {
-                      const uri = await controller.onPickImage();
-                      if (uri) {
-                        void controller.onUploadPaymentProof(uri);
-                      }
-                    }}
-                    style={styles.paymentProofUploadButton}
-                    textStyle={styles.paymentProofUploadButtonText}
-                  />
-                ) : null}
               </View>
               {sale.paymentProofs.length === 0 ? (
                 <Text style={styles.metaText}>Belum ada bukti pembayaran.</Text>
