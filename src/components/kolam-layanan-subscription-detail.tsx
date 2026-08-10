@@ -22,6 +22,7 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -542,15 +543,13 @@ export function KolamLayananSubscriptionDetail({
                     value={Number(form.transportCostDefault) || 0}
                   />
                 </FieldShell>
-                <FieldShell label="Catatan">
-                  <KolamFormTextField
-                    multiline
-                    onChangeText={value =>
-                      controller.onChangeContractForm({ notes: value })
-                    }
-                    value={form.notes}
-                  />
-                </FieldShell>
+                <KolamNotesField
+                  label="Catatan"
+                  onChangeText={value =>
+                    controller.onChangeContractForm({ notes: value })
+                  }
+                  value={form.notes}
+                />
               </FormSection>
             </View>
           </View>

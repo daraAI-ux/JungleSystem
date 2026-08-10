@@ -23,6 +23,7 @@ import { KolamDescriptionList } from './kolam-description-list';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamNotesField} from './kolam-notes-field';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -358,19 +359,12 @@ export function KolamLayananExecutionDetail({
                     }
                   />
                 </View>
-                <View style={settingsWebFormStyles.settingsWebFormField}>
-                  <Text style={styles.fieldLabel}>Catatan</Text>
-                  <KolamFormTextField
-                    multiline
-                    onChangeText={controller.onSetCustomerNote}
+                <KolamNotesField
+                  label="Catatan"
+                  onChangeText={controller.onSetCustomerNote}
                     placeholder="Catatan dari pelanggan / WA / telepon…"
-                    style={[
-                      settingsWebFormStyles.settingsWebFormFieldValue,
-                      settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-                    ]}
-                    value={controller.customerNote}
-                  />
-                </View>
+                  value={controller.customerNote}
+                />
                 <KolamButton
                   disabled={controller.saving}
                   intent="primary"
