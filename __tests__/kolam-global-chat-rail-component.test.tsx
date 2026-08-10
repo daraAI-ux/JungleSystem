@@ -698,6 +698,46 @@ describe('KolamGlobalChatRail', () => {
     );
   });
 
+  it('opens an initial team chat room when requested by route context', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail
+          initialSelectedId="room-1"
+          mode="team-chat"
+          onClose={() => undefined}
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    expect(useDetailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'team-chat',
+        selectedId: 'room-1',
+      }),
+    );
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining(['Operasional']),
+    );
+  });
+
   it('deletes only meeting or project team chat rooms after confirmation', async () => {
     const refresh = jest.fn().mockResolvedValue(undefined);
     useReadonlyDataMock.mockReturnValue({

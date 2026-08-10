@@ -771,7 +771,6 @@ function ModuleCard({
       ]}>
       {backgroundSource ? (
         <Image
-          pointerEvents="none"
           resizeMode="cover"
           source={backgroundSource}
           style={styles.moduleCardBackground}

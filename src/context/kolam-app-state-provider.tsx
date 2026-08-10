@@ -58,6 +58,8 @@ export function KolamAppStateProvider({
   const localFirstSyncedOwnerRef = React.useRef<string | null>(null);
   const [activeChatRail, setActiveChatRail] =
     React.useState<KolamGlobalChatRailMode | null>(null);
+  const [chatRailInitialSelectedId, setChatRailInitialSelectedId] =
+    React.useState<string | null>(null);
   const [activeSettingsTab, setActiveSettingsTab] =
     React.useState<SettingsTabItem | null>(
       getSettingsTabItemById(DEFAULT_SETTINGS_TAB_ID),
@@ -106,7 +108,7 @@ export function KolamAppStateProvider({
     handleAmSurfaceSelect,
     handleBreadcrumbPress,
     handleCommand: handleNavigationCommand,
-    handleDashboardRouteContext,
+    handleDashboardRouteContext: handleNavigationDashboardRouteContext,
     handleKolamNavigationItem,
     handleKolamSurfaceSelect,
     handleModuleSelect,
@@ -393,6 +395,7 @@ export function KolamAppStateProvider({
         return;
       }
 
+      setChatRailInitialSelectedId(null);
       setActiveChatRail(currentMode =>
         currentMode === nextMode ? null : nextMode,
       );
@@ -400,8 +403,23 @@ export function KolamAppStateProvider({
     [],
   );
   const handleChatRailClose = React.useCallback(() => {
+    setChatRailInitialSelectedId(null);
     setActiveChatRail(null);
   }, []);
+  const handleDashboardRouteContext = React.useCallback(
+    (route: string) => {
+      const teamChatRoomId = getTeamChatRoomIdFromRoute(route);
+
+      if (teamChatRoomId !== undefined) {
+        setChatRailInitialSelectedId(teamChatRoomId);
+        setActiveChatRail('team-chat');
+        return;
+      }
+
+      handleNavigationDashboardRouteContext(route);
+    },
+    [handleNavigationDashboardRouteContext],
+  );
   const {unreadCounts: chatUnreadCounts} = useKolamChatNotificationHost({
     currentUserId: authUser?.id,
     enabled: Boolean(authUser),
@@ -610,11 +628,12 @@ export function KolamAppStateProvider({
     () =>
       activeChatRail ? (
         <KolamGlobalChatRail
+          initialSelectedId={chatRailInitialSelectedId}
           mode={activeChatRail}
           onClose={handleChatRailClose}
         />
       ) : null,
-    [activeChatRail, handleChatRailClose],
+    [activeChatRail, chatRailInitialSelectedId, handleChatRailClose],
   );
   const workspaceTabsNode = React.useMemo(
     () => (
@@ -812,4 +831,20 @@ function getChatRailMode(
   }
 
   return null;
+}
+
+function getTeamChatRoomIdFromRoute(route: string): string | null | undefined {
+  const trimmed = route.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const [path, query = ''] = trimmed.split('?');
+  if (path.replace(/\/+$/, '') !== '/team-chat') {
+    return undefined;
+  }
+
+  const params = new URLSearchParams(query);
+  const roomId = params.get('room')?.trim();
+  return roomId || null;
 }

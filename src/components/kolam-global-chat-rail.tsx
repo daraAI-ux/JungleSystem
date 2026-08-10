@@ -352,9 +352,11 @@ function resolveDaraAvatarImageUrl(
 }
 
 export function KolamGlobalChatRail({
+  initialSelectedId,
   mode,
   onClose,
 }: {
+  initialSelectedId?: string | null;
   mode: KolamGlobalChatRailMode;
   onClose: () => void;
 }) {
@@ -436,6 +438,7 @@ export function KolamGlobalChatRail({
     inboxFilter.assignment,
     labelsState.items,
   );
+  const normalizedInitialSelectedId = initialSelectedId?.trim() || null;
   const [templatesState, setTemplatesState] =
     React.useState<KolamChatRailTemplatesState>({
       items: [],
@@ -844,6 +847,22 @@ export function KolamGlobalChatRail({
       setReplyTarget(null);
     }
   }, [items, selectedItemId]);
+
+  React.useEffect(() => {
+    if (
+      mode !== 'team-chat' ||
+      !normalizedInitialSelectedId ||
+      selectedItemId === normalizedInitialSelectedId ||
+      !items.some(item => item.id === normalizedInitialSelectedId)
+    ) {
+      return;
+    }
+
+    setSelectedItemId(normalizedInitialSelectedId);
+    setComposerText('');
+    setPendingAttachment(null);
+    setReplyTarget(null);
+  }, [items, mode, normalizedInitialSelectedId, selectedItemId]);
 
   React.useEffect(() => {
     setReplyTarget(null);
