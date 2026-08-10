@@ -139,6 +139,9 @@ const DOWNLOAD_ICON_PATHS = getSvgPathData(KOLAM_DOWNLOAD_TOPBAR_ICON_SVG);
 const EMPLOYEE_BONUS_ICON_PATHS = getSvgPathData(
   KOLAM_EMPLOYEE_BONUS_MODULE_ICON_SVG,
 );
+const KANDANG_ENCLOSURE_ICON_PATHS = getSvgPathData(
+  KOLAM_KANDANG_ENCLOSURE_ICON_SVG,
+);
 const LOCATION_ICON_PATHS = getSvgPathData(KOLAM_LOCATION_MODULE_ICON_SVG);
 const MEDIA_ICON_PATHS = getSvgPathData(KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG);
 const PACKING_ICON_PATHS = getSvgPathData(KOLAM_PACKING_MODULE_ICON_SVG);
@@ -303,11 +306,11 @@ export function KolamModuleIcon({
           xml={KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG}
         />
       ) : kind === 'enclosure' ? (
-        <SvgXml
-          height={dimension}
-          width={dimension}
-          xml={KOLAM_KANDANG_ENCLOSURE_ICON_SVG}
-        />
+        <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
+          {KANDANG_ENCLOSURE_ICON_PATHS.map(path => (
+            <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
+          ))}
+        </Svg>
       ) : kind === 'tag' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           <Path d={TAG_ICON_PATH} fill="#1a1a1a" fillRule="nonzero" />
