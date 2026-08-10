@@ -47,6 +47,7 @@ import { isKolamCampaignRoute } from '../domain/kolam-campaign';
 import { isKolamDaraMarketIntelRoute } from '../domain/kolam-dara-market-intel';
 import { isKolamDaraSeoRoute } from '../domain/kolam-dara-seo';
 import { isKolamDaraTrainingRoute } from '../domain/kolam-dara-training';
+import { isKolamHrRoute } from '../domain/kolam-hr';
 import { isKolamPusatAiHubRoute } from '../domain/kolam-pusat-ai';
 import { isKolamSalesRoute } from '../domain/kolam-sales';
 import { isKolamSourceRoute } from '../domain/kolam-source';
@@ -73,6 +74,7 @@ import { KolamCategorySurface } from './kolam-category-surface';
 import { KolamDaraMarketIntelSurface } from './kolam-dara-market-intel-surface';
 import { KolamDaraSeoSurface } from './kolam-dara-seo-surface';
 import { KolamDaraTrainingSurface } from './kolam-dara-training-surface';
+import { KolamHrSurface } from './kolam-hr-surface';
 import { KolamPusatAiRingkasanSurface } from './kolam-pusat-ai-ringkasan-surface';
 import { KolamComplaintSurface } from './kolam-complaint-surface';
 import { KolamLayananSurface } from './kolam-layanan-surface';
@@ -284,6 +286,15 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamDaraTrainingSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/list-of-users/dara-training'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamHrRoute(activeRoutePath)) {
+    return (
+      <KolamHrSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/list-of-users/hr'}
       />
     );
   }
