@@ -897,6 +897,7 @@ function KolamSourceForm({
                           value: option.id,
                         }),
                       )}
+                      triggerTextStyle={styles.fullWidthDropdownText}
                       value={form.commissionRecipientMode}
                     />
                     {form.commissionRecipientMode === 'selected_users' ? (
@@ -1215,6 +1216,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  fullWidthDropdownText: {
+    maxWidth: '100%',
   },
   formLogo: {
     borderColor: V.colors.border,
