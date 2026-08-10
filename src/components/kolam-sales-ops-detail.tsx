@@ -391,6 +391,8 @@ export function KolamSalesOpsDetail({
             disabled={marketplaceManaged || allowedTransitions.length === 0}
             floating
             label={paymentStatusLabel}
+            menuAlign="left"
+            menuWidth={180}
             style={[
               styles.paymentStatusTrigger,
               marketplaceManaged || allowedTransitions.length === 0
@@ -398,6 +400,7 @@ export function KolamSalesOpsDetail({
                 : null,
             ]}
             textStyle={styles.paymentStatusTriggerText}
+            variant="select"
           />
         </KolamDetailMetaStripItem>
         <KolamDetailMetaStripItem

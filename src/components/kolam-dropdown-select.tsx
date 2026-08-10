@@ -290,18 +290,24 @@ export function KolamOverflowMenuButton({
   disabled = false,
   floating = false,
   label = '...',
+  menuAlign = 'right',
+  menuWidth = 220,
   onOpenChange,
   style,
   textStyle,
+  variant = 'menu',
 }: {
   accessibilityLabel?: string;
   actions: KolamOverflowMenuAction[];
   disabled?: boolean;
   floating?: boolean;
   label?: string;
+  menuAlign?: 'left' | 'right';
+  menuWidth?: number;
   onOpenChange?: (open: boolean) => void;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  variant?: 'menu' | 'select';
 }) {
   const [open, setOpen] = React.useState(false);
   const [placement, setPlacement] = React.useState<'bottom' | 'top'>('bottom');
@@ -309,7 +315,6 @@ export function KolamOverflowMenuButton({
   const openMenuIdRef = React.useRef(getNextOpenMenuId());
   const viewport = useWindowDimensions();
   const rowLayer = useKolamListTableRowLayer();
-  const overlayMenuWidth = 220;
 
   React.useEffect(() => {
     return subscribeOpenMenu(activeId => {
@@ -352,9 +357,12 @@ export function KolamOverflowMenuButton({
         availableBelow < estimatedMenuHeight + 12 &&
         availableAbove > availableBelow;
       const nextPlacement = shouldOpenUp ? 'top' : 'bottom';
+      const nextMenuWidth = Math.max(120, menuWidth);
+      const alignedLeft =
+        menuAlign === 'left' ? _x : _x + _width - nextMenuWidth;
       const nextLeft = Math.min(
-        Math.max(8, _x + _width - overlayMenuWidth),
-        Math.max(8, viewport.width - overlayMenuWidth - 8),
+        Math.max(8, alignedLeft),
+        Math.max(8, viewport.width - nextMenuWidth - 8),
       );
       const nextTop =
         nextPlacement === 'top'
@@ -382,7 +390,7 @@ export function KolamOverflowMenuButton({
             onOpenChange?.(false);
           },
           top: nextTop,
-          width: overlayMenuWidth,
+          width: nextMenuWidth,
         });
       }
       setMenuOpen(true);
@@ -436,8 +444,35 @@ export function KolamOverflowMenuButton({
         : styles.overflowMenuDown,
   ]);
 
-  return (
-    <View ref={rootRef} style={styles.overflowRoot}>
+  const trigger =
+    variant === 'select' ? (
+      <KolamInteractionFrame
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ expanded: open }}
+        disabled={disabled}
+        onPress={toggleMenu}
+        style={[
+          styles.selectOverflowTrigger,
+          style,
+          disabled && styles.selectOverflowTriggerDisabled,
+        ]}
+      >
+        <View style={styles.selectOverflowValue}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'label',
+                text: label,
+                style: [styles.selectOverflowText, textStyle],
+              },
+            ]}
+          />
+        </View>
+        <View style={styles.selectOverflowChevron}>
+          <KolamChevronIcon direction={open ? 'up' : 'down'} size="menu-sm" />
+        </View>
+      </KolamInteractionFrame>
+    ) : (
       <KolamButton
         accessibilityLabel={accessibilityLabel}
         disabled={disabled}
@@ -447,6 +482,11 @@ export function KolamOverflowMenuButton({
         style={[styles.overflowButton, style]}
         textStyle={[styles.overflowText, textStyle]}
       />
+    );
+
+  return (
+    <View ref={rootRef} style={styles.overflowRoot}>
+      {trigger}
       {open && !floating ? menu : null}
     </View>
   );
@@ -626,6 +666,41 @@ const styles = StyleSheet.create({
   overflowText: {
     fontSize: 18,
     lineHeight: 18,
+  },
+  selectOverflowTrigger: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.input,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    minHeight: V.control.inputHeight,
+    minWidth: 160,
+    overflow: 'hidden',
+    paddingLeft: 12,
+  },
+  selectOverflowTriggerDisabled: {
+    opacity: 0.72,
+  },
+  selectOverflowValue: {
+    flex: 1,
+    minWidth: 0,
+  },
+  selectOverflowText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: V.control.fontSize,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  selectOverflowChevron: {
+    alignItems: 'center',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    height: V.control.inputHeight - 2,
+    justifyContent: 'center',
+    marginLeft: 8,
+    width: 28,
   },
   overflowMenu: {
     position: 'absolute',
