@@ -1029,6 +1029,13 @@ function KolamEnclosureList({
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
+              {controller.activeTab === 'deaths' ? (
+                <KolamStockTransactionButton
+                  label="Pergerakan stok"
+                  onPress={() => onRouteChange?.('/stock-transaction')}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
             </View>
           </View>
         </View>
@@ -1607,13 +1614,6 @@ function KolamEnclosureDeathHistoryPanel({
           icon="E"
           label="Total event"
           value={deaths.totalCases}
-        />
-      </View>
-      <View style={styles.deathHistoryToolbar}>
-        <KolamStockTransactionButton
-          label="Pergerakan stok"
-          onPress={() => onRouteChange?.('/stock-transaction')}
-          style={styles.toolbarButton}
         />
       </View>
       <DashboardDeathTable
@@ -3241,11 +3241,6 @@ const styles = StyleSheet.create({
   deathHistoryPanel: {
     gap: 12,
     minHeight: 0,
-  },
-  deathHistoryToolbar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
   },
   sectionHeading: {
     alignItems: 'flex-end',
