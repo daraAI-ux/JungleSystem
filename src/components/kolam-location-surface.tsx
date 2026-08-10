@@ -36,6 +36,7 @@ import {KolamButton} from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamCopyStack} from './kolam-copy-stack';
@@ -348,8 +349,24 @@ function KolamLocationForm({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
-              onPress={() => onRouteChange?.('/locations')}
+            <KolamSaveButton
+              disabled={saving}
+              label={
+                saving
+                  ? isEdit
+                    ? 'Menyimpan...'
+                    : 'Membuat...'
+                  : isEdit
+                    ? 'Simpan perubahan'
+                    : 'Buat lokasi'
+              }
+              onPress={handleSave}
+            />
+            <KolamCancelButton
+              disabled={saving}
+              onPress={() =>
+                onRouteChange?.(isEdit ? `/locations/${locationId}` : '/locations')
+              }
             />
           </View>
         </View>
@@ -506,28 +523,6 @@ function KolamLocationForm({
             ) : null}
           </KolamContentFrame>
 
-          <View style={styles.formActions}>
-            <KolamCancelButton
-              disabled={saving}
-              onPress={() =>
-                onRouteChange?.(isEdit ? `/locations/${locationId}` : '/locations')
-              }
-            />
-            <KolamButton
-              disabled={saving}
-              intent="primary"
-              label={
-                saving
-                  ? isEdit
-                    ? 'Menyimpan...'
-                    : 'Membuat...'
-                  : isEdit
-                    ? 'Simpan Perubahan'
-                    : 'Buat Lokasi'
-              }
-              onPress={handleSave}
-            />
-          </View>
         </View>
       )}
     </View>
@@ -2180,12 +2175,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     minWidth: 0,
-  },
-  formActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
   inventoryStack: {
     gap: 16,
