@@ -179,25 +179,54 @@ function KolamSourceShell({
             </Text>
           </View>
           <View style={kolamTableToolbarStyles.actions}>
-            <KolamDaftarButton
-              onPress={() => {
-                controller.onBackToList();
-                onRouteChange?.(KOLAM_SOURCE_ROOT);
-              }}
-            />
             {controller.mode === 'detail' ? (
-              <KolamEditButton
-                intent="primary"
-                onPress={() => {
-                  controller.onEdit();
-                  if (controller.selectedSource) {
-                    onRouteChange?.(
-                      `${KOLAM_SOURCE_ROOT}/${controller.selectedSource.id}/edit`,
-                    );
-                  }
-                }}
-              />
-            ) : null}
+              <>
+                <KolamDaftarButton
+                  onPress={() => {
+                    controller.onBackToList();
+                    onRouteChange?.(KOLAM_SOURCE_ROOT);
+                  }}
+                />
+                <KolamEditButton
+                  intent="primary"
+                  onPress={() => {
+                    controller.onEdit();
+                    if (controller.selectedSource) {
+                      onRouteChange?.(
+                        `${KOLAM_SOURCE_ROOT}/${controller.selectedSource.id}/edit`,
+                      );
+                    }
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <KolamSaveButton
+                  disabled={controller.saving}
+                  label={controller.saving ? 'Menyimpan...' : 'Simpan'}
+                  onPress={() => {
+                    void controller.onSave().then(id => {
+                      if (id) {
+                        onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${id}`);
+                      }
+                    });
+                  }}
+                />
+                <KolamCancelButton
+                  onPress={() => {
+                    if (controller.mode === 'edit' && controller.selectedSource) {
+                      onRouteChange?.(
+                        `${KOLAM_SOURCE_ROOT}/${controller.selectedSource.id}`,
+                      );
+                      void controller.onSelectSource(controller.selectedSource);
+                      return;
+                    }
+                    controller.onBackToList();
+                    onRouteChange?.(KOLAM_SOURCE_ROOT);
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -984,33 +1013,6 @@ function KolamSourceForm({
         ))}
         <KolamButton label="Tambah field biaya" onPress={addCostField} />
       </SourceFormSection>
-
-      <View style={styles.detailActions}>
-        <KolamCancelButton
-          onPress={() => {
-            if (controller.mode === 'edit' && controller.selectedSource) {
-              onRouteChange?.(
-                `${KOLAM_SOURCE_ROOT}/${controller.selectedSource.id}`,
-              );
-              void controller.onSelectSource(controller.selectedSource);
-              return;
-            }
-            controller.onBackToList();
-            onRouteChange?.(KOLAM_SOURCE_ROOT);
-          }}
-        />
-        <KolamSaveButton
-          disabled={controller.saving}
-          label={controller.saving ? 'Menyimpan…' : 'Simpan'}
-          onPress={() => {
-            void controller.onSave().then(id => {
-              if (id) {
-                onRouteChange?.(`${KOLAM_SOURCE_ROOT}/${id}`);
-              }
-            });
-          }}
-        />
-      </View>
     </KolamDetailScrollSurface>
   );
 }
