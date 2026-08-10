@@ -29,6 +29,7 @@ export type KolamNavigationModuleIcon =
   | 'discountApproval'
   | 'download'
   | 'employeeBonus'
+  | 'employeeSettings'
   | 'enclosure'
   | 'fieldcustom'
   | 'financeSummary'
@@ -683,6 +684,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Pengaturan Karyawan',
         route: '/list-of-users/hr',
         description: 'Absensi harian, cuti, dan lembur karyawan',
+        moduleIcon: 'employeeSettings',
         requiredAccess: ['kolam'],
       },
     ],
@@ -1086,6 +1088,7 @@ export const kolamSidebarNavigationSections: KolamNavigationSection[] = [
     items: [
       sidebarItem('/list-of-users/hr', {
         label: 'Pengaturan Karyawan',
+        moduleIcon: 'employeeSettings',
       }),
     ],
   },

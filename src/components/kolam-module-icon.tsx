@@ -17,6 +17,7 @@ import {KOLAM_DARA_TRAINING_MODULE_ICON_SVG} from '../assets/icons/dara-training
 import {KOLAM_DISCOUNT_APPROVAL_MODULE_ICON_SVG} from '../assets/icons/discount-approval-module-icon-svg';
 import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
 import {KOLAM_EMPLOYEE_BONUS_MODULE_ICON_SVG} from '../assets/icons/employee-bonus-module-icon-svg';
+import {KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG} from '../assets/icons/employee-settings-module-icon-svg';
 import {KOLAM_FINANCE_SUMMARY_MODULE_ICON_SVG} from '../assets/icons/finance-summary-module-icon-svg';
 import {KOLAM_LOCATION_MODULE_ICON_SVG} from '../assets/icons/location-module-icon-svg';
 import {KOLAM_MEDIA_CAMERA_TOPBAR_ICON_SVG} from '../assets/icons/media-camera-topbar-icon-svg';
@@ -72,6 +73,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   discountApproval: 'Icon Persetujuan Diskon',
   download: 'Icon Download',
   employeeBonus: 'Icon Bonus Karyawan',
+  employeeSettings: 'Icon Pengaturan Karyawan',
   enclosure: 'Icon Kandang',
   fieldcustom: 'Icon Field Kustom',
   financeSummary: 'Icon Ringkasan Keuangan',
@@ -292,6 +294,12 @@ export function KolamModuleIcon({
             <Path key={path} d={path} fill="#1a1a1a" fillRule="nonzero" />
           ))}
         </Svg>
+      ) : kind === 'employeeSettings' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_EMPLOYEE_SETTINGS_MODULE_ICON_SVG}
+        />
       ) : kind === 'enclosure' ? (
         <Image
           resizeMode="contain"
