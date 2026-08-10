@@ -188,7 +188,8 @@ export function KolamKpiSummaryBody({
         </View>
       ) : null}
 
-      <KolamCardFrame style={styles.card}>
+      <View style={styles.mainGrid}>
+      <KolamCardFrame style={[styles.card, styles.leaderboardCard]}>
         <Text style={styles.sectionTitle}>Leaderboard tim</Text>
         {controller.leaderboard?.periodKey ? (
           <Text style={styles.meta}>{controller.leaderboard.periodKey}</Text>
@@ -217,7 +218,7 @@ export function KolamKpiSummaryBody({
         ) : null}
       </KolamCardFrame>
 
-      <KolamCardFrame style={styles.card}>
+      <KolamCardFrame style={[styles.card, styles.trendCard]}>
         <Text style={styles.sectionTitle}>Tren poin tim</Text>
         <View style={styles.granularityRow}>
           {KOLAM_KPI_GRANULARITY_OPTIONS.map(option => (
@@ -240,6 +241,7 @@ export function KolamKpiSummaryBody({
           <KpiTeamLineChart series={controller.charts?.series ?? []} />
         )}
       </KolamCardFrame>
+      </View>
 
       <KolamCardFrame style={styles.card}>
         <Text style={styles.sectionTitle}>Breakdown aturan (tim)</Text>
@@ -329,6 +331,20 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: 8,
+  },
+  mainGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row-reverse',
+    gap: 12,
+    minWidth: 0,
+  },
+  trendCard: {
+    flex: 3,
+    minWidth: 0,
+  },
+  leaderboardCard: {
+    flex: 1,
+    minWidth: 0,
   },
   toolbarWrap: {
     elevation: 1000,
