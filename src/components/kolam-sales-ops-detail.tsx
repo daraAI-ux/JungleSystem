@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import {SvgXml} from 'react-native-svg';
+import {KOLAM_NEW_BUTTON_ICON_SVG} from '../assets/icons/new-button-icon-svg';
 import {
   canAddItemsToKolamSale,
   canDownloadKolamSaleShippingResi,
@@ -282,13 +283,15 @@ export function KolamSalesOpsDetail({
             ) : null}
             {canAddItemsToKolamSale(sale) ? (
               <KolamButton
+                icon={<KolamSalesAddItemIcon />}
                 label="Tambah item"
                 onPress={() =>
                   onRouteChange?.(
                     `${KOLAM_SALES_ROOT}/${sale.id}/edit?mode=add-items`,
                   )
                 }
-                style={styles.toolbarButton}
+                style={[styles.toolbarButton, styles.toolbarDaftarToneButton]}
+                textStyle={styles.toolbarDaftarToneButtonText}
               />
             ) : null}
             {canUploadProof ? (
@@ -1306,6 +1309,21 @@ function KolamSalesStockFlowCard({
   );
 }
 
+const KOLAM_SALES_ADD_ITEM_ICON_XML = KOLAM_NEW_BUTTON_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.primaryFg,
+);
+
+function KolamSalesAddItemIcon() {
+  return (
+    <SvgXml
+      height="100%"
+      width="100%"
+      xml={KOLAM_SALES_ADD_ITEM_ICON_XML}
+    />
+  );
+}
+
 type KolamSaleEnclosureAllocationDraftRow = {
   enclosureId: string;
   qty: number;
@@ -2018,6 +2036,13 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  toolbarDaftarToneButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  toolbarDaftarToneButtonText: {
+    color: V.colors.primaryFg,
   },
   detailRoot: {
     flexGrow: 0,
