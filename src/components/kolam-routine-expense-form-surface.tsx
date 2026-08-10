@@ -16,6 +16,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -191,17 +192,14 @@ function RoutineExpenseFormBody({
                 />
               </View>
 
-              <View style={settingsWebFormStyles.settingsWebFormField}>
-                <KolamSettingsWebFieldLabel label="Catatan" required={false} />
-                <KolamFormTextField
-                  multiline
-                  onChangeText={value =>
-                    controller.onChangeForm({ note: value })
-                  }
-                  placeholder="mis. Gaji bulan Juli 2024, tagihan PLN kantor pusat, dll."
-                  value={form.note}
-                />
-              </View>
+              <KolamNotesField
+                label="Catatan"
+                onChangeText={value =>
+                  controller.onChangeForm({ note: value })
+                }
+                placeholder="mis. Gaji bulan Juli 2024, tagihan PLN kantor pusat, dll."
+                value={form.note}
+              />
             </View>
           </KolamContentFrame>
         </KolamContentFrame>

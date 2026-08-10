@@ -46,6 +46,7 @@ import {
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 
 const DETAIL_TABS: Array<{ id: KolamAdminCashflowDetailTab; label: string }> = [
@@ -257,12 +258,10 @@ export function KolamAdminCashflowSessionDetail({
             <Text style={styles.modalTitle}>
               Tolak {rejectTarget?.invoiceCode || 'invoice'}
             </Text>
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={3}
               onChangeText={setRejectNote}
               placeholder="Catatan wajib"
-              style={styles.multiline}
               value={rejectNote}
             />
             <View style={styles.modalActions}>
@@ -871,12 +870,10 @@ function DepositSubmitModal({
               })
             )}
 
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               numberOfLines={2}
               onChangeText={setNote}
               placeholder="Catatan (opsional)"
-              style={styles.multiline}
               value={note}
             />
           </ScrollView>

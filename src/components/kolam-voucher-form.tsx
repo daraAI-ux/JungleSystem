@@ -19,6 +19,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -142,16 +143,14 @@ export function KolamVoucherForm({
             value={form.title}
           />
         </LabeledField>
-        <LabeledField label="Deskripsi Internal">
-          <KolamFormTextField
-            multiline
+        <KolamNotesField
+            label="Deskripsi Internal"
             onChangeText={value =>
               controller.onChangeForm('description', value)
             }
             placeholder="Catatan internal (tidak ditampilkan ke pelanggan)"
             value={form.description}
           />
-        </LabeledField>
       </VoucherFormSection>
 
       <VoucherFormSection

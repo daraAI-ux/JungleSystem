@@ -27,6 +27,7 @@ import { KolamExportXlsButton } from './kolam-export-xls-button';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamHoverTooltip } from './kolam-hover-tooltip';
 import {KolamModalDialog} from './kolam-modal-dialog';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import {KolamSaveButton} from './kolam-save-button';
 import { KolamSearchField } from './kolam-search-field';
@@ -161,13 +162,11 @@ function KolamStockOpnameCreateForm({
             3. Kirim untuk review, lalu posting ke stok saat siap.
           </Text>
         </View>
-        <Text style={styles.fieldLabel}>Catatan (opsional)</Text>
-        <KolamFormTextField
-          multiline
+        <KolamNotesField
+          label="Catatan (opsional)"
           numberOfLines={4}
           onChangeText={setNote}
           placeholder="Contoh: Opname rak A1 / minggu ke-14"
-          style={styles.createNote}
           value={note}
         />
         <View style={styles.createActions}>
@@ -850,10 +849,6 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 12,
     fontWeight: '600',
-  },
-  createNote: {
-    minHeight: 88,
-    textAlignVertical: 'top',
   },
   createActions: {
     flexDirection: 'row',

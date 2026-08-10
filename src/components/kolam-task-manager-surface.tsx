@@ -53,6 +53,7 @@ import {
 } from './kolam-list-table-composition';
 import { openKolamMediaPreview } from './kolam-media-preview-dialog';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamOverdueTaskIcon } from './kolam-overdue-task-icon';
 import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -665,15 +666,9 @@ function KolamTaskManagerDetail({
         <Text style={styles.sectionTitle}>Timeline</Text>
         {canPostDiscussion ? (
           <View style={styles.noteAddRow}>
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
               onChangeText={controller.onSetNoteDraft}
               placeholder="Catatan"
-              style={[
-                settingsWebFormStyles.settingsWebFormFieldValue,
-                settingsWebFormStyles.settingsWebFormFieldValueTextarea,
-                styles.noteDraftInput,
-              ]}
               value={controller.noteDraft}
             />
             <KolamButton
@@ -4081,10 +4076,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  noteDraftInput: {
-    flex: 1,
-    minWidth: 260,
   },
   timelineRow: {
     borderColor: V.colors.border,

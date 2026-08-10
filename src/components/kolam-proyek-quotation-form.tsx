@@ -12,6 +12,7 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -471,15 +472,14 @@ export function KolamProyekQuotationForm({
                   </Field>
                 </View>
               </View>
-              <Field label="Catatan">
-                <KolamFormTextField
-                  onChangeText={value =>
-                    controller.onPatchFormItem(item.key, { note: value })
-                  }
-                  placeholder="Opsional"
-                  value={item.note}
-                />
-              </Field>
+              <KolamNotesField
+                label="Catatan"
+                onChangeText={value =>
+                  controller.onPatchFormItem(item.key, { note: value })
+                }
+                placeholder="Opsional"
+                value={item.note}
+              />
               <KolamDeleteButton
                 intent="outline"
                 label="Hapus item"

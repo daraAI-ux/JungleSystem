@@ -37,6 +37,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
@@ -561,16 +562,15 @@ function KolamTermsTemplateFormShell({
                   </FieldShell>
                 ) : null}
                 {controller.mode !== 'new' && editable ? (
-                  <FieldShell label="Catatan perubahan">
-                    <KolamFormTextField
-                      editable={!controller.mutating}
-                      onChangeText={changeNote =>
-                        controller.onChangeForm({ changeNote })
-                      }
-                      placeholder="Opsional"
-                      value={form.changeNote}
-                    />
-                  </FieldShell>
+                  <KolamNotesField
+                    editable={!controller.mutating}
+                    label="Catatan perubahan"
+                    onChangeText={changeNote =>
+                      controller.onChangeForm({ changeNote })
+                    }
+                    placeholder="Opsional"
+                    value={form.changeNote}
+                  />
                 ) : null}
               </View>
             </KolamContentFrame>
