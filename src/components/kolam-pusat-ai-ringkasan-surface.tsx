@@ -83,7 +83,7 @@ const LOG_DARA_VIOLET = '#7c3aed';
 const LOG_DARA_VIOLET_SOFT = '#f5f3ff';
 const LOG_DARA_VIOLET_BORDER = 'rgba(124, 58, 237, 0.2)';
 const DARA_SEO_CARD_BACKGROUND =
-  require('../assets/images/dara-seo-card-background.png') as ImageSourcePropType;
+  require('../assets/images/dara-seo-card-background-v2.png') as ImageSourcePropType;
 
 export function KolamPusatAiRingkasanSurface({
   onRouteChange,
@@ -1324,6 +1324,7 @@ const styles = StyleSheet.create({
   },
   moduleCardBackground: {
     ...StyleSheet.absoluteFillObject,
+    borderRadius: V.radius.lg,
     height: '100%',
     width: '100%',
   },
