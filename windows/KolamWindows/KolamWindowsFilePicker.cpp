@@ -199,10 +199,23 @@ void SaveBase64File(
   try {
     auto picker = winrt::Windows::Storage::Pickers::FileSavePicker();
     picker.SuggestedStartLocation(winrt::Windows::Storage::Pickers::PickerLocationId::DocumentsLibrary);
-    picker.SuggestedFileName(winrt::to_hstring(SanitizeSuggestedName(suggestedName)));
+    const auto safeSuggestedName = SanitizeSuggestedName(suggestedName);
+    const auto extension = GetExtension(safeSuggestedName);
+    picker.SuggestedFileName(winrt::to_hstring(safeSuggestedName));
     auto extensions = winrt::single_threaded_vector<winrt::hstring>();
-    extensions.Append(L".xlsx");
-    picker.FileTypeChoices().Insert(L"Excel Workbook", extensions);
+    if (extension == ".pdf") {
+      extensions.Append(L".pdf");
+      picker.DefaultFileExtension(L".pdf");
+      picker.FileTypeChoices().Insert(L"PDF Document", extensions);
+    } else if (extension == ".xls") {
+      extensions.Append(L".xls");
+      picker.DefaultFileExtension(L".xls");
+      picker.FileTypeChoices().Insert(L"Excel 97-2003 Workbook", extensions);
+    } else {
+      extensions.Append(L".xlsx");
+      picker.DefaultFileExtension(L".xlsx");
+      picker.FileTypeChoices().Insert(L"Excel Workbook", extensions);
+    }
 
     auto hwnd = GetCurrentProcessWindow();
     if (hwnd) {
