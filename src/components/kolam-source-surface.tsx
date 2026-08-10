@@ -132,7 +132,7 @@ export function KolamSourceSurface({
       ) : controller.isEditable ? (
         <KolamSourceForm controller={controller} onRouteChange={onRouteChange} />
       ) : (
-        <KolamSourceDetail controller={controller} onRouteChange={onRouteChange} />
+        <KolamSourceDetail controller={controller} />
       )}
     </KolamSourceShell>
   );
@@ -147,6 +147,8 @@ function KolamSourceShell({
   controller: KolamSourceController;
   onRouteChange?: (route: string) => void;
 }) {
+  const [deleteDetailOpen, setDeleteDetailOpen] = React.useState(false);
+
   if (controller.mode === 'list') {
     return (
       <View style={styles.surface}>
@@ -188,6 +190,13 @@ function KolamSourceShell({
           }
         }}
       />
+      {controller.selectedSource ? (
+        <KolamDeleteButton
+          intent="danger"
+          label="Hapus"
+          onPress={() => setDeleteDetailOpen(true)}
+        />
+      ) : null}
     </>
   );
 
@@ -247,6 +256,26 @@ function KolamSourceShell({
         />
       ) : null}
       {children}
+      {controller.selectedSource ? (
+        <KolamDeleteConfirmDialog
+          itemLabel={controller.selectedSource.name}
+          itemType="sumber penjualan"
+          onCancel={() => setDeleteDetailOpen(false)}
+          onConfirm={() => {
+            const source = controller.selectedSource;
+            if (!source) {
+              return;
+            }
+            void controller.onDeleteSource(source).then(ok => {
+              if (ok) {
+                setDeleteDetailOpen(false);
+                onRouteChange?.(KOLAM_SOURCE_ROOT);
+              }
+            });
+          }}
+          visible={deleteDetailOpen}
+        />
+      ) : null}
     </View>
   );
 }
@@ -493,13 +522,10 @@ function KolamSourceActionsMenu({
 
 function KolamSourceDetail({
   controller,
-  onRouteChange,
 }: {
   controller: KolamSourceController;
-  onRouteChange?: (route: string) => void;
 }) {
   const source = controller.selectedSource;
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
 
   if (!source) {
     return (
@@ -651,29 +677,6 @@ function KolamSourceDetail({
         ]}
         style={styles.sourceSummaryCard}
         title={source.name}
-      />
-
-      <View style={styles.detailActions}>
-        <KolamDeleteButton
-          intent="danger"
-          label="Hapus"
-          onPress={() => setDeleteOpen(true)}
-        />
-      </View>
-
-      <KolamDeleteConfirmDialog
-        itemLabel={source.name}
-        itemType="sumber penjualan"
-        onCancel={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          void controller.onDeleteSource(source).then(ok => {
-            if (ok) {
-              setDeleteOpen(false);
-              onRouteChange?.(KOLAM_SOURCE_ROOT);
-            }
-          });
-        }}
-        visible={deleteOpen}
       />
     </KolamDetailScrollSurface>
   );
@@ -1142,12 +1145,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  detailActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
   switchRow: {
     alignItems: 'center',
