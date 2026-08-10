@@ -30,6 +30,7 @@ import {
   type KolamSourceController,
 } from '../hooks/use-kolam-source-controller';
 import { KolamButton } from './kolam-button';
+import { KolamCardFrame } from './kolam-card-frame';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
@@ -55,11 +56,13 @@ import {
 } from './kolam-list-table-composition';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSearchField } from './kolam-search-field';
+import { KolamSettingsWebFileField } from './kolam-settings-web-file-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 function FieldShell({
   children,
@@ -713,8 +716,9 @@ function KolamSourceForm({
   onRouteChange?: (route: string) => void;
 }) {
   const { form } = controller;
-  const previewUri =
-    form.pendingLogoLocalUri || controller.selectedSource?.logoUri;
+  const existingLogoUri = controller.selectedSource?.logoUri?.trim() ?? '';
+  const logoCount =
+    (existingLogoUri ? 1 : 0) + (form.pendingLogoLocalUri?.trim() ? 1 : 0);
   const [markupMode, setMarkupMode] = React.useState<SourceMarkupMode>(() =>
     Number(form.markupFixed) > 0 && Number(form.markupPercent) <= 0
       ? 'fixed'
@@ -1069,28 +1073,37 @@ function KolamSourceForm({
         description="Logo kotak untuk list penjualan. JPG/PNG/GIF/WEBP."
         title="Logo"
       >
-        {previewUri ? (
-          <KolamRemoteImage
-            accessibilityLabel="Pratinjau logo sumber"
-            resizeMode="contain"
-            sourceUri={previewUri}
-            style={styles.formLogo}
+        <KolamSettingsWebFileField
+          accessibilityLabel="Logo sumber penjualan"
+          actionLabel="Pilih file"
+          disabled={controller.saving}
+          emptyLabel="Logo belum dipilih"
+          fileCount={Math.min(logoCount, 1)}
+          fileMax={1}
+          onLocalValueChange={logoLocalUri => {
+            if (logoLocalUri) {
+              void controller.onUploadLogo(logoLocalUri);
+              return;
+            }
+            controller.onChangeForm({ pendingLogoLocalUri: null });
+          }}
+          onUpload={() => {
+            void handlePickLogo();
+          }}
+          scope="source-logo"
+          title="Logo"
+          value={form.pendingLogoLocalUri}
+        />
+        {existingLogoUri ? (
+          <SourceLogoMediaCard
+            disabled={controller.saving}
+            onDelete={() => {
+              void controller.onDeleteLogo();
+            }}
+            revision={controller.selectedSource?.updatedAt ?? existingLogoUri}
+            sourceUri={existingLogoUri}
           />
-        ) : (
-          <Text style={styles.metaText}>Belum ada logo.</Text>
-        )}
-        <View style={styles.badgeRow}>
-          <KolamButton label="Pilih logo" onPress={() => void handlePickLogo()} />
-          {previewUri ? (
-            <KolamDeleteButton
-              intent="danger"
-              label="Hapus logo"
-              onPress={() => {
-                void controller.onDeleteLogo();
-              }}
-            />
-          ) : null}
-        </View>
+        ) : null}
       </SourceFormSection>
 
       <SourceFormSection
@@ -1153,6 +1166,69 @@ function KolamSourceForm({
       </SourceFormSection>
     </KolamDetailScrollSurface>
   );
+}
+
+function SourceLogoMediaCard({
+  disabled,
+  onDelete,
+  revision,
+  sourceUri,
+}: {
+  disabled: boolean;
+  onDelete: () => void;
+  revision: string;
+  sourceUri: string;
+}) {
+  const displayName = getSourceUploadFileDisplayName(sourceUri) || 'Logo';
+
+  return (
+    <View
+      style={[
+        settingsWebFormStyles.settingsWebUploadFileRow,
+        styles.existingLogoItem,
+      ]}
+    >
+      <KolamCardFrame variant="settingsWebLogoPreview">
+        <KolamRemoteImage
+          accessibilityLabel="Logo sumber penjualan"
+          resizeMode="contain"
+          revision={revision}
+          scope="source-logo"
+          sourceUri={sourceUri}
+          style={settingsWebFormStyles.settingsWebLogoImage}
+        />
+      </KolamCardFrame>
+      <View style={settingsWebFormStyles.settingsWebUploadFileCopy}>
+        <Text
+          numberOfLines={1}
+          style={settingsWebFormStyles.settingsWebUploadFileName}
+        >
+          {displayName}
+        </Text>
+        <Text style={settingsWebFormStyles.settingsWebUploadFileStatus}>
+          Terunggah
+        </Text>
+      </View>
+      <KolamInteractionFrame
+        accessibilityLabel="Hapus logo"
+        disabled={disabled}
+        onPress={onDelete}
+        style={settingsWebFormStyles.settingsWebUploadDeleteButton}
+      >
+        <KolamUploadDeleteIcon />
+      </KolamInteractionFrame>
+    </View>
+  );
+}
+
+function getSourceUploadFileDisplayName(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const withoutQuery = trimmed.split(/[?#]/)[0] ?? trimmed;
+  return withoutQuery.split(/[\\/]/).filter(Boolean).pop() ?? trimmed;
 }
 
 const styles = StyleSheet.create({
@@ -1328,12 +1404,8 @@ const styles = StyleSheet.create({
   fullWidthDropdownText: {
     maxWidth: '100%',
   },
-  formLogo: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    height: 96,
-    width: 96,
+  existingLogoItem: {
+    alignSelf: 'stretch',
   },
   costFieldCard: {
     borderColor: V.colors.border,
