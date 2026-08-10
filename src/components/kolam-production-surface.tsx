@@ -94,6 +94,15 @@ function productionStatusIntent(status?: string): ProductionStatusIntent {
   return 'muted';
 }
 
+function productionHistoryTimelineDotStyle(status: string) {
+  const intent = productionStatusIntent(status);
+  if (intent === 'success') return styles.historyTimelineDotSuccess;
+  if (intent === 'danger') return styles.historyTimelineDotDanger;
+  if (intent === 'warning') return styles.historyTimelineDotWarning;
+  if (intent === 'primary') return styles.historyTimelineDotPrimary;
+  return styles.historyTimelineDotSecondary;
+}
+
 export function KolamProductionSurface({
   onRouteChange,
   route,
@@ -1565,27 +1574,44 @@ function KolamProductionHistorySection({
       variant="settingsWebConfig"
     >
       <Text style={styles.sectionTitle}>Timeline Produksi</Text>
-      {events.map(event => (
-        <View key={event.id} style={styles.historyRow}>
-          <Text style={styles.helperText}>
-            {event.changedAt ? event.changedAt.slice(0, 16).replace('T', ' ') : '—'}
-          </Text>
-          <KolamStatusBadge
-            intent="muted"
-            label={getKolamProductionHistoryStatusLabel(event.status)}
-          />
-          {event.note ? <Text style={styles.sectionSubtitle}>{event.note}</Text> : null}
-          {event.recalcDelta ? (
-            <Text style={styles.helperText}>
-              Estimasi: {formatRupiah(event.recalcDelta.estimatedCostBefore)} →{' '}
-              {formatRupiah(event.recalcDelta.estimatedCostAfter)}
-            </Text>
-          ) : null}
-          {event.changedByName ? (
-            <Text style={styles.helperText}>Oleh {event.changedByName}</Text>
-          ) : null}
+      <ScrollView
+        contentContainerStyle={styles.historyScroll}
+        nestedScrollEnabled
+        style={styles.historyScrollView}
+      >
+        <View style={styles.historyTimeline}>
+          {events.map(event => (
+            <View key={event.id} style={styles.historyTimelineItem}>
+              <View
+                style={[
+                  styles.historyTimelineDot,
+                  productionHistoryTimelineDotStyle(event.status),
+                ]}
+              />
+              <View style={styles.historyTimelineBody}>
+                <Text style={styles.historyTimelineTitle}>
+                  {getKolamProductionHistoryStatusLabel(event.status)}
+                </Text>
+                <Text style={styles.helperText}>
+                  {event.changedAt
+                    ? event.changedAt.slice(0, 16).replace('T', ' ')
+                    : '—'}
+                  {event.changedByName ? ' · ' + event.changedByName : ''}
+                </Text>
+                {event.note ? (
+                  <Text style={styles.helperText}>{event.note}</Text>
+                ) : null}
+                {event.recalcDelta ? (
+                  <Text style={styles.helperText}>
+                    Estimasi: {formatRupiah(event.recalcDelta.estimatedCostBefore)} →{' '}
+                    {formatRupiah(event.recalcDelta.estimatedCostAfter)}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ))}
         </View>
-      ))}
+      </ScrollView>
     </KolamContentFrame>
   );
 }
@@ -2070,11 +2096,54 @@ const styles = StyleSheet.create({
   },
   serialNumber: { color: V.colors.fg, fontFamily: V.fontFamily, fontSize: 13, fontWeight: '700' },
   qrThumb: { height: 64, marginTop: 4, width: 64 },
-  historyRow: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 4,
-    marginBottom: 8,
-    paddingBottom: 8,
+  historyScrollView: {
+    maxHeight: 320,
+  },
+  historyScroll: {
+    paddingBottom: 4,
+    paddingTop: 2,
+  },
+  historyTimeline: {
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 2,
+    gap: 14,
+    paddingLeft: 12,
+  },
+  historyTimelineItem: {
+    paddingLeft: 4,
+    position: 'relative',
+  },
+  historyTimelineDot: {
+    borderColor: V.colors.bg,
+    borderRadius: 6,
+    borderWidth: 2,
+    height: 10,
+    left: -18,
+    position: 'absolute',
+    top: 3,
+    width: 10,
+  },
+  historyTimelineDotPrimary: {
+    backgroundColor: V.colors.primary,
+  },
+  historyTimelineDotSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  historyTimelineDotDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  historyTimelineDotWarning: {
+    backgroundColor: V.colors.warning,
+  },
+  historyTimelineDotSecondary: {
+    backgroundColor: V.colors.mutedFg,
+  },
+  historyTimelineBody: {
+    gap: 2,
+  },
+  historyTimelineTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
