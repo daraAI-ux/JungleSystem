@@ -279,6 +279,7 @@ function KolamSalesOpsList({
             <View style={kolamTableToolbarStyles.filters}>
               <KolamSearchField
                 containerStyle={kolamTableToolbarStyles.searchInput}
+                inputStyle={styles.salesListSearchInputText}
                 onChangeText={setSearchInput}
                 placeholder="Cari invoice / pembeli"
                 value={searchInput}
@@ -2113,6 +2114,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  salesListSearchInputText: {
+    fontSize: 12,
   },
   detailToolbarContext: {
     color: V.colors.fg,
