@@ -1078,7 +1078,7 @@ function KolamProductionDetail({
                 style={styles.toolbarButton}
               />
             ) : null}
-            {nextStatuses.length > 0 && canUpdate ? (
+            {canUpdate ? (
               <KolamDropdownSelect<KolamProductionStatus>
                 accessibilityLabel="Status produksi"
                 label="Status"
