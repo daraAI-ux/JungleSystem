@@ -81,7 +81,7 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
-import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -186,19 +186,15 @@ export function KolamSalesOpsDetail({
   const pendingLabel = pendingStatus
     ? formatKolamSalePaymentStatusLabel(pendingStatus)
     : '';
-  const paymentStatusOptions = [
-    {
-      label: formatKolamSalePaymentStatusLabel(currentPaymentStatus),
-      value: currentPaymentStatus,
-    },
-    ...allowedTransitions.map(status => ({
-      label: formatKolamSalePaymentStatusLabel(status),
-      value: status,
-    })),
-  ] satisfies Array<{
-    label: string;
-    value: KolamSalePaymentStatus | KolamSaleStatusTransitionTarget;
-  }>;
+  const paymentStatusLabel =
+    formatKolamSalePaymentStatusLabel(currentPaymentStatus);
+  const paymentStatusActions = allowedTransitions.map(status => ({
+    label: formatKolamSalePaymentStatusLabel(status),
+    onPress: () => setPendingStatus(status),
+    tone: status === 'cancelled' ? 'danger' : 'default',
+  })) satisfies React.ComponentProps<
+    typeof KolamOverflowMenuButton
+  >['actions'];
   const buyerPhone = sale.customer?.phone || sale.buyerInfo?.phone || '';
   const buyerEmail = sale.customer?.email || sale.buyerInfo?.email || '';
   const mainComplaint = getKolamSaleMainComplaint(sale);
@@ -389,36 +385,20 @@ export function KolamSalesOpsDetail({
         }
       >
         <KolamDetailMetaStripItem label="Pembayaran">
-          <View
-            pointerEvents={
+          <KolamOverflowMenuButton
+            accessibilityLabel="Status pembayaran"
+            actions={paymentStatusActions}
+            disabled={marketplaceManaged || allowedTransitions.length === 0}
+            floating
+            label={paymentStatusLabel}
+            style={[
+              styles.paymentStatusTrigger,
               marketplaceManaged || allowedTransitions.length === 0
-                ? 'none'
-                : 'auto'
-            }
-          >
-            <KolamDropdownSelect
-              accessibilityLabel="Status pembayaran"
-              label="Status"
-              menuStyle={styles.paymentStatusMenu}
-              onChange={value => {
-                if (value === sale.status || marketplaceManaged) {
-                  return;
-                }
-                setPendingStatus(value as KolamSaleStatusTransitionTarget);
-              }}
-              options={paymentStatusOptions}
-              showLabelInTrigger={false}
-              style={styles.paymentStatusSelect}
-              triggerStyle={[
-                styles.paymentStatusTrigger,
-                marketplaceManaged || allowedTransitions.length === 0
-                  ? styles.paymentStatusTriggerMuted
-                  : null,
-              ]}
-              triggerTextStyle={styles.paymentStatusTriggerText}
-              value={currentPaymentStatus}
-            />
-          </View>
+                ? styles.paymentStatusTriggerMuted
+                : null,
+            ]}
+            textStyle={styles.paymentStatusTriggerText}
+          />
         </KolamDetailMetaStripItem>
         <KolamDetailMetaStripItem
           label={skipShipping ? (posSale ? 'POS' : 'Layanan') : 'Pengiriman'}
@@ -1562,11 +1542,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 4,
   },
-  paymentStatusSelect: {
-    minWidth: 126,
-  },
   paymentStatusTrigger: {
     minHeight: 30,
+    minWidth: 126,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -1576,9 +1554,6 @@ const styles = StyleSheet.create({
   paymentStatusTriggerText: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  paymentStatusMenu: {
-    minWidth: 160,
   },
   paymentProofCard: {
     gap: 10,

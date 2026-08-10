@@ -287,13 +287,21 @@ function normalizeDropdownSearch(value: string) {
 export function KolamOverflowMenuButton({
   actions,
   accessibilityLabel = 'Menu aksi',
+  disabled = false,
   floating = false,
+  label = '...',
   onOpenChange,
+  style,
+  textStyle,
 }: {
   accessibilityLabel?: string;
   actions: KolamOverflowMenuAction[];
+  disabled?: boolean;
   floating?: boolean;
+  label?: string;
   onOpenChange?: (open: boolean) => void;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }) {
   const [open, setOpen] = React.useState(false);
   const [placement, setPlacement] = React.useState<'bottom' | 'top'>('bottom');
@@ -381,6 +389,9 @@ export function KolamOverflowMenuButton({
     });
   };
   const toggleMenu = () => {
+    if (disabled) {
+      return;
+    }
     if (open) {
       setMenuOpen(false);
       return;
@@ -429,11 +440,12 @@ export function KolamOverflowMenuButton({
     <View ref={rootRef} style={styles.overflowRoot}>
       <KolamButton
         accessibilityLabel={accessibilityLabel}
+        disabled={disabled}
         intent="outline"
-        label="..."
+        label={label}
         onPress={toggleMenu}
-        style={styles.overflowButton}
-        textStyle={styles.overflowText}
+        style={[styles.overflowButton, style]}
+        textStyle={[styles.overflowText, textStyle]}
       />
       {open && !floating ? menu : null}
     </View>
