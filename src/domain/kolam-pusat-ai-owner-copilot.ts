@@ -80,6 +80,9 @@ export const KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS =
 export const KOLAM_OWNER_COPILOT_AUDIT_OFF =
   'Audit log mati di Settings.';
 
+const OWNER_COPILOT_DEV_NOTE_PATTERN =
+  /(scenario|governance|sign-off|sign off|AC1\.005|runtime P2|placeholder)/i;
+
 export function formatKolamOwnerCopilotIdr(value: unknown) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) {
@@ -232,11 +235,21 @@ export function normalizeKolamOwnerCopilotDashboard(
       recentEvents: normalizeEvents(nightOps.recentEvents),
     },
     insights: normalizeInsights(data.insights),
-    executiveNote:
-      typeof executive.note === 'string' && executive.note.trim()
-        ? executive.note.trim()
-        : '',
+    executiveNote: normalizeExecutiveNote(executive.note),
   };
+}
+
+function normalizeExecutiveNote(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const note = value.trim();
+  if (!note || OWNER_COPILOT_DEV_NOTE_PATTERN.test(note)) {
+    return '';
+  }
+
+  return note;
 }
 
 function normalizeFailures(value: unknown): KolamOwnerCopilotNightOpsFailure[] {

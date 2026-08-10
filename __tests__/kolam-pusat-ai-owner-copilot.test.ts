@@ -74,10 +74,56 @@ describe('kolam-pusat-ai-owner-copilot domain', () => {
     expect(dash!.health.orderCount).toBe(4);
     expect(dash!.nightOps.failures[0].invoiceCode).toBe('INV-1');
     expect(dash!.teamChat.webHref).toBe('/team-chat?room=room-1');
+    expect(dash!.executiveNote).toBe('Note eksekutif.');
     expect(computeKolamOwnerCopilotNightOpsTotal(dash!.nightOps.counts)).toBe(5);
     expect(formatKolamOwnerCopilotEventLabel('olshop_autopilot')).toBe(
       'Automasi olshop',
     );
     expect(formatKolamOwnerCopilotIdr(1500)).toContain('Rp');
+  });
+
+  it('drops old owner copilot development notes from dashboard payloads', () => {
+    const dash = normalizeKolamOwnerCopilotDashboard({
+      generatedAt: '2026-08-03T12:00:00.000Z',
+      lookbackHours: 24,
+      window: {label: '3 Agu 00.00 - 3 Agu 12.00 WIB'},
+      teamChat: {
+        aiRoomId: 'room-1',
+        roomName: 'Chat dengan DARA',
+        webHref: '/team-chat?room=room-1',
+        suggestedPrompts: [],
+      },
+      health: {
+        sales: {formatted: 'Rp 0', totalIdr: 0, orderCount: 0},
+        margin: {
+          formattedProfit: 'Rp 0 (0.0%)',
+          grossProfitIdr: 0,
+          marginPercent: 0,
+        },
+        lowStockCount: 0,
+      },
+      nightOps: {
+        opsAuditEnabled: true,
+        counts: {
+          olshop_dispatch: 0,
+          olshop_defer: 0,
+          olshop_fail: 0,
+          olshop_stock_hold: 0,
+          webstore_start: 0,
+          dana_ok: 0,
+          dana_fail: 0,
+        },
+        failures: [],
+        recentEvents: [],
+      },
+      insights: [],
+      executive: {
+        note:
+          'Scenario analysis & governance sign-off - tanya @dara di room Chat dengan DARA (AC1.005-007 runtime P2).',
+      },
+    });
+
+    expect(dash).not.toBeNull();
+    expect(dash!.executiveNote).toBe('');
   });
 });
