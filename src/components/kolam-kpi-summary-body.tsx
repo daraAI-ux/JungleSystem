@@ -41,19 +41,23 @@ export function KolamKpiSummaryBody({
         ),
       },
       {
+        align: 'center' as const,
         id: 'events',
         label: 'Event',
         flex: 0.7,
         render: (row: {ruleKey: string; points: number; count: number}) => (
-          <Text style={styles.meta}>{formatKolamKpiPoints(row.count)}</Text>
+          <Text style={styles.centerMeta}>{formatKolamKpiPoints(row.count)}</Text>
         ),
       },
       {
+        align: 'center' as const,
         id: 'points',
         label: 'Poin',
         flex: 0.7,
         render: (row: {ruleKey: string; points: number; count: number}) => (
-          <Text style={styles.cellText}>{formatKolamKpiPoints(row.points)}</Text>
+          <Text style={styles.centerCellText}>
+            {formatKolamKpiPoints(row.points)}
+          </Text>
         ),
       },
     ],
@@ -530,6 +534,22 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  centerMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    width: '100%',
+  },
+  centerCellText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
   },
   dangerText: {
     color: V.colors.danger,
