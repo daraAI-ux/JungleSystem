@@ -88,6 +88,7 @@ import {
   replaceKolamSalePaymentProof,
   requestKolamSaleBiteshipPickup,
   requestKolamSaleMarketplacePickup,
+  setKolamSaleBiteshipWaybill,
   updateKolamSale,
   updateKolamSaleDelivery,
   updateKolamSaleStatus,
@@ -176,6 +177,10 @@ export interface KolamSalesController {
   onRemoveCustomCost: (key: string) => void;
   onReplacePaymentProof: (proofId: string, localUri: string) => Promise<boolean>;
   onRequestBiteshipPickup: () => Promise<boolean>;
+  onSetBiteshipWaybill: (
+    itemId: string,
+    waybillId: string,
+  ) => Promise<boolean>;
   /** Tokopedia platform pickup via AM (empty body). Shopee slot UI is out of scope. */
   onRequestMarketplacePickup: () => Promise<boolean>;
   onSave: () => Promise<string | null>;
@@ -1169,6 +1174,30 @@ export function useKolamSalesController(route: string): KolamSalesController {
     }
   }, [refreshDetail, selectedSale]);
 
+  const onSetBiteshipWaybill = useCallback(
+    async (itemId: string, waybillId: string) => {
+      const sale = selectedSale;
+      const trimmedWaybill = waybillId.trim();
+      if (!sale || !itemId || !trimmedWaybill) {
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      try {
+        await setKolamSaleBiteshipWaybill(sale.id, itemId, trimmedWaybill);
+        setStatusMessage('Nomor resi Biteship disimpan.');
+        await refreshDetail();
+        return true;
+      } catch (mutationError) {
+        setError(formatKolamSaleMutationError(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [refreshDetail, selectedSale],
+  );
+
   const onRequestMarketplacePickup = useCallback(async () => {
     const sale = selectedSale;
     if (!sale) {
@@ -1259,6 +1288,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     onReplacePaymentProof,
     onRequestBiteshipPickup,
     onRequestMarketplacePickup,
+    onSetBiteshipWaybill,
     onSave,
     onSearchChange,
     onSelectSale,

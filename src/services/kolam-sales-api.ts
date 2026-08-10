@@ -356,6 +356,19 @@ export async function requestKolamSaleBiteshipPickup(
   );
 }
 
+export async function setKolamSaleBiteshipWaybill(
+  saleId: string,
+  itemId: string,
+  waybillId: string,
+): Promise<unknown> {
+  return kolamRequest<unknown>(
+    `/biteship/sales/${encodeURIComponent(saleId)}/items/${encodeURIComponent(
+      itemId,
+    )}/waybill`,
+    { method: 'PUT', body: { waybillId } },
+  );
+}
+
 export async function getKolamSaleMarketplacePickupOptions(
   saleId: string,
 ): Promise<unknown> {

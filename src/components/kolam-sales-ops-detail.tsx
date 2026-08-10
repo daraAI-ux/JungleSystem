@@ -49,6 +49,8 @@ import {
   KOLAM_SALES_ROOT,
   type KolamSalePaymentStatus,
   type KolamSaleDeliveryTransitionTarget,
+  type KolamSaleHistory,
+  type KolamSaleItem,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
 import {
@@ -82,8 +84,10 @@ import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamOverflowMenuButton } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSaveButton } from './kolam-save-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
@@ -171,6 +175,7 @@ export function KolamSalesOpsDetail({
   const saleCouriers = getKolamSaleCouriers(sale);
   const saleServiceLabel = getKolamSaleServiceLabel(sale);
   const saleTrackingNumber = getKolamSaleTrackingNumber(sale);
+  const biteshipWaybillItems = sale.items.filter(isKolamBiteshipCheckoutItem);
   const sourceLogoUri = resolveKolamSaleSourceLogoUri(
     sale,
     controller.sources,
@@ -642,7 +647,7 @@ export function KolamSalesOpsDetail({
                     </Text>
                   </View>
                 ) : null}
-                {saleTrackingNumber ? (
+                {saleTrackingNumber && biteshipWaybillItems.length === 0 ? (
                   <View style={styles.shippingField}>
                     <Text style={styles.shippingFieldLabel}>Nomor Resi</Text>
                     <Text
@@ -651,6 +656,28 @@ export function KolamSalesOpsDetail({
                     >
                       {saleTrackingNumber}
                     </Text>
+                  </View>
+                ) : null}
+                {biteshipWaybillItems.length > 0 ? (
+                  <View style={styles.shippingField}>
+                    <Text style={styles.shippingFieldLabel}>Nomor Resi</Text>
+                    <View style={styles.biteshipWaybillList}>
+                      {biteshipWaybillItems.map(item => (
+                        <KolamBiteshipWaybillItem
+                          disabled={
+                            controller.mutating ||
+                            sale.deliveryStatus === 'success'
+                          }
+                          item={item}
+                          key={item.id}
+                          onSave={waybillId =>
+                            controller.onSetBiteshipWaybill(item.id, waybillId)
+                          }
+                          saleHistories={sale.saleHistories}
+                          saleStatus={sale.status}
+                        />
+                      ))}
+                    </View>
                   </View>
                 ) : null}
                 <View style={styles.shippingField}>
@@ -1251,6 +1278,179 @@ export function KolamSalesOpsDetail({
   );
 }
 
+function KolamBiteshipWaybillItem({
+  disabled,
+  item,
+  onSave,
+  saleHistories,
+  saleStatus,
+}: {
+  disabled: boolean;
+  item: KolamSaleItem;
+  onSave: (waybillId: string) => Promise<boolean>;
+  saleHistories: KolamSaleHistory[];
+  saleStatus: string;
+}) {
+  const [waybill, setWaybill] = useState(item.biteshipWaybillId || '');
+  const [submitting, setSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    setWaybill(item.biteshipWaybillId || '');
+  }, [item.biteshipWaybillId]);
+
+  const trimmedWaybill = waybill.trim();
+  const deliveryStatus = item.itemDeliveryStatus || 'none';
+  const booking = resolveKolamBiteshipItemBooking(
+    item,
+    saleStatus,
+    saleHistories,
+  );
+  const courierLogo = item.biteshipCourierCode
+    ? getKolamCourierLogoSource(item.biteshipCourierCode.toLowerCase())
+    : null;
+  const inputDisabled = disabled || submitting || deliveryStatus === 'delivered';
+  const saveDisabled =
+    inputDisabled ||
+    !trimmedWaybill ||
+    trimmedWaybill === item.biteshipWaybillId;
+
+  return (
+    <View style={styles.biteshipWaybillCard}>
+      <View style={styles.biteshipWaybillHeader}>
+        <View style={styles.biteshipWaybillTitleRow}>
+          {courierLogo ? (
+            <Image
+              accessibilityLabel={`Logo ${item.biteshipCourierCode}`}
+              resizeMode="contain"
+              source={courierLogo}
+              style={styles.biteshipWaybillLogo}
+            />
+          ) : null}
+          <View style={styles.biteshipWaybillTitleBlock}>
+            <Text numberOfLines={1} style={styles.primaryText}>
+              {item.title}
+            </Text>
+            <Text style={styles.metaText}>
+              Qty: {item.quantity}
+              {item.biteshipCourierCode
+                ? ` · ${item.biteshipCourierCode.toUpperCase()}`
+                : ''}
+            </Text>
+          </View>
+        </View>
+        <KolamStatusBadge
+          intent={
+            deliveryStatus === 'delivered'
+              ? 'success'
+              : deliveryStatus === 'on_delivery'
+                ? 'warning'
+                : 'muted'
+          }
+          label={
+            deliveryStatus === 'delivered'
+              ? 'Terkirim'
+              : deliveryStatus === 'on_delivery'
+                ? 'Dalam pengiriman'
+                : 'Menunggu'
+          }
+        />
+      </View>
+      {booking?.orderId ? (
+        <Text style={[styles.metaText, styles.trackingMono]}>
+          Biteship Order ID: {booking.orderId}
+        </Text>
+      ) : null}
+      {booking?.state === 'pending' ? (
+        <Text style={styles.biteshipPendingText}>
+          Booking Biteship sedang diproses...
+        </Text>
+      ) : null}
+      {booking?.state === 'failed' ? (
+        <Text style={styles.biteshipFailedText}>
+          Booking Biteship gagal - masukkan resi manual di bawah.
+          {booking.message ? ` (${booking.message})` : ''}
+        </Text>
+      ) : null}
+      <View style={styles.biteshipWaybillInputRow}>
+        <KolamFormTextField
+          editable={!inputDisabled}
+          onChangeText={setWaybill}
+          placeholder="Masukkan nomor resi"
+          style={styles.biteshipWaybillInput}
+          value={waybill}
+        />
+        <KolamSaveButton
+          disabled={saveDisabled}
+          label={item.biteshipWaybillId ? 'Perbarui' : 'Simpan'}
+          onPress={async () => {
+            if (saveDisabled) {
+              return;
+            }
+            setSubmitting(true);
+            try {
+              await onSave(trimmedWaybill);
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+          style={styles.biteshipWaybillSaveButton}
+        />
+      </View>
+      {item.biteshipTrackingOrderStatus ? (
+        <Text style={styles.metaText}>
+          Status Biteship:{' '}
+          <Text style={styles.primaryText}>
+            {item.biteshipTrackingOrderStatus.toUpperCase()}
+          </Text>
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function isKolamBiteshipCheckoutItem(item: KolamSaleItem) {
+  return (
+    item.shippingSource === 'biteship' ||
+    Boolean(
+      item.biteshipCourierCode.trim() && item.biteshipServiceCode.trim(),
+    )
+  );
+}
+
+function resolveKolamBiteshipItemBooking(
+  item: KolamSaleItem,
+  saleStatus: string,
+  histories: KolamSaleHistory[],
+): {
+  message?: string;
+  orderId?: string;
+  state: 'booked' | 'pending' | 'failed';
+} | null {
+  if (!isKolamBiteshipCheckoutItem(item)) {
+    return null;
+  }
+  if (item.biteshipWaybillId.trim()) {
+    return { state: 'booked', orderId: item.biteshipOrderId || undefined };
+  }
+  if (saleStatus !== 'paid') {
+    return null;
+  }
+
+  const failNote = [...histories].reverse().find(history => {
+    const note = history.note || '';
+    return (
+      note.includes('Biteship auto-booking failed') ||
+      note.includes(`skipped for item ${item.id}`)
+    );
+  })?.note;
+
+  if (failNote) {
+    return { state: 'failed', message: failNote };
+  }
+
+  return { state: 'pending' };
+}
+
 function commissionRuleLabel(
   rule: KolamSaleItemProfitBreakdown['commissionRule'],
 ): string {
@@ -1841,6 +2041,61 @@ const styles = StyleSheet.create({
   trackingMono: {
     fontFamily: 'Consolas',
     fontVariant: ['tabular-nums'],
+  },
+  biteshipWaybillList: {
+    gap: 8,
+  },
+  biteshipWaybillCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10,
+  },
+  biteshipWaybillHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  biteshipWaybillTitleRow: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 180,
+  },
+  biteshipWaybillLogo: {
+    height: 24,
+    width: 24,
+  },
+  biteshipWaybillTitleBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  biteshipPendingText: {
+    color: V.colors.warning,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  biteshipFailedText: {
+    color: V.colors.danger,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  biteshipWaybillInputRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  biteshipWaybillInput: {
+    flex: 1,
+    minWidth: 180,
+  },
+  biteshipWaybillSaveButton: {
+    flexShrink: 0,
   },
   historyScrollView: {
     maxHeight: 320,

@@ -136,8 +136,13 @@ export type KolamSaleItem = {
   packings: KolamSaleItemPacking[];
   thumbnailUri: string | null;
   variantLabel: string;
+  shippingSource: string;
   biteshipCourierCode: string;
   biteshipServiceCode: string;
+  biteshipWaybillId: string;
+  biteshipOrderId: string;
+  itemDeliveryStatus: string;
+  biteshipTrackingOrderStatus: string;
   shippingMethodId: string;
   shippingMethodName: string;
   productId: string;
@@ -3561,6 +3566,7 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
   const enclosure = asRecord(record.enclosure);
   const variant = asRecord(record.variant);
   const discountRecord = asRecord(record.discount);
+  const biteshipTracking = asRecord(record.biteshipTracking);
 
   const title =
     getString(record, 'customName') ||
@@ -3619,8 +3625,13 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
       enclosure,
     ),
     variantLabel,
+    shippingSource: getString(record, 'shippingSource'),
     biteshipCourierCode: getString(record, 'biteshipCourierCode'),
     biteshipServiceCode: getString(record, 'biteshipServiceCode'),
+    biteshipWaybillId: getString(record, 'biteshipWaybillId'),
+    biteshipOrderId: getString(record, 'biteshipOrderId'),
+    itemDeliveryStatus: getString(record, 'itemDeliveryStatus'),
+    biteshipTrackingOrderStatus: getString(biteshipTracking, 'orderStatus'),
     shippingMethodId: resolveShippingMethodId(record.shippingMethod),
     shippingMethodName: resolveShippingMethodName(record.shippingMethod),
     productId:
