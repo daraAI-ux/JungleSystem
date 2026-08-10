@@ -12,6 +12,8 @@ import type {
   KolamSaleListResult,
   KolamSaleLivestockAllocationRow,
   KolamSaleNotificationSummary,
+  KolamSaleSpeciesEnclosureAllocation,
+  KolamSaleSpeciesEnclosurePlacement,
   KolamSaleSourceOption,
   KolamSaleStatusTransitionTarget,
   KolamSaleUpdateBody,
@@ -402,25 +404,148 @@ export async function getKolamSalePendingLivestockAllocations(
       : payload;
   const list = Array.isArray(data) ? data : [];
   return list
-    .map((row, index) => {
-      if (!row || typeof row !== 'object') {
-        return null;
-      }
-      const record = row as Record<string, unknown>;
-      const id = String(record._id ?? record.id ?? `alloc-${index}`).trim();
-      return {
-        id,
-        label: String(
-          record.label ??
-            record.speciesName ??
-            record.name ??
-            record.code ??
-            id,
-        ),
-        status: String(record.status ?? 'pending'),
-      } satisfies KolamSaleLivestockAllocationRow;
-    })
+    .map((row, index) => normalizeSaleLivestockAllocationRow(row, index))
     .filter((row): row is KolamSaleLivestockAllocationRow => Boolean(row));
+}
+
+export async function getKolamSaleSpeciesEnclosureAllocation(
+  speciesId: string,
+): Promise<KolamSaleSpeciesEnclosureAllocation> {
+  const payload = await kolamRequest<unknown>(
+    `/species/${encodeURIComponent(speciesId)}/enclosure-allocation`,
+  );
+  const data =
+    payload && typeof payload === 'object' && 'data' in (payload as object)
+      ? (payload as { data: unknown }).data
+      : payload;
+  const record =
+    data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+  const placementsRaw = Array.isArray(record.placements)
+    ? record.placements
+    : [];
+
+  return {
+    speciesId: getRecordId(record.speciesId) || speciesId,
+    placements: placementsRaw
+      .map(normalizeSaleSpeciesEnclosurePlacement)
+      .filter(
+        (row): row is KolamSaleSpeciesEnclosurePlacement => Boolean(row),
+      ),
+  };
+}
+
+export async function resolveKolamSaleLivestockAllocation({
+  allocations,
+  pendingId,
+}: {
+  allocations: { enclosureId: string; qty: number }[];
+  pendingId: string;
+}): Promise<unknown> {
+  return kolamRequest<unknown>('/enclosures/resolve-livestock-allocation', {
+    method: 'POST',
+    body: { pendingId, allocations },
+  });
+}
+
+function normalizeSaleLivestockAllocationRow(
+  row: unknown,
+  index: number,
+): KolamSaleLivestockAllocationRow | null {
+  if (!row || typeof row !== 'object') {
+    return null;
+  }
+  const record = row as Record<string, unknown>;
+  const id = getRecordId(record._id) || getRecordId(record.id) || `alloc-${index}`;
+  const speciesName =
+    getRecordString(record.speciesName) ||
+    getRecordString(record.name) ||
+    getRecordString(record.displayLine) ||
+    'Species';
+  const displayLine = getRecordString(record.displayLine);
+  const variantLabel = getRecordString(record.variantLabel);
+  const qtyRemaining = getRecordNumber(record.qtyRemaining) ?? 0;
+  const unitLabel = getRecordString(record.unitLabel) || 'ekor';
+  const label =
+    getRecordString(record.label) ||
+    [speciesName, variantLabel].filter(Boolean).join(' · ') ||
+    id;
+
+  return {
+    id,
+    label,
+    saleId: getRecordId(record.saleId),
+    saleItemIndex: getRecordNumber(record.saleItemIndex) ?? index,
+    invoiceCode: getRecordString(record.invoiceCode),
+    speciesId: getRecordId(record.speciesId),
+    variantId: getRecordId(record.variantId),
+    variantLabel,
+    qtyTotal: getRecordNumber(record.qtyTotal) ?? qtyRemaining,
+    qtyRemaining,
+    unitLabel,
+    displayLine,
+    speciesName,
+    status: getRecordString(record.status) || 'pending',
+    createdAt: getRecordString(record.createdAt),
+  };
+}
+
+function normalizeSaleSpeciesEnclosurePlacement(
+  row: unknown,
+): KolamSaleSpeciesEnclosurePlacement | null {
+  if (!row || typeof row !== 'object') {
+    return null;
+  }
+  const record = row as Record<string, unknown>;
+  const enclosure =
+    record.enclosure && typeof record.enclosure === 'object'
+      ? (record.enclosure as Record<string, unknown>)
+      : {};
+  const enclosureId = getRecordId(enclosure._id) || getRecordId(enclosure.id);
+  if (!enclosureId) {
+    return null;
+  }
+  const code = getRecordString(enclosure.enclosure_code);
+  const name = getRecordString(enclosure.enclosure_name);
+  const quantity = getRecordNumber(record.quantity) ?? 0;
+  return {
+    enclosureId,
+    label: `${code || name || enclosureId} (${quantity})`,
+    quantity,
+    variantId: getRecordId(record.variantId),
+    variantLabel: getRecordString(record.variantLabel),
+  };
+}
+
+function getRecordString(value: unknown) {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return '';
+}
+
+function getRecordNumber(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function getRecordId(value: unknown) {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return getRecordString(record._id) || getRecordString(record.id);
+  }
+  return '';
 }
 
 function normalizeCatalogOptions(

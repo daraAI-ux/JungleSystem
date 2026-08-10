@@ -88,6 +88,7 @@ import {
   replaceKolamSalePaymentProof,
   requestKolamSaleBiteshipPickup,
   requestKolamSaleMarketplacePickup,
+  resolveKolamSaleLivestockAllocation,
   setKolamSaleBiteshipWaybill,
   updateKolamSale,
   updateKolamSaleDelivery,
@@ -183,6 +184,10 @@ export interface KolamSalesController {
   ) => Promise<boolean>;
   /** Tokopedia platform pickup via AM (empty body). Shopee slot UI is out of scope. */
   onRequestMarketplacePickup: () => Promise<boolean>;
+  onResolveLivestockAllocation: (
+    pendingId: string,
+    allocations: { enclosureId: string; qty: number }[],
+  ) => Promise<boolean>;
   onSave: () => Promise<string | null>;
   onSearchChange: (search: string) => void;
   onSelectSale: (sale: KolamSale) => void;
@@ -1231,6 +1236,32 @@ export function useKolamSalesController(route: string): KolamSalesController {
     }
   }, [refreshDetail, selectedSale]);
 
+  const onResolveLivestockAllocation = useCallback(
+    async (
+      pendingId: string,
+      allocations: { enclosureId: string; qty: number }[],
+    ) => {
+      if (!selectedSale) {
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await resolveKolamSaleLivestockAllocation({ pendingId, allocations });
+        setStatusMessage('Alokasi enclosure tercatat.');
+        await refreshDetail();
+        return true;
+      } catch (mutationError) {
+        setError(formatKolamSaleMutationError(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [refreshDetail, selectedSale],
+  );
+
   return {
     analytics,
     analyticsLoading,
@@ -1288,6 +1319,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     onReplacePaymentProof,
     onRequestBiteshipPickup,
     onRequestMarketplacePickup,
+    onResolveLivestockAllocation,
     onSetBiteshipWaybill,
     onSave,
     onSearchChange,

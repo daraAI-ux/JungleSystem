@@ -2116,7 +2116,32 @@ export interface KolamSaleNotificationSummary {
 export interface KolamSaleLivestockAllocationRow {
   id: string;
   label: string;
+  saleId: string;
+  saleItemIndex: number;
+  invoiceCode: string;
+  speciesId: string;
+  variantId: string;
+  variantLabel: string;
+  qtyTotal: number;
+  qtyRemaining: number;
+  unitLabel: string;
+  displayLine: string;
+  speciesName: string;
   status: string;
+  createdAt: string;
+}
+
+export interface KolamSaleSpeciesEnclosurePlacement {
+  enclosureId: string;
+  label: string;
+  quantity: number;
+  variantId: string;
+  variantLabel: string;
+}
+
+export interface KolamSaleSpeciesEnclosureAllocation {
+  speciesId: string;
+  placements: KolamSaleSpeciesEnclosurePlacement[];
 }
 
 let createItemKeySeq = 0;

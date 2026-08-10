@@ -53,6 +53,8 @@ import {
   type KolamSaleDeliveryTransitionTarget,
   type KolamSaleHistory,
   type KolamSaleItem,
+  type KolamSaleLivestockAllocationRow,
+  type KolamSaleSpeciesEnclosurePlacement,
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
 import {
@@ -67,9 +69,12 @@ import {
   type KolamSaleItemProfitBreakdown,
 } from '../domain/kolam-sales-profit';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getErrorMessage } from '../lib/api-error';
 import { formatRupiah } from '../lib/money';
 import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
+import { getKolamSaleSpeciesEnclosureAllocation } from '../services/kolam-sales-api';
 import { KolamButton } from './kolam-button';
+import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
@@ -84,9 +89,13 @@ import { KolamContentFrame } from './kolam-content-frame';
 import { KolamComplaintButton } from './kolam-complaint-button';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
-import { KolamOverflowMenuButton } from './kolam-dropdown-select';
+import {
+  KolamDropdownSelect,
+  KolamOverflowMenuButton,
+} from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamModalDialog } from './kolam-modal-dialog';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSaveButton } from './kolam-save-button';
@@ -1187,18 +1196,11 @@ export function KolamSalesOpsDetail({
       </View>
 
       <View style={styles.fulfillmentRow}>
-        <KolamCardFrame style={styles.fulfillmentCard} variant="compact">
-          <Text style={styles.sectionTitle}>Alokasi kandang</Text>
-          {controller.livestockAllocations.length > 0 ? (
-            controller.livestockAllocations.map(row => (
-              <Text key={row.id} style={styles.metaText}>
-                {row.label} · {row.status}
-              </Text>
-            ))
-          ) : (
-            <Text style={styles.metaText}>Belum ada alokasi kandang.</Text>
-          )}
-        </KolamCardFrame>
+        <KolamSalesEnclosureAllocationPanel
+          disabled={controller.mutating}
+          onResolve={controller.onResolveLivestockAllocation}
+          rows={controller.livestockAllocations}
+        />
 
         <KolamCardFrame style={styles.fulfillmentCard} variant="compact">
           <Text style={styles.sectionTitle}>Alur Stok</Text>
@@ -1285,6 +1287,298 @@ export function KolamSalesOpsDetail({
       />
     </View>
   );
+}
+
+type KolamSaleEnclosureAllocationDraftRow = {
+  enclosureId: string;
+  qty: number;
+};
+
+function KolamSalesEnclosureAllocationPanel({
+  disabled,
+  onResolve,
+  rows,
+}: {
+  disabled: boolean;
+  onResolve: (
+    pendingId: string,
+    allocations: { enclosureId: string; qty: number }[],
+  ) => Promise<boolean>;
+  rows: KolamSaleLivestockAllocationRow[];
+}) {
+  const [activePending, setActivePending] =
+    useState<KolamSaleLivestockAllocationRow | null>(null);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <KolamCardFrame
+        style={[styles.fulfillmentCard, styles.allocationCard]}
+        variant="compact"
+      >
+        <View style={styles.allocationHeader}>
+          <View style={styles.allocationTitleRow}>
+            <Text style={styles.sectionTitle}>Alokasi enclosure</Text>
+            <KolamStatusBadge
+              intent="warning"
+              label={livestockPendingBadgeLabel(rows.length)}
+            />
+          </View>
+          <Text style={styles.metaText}>
+            Tentukan kandang sumber untuk setiap species yang keluar dari
+            penjualan ini.
+          </Text>
+        </View>
+        <View style={styles.allocationList}>
+          {rows.map(row => (
+            <View key={row.id} style={styles.allocationRow}>
+              <View style={styles.allocationBody}>
+                <Text style={styles.primaryText}>
+                  {row.speciesName || row.displayLine || row.label || 'Species'}
+                  {row.variantLabel ? ` - ${row.variantLabel}` : ''}
+                </Text>
+                <Text style={styles.metaText}>
+                  {row.qtyRemaining} {row.unitLabel || 'ekor'} menunggu alokasi
+                  dari enclosure
+                </Text>
+              </View>
+              <KolamButton
+                disabled={disabled || !row.speciesId}
+                label="Atur enclosure"
+                onPress={() => setActivePending(row)}
+              />
+            </View>
+          ))}
+        </View>
+      </KolamCardFrame>
+      <KolamSalesEnclosureAllocationModal
+        disabled={disabled}
+        onClose={() => setActivePending(null)}
+        onResolve={onResolve}
+        pending={activePending}
+      />
+    </>
+  );
+}
+
+function KolamSalesEnclosureAllocationModal({
+  disabled,
+  onClose,
+  onResolve,
+  pending,
+}: {
+  disabled: boolean;
+  onClose: () => void;
+  onResolve: (
+    pendingId: string,
+    allocations: { enclosureId: string; qty: number }[],
+  ) => Promise<boolean>;
+  pending: KolamSaleLivestockAllocationRow | null;
+}) {
+  const [placements, setPlacements] = useState<
+    KolamSaleSpeciesEnclosurePlacement[]
+  >([]);
+  const [rows, setRows] = useState<KolamSaleEnclosureAllocationDraftRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const visible = Boolean(pending);
+
+  React.useEffect(() => {
+    if (!pending) {
+      setPlacements([]);
+      setRows([]);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    void getKolamSaleSpeciesEnclosureAllocation(pending.speciesId)
+      .then(allocation => {
+        if (cancelled) {
+          return;
+        }
+        const options = allocation.placements.filter(placement => {
+          if (!pending.variantId) {
+            return !placement.variantId;
+          }
+          return placement.variantId === pending.variantId;
+        });
+        setPlacements(options);
+        setRows([
+          {
+            enclosureId: options[0]?.enclosureId ?? '',
+            qty: pending.qtyRemaining || 1,
+          },
+        ]);
+      })
+      .catch(loadError => {
+        if (!cancelled) {
+          setError(getErrorMessage(loadError));
+          setPlacements([]);
+          setRows([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pending]);
+
+  const total = rows.reduce((sum, row) => sum + Math.max(0, row.qty), 0);
+  const options = placements.map(placement => ({
+    label: placement.label,
+    value: placement.enclosureId,
+  }));
+
+  const updateRow = (
+    index: number,
+    patch: Partial<KolamSaleEnclosureAllocationDraftRow>,
+  ) => {
+    setRows(current =>
+      current.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      ),
+    );
+  };
+
+  const addRow = () => {
+    setRows(current => [
+      ...current,
+      { enclosureId: options[0]?.value ?? '', qty: 1 },
+    ]);
+  };
+
+  const removeRow = (index: number) => {
+    setRows(current =>
+      current.length <= 1
+        ? current
+        : current.filter((_, rowIndex) => rowIndex !== index),
+    );
+  };
+
+  const submit = async () => {
+    if (!pending) {
+      return;
+    }
+    const allocations = rows.filter(row => row.enclosureId && row.qty > 0);
+    if (allocations.length === 0) {
+      setError('Pilih minimal satu enclosure');
+      return;
+    }
+    if (total !== pending.qtyRemaining) {
+      setError(`Total alokasi harus ${pending.qtyRemaining}`);
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    const ok = await onResolve(pending.id, allocations);
+    setSubmitting(false);
+    if (ok) {
+      onClose();
+    }
+  };
+
+  return (
+    <KolamModalDialog
+      description={
+        pending
+          ? `${pending.speciesName || pending.displayLine || 'Species'} - ${
+              pending.qtyRemaining
+            } ${pending.unitLabel || 'ekor'} perlu dikurangi dari kandang.`
+          : undefined
+      }
+      footer={
+        <>
+          <KolamCancelButton disabled={submitting} onPress={onClose} />
+          <KolamSaveButton
+            disabled={
+              disabled || submitting || loading || options.length === 0
+            }
+            label={submitting ? 'Menyimpan...' : 'Simpan alokasi'}
+            onPress={submit}
+          />
+        </>
+      }
+      maxHeight="84%"
+      onClose={onClose}
+      title="Alokasi sumber enclosure"
+      visible={visible}
+      width={720}
+    >
+      <ScrollView
+        contentContainerStyle={styles.allocationModalBody}
+        nestedScrollEnabled
+      >
+        {loading ? (
+          <Text style={styles.metaText}>Memuat enclosure...</Text>
+        ) : options.length === 0 ? (
+          <Text style={styles.metaText}>
+            Belum ada posisi di enclosure untuk species/variant ini. Tempatkan
+            livestock dulu di halaman species atau enclosure.
+          </Text>
+        ) : (
+          <View style={styles.allocationModalRows}>
+            {rows.map((row, index) => (
+              <View key={index} style={styles.allocationModalRow}>
+                <KolamDropdownSelect
+                  label="Enclosure"
+                  onChange={value => updateRow(index, { enclosureId: value })}
+                  options={options}
+                  searchable
+                  searchPlaceholder="Cari enclosure..."
+                  showLabelInTrigger={index === 0}
+                  style={styles.allocationModalSelect}
+                  value={row.enclosureId || options[0].value}
+                />
+                <KolamFormTextField
+                  mode="numeric"
+                  onChangeText={value =>
+                    updateRow(index, {
+                      qty: Math.max(1, Number(value) || 1),
+                    })
+                  }
+                  placeholder="Qty"
+                  style={styles.allocationModalQty}
+                  value={String(row.qty)}
+                />
+                <KolamDeleteButton
+                  disabled={rows.length <= 1}
+                  label="Hapus"
+                  onPress={() => removeRow(index)}
+                  style={styles.allocationModalDelete}
+                />
+              </View>
+            ))}
+            <View style={styles.allocationModalFooterRow}>
+              <KolamButton label="Tambah baris" onPress={addRow} />
+              <Text style={styles.metaText}>
+                Total: {total} / {pending?.qtyRemaining ?? 0}
+              </Text>
+            </View>
+          </View>
+        )}
+        {error ? <Text style={styles.allocationError}>{error}</Text> : null}
+      </ScrollView>
+    </KolamModalDialog>
+  );
+}
+
+function livestockPendingBadgeLabel(count: number) {
+  if (count <= 0) {
+    return '';
+  }
+  return `${count} spesies perlu atur kandang`;
 }
 
 const KOLAM_SALE_DELIVERY_ROBOT_ICON_XML = `
@@ -1797,6 +2091,72 @@ const styles = StyleSheet.create({
     flexBasis: 360,
     gap: 8,
     minWidth: 280,
+  },
+  allocationCard: {
+    borderColor: '#f59e0b',
+  },
+  allocationHeader: {
+    gap: 6,
+  },
+  allocationTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  allocationList: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  allocationRow: {
+    alignItems: 'center',
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  allocationBody: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
+  },
+  allocationModalBody: {
+    gap: 12,
+    paddingBottom: 4,
+  },
+  allocationModalRows: {
+    gap: 10,
+  },
+  allocationModalRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  allocationModalSelect: {
+    flex: 1,
+    minWidth: 260,
+  },
+  allocationModalQty: {
+    width: 100,
+  },
+  allocationModalDelete: {
+    flexShrink: 0,
+  },
+  allocationModalFooterRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  allocationError: {
+    color: V.colors.danger,
+    fontSize: 12,
+    fontWeight: '700',
   },
   sectionTitle: {
     color: V.colors.fg,
