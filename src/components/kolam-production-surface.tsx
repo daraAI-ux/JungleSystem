@@ -603,8 +603,8 @@ function KolamProductionForm({
       <KolamDetailScrollSurface contentContainerStyle={styles.formScroll}>
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         {!isEdit ? (
-          <View style={styles.formSection}>
-            <Text style={styles.sectionSubtitle}>Mode Serial (Freyer)</Text>
+          <View style={[styles.formSection, styles.serialModeCard]}>
+            <Text style={styles.sectionSubtitle}>Mode Serial</Text>
             <KolamSwitch
               active={form.serialEnabled}
               onPress={() =>
@@ -1903,6 +1903,17 @@ const styles = StyleSheet.create({
   sectionTitle: { color: V.colors.fg, fontFamily: V.fontFamily, fontSize: 16, fontWeight: '800' },
   sectionSubtitle: { color: V.colors.fg, fontFamily: V.fontFamily, fontSize: 13, fontWeight: '600' },
   formSection: { gap: 8 },
+  serialModeCard: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   componentPreview: { gap: 4 },
   componentRow: { gap: 8, marginBottom: 8 },
