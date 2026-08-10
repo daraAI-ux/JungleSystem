@@ -66,7 +66,6 @@ import {useKolamPusatAiInventoryCopilotController} from '../hooks/use-kolam-pusa
 import {useKolamPusatAiPoCopilotController} from '../hooks/use-kolam-pusat-ai-po-copilot-controller';
 import {useKolamPusatAiTransaksiCopilotController} from '../hooks/use-kolam-pusat-ai-transaksi-copilot-controller';
 import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamPusatAiInventoryCopilotBody} from './kolam-pusat-ai-inventory-copilot-body';
@@ -215,15 +214,6 @@ function KolamPusatAiLogDaraBody({
             {`${log.lookbackHours} jam terakhir`}
           </Text>
         </View>
-        <KolamRefreshButton
-          accessibilityLabel="Refresh"
-          disabled={loading}
-          intent="outline"
-
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-        />
       </View>
 
       <View style={styles.logEventsCard}>
