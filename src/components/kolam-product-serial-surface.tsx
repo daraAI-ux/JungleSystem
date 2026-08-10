@@ -534,11 +534,7 @@ function KolamProductSerialOpname({
     <View style={styles.opnameRoot}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              Opname Serial
-            </Text>
-          </View>
+          <View style={kolamTableToolbarStyles.filters} />
           <View style={kolamTableToolbarStyles.actions}>
             <KolamDaftarButton
               onPress={() => onRouteChange?.(KOLAM_PRODUCT_SERIAL_ROOT)}
@@ -660,16 +656,6 @@ function formatProductSerialDateTime(value?: string) {
 const styles = StyleSheet.create({
   surface: { gap: 14 },
   statusBadge: { alignSelf: 'stretch' },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '700',
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
   listRoot: { gap: 14 },
   productFilterBanner: {
     backgroundColor: V.colors.primarySoft,
