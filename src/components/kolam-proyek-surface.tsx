@@ -75,6 +75,7 @@ import {
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import {KolamNotesField} from './kolam-notes-field';
 import { KolamPdfDownloadButton } from './kolam-pdf-download-button';
 import { KolamProyekQuotationForm } from './kolam-proyek-quotation-form';
 import { KolamRemoteImage } from './kolam-remote-image';
@@ -1241,11 +1242,8 @@ function KolamProyekDetailRead({
                     />
                   </View>
                   <View style={styles.progressNoteField}>
-                    <KolamSettingsWebFieldLabel
+                    <KolamNotesField
                       label="Catatan"
-                      required={false}
-                    />
-                    <KolamFormTextField
                       onChangeText={setProgressNoteText}
                       placeholder="Catatan"
                       value={progressNoteText}
@@ -1671,9 +1669,8 @@ function KolamProyekDetailRead({
               placeholder="0"
               value={Number(confirmDpAmount) || 0}
             />
-            <KolamSettingsWebFieldLabel label="Catatan" required={false} />
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
+              label="Catatan"
               onChangeText={setConfirmDpNote}
               placeholder="Opsional"
               value={confirmDpNote}
@@ -1728,9 +1725,9 @@ function KolamProyekDetailRead({
               Status menjadi dikerjakan. Task PIC dibuat dan HPP stok dapat
               dipotong di backend.
             </Text>
-            <KolamSettingsWebFieldLabel label="Catatan" required />
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
+              label="Catatan"
+              required
               onChangeText={setStartWorkNote}
               placeholder="Min. 5 karakter"
               value={startWorkNote}
@@ -1768,9 +1765,8 @@ function KolamProyekDetailRead({
             <Text style={styles.dialogMessage}>
               Opsional: catat resolusi revisi untuk klien.
             </Text>
-            <KolamSettingsWebFieldLabel label="Catatan resolusi" required={false} />
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
+              label="Catatan resolusi"
               onChangeText={setResendNote}
               placeholder="Opsional"
               value={resendNote}
@@ -1854,9 +1850,9 @@ function KolamProyekDetailRead({
               Status akan menjadi refunded lewat lifecycle admin. Catatan audit
               wajib (minimal 5 karakter). Ini bukan alur wallet/kwitansi Fase 3.
             </Text>
-            <KolamSettingsWebFieldLabel label="Catatan refund" required />
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
+              label="Catatan refund"
+              required
               onChangeText={setRefundNote}
               placeholder="Alasan / catatan refund"
               value={refundNote}
@@ -2157,21 +2153,16 @@ function ReviewRoundSubmitForm({
         showLabelInTrigger={false}
         value={deadline}
       />
-      <KolamSettingsWebFieldLabel label="Catatan" required={false} />
-      <KolamFormTextField
-        multiline
+      <KolamNotesField
+        label="Catatan"
         onChangeText={setNote}
         placeholder="Opsional"
         value={note}
       />
       {showResolutionNote ? (
         <>
-          <KolamSettingsWebFieldLabel
+          <KolamNotesField
             label="Catatan resolusi revisi"
-            required={false}
-          />
-          <KolamFormTextField
-            multiline
             onChangeText={setResolutionNote}
             placeholder="Opsional"
             value={resolutionNote}
@@ -2439,15 +2430,12 @@ function ProyekLifecycleTimeline({
 
         {canAdminLifecycle && targets.length === 1 ? (
           <View style={styles.progressEditor}>
-            <KolamSettingsWebFieldLabel
+            <KolamNotesField
               label={`Catatan untuk "${formatKolamProyekLifecycleTransitionLabel(
                 targets[0],
                 detail.lifecycleStatus,
               )}"`}
               required
-            />
-            <KolamFormTextField
-              multiline
               onChangeText={onLifecycleNoteChange}
               placeholder="Minimal 5 karakter"
               value={lifecycleNote}
@@ -2496,9 +2484,9 @@ function ProyekLifecycleTimeline({
               showLabelInTrigger={false}
               value={lifecycleTarget}
             />
-            <KolamSettingsWebFieldLabel label="Catatan" required />
-            <KolamFormTextField
-              multiline
+            <KolamNotesField
+              label="Catatan"
+              required
               onChangeText={onLifecycleNoteChange}
               placeholder="Minimal 5 karakter"
               value={lifecycleNote}
