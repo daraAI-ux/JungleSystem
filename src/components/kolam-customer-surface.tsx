@@ -153,7 +153,7 @@ const CUSTOMER_POINT_TRANSACTION_COLUMNS: Array<
     ),
   },
   {
-    align: 'right',
+    align: 'center',
     flex: 0.8,
     id: 'points',
     label: 'Poin',
@@ -3183,7 +3183,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 20,
-    textAlign: 'right',
+    textAlign: 'center',
   },
   customerPointTransactionPointsIn: {
     color: V.colors.success,
