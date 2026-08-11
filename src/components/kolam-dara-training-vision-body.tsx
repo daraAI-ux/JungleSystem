@@ -164,9 +164,9 @@ function PipelineSummaryFieldValue({
   value: string | number;
 }) {
   return (
-    <View style={styles.pipelineFieldRight}>
-      <Text style={styles.pipelineFieldValue}>{value}</Text>
-      {hint ? <Text style={styles.pipelineFieldHint}>{hint}</Text> : null}
+    <View style={styles.pipelineSummaryValue}>
+      <Text style={styles.pipelineSummaryValueText}>{value}</Text>
+      {hint ? <Text style={styles.pipelineSummaryHint}>{hint}</Text> : null}
     </View>
   );
 }
@@ -1975,6 +1975,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     textAlign: 'right',
+  },
+  pipelineSummaryValue: {
+    alignItems: 'flex-start',
+    gap: 2,
+    minWidth: 0,
+  },
+  pipelineSummaryValueText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    textAlign: 'left',
+  },
+  pipelineSummaryHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    lineHeight: 14,
+    textAlign: 'left',
   },
   statGrid: {
     alignItems: 'stretch',
