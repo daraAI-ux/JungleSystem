@@ -587,14 +587,6 @@ export function KolamDaraTaxRegulasiBody({
               ) : null}
             </View>
             <View style={styles.rowActions}>
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                intent="outline"
-
-                onPress={() => {
-                  void loadKitab();
-                }}
-              />
               {isAdmin ? (
                 <KolamButton
                   disabled={kitabAiRunning}
