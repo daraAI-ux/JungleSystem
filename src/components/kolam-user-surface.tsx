@@ -848,23 +848,25 @@ function KolamUserDetailSurface({
         ),
       },
       {
-        align: 'right',
+        align: 'center',
         flex: 0.8,
         id: 'amount',
         label: 'Jumlah',
         render: item => (
-          <Text style={styles.payrollEntryAmount}>
+          <Text style={[styles.payrollEntryAmount, styles.userTableTextCenter]}>
             {formatUserCurrency(item.amount)}
           </Text>
         ),
       },
       {
-        align: 'left',
+        align: 'center',
         flex: 1.6,
         id: 'reason',
         label: 'Alasan',
         render: item => (
-          <Text numberOfLines={2} style={styles.detailSubtitle}>
+          <Text
+            numberOfLines={2}
+            style={[styles.detailSubtitle, styles.userTableTextCenter]}>
             {item.reason || item.rejectionReason || '-'}
           </Text>
         ),
