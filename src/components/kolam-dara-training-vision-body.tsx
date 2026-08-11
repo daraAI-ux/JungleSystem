@@ -593,21 +593,144 @@ export function KolamDaraTrainingVisionBody({
     selectedProduct?.displayName ??
     selectedSpecies?.displayName ??
     'Foto training';
+  const outOfCatalogPanel = (
+    <View style={styles.introPanel}>
+      <Text style={styles.sectionTitle}>Di luar katalog</Text>
+      <Text style={styles.meta}>
+        Foto yang bukan bukti bayar, species, atau produk katalog disimpan
+        sebagai contoh penolakan. Data ini membantu DARA menahan jawaban saat
+        gambar tidak cocok.
+      </Text>
+
+      {canManage ? (
+        <View style={styles.formBox}>
+          <Text style={styles.fieldLabel}>Tambah contoh ditolak</Text>
+          <Text style={styles.fieldLabel}>Path foto</Text>
+          <TextInput
+            onChangeText={setNegKey}
+            placeholder="/media/..."
+            style={styles.textInput}
+            value={negKey}
+          />
+          <KolamDropdownSelect
+            label="Tipe"
+            onChange={setNegType}
+            options={negTypeOptions}
+            value={negType}
+          />
+          <KolamButton
+            disabled={!!busy || !negKey.trim()}
+            label="Tambah"
+            onPress={() => {
+              void runBusy('neg', async () => {
+                await addKolamDaraTrainingVisionHardNegative({
+                  photoKey: negKey.trim(),
+                  negativeType: negType,
+                });
+                setNegKey('');
+                setNotice('Contoh ditolak ditambahkan');
+                await load();
+              });
+            }}
+            size="sm"
+          />
+        </View>
+      ) : null}
+
+      {feedbackQueue.length > 0 ? (
+        <>
+          <Text style={styles.sectionTitle}>Antrian feedback</Text>
+          <View style={styles.tableHead}>
+            <Text style={[styles.th, styles.colKind]}>Jenis</Text>
+            <Text style={[styles.th, styles.colLabel]}>Label benar</Text>
+            <Text style={[styles.th, styles.colStatus]}>Status</Text>
+            <Text style={[styles.th, styles.colDate]}>Tanggal</Text>
+            {canManage ? <Text style={[styles.th, styles.colAction]} /> : null}
+          </View>
+          {feedbackQueue.map(row => (
+            <View key={row.id} style={styles.tableRow}>
+              <View style={styles.colKind}>
+                <KolamStatusBadge
+                  intent={row.entityKind === 'product' ? 'primary' : 'muted'}
+                  label={row.entityKind === 'product' ? 'Produk' : 'Species'}
+                />
+              </View>
+              <Text numberOfLines={2} style={[styles.td, styles.colLabel]}>
+                {row.correctDisplayName || '-'}
+                {row.correctSku ? ` ${row.correctSku}` : ''}
+              </Text>
+              <Text style={[styles.tdMuted, styles.colStatus]}>
+                {row.matchStatus || '-'}
+              </Text>
+              <Text style={[styles.tdMuted, styles.colDate]}>
+                {formatKolamDaraTrainingVisionDateTime(row.createdAt)}
+              </Text>
+              {canManage ? (
+                <View style={styles.colAction}>
+                  <KolamButton
+                    disabled={busy === row.id}
+                    intent="secondary"
+                    label="Import"
+                    onPress={() => {
+                      void runBusy(row.id, async () => {
+                        await importKolamDaraTrainingVisionFeedbackQueueItem(
+                          row.id,
+                        );
+                        setNotice('Diimport ke training');
+                        await load();
+                      });
+                    }}
+                    size="sm"
+                  />
+                </View>
+              ) : null}
+            </View>
+          ))}
+        </>
+      ) : (
+        <Text style={styles.meta}>Antrian feedback kosong.</Text>
+      )}
+
+      {hardNegatives.length > 0 ? (
+        <>
+          <Text style={styles.sectionTitle}>Contoh ditolak</Text>
+          <View style={styles.tableHead}>
+            <Text style={[styles.th, styles.colPath]}>Path</Text>
+            <Text style={[styles.th, styles.colKind]}>Tipe</Text>
+            <Text style={[styles.th, styles.colDate]}>Tanggal</Text>
+          </View>
+          {hardNegatives.map(row => (
+            <View key={row.id} style={styles.tableRow}>
+              <Text numberOfLines={2} style={[styles.tdMuted, styles.colPath]}>
+                {row.photoKey}
+              </Text>
+              <Text style={[styles.td, styles.colKind]}>
+                {row.negativeType || '-'}
+              </Text>
+              <Text style={[styles.tdMuted, styles.colDate]}>
+                {formatKolamDaraTrainingVisionDateTime(row.createdAt)}
+              </Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+      <Text style={styles.meta}>
+        {hardNegatives.length} contoh ditolak terdaftar.
+      </Text>
+    </View>
+  );
 
   return (
     <>
     <KolamDetailScrollSurface contentContainerStyle={styles.root}>
       <View style={styles.introCard}>
-        <Text style={styles.introTitle}>Vision inbox — closed-world</Text>
+        <Text style={styles.introTitle}>Vision inbox</Text>
         <Text style={styles.meta}>
-          DARA hanya mengenali{' '}
-          <Text style={styles.metaStrong}>bukti pembayaran</Text>,{' '}
-          <Text style={styles.metaStrong}>species</Text>, dan{' '}
-          <Text style={styles.metaStrong}>produk sellable</Text> di katalog DA.
-          Foto di luar katalog → abstain (tidak ditebak). OCR bukti bayar
-          diprioritaskan sebelum vision katalog. Kelola dataset & indeks di
-          Ringkasan.
+          DARA hanya boleh mengenali bukti pembayaran, species, dan produk
+          katalog. Foto lain ditahan supaya DARA tidak menebak. Bukti bayar
+          dibaca lebih dulu, lalu foto katalog dicocokkan dari dataset.
         </Text>
+        {section === 'ringkasan' ? outOfCatalogPanel : null}
       </View>
 
       <View style={styles.navShell}>
@@ -1487,137 +1610,6 @@ export function KolamDaraTrainingVisionBody({
         </>
       ) : null}
 
-      {section === 'luar' ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Di luar katalog & bukan target vision
-          </Text>
-          <Text style={styles.meta}>
-            Hard negative melatih YOLO abstain — termasuk bukti bayar,
-            screenshot, dan foto bukan species/produk DA. Frasa `payment_hint`
-            ada di tab Frasa respons cepat.
-          </Text>
-
-          {canManage ? (
-            <View style={styles.formBox}>
-              <Text style={styles.fieldLabel}>Tambah hard negative</Text>
-              <Text style={styles.fieldLabel}>Path foto</Text>
-              <TextInput
-                onChangeText={setNegKey}
-                placeholder="/media/..."
-                style={styles.textInput}
-                value={negKey}
-              />
-              <KolamDropdownSelect
-                label="Tipe"
-                onChange={setNegType}
-                options={negTypeOptions}
-                value={negType}
-              />
-              <KolamButton
-                disabled={!!busy || !negKey.trim()}
-                label="Tambah"
-                onPress={() => {
-                  void runBusy('neg', async () => {
-                    await addKolamDaraTrainingVisionHardNegative({
-                      photoKey: negKey.trim(),
-                      negativeType: negType,
-                    });
-                    setNegKey('');
-                    setNotice('Hard negative ditambahkan');
-                    await load();
-                  });
-                }}
-                size="sm"
-              />
-            </View>
-          ) : null}
-
-          {feedbackQueue.length > 0 ? (
-            <>
-              <Text style={styles.sectionTitle}>Antrian feedback</Text>
-              <View style={styles.tableHead}>
-                <Text style={[styles.th, styles.colKind]}>Jenis</Text>
-                <Text style={[styles.th, styles.colLabel]}>Label benar</Text>
-                <Text style={[styles.th, styles.colStatus]}>Status</Text>
-                <Text style={[styles.th, styles.colDate]}>Tanggal</Text>
-                {canManage ? (
-                  <Text style={[styles.th, styles.colAction]} />
-                ) : null}
-              </View>
-              {feedbackQueue.map(row => (
-                <View key={row.id} style={styles.tableRow}>
-                  <View style={styles.colKind}>
-                    <KolamStatusBadge
-                      intent={row.entityKind === 'product' ? 'primary' : 'muted'}
-                      label={row.entityKind === 'product' ? 'Produk' : 'Species'}
-                    />
-                  </View>
-                  <Text numberOfLines={2} style={[styles.td, styles.colLabel]}>
-                    {row.correctDisplayName || '—'}
-                    {row.correctSku ? ` ${row.correctSku}` : ''}
-                  </Text>
-                  <Text style={[styles.tdMuted, styles.colStatus]}>
-                    {row.matchStatus || '—'}
-                  </Text>
-                  <Text style={[styles.tdMuted, styles.colDate]}>
-                    {formatKolamDaraTrainingVisionDateTime(row.createdAt)}
-                  </Text>
-                  {canManage ? (
-                    <View style={styles.colAction}>
-                      <KolamButton
-                        disabled={busy === row.id}
-                        intent="secondary"
-                        label="Import"
-                        onPress={() => {
-                          void runBusy(row.id, async () => {
-                            await importKolamDaraTrainingVisionFeedbackQueueItem(
-                              row.id,
-                            );
-                            setNotice('Diimport ke training');
-                            await load();
-                          });
-                        }}
-                        size="sm"
-                      />
-                    </View>
-                  ) : null}
-                </View>
-              ))}
-            </>
-          ) : (
-            <Text style={styles.meta}>Antrian feedback kosong.</Text>
-          )}
-
-          {hardNegatives.length > 0 ? (
-            <>
-              <Text style={styles.sectionTitle}>Hard negatives</Text>
-              <View style={styles.tableHead}>
-                <Text style={[styles.th, styles.colPath]}>Path</Text>
-                <Text style={[styles.th, styles.colKind]}>Tipe</Text>
-                <Text style={[styles.th, styles.colDate]}>Tanggal</Text>
-              </View>
-              {hardNegatives.map(row => (
-                <View key={row.id} style={styles.tableRow}>
-                  <Text numberOfLines={2} style={[styles.tdMuted, styles.colPath]}>
-                    {row.photoKey}
-                  </Text>
-                  <Text style={[styles.td, styles.colKind]}>
-                    {row.negativeType || '—'}
-                  </Text>
-                  <Text style={[styles.tdMuted, styles.colDate]}>
-                    {formatKolamDaraTrainingVisionDateTime(row.createdAt)}
-                  </Text>
-                </View>
-              ))}
-            </>
-          ) : null}
-          <Text style={styles.meta}>
-            {hardNegatives.length} entri hard negative terdaftar.
-          </Text>
-        </View>
-      ) : null}
-
       {section === 'koreksi' ? (
         <View style={styles.card}>
           <View style={styles.cardHead}>
@@ -1896,6 +1888,15 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
+  },
+  introPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+    marginTop: 8,
+    padding: 10,
   },
   navShell: {
     backgroundColor: V.colors.muted,

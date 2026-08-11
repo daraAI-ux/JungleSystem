@@ -7,7 +7,6 @@ export type KolamDaraTrainingVisionSectionId =
   | 'ringkasan'
   | 'species'
   | 'produk'
-  | 'luar'
   | 'koreksi';
 
 export const KOLAM_DARA_TRAINING_VISION_SECTIONS: Array<{
@@ -17,7 +16,6 @@ export const KOLAM_DARA_TRAINING_VISION_SECTIONS: Array<{
   {id: 'ringkasan', label: 'Ringkasan'},
   {id: 'species', label: 'Species (YOLO)'},
   {id: 'produk', label: 'Produk'},
-  {id: 'luar', label: 'Di luar katalog'},
   {id: 'koreksi', label: 'Koreksi inbox'},
 ];
 

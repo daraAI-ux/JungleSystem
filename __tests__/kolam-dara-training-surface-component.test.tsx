@@ -623,7 +623,9 @@ describe('KolamDaraTrainingSurface', () => {
     });
 
     const text = JSON.stringify(tree!.toJSON());
-    expect(text).toContain('Vision inbox — closed-world');
+    expect(text).toContain('Vision inbox');
+    expect(text).toContain('Foto yang bukan bukti bayar');
+    expect(text).toContain('Di luar katalog');
     expect(text).toContain('Ringkasan');
     expect(text).not.toContain('Indeks katalog');
     expect(text).toContain('Koreksi inbox');
