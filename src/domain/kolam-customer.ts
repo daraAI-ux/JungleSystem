@@ -105,6 +105,27 @@ export interface KolamCustomerPointTransactionsResult {
   pagination: KolamCustomerPagination;
 }
 
+export interface KolamCustomerStorageProduct {
+  id: string;
+  name: string;
+  slug: string;
+  units: string;
+}
+
+export interface KolamCustomerStorageItem {
+  id: string;
+  product: KolamCustomerStorageProduct | null;
+  variant: string;
+  stock: number;
+  totalStock: number;
+  updatedAt: string;
+}
+
+export interface KolamCustomerStorageResult {
+  items: KolamCustomerStorageItem[];
+  pagination: KolamCustomerPagination;
+}
+
 export interface KolamCustomerSavePayload {
   address: string;
   email: string;
@@ -159,6 +180,30 @@ export function normalizeKolamCustomerPointTransactionsResult(
     .filter(
       (item): item is KolamCustomerPointTransaction => Boolean(item),
     );
+
+  return {
+    items,
+    pagination: normalizeKolamCustomerPagination(
+      record.pagination,
+      items.length,
+      fallback,
+    ),
+  };
+}
+
+export function normalizeKolamCustomerStorageResult(
+  payload: unknown,
+  fallback: Required<Pick<KolamCustomerListQuery, 'limit' | 'page'>>,
+): KolamCustomerStorageResult {
+  const record = asRecord(payload);
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  const items = rows
+    .map(normalizeKolamCustomerStorageItem)
+    .filter((item): item is KolamCustomerStorageItem => Boolean(item));
 
   return {
     items,
@@ -264,6 +309,47 @@ function normalizeKolamCustomerPointTransactionUser(
     id,
     name: name || getString(record, 'name') || getString(record, 'username'),
     username: getString(record, 'username'),
+  };
+}
+
+function normalizeKolamCustomerStorageItem(
+  value: unknown,
+): KolamCustomerStorageItem | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    product: normalizeKolamCustomerStorageProduct(record.product),
+    stock: getNumber(record, 'stock') ?? 0,
+    totalStock: getNumber(record, 'totalStock') ?? 0,
+    updatedAt: getString(record, 'updatedAt'),
+    variant:
+      getString(record, 'variant') ||
+      getString(asRecord(record.variant), '_id') ||
+      getString(asRecord(record.variant), 'id'),
+  };
+}
+
+function normalizeKolamCustomerStorageProduct(
+  value: unknown,
+): KolamCustomerStorageProduct | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    name: getString(record, 'name') || 'Item',
+    slug: getString(record, 'slug'),
+    units: getString(record, 'units'),
   };
 }
 

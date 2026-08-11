@@ -10,6 +10,8 @@ import {
   type KolamCustomerPointTransaction,
   type KolamCustomerPointTransactionsResult,
   type KolamCustomerSavePayload,
+  type KolamCustomerStorageItem,
+  type KolamCustomerStorageResult,
 } from '../domain/kolam-customer';
 import {
   canEditKolamTaxPartyProfile,
@@ -31,6 +33,7 @@ import {
   getKolamCustomerFreyerDevices,
   getKolamCustomerList,
   getKolamCustomerPointTransactions,
+  getKolamCustomerStorage,
   getKolamUnattachedCustomerFreyerDevices,
   updateKolamCustomer,
   uploadKolamCustomerPhoto,
@@ -188,6 +191,16 @@ const INITIAL_CUSTOMER_POINT_TRANSACTIONS: KolamCustomerPointTransactionsResult 
       totalPages: 1,
     },
   };
+
+const INITIAL_CUSTOMER_STORAGE: KolamCustomerStorageResult = {
+  items: [],
+  pagination: {
+    limit: 50,
+    page: 1,
+    total: 0,
+    totalPages: 1,
+  },
+};
 
 export function KolamCustomerSurface({
   customer,
@@ -472,6 +485,11 @@ function KolamCustomerDetailSurface({
   const [pointTransactionsLoading, setPointTransactionsLoading] =
     React.useState(false);
   const [pointTransactionsPage, setPointTransactionsPage] = React.useState(1);
+  const [customerStorage, setCustomerStorage] = React.useState(
+    INITIAL_CUSTOMER_STORAGE,
+  );
+  const [customerStorageLoading, setCustomerStorageLoading] =
+    React.useState(false);
   const [freyerDevices, setFreyerDevices] = React.useState<
     KolamFreyerIotDevice[]
   >([]);
@@ -598,6 +616,43 @@ function KolamCustomerDetailSurface({
       active = false;
     };
   }, [customerId, pointTransactionsPage]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customerId) {
+      setCustomerStorage(INITIAL_CUSTOMER_STORAGE);
+      return () => {
+        active = false;
+      };
+    }
+
+    setCustomerStorageLoading(true);
+    void getKolamCustomerStorage({
+      customerId,
+      limit: 50,
+      page: 1,
+    })
+      .then(result => {
+        if (active) {
+          setCustomerStorage(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setCustomerStorage(INITIAL_CUSTOMER_STORAGE);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setCustomerStorageLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customerId]);
 
   const reloadFreyerDevices = React.useCallback(async () => {
     if (!customerId) {
@@ -1001,6 +1056,11 @@ function KolamCustomerDetailSurface({
         saving={freyerSaving}
         selectedId={selectedFreyerId}
         unattached={unattachedFreyerDevices}
+      />
+
+      <CustomerStorageCard
+        loading={customerStorageLoading}
+        result={customerStorage}
       />
     </View>
   );
@@ -1705,6 +1765,61 @@ function CustomerFreyerDevicesCard({
   );
 }
 
+function CustomerStorageCard({
+  loading,
+  result,
+}: {
+  loading: boolean;
+  result: KolamCustomerStorageResult;
+}) {
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <View style={styles.customerCardHeaderRow}>
+        <SectionTitle
+          description="Stok milik pelanggan yang tersimpan di gudang"
+          title="Customer Storage"
+        />
+        <KolamStatusBadge
+          intent={result.items.length ? 'success' : 'secondary'}
+          label={`${result.pagination.total || result.items.length} item`}
+        />
+      </View>
+      {loading ? (
+        <KolamEmptyState compact message="Memuat storage." title="Memuat" />
+      ) : result.items.length ? (
+        <View style={styles.customerStorageList}>
+          {result.items.map(item => (
+            <CustomerStorageRow item={item} key={item.id} />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.customerEmptyPanel}>
+          <Text style={styles.customerSubText}>Belum ada customer storage.</Text>
+        </View>
+      )}
+    </KolamContentFrame>
+  );
+}
+
+function CustomerStorageRow({item}: {item: KolamCustomerStorageItem}) {
+  const stockIntent =
+    item.stock <= 0 ? 'danger' : item.stock <= 2 ? 'warning' : 'success';
+
+  return (
+    <View style={styles.customerStorageRow}>
+      <View style={styles.customerStorageCopy}>
+        <Text numberOfLines={1} style={styles.customerMetaText}>
+          {item.product?.name || 'Item'}
+        </Text>
+        <Text numberOfLines={1} style={styles.customerSubText}>
+          {item.product?.units || '-'} | {formatCustomerDateTime(item.updatedAt)}
+        </Text>
+      </View>
+      <KolamStatusBadge intent={stockIntent} label={`Stok ${item.stock}`} />
+    </View>
+  );
+}
+
 function CustomerFieldShell({
   children,
   label,
@@ -2335,6 +2450,26 @@ const styles = StyleSheet.create({
   customerFreyerSelect: {
     flex: 1,
     minWidth: 260,
+  },
+  customerStorageList: {
+    gap: 8,
+  },
+  customerStorageRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  customerStorageCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
   },
   customerEmptyPanel: {
     alignItems: 'center',

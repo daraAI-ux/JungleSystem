@@ -3,12 +3,14 @@ import {
   normalizeKolamCustomerDetail,
   normalizeKolamCustomerListResult,
   normalizeKolamCustomerPointTransactionsResult,
+  normalizeKolamCustomerStorageResult,
   type KolamCustomer,
   type KolamCustomerListQuery,
   type KolamCustomerListResult,
   type KolamCustomerPointTransactionsResult,
   type KolamCustomerPointTransactionType,
   type KolamCustomerSavePayload,
+  type KolamCustomerStorageResult,
 } from '../domain/kolam-customer';
 import {
   normalizeKolamFreyerIotDevice,
@@ -151,6 +153,26 @@ export async function getKolamCustomerPointTransactions({
   );
 
   return normalizeKolamCustomerPointTransactionsResult(response, {limit, page});
+}
+
+export async function getKolamCustomerStorage({
+  customerId,
+  limit = 50,
+  page = 1,
+}: {
+  customerId: string;
+  limit?: number;
+  page?: number;
+}): Promise<KolamCustomerStorageResult> {
+  const response = await kolamRequest<unknown>('/customer-storage', {
+    query: {
+      forCustomer: customerId,
+      limit,
+      page,
+    },
+  });
+
+  return normalizeKolamCustomerStorageResult(response, {limit, page});
 }
 
 export async function getKolamCustomerFreyerDevices(
