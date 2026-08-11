@@ -1154,6 +1154,7 @@ function WalletTransactionPanel({
                   controller.onChangeTxFilters({ walletId: value })
                 }
                 options={walletOptions}
+                showLabelInTrigger={false}
                 style={styles.txDropdown}
                 triggerStyle={styles.filterTrigger}
                 value={controller.txFilters.walletId}
@@ -1163,6 +1164,7 @@ function WalletTransactionPanel({
               label="Tipe"
               onChange={value => controller.onChangeTxFilters({ type: value })}
               options={KOLAM_WALLET_TX_TYPE_OPTIONS}
+              showLabelInTrigger={false}
               style={styles.txDropdown}
               triggerStyle={styles.filterTrigger}
               value={controller.txFilters.type}
@@ -1173,6 +1175,7 @@ function WalletTransactionPanel({
                 controller.onChangeTxFilters({ source: value })
               }
               options={KOLAM_WALLET_TX_SOURCE_OPTIONS}
+              showLabelInTrigger={false}
               style={styles.txDropdown}
               triggerStyle={styles.filterTrigger}
               value={controller.txFilters.source}
@@ -1183,6 +1186,7 @@ function WalletTransactionPanel({
                 controller.onChangeTxFilters({ confirmStatus: value })
               }
               options={KOLAM_WALLET_CONFIRM_STATUS_OPTIONS}
+              showLabelInTrigger={false}
               style={styles.txDropdown}
               triggerStyle={styles.filterTrigger}
               value={controller.txFilters.confirmStatus}
