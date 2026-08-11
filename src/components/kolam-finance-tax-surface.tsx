@@ -71,18 +71,6 @@ export function KolamFinanceTaxSurface({
                 showLabelInTrigger={false}
                 value={controller.period}
               />
-              <View style={styles.toolbarTabs}>
-                <KolamSurfacePanelTabs
-                  onSelectTab={(tabId: KolamDaraTaxTabId) => {
-                    onRouteChange?.(buildKolamDaraTaxRoute(tabId));
-                  }}
-                  selectedTabId={selectedTab}
-                  tabs={KOLAM_DARA_TAX_TABS.map(tab => ({
-                    id: tab.id,
-                    label: tab.label,
-                  }))}
-                />
-              </View>
             </View>
           </View>
         </View>
@@ -99,6 +87,16 @@ export function KolamFinanceTaxSurface({
       <KolamDetailScrollSurface
         contentContainerStyle={styles.scrollContent}
         style={styles.scroll}>
+        <KolamSurfacePanelTabs
+          onSelectTab={(tabId: KolamDaraTaxTabId) => {
+            onRouteChange?.(buildKolamDaraTaxRoute(tabId));
+          }}
+          selectedTabId={selectedTab}
+          tabs={KOLAM_DARA_TAX_TABS.map(tab => ({
+            id: tab.id,
+            label: tab.label,
+          }))}
+        />
         {selectedTab === 'ringkasan' ? (
           <KolamDaraTaxRingkasanBody
             dashboard={controller.dashboard}
@@ -185,10 +183,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     lineHeight: 18,
-  },
-  toolbarTabs: {
-    flexShrink: 1,
-    minWidth: 0,
   },
   scroll: {
     flex: 1,
