@@ -12,9 +12,18 @@ import type {
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamActionControlButton} from './kolam-action-control-button';
 import {KolamDetailPanel} from './kolam-detail-panel';
-import {KolamFilterBar} from './kolam-filter-bar';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
+import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamListTableComposition} from './kolam-list-table-composition';
+import {KolamSearchField} from './kolam-search-field';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
+import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+
+const ACTIVITY_LOG_FILTER_PANEL_WIDTH = 240;
 
 export function KolamSettingsActivityLogSurface({
   columns,
@@ -48,6 +57,14 @@ export function KolamSettingsActivityLogSurface({
   selectedActivityLogId: string;
   statsCards: SettingsActivityLogStatsCard[];
 }) {
+  const toolbarRef = React.useRef<View | null>(null);
+  const filterTriggerRefs = React.useRef<
+    Partial<Record<keyof SettingsActivityLogFilterState, View | null>>
+  >({});
+  const [activeFilterPanel, setActiveFilterPanel] =
+    React.useState<keyof SettingsActivityLogFilterState | null>(null);
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
   const tableColumns = React.useMemo(
     () =>
       columns
@@ -66,18 +83,127 @@ export function KolamSettingsActivityLogSurface({
         })),
     [columns],
   );
+  const searchControl = filterControls.find(control => control.id === 'search');
+  const selectControls = filterControls.filter(
+    control => control.control === 'select',
+  );
+  const activeFilterControl = activeFilterPanel
+    ? selectControls.find(control => control.id === activeFilterPanel)
+    : null;
+  const anchorFilterPanel = React.useCallback(
+    (panel: keyof SettingsActivityLogFilterState) => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        filterTriggerRefs.current[panel],
+        ACTIVITY_LOG_FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
+    },
+    [],
+  );
+  const openFilterPanel = React.useCallback(
+    (panel: keyof SettingsActivityLogFilterState) => {
+      if (activeFilterPanel === panel) {
+        setActiveFilterPanel(null);
+        setPanelAnchor(null);
+        return;
+      }
+      anchorFilterPanel(panel);
+      setActiveFilterPanel(panel);
+    },
+    [activeFilterPanel, anchorFilterPanel],
+  );
+
+  React.useEffect(() => {
+    if (!activeFilterPanel) {
+      return;
+    }
+    requestAnimationFrame(() => anchorFilterPanel(activeFilterPanel));
+  }, [activeFilterPanel, anchorFilterPanel]);
 
   return (
     <>
-      <KolamFilterBar
-        controls={filterControls}
-        values={{...filterValues}}
-        onChange={(key, value) =>
-          onFilterChange(key as keyof SettingsActivityLogFilterState, value)
-        }
-        onRefresh={onRefresh}
-        accessibilityLabel="settings/activity-log/activity-log-list.tsx filters mapped to native controls"
-      />
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                accessibilityLabel="Cari activity log"
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                onChangeText={value => onFilterChange('search', value)}
+                placeholder={searchControl?.placeholder ?? 'Cari...'}
+                value={filterValues.search}
+              />
+              {selectControls.map(control => {
+                const selectedValue = filterValues[control.id] ?? '';
+                return (
+                  <View
+                    collapsable={false}
+                    key={control.id}
+                    ref={node => {
+                      filterTriggerRefs.current[control.id] = node;
+                    }}
+                  >
+                    <KolamTableFilterTrigger
+                      active={Boolean(selectedValue)}
+                      label={getActivityLogFilterLabel(control, selectedValue)}
+                      onPress={() => openFilterPanel(control.id)}
+                      open={activeFilterPanel === control.id}
+                      variant="quiet"
+                    />
+                  </View>
+                );
+              })}
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamActionControlButton label="Refresh" onPress={onRefresh} />
+            </View>
+          </View>
+        </View>
+        {activeFilterControl && panelAnchor ? (
+          <View
+            style={[
+              styles.filterOverlayPanel,
+              {
+                left: panelAnchor.left,
+                top: panelAnchor.top,
+                width: ACTIVITY_LOG_FILTER_PANEL_WIDTH,
+              },
+            ]}
+          >
+            {(activeFilterControl.options ?? []).map(option => {
+              const selected =
+                (filterValues[activeFilterControl.id] ?? '') === option.id;
+              return (
+                <KolamInteractionFrame
+                  accessibilityLabel={option.label}
+                  key={`${activeFilterControl.id}-${option.id || 'all'}`}
+                  onPress={() => {
+                    onFilterChange(activeFilterControl.id, option.id);
+                    setActiveFilterPanel(null);
+                    setPanelAnchor(null);
+                  }}
+                  selected={selected}
+                  style={[
+                    styles.filterMenuItem,
+                    selected ? styles.filterMenuItemSelected : null,
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.filterMenuItemLabel,
+                      selected ? styles.filterMenuItemLabelSelected : null,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </KolamInteractionFrame>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
       <KolamStatsCardStrip cards={statsCards} />
       <KolamListTableComposition
         actionsColumn
@@ -181,6 +307,17 @@ function getActivityLogStatusStyle(row: SettingsActivityLogRow) {
   return styles.statusMuted;
 }
 
+function getActivityLogFilterLabel(
+  control: SettingsActivityLogFilterControl,
+  value: string,
+) {
+  return (
+    control.options?.find(option => option.id === value)?.label ??
+    control.options?.[0]?.label ??
+    control.label
+  );
+}
+
 const emptyActivityLogFilterValues: SettingsActivityLogFilterState = {
   search: '',
   type: '',
@@ -195,6 +332,48 @@ function noopFilterChange() {}
 function noopRefresh() {}
 
 const styles = StyleSheet.create({
+  toolbarWrap: {
+    zIndex: 100000,
+  },
+  filterOverlayPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    elevation: 1200,
+    gap: 2,
+    padding: 6,
+    position: 'absolute',
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    zIndex: 120000,
+  },
+  filterMenuItem: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    minHeight: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  filterMenuItemSelected: {
+    backgroundColor: V.colors.primarySoft,
+  },
+  filterMenuItemLabel: {
+    color: V.colors.fg,
+    flex: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterMenuItemLabelSelected: {
+    color: V.colors.primary,
+    fontWeight: '800',
+  },
   tableShell: {
     alignSelf: 'stretch',
     width: '100%',

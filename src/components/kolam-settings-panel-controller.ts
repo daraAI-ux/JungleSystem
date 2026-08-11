@@ -1000,7 +1000,7 @@ const defaultSitemapConfig: KolamSitemapConfig = {
   },
 };
 
-const activityLogPageSize = 50;
+const activityLogPageSize = 10;
 
 const emptyActivityLogFilters: SettingsActivityLogFilterState = {
   search: '',
