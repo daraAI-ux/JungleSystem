@@ -21,6 +21,7 @@ import {
   type KolamUserKasbonItem,
   type KolamUserListItem,
   type KolamUserListPagination,
+  type KolamUserRatingItem,
   type KolamUserRatingListResult,
   type KolamUserRatingSummary,
   type KolamUserRoleOption,
@@ -85,12 +86,14 @@ const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
 const USER_KASBON_TABLE_PAGE_SIZE = 10;
 const USER_ATTENDANCE_TABLE_PAGE_SIZE = 10;
 const USER_BONUS_TABLE_PAGE_SIZE = 10;
+const USER_RATING_TABLE_PAGE_SIZE = 10;
 
 type UserPayrollHistoryTab =
   | 'deductions'
   | 'kasbons'
   | 'attendance'
-  | 'bonuses';
+  | 'bonuses'
+  | 'ratings';
 
 const EMPLOYEE_FILTER_OPTIONS: Array<{
   label: string;
@@ -791,6 +794,7 @@ function KolamUserDetailSurface({
   const [kasbonPage, setKasbonPage] = React.useState(1);
   const [attendancePage, setAttendancePage] = React.useState(1);
   const [bonusPage, setBonusPage] = React.useState(1);
+  const [ratingPage, setRatingPage] = React.useState(1);
   const [activePayrollTab, setActivePayrollTab] =
     React.useState<UserPayrollHistoryTab>('deductions');
   const [payrollLoading, setPayrollLoading] = React.useState(false);
@@ -862,8 +866,17 @@ function KolamUserDetailSurface({
       ...(canViewBonus
         ? [{id: 'bonuses' as const, label: 'Riwayat Bonus'}]
         : []),
+      ...(canViewRating
+        ? [{id: 'ratings' as const, label: 'Chat Rating'}]
+        : []),
     ],
-    [canViewAttendance, canViewBonus, canViewDeductions, canViewKasbon],
+    [
+      canViewAttendance,
+      canViewBonus,
+      canViewDeductions,
+      canViewKasbon,
+      canViewRating,
+    ],
   );
   const selectedPayrollTab = payrollTabs.some(tab => tab.id === activePayrollTab)
     ? activePayrollTab
@@ -1188,6 +1201,77 @@ function KolamUserDetailSurface({
     ],
     [],
   );
+  const ratingColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamUserRatingItem>>
+  >(
+    () => [
+      {
+        align: 'center',
+        flex: 0.75,
+        id: 'rating',
+        label: 'Rating',
+        render: item => (
+          <Text style={[styles.userMetaText, styles.userTableTextCenter]}>
+            {formatUserRatingStars(item.rating)}
+          </Text>
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1.1,
+        id: 'contact',
+        label: 'Pelanggan',
+        render: item => (
+          <Text style={styles.userMetaText}>{item.contactName || '-'}</Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.75,
+        id: 'platform',
+        label: 'Platform',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {item.platform || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1.55,
+        id: 'comment',
+        label: 'Komentar',
+        render: item => (
+          <Text numberOfLines={2} style={styles.detailValue}>
+            {item.comment || 'Tanpa komentar'}
+          </Text>
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1.3,
+        id: 'preview',
+        label: 'Pesan',
+        render: item => (
+          <Text numberOfLines={2} style={styles.detailSubtitle}>
+            {item.lastMessagePreview || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'created',
+        label: 'Dibuat',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.createdAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
   const visibleDeductions = React.useMemo(() => {
     const pageStart = (deductionPage - 1) * USER_DEDUCTION_TABLE_PAGE_SIZE;
 
@@ -1266,6 +1350,17 @@ function KolamUserDetailSurface({
       setBonusPage(maxPage);
     }
   }, [bonusPage, payrollSummary.bonuses.length]);
+
+  React.useEffect(() => {
+    const maxPage = Math.max(
+      1,
+      Math.ceil(ratingList.total / USER_RATING_TABLE_PAGE_SIZE),
+    );
+
+    if (ratingPage > maxPage) {
+      setRatingPage(maxPage);
+    }
+  }, [ratingList.total, ratingPage]);
 
   React.useEffect(() => {
     let active = true;
@@ -1394,7 +1489,10 @@ function KolamUserDetailSurface({
 
     void Promise.all([
       getKolamUserRatingSummary(user.id),
-      getKolamUserRatingList(user.id, {limit: 10, page: 1}),
+      getKolamUserRatingList(user.id, {
+        limit: USER_RATING_TABLE_PAGE_SIZE,
+        page: ratingPage,
+      }),
     ])
       .then(([summary, list]) => {
         if (active) {
@@ -1418,7 +1516,7 @@ function KolamUserDetailSurface({
     return () => {
       active = false;
     };
-  }, [canViewRating, user?.id]);
+  }, [canViewRating, ratingPage, user?.id]);
 
   React.useEffect(() => {
     let active = true;
@@ -2001,6 +2099,52 @@ function KolamUserDetailSurface({
                 rows={payrollLoading ? [] : visibleBonuses}
               />
             ) : null}
+            {selectedPayrollTab === 'ratings' ? (
+              <>
+                <View style={styles.attendanceSummaryGrid}>
+                  <View style={styles.attendanceSummaryItem}>
+                    <Text style={styles.attendanceSummaryLabel}>
+                      Rating rata-rata:
+                    </Text>
+                    <Text style={styles.attendanceSummaryValue}>
+                      {ratingSummary.totalRatings > 0
+                        ? `${ratingSummary.averageRating.toFixed(
+                            1,
+                          )} ${formatUserRatingStars(
+                            ratingSummary.averageRating,
+                          )}`
+                        : '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.attendanceSummaryItem}>
+                    <Text style={styles.attendanceSummaryLabel}>Total:</Text>
+                    <Text style={styles.attendanceSummaryValue}>
+                      {ratingSummary.totalRatings} rating
+                    </Text>
+                  </View>
+                </View>
+                <KolamListTableComposition
+                  columns={ratingColumns}
+                  emptyTitle={
+                    ratingLoading
+                      ? 'Memuat rating chat...'
+                      : 'Belum ada rating.'
+                  }
+                  getRowKey={item => item.id || item.createdAt}
+                  loading={ratingLoading}
+                  pagination={{
+                    onPageChange: setRatingPage,
+                    page: ratingPage,
+                    pageSize: USER_RATING_TABLE_PAGE_SIZE,
+                    total: ratingList.total,
+                  }}
+                  rows={ratingLoading ? [] : ratingList.items}
+                />
+                {ratingError ? (
+                  <Text style={styles.formErrorText}>{ratingError}</Text>
+                ) : null}
+              </>
+            ) : null}
           </View>
         ) : null}
         {user.isEmployee &&
@@ -2009,95 +2153,6 @@ function KolamUserDetailSurface({
           <Text style={styles.formErrorText}>{payrollError}</Text>
         ) : null}
 
-        {user.isEmployee && canViewRating ? (
-          <View style={styles.detailGrid}>
-            {canViewRating ? (
-              <View style={styles.detailPanel}>
-                <Text style={styles.detailPanelTitle}>Chat Rating</Text>
-                {ratingLoading ? (
-                  <Text style={styles.detailSubtitle}>Memuat rating chat...</Text>
-                ) : ratingSummary.totalRatings > 0 ? (
-                  <>
-                    <View style={styles.ratingSummaryRow}>
-                      <Text style={styles.ratingScore}>
-                        {ratingSummary.averageRating.toFixed(1)}
-                      </Text>
-                      <View style={styles.ratingSummaryCopy}>
-                        <Text style={styles.ratingStars}>
-                          {formatUserRatingStars(ratingSummary.averageRating)}
-                        </Text>
-                        <Text style={styles.detailSubtitle}>
-                          {ratingSummary.totalRatings} rating
-                        </Text>
-                      </View>
-                    </View>
-                    {ratingSummary.counts
-                      .slice()
-                      .sort((a, b) => b.rating - a.rating)
-                      .map(item => (
-                        <View key={item.rating} style={styles.ratingCountRow}>
-                          <Text style={styles.ratingCountLabel}>
-                            {item.rating} bintang
-                          </Text>
-                          <View style={styles.ratingBarTrack}>
-                            <View
-                              style={[
-                                styles.ratingBarFill,
-                                {
-                                  width: `${Math.min(
-                                    100,
-                                    ratingSummary.totalRatings
-                                      ? (item.count /
-                                          ratingSummary.totalRatings) *
-                                          100
-                                      : 0,
-                                  )}%`,
-                                },
-                              ]}
-                            />
-                          </View>
-                          <Text style={styles.ratingCountValue}>
-                            {item.count}
-                          </Text>
-                        </View>
-                      ))}
-                  </>
-                ) : (
-                  <Text style={styles.detailSubtitle}>Belum ada rating.</Text>
-                )}
-                {ratingError ? (
-                  <Text style={styles.formErrorText}>{ratingError}</Text>
-                ) : null}
-              </View>
-            ) : null}
-
-            {canViewRating && ratingList.items.length ? (
-              <View style={styles.detailPanel}>
-                <Text style={styles.detailPanelTitle}>Rating Terbaru</Text>
-                {ratingList.items.map(item => (
-                  <View key={item.id || item.createdAt} style={styles.payrollEntry}>
-                    <View style={styles.payrollEntryHeader}>
-                      <Text style={styles.payrollEntryTitle}>
-                        {formatUserRatingStars(item.rating)}
-                      </Text>
-                      <Text style={styles.payrollEntryDate}>
-                        {formatUserDateTime(item.createdAt)}
-                      </Text>
-                    </View>
-                    <Text numberOfLines={3} style={styles.detailValue}>
-                      {item.comment || 'Tanpa komentar'}
-                    </Text>
-                    <Text numberOfLines={2} style={styles.detailSubtitle}>
-                      {[item.contactName, item.platform, item.lastMessagePreview]
-                        .filter(Boolean)
-                        .join(' - ') || '-'}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ) : null}
       </KolamContentFrame>
     </View>
   );
