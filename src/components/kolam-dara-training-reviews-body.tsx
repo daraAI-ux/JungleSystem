@@ -254,7 +254,10 @@ export function KolamDaraTrainingReviewsBody({
               </View>
             ) : null}
             <KolamNotesField
+              containerStyle={styles.modalNotes}
+              inputStyle={styles.modalNotesInput}
               label="Catatan kendala / perbaikan DARA"
+              numberOfLines={5}
               onChangeText={setNotes}
               value={notes}
             />
@@ -366,18 +369,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   modalCard: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
     borderRadius: 10,
     borderWidth: 1,
-    gap: 10,
-    maxHeight: '90%',
-    maxWidth: 520,
-    padding: 14,
-    width: '100%',
+    gap: 12,
+    maxHeight: '86%',
+    maxWidth: 640,
+    minWidth: 420,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    width: '92%',
     zIndex: 2,
   },
   modalTitle: {
@@ -393,6 +399,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 10,
   },
+  modalNotes: {
+    flexShrink: 1,
+  },
+  modalNotesInput: {
+    minHeight: 92,
+  },
   fieldLabel: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -400,9 +412,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   modalFooter: {
+    alignItems: 'center',
+    borderTopColor: V.colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
+    minHeight: 42,
+    paddingTop: 12,
   },
 });
