@@ -1434,19 +1434,6 @@ function KolamCustomerFormSurface({
         </View>
       </View>
 
-      <View style={styles.detailHeader}>
-        <View style={styles.detailHeading}>
-          <Text style={styles.detailTitle}>
-            {isEdit ? 'Rubah pelanggan' : 'Pelanggan baru'}
-          </Text>
-          <Text style={styles.detailSubtitle}>
-            {isEdit
-              ? 'Perbarui informasi kontak dan data pribadi pelanggan.'
-              : 'Isi informasi pribadi dan kontak pelanggan.'}
-          </Text>
-        </View>
-      </View>
-
       {error ? (
         <KolamStatusBadge
           intent="danger"
