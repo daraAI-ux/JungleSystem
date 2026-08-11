@@ -106,8 +106,8 @@ export function KolamDaraTrainingSurface({
                   accessibilityLabel={tab.label}
                   icon={
                     <SvgXml
-                      height="100%"
-                      width="100%"
+                      height={14}
+                      width={14}
                       xml={getToolbarIconXml(
                         KOLAM_DARA_TRAINING_TAB_ICONS[tab.id],
                       )}
@@ -207,15 +207,20 @@ const styles = StyleSheet.create({
     zIndex: 100000,
   },
   toolbarTabButton: {
+    alignItems: 'center',
     backgroundColor: KOLAM_ACTION_BUTTON_BG,
     borderColor: KOLAM_ACTION_BUTTON_BG,
+    height: 32,
+    minHeight: 32,
     opacity: 0.9,
+    paddingVertical: 0,
   },
   toolbarTabButtonActive: {
     opacity: 1,
   },
   toolbarTabButtonText: {
     color: V.colors.primaryFg,
+    lineHeight: 16,
   },
   scroll: {
     flex: 1,
