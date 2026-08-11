@@ -4045,7 +4045,12 @@ export function KolamSettingsWebConfigSurface({
       ) : null}
       {showSyncSettings ? (
         <>
-          <View style={styles.marketplaceOverview}>
+          <View
+            style={[
+              styles.marketplaceOverview,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -4097,7 +4102,12 @@ export function KolamSettingsWebConfigSurface({
               ))}
             </View>
           </View>
-          <View style={styles.regionExplorerCard}>
+          <View
+            style={[
+              styles.regionExplorerCard,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
@@ -4213,16 +4223,23 @@ export function KolamSettingsWebConfigSurface({
             </View>
           </View>
           {regionSyncMessage ? (
-            <KolamCopyStack
-              items={[
-                {
-                  id: 'region-sync-message',
-                  text: regionSyncMessage,
-                },
-              ]}
-            />
+            <View style={styles.settingsTabCardSpacing}>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'region-sync-message',
+                    text: regionSyncMessage,
+                  },
+                ]}
+              />
+            </View>
           ) : null}
-          <View style={styles.marketplaceOverview}>
+          <View
+            style={[
+              styles.marketplaceOverview,
+              styles.settingsTabCardSpacing,
+            ]}
+          >
             <KolamCopyStack
               items={[
                 {
