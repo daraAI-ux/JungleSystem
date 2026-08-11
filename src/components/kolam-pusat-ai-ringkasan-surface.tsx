@@ -332,6 +332,7 @@ function KolamPusatAiOwnerCopilotBody({
           </View>
           <View style={styles.ownerProfileColumn}>
             <OwnerCopilotDaraAvatarCard controller={controller} />
+            {dash ? <OwnerCopilotDaraPromptCard dash={dash} /> : null}
           </View>
         </View>
       </View>
@@ -381,6 +382,25 @@ function OwnerCopilotDaraAvatarCard({
           void controller.onPickDaraAvatar();
         }}
       />
+    </View>
+  );
+}
+
+function OwnerCopilotDaraPromptCard({
+  dash,
+}: {
+  dash: KolamOwnerCopilotDashboard;
+}) {
+  return (
+    <View style={styles.ownerCard}>
+      <Text style={styles.ownerCardTitle}>Tanya di room DARA</Text>
+      <View style={styles.promptList}>
+        {dash.teamChat.suggestedPrompts.map(prompt => (
+          <Text key={prompt} style={styles.promptChip}>
+            {String.fromCharCode(171) + prompt + String.fromCharCode(187)}
+          </Text>
+        ))}
+      </View>
     </View>
   );
 }
@@ -451,21 +471,6 @@ function OwnerCopilotDashboardContent({
             id: 'dana',
             label: 'DANA',
             value: [counts.dana_ok, 'ok', counts.dana_fail, 'gagal'].join(' '),
-          },
-        ]}
-        sections={[
-          {
-            id: 'team-chat-prompts',
-            title: 'Tanya di room DARA',
-            content: (
-              <View style={styles.promptList}>
-                {dash.teamChat.suggestedPrompts.map(prompt => (
-                  <Text key={prompt} style={styles.promptChip}>
-                    {String.fromCharCode(171) + prompt + String.fromCharCode(187)}
-                  </Text>
-                ))}
-              </View>
-            ),
           },
         ]}
         title=""
@@ -1124,6 +1129,7 @@ const styles = StyleSheet.create({
   ownerProfileColumn: {
     flexBasis: '23%',
     flexGrow: 1,
+    gap: 12,
     minWidth: 240,
   },
   ownerCards: {
