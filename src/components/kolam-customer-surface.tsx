@@ -32,6 +32,7 @@ import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamDeleteConfirmDialog} from './kolam-delete-confirm-dialog';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
@@ -519,119 +520,101 @@ function KolamCustomerDetailSurface({
 
       <View style={styles.detailGrid}>
         <View style={styles.detailMainColumn}>
-          <KolamContentFrame
-            style={styles.detailCard}
-            variant="settingsWebConfig">
-            <View style={styles.photoSectionHeader}>
-              <SectionTitle
-                description="Foto pelanggan"
-                title="Foto"
-              />
-              <KolamButton
-                disabled={photoSaving}
-                label={photoSaving ? 'Memproses...' : 'Unggah Foto'}
-                onPress={() => void handleUploadPhoto()}
-              />
-            </View>
-            {mediaItems.length ? (
-              <>
-                <KolamDetailMediaPreview
-                  items={mediaItems}
-                  title={customer.name}
-                />
-                <View style={styles.photoActionList}>
-                  {customer.photos.map((photo, index) => (
-                    <View key={`${photo}-${index}`} style={styles.photoActionRow}>
-                      <Text numberOfLines={1} style={styles.customerSubText}>
-                        Foto {index + 1}
-                      </Text>
-                      <KolamDeleteButton
-                        disabled={photoSaving}
-                        intent="danger"
-                        label="Hapus"
-                        onPress={() => void handleDeletePhoto(index)}
-                        style={styles.photoDeleteButton}
-                      />
-                    </View>
-                  ))}
-                </View>
-              </>
-            ) : (
-              <View style={styles.detailEmptyBox}>
-                <Text style={styles.customerSubText}>
-                  Foto pelanggan belum tersedia.
+          <KolamDetailSummaryCard
+            body={
+              customer.notes ? (
+                <Text style={styles.customerSummaryNotes}>
+                  {customer.notes}
                 </Text>
-              </View>
-            )}
-          </KolamContentFrame>
-
-          <KolamContentFrame
-            style={styles.detailCard}
-            variant="settingsWebConfig">
-            <SectionTitle
-              description="Ringkasan saldo poin member"
-              title="Poin Member"
-            />
-            <View style={styles.pointsGrid}>
-              <CustomerPointMetric
-                label="Poin Tersedia"
-                value={customer.points.availablePoints}
-              />
-              <CustomerPointMetric
-                label="Total Poin"
-                value={customer.points.totalPoints}
-              />
-              <CustomerPointMetric
-                label="Poin Lifetime"
-                value={customer.points.lifetimePoints}
-              />
-            </View>
-          </KolamContentFrame>
-        </View>
-
-        <View style={styles.detailSideColumn}>
-          <KolamContentFrame
-            style={styles.detailCard}
-            variant="settingsWebConfig">
-            <SectionTitle
-              description="Data profil utama pelanggan"
-              title="Informasi Pelanggan"
-            />
-            <View style={styles.detailRows}>
-              <CustomerDetailRow
-                label="Jenis Kelamin"
-                value={formatCustomerGenderLabel(customer.gender)}
-              />
-              <CustomerDetailRow
-                label="Alamat"
-                value={primaryAddress || customer.address || '-'}
-              />
-              <CustomerDetailRow label="Telepon" value={customer.phone || '-'} />
-              <CustomerDetailRow label="Email" value={customer.email || '-'} />
-              <CustomerDetailRow
-                label="Username"
-                value={customer.username ? `@${customer.username}` : '-'}
-              />
-              <CustomerDetailRow
-                label="Status"
-                value={
+              ) : undefined
+            }
+            bodyTitle={customer.notes ? 'Catatan' : undefined}
+            description="Data profil utama pelanggan"
+            fieldColumns={3}
+            fields={[
+              {
+                id: 'status',
+                label: 'Status',
+                value: (
                   <KolamStatusBadge
                     intent={getCustomerStatusIntent(customer.status)}
                     label={getCustomerStatusLabel(customer.status)}
                   />
-                }
+                ),
+              },
+              {
+                id: 'gender',
+                label: 'Jenis Kelamin',
+                value: formatCustomerGenderLabel(customer.gender),
+              },
+              {
+                id: 'phone',
+                label: 'Telepon',
+                value: customer.phone || '-',
+              },
+              {
+                id: 'email',
+                label: 'Email',
+                value: customer.email || '-',
+              },
+              {
+                id: 'username',
+                label: 'Username',
+                value: customer.username ? `@${customer.username}` : '-',
+              },
+              {
+                id: 'address',
+                label: 'Alamat',
+                value: primaryAddress || customer.address || '-',
+              },
+              {
+                id: 'created',
+                label: 'Dibuat Pada',
+                value: formatCustomerDateTime(customer.createdAt),
+              },
+              {
+                id: 'updated',
+                label: 'Diperbarui Pada',
+                value: formatCustomerDateTime(customer.updatedAt),
+              },
+            ]}
+            leading={
+              <CustomerPictureSummaryBox
+                customer={customer}
+                mediaItems={mediaItems}
+                onDeletePhoto={handleDeletePhoto}
+                onUploadPhoto={handleUploadPhoto}
+                photoSaving={photoSaving}
               />
-              <CustomerDetailRow
-                label="Dibuat Pada"
-                value={formatCustomerDateTime(customer.createdAt)}
-              />
-              <CustomerDetailRow
-                label="Diperbarui Pada"
-                value={formatCustomerDateTime(customer.updatedAt)}
-              />
-            </View>
-          </KolamContentFrame>
+            }
+            leadingStyle={styles.customerSummaryPictureLeading}
+            sections={[
+              {
+                id: 'points',
+                title: 'Poin Member',
+                content: (
+                  <View style={styles.pointsGrid}>
+                    <CustomerPointMetric
+                      label="Poin Tersedia"
+                      value={customer.points.availablePoints}
+                    />
+                    <CustomerPointMetric
+                      label="Total Poin"
+                      value={customer.points.totalPoints}
+                    />
+                    <CustomerPointMetric
+                      label="Poin Lifetime"
+                      value={customer.points.lifetimePoints}
+                    />
+                  </View>
+                ),
+              },
+            ]}
+            title="Ringkasan pelanggan"
+          />
+        </View>
 
+        <View style={styles.detailSideColumn}>
           {customer.addresses.length ? (
             <KolamContentFrame
               style={styles.detailCard}
@@ -1087,30 +1070,65 @@ function SectionTitle({
   );
 }
 
-function CustomerDetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailRowLabel}>{label}</Text>
-      {typeof value === 'string' || typeof value === 'number' ? (
-        <Text style={styles.detailRowValue}>{value}</Text>
-      ) : (
-        <View style={styles.detailRowValueBox}>{value}</View>
-      )}
-    </View>
-  );
-}
-
 function CustomerPointMetric({label, value}: {label: string; value: number}) {
   return (
     <View style={styles.pointMetric}>
       <Text style={styles.pointMetricValue}>{formatCustomerNumber(value)}</Text>
       <Text style={styles.pointMetricLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function CustomerPictureSummaryBox({
+  customer,
+  mediaItems,
+  onDeletePhoto,
+  onUploadPhoto,
+  photoSaving,
+}: {
+  customer: KolamCustomer;
+  mediaItems: KolamDetailMediaItem[];
+  onDeletePhoto: (index: number) => Promise<void>;
+  onUploadPhoto: () => Promise<void>;
+  photoSaving: boolean;
+}) {
+  return (
+    <View style={styles.customerSummaryPictureBox}>
+      <View style={styles.photoSectionHeader}>
+        <SectionTitle description="Foto pelanggan" title="Foto" />
+        <KolamButton
+          disabled={photoSaving}
+          label={photoSaving ? 'Memproses...' : 'Unggah Foto'}
+          onPress={() => void onUploadPhoto()}
+        />
+      </View>
+      {mediaItems.length ? (
+        <>
+          <KolamDetailMediaPreview items={mediaItems} title={customer.name} />
+          <View style={styles.photoActionList}>
+            {customer.photos.map((photo, index) => (
+              <View key={`${photo}-${index}`} style={styles.photoActionRow}>
+                <Text numberOfLines={1} style={styles.customerSubText}>
+                  Foto {index + 1}
+                </Text>
+                <KolamDeleteButton
+                  disabled={photoSaving}
+                  intent="danger"
+                  label="Hapus"
+                  onPress={() => void onDeletePhoto(index)}
+                  style={styles.photoDeleteButton}
+                />
+              </View>
+            ))}
+          </View>
+        </>
+      ) : (
+        <View style={styles.detailEmptyBox}>
+          <Text style={styles.customerSubText}>
+            Foto pelanggan belum tersedia.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -1549,6 +1567,25 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
   },
+  customerSummaryPictureLeading: {
+    maxWidth: 320,
+    minWidth: 260,
+    width: 300,
+  },
+  customerSummaryPictureBox: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 10,
+    width: '100%',
+  },
+  customerSummaryNotes: {
+    color: V.colors.fg,
+    fontSize: 13,
+    lineHeight: 20,
+  },
   sectionTitleBlock: {
     gap: 3,
   },
@@ -1624,30 +1661,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 18,
-  },
-  detailRows: {
-    gap: 0,
-  },
-  detailRow: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    gap: 6,
-    paddingVertical: 10,
-  },
-  detailRowLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '800',
-    lineHeight: 18,
-  },
-  detailRowValue: {
-    color: V.colors.fg,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
-  detailRowValueBox: {
-    alignItems: 'flex-start',
   },
   addressStack: {
     gap: 8,
