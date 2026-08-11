@@ -2,8 +2,8 @@
  * Inventory Copilot chrome — layout/spacing from DA-Dara-Plugin
  * `shipping-delivery.css` (shared with shipping); colors follow Kolam light theme.
  */
-import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
 export const inventoryCopilotStyles = StyleSheet.create({
   scroll: {
@@ -164,6 +164,7 @@ export const inventoryCopilotStyles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+    marginLeft: 'auto',
   },
   notifyLabel: {
     color: V.colors.fg,

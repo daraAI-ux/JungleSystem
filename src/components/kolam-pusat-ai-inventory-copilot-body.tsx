@@ -16,14 +16,13 @@ import {
   type KolamInventoryListLine,
   type KolamInventoryOpsLogEvent,
 } from '../domain/kolam-pusat-ai-inventory-copilot';
-import {getKolamFileUrl} from '../lib/file-url';
-import type {KolamPusatAiInventoryCopilotController} from '../hooks/use-kolam-pusat-ai-inventory-copilot-controller';
-import {KolamButton} from './kolam-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamEmptyState} from './kolam-empty-state';
-import {KolamSwitch} from './kolam-switch';
-import {inventoryCopilotStyles as styles} from './kolam-pusat-ai-inventory-copilot-styles';
+import { getKolamFileUrl } from '../lib/file-url';
+import type { KolamPusatAiInventoryCopilotController } from '../hooks/use-kolam-pusat-ai-inventory-copilot-controller';
+import { KolamButton } from './kolam-button';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamSwitch } from './kolam-switch';
+import { inventoryCopilotStyles as styles } from './kolam-pusat-ai-inventory-copilot-styles';
 
 export function KolamPusatAiInventoryCopilotBody({
   controller,
@@ -32,7 +31,7 @@ export function KolamPusatAiInventoryCopilotBody({
   controller: KolamPusatAiInventoryCopilotController;
   onRouteChange?: (route: string) => void;
 }) {
-  const {dashboard, opsLog, loading, error, notice} = controller;
+  const { dashboard, opsLog, loading, error, notice } = controller;
   const counts = dashboard?.counts;
   const notifyRoomRoute =
     dashboard?.teamChat.webHref || controller.health?.notifyRoom?.webHref;
@@ -40,7 +39,8 @@ export function KolamPusatAiInventoryCopilotBody({
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
-      style={styles.scroll}>
+      style={styles.scroll}
+    >
       <View style={styles.shell}>
         <View style={styles.shellHeader}>
           <View style={styles.heading}>
@@ -58,15 +58,6 @@ export function KolamPusatAiInventoryCopilotBody({
                 onPress={() => onRouteChange?.(notifyRoomRoute)}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={loading}
-              intent="outline"
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
           </View>
         </View>
 
@@ -93,10 +84,10 @@ export function KolamPusatAiInventoryCopilotBody({
           {dashboard && counts ? (
             <>
               <Text style={styles.meta}>
-                {`Diperbarui ${formatKolamInventoryCopilotWib(dashboard.generatedAt)}${
-                  dashboard.priorityHint
-                    ? ` · ${dashboard.priorityHint}`
-                    : ''
+                {`Diperbarui ${formatKolamInventoryCopilotWib(
+                  dashboard.generatedAt,
+                )}${
+                  dashboard.priorityHint ? ` · ${dashboard.priorityHint}` : ''
                 }`}
               </Text>
 
@@ -133,10 +124,7 @@ export function KolamPusatAiInventoryCopilotBody({
               </View>
 
               <View style={styles.listGrid}>
-                <ListCard
-                  lines={dashboard.lowStockLines}
-                  title="Low stock"
-                />
+                <ListCard lines={dashboard.lowStockLines} title="Low stock" />
                 <ListCard
                   lines={dashboard.varianceLines}
                   title="Variance opname (satu daftar)"
@@ -174,7 +162,8 @@ export function KolamPusatAiInventoryCopilotBody({
                     <Pressable
                       accessibilityRole="link"
                       key={link.id}
-                      onPress={() => onRouteChange?.(link.href)}>
+                      onPress={() => onRouteChange?.(link.href)}
+                    >
                       <Text style={styles.link}>{link.label}</Text>
                     </Pressable>
                   ))}
@@ -183,7 +172,9 @@ export function KolamPusatAiInventoryCopilotBody({
 
               {dashboard.teamChat.suggestedPrompts.length ? (
                 <View style={styles.promptsBox}>
-                  <Text style={styles.promptsTitle}>Saran prompt room DARA</Text>
+                  <Text style={styles.promptsTitle}>
+                    Saran prompt room DARA
+                  </Text>
                   {dashboard.teamChat.suggestedPrompts.map(prompt => (
                     <Text key={prompt} style={styles.promptItem}>
                       {`• ${prompt}`}
@@ -218,7 +209,9 @@ export function KolamPusatAiInventoryCopilotBody({
   );
 }
 
-function NotifyRoomSection({controller}: {
+function NotifyRoomSection({
+  controller,
+}: {
   controller: KolamPusatAiInventoryCopilotController;
 }) {
   const roomOptions = controller.rooms.map(room => ({
@@ -234,6 +227,27 @@ function NotifyRoomSection({controller}: {
         Pangeran Isopod.
       </Text>
       <View style={styles.notifyRow}>
+        <View style={styles.roomSelect}>
+          <KolamDropdownSelect
+            accessibilityLabel="Team Chat room"
+            label="Team Chat room"
+            onChange={value => {
+              void controller.onSetNotifyRoom(value);
+            }}
+            options={
+              roomOptions.length
+                ? roomOptions
+                : [{ label: 'Tidak ada room', value: '' }]
+            }
+            showLabelInTrigger
+            value={
+              controller.selectedRoomId ||
+              controller.dashboard?.teamChat.aiRoomId ||
+              roomOptions[0]?.value ||
+              ''
+            }
+          />
+        </View>
         <View style={styles.notifyToggle}>
           <KolamSwitch
             active={controller.notifyEnabled}
@@ -245,29 +259,6 @@ function NotifyRoomSection({controller}: {
           <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
         </View>
       </View>
-      <View style={styles.roomRow}>
-        <View style={styles.roomSelect}>
-          <KolamDropdownSelect
-            accessibilityLabel="Team Chat room"
-            label="Team Chat room"
-            onChange={value => {
-              void controller.onSetNotifyRoom(value);
-            }}
-            options={
-              roomOptions.length
-                ? roomOptions
-                : [{label: 'Tidak ada room', value: ''}]
-            }
-            showLabelInTrigger
-            value={
-              controller.selectedRoomId ||
-              controller.dashboard?.teamChat.aiRoomId ||
-              roomOptions[0]?.value ||
-              ''
-            }
-          />
-        </View>
-      </View>
     </View>
   );
 }
@@ -277,7 +268,7 @@ function BotHealthSection({
 }: {
   controller: KolamPusatAiInventoryCopilotController;
 }) {
-  const {health, healthLoading} = controller;
+  const { health, healthLoading } = controller;
   return (
     <View style={[styles.sectionCard, styles.botStrip]}>
       <View style={styles.botStripHead}>
@@ -288,7 +279,9 @@ function BotHealthSection({
           <Text style={styles.sectionDesc}>
             {`Bot deterministik untuk log stock sync dan cek status stok.${
               health?.checkedAt
-                ? ` Diperiksa ${formatKolamInventoryCopilotWib(health.checkedAt)}.`
+                ? ` Diperiksa ${formatKolamInventoryCopilotWib(
+                    health.checkedAt,
+                  )}.`
                 : ''
             }`}
           </Text>
@@ -320,9 +313,7 @@ function BotHealthSection({
           ))}
         </View>
       )}
-      {health?.note ? (
-        <Text style={styles.noteTiny}>{health.note}</Text>
-      ) : null}
+      {health?.note ? <Text style={styles.noteTiny}>{health.note}</Text> : null}
     </View>
   );
 }
@@ -347,7 +338,7 @@ function BotProfileSection({
         </View>
         <View style={styles.botStripActions}>
           {photoUri ? (
-            <Image source={{uri: photoUri}} style={styles.botAvatar} />
+            <Image source={{ uri: photoUri }} style={styles.botAvatar} />
           ) : (
             <View style={styles.botAvatarPh}>
               <Text style={styles.botAvatarPhText}>BOT</Text>
@@ -359,7 +350,8 @@ function BotProfileSection({
             onPress={() => {
               void controller.onPickBotPhoto();
             }}
-            style={styles.botUpload}>
+            style={styles.botUpload}
+          >
             <Text style={styles.botUploadText}>
               {controller.photoUploading ? 'Mengunggah…' : 'Unggah foto bot'}
             </Text>
@@ -422,7 +414,9 @@ function ListCard({
         </Text>
       ))}
       {showEmpty ? (
-        <Text style={styles.listLine}>{KOLAM_INVENTORY_COPILOT_LIST_EMPTY}</Text>
+        <Text style={styles.listLine}>
+          {KOLAM_INVENTORY_COPILOT_LIST_EMPTY}
+        </Text>
       ) : null}
     </View>
   );
@@ -444,7 +438,9 @@ function OpsLogCard({
         {loading ? (
           <Text style={styles.loadingText}>Memuat…</Text>
         ) : events.length === 0 ? (
-          <Text style={styles.opsEmpty}>{KOLAM_INVENTORY_COPILOT_OPS_EMPTY}</Text>
+          <Text style={styles.opsEmpty}>
+            {KOLAM_INVENTORY_COPILOT_OPS_EMPTY}
+          </Text>
         ) : (
           events.map(event => (
             <View key={event.id} style={styles.opsItem}>
