@@ -997,7 +997,7 @@ export function KolamDaraTrainingVisionBody({
                   ),
                 },
                 {
-                  align: 'left',
+                  align: 'center',
                   flex: 0.62,
                   id: 'catalog',
                   label: 'Katalog',
@@ -1006,7 +1006,7 @@ export function KolamDaraTrainingVisionBody({
                   ),
                 },
                 {
-                  align: 'left',
+                  align: 'center',
                   flex: 0.62,
                   id: 'training',
                   label: 'Training',
