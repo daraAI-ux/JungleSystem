@@ -3943,6 +3943,21 @@ function KolamChatRailDetailPanel({
                 </Text>
               ) : null}
             </View>
+            {mode === 'team-chat' &&
+            detail.callConfig.enabled &&
+            !detail.activeCall ? (
+              <KolamPressable
+                accessibilityLabel="Start team chat call"
+                disabled={detail.callBusy}
+                onPress={detail.startCall}
+                style={[
+                  styles.detailRoomCallButton,
+                  detail.callBusy && styles.composerIconButtonDisabled,
+                ]}
+              >
+                <SvgXml height="100%" width="100%" xml={KOLAM_CALL_ICON_SVG} />
+              </KolamPressable>
+            ) : null}
             {canDeleteSelectedTeamRoom ? (
               <KolamPressable
                 accessibilityLabel={`Hapus room ${selectedItem.title}`}
@@ -6015,20 +6030,7 @@ function KolamChatCallStrip({
                 <Text style={styles.callButtonText}>End</Text>
               </KolamPressable>
             </>
-          ) : (
-            <KolamPressable
-              accessibilityLabel="Start team chat call"
-              disabled={detail.callBusy}
-              onPress={detail.startCall}
-              style={[
-                styles.callButton,
-                styles.callIconButton,
-                detail.callBusy && styles.callButtonDisabled,
-              ]}
-            >
-              <SvgXml height="100%" width="100%" xml={KOLAM_CALL_ICON_SVG} />
-            </KolamPressable>
-          )}
+          ) : null}
         </View>
       </View>
       {activeCall ? (
@@ -9400,13 +9402,23 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   detailDeleteRoomButton: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 14,
     backgroundColor: 'transparent',
+  },
+  detailRoomCallButton: {
+    width: 28,
+    height: 28,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: V.colors.primary,
+    padding: 7,
   },
   teamRoomTrashIcon: {
     width: 18,
