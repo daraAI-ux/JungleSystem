@@ -1619,7 +1619,9 @@ function KolamUserDetailSurface({
         />
       </UserDetailActionToolbar>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <KolamContentFrame
+        style={[styles.detailCard, styles.detailCardFlush]}
+        variant="settingsWebConfig">
         <KolamDetailSummaryCard
           description="Data profil utama pengguna"
           fieldColumns={3}
@@ -4243,6 +4245,9 @@ const styles = StyleSheet.create({
   detailCard: {
     gap: 18,
     padding: 18,
+  },
+  detailCardFlush: {
+    padding: 0,
   },
   detailTitleBlock: {
     gap: 4,
