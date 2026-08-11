@@ -6,6 +6,7 @@ export type KolamButtonIntent =
   | 'outline'
   | 'plain';
 
+export type KolamButtonDensity = 'compact' | 'regular';
 export type KolamButtonSize = 'sm' | 'md';
 export type KolamButtonTone = 'default' | 'positive';
 
@@ -102,15 +103,15 @@ const kolamButtonVisual: KolamButtonVisualContract = {
 export function getKolamButtonVisualContract(): KolamButtonVisualContract {
   return {
     ...kolamButtonVisual,
-    base: {...kolamButtonVisual.base},
+    base: { ...kolamButtonVisual.base },
     sizes: {
-      sm: {...kolamButtonVisual.sizes.sm},
-      md: {...kolamButtonVisual.sizes.md},
+      sm: { ...kolamButtonVisual.sizes.sm },
+      md: { ...kolamButtonVisual.sizes.md },
     },
     intents: [...kolamButtonVisual.intents],
     tones: {
-      default: {...kolamButtonVisual.tones.default},
-      positive: {...kolamButtonVisual.tones.positive},
+      default: { ...kolamButtonVisual.tones.default },
+      positive: { ...kolamButtonVisual.tones.positive },
     },
     appliedSurfaces: [...kolamButtonVisual.appliedSurfaces],
   };

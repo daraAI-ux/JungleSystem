@@ -6,17 +6,18 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import {SvgXml} from 'react-native-svg';
-import {KOLAM_NEW_BUTTON_ICON_SVG} from '../assets/icons/new-button-icon-svg';
+import { SvgXml } from 'react-native-svg';
+import { KOLAM_NEW_BUTTON_ICON_SVG } from '../assets/icons/new-button-icon-svg';
 import {
   getKolamButtonVisualContract,
+  type KolamButtonDensity,
   type KolamButtonIntent,
   type KolamButtonSize,
   type KolamButtonTone,
 } from '../domain/kolam-button';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KolamCopyStack} from './kolam-copy-stack';
-import {KolamInteractionFrame} from './kolam-interaction-frame';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { KolamCopyStack } from './kolam-copy-stack';
+import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 const KOLAM_BUTTON_VISUAL = getKolamButtonVisualContract();
 const KOLAM_NEW_BUTTON_LABEL = 'Baru';
@@ -24,9 +25,38 @@ const KOLAM_NEW_BUTTON_ICON_XML = KOLAM_NEW_BUTTON_ICON_SVG.replace(
   /#000000/g,
   V.colors.success,
 );
+const KOLAM_COMPACT_BUTTON_VISUAL: Record<
+  KolamButtonSize,
+  {
+    gapX: number;
+    iconSize: number;
+    lineHeight: number;
+    minHeight: number;
+    paddingX: number;
+    fontSize: number;
+  }
+> = {
+  sm: {
+    minHeight: 30,
+    paddingX: 9,
+    gapX: 5,
+    fontSize: 12,
+    lineHeight: 17,
+    iconSize: 14,
+  },
+  md: {
+    minHeight: 32,
+    paddingX: 10,
+    gapX: 6,
+    fontSize: 12,
+    lineHeight: 20,
+    iconSize: 14,
+  },
+};
 
 export interface KolamButtonProps {
   label: string;
+  density?: KolamButtonDensity;
   intent?: KolamButtonIntent;
   size?: KolamButtonSize;
   tone?: KolamButtonTone;
@@ -41,6 +71,7 @@ export interface KolamButtonProps {
 
 export function KolamButton({
   label,
+  density = 'compact',
   intent = 'outline',
   size = 'sm',
   tone = 'default',
@@ -53,6 +84,7 @@ export function KolamButton({
   accessibilityLabel,
 }: KolamButtonProps) {
   const unavailable = disabled || muted;
+  const visualMetrics = getButtonVisualMetrics(size, density);
   const resolvedIcon =
     icon ??
     (label === KOLAM_NEW_BUTTON_LABEL ? (
@@ -66,13 +98,27 @@ export function KolamButton({
       onPress={onPress}
       style={[
         styles.button,
-        size === 'md' ? styles.buttonMd : styles.buttonSm,
+        {
+          gap: visualMetrics.gapX,
+          minHeight: visualMetrics.minHeight,
+          paddingHorizontal: visualMetrics.paddingX,
+        },
         getIntentStyle(intent),
         getToneStyle(tone),
         style,
         unavailable && styles.buttonMuted,
-      ]}>
-      {resolvedIcon ? <View style={styles.icon}>{resolvedIcon}</View> : null}
+      ]}
+    >
+      {resolvedIcon ? (
+        <View
+          style={[
+            styles.icon,
+            { height: visualMetrics.iconSize, width: visualMetrics.iconSize },
+          ]}
+        >
+          {resolvedIcon}
+        </View>
+      ) : null}
       <KolamCopyStack
         items={[
           {
@@ -80,7 +126,10 @@ export function KolamButton({
             text: label,
             style: [
               styles.text,
-              size === 'md' ? styles.textMd : styles.textSm,
+              {
+                fontSize: visualMetrics.fontSize,
+                lineHeight: visualMetrics.lineHeight,
+              },
               getTextIntentStyle(intent),
               getTextToneStyle(tone),
               unavailable && styles.textMuted,
@@ -91,6 +140,20 @@ export function KolamButton({
       />
     </KolamInteractionFrame>
   );
+}
+
+function getButtonVisualMetrics(
+  size: KolamButtonSize,
+  density: KolamButtonDensity,
+) {
+  if (density === 'regular') {
+    return {
+      ...KOLAM_BUTTON_VISUAL.sizes[size],
+      iconSize: KOLAM_BUTTON_VISUAL.base.iconSize,
+    };
+  }
+
+  return KOLAM_COMPACT_BUTTON_VISUAL[size];
 }
 
 function getIntentStyle(intent: KolamButtonIntent) {
@@ -153,16 +216,6 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.lg,
     borderWidth: 1,
   },
-  buttonSm: {
-    minHeight: KOLAM_BUTTON_VISUAL.sizes.sm.minHeight,
-    gap: KOLAM_BUTTON_VISUAL.sizes.sm.gapX,
-    paddingHorizontal: KOLAM_BUTTON_VISUAL.sizes.sm.paddingX,
-  },
-  buttonMd: {
-    minHeight: KOLAM_BUTTON_VISUAL.sizes.md.minHeight,
-    gap: KOLAM_BUTTON_VISUAL.sizes.md.gapX,
-    paddingHorizontal: KOLAM_BUTTON_VISUAL.sizes.md.paddingX,
-  },
   primary: {
     backgroundColor: V.colors.primary,
     borderColor: V.colors.primary,
@@ -197,8 +250,6 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   icon: {
-    width: KOLAM_BUTTON_VISUAL.base.iconSize,
-    height: KOLAM_BUTTON_VISUAL.base.iconSize,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -206,14 +257,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontWeight:
       KOLAM_BUTTON_VISUAL.base.fontWeight === 'medium' ? '500' : '700',
-  },
-  textSm: {
-    fontSize: KOLAM_BUTTON_VISUAL.sizes.sm.fontSize,
-    lineHeight: KOLAM_BUTTON_VISUAL.sizes.sm.lineHeight,
-  },
-  textMd: {
-    fontSize: KOLAM_BUTTON_VISUAL.sizes.md.fontSize,
-    lineHeight: KOLAM_BUTTON_VISUAL.sizes.md.lineHeight,
   },
   textDefault: {
     color: V.colors.fg,

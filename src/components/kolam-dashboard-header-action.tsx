@@ -1,7 +1,7 @@
 ﻿import React from 'react';
-import type {DashboardHeaderAction} from '../domain/dashboard-header';
-import {KolamActionControlButton} from './kolam-action-control-button';
-import {KolamDashboardHeaderActionIcon} from './kolam-dashboard-header-action-icon';
+import type { DashboardHeaderAction } from '../domain/dashboard-header';
+import { KolamActionControlButton } from './kolam-action-control-button';
+import { KolamDashboardHeaderActionIcon } from './kolam-dashboard-header-action-icon';
 
 export function KolamDashboardHeaderAction({
   action,
@@ -13,6 +13,7 @@ export function KolamDashboardHeaderAction({
   return (
     <KolamActionControlButton
       accessibilityLabel={action.accessibilityLabel}
+      density="regular"
       label={action.label}
       intent={action.intent}
       tone={action.buttonTone}
@@ -28,7 +29,3 @@ export function KolamDashboardHeaderAction({
     />
   );
 }
-
-
-
-
