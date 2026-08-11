@@ -1096,7 +1096,6 @@ function KolamCustomerDetailSurface({
         <View
           style={[
             styles.detailMainColumn,
-            !hasAddresses && styles.detailMainColumnFull,
           ]}>
           <KolamDetailSummaryCard
             body={
@@ -1185,10 +1184,19 @@ function KolamCustomerDetailSurface({
           />
         </View>
 
-        {hasAddresses ? (
-          <View style={styles.detailSideColumn}>
+        <View style={styles.detailSideColumn}>
+          <CustomerTaxProfileCard
+            authUser={authUser}
+            form={taxProfile}
+            loaded={taxProfileLoaded}
+            onChange={handleChangeTaxProfile}
+            onSave={handleSaveTaxProfile}
+            saving={taxProfileSaving}
+          />
+
+          {hasAddresses ? (
             <KolamContentFrame
-              style={styles.detailCard}
+              style={[styles.detailCard, styles.customerDetailSectionCard]}
               variant="settingsWebConfig">
               <SectionTitle
                 description="Alamat tersimpan dari payload pelanggan"
@@ -1215,18 +1223,9 @@ function KolamCustomerDetailSurface({
                 ))}
               </View>
             </KolamContentFrame>
-          </View>
-        ) : null}
+          ) : null}
+        </View>
       </View>
-
-      <CustomerTaxProfileCard
-        authUser={authUser}
-        form={taxProfile}
-        loaded={taxProfileLoaded}
-        onChange={handleChangeTaxProfile}
-        onSave={handleSaveTaxProfile}
-        saving={taxProfileSaving}
-      />
 
       <CustomerPointTransactionsCard
         loading={pointTransactionsLoading}
@@ -1777,7 +1776,11 @@ function CustomerTaxProfileCard({
 
   return (
     <KolamContentFrame
-      style={[styles.detailCard, styles.customerDetailSectionCard]}
+      style={[
+        styles.detailCard,
+        styles.customerDetailSectionCard,
+        styles.customerTaxProfileCard,
+      ]}
       variant="settingsWebConfig">
       <View style={styles.taxHeader}>
         <Text style={styles.sectionTitle}>Profil pajak</Text>
@@ -3106,6 +3109,10 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  customerTaxProfileCard: {
+    backgroundColor: '#f5f0ff',
+    borderColor: '#d8c7ff',
   },
   customerTaxProfileBody: {
     gap: 12,
