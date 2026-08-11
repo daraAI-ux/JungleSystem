@@ -52,7 +52,7 @@ export function KolamPusatAiPoCopilotBody({
             {notifyRoomRoute ? (
               <KolamButton
                 intent="primary"
-                label="Buka room DARA"
+                label="Buka room"
                 onPress={() => onRouteChange?.(notifyRoomRoute)}
               />
             ) : null}
