@@ -7126,6 +7126,30 @@ function MarketplaceLandingOverviewPanel({
       detail: getFirstTitles(bioactiveSteps.map(item => item.key)),
     },
   ];
+  const activeOverviewRows = rows.filter(row => {
+    if (activeTabId === 'hero') {
+      return row.id === 'hero-slides';
+    }
+    if (activeTabId === 'category') {
+      return row.id === 'category-banners';
+    }
+    if (activeTabId === 'cta') {
+      return row.id === 'cta';
+    }
+    if (activeTabId === 'youtube') {
+      return row.id === 'youtube';
+    }
+    if (activeTabId === 'announcement') {
+      return row.id === 'announcement-banners';
+    }
+    if (activeTabId === 'notices') {
+      return row.id === 'customer-notices';
+    }
+    return (
+      row.id === 'featured-collections' || row.id === 'bioactive-ecosystem'
+    );
+  });
+  const showAssetSection = activeTabId !== 'notices';
 
   return (
     <View style={styles.marketplaceOverview}>
@@ -7133,7 +7157,7 @@ function MarketplaceLandingOverviewPanel({
         items={[
           {
             id: 'title',
-            text: 'Ringkasan Landing Marketplace',
+            text: getMarketplaceLandingTabLabel(activeTabId),
             style: styles.marketplaceOverviewTitle,
           },
           ...(overview.status === 'loading'
@@ -7156,7 +7180,7 @@ function MarketplaceLandingOverviewPanel({
         ]}
       />
       <View style={styles.marketplaceOverviewRows}>
-        {rows.map(row => (
+        {activeOverviewRows.map(row => (
           <View key={row.id} style={styles.marketplaceOverviewRow}>
             <KolamCopyStack
               containerStyle={styles.marketplaceOverviewCopy}
@@ -7185,46 +7209,59 @@ function MarketplaceLandingOverviewPanel({
           </View>
         ))}
       </View>
+      {showAssetSection ? (
       <View style={styles.marketplaceAssetSection}>
         <KolamCopyStack
           items={[
             {
               id: 'asset-title',
-              text: 'Unggah Aset Marketplace',
+              text: 'Aset',
               style: styles.marketplaceOverviewLabel,
             },
           ]}
         />
-        <View style={styles.marketplaceAssetActions}>
-          <MarketplaceAssetButton
-            disabled={disabled}
-            id="websetting-logo"
-            label="Unggah logo"
-            onPress={onUploadLogo}
-            status={assetStatus}
-          />
-          <MarketplaceAssetButton
-            disabled={disabled}
-            id="dara-avatar"
-            label="Unggah avatar DARA"
-            onPress={onUploadDaraAvatar}
-            status={assetStatus}
-          />
-          <MarketplaceAssetButton
-            disabled={disabled}
-            id="cta-background"
-            label="Unggah background CTA"
-            onPress={onUploadCtaBackground}
-            status={assetStatus}
-          />
-          <MarketplaceAssetButton
-            disabled={disabled}
-            id="youtube-background"
-            label="Unggah background YouTube"
-            onPress={onUploadYoutubeBackground}
-            status={assetStatus}
-          />
-        </View>
+        {activeTabId === 'featured' ? (
+          <View style={styles.marketplaceAssetActions}>
+            <>
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id="websetting-logo"
+                label="Unggah logo"
+                onPress={onUploadLogo}
+                status={assetStatus}
+              />
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id="dara-avatar"
+                label="Unggah avatar DARA"
+                onPress={onUploadDaraAvatar}
+                status={assetStatus}
+              />
+            </>
+          </View>
+        ) : null}
+        {activeTabId === 'cta' ? (
+          <View style={styles.marketplaceAssetActions}>
+            <MarketplaceAssetButton
+              disabled={disabled}
+              id="cta-background"
+              label="Unggah background CTA"
+              onPress={onUploadCtaBackground}
+              status={assetStatus}
+            />
+          </View>
+        ) : null}
+        {activeTabId === 'youtube' ? (
+          <View style={styles.marketplaceAssetActions}>
+            <MarketplaceAssetButton
+              disabled={disabled}
+              id="youtube-background"
+              label="Unggah background YouTube"
+              onPress={onUploadYoutubeBackground}
+              status={assetStatus}
+            />
+          </View>
+        ) : null}
         {activeTabId === 'hero' ? (
           <MarketplaceAssetRows
             disabled={disabled}
@@ -7299,6 +7336,7 @@ function MarketplaceLandingOverviewPanel({
           </>
         ) : null}
       </View>
+      ) : null}
     </View>
   );
 }
@@ -7659,17 +7697,8 @@ function MarketplaceLandingControlsPanel({
 
   return (
     <View style={styles.marketplaceControls}>
-      <KolamCopyStack
-        items={[
-          {
-            id: 'title',
-            text: 'Kontrol Landing Marketplace',
-            style: styles.marketplaceOverviewTitle,
-          },
-        ]}
-      />
       {activeTabId === 'hero' ? (
-        <View style={styles.marketplaceControlSection}>
+        <View style={styles.marketplaceControlCard}>
           <KolamCopyStack
             items={[
               {
@@ -7790,7 +7819,7 @@ function MarketplaceLandingControlsPanel({
         </View>
       ) : null}
       {activeTabId === 'category' ? (
-        <View style={styles.marketplaceControlSection}>
+        <View style={styles.marketplaceControlCard}>
           <KolamCopyStack
             items={[
               {
@@ -7852,7 +7881,7 @@ function MarketplaceLandingControlsPanel({
         </View>
       ) : null}
       {activeTabId === 'announcement' ? (
-        <View style={styles.marketplaceControlSection}>
+        <View style={styles.marketplaceControlCard}>
           <KolamCopyStack
             items={[
               {
@@ -7918,7 +7947,7 @@ function MarketplaceLandingControlsPanel({
         </View>
       ) : null}
       {activeTabId === 'cta' ? (
-        <View style={styles.marketplaceControlSection}>
+        <View style={styles.marketplaceControlCard}>
           <KolamCopyStack
             items={[
               {
@@ -7980,7 +8009,7 @@ function MarketplaceLandingControlsPanel({
         </View>
       ) : null}
       {activeTabId === 'youtube' ? (
-        <View style={styles.marketplaceControlSection}>
+        <View style={styles.marketplaceControlCard}>
           <KolamCopyStack
             items={[
               {
@@ -8035,7 +8064,7 @@ function MarketplaceLandingControlsPanel({
         </View>
       ) : null}
       {activeTabId === 'notices' ? (
-        <View style={styles.marketplaceControlSection}>
+        <View style={styles.marketplaceControlCard}>
           <KolamCopyStack
             items={[
               {
@@ -9874,6 +9903,14 @@ const styles = StyleSheet.create({
   },
   marketplaceControls: {
     gap: 14,
+  },
+  marketplaceControlCard: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
   },
   marketplaceControlSection: {
     gap: 10,
