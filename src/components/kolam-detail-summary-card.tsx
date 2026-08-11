@@ -140,7 +140,9 @@ export function KolamDetailSummaryCard({
             {fieldGrid}
           </View>
           {hasAside ? (
-            <View style={[styles.asideSlot, asideStyle]}>{aside}</View>
+            <View style={StyleSheet.flatten([styles.asideSlot, asideStyle])}>
+              {aside}
+            </View>
           ) : null}
         </View>
       ) : (

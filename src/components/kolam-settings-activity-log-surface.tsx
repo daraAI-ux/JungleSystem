@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import Svg, {Circle, Path} from 'react-native-svg';
 import type {
   SettingsActivityLogDetailField,
   SettingsActivityLogFilterControl,
@@ -10,7 +11,6 @@ import type {
   SettingsActivityLogTableColumn,
 } from '../domain/settings-surface';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KolamActionControlButton} from './kolam-action-control-button';
 import {KolamDetailPanel} from './kolam-detail-panel';
 import {
   measureFilterPanelAnchor,
@@ -71,7 +71,10 @@ export function KolamSettingsActivityLogSurface({
         .filter(column => column.id !== 'detail')
         .map(column => ({
           align:
-            column.id === 'status' || column.id === 'duration'
+            column.id === 'method' ||
+            column.id === 'ip' ||
+            column.id === 'status' ||
+            column.id === 'duration'
               ? ('center' as const)
               : ('left' as const),
           flex: getActivityLogTableColumnFlex(column),
@@ -215,11 +218,21 @@ export function KolamSettingsActivityLogSurface({
           total: pagination.total,
         }}
         renderActions={row => (
-          <KolamActionControlButton
-            intent={selectedActivityLogId === row.id ? 'primary' : undefined}
-            label="Detail"
-            onPress={() => onSelectActivityLog(row.id)}
-          />
+          <View style={styles.actionIconsRow}>
+            {row.ip && row.ip !== '-' ? (
+              <ActivityLogIconButton
+                accessibilityLabel="Blokir IP"
+                icon="shield"
+                onPress={() => onSelectActivityLog(row.id)}
+              />
+            ) : null}
+            <ActivityLogIconButton
+              accessibilityLabel="Lihat detail"
+              active={selectedActivityLogId === row.id}
+              icon="eye"
+              onPress={() => onSelectActivityLog(row.id)}
+            />
+          </View>
         )}
         rows={rows}
         style={styles.tableShell}
@@ -262,7 +275,9 @@ function ActivityLogTableCell({
       numberOfLines={1}
       style={[
         styles.bodyCell,
+        isCenteredActivityLogColumn(column.id) ? styles.bodyCellCenter : null,
         column.id === 'method' ? styles.monoCell : null,
+        column.id === 'ip' ? styles.monoCell : null,
         column.id === 'status' ? getActivityLogStatusStyle(row) : null,
       ]}
     >
@@ -288,21 +303,105 @@ function getActivityLogTableCellValue(
 
 function getActivityLogTableColumnFlex(column: SettingsActivityLogTableColumn) {
   if (column.width === 'flex') return 2.4;
-  if (column.id === 'timestamp') return 1;
+  if (column.id === 'timestamp') return 0.9;
   if (column.id === 'user') return 1.1;
-  if (column.id === 'source') return 0.85;
-  if (column.id === 'type') return 0.7;
-  if (column.id === 'method') return 0.7;
-  if (column.id === 'ip') return 0.9;
-  if (column.id === 'status') return 0.75;
-  if (column.id === 'duration') return 0.75;
+  if (column.id === 'source') return 0.72;
+  if (column.id === 'type') return 0.58;
+  if (column.id === 'method') return 0.56;
+  if (column.id === 'ip') return 0.72;
+  if (column.id === 'status') return 0.62;
+  if (column.id === 'duration') return 0.62;
   return 1;
+}
+
+function isCenteredActivityLogColumn(columnId: SettingsActivityLogTableColumn['id']) {
+  return (
+    columnId === 'method' ||
+    columnId === 'ip' ||
+    columnId === 'status' ||
+    columnId === 'duration'
+  );
 }
 
 function getActivityLogStatusStyle(row: SettingsActivityLogRow) {
   if (row.tone === 'success') return styles.statusSuccess;
   if (row.tone === 'warning') return styles.statusWarning;
   return styles.statusMuted;
+}
+
+function ActivityLogIconButton({
+  accessibilityLabel,
+  active = false,
+  icon,
+  onPress,
+}: {
+  accessibilityLabel: string;
+  active?: boolean;
+  icon: 'eye' | 'shield';
+  onPress: () => void;
+}) {
+  const color = active ? V.colors.primary : V.colors.fg;
+
+  return (
+    <KolamInteractionFrame
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      selected={active}
+      style={styles.actionIconButton}
+    >
+      {icon === 'shield' ? (
+        <ActivityLogShieldIcon color={color} />
+      ) : (
+        <ActivityLogEyeIcon color={color} />
+      )}
+    </KolamInteractionFrame>
+  );
+}
+
+function ActivityLogShieldIcon({color}: {color: string}) {
+  return (
+    <Svg height={17} viewBox="0 0 24 24" width={17}>
+      <Path
+        d="M12 3.2 5.2 5.8v5.2c0 4.3 2.8 8.2 6.8 9.8 4-1.6 6.8-5.5 6.8-9.8V5.8L12 3.2Z"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <Path
+        d="m9.2 12 1.9 1.9 3.9-4.1"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+    </Svg>
+  );
+}
+
+function ActivityLogEyeIcon({color}: {color: string}) {
+  return (
+    <Svg height={17} viewBox="0 0 24 24" width={17}>
+      <Path
+        d="M2.6 12s3.4-6 9.4-6 9.4 6 9.4 6-3.4 6-9.4 6-9.4-6-9.4-6Z"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <Circle
+        cx={12}
+        cy={12}
+        fill="none"
+        r={2.6}
+        stroke={color}
+        strokeWidth={2}
+      />
+    </Svg>
+  );
 }
 
 function getActivityLogFilterLabel(
@@ -381,6 +480,10 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
+  bodyCellCenter: {
+    textAlign: 'center',
+    width: '100%',
+  },
   monoCell: {
     fontFamily: 'Consolas',
   },
@@ -410,5 +513,22 @@ const styles = StyleSheet.create({
   statusWarning: {
     color: '#92400e',
     fontWeight: '900',
+  },
+  actionIconsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    justifyContent: 'flex-end',
+  },
+  actionIconButton: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderRadius: 6,
+    borderWidth: 0,
+    height: 24,
+    justifyContent: 'center',
+    padding: 0,
+    width: 24,
   },
 });
