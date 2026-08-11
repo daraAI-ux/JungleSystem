@@ -45,6 +45,7 @@ import {
   pickNativeImageFile,
 } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
@@ -178,29 +179,34 @@ function WalletDetailMode({
 
   return (
     <View style={styles.listRoot}>
-      <View style={styles.detailHeader}>
-        <KolamButton
-          intent="secondary"
-          label="Kembali"
-          onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
-          style={styles.filterTrigger}
-        />
-        {wallet ? (
-          <View style={styles.detailTitleBlock}>
-            <Text style={styles.detailTitle}>{wallet.name}</Text>
-            <KolamStatusBadge
-              intent={getKolamWalletTypeIntent(wallet.type)}
-              label={formatKolamWalletTypeLabel(wallet.type)}
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={styles.detailToolbar}>
+          {wallet ? (
+            <View style={styles.detailTitleBlock}>
+              <Text style={styles.detailTitle}>{wallet.name}</Text>
+              <KolamStatusBadge
+                intent={getKolamWalletTypeIntent(wallet.type)}
+                label={formatKolamWalletTypeLabel(wallet.type)}
+              />
+            </View>
+          ) : null}
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamDaftarButton
+              onPress={() => onRouteChange?.(KOLAM_WALLET_ROOT)}
+              size="sm"
             />
+            {wallet && controller.canEdit ? (
+              <KolamEditButton
+                intent="secondary"
+                onPress={() =>
+                  onRouteChange?.(getKolamWalletEditRoute(wallet.id))
+                }
+                size="sm"
+                style={styles.filterTrigger}
+              />
+            ) : null}
           </View>
-        ) : null}
-        {wallet && controller.canEdit ? (
-          <KolamEditButton
-            intent="secondary"
-            onPress={() => onRouteChange?.(getKolamWalletEditRoute(wallet.id))}
-            style={styles.filterTrigger}
-          />
-        ) : null}
+        </View>
       </View>
 
       {controller.loadingDetail ? (
@@ -2603,6 +2609,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  detailToolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+    width: '100%',
   },
   detailTitleBlock: {
     alignItems: 'center',
