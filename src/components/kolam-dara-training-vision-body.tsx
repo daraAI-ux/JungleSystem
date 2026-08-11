@@ -980,14 +980,16 @@ export function KolamDaraTrainingVisionBody({
             <KolamListTableComposition
               columns={[
                 {
-                  flex: 2.3,
+                  flex: 1.85,
                   id: 'species',
                   label: 'Species',
                   render: row => (
                     <View>
-                      <Text style={styles.tdStrong}>{row.displayName}</Text>
+                      <Text numberOfLines={2} style={styles.tdStrong}>
+                        {row.displayName}
+                      </Text>
                       {row.scientificName ? (
-                        <Text style={styles.tdMuted}>
+                        <Text numberOfLines={1} style={styles.tdMuted}>
                           {row.scientificName}
                         </Text>
                       ) : null}
@@ -996,7 +998,7 @@ export function KolamDaraTrainingVisionBody({
                 },
                 {
                   align: 'center',
-                  flex: 0.75,
+                  flex: 0.62,
                   id: 'catalog',
                   label: 'Katalog',
                   render: row => (
@@ -1005,7 +1007,7 @@ export function KolamDaraTrainingVisionBody({
                 },
                 {
                   align: 'center',
-                  flex: 0.75,
+                  flex: 0.62,
                   id: 'training',
                   label: 'Training',
                   render: row => (
@@ -1014,7 +1016,7 @@ export function KolamDaraTrainingVisionBody({
                 },
                 {
                   align: 'center',
-                  flex: 1,
+                  flex: 0.9,
                   id: 'status',
                   label: 'Status',
                   render: row => {
@@ -1033,6 +1035,22 @@ export function KolamDaraTrainingVisionBody({
                     );
                   },
                 },
+                {
+                  align: 'right',
+                  flex: 0.78,
+                  id: 'action',
+                  label: '',
+                  render: row => (
+                    <KolamButton
+                      intent="secondary"
+                      label="Kelola"
+                      onPress={() => {
+                        void openSpecies(row);
+                      }}
+                      size="sm"
+                    />
+                  ),
+                },
               ]}
               emptyTitle={loading ? 'Memuat...' : 'Tidak ada species'}
               getRowKey={row => row.speciesId}
@@ -1047,16 +1065,6 @@ export function KolamDaraTrainingVisionBody({
                     }
                   : undefined
               }
-              renderActions={row => (
-                <KolamButton
-                  intent="secondary"
-                  label="Kelola"
-                  onPress={() => {
-                    void openSpecies(row);
-                  }}
-                  size="sm"
-                />
-              )}
               rows={loading ? [] : speciesRows}
               showFooter={!loading && speciesTotal > 0}
             />
