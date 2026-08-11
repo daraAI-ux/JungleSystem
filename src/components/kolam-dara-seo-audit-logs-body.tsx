@@ -6,7 +6,6 @@ import type {KolamDaraSeoAuditLogsController} from '../hooks/use-kolam-dara-seo-
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
-import {KolamRefreshButton} from './kolam-refresh-button';
 
 /**
  * FE parity table chrome: same 10/page + KolamListTableComposition as SEO tables.
@@ -20,16 +19,6 @@ export function KolamDaraSeoAuditLogsBody({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
-      <View style={styles.toolbar}>
-        <KolamRefreshButton
-          accessibilityLabel="Refresh"
-          disabled={controller.loading}
-          onPress={() => {
-            void controller.onRefresh();
-          }}
-        />
-      </View>
-
       {controller.error && !controller.rows.length ? (
         <KolamEmptyState message={controller.error} title="Gagal memuat" />
       ) : null}
@@ -87,7 +76,6 @@ export function KolamDaraSeoAuditLogsBody({
 const styles = StyleSheet.create({
   scroll: {flex: 1},
   content: {gap: 10, paddingBottom: 24},
-  toolbar: {alignItems: 'flex-end'},
   tableShell: {
     alignSelf: 'stretch',
     width: '100%',
