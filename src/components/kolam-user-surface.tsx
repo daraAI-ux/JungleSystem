@@ -838,18 +838,18 @@ function KolamUserDetailSurface({
     () => [
       {
         align: 'left',
-        flex: 1,
+        flex: 1.45,
         id: 'code',
         label: 'Kode',
         render: item => (
-          <Text numberOfLines={1} style={styles.userMetaText}>
+          <Text style={styles.userMetaText}>
             {item.code || 'Potongan'}
           </Text>
         ),
       },
       {
         align: 'center',
-        flex: 0.8,
+        flex: 0.65,
         id: 'amount',
         label: 'Jumlah',
         render: item => (
@@ -860,7 +860,7 @@ function KolamUserDetailSurface({
       },
       {
         align: 'center',
-        flex: 1.6,
+        flex: 1.25,
         id: 'reason',
         label: 'Alasan',
         render: item => (
@@ -873,7 +873,7 @@ function KolamUserDetailSurface({
       },
       {
         align: 'center',
-        flex: 0.9,
+        flex: 0.75,
         id: 'status',
         label: 'Status',
         render: item => (
