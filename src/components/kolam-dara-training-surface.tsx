@@ -19,7 +19,6 @@ import {
 } from '../domain/kolam-dara-training';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamDaraTrainingController } from '../hooks/use-kolam-dara-training-controller';
-import { KolamButton } from './kolam-button';
 import { KolamDaraTrainingFineTuneBody } from './kolam-dara-training-fine-tune-body';
 import { KolamDaraTrainingFulfillmentBody } from './kolam-dara-training-fulfillment-body';
 import { KolamDaraTrainingPhrasesBody } from './kolam-dara-training-phrases-body';
@@ -28,6 +27,7 @@ import { KolamDaraTrainingReviewsBody } from './kolam-dara-training-reviews-body
 import { KolamDaraTrainingVideoStudioBody } from './kolam-dara-training-video-studio-body';
 import { KolamDaraTrainingVisionBody } from './kolam-dara-training-vision-body';
 import { KolamEmptyState } from './kolam-empty-state';
+import { KolamPressable } from './kolam-pressable';
 import { KolamStatsCardStrip } from './kolam-stats-card-strip';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -101,28 +101,14 @@ export function KolamDaraTrainingSurface({
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
               {KOLAM_DARA_TRAINING_TABS.map(tab => (
-                <KolamButton
+                <DaraTrainingToolbarTabButton
                   key={tab.id}
-                  accessibilityLabel={tab.label}
-                  icon={
-                    <SvgXml
-                      height={14}
-                      width={14}
-                      xml={getToolbarIconXml(
-                        KOLAM_DARA_TRAINING_TAB_ICONS[tab.id],
-                      )}
-                    />
-                  }
+                  active={selectedTab === tab.id}
                   label={tab.label}
                   onPress={() => {
                     onRouteChange?.(buildKolamDaraTrainingRoute(tab.id));
                   }}
-                  size="sm"
-                  style={[
-                    styles.toolbarTabButton,
-                    selectedTab === tab.id && styles.toolbarTabButtonActive,
-                  ]}
-                  textStyle={styles.toolbarTabButtonText}
+                  tabId={tab.id}
                 />
               ))}
             </View>
@@ -193,6 +179,34 @@ export function KolamDaraTrainingSurface({
   );
 }
 
+function DaraTrainingToolbarTabButton({
+  active,
+  label,
+  onPress,
+  tabId,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+  tabId: KolamDaraTrainingTabId;
+}) {
+  return (
+    <KolamPressable
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={[styles.toolbarTabButton, active && styles.toolbarTabButtonActive]}>
+      <View style={styles.toolbarTabButtonIcon}>
+        <SvgXml
+          height={14}
+          width={14}
+          xml={getToolbarIconXml(KOLAM_DARA_TRAINING_TAB_ICONS[tabId])}
+        />
+      </View>
+      <Text style={styles.toolbarTabButtonText}>{label}</Text>
+    </KolamPressable>
+  );
+}
+
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
@@ -210,17 +224,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: KOLAM_ACTION_BUTTON_BG,
     borderColor: KOLAM_ACTION_BUTTON_BG,
-    height: 32,
-    minHeight: 32,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 5,
+    height: 30,
+    justifyContent: 'center',
     opacity: 0.9,
+    paddingHorizontal: 9,
     paddingVertical: 0,
   },
   toolbarTabButtonActive: {
     opacity: 1,
   },
+  toolbarTabButtonIcon: {
+    alignItems: 'center',
+    height: 14,
+    justifyContent: 'center',
+    width: 14,
+  },
   toolbarTabButtonText: {
     color: V.colors.primaryFg,
-    lineHeight: 16,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '500',
+    includeFontPadding: false,
+    lineHeight: 14,
+    padding: 0,
   },
   scroll: {
     flex: 1,
