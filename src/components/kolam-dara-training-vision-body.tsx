@@ -63,6 +63,7 @@ import {
   trainKolamDaraTrainingVisionYoloProducts,
 } from '../services/kolam-dara-training-vision-api';
 import {KolamButton} from './kolam-button';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
@@ -619,9 +620,9 @@ export function KolamDaraTrainingVisionBody({
       {section === 'ringkasan' ? (
         <>
           {stats ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Status pipeline</Text>
-              <View style={styles.pipelineColumns}>
+            <KolamDetailSummaryCard
+              body={
+                <View style={styles.pipelineColumns}>
                 <View style={styles.pipelineColumn}>
                   <PipelineField
                     label="Closed-world"
@@ -703,7 +704,10 @@ export function KolamDaraTrainingVisionBody({
                   />
                 </View>
               </View>
-            </View>
+              }
+              fields={[]}
+              title="Status pipeline"
+            />
           ) : null}
 
           <View style={styles.card}>
