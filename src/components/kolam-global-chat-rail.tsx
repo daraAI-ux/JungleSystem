@@ -18,6 +18,7 @@ import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {KOLAM_CALL_ICON_SVG} from '../assets/icons/call-icon-svg';
 import {KOLAM_DELETE_ROOM_ICON_SVG} from '../assets/icons/delete-room-icon-svg';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
+import {resolveKolamTeamChatBotAvatarRawUrl} from '../domain/kolam-team-chat-bot-display';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   type KolamChatLiveEvent,
@@ -365,39 +366,6 @@ function resolveBotAvatarImageUrl(stored?: string | null) {
 
 function resolveKatakTerbangAvatarImageUrl(stored?: string | null) {
   return resolveBotAvatarImageUrl(stored);
-}
-
-/** FE plugin chat `TeamChatUserAvatar` — bot foto dulu, DARA hanya fallback AI tanpa foto bot. */
-function resolveTeamChatBotAvatarRawUrl({
-  botAvatarUrl,
-  botKey,
-  katakTerbangAvatarUrl,
-  rajaAnemonAvatarUrl,
-  pangeranIsopodAvatarUrl,
-}: {
-  botAvatarUrl?: string | null;
-  botKey?: string | null;
-  katakTerbangAvatarUrl?: string | null;
-  rajaAnemonAvatarUrl?: string | null;
-  pangeranIsopodAvatarUrl?: string | null;
-}) {
-  const key = String(botKey || '')
-    .trim()
-    .toLowerCase();
-  const fromMessage = String(botAvatarUrl || '').trim();
-  if (fromMessage) {
-    return fromMessage;
-  }
-  if (key === 'katak_terbang') {
-    return String(katakTerbangAvatarUrl || '').trim();
-  }
-  if (key === 'raja_anemon') {
-    return String(rajaAnemonAvatarUrl || '').trim();
-  }
-  if (key === 'pangeran_isopod') {
-    return String(pangeranIsopodAvatarUrl || '').trim();
-  }
-  return '';
 }
 
 export function KolamGlobalChatRail({
@@ -4804,7 +4772,7 @@ function getTeamChatMessageAvatarUrl(
     pangeranIsopodAvatarUrl?: string | null;
   },
 ) {
-  const rawBotAvatar = resolveTeamChatBotAvatarRawUrl({
+  const rawBotAvatar = resolveKolamTeamChatBotAvatarRawUrl({
     botAvatarUrl: message.botAvatarUrl,
     botKey: message.botKey,
     katakTerbangAvatarUrl: botAvatarFallback?.katakTerbangAvatarUrl,

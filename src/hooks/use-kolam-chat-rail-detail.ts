@@ -56,6 +56,7 @@ import {
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type {NativeImagePickerResult} from '../services/native-file-picker';
+import {resolveKolamTeamChatBotDisplayName} from '../domain/kolam-team-chat-bot-display';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
@@ -1261,7 +1262,10 @@ function getInboxMessageBody({content}: KolamChatMessage) {
 
 function getTeamChatAuthor(message: KolamTeamChatMessage) {
   if (isTeamChatAiMessage(message)) {
-    return message.botName || 'DARA';
+    return resolveKolamTeamChatBotDisplayName({
+      botKey: message.botKey,
+      botName: message.botName,
+    });
   }
 
   const sender = message.sender;
