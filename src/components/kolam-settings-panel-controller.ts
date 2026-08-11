@@ -1979,18 +1979,57 @@ export function useKolamSettingsPanelController(
     setDaraKnowledgeSaveStatus('idle');
     setDaraKnowledgeMessage('');
   };
-  const setWebSettingPluginControl = (
+  const setWebSettingPluginControl = async (
     key: KolamPluginConfigKey,
     enabled: boolean,
   ) => {
+    const previousControls = webSettingDraft.pluginControls;
+    const nextControls = {
+      ...previousControls,
+      [key]: enabled,
+    };
+
     setWebSettingDraft(current => ({
       ...current,
-      pluginControls: {
-        ...current.pluginControls,
-        [key]: enabled,
-      },
+      pluginControls: nextControls,
     }));
-    setWebSettingSaveStatus('idle');
+    setWebSettingSaveStatus('saving');
+    setWebSettingMessage('');
+
+    try {
+      const updated = await updateKolamWebSetting({
+        kolamPlugins: createKolamPluginsUpdateBody(
+          nextControls,
+          webSetting?.kolamPlugins,
+          webSettingDraft.chatStoreEnabled,
+        ),
+      });
+
+      setWebSetting(current =>
+        current
+          ? {
+              ...current,
+              ...updated,
+              kolamPlugins: createKolamPluginsUpdateBody(
+                nextControls,
+                updated.kolamPlugins,
+                webSettingDraft.chatStoreEnabled,
+              ),
+            }
+          : updated,
+      );
+      setWebSettingSaveStatus('saved');
+      setWebSettingMessage(
+        enabled ? 'Plugin diaktifkan.' : 'Plugin dinonaktifkan.',
+      );
+    } catch (error) {
+      setWebSettingDraft(current => ({
+        ...current,
+        pluginControls: previousControls,
+      }));
+      setWebSettingSaveStatus('error');
+      setWebSettingMessage(getWebSettingSaveErrorMessage(error));
+    }
   };
   const setSitemapMasterField = (
     key: 'enabled' | 'includeImages',
