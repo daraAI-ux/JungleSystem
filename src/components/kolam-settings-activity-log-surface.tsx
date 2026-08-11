@@ -11,8 +11,9 @@ import type {
   SettingsActivityLogTableColumn,
 } from '../domain/settings-surface';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {KolamDetailPanel} from './kolam-detail-panel';
+import {KolamButton} from './kolam-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
+import {KolamDetailPanelBody} from './kolam-detail-panel-body';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -23,6 +24,7 @@ import {KolamSearchField} from './kolam-search-field';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import {KolamModalDialog} from './kolam-modal-dialog';
 
 const ACTIVITY_LOG_FILTER_PANEL_WIDTH = 240;
 
@@ -246,15 +248,24 @@ export function KolamSettingsActivityLogSurface({
         rows={rows}
         style={styles.tableShell}
       />
-      {selectedActivityLog ? (
-        <KolamDetailPanel
-          title="Detail Log"
-          subtitle={selectedActivityLog.path}
-          fields={selectedActivityLogFields}
-          warningFlags={selectedActivityLog.suspicious}
-          onClose={() => onSelectActivityLog('')}
-        />
-      ) : null}
+      <KolamModalDialog
+        description={selectedActivityLog?.path}
+        footer={
+          <KolamButton label="Tutup" onPress={() => onSelectActivityLog('')} />
+        }
+        maxHeight="84%"
+        onClose={() => onSelectActivityLog('')}
+        title="Detail Log"
+        visible={Boolean(selectedActivityLog)}
+        width={620}>
+        {selectedActivityLog ? (
+          <KolamDetailPanelBody
+            fields={selectedActivityLogFields}
+            warningFlags={selectedActivityLog.suspicious}
+            warningTitle="Flag mencurigakan"
+          />
+        ) : null}
+      </KolamModalDialog>
       <KolamConfirmDialog
         confirmLabel="Blokir"
         destructive
