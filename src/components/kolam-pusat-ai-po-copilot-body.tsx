@@ -47,33 +47,6 @@ export function KolamPusatAiPoCopilotBody({
             <Text style={styles.title}>PO Copilot</Text>
             <Text style={styles.desc}>{KOLAM_PO_COPILOT_DESCRIPTION}</Text>
           </View>
-          <View style={styles.shellActions}>
-            <View style={styles.rangeTabs}>
-              {KOLAM_PO_COPILOT_RANGES.map(item => {
-                const active = range === item.id;
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    key={item.id}
-                    onPress={() => controller.onSetRange(item.id)}
-                    style={[
-                      styles.rangeBtn,
-                      active ? styles.rangeBtnActive : null,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.rangeBtnText,
-                        active ? styles.rangeBtnTextActive : null,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
         </View>
 
         <View style={styles.body}>
@@ -95,32 +68,62 @@ export function KolamPusatAiPoCopilotBody({
           </View>
           <BotHealthSection controller={controller} />
 
-          {loading && !stats ? (
-            <Text style={styles.loadingText}>Memuat…</Text>
-          ) : (
-            <View style={styles.kpiGrid}>
-              <PoKpiCard
-                loading={loading}
-                summary={stats?.closed ?? null}
-                title="PO Closed (berhasil)"
-                unitLabel="PO"
-              />
-              <PoKpiCard
-                loading={loading}
-                summary={stats?.failed ?? null}
-                title="PO gagal (rejected / cancelled)"
-                unitLabel="PO"
-              />
+          <View style={styles.deliveryPanel}>
+            <View style={styles.deliveryPanelHeader}>
+              {stats?.generatedAt ? (
+                <Text style={styles.meta}>
+                  {`Statistik diperbarui ${formatKolamPoCopilotWib(
+                    stats.generatedAt,
+                  )}${stats.note ? ` · ${stats.note}` : ''}`}
+                </Text>
+              ) : (
+                <View />
+              )}
+              <View style={styles.rangeTabs}>
+                {KOLAM_PO_COPILOT_RANGES.map(item => {
+                  const active = range === item.id;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={item.id}
+                      onPress={() => controller.onSetRange(item.id)}
+                      style={[
+                        styles.rangeBtn,
+                        active ? styles.rangeBtnActive : null,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.rangeBtnText,
+                          active ? styles.rangeBtnTextActive : null,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          )}
-
-          {stats?.generatedAt ? (
-            <Text style={styles.meta}>
-              {`Statistik diperbarui ${formatKolamPoCopilotWib(
-                stats.generatedAt,
-              )}${stats.note ? ` · ${stats.note}` : ''}`}
-            </Text>
-          ) : null}
+            {loading && !stats ? (
+              <Text style={styles.loadingText}>Memuat…</Text>
+            ) : (
+              <View style={styles.kpiGrid}>
+                <PoKpiCard
+                  loading={loading}
+                  summary={stats?.closed ?? null}
+                  title="PO Closed (berhasil)"
+                  unitLabel="PO"
+                />
+                <PoKpiCard
+                  loading={loading}
+                  summary={stats?.failed ?? null}
+                  title="PO gagal (rejected / cancelled)"
+                  unitLabel="PO"
+                />
+              </View>
+            )}
+          </View>
 
           <View style={styles.opsBlock}>
             <Text style={styles.sectionTitle}>Console operasi</Text>

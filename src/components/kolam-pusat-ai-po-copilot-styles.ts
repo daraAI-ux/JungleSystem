@@ -66,6 +66,21 @@ export const poCopilotStyles = StyleSheet.create({
     flexDirection: 'column',
     gap: 16,
   },
+  deliveryPanel: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    padding: 14,
+  },
+  deliveryPanelHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
   sideBySideGrid: {
     alignItems: 'stretch',
     flexDirection: 'row',
