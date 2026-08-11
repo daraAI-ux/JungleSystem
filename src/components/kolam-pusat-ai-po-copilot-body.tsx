@@ -81,7 +81,7 @@ export function KolamPusatAiPoCopilotBody({
                 <Text style={[styles.meta, styles.deliveryPanelHeaderMeta]}>
                   {`Statistik diperbarui ${formatKolamPoCopilotWib(
                     stats.generatedAt,
-                  )}${stats.note ? ` · ${stats.note}` : ''}`}
+                  )}`}
                 </Text>
               ) : (
                 <View style={styles.deliveryPanelHeaderMeta} />
