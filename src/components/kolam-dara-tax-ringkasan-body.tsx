@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   kpiValue: {
-    color: V.colors.fg,
+    color: '#6d28d9',
     fontFamily: V.fontFamily,
     fontSize: 18,
     fontWeight: '800',
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     color: '#6d28d9',
   },
   kpiAmber: {
-    color: '#92400e',
+    color: '#6d28d9',
   },
   card: {
     backgroundColor: V.colors.bg,
