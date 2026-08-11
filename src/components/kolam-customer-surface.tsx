@@ -6,10 +6,14 @@ import {
   type KolamCustomer,
   type KolamCustomerAddress,
   type KolamCustomerExternalAccount,
+  type KolamCustomerActivityResult,
+  type KolamCustomerProjectActivity,
   type KolamCustomerListResult,
   type KolamCustomerPointTransaction,
   type KolamCustomerPointTransactionsResult,
+  type KolamCustomerSaleActivity,
   type KolamCustomerSavePayload,
+  type KolamCustomerSubscriptionActivity,
   type KolamCustomerStorageItem,
   type KolamCustomerStorageResult,
 } from '../domain/kolam-customer';
@@ -29,6 +33,7 @@ import {
   deleteKolamCustomer,
   deleteKolamCustomerPhoto,
   detachKolamFreyerFromCustomer,
+  getKolamCustomerActivity,
   getKolamCustomerDetail,
   getKolamCustomerFreyerDevices,
   getKolamCustomerList,
@@ -38,6 +43,9 @@ import {
   updateKolamCustomer,
   uploadKolamCustomerPhoto,
 } from '../services/kolam-customer-api';
+import {downloadKolamLayananSubscriptionInvoice} from '../services/kolam-layanan-api';
+import {downloadKolamProyekInvoice} from '../services/kolam-proyek-api';
+import {downloadKolamSaleInvoice} from '../services/kolam-sales-api';
 import {
   getKolamTaxPartyProfile,
   upsertKolamTaxPartyProfile,
@@ -69,6 +77,7 @@ import {
 } from './kolam-list-table-composition';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
 import {KolamNotesField} from './kolam-notes-field';
+import {KolamPdfDownloadButton} from './kolam-pdf-download-button';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 
@@ -201,6 +210,19 @@ const INITIAL_CUSTOMER_STORAGE: KolamCustomerStorageResult = {
     totalPages: 1,
   },
 };
+
+const INITIAL_CUSTOMER_ACTIVITY: KolamCustomerActivityResult = {
+  projects: [],
+  sales: [],
+  subscriptions: [],
+};
+
+const PROJECT_INVOICE_BLOCKED = new Set([
+  'draft',
+  'quotation_sent',
+  'revision_in_progress',
+  'cancelled',
+]);
 
 export function KolamCustomerSurface({
   customer,
@@ -490,6 +512,12 @@ function KolamCustomerDetailSurface({
   );
   const [customerStorageLoading, setCustomerStorageLoading] =
     React.useState(false);
+  const [customerActivity, setCustomerActivity] = React.useState(
+    INITIAL_CUSTOMER_ACTIVITY,
+  );
+  const [customerActivityLoading, setCustomerActivityLoading] =
+    React.useState(false);
+  const [downloadingInvoice, setDownloadingInvoice] = React.useState('');
   const [freyerDevices, setFreyerDevices] = React.useState<
     KolamFreyerIotDevice[]
   >([]);
@@ -646,6 +674,39 @@ function KolamCustomerDetailSurface({
       .finally(() => {
         if (active) {
           setCustomerStorageLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customerId]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customerId) {
+      setCustomerActivity(INITIAL_CUSTOMER_ACTIVITY);
+      return () => {
+        active = false;
+      };
+    }
+
+    setCustomerActivityLoading(true);
+    void getKolamCustomerActivity(customerId)
+      .then(result => {
+        if (active) {
+          setCustomerActivity(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setCustomerActivity(INITIAL_CUSTOMER_ACTIVITY);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setCustomerActivityLoading(false);
         }
       });
 
@@ -851,6 +912,80 @@ function KolamCustomerDetailSurface({
       }
     },
     [customer, freyerSaving, reloadFreyerDevices],
+  );
+  const handleDownloadProjectInvoice = React.useCallback(
+    async (project: KolamCustomerProjectActivity) => {
+      if (downloadingInvoice) {
+        return;
+      }
+
+      setDownloadingInvoice(`project-${project.id}`);
+      setError('');
+      try {
+        await downloadKolamProyekInvoice(
+          project.id,
+          project.quotationNumber || project.id,
+        );
+      } catch (errorResult) {
+        setError(
+          errorResult instanceof Error
+            ? errorResult.message
+            : 'Gagal mengunduh invoice proyek.',
+        );
+      } finally {
+        setDownloadingInvoice('');
+      }
+    },
+    [downloadingInvoice],
+  );
+  const handleDownloadSubscriptionInvoice = React.useCallback(
+    async (subscription: KolamCustomerSubscriptionActivity) => {
+      if (downloadingInvoice) {
+        return;
+      }
+
+      setDownloadingInvoice(`subscription-${subscription.id}`);
+      setError('');
+      try {
+        await downloadKolamLayananSubscriptionInvoice({
+          id: subscription.id,
+          saleId: subscription.saleId,
+          saleInvoiceCode: subscription.invoiceCode,
+          subscriptionNumber: subscription.subscriptionNumber,
+        });
+      } catch (errorResult) {
+        setError(
+          errorResult instanceof Error
+            ? errorResult.message
+            : 'Gagal mengunduh invoice layanan.',
+        );
+      } finally {
+        setDownloadingInvoice('');
+      }
+    },
+    [downloadingInvoice],
+  );
+  const handleDownloadSaleInvoice = React.useCallback(
+    async (sale: KolamCustomerSaleActivity) => {
+      if (downloadingInvoice) {
+        return;
+      }
+
+      setDownloadingInvoice(`sale-${sale.id}`);
+      setError('');
+      try {
+        await downloadKolamSaleInvoice(sale.id, sale.invoiceCode || sale.id);
+      } catch (errorResult) {
+        setError(
+          errorResult instanceof Error
+            ? errorResult.message
+            : 'Gagal mengunduh invoice.',
+        );
+      } finally {
+        setDownloadingInvoice('');
+      }
+    },
+    [downloadingInvoice],
   );
 
   return (
@@ -1061,6 +1196,15 @@ function KolamCustomerDetailSurface({
       <CustomerStorageCard
         loading={customerStorageLoading}
         result={customerStorage}
+      />
+
+      <CustomerActivityInvoiceCard
+        downloadingInvoice={downloadingInvoice}
+        loading={customerActivityLoading}
+        onDownloadProjectInvoice={handleDownloadProjectInvoice}
+        onDownloadSaleInvoice={handleDownloadSaleInvoice}
+        onDownloadSubscriptionInvoice={handleDownloadSubscriptionInvoice}
+        result={customerActivity}
       />
     </View>
   );
@@ -1820,6 +1964,315 @@ function CustomerStorageRow({item}: {item: KolamCustomerStorageItem}) {
   );
 }
 
+function CustomerActivityInvoiceCard({
+  downloadingInvoice,
+  loading,
+  onDownloadProjectInvoice,
+  onDownloadSaleInvoice,
+  onDownloadSubscriptionInvoice,
+  result,
+}: {
+  downloadingInvoice: string;
+  loading: boolean;
+  onDownloadProjectInvoice: (
+    project: KolamCustomerProjectActivity,
+  ) => Promise<void>;
+  onDownloadSaleInvoice: (sale: KolamCustomerSaleActivity) => Promise<void>;
+  onDownloadSubscriptionInvoice: (
+    subscription: KolamCustomerSubscriptionActivity,
+  ) => Promise<void>;
+  result: KolamCustomerActivityResult;
+}) {
+  const projectColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamCustomerProjectActivity>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 1.1,
+        id: 'quotation',
+        label: 'No. Penawaran',
+        render: project => (
+          <Text numberOfLines={1} style={styles.customerMetaText}>
+            {project.quotationNumber || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1.15,
+        id: 'task',
+        label: 'Tugas',
+        render: project => (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            {project.taskTitle || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.9,
+        id: 'status',
+        label: 'Status',
+        render: project => (
+          <KolamStatusBadge
+            intent={getCustomerProjectStatusIntent(project.lifecycleStatus)}
+            label={formatCustomerProjectStatus(project.lifecycleStatus)}
+          />
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1,
+        id: 'invoice',
+        label: 'Invoice',
+        render: project => (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            {project.invoiceCode || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.8,
+        id: 'date',
+        label: 'Tgl',
+        render: project => (
+          <Text style={[styles.customerSubText, styles.customerTextCenter]}>
+            {formatCustomerShortDate(project.createdAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
+  const subscriptionColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamCustomerSubscriptionActivity>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 1.1,
+        id: 'number',
+        label: 'No. Langganan',
+        render: subscription => (
+          <Text numberOfLines={1} style={styles.customerMetaText}>
+            {subscription.subscriptionNumber || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1.15,
+        id: 'package',
+        label: 'Paket',
+        render: subscription => (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            {subscription.packageName || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.85,
+        id: 'status',
+        label: 'Status',
+        render: subscription => (
+          <KolamStatusBadge
+            intent={getCustomerSubscriptionStatusIntent(subscription.status)}
+            label={formatCustomerSubscriptionStatus(subscription.status)}
+          />
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1,
+        id: 'invoice',
+        label: 'Invoice',
+        render: subscription => (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            {subscription.invoiceCode || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 1.05,
+        id: 'period',
+        label: 'Berlaku',
+        render: subscription => (
+          <Text style={[styles.customerSubText, styles.customerTextCenter]}>
+            {formatCustomerPeriod(subscription.startDate, subscription.endDate)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
+  const saleColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamCustomerSaleActivity>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 1.25,
+        id: 'invoice',
+        label: 'Kode Invoice',
+        render: sale => (
+          <Text numberOfLines={1} style={styles.customerMetaText}>
+            {sale.invoiceCode || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'right',
+        flex: 0.9,
+        id: 'total',
+        label: 'Total',
+        render: sale => (
+          <Text style={styles.customerMoneyText}>
+            {formatCustomerCurrency(sale.finalTotal)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.85,
+        id: 'status',
+        label: 'Status',
+        render: sale => (
+          <KolamStatusBadge
+            intent={getCustomerSaleStatusIntent(sale.status)}
+            label={formatCustomerSaleStatus(sale.status)}
+          />
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.85,
+        id: 'date',
+        label: 'Tgl',
+        render: sale => (
+          <Text style={[styles.customerSubText, styles.customerTextCenter]}>
+            {formatCustomerShortDate(sale.createdAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <SectionTitle
+        description="Proyek kustom, langganan layanan, dan invoice pembelian"
+        title="Aktivitas & Invoice"
+      />
+      <View style={styles.customerActivityStack}>
+        <CustomerActivityTableSection
+          count={result.projects.length}
+          title="Proyek Kustom"
+        >
+          <KolamListTableComposition
+            actionsColumn
+            columns={projectColumns}
+            emptyTitle={loading ? 'Memuat proyek...' : 'Belum ada proyek'}
+            getRowKey={row => row.id}
+            loading={loading}
+            renderActions={project =>
+              PROJECT_INVOICE_BLOCKED.has(project.lifecycleStatus) ? null : (
+                <KolamPdfDownloadButton
+                  disabled={Boolean(downloadingInvoice)}
+                  iconOnly
+                  label="Unduh invoice proyek"
+                  loading={downloadingInvoice === `project-${project.id}`}
+                  onPress={() => void onDownloadProjectInvoice(project)}
+                />
+              )
+            }
+            rows={loading ? [] : result.projects}
+            showFooter={false}
+          />
+        </CustomerActivityTableSection>
+
+        <CustomerActivityTableSection
+          count={result.subscriptions.length}
+          title="Langganan Layanan"
+        >
+          <KolamListTableComposition
+            actionsColumn
+            columns={subscriptionColumns}
+            emptyTitle={
+              loading ? 'Memuat langganan...' : 'Belum ada langganan'
+            }
+            getRowKey={row => row.id}
+            loading={loading}
+            renderActions={subscription =>
+              subscription.saleId ? (
+                <KolamPdfDownloadButton
+                  disabled={Boolean(downloadingInvoice)}
+                  iconOnly
+                  label="Unduh invoice layanan"
+                  loading={downloadingInvoice === `subscription-${subscription.id}`}
+                  onPress={() => void onDownloadSubscriptionInvoice(subscription)}
+                />
+              ) : null
+            }
+            rows={loading ? [] : result.subscriptions}
+            showFooter={false}
+          />
+        </CustomerActivityTableSection>
+
+        <CustomerActivityTableSection
+          count={result.sales.length}
+          title="Invoice Pembelian"
+        >
+          <KolamListTableComposition
+            actionsColumn
+            columns={saleColumns}
+            emptyTitle={
+              loading ? 'Memuat invoice...' : 'Belum ada invoice pembelian'
+            }
+            getRowKey={row => row.id}
+            loading={loading}
+            renderActions={sale => (
+              <KolamPdfDownloadButton
+                disabled={Boolean(downloadingInvoice)}
+                iconOnly
+                label="Unduh invoice"
+                loading={downloadingInvoice === `sale-${sale.id}`}
+                onPress={() => void onDownloadSaleInvoice(sale)}
+              />
+            )}
+            rows={loading ? [] : result.sales}
+            showFooter={false}
+          />
+        </CustomerActivityTableSection>
+      </View>
+    </KolamContentFrame>
+  );
+}
+
+function CustomerActivityTableSection({
+  children,
+  count,
+  title,
+}: {
+  children: React.ReactNode;
+  count: number;
+  title: string;
+}) {
+  return (
+    <View style={styles.customerActivitySection}>
+      <View style={styles.customerActivitySectionHeader}>
+        <Text style={styles.customerActivitySectionTitle}>{title}</Text>
+        <Text style={styles.customerSubText}>{count} item</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
 function CustomerFieldShell({
   children,
   label,
@@ -1925,6 +2378,42 @@ function formatCustomerDateTime(value: string) {
   }).format(date);
 }
 
+function formatCustomerShortDate(value: string) {
+  if (!value) {
+    return '-';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit',
+  }).format(date);
+}
+
+function formatCustomerPeriod(startDate: string, endDate: string) {
+  const start = formatCustomerShortDate(startDate);
+  const end = formatCustomerShortDate(endDate);
+
+  if (start === '-' && end === '-') {
+    return '-';
+  }
+
+  return end === '-' ? start : `${start} - ${end}`;
+}
+
+function formatCustomerCurrency(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(value || 0);
+}
+
 function formatCustomerNumber(value: number) {
   return new Intl.NumberFormat('id-ID').format(value);
 }
@@ -2011,6 +2500,101 @@ function getCustomerPointTransactionLabel(type: string) {
       return 'Kedaluwarsa';
     default:
       return type || '-';
+  }
+}
+
+function formatCustomerProjectStatus(status: string) {
+  switch (status) {
+    case 'draft':
+      return 'Draft';
+    case 'quotation_sent':
+      return 'Penawaran';
+    case 'revision_in_progress':
+      return 'Revisi';
+    case 'approved':
+      return 'Disetujui';
+    case 'in_progress':
+      return 'Diproses';
+    case 'completed':
+      return 'Selesai';
+    case 'cancelled':
+      return 'Dibatalkan';
+    default:
+      return status || '-';
+  }
+}
+
+function getCustomerProjectStatusIntent(status: string) {
+  switch (status) {
+    case 'approved':
+    case 'completed':
+      return 'success' as const;
+    case 'quotation_sent':
+    case 'revision_in_progress':
+    case 'in_progress':
+      return 'warning' as const;
+    case 'cancelled':
+      return 'danger' as const;
+    default:
+      return 'secondary' as const;
+  }
+}
+
+function formatCustomerSubscriptionStatus(status: string) {
+  switch (status) {
+    case 'active':
+      return 'Aktif';
+    case 'suspended':
+      return 'Ditahan';
+    case 'expired':
+      return 'Berakhir';
+    case 'cancelled':
+      return 'Dibatalkan';
+    case 'draft':
+      return 'Draft';
+    default:
+      return status || '-';
+  }
+}
+
+function getCustomerSubscriptionStatusIntent(status: string) {
+  switch (status) {
+    case 'active':
+      return 'success' as const;
+    case 'suspended':
+      return 'warning' as const;
+    case 'cancelled':
+      return 'danger' as const;
+    default:
+      return 'secondary' as const;
+  }
+}
+
+function formatCustomerSaleStatus(status: string) {
+  switch (status) {
+    case 'paid':
+      return 'Lunas';
+    case 'pending':
+      return 'Menunggu';
+    case 'cancelled':
+      return 'Dibatalkan';
+    case 'refunded':
+      return 'Refund';
+    default:
+      return status || '-';
+  }
+}
+
+function getCustomerSaleStatusIntent(status: string) {
+  switch (status) {
+    case 'paid':
+      return 'success' as const;
+    case 'pending':
+      return 'warning' as const;
+    case 'cancelled':
+      return 'danger' as const;
+    default:
+      return 'secondary' as const;
   }
 }
 
@@ -2470,6 +3054,31 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
     minWidth: 0,
+  },
+  customerActivityStack: {
+    gap: 16,
+  },
+  customerActivitySection: {
+    gap: 8,
+  },
+  customerActivitySectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  customerActivitySectionTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  customerMoneyText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'right',
   },
   customerEmptyPanel: {
     alignItems: 'center',

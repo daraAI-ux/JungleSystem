@@ -126,6 +126,40 @@ export interface KolamCustomerStorageResult {
   pagination: KolamCustomerPagination;
 }
 
+export interface KolamCustomerProjectActivity {
+  id: string;
+  invoiceCode: string;
+  lifecycleStatus: string;
+  quotationNumber: string;
+  taskTitle: string;
+  createdAt: string;
+}
+
+export interface KolamCustomerSubscriptionActivity {
+  id: string;
+  invoiceCode: string;
+  packageName: string;
+  saleId: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  subscriptionNumber: string;
+}
+
+export interface KolamCustomerSaleActivity {
+  id: string;
+  invoiceCode: string;
+  finalTotal: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface KolamCustomerActivityResult {
+  projects: KolamCustomerProjectActivity[];
+  subscriptions: KolamCustomerSubscriptionActivity[];
+  sales: KolamCustomerSaleActivity[];
+}
+
 export interface KolamCustomerSavePayload {
   address: string;
   email: string;
@@ -212,6 +246,30 @@ export function normalizeKolamCustomerStorageResult(
       items.length,
       fallback,
     ),
+  };
+}
+
+export function normalizeKolamCustomerActivityResult({
+  projects,
+  sales,
+  subscriptions,
+}: {
+  projects: unknown;
+  sales: unknown;
+  subscriptions: unknown;
+}): KolamCustomerActivityResult {
+  return {
+    projects: extractKolamCustomerRows(projects)
+      .map(normalizeKolamCustomerProjectActivity)
+      .filter((item): item is KolamCustomerProjectActivity => Boolean(item)),
+    sales: extractKolamCustomerRows(sales)
+      .map(normalizeKolamCustomerSaleActivity)
+      .filter((item): item is KolamCustomerSaleActivity => Boolean(item)),
+    subscriptions: extractKolamCustomerRows(subscriptions)
+      .map(normalizeKolamCustomerSubscriptionActivity)
+      .filter(
+        (item): item is KolamCustomerSubscriptionActivity => Boolean(item),
+      ),
   };
 }
 
@@ -353,6 +411,79 @@ function normalizeKolamCustomerStorageProduct(
   };
 }
 
+function normalizeKolamCustomerProjectActivity(
+  value: unknown,
+): KolamCustomerProjectActivity | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  const sale = asRecord(record.sale);
+  const task = asRecord(record.linkedTask);
+
+  return {
+    createdAt: getString(record, 'createdAt'),
+    id,
+    invoiceCode: getString(sale, 'invoiceCode'),
+    lifecycleStatus: getString(record, 'lifecycleStatus'),
+    quotationNumber: getString(record, 'quotationNumber'),
+    taskTitle: getString(task, 'title'),
+  };
+}
+
+function normalizeKolamCustomerSubscriptionActivity(
+  value: unknown,
+): KolamCustomerSubscriptionActivity | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  const sale = asRecord(record.sale);
+  const service = asRecord(record.service);
+
+  return {
+    endDate: getString(record, 'endDate'),
+    id,
+    invoiceCode: getString(sale, 'invoiceCode'),
+    packageName:
+      getString(service, 'name') ||
+      getString(record, 'packageCode') ||
+      getString(record, 'packageName'),
+    saleId:
+      getString(sale, '_id') ||
+      getString(sale, 'id') ||
+      getString(record, 'sale'),
+    startDate: getString(record, 'startDate'),
+    status: getString(record, 'status'),
+    subscriptionNumber: getString(record, 'subscriptionNumber'),
+  };
+}
+
+function normalizeKolamCustomerSaleActivity(
+  value: unknown,
+): KolamCustomerSaleActivity | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    createdAt: getString(record, 'createdAt'),
+    finalTotal: getNumber(record, 'finalTotal') ?? 0,
+    id,
+    invoiceCode: getString(record, 'invoiceCode'),
+    status: getString(record, 'status'),
+  };
+}
+
 export function getKolamCustomerPrimaryAddress(customer: KolamCustomer) {
   return (
     customer.addresses.find(address => address.isDefault) ??
@@ -463,6 +594,25 @@ function normalizeStringList(value: unknown) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : [];
+}
+
+function extractKolamCustomerRows(payload: unknown) {
+  const record = asRecord(payload);
+  const dataRecord = asRecord(record.data);
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(record.data)) {
+    return record.data;
+  }
+
+  if (Array.isArray(dataRecord.data)) {
+    return dataRecord.data;
+  }
+
+  return [];
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

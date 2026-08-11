@@ -1,9 +1,11 @@
 import {appConfig} from '../config/app';
 import {
+  normalizeKolamCustomerActivityResult,
   normalizeKolamCustomerDetail,
   normalizeKolamCustomerListResult,
   normalizeKolamCustomerPointTransactionsResult,
   normalizeKolamCustomerStorageResult,
+  type KolamCustomerActivityResult,
   type KolamCustomer,
   type KolamCustomerListQuery,
   type KolamCustomerListResult,
@@ -173,6 +175,27 @@ export async function getKolamCustomerStorage({
   });
 
   return normalizeKolamCustomerStorageResult(response, {limit, page});
+}
+
+export async function getKolamCustomerActivity(
+  customerId: string,
+): Promise<KolamCustomerActivityResult> {
+  const query = {
+    customer: customerId,
+    limit: 30,
+    page: 1,
+  };
+  const [projects, subscriptions, sales] = await Promise.all([
+    kolamRequest<unknown>('/custom-project', {query}),
+    kolamRequest<unknown>('/subscriptions', {query}),
+    kolamRequest<unknown>('/sales', {query}),
+  ]);
+
+  return normalizeKolamCustomerActivityResult({
+    projects,
+    sales,
+    subscriptions,
+  });
 }
 
 export async function getKolamCustomerFreyerDevices(
