@@ -63,6 +63,7 @@ import {
   firstKolamBiteshipScheduledLabel,
   isKolamBiteshipCheckoutItem,
   isKolamBiteshipInstantCourier,
+  needsKolamBiteshipBooking,
   resolveKolamBiteshipItemBooking,
   showKolamWebstoreBiteshipRequest,
   showKolamWebstoreBiteshipReschedule,
@@ -1758,6 +1759,7 @@ function KolamBiteshipWaybillItem({
 
   const trimmedWaybill = waybill.trim();
   const deliveryStatus = item.itemDeliveryStatus || 'none';
+  const needsBooking = needsKolamBiteshipBooking(item);
   const booking = resolveKolamBiteshipItemBooking(
     item,
     saleStatus,
@@ -1807,50 +1809,63 @@ function KolamBiteshipWaybillItem({
           Biteship Order ID: {booking.orderId}
         </Text>
       ) : null}
-      {booking?.state === 'pending' ? (
-        <Text style={styles.biteshipPendingText}>
-          Booking Biteship sedang diproses...
-        </Text>
-      ) : null}
-      {booking?.state === 'failed' ? (
-        <Text style={styles.biteshipFailedText}>
-          Booking Biteship gagal - masukkan resi manual di bawah.
-          {booking.message ? ` (${booking.message})` : ''}
-        </Text>
-      ) : null}
-      <View style={styles.biteshipWaybillInputRow}>
-        <KolamFormTextField
-          editable={!inputDisabled}
-          onChangeText={setWaybill}
-          placeholder="Masukkan nomor resi"
-          style={styles.biteshipWaybillInput}
-          value={waybill}
-        />
-        <KolamSaveButton
-          disabled={saveDisabled}
-          label={item.biteshipWaybillId ? 'Perbarui' : 'Simpan'}
-          onPress={async () => {
-            if (saveDisabled) {
-              return;
-            }
-            setSubmitting(true);
-            try {
-              await onSave(trimmedWaybill);
-            } finally {
-              setSubmitting(false);
-            }
-          }}
-          style={styles.biteshipWaybillSaveButton}
-        />
-      </View>
-      {item.biteshipTrackingOrderStatus ? (
-        <Text style={styles.metaText}>
-          Status Biteship:{' '}
-          <Text style={styles.primaryText}>
-            {item.biteshipTrackingOrderStatus.toUpperCase()}
-          </Text>
-        </Text>
-      ) : null}
+      {needsBooking ? (
+        <>
+          {booking?.state === 'pending' ? (
+            <Text style={styles.biteshipPendingText}>
+              Booking Biteship sedang diproses...
+            </Text>
+          ) : null}
+          <Text style={styles.biteshipFailedText}>Book ulang Biteship</Text>
+        </>
+      ) : (
+        <>
+          {booking?.state === 'pending' ? (
+            <Text style={styles.biteshipPendingText}>
+              Booking Biteship sedang diproses...
+            </Text>
+          ) : null}
+          {booking?.state === 'failed' ? (
+            <Text style={styles.biteshipFailedText}>
+              Booking Biteship gagal
+              {booking.message ? ` (${booking.message})` : ''}
+            </Text>
+          ) : null}
+          <View style={styles.biteshipWaybillInputRow}>
+            <KolamFormTextField
+              editable={!inputDisabled}
+              onChangeText={setWaybill}
+              placeholder="Masukkan nomor resi"
+              style={styles.biteshipWaybillInput}
+              value={waybill}
+            />
+            <KolamSaveButton
+              disabled={saveDisabled}
+              label={item.biteshipWaybillId ? 'Perbarui' : 'Simpan'}
+              onPress={async () => {
+                if (saveDisabled) {
+                  return;
+                }
+                setSubmitting(true);
+                try {
+                  await onSave(trimmedWaybill);
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              style={styles.biteshipWaybillSaveButton}
+            />
+          </View>
+          {item.biteshipTrackingOrderStatus ? (
+            <Text style={styles.metaText}>
+              Status Biteship:{' '}
+              <Text style={styles.primaryText}>
+                {item.biteshipTrackingOrderStatus.toUpperCase()}
+              </Text>
+            </Text>
+          ) : null}
+        </>
+      )}
     </View>
   );
 }

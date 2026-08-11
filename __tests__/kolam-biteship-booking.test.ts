@@ -60,6 +60,8 @@ describe('kolam-biteship-booking', () => {
     expect(
       resolveKolamBiteshipItemBooking(withFakeResi, 'paid', [])?.state,
     ).toBe('failed');
+    // UI: hide manual waybill/POD; operator must Book ulang
+    expect(Boolean(withFakeResi.biteshipOrderId.trim())).toBe(false);
   });
 
   it('booked only when biteshipOrderId exists', () => {
