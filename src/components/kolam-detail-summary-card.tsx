@@ -27,6 +27,9 @@ export type KolamDetailSummaryCardProps = {
   /** Label above `body` when body is present. */
   bodyTitle?: string;
   actions?: React.ReactNode;
+  /** Optional compact panel inside the card, to the right of the field grid. */
+  aside?: React.ReactNode;
+  asideStyle?: StyleProp<ViewStyle>;
   description?: string;
   fieldColumns?: 2 | 3 | 4;
   fields: KolamDetailSummaryField[];
@@ -60,6 +63,8 @@ function SummaryBodyPanel({
  */
 export function KolamDetailSummaryCard({
   actions,
+  aside,
+  asideStyle,
   body,
   bodyTitle,
   description,
@@ -72,6 +77,7 @@ export function KolamDetailSummaryCard({
   title,
 }: KolamDetailSummaryCardProps) {
   const hasHeader = Boolean(title || description || actions);
+  const hasAside = Boolean(aside);
   const fieldGrid =
     fields.length > 0 ? (
       <View style={styles.fieldGrid}>
@@ -120,10 +126,22 @@ export function KolamDetailSummaryCard({
         </View>
       ) : null}
 
-      {leading ? (
+      {leading || hasAside ? (
         <View style={styles.leadingRow}>
-          <View style={[styles.leadingSlot, leadingStyle]}>{leading}</View>
-          <View style={styles.leadingContent}>{fieldGrid}</View>
+          {leading ? (
+            <View style={[styles.leadingSlot, leadingStyle]}>{leading}</View>
+          ) : null}
+          <View
+            style={[
+              styles.leadingContent,
+              !leading && styles.leadingContentNoLeading,
+              hasAside ? styles.leadingContentWithAside : null,
+            ]}>
+            {fieldGrid}
+          </View>
+          {hasAside ? (
+            <View style={[styles.asideSlot, asideStyle]}>{aside}</View>
+          ) : null}
         </View>
       ) : (
         fieldGrid
@@ -200,6 +218,18 @@ const styles = StyleSheet.create({
     flexBasis: '72%',
     flexGrow: 3,
     minWidth: 360,
+  },
+  leadingContentNoLeading: {
+    flexBasis: '64%',
+  },
+  leadingContentWithAside: {
+    flexBasis: '42%',
+    flexGrow: 2,
+  },
+  asideSlot: {
+    flexBasis: 280,
+    flexGrow: 1,
+    minWidth: 260,
   },
   fieldCell: {
     flexBasis: '46%',

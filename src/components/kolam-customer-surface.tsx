@@ -1096,8 +1096,20 @@ function KolamCustomerDetailSurface({
         <View
           style={[
             styles.detailMainColumn,
+            !hasAddresses && styles.detailMainColumnFull,
           ]}>
           <KolamDetailSummaryCard
+            aside={
+              <CustomerTaxProfilePanel
+                authUser={authUser}
+                form={taxProfile}
+                loaded={taxProfileLoaded}
+                onChange={handleChangeTaxProfile}
+                onSave={handleSaveTaxProfile}
+                saving={taxProfileSaving}
+              />
+            }
+            asideStyle={styles.customerSummaryTaxAside}
             body={
               customer.notes ? (
                 <Text style={styles.customerSummaryNotes}>
@@ -1184,17 +1196,8 @@ function KolamCustomerDetailSurface({
           />
         </View>
 
-        <View style={styles.detailSideColumn}>
-          <CustomerTaxProfileCard
-            authUser={authUser}
-            form={taxProfile}
-            loaded={taxProfileLoaded}
-            onChange={handleChangeTaxProfile}
-            onSave={handleSaveTaxProfile}
-            saving={taxProfileSaving}
-          />
-
-          {hasAddresses ? (
+        {hasAddresses ? (
+          <View style={styles.detailSideColumn}>
             <KolamContentFrame
               style={[styles.detailCard, styles.customerDetailSectionCard]}
               variant="settingsWebConfig">
@@ -1223,8 +1226,8 @@ function KolamCustomerDetailSurface({
                 ))}
               </View>
             </KolamContentFrame>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
       </View>
 
       <CustomerPointTransactionsCard
@@ -1756,7 +1759,7 @@ function CustomerPictureSummaryBox({
   );
 }
 
-function CustomerTaxProfileCard({
+function CustomerTaxProfilePanel({
   authUser,
   form,
   loaded,
@@ -1775,13 +1778,7 @@ function CustomerTaxProfileCard({
   const hasNpwp = loaded && hasKolamTaxPartyNpwp(form);
 
   return (
-    <KolamContentFrame
-      style={[
-        styles.detailCard,
-        styles.customerDetailSectionCard,
-        styles.customerTaxProfileCard,
-      ]}
-      variant="settingsWebConfig">
+    <View style={styles.customerTaxProfilePanel}>
       <View style={styles.taxHeader}>
         <Text style={styles.sectionTitle}>Profil pajak</Text>
         {loaded ? (
@@ -1843,7 +1840,7 @@ function CustomerTaxProfileCard({
           )}
         </View>
       )}
-    </KolamContentFrame>
+    </View>
   );
 }
 
@@ -3067,6 +3064,11 @@ const styles = StyleSheet.create({
     minWidth: 240,
     width: 260,
   },
+  customerSummaryTaxAside: {
+    flexBasis: 300,
+    flexGrow: 1,
+    minWidth: 280,
+  },
   customerSummaryPictureBox: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -3110,12 +3112,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  customerTaxProfileCard: {
+  customerTaxProfilePanel: {
     backgroundColor: '#f5f0ff',
     borderColor: '#d8c7ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
   },
   customerTaxProfileBody: {
-    gap: 12,
+    gap: 10,
   },
   taxHeader: {
     alignItems: 'center',
@@ -3130,7 +3136,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   formSplitCell: {
-    flexBasis: 260,
+    flexBasis: 180,
     flexGrow: 1,
     minWidth: 0,
   },
