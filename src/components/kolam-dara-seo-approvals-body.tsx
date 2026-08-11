@@ -11,6 +11,7 @@ import {
 import {
   KOLAM_DARA_SEO_STATUS_FILTERS,
   KOLAM_DARA_SEO_TARGET_TABS,
+  KOLAM_DARA_SEO_APPROVALS_PAGE_SIZE,
   buildKolamDaraSeoEntityHref,
   formatKolamDaraSeoApplySuccessLabel,
   formatKolamDaraSeoSuggestionStatus,
@@ -29,9 +30,12 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoApprovalsController} from '../hooks/use-kolam-dara-seo-approvals-controller';
 import {KolamButton} from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamEmptyState} from './kolam-empty-state';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
@@ -81,6 +85,81 @@ export function KolamDaraSeoApprovalsBody({
   const targetLabel =
     KOLAM_DARA_SEO_TARGET_TABS.find(item => item.id === controller.targetTab)
       ?.label ?? 'Tipe';
+  const tableColumns = useMemo<
+    Array<KolamListTableColumn<KolamDaraSeoSuggestion>>
+  >(
+    () => [
+      ...(canApprove
+        ? [
+            {
+              align: 'center' as const,
+              flex: 0.36,
+              id: 'select',
+              label: '',
+              render: (item: KolamDaraSeoSuggestion) => {
+                const ready = isKolamDaraSeoReadyToApply(item);
+                const selected = controller.selectedIds.includes(item.id);
+                return (
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{checked: selected, disabled: !ready}}
+                    disabled={!ready}
+                    onPress={() => controller.onToggleSelected(item.id)}
+                    style={[
+                      styles.check,
+                      selected ? styles.checkOn : null,
+                      !ready ? styles.checkDisabled : null,
+                    ]}>
+                    <Text style={styles.checkMark}>{selected ? '✓' : ''}</Text>
+                  </Pressable>
+                );
+              },
+            },
+          ]
+        : []),
+      {
+        flex: 0.72,
+        id: 'target',
+        label: 'Tipe',
+        render: (item: KolamDaraSeoSuggestion) => (
+          <Text style={styles.badge}>
+            {formatKolamDaraSeoTargetBadge(resolveKolamDaraSeoTargetType(item))}
+          </Text>
+        ),
+      },
+      {
+        flex: 1.8,
+        id: 'title',
+        label: 'Rekomendasi',
+        render: (item: KolamDaraSeoSuggestion) => (
+          <Text numberOfLines={2} style={styles.rowTitle}>
+            {item.title}
+          </Text>
+        ),
+      },
+      {
+        align: 'center' as const,
+        flex: 0.9,
+        id: 'status',
+        label: 'Status',
+        render: (item: KolamDaraSeoSuggestion) => (
+          <Text numberOfLines={2} style={styles.tableCenterText}>
+            {formatKolamDaraSeoSuggestionStatus(item.status)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center' as const,
+        flex: 0.6,
+        id: 'score',
+        label: 'Skor',
+        render: (item: KolamDaraSeoSuggestion) => (
+          <Text style={styles.tableCenterStrong}>{item.seoScore}/100</Text>
+        ),
+      },
+    ],
+    [canApprove, controller],
+  );
 
   const openPanel = (
     panel: Exclude<ApprovalsFilterPanel, null>,
@@ -170,14 +249,6 @@ export function KolamDaraSeoApprovalsBody({
                   controller.onResetFilters();
                 }}
               />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               {canApprove ? (
                 <KolamButton
                   disabled={
@@ -259,7 +330,31 @@ export function KolamDaraSeoApprovalsBody({
           <Text style={styles.meta}>Memuat…</Text>
         ) : null}
 
-        {!controller.loading && controller.pageItems.length === 0 ? (
+        <KolamListTableComposition
+          columns={tableColumns}
+          emptyTitle="Tidak ada data untuk filter ini"
+          getRowKey={item => item.id}
+          loading={controller.loading}
+          pagination={{
+            onPageChange: controller.onPageChange,
+            page: controller.page,
+            pageSize: KOLAM_DARA_SEO_APPROVALS_PAGE_SIZE,
+            total: controller.filteredTotal,
+          }}
+          renderActions={item => (
+            <KolamButton
+              label="Review"
+              onPress={() => {
+                void controller.onOpenDetail(item.id);
+              }}
+              size="sm"
+            />
+          )}
+          rows={controller.pageItems}
+          showFooter={controller.filteredTotal > 0}
+        />
+
+        {false && !controller.loading && controller.pageItems.length === 0 ? (
           <KolamEmptyState title="Tidak ada data untuk filter ini" />
         ) : (
           <View style={styles.list}>
@@ -278,7 +373,7 @@ export function KolamDaraSeoApprovalsBody({
           </View>
         )}
 
-        {controller.filteredTotal > 0 ? (
+        {false && controller.filteredTotal > 0 ? (
           <View style={styles.pagination}>
             <KolamButton
               disabled={controller.page <= 1}
@@ -620,6 +715,21 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  tableCenterText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    textAlign: 'center',
+    width: '100%',
+  },
+  tableCenterStrong: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
   },
   list: {
     gap: 8,
