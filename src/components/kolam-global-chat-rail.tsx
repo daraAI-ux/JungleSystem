@@ -9389,6 +9389,11 @@ const styles = StyleSheet.create({
   },
   messageBubbleOther: {
     alignSelf: 'flex-start',
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderWidth: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 2,
   },
   teamMessageAuthorRow: {
     alignItems: 'center',
