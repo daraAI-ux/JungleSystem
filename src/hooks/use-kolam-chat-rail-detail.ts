@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import type {KolamGlobalChatRailMode} from '../components/kolam-global-chat-rail';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { KolamGlobalChatRailMode } from '../components/kolam-global-chat-rail';
 import {
   attachKolamChatMarketplaceProduct,
   assignKolamChatConversation,
@@ -55,8 +55,8 @@ import {
   uploadKolamChatImage,
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
-import type {NativeImagePickerResult} from '../services/native-file-picker';
-import {resolveKolamTeamChatBotDisplayName} from '../domain/kolam-team-chat-bot-display';
+import type { NativeImagePickerResult } from '../services/native-file-picker';
+import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bot-display';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
@@ -196,15 +196,16 @@ export function useKolamChatRailDetail({
   const [messageSearchLoading, setMessageSearchLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [conversation, setConversation] = useState<KolamChatConversation | null>(
-    null,
-  );
+  const [conversation, setConversation] =
+    useState<KolamChatConversation | null>(null);
   const [callBusy, setCallBusy] = useState(false);
   const [activeCall, setActiveCall] = useState<KolamTeamChatCall | null>(null);
   const [callConfig, setCallConfig] = useState<KolamTeamChatCallConfig>({
     enabled: false,
   });
-  const [callErrorMessage, setCallErrorMessage] = useState<string | undefined>();
+  const [callErrorMessage, setCallErrorMessage] = useState<
+    string | undefined
+  >();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [purgingMessages, setPurgingMessages] = useState(false);
   const [presence, setPresence] = useState<KolamTeamChatPresence>(
@@ -214,70 +215,79 @@ export function useKolamChatRailDetail({
     useState<KolamChatRailTeamRoomMetadata>(EMPTY_TEAM_ROOM_METADATA);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refresh = useCallback(async (options?: KolamChatRailRefreshOptions) => {
-    const quiet = options?.quiet === true;
-    if (!selectedId) {
-      setMessages([]);
-      setMessageSearchResults(null);
-      setMessageSearchQuery('');
-      setMessageSearchLoading(false);
-      setConversation(null);
-      setPresence(EMPTY_TEAM_CHAT_PRESENCE);
-      setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
-      setActiveCall(null);
-      setErrorMessage(undefined);
-      setLoading(false);
-      return;
-    }
-
-    if (!quiet) {
-      setLoading(true);
-    }
-    setErrorMessage(undefined);
-
-    try {
-      if (mode === 'team-chat') {
+  const refresh = useCallback(
+    async (options?: KolamChatRailRefreshOptions) => {
+      const quiet = options?.quiet === true;
+      if (!selectedId) {
+        setMessages([]);
+        setMessageSearchResults(null);
+        setMessageSearchQuery('');
+        setMessageSearchLoading(false);
         setConversation(null);
-        const [nextMessages, nextMetadata] = await Promise.all([
-          getKolamTeamChatMessages(selectedId, {limit: 80}),
-          getKolamTeamChatMembers(selectedId).catch(() => EMPTY_TEAM_ROOM_METADATA),
-        ]);
-        await markKolamTeamChatRoomRead(selectedId).catch(() => undefined);
-        setTeamRoomMetadata(nextMetadata);
-        setMessages(
-          nextMessages.map(message => mapTeamChatMessage(message, currentUserId)),
-        );
+        setPresence(EMPTY_TEAM_CHAT_PRESENCE);
+        setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
+        setActiveCall(null);
+        setErrorMessage(undefined);
+        setLoading(false);
         return;
       }
 
-      const [nextConversation, nextMessages] = await Promise.all([
-        getKolamChatConversation(selectedId),
-        getKolamChatMessages(selectedId, {limit: 50}),
-      ]);
-      await markKolamChatConversationRead(selectedId).catch(() => undefined);
-      setConversation(nextConversation);
-      setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
-      const buyerDisplayName = getInboxBuyerDisplayName(nextConversation);
-      setMessages(
-        [...nextMessages]
-          .reverse()
-          .map(message => mapInboxMessage(message, buyerDisplayName)),
-      );
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Detail chat belum bisa dibaca.',
-      );
       if (!quiet) {
-        setMessages([]);
-        setConversation(null);
+        setLoading(true);
+      }
+      setErrorMessage(undefined);
+
+      try {
+        if (mode === 'team-chat') {
+          setConversation(null);
+          const [nextMessages, nextMetadata] = await Promise.all([
+            getKolamTeamChatMessages(selectedId, { limit: 80 }),
+            getKolamTeamChatMembers(selectedId).catch(
+              () => EMPTY_TEAM_ROOM_METADATA,
+            ),
+          ]);
+          await markKolamTeamChatRoomRead(selectedId).catch(() => undefined);
+          setTeamRoomMetadata(nextMetadata);
+          setMessages(
+            nextMessages.map(message =>
+              mapTeamChatMessage(message, currentUserId),
+            ),
+          );
+          return;
+        }
+
+        const [nextConversation, nextMessages] = await Promise.all([
+          getKolamChatConversation(selectedId),
+          getKolamChatMessages(selectedId, { limit: 50 }),
+        ]);
+        await markKolamChatConversationRead(selectedId).catch(() => undefined);
+        setConversation(nextConversation);
         setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
+        const buyerDisplayName = getInboxBuyerDisplayName(nextConversation);
+        setMessages(
+          [...nextMessages]
+            .reverse()
+            .map(message => mapInboxMessage(message, buyerDisplayName)),
+        );
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Detail chat belum bisa dibaca.',
+        );
+        if (!quiet) {
+          setMessages([]);
+          setConversation(null);
+          setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
+        }
+      } finally {
+        if (!quiet) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (!quiet) {
-        setLoading(false);
-      }
-    }
-  }, [currentUserId, mode, selectedId]);
+    },
+    [currentUserId, mode, selectedId],
+  );
 
   useEffect(() => {
     refresh();
@@ -292,7 +302,7 @@ export function useKolamChatRailDetail({
   const refreshCall = useCallback(async () => {
     if (mode !== 'team-chat' || !selectedId) {
       setActiveCall(null);
-      setCallConfig({enabled: false});
+      setCallConfig({ enabled: false });
       setCallErrorMessage(undefined);
       return;
     }
@@ -308,7 +318,9 @@ export function useKolamChatRailDetail({
       setActiveCall(call && call.status !== 'ended' ? call : null);
     } catch (error) {
       setCallErrorMessage(
-        error instanceof Error ? error.message : 'Status call belum bisa dibaca.',
+        error instanceof Error
+          ? error.message
+          : 'Status call belum bisa dibaca.',
       );
     }
   }, [mode, selectedId]);
@@ -604,7 +616,7 @@ export function useKolamChatRailDetail({
       setMessages(current =>
         current.map(message =>
           message.id === messageId
-            ? {...message, ...mapInboxMessagePatch(patch, message)}
+            ? { ...message, ...mapInboxMessagePatch(patch, message) }
             : message,
         ),
       );
@@ -623,13 +635,15 @@ export function useKolamChatRailDetail({
         getInboxBuyerDisplayName(conversation),
       );
       setMessages(current => {
-        const existingIndex = current.findIndex(item => item.id === nextMessage.id);
+        const existingIndex = current.findIndex(
+          item => item.id === nextMessage.id,
+        );
         if (existingIndex === -1) {
           return [...current, nextMessage];
         }
 
         return current.map(item =>
-          item.id === nextMessage.id ? {...item, ...nextMessage} : item,
+          item.id === nextMessage.id ? { ...item, ...nextMessage } : item,
         );
       });
     },
@@ -656,7 +670,10 @@ export function useKolamChatRailDetail({
           setMessages(current =>
             current.map(item =>
               item.id === messageId
-                ? mapInboxMessage(message, getInboxBuyerDisplayName(conversation))
+                ? mapInboxMessage(
+                    message,
+                    getInboxBuyerDisplayName(conversation),
+                  )
                 : item,
             ),
           );
@@ -747,9 +764,7 @@ export function useKolamChatRailDetail({
       return result.deletedCount;
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Gagal menghapus pesan room.';
+        error instanceof Error ? error.message : 'Gagal menghapus pesan room.';
       setErrorMessage(message);
       throw error instanceof Error ? error : new Error(message);
     } finally {
@@ -794,15 +809,18 @@ export function useKolamChatRailDetail({
     await refresh();
   }, [conversation, refresh, runInboxConversationAction, selectedId]);
 
-  const assignInboxToMe = useCallback(async (handoverNote?: string) => {
-    if (!selectedId || !currentUserId) {
-      return;
-    }
+  const assignInboxToMe = useCallback(
+    async (handoverNote?: string) => {
+      if (!selectedId || !currentUserId) {
+        return;
+      }
 
-    await runInboxConversationAction(() =>
-      assignKolamChatConversation(selectedId, currentUserId, handoverNote),
-    );
-  }, [currentUserId, runInboxConversationAction, selectedId]);
+      await runInboxConversationAction(() =>
+        assignKolamChatConversation(selectedId, currentUserId, handoverNote),
+      );
+    },
+    [currentUserId, runInboxConversationAction, selectedId],
+  );
 
   const toggleInboxAiHandled = useCallback(async () => {
     if (!selectedId || !conversation) {
@@ -913,7 +931,9 @@ export function useKolamChatRailDetail({
       return;
     }
 
-    await runCallAction(() => handoverKolamTeamChatCall(activeCall._id, 'android'));
+    await runCallAction(() =>
+      handoverKolamTeamChatCall(activeCall._id, 'android'),
+    );
   }, [activeCall, runCallAction]);
 
   const muteCallParticipant = useCallback(
@@ -990,7 +1010,9 @@ export function useKolamChatRailDetail({
 }
 
 function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
-  return typeof participant.user === 'string' ? participant.user : participant.user?._id;
+  return typeof participant.user === 'string'
+    ? participant.user
+    : participant.user?._id;
 }
 
 function mapInboxMessage(
@@ -1063,7 +1085,9 @@ function mapInboxMessagePatch(
     next.senderIsAi = isInboxAiMessage({
       daraMeta: next.daraMeta ?? current.daraMeta ?? undefined,
       senderName:
-        typeof patch.senderName === 'string' ? patch.senderName : current.author,
+        typeof patch.senderName === 'string'
+          ? patch.senderName
+          : current.author,
       senderType: patch.senderType,
     } as KolamChatMessage);
   }
@@ -1074,10 +1098,10 @@ function mapInboxMessagePatch(
 function buildMarketplaceAttachBody(item: KolamChatMarketplaceListingHit) {
   return {
     ...(item.entityType === 'species'
-      ? {speciesId: item.entityId}
-      : {productId: item.entityId}),
+      ? { speciesId: item.entityId }
+      : { productId: item.entityId }),
     entityType: item.entityType,
-    ...(item.sku ? {sku: item.sku} : {}),
+    ...(item.sku ? { sku: item.sku } : {}),
   };
 }
 
@@ -1085,8 +1109,7 @@ function buildOptimisticMarketplaceMessage(
   item: KolamChatMarketplaceListingHit,
   tempId: string,
 ): KolamChatRailDetailMessage {
-  const platformLabel =
-    item.platform === 'tokopedia' ? 'Tokopedia' : 'Shopee';
+  const platformLabel = item.platform === 'tokopedia' ? 'Tokopedia' : 'Shopee';
   const name = item.listingName || item.name || 'Produk marketplace';
   const now = new Date().toISOString();
 
@@ -1137,6 +1160,7 @@ function mapTeamChatMessage(
   currentUserId?: string,
 ): KolamChatRailDetailMessage {
   const isAi = isTeamChatAiMessage(message);
+  const senderId = getTeamChatSenderId(message);
 
   return {
     attachments: Array.isArray(message.attachments) ? message.attachments : [],
@@ -1145,17 +1169,19 @@ function mapTeamChatMessage(
     author: getTeamChatAuthor(message),
     body:
       message.body?.trim() ||
-      (message.attachments?.length || message.embeds?.length || message.linkPreviews?.length
+      (message.attachments?.length ||
+      message.embeds?.length ||
+      message.linkPreviews?.length
         ? ''
         : 'Pesan'),
     linkPreviews: Array.isArray(message.linkPreviews)
       ? message.linkPreviews
       : [],
-    mine: !isAi,
+    mine: Boolean(!isAi && currentUserId && senderId === currentUserId),
     reactions: groupTeamChatReactions(message.reactions, currentUserId),
     replyPreview: message.replyPreview ?? null,
     senderIsAi: isAi,
-    senderId: getTeamChatSenderId(message),
+    senderId,
     senderProfilePicture: getTeamChatSenderProfilePicture(message),
     botKey: message.botKey?.trim() || null,
     botAvatarUrl: message.botAvatarUrl?.trim() || null,
@@ -1223,7 +1249,9 @@ function isInboxAiMessage(message: Partial<KolamChatMessage>) {
     return true;
   }
 
-  const senderName = String(message.senderName ?? '').trim().toLowerCase();
+  const senderName = String(message.senderName ?? '')
+    .trim()
+    .toLowerCase();
   return (
     senderName === 'dara' ||
     senderName.includes('dara') ||
@@ -1231,9 +1259,7 @@ function isInboxAiMessage(message: Partial<KolamChatMessage>) {
   );
 }
 
-function getInboxBuyerDisplayName(
-  conversation?: KolamChatConversation | null,
-) {
+function getInboxBuyerDisplayName(conversation?: KolamChatConversation | null) {
   const contact = conversation?.contactId;
   if (!contact || typeof contact === 'string') {
     return '';
@@ -1248,7 +1274,7 @@ function getInboxBuyerDisplayName(
   return contact.displayName?.trim() || customerName || '';
 }
 
-function getInboxMessageBody({content}: KolamChatMessage) {
+function getInboxMessageBody({ content }: KolamChatMessage) {
   if (!content) {
     return 'Pesan';
   }
