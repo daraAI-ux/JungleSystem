@@ -91,12 +91,18 @@ export function KolamPusatAiTransaksiCopilotBody({
             <KolamEmptyState message={error} title="Gagal memuat" />
           ) : null}
 
-          <NotifyRoomSection
-            controller={controller}
-            onRouteChange={onRouteChange}
-          />
+          <View style={styles.sideBySideGrid}>
+            <View style={styles.sideBySideItem}>
+              <NotifyRoomSection
+                controller={controller}
+                onRouteChange={onRouteChange}
+              />
+            </View>
+            <View style={styles.sideBySideItem}>
+              <BotProfileSection controller={controller} />
+            </View>
+          </View>
           <BotHealthSection controller={controller} />
-          <BotProfileSection controller={controller} />
 
           {loading && !stats ? (
             <Text style={styles.loadingText}>Memuat…</Text>
