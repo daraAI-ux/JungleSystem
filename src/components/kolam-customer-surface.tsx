@@ -83,6 +83,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamCustomerModule} from './kolam-pos-workspace-widgets';
 import {KolamNotesField} from './kolam-notes-field';
 import {KolamPdfDownloadButton} from './kolam-pdf-download-button';
@@ -1419,6 +1420,20 @@ function KolamCustomerFormSurface({
 
   return (
     <View style={styles.detailSurface}>
+      <View style={kolamTableToolbarStyles.shell}>
+        <View style={kolamTableToolbarStyles.row}>
+          <View style={kolamTableToolbarStyles.filters} />
+          <View style={kolamTableToolbarStyles.actions}>
+            <KolamSaveButton
+              disabled={saving}
+              label={saving ? 'Menyimpan...' : 'Simpan'}
+              onPress={handleSave}
+            />
+            <KolamCancelButton disabled={saving} onPress={handleCancel} />
+          </View>
+        </View>
+      </View>
+
       <View style={styles.detailHeader}>
         <View style={styles.detailHeading}>
           <Text style={styles.detailTitle}>
@@ -1429,14 +1444,6 @@ function KolamCustomerFormSurface({
               ? 'Perbarui informasi kontak dan data pribadi pelanggan.'
               : 'Isi informasi pribadi dan kontak pelanggan.'}
           </Text>
-        </View>
-        <View style={styles.detailActions}>
-          <KolamCancelButton disabled={saving} onPress={handleCancel} />
-          <KolamSaveButton
-            disabled={saving}
-            label={saving ? 'Menyimpan...' : 'Simpan'}
-            onPress={handleSave}
-          />
         </View>
       </View>
 
@@ -3051,14 +3058,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 13,
     lineHeight: 20,
-  },
-  detailActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexShrink: 0,
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
   detailBackButton: {
     alignSelf: 'flex-start',
