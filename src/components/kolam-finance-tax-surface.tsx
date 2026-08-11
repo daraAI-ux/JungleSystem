@@ -1,6 +1,6 @@
-import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
-import {useKolamAuthContext} from '../context/kolam-app-contexts';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import {
   buildKolamDaraTaxRoute,
   getKolamDaraTaxTab,
@@ -10,18 +10,25 @@ import {
   type KolamDaraTaxPeriod,
   type KolamDaraTaxTabId,
 } from '../domain/kolam-finance-tax';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {useKolamFinanceTaxController} from '../hooks/use-kolam-finance-tax-controller';
-import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
-import {KolamDaraTaxLaporanBody} from './kolam-dara-tax-laporan-body';
-import {KolamDaraTaxOperasionalBody} from './kolam-dara-tax-operasional-body';
-import {KolamDaraTaxRegulasiBody} from './kolam-dara-tax-regulasi-body';
-import {KolamDaraTaxRingkasanBody} from './kolam-dara-tax-ringkasan-body';
-import {KolamDaraTaxSetoranBody} from './kolam-dara-tax-setoran-body';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamEmptyState} from './kolam-empty-state';
-import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
-import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { useKolamFinanceTaxController } from '../hooks/use-kolam-finance-tax-controller';
+import {
+  runKolamDaraTaxBootstrap,
+  runKolamDaraTaxReaccruePph21,
+  runKolamDaraTaxSnapshotBackfill,
+} from '../services/kolam-dara-tax-api';
+import { KolamButton } from './kolam-button';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
+import { KolamDaraTaxLaporanBody } from './kolam-dara-tax-laporan-body';
+import { KolamDaraTaxOperasionalBody } from './kolam-dara-tax-operasional-body';
+import { KolamDaraTaxRegulasiBody } from './kolam-dara-tax-regulasi-body';
+import { KolamDaraTaxRingkasanBody } from './kolam-dara-tax-ringkasan-body';
+import { KolamDaraTaxSetoranBody } from './kolam-dara-tax-setoran-body';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamRefreshIcon } from './kolam-refresh-icon';
+import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
+import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
 /** FE `DaraTaxDashboardPage` + `TaxIntelligenceDashboard` shell (Batch 0). */
 export function KolamFinanceTaxSurface({
@@ -32,11 +39,12 @@ export function KolamFinanceTaxSurface({
   route: string;
 }) {
   const controller = useKolamFinanceTaxController(route);
-  const {authUser} = useKolamAuthContext();
+  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
+  const { authUser } = useKolamAuthContext();
   const access = resolveKolamDaraTaxAccess({
     roleKey: authUser?.roleKey,
     permissions: authUser?.permissions,
-    isOwner: (authUser as {isOwner?: boolean} | null | undefined)?.isOwner,
+    isOwner: (authUser as { isOwner?: boolean } | null | undefined)?.isOwner,
   });
 
   if (!access.canSee) {
@@ -51,6 +59,25 @@ export function KolamFinanceTaxSurface({
   const selectedTabLabel =
     KOLAM_DARA_TAX_TABS.find(tab => tab.id === selectedTab)?.label ??
     'Ringkasan';
+  const showMaintenanceActions = selectedTab === 'regulasi' && access.isAdmin;
+
+  const runMaintenance = (
+    action: () => Promise<string | void>,
+    successFallback: string,
+    errorFallback: string,
+  ) => {
+    setMaintenanceBusy(true);
+    action()
+      .then(msg => {
+        controller.onSetNotice(msg || successFallback);
+        void controller.onRefreshMonitoring();
+      })
+      .catch(() => controller.onSetNotice(errorFallback))
+      .finally(() => setMaintenanceBusy(false));
+  };
+  const maintenanceIcon = (
+    <KolamRefreshIcon color={V.colors.primaryFg} size={14} />
+  );
 
   return (
     <View style={styles.surface}>
@@ -72,6 +99,106 @@ export function KolamFinanceTaxSurface({
                 value={controller.period}
               />
             </View>
+            {showMaintenanceActions ? (
+              <View style={kolamTableToolbarStyles.actions}>
+                <KolamButton
+                  disabled={maintenanceBusy}
+                  icon={maintenanceIcon}
+                  intent="outline"
+                  label="Inisialisasi"
+                  onPress={() =>
+                    runMaintenance(
+                      runKolamDaraTaxBootstrap,
+                      'Inisialisasi berhasil',
+                      'Inisialisasi gagal',
+                    )
+                  }
+                  size="sm"
+                  style={styles.maintenanceButton}
+                  textStyle={styles.maintenanceButtonText}
+                />
+                <KolamButton
+                  disabled={maintenanceBusy}
+                  icon={maintenanceIcon}
+                  intent="outline"
+                  label="Uji isi ulang"
+                  onPress={() =>
+                    runMaintenance(
+                      () =>
+                        runKolamDaraTaxSnapshotBackfill({
+                          dryRun: true,
+                          limit: 100,
+                        }),
+                      'Uji jalan selesai',
+                      'Uji isi ulang gagal',
+                    )
+                  }
+                  size="sm"
+                  style={styles.maintenanceButton}
+                  textStyle={styles.maintenanceButtonText}
+                />
+                <KolamButton
+                  disabled={maintenanceBusy}
+                  icon={maintenanceIcon}
+                  intent="outline"
+                  label="Terapkan isi ulang"
+                  onPress={() =>
+                    runMaintenance(
+                      () =>
+                        runKolamDaraTaxSnapshotBackfill({
+                          dryRun: false,
+                          limit: 200,
+                        }),
+                      'Isi ulang diterapkan',
+                      'Isi ulang gagal',
+                    )
+                  }
+                  size="sm"
+                  style={styles.maintenanceButton}
+                  textStyle={styles.maintenanceButtonText}
+                />
+                <KolamButton
+                  disabled={maintenanceBusy}
+                  icon={maintenanceIcon}
+                  intent="outline"
+                  label="Uji PPh 21"
+                  onPress={() =>
+                    runMaintenance(
+                      () =>
+                        runKolamDaraTaxReaccruePph21({
+                          dryRun: true,
+                          limit: 500,
+                        }),
+                      'Uji jalan selesai',
+                      'Gagal',
+                    )
+                  }
+                  size="sm"
+                  style={styles.maintenanceButton}
+                  textStyle={styles.maintenanceButtonText}
+                />
+                <KolamButton
+                  disabled={maintenanceBusy}
+                  icon={maintenanceIcon}
+                  intent="outline"
+                  label="Terapkan PPh 21"
+                  onPress={() =>
+                    runMaintenance(
+                      () =>
+                        runKolamDaraTaxReaccruePph21({
+                          dryRun: false,
+                          limit: 500,
+                        }),
+                      'Diterapkan',
+                      'Gagal',
+                    )
+                  }
+                  size="sm"
+                  style={styles.maintenanceButton}
+                  textStyle={styles.maintenanceButtonText}
+                />
+              </View>
+            ) : null}
           </View>
         </View>
       </View>
@@ -86,7 +213,8 @@ export function KolamFinanceTaxSurface({
 
       <KolamDetailScrollSurface
         contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}>
+        style={styles.scroll}
+      >
         <KolamSurfacePanelTabs
           onSelectTab={(tabId: KolamDaraTaxTabId) => {
             onRouteChange?.(buildKolamDaraTaxRoute(tabId));
@@ -183,6 +311,13 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     lineHeight: 18,
+  },
+  maintenanceButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  maintenanceButtonText: {
+    color: V.colors.primaryFg,
   },
   scroll: {
     flex: 1,

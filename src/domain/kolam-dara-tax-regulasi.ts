@@ -9,8 +9,7 @@ export type KolamDaraTaxRmsSubTab =
   | 'draft'
   | 'versi'
   | 'kb'
-  | 'audit'
-  | 'maintenance';
+  | 'audit';
 
 export const KOLAM_DARA_TAX_RMS_TABS: Array<{
   id: KolamDaraTaxRmsSubTab;
@@ -24,7 +23,6 @@ export const KOLAM_DARA_TAX_RMS_TABS: Array<{
   { id: 'versi', label: 'Versi' },
   { id: 'kb', label: 'Basis pengetahuan' },
   { id: 'audit', label: 'Log audit', approveOnly: true },
-  { id: 'maintenance', label: 'Pemeliharaan', adminOnly: true },
 ];
 
 export const KOLAM_DARA_TAX_WATCH_STATUS_LABEL: Record<string, string> = {

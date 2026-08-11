@@ -39,9 +39,6 @@ import {
   fetchKolamDaraTaxRegulationVersions,
   rejectKolamDaraTaxRegulationDraft,
   rollbackKolamDaraTaxRegulationVersion,
-  runKolamDaraTaxBootstrap,
-  runKolamDaraTaxReaccruePph21,
-  runKolamDaraTaxSnapshotBackfill,
 } from '../services/kolam-dara-tax-api';
 import { KolamButton } from './kolam-button';
 import { KolamCancelButton } from './kolam-cancel-button';
@@ -231,8 +228,6 @@ export function KolamDaraTaxRegulasiBody({
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditPage, setAuditPage] = useState(1);
 
-  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
-
   useEffect(() => {
     setVersions(versionsProp);
   }, [versionsProp]);
@@ -419,8 +414,8 @@ export function KolamDaraTaxRegulasiBody({
           {!activeVersion && isAdmin ? (
             <View style={styles.roseBanner}>
               <Text style={styles.roseText}>
-                Belum ada versi regulasi aktif. Jalankan inisialisasi di
-                Pemeliharaan.
+                Belum ada versi regulasi aktif. Jalankan inisialisasi dari
+                toolbar DARA Pajak.
               </Text>
             </View>
           ) : null}
@@ -1210,85 +1205,6 @@ export function KolamDaraTaxRegulasiBody({
               ) : null}
             </>
           )}
-        </View>
-      ) : null}
-
-      {rmsSubTab === 'maintenance' && isAdmin ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Pemeliharaan</Text>
-          <View style={styles.rowActions}>
-            <KolamButton
-              disabled={maintenanceBusy}
-              intent="primary"
-              label="Inisialisasi pengetahuan ID"
-              onPress={() => {
-                setMaintenanceBusy(true);
-                runKolamDaraTaxBootstrap()
-                  .then(() => {
-                    onNotice('Inisialisasi berhasil');
-                    onRefreshMonitoring();
-                  })
-                  .catch(() => onNotice('Inisialisasi gagal'))
-                  .finally(() => setMaintenanceBusy(false));
-              }}
-            />
-            <KolamButton
-              disabled={maintenanceBusy}
-              intent="outline"
-              label={
-                maintenanceBusy ? 'Mengisi ulang…' : 'Uji isi ulang cuplikan'
-              }
-              onPress={() => {
-                setMaintenanceBusy(true);
-                runKolamDaraTaxSnapshotBackfill({ dryRun: true, limit: 100 })
-                  .then(msg => {
-                    onNotice(msg || 'Uji jalan selesai');
-                    onRefreshMonitoring();
-                  })
-                  .catch(() => onNotice('Uji isi ulang gagal'))
-                  .finally(() => setMaintenanceBusy(false));
-              }}
-            />
-            <KolamButton
-              disabled={maintenanceBusy}
-              intent="outline"
-              label="Terapkan isi ulang cuplikan"
-              onPress={() => {
-                setMaintenanceBusy(true);
-                runKolamDaraTaxSnapshotBackfill({ dryRun: false, limit: 200 })
-                  .then(msg => {
-                    onNotice(msg || 'Isi ulang diterapkan');
-                    onRefreshMonitoring();
-                  })
-                  .catch(() => onNotice('Isi ulang gagal'))
-                  .finally(() => setMaintenanceBusy(false));
-              }}
-            />
-            <KolamButton
-              disabled={maintenanceBusy}
-              intent="outline"
-              label="Uji hitung ulang PPh 21"
-              onPress={() => {
-                setMaintenanceBusy(true);
-                runKolamDaraTaxReaccruePph21({ dryRun: true, limit: 500 })
-                  .then(msg => onNotice(msg || 'Uji jalan selesai'))
-                  .catch(() => onNotice('Gagal'))
-                  .finally(() => setMaintenanceBusy(false));
-              }}
-            />
-            <KolamButton
-              disabled={maintenanceBusy}
-              intent="outline"
-              label="Terapkan hitung ulang PPh 21"
-              onPress={() => {
-                setMaintenanceBusy(true);
-                runKolamDaraTaxReaccruePph21({ dryRun: false, limit: 500 })
-                  .then(msg => onNotice(msg || 'Diterapkan'))
-                  .catch(() => onNotice('Gagal'))
-                  .finally(() => setMaintenanceBusy(false));
-              }}
-            />
-          </View>
         </View>
       ) : null}
     </View>
