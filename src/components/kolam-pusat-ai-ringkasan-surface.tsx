@@ -46,6 +46,7 @@ import {
 } from '../domain/kolam-pusat-ai-owner-copilot';
 import {isTopNavAdminRole} from '../domain/top-nav';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import {getKolamFileUrl} from '../lib/file-url';
 import {
   useKolamPusatAiLogDaraController,
   type KolamPusatAiLogDaraController,
@@ -71,6 +72,7 @@ import {KolamEmptyState} from './kolam-empty-state';
 import {KolamPusatAiInventoryCopilotBody} from './kolam-pusat-ai-inventory-copilot-body';
 import {KolamPusatAiPoCopilotBody} from './kolam-pusat-ai-po-copilot-body';
 import {KolamPusatAiTransaksiCopilotBody} from './kolam-pusat-ai-transaksi-copilot-body';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -294,6 +296,8 @@ function KolamPusatAiOwnerCopilotBody({
           <Text style={styles.loadingText}>Memuat…</Text>
         ) : null}
 
+        <OwnerCopilotDaraAvatarCard controller={controller} />
+
         {error && !dash ? (
           <KolamEmptyState message={error} title="Gagal memuat" />
         ) : null}
@@ -301,6 +305,52 @@ function KolamPusatAiOwnerCopilotBody({
         {dash ? <OwnerCopilotDashboardContent dash={dash} /> : null}
       </View>
     </ScrollView>
+  );
+}
+
+function OwnerCopilotDaraAvatarCard({
+  controller,
+}: {
+  controller: KolamPusatAiOwnerCopilotController;
+}) {
+  const avatarUri = controller.daraAvatarUrl
+    ? getKolamFileUrl(controller.daraAvatarUrl) ?? controller.daraAvatarUrl
+    : '';
+
+  return (
+    <View style={styles.ownerAvatarCard}>
+      <View style={styles.ownerAvatarFrame}>
+        {avatarUri ? (
+          <KolamRemoteImage
+            accessibilityLabel="Avatar DARA"
+            resizeMode="cover"
+            revision={avatarUri}
+            scope="owner-copilot-dara-avatar"
+            sourceUri={avatarUri}
+            style={styles.ownerAvatarImage}
+          />
+        ) : (
+          <Text style={styles.ownerAvatarFallback}>DARA</Text>
+        )}
+      </View>
+      <View style={styles.ownerAvatarCopy}>
+        <Text style={styles.ownerCardTitle}>Profil DARA</Text>
+        <Text style={styles.ownerCardMuted}>
+          Avatar DARA untuk Kolam dan webstore.
+        </Text>
+        {controller.notice ? (
+          <Text style={styles.ownerNotice}>{controller.notice}</Text>
+        ) : null}
+      </View>
+      <KolamButton
+        disabled={controller.avatarUploading}
+        intent="secondary"
+        label={controller.avatarUploading ? 'Mengunggah...' : 'Unggah avatar'}
+        onPress={() => {
+          void controller.onPickDaraAvatar();
+        }}
+      />
+    </View>
   );
 }
 
@@ -1015,6 +1065,48 @@ const styles = StyleSheet.create({
     gap: 6,
     minWidth: 220,
     padding: 14,
+  },
+  ownerAvatarCard: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: V.radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    padding: 14,
+  },
+  ownerAvatarFrame: {
+    alignItems: 'center',
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 64,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 64,
+  },
+  ownerAvatarImage: {
+    height: '100%',
+    width: '100%',
+  },
+  ownerAvatarFallback: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  ownerAvatarCopy: {
+    flex: 1,
+    gap: 4,
+    minWidth: 180,
+  },
+  ownerNotice: {
+    color: V.colors.primary,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
   },
   ownerCardWide: {
     flexBasis: 280,
