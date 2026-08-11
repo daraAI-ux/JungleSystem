@@ -4,7 +4,6 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoRankingsController} from '../hooks/use-kolam-dara-seo-rankings-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -77,14 +76,6 @@ export function KolamDaraSeoRankingsBody({
               />
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-              />
               {canDraft ? (
                 <KolamButton
                   disabled={
