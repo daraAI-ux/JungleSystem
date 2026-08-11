@@ -10,9 +10,9 @@ import {
 import { formatKolamDaraTaxDateId } from '../domain/kolam-dara-tax';
 import {
   formatKolamDaraTaxDateTimeId,
+  KOLAM_DARA_TAX_AUDIT_LOGS_PAGE_SIZE,
   KOLAM_DARA_TAX_RMS_TABS,
   KOLAM_DARA_TAX_WATCH_STATUS_LABEL,
-  paginateKolamDaraTaxAuditLogs,
   type KolamDaraTaxAuditLog,
   type KolamDaraTaxKnowledge,
   type KolamDaraTaxKitab,
@@ -345,11 +345,6 @@ export function KolamDaraTaxRegulasiBody({
       setAuditLoading(false);
     }
   }, [onNotice]);
-
-  const auditPaged = useMemo(
-    () => paginateKolamDaraTaxAuditLogs(auditLogs, auditPage),
-    [auditLogs, auditPage],
-  );
 
   useEffect(() => {
     if (rmsSubTab === 'kitab') {
@@ -1153,58 +1148,47 @@ export function KolamDaraTaxRegulasiBody({
       {rmsSubTab === 'audit' && canApprove ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Log audit</Text>
-          {auditLoading ? (
-            <Text style={styles.meta}>Memuat…</Text>
-          ) : auditLogs.length === 0 ? (
-            <Text style={styles.meta}>Belum ada entri.</Text>
-          ) : (
-            <>
-              <View style={styles.tableHead}>
-                <Text style={[styles.th, styles.colAuditTime]}>Waktu</Text>
-                <Text style={[styles.th, styles.colAuditAction]}>Aksi</Text>
-                <Text style={[styles.th, styles.colAuditSummary]}>
-                  Ringkasan
-                </Text>
-              </View>
-              {auditPaged.items.map(row => (
-                <View
-                  key={row.id}
-                  style={[styles.tableRow, styles.tableRowTop]}
-                >
-                  <Text style={[styles.tdMuted, styles.colAuditTime]}>
+          <KolamListTableComposition
+            columns={[
+              {
+                flex: 1.1,
+                id: 'time',
+                label: 'Waktu',
+                render: row => (
+                  <Text style={styles.tdMuted}>
                     {formatKolamDaraTaxDateTimeId(row.createdAt)}
                   </Text>
-                  <Text style={[styles.tdMono, styles.colAuditAction]}>
-                    {row.action}
-                  </Text>
-                  <Text style={[styles.td, styles.colAuditSummary]}>
-                    {row.resultSummary || '—'}
-                  </Text>
-                </View>
-              ))}
-              {auditPaged.totalPages > 1 ? (
-                <View style={styles.pager}>
-                  <KolamButton
-                    disabled={auditPaged.page <= 1}
-                    intent="secondary"
-                    label="Sebelumnya"
-                    onPress={() => setAuditPage(auditPaged.page - 1)}
-                    size="sm"
-                  />
-                  <Text style={styles.pageLabel}>
-                    {`${auditPaged.page} / ${auditPaged.totalPages} · ${auditPaged.total}`}
-                  </Text>
-                  <KolamButton
-                    disabled={auditPaged.page >= auditPaged.totalPages}
-                    intent="secondary"
-                    label="Berikutnya"
-                    onPress={() => setAuditPage(auditPaged.page + 1)}
-                    size="sm"
-                  />
-                </View>
-              ) : null}
-            </>
-          )}
+                ),
+              },
+              {
+                flex: 1.2,
+                id: 'action',
+                label: 'Aksi',
+                render: row => <Text style={styles.tdMono}>{row.action}</Text>,
+              },
+              {
+                flex: 2,
+                id: 'summary',
+                label: 'Ringkasan',
+                render: row => (
+                  <Text style={styles.td}>{row.resultSummary || '—'}</Text>
+                ),
+              },
+            ]}
+            emptyTitle="Belum ada entri."
+            getRowKey={row => row.id}
+            loading={auditLoading}
+            pagination={{
+              onPageChange: setAuditPage,
+              page: auditPage,
+              pageSize: KOLAM_DARA_TAX_AUDIT_LOGS_PAGE_SIZE,
+              total: auditLogs.length,
+            }}
+            rows={auditLogs.slice(
+              (auditPage - 1) * KOLAM_DARA_TAX_AUDIT_LOGS_PAGE_SIZE,
+              auditPage * KOLAM_DARA_TAX_AUDIT_LOGS_PAGE_SIZE,
+            )}
+          />
         </View>
       ) : null}
     </View>
@@ -1320,9 +1304,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 6,
   },
-  tableRowTop: {
-    alignItems: 'flex-start',
-  },
   th: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
@@ -1360,22 +1341,6 @@ const styles = StyleSheet.create({
   colHukum: { flex: 1.4, minWidth: 100 },
   colTitle: { flex: 1.6, minWidth: 120 },
   colCategory: { flex: 1, minWidth: 80 },
-  colAuditTime: { flex: 1.1, minWidth: 96 },
-  colAuditAction: { flex: 1.2, minWidth: 100 },
-  colAuditSummary: { flex: 2, minWidth: 140 },
-  pager: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
-    paddingTop: 8,
-  },
-  pageLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-  },
   link: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,
