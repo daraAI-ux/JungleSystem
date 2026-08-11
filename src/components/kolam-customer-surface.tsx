@@ -570,6 +570,21 @@ function KolamCustomerDetailSurface({
                 value: primaryAddress || customer.address || '-',
               },
               {
+                id: 'available-points',
+                label: 'Poin Member',
+                value: formatCustomerNumber(customer.points.availablePoints),
+              },
+              {
+                id: 'total-points',
+                label: 'Total Poin',
+                value: formatCustomerNumber(customer.points.totalPoints),
+              },
+              {
+                id: 'lifetime-points',
+                label: 'Poin Lifetime',
+                value: formatCustomerNumber(customer.points.lifetimePoints),
+              },
+              {
                 id: 'created',
                 label: 'Dibuat Pada',
                 value: formatCustomerDateTime(customer.createdAt),
@@ -590,28 +605,6 @@ function KolamCustomerDetailSurface({
               />
             }
             leadingStyle={styles.customerSummaryPictureLeading}
-            sections={[
-              {
-                id: 'points',
-                title: 'Poin Member',
-                content: (
-                  <View style={styles.pointsGrid}>
-                    <CustomerPointMetric
-                      label="Poin Tersedia"
-                      value={customer.points.availablePoints}
-                    />
-                    <CustomerPointMetric
-                      label="Total Poin"
-                      value={customer.points.totalPoints}
-                    />
-                    <CustomerPointMetric
-                      label="Poin Lifetime"
-                      value={customer.points.lifetimePoints}
-                    />
-                  </View>
-                ),
-              },
-            ]}
             title="Ringkasan pelanggan"
           />
         </View>
@@ -1068,15 +1061,6 @@ function SectionTitle({
       {description ? (
         <Text style={styles.sectionDescription}>{description}</Text>
       ) : null}
-    </View>
-  );
-}
-
-function CustomerPointMetric({label, value}: {label: string; value: number}) {
-  return (
-    <View style={styles.pointMetric}>
-      <Text style={styles.pointMetricValue}>{formatCustomerNumber(value)}</Text>
-      <Text style={styles.pointMetricLabel}>{label}</Text>
     </View>
   );
 }
@@ -1671,33 +1655,6 @@ const styles = StyleSheet.create({
   photoDeleteButton: {
     minHeight: 30,
     paddingHorizontal: 10,
-  },
-  pointsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  pointMetric: {
-    backgroundColor: V.colors.primarySoft,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexBasis: 150,
-    flexGrow: 1,
-    gap: 4,
-    padding: 12,
-  },
-  pointMetricValue: {
-    color: V.colors.primary,
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 28,
-  },
-  pointMetricLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 18,
   },
   addressStack: {
     gap: 8,
