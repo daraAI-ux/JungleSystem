@@ -3476,7 +3476,7 @@ function KolamTeamChatDeleteRoomIcon() {
       height="100%"
       importantForAccessibility="no-hide-descendants"
       width="100%"
-      xml={KOLAM_DELETE_ROOM_ICON_SVG.replace('#e21e2c', V.colors.fg)}
+      xml={KOLAM_DELETE_ROOM_ICON_SVG.replace('#e21e2c', '#374151')}
     />
   );
 }
@@ -3958,7 +3958,7 @@ function KolamChatRailDetailPanel({
                 <SvgXml
                   height="100%"
                   width="100%"
-                  xml={KOLAM_CALL_ICON_SVG.replace('#df000c', V.colors.fg)}
+                  xml={KOLAM_CALL_ICON_SVG.replace('#df000c', '#374151')}
                 />
               </KolamPressable>
             ) : null}
@@ -9406,21 +9406,21 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   detailDeleteRoomButton: {
-    width: 25,
-    height: 25,
+    width: 22,
+    height: 22,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12.5,
+    borderRadius: 11,
     backgroundColor: 'transparent',
   },
   detailRoomCallButton: {
-    width: 25,
-    height: 25,
+    width: 22,
+    height: 22,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12.5,
+    borderRadius: 11,
     backgroundColor: 'transparent',
   },
   teamRoomTrashIcon: {
