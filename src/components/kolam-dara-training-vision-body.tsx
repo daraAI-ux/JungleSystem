@@ -1159,16 +1159,18 @@ export function KolamDaraTrainingVisionBody({
             <KolamListTableComposition
               columns={[
                 {
-                  flex: 2.3,
+                  flex: 2.15,
                   id: 'product',
                   label: 'Produk',
                   render: row => (
-                    <Text style={styles.tdStrong}>{row.displayName}</Text>
+                    <Text numberOfLines={2} style={styles.tdStrong}>
+                      {row.displayName}
+                    </Text>
                   ),
                 },
                 {
                   align: 'center',
-                  flex: 0.75,
+                  flex: 0.62,
                   id: 'catalog',
                   label: 'Katalog',
                   render: row => (
@@ -1177,7 +1179,7 @@ export function KolamDaraTrainingVisionBody({
                 },
                 {
                   align: 'center',
-                  flex: 0.75,
+                  flex: 0.62,
                   id: 'training',
                   label: 'Training',
                   render: row => (
@@ -1185,8 +1187,8 @@ export function KolamDaraTrainingVisionBody({
                   ),
                 },
                 {
-                  align: 'center',
-                  flex: 1,
+                  align: 'left',
+                  flex: 0.82,
                   id: 'status',
                   label: 'Status',
                   render: row => {
@@ -1205,6 +1207,22 @@ export function KolamDaraTrainingVisionBody({
                     );
                   },
                 },
+                {
+                  align: 'right',
+                  flex: 0.48,
+                  id: 'action',
+                  label: '',
+                  render: row => (
+                    <KolamButton
+                      intent="secondary"
+                      label="Kelola"
+                      onPress={() => {
+                        void openProduct(row);
+                      }}
+                      size="sm"
+                    />
+                  ),
+                },
               ]}
               emptyTitle={loading ? 'Memuat...' : 'Tidak ada produk'}
               getRowKey={row => row.productId}
@@ -1219,16 +1237,6 @@ export function KolamDaraTrainingVisionBody({
                     }
                   : undefined
               }
-              renderActions={row => (
-                <KolamButton
-                  intent="secondary"
-                  label="Kelola"
-                  onPress={() => {
-                    void openProduct(row);
-                  }}
-                  size="sm"
-                />
-              )}
               rows={loading ? [] : productRows}
               showFooter={!loading && productTotal > 0}
             />
