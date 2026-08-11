@@ -179,6 +179,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+    marginLeft: 'auto',
   },
   notifyLabel: {
     color: V.colors.fg,
