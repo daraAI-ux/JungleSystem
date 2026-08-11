@@ -75,6 +75,8 @@ export function KolamOverflowMenuOverlayHost({
       return;
     }
 
+    setLocalPosition(null);
+
     const host = hostRef.current;
     if (!host || typeof host.measureInWindow !== 'function') {
       setLocalPosition({ left: menu.left, top: menu.top });
@@ -109,18 +111,20 @@ export function KolamOverflowMenuOverlayHost({
         onPress={() => hideKolamOverflowMenuOverlay(menu.id)}
         style={styles.dismissLayer}
       />
-      <View
-        style={[
-          styles.menuLayer,
-          {
-            left: localPosition?.left ?? menu.left,
-            top: localPosition?.top ?? menu.top,
-            width: menu.width,
-          },
-        ]}
-      >
-        {menu.content}
-      </View>
+      {localPosition ? (
+        <View
+          style={[
+            styles.menuLayer,
+            {
+              left: localPosition.left,
+              top: localPosition.top,
+              width: menu.width,
+            },
+          ]}
+        >
+          {menu.content}
+        </View>
+      ) : null}
     </View>
   );
 }
