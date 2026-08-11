@@ -12,6 +12,7 @@ import type {
 } from '../domain/settings-surface';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamDetailPanel} from './kolam-detail-panel';
+import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {
   measureFilterPanelAnchor,
   type KolamFilterPanelAnchor,
@@ -26,9 +27,13 @@ import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 const ACTIVITY_LOG_FILTER_PANEL_WIDTH = 240;
 
 export function KolamSettingsActivityLogSurface({
+  blockIpTarget = '',
   columns,
   filterControls,
   filterValues = emptyActivityLogFilterValues,
+  onBlockActivityLogIp = noopBlockActivityLogIp,
+  onCancelBlockActivityLogIp = noopRefresh,
+  onConfirmBlockActivityLogIp = noopRefresh,
   onPageChange,
   onFilterChange = noopFilterChange,
   onRefresh = noopRefresh,
@@ -40,9 +45,13 @@ export function KolamSettingsActivityLogSurface({
   selectedActivityLogId,
   statsCards,
 }: {
+  blockIpTarget?: string;
   columns: SettingsActivityLogTableColumn[];
   filterControls: SettingsActivityLogFilterControl[];
   filterValues?: SettingsActivityLogFilterState;
+  onBlockActivityLogIp?: (ip: string) => void;
+  onCancelBlockActivityLogIp?: () => void;
+  onConfirmBlockActivityLogIp?: () => void;
   onPageChange: (page: number) => void;
   onFilterChange?: (
     key: keyof SettingsActivityLogFilterState,
@@ -223,7 +232,7 @@ export function KolamSettingsActivityLogSurface({
               <ActivityLogIconButton
                 accessibilityLabel="Blokir IP"
                 icon="shield"
-                onPress={() => onSelectActivityLog(row.id)}
+                onPress={() => onBlockActivityLogIp(row.ip)}
               />
             ) : null}
             <ActivityLogIconButton
@@ -246,6 +255,15 @@ export function KolamSettingsActivityLogSurface({
           onClose={() => onSelectActivityLog('')}
         />
       ) : null}
+      <KolamConfirmDialog
+        confirmLabel="Blokir"
+        destructive
+        message={`Blokir IP ${blockIpTarget} selama 60 menit?`}
+        onCancel={onCancelBlockActivityLogIp}
+        onConfirm={onConfirmBlockActivityLogIp}
+        title="Blokir IP"
+        visible={Boolean(blockIpTarget)}
+      />
     </>
   );
 }
@@ -427,6 +445,8 @@ const emptyActivityLogFilterValues: SettingsActivityLogFilterState = {
 function noopFilterChange() {}
 
 function noopRefresh() {}
+
+function noopBlockActivityLogIp(_ip: string) {}
 
 const styles = StyleSheet.create({
   toolbarWrap: {

@@ -1525,6 +1525,29 @@ export interface KolamActivityLogDeleteResponse {
   };
 }
 
+export interface KolamBlockedIp {
+  _id: string;
+  ip: string;
+  reason: string;
+  source: 'manual' | 'auto' | 'env';
+  isActive: boolean;
+  blockedUntil: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KolamBlockIpInput {
+  ip: string;
+  reason?: string;
+  durationMinutes?: number | '';
+  blockedUntil?: string;
+}
+
+export interface KolamBlockedIpResponse {
+  success: boolean;
+  data: KolamBlockedIp;
+}
+
 export interface KolamNotificationSoundResponse {
   message: string;
   notificationSound?: string;
@@ -1967,6 +1990,21 @@ export function getKolamActivityLogStats(
 
 export function deleteKolamActivityLogs(): Promise<KolamActivityLogDeleteResponse> {
   return kolamDelete<KolamActivityLogDeleteResponse>('/activity-log');
+}
+
+export async function blockKolamActivityLogIp(
+  input: KolamBlockIpInput,
+): Promise<KolamBlockedIp> {
+  const response = await kolamPost<KolamBlockedIpResponse>(
+    '/security/blocked-ips',
+    {
+      ip: input.ip,
+      reason: input.reason,
+      ...(input.durationMinutes ? {durationMinutes: input.durationMinutes} : {}),
+      ...(input.blockedUntil ? {blockedUntil: input.blockedUntil} : {}),
+    },
+  );
+  return response.data;
 }
 
 export async function getKolamStaffAttendanceSettings(): Promise<KolamStaffAttendanceSettings> {

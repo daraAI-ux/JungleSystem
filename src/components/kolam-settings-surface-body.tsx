@@ -371,11 +371,15 @@ export function KolamSettingsSurfaceBody({
         filterControls={controller.activityFilterControls}
         filterValues={controller.activityLogFilters}
         onFilterChange={controller.setActivityLogFilter}
+        onBlockActivityLogIp={controller.requestBlockActivityLogIp}
+        onCancelBlockActivityLogIp={controller.cancelBlockActivityLogIp}
+        onConfirmBlockActivityLogIp={controller.confirmBlockActivityLogIp}
         onPageChange={controller.changeActivityPage}
         onRefresh={controller.refreshActivityLogs}
         onSelectActivityLog={controller.setSelectedActivityLogId}
         pagination={controller.activityPagination}
         rows={controller.activityRows}
+        blockIpTarget={controller.activityLogBlockIpTarget}
         selectedActivityLog={controller.selectedActivityLog}
         selectedActivityLogFields={controller.selectedActivityLogFields}
         selectedActivityLogId={controller.selectedActivityLogId}

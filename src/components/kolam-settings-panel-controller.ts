@@ -52,6 +52,7 @@ import {
   createKolamCategoryBanner,
   createKolamHeroSlide,
   createKolamRole,
+  blockKolamActivityLogIp,
   deleteKolamRole,
   getKolamActivityLogs,
   getKolamActivityLogStats,
@@ -1038,6 +1039,8 @@ export function useKolamSettingsPanelController(
     useState<ActivityLogStatus>('idle');
   const [activityLogMessage, setActivityLogMessage] = useState('');
   const [activityReloadKey, setActivityReloadKey] = useState(0);
+  const [activityLogBlockIpTarget, setActivityLogBlockIpTarget] =
+    useState('');
   const [activityLogFilters, setActivityLogFilters] =
     useState<SettingsActivityLogFilterState>(emptyActivityLogFilters);
   const [webTitle, setWebTitle] = useState(
@@ -1915,6 +1918,33 @@ export function useKolamSettingsPanelController(
   };
   const refreshActivityLogs = () => {
     setActivityReloadKey(current => current + 1);
+  };
+  const requestBlockActivityLogIp = (ip: string) => {
+    if (!ip || ip === '-') {
+      return;
+    }
+    setActivityLogBlockIpTarget(ip);
+  };
+  const cancelBlockActivityLogIp = () => {
+    setActivityLogBlockIpTarget('');
+  };
+  const confirmBlockActivityLogIp = async () => {
+    const ip = activityLogBlockIpTarget;
+    if (!ip) {
+      return;
+    }
+    try {
+      await blockKolamActivityLogIp({
+        ip,
+        reason: 'Blocked from suspicious activity log',
+        durationMinutes: 60,
+      });
+      setActivityLogBlockIpTarget('');
+      setActivityLogMessage('IP berhasil diblokir.');
+      refreshActivityLogs();
+    } catch (error) {
+      setActivityLogMessage(getActivityLogErrorMessage(error));
+    }
   };
   const setWebSettingDraftField = <Key extends keyof WebSettingDraft>(
     key: Key,
@@ -4649,6 +4679,10 @@ export function useKolamSettingsPanelController(
     selectedActivityLogFields,
     selectedActivityLogId,
     setSelectedActivityLogId,
+    activityLogBlockIpTarget,
+    requestBlockActivityLogIp,
+    cancelBlockActivityLogIp,
+    confirmBlockActivityLogIp,
     selectedRole,
     selectedRoleId,
     setMaintenanceMode,
