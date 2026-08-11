@@ -513,11 +513,6 @@ export const inventoryCopilotStyles = StyleSheet.create({
     lineHeight: 16,
     marginBottom: 4,
   },
-  linksRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
   promptsBox: {
     backgroundColor: V.colors.mutedSoft,
     borderColor: V.colors.border,

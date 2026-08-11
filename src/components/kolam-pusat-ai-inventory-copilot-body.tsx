@@ -185,20 +185,6 @@ export function KolamPusatAiInventoryCopilotBody({
                 ) : null}
               </View>
 
-              {dashboard.links.length ? (
-                <View style={styles.linksRow}>
-                  {dashboard.links.map(link => (
-                    <Pressable
-                      accessibilityRole="link"
-                      key={link.id}
-                      onPress={() => onRouteChange?.(link.href)}
-                    >
-                      <Text style={styles.link}>{link.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-
               {dashboard.teamChat.suggestedPrompts.length ? (
                 <View style={styles.promptsBox}>
                   <Text style={styles.promptsTitle}>
