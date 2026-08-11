@@ -980,7 +980,7 @@ export function KolamDaraTrainingVisionBody({
             <KolamListTableComposition
               columns={[
                 {
-                  flex: 1.85,
+                  flex: 2.15,
                   id: 'species',
                   label: 'Species',
                   render: row => (
@@ -997,7 +997,7 @@ export function KolamDaraTrainingVisionBody({
                   ),
                 },
                 {
-                  align: 'center',
+                  align: 'left',
                   flex: 0.62,
                   id: 'catalog',
                   label: 'Katalog',
@@ -1006,7 +1006,7 @@ export function KolamDaraTrainingVisionBody({
                   ),
                 },
                 {
-                  align: 'center',
+                  align: 'left',
                   flex: 0.62,
                   id: 'training',
                   label: 'Training',
@@ -1015,8 +1015,8 @@ export function KolamDaraTrainingVisionBody({
                   ),
                 },
                 {
-                  align: 'center',
-                  flex: 0.9,
+                  align: 'left',
+                  flex: 0.82,
                   id: 'status',
                   label: 'Status',
                   render: row => {
@@ -1037,7 +1037,7 @@ export function KolamDaraTrainingVisionBody({
                 },
                 {
                   align: 'right',
-                  flex: 0.78,
+                  flex: 0.48,
                   id: 'action',
                   label: '',
                   render: row => (
