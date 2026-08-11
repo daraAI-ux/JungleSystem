@@ -83,6 +83,7 @@ import {KolamToggleRow} from './kolam-toggle-row';
 const SEARCH_DEBOUNCE_MS = 350;
 const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
 const USER_KASBON_TABLE_PAGE_SIZE = 10;
+const USER_ATTENDANCE_TABLE_PAGE_SIZE = 10;
 
 type UserPayrollHistoryTab = 'deductions' | 'kasbons';
 
@@ -783,6 +784,7 @@ function KolamUserDetailSurface({
   );
   const [deductionPage, setDeductionPage] = React.useState(1);
   const [kasbonPage, setKasbonPage] = React.useState(1);
+  const [attendancePage, setAttendancePage] = React.useState(1);
   const [activePayrollTab, setActivePayrollTab] =
     React.useState<UserPayrollHistoryTab>('deductions');
   const [payrollLoading, setPayrollLoading] = React.useState(false);
@@ -1016,6 +1018,86 @@ function KolamUserDetailSurface({
     ],
     [],
   );
+  const attendanceColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamUserAttendanceRecord>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 0.95,
+        id: 'date',
+        label: 'Tanggal',
+        render: item => (
+          <Text style={styles.userMetaText}>
+            {formatAttendanceDate(item.dateKey)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.8,
+        id: 'status',
+        label: 'Status',
+        render: item => (
+          <View style={styles.userTableBadgeCell}>
+            <KolamStatusBadge
+              intent={getAttendanceStatusIntent(item.status)}
+              label={formatAttendanceStatus(item.status)}
+              numberOfLines={1}
+              style={styles.userTableBadge}
+            />
+          </View>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'check-in',
+        label: 'Check-in',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.checkInAt)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'check-out',
+        label: 'Check-out',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.checkOutAt)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.75,
+        id: 'late',
+        label: 'Terlambat',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {item.lateMinutes == null ? '-' : `${item.lateMinutes} menit`}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 1.25,
+        id: 'deduction',
+        label: 'Potongan',
+        render: item => (
+          <Text
+            numberOfLines={2}
+            style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatAttendanceDeduction(item)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
   const visibleDeductions = React.useMemo(() => {
     const pageStart = (deductionPage - 1) * USER_DEDUCTION_TABLE_PAGE_SIZE;
 
@@ -1032,6 +1114,14 @@ function KolamUserDetailSurface({
       pageStart + USER_KASBON_TABLE_PAGE_SIZE,
     );
   }, [kasbonPage, payrollSummary.kasbons]);
+  const visibleAttendanceRecords = React.useMemo(() => {
+    const pageStart = (attendancePage - 1) * USER_ATTENDANCE_TABLE_PAGE_SIZE;
+
+    return attendanceRecords.slice(
+      pageStart,
+      pageStart + USER_ATTENDANCE_TABLE_PAGE_SIZE,
+    );
+  }, [attendancePage, attendanceRecords]);
 
   React.useEffect(() => {
     const maxPage = Math.max(
@@ -1056,6 +1146,17 @@ function KolamUserDetailSurface({
       setKasbonPage(maxPage);
     }
   }, [kasbonPage, payrollSummary.kasbons.length]);
+
+  React.useEffect(() => {
+    const maxPage = Math.max(
+      1,
+      Math.ceil(attendanceRecords.length / USER_ATTENDANCE_TABLE_PAGE_SIZE),
+    );
+
+    if (attendancePage > maxPage) {
+      setAttendancePage(maxPage);
+    }
+  }, [attendancePage, attendanceRecords.length]);
 
   React.useEffect(() => {
     let active = true;
@@ -1760,7 +1861,7 @@ function KolamUserDetailSurface({
           <Text style={styles.formErrorText}>{payrollError}</Text>
         ) : null}
 
-        {user.isEmployee && (canViewRating || canViewAttendance) ? (
+        {user.isEmployee && canViewRating ? (
           <View style={styles.detailGrid}>
             {canViewRating ? (
               <View style={styles.detailPanel}>
@@ -1847,79 +1948,54 @@ function KolamUserDetailSurface({
                 ))}
               </View>
             ) : null}
-
-            {canViewAttendance ? (
-              <View style={styles.detailPanel}>
-                <Text style={styles.detailPanelTitle}>Absensi Karyawan</Text>
-                {attendanceLoading ? (
-                  <Text style={styles.detailSubtitle}>Memuat absensi...</Text>
-                ) : (
-                  <>
-                    <DetailRow
-                      label="Periode Gaji"
-                      value={
-                        attendancePeriodKey
-                          ? formatAttendancePeriodLabel(
-                              attendancePeriodKey,
-                              attendanceSettings.payrollCutoffDay,
-                            )
-                          : '-'
-                      }
-                    />
-                    <DetailRow
-                      label="Face Enrollment"
-                      value={formatFaceEnrollment(faceEnrollment)}
-                    />
-                    {faceEnrollment?.photoPath ? (
-                      <DetailRow
-                        label="Foto Referensi"
-                        numberOfLines={2}
-                        value={faceEnrollment.photoPath}
-                      />
-                    ) : null}
-                    {attendanceRecords.length ? (
-                      attendanceRecords.map(item => (
-                        <View
-                          key={item.id || item.dateKey}
-                          style={styles.attendanceEntry}
-                        >
-                          <View style={styles.payrollEntryHeader}>
-                            <Text style={styles.payrollEntryTitle}>
-                              {formatAttendanceDate(item.dateKey)}
-                            </Text>
-                            <KolamStatusBadge
-                              intent={getAttendanceStatusIntent(item.status)}
-                              label={formatAttendanceStatus(item.status)}
-                              numberOfLines={1}
-                            />
-                          </View>
-                          <View style={styles.attendanceMetaGrid}>
-                            <DetailRow
-                              label="Check-in"
-                              value={formatUserDateTime(item.checkInAt)}
-                            />
-                            <DetailRow
-                              label="Check-out"
-                              value={formatUserDateTime(item.checkOutAt)}
-                            />
-                            <DetailRow
-                              label="Potongan"
-                              value={formatAttendanceDeduction(item)}
-                            />
-                          </View>
-                        </View>
-                      ))
-                    ) : (
-                      <Text style={styles.detailSubtitle}>
-                        Belum ada catatan absensi pada periode ini.
-                      </Text>
-                    )}
-                  </>
-                )}
-                {attendanceError ? (
-                  <Text style={styles.formErrorText}>{attendanceError}</Text>
-                ) : null}
-              </View>
+          </View>
+        ) : null}
+        {user.isEmployee && canViewAttendance ? (
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Absensi Karyawan</Text>
+            <View style={styles.attendanceSummaryGrid}>
+              <DetailRow
+                label="Periode Gaji"
+                value={
+                  attendancePeriodKey
+                    ? formatAttendancePeriodLabel(
+                        attendancePeriodKey,
+                        attendanceSettings.payrollCutoffDay,
+                      )
+                    : '-'
+                }
+              />
+              <DetailRow
+                label="Face Enrollment"
+                value={formatFaceEnrollment(faceEnrollment)}
+              />
+              {faceEnrollment?.photoPath ? (
+                <DetailRow
+                  label="Foto Referensi"
+                  numberOfLines={2}
+                  value={faceEnrollment.photoPath}
+                />
+              ) : null}
+            </View>
+            <KolamListTableComposition
+              columns={attendanceColumns}
+              emptyTitle={
+                attendanceLoading
+                  ? 'Memuat absensi...'
+                  : 'Belum ada catatan absensi pada periode ini.'
+              }
+              getRowKey={item => item.id || item.dateKey}
+              loading={attendanceLoading}
+              pagination={{
+                onPageChange: setAttendancePage,
+                page: attendancePage,
+                pageSize: USER_ATTENDANCE_TABLE_PAGE_SIZE,
+                total: attendanceRecords.length,
+              }}
+              rows={attendanceLoading ? [] : visibleAttendanceRecords}
+            />
+            {attendanceError ? (
+              <Text style={styles.formErrorText}>{attendanceError}</Text>
             ) : null}
           </View>
         ) : null}
@@ -4067,6 +4143,11 @@ const styles = StyleSheet.create({
   },
   payrollTabsWrap: {
     alignSelf: 'flex-start',
+  },
+  attendanceSummaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
   },
   detailRow: {
     gap: 4,
