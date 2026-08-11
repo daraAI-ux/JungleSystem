@@ -4156,7 +4156,14 @@ function KolamChatRailDetailPanel({
                               textStyle={styles.teamMessageAvatarText}
                             />
                           </View>
-                          <Text style={styles.messageAuthor}>
+                          <Text
+                            style={[
+                              styles.messageAuthor,
+                              {
+                                color: getTeamChatAuthorDisplayColor(message),
+                              },
+                            ]}
+                          >
                             {message.author}
                           </Text>
                           <Text
@@ -5024,6 +5031,35 @@ function isInboxDetailAiMessage(message: KolamChatRailDetailMessage) {
     author === 'dara' ||
     author.includes('katak terbang')
   );
+}
+
+const TEAM_CHAT_AUTHOR_COLORS = [
+  '#2563eb',
+  '#7c3aed',
+  '#db2777',
+  '#ea580c',
+  '#0891b2',
+  '#4f46e5',
+  '#be123c',
+  '#0f766e',
+] as const;
+
+function getTeamChatAuthorDisplayColor(message: KolamChatRailDetailMessage) {
+  if (message.senderIsAi || message.botKey) {
+    return V.colors.mutedFg;
+  }
+
+  const key = (message.senderId || message.author || '').trim();
+  if (!key) {
+    return V.colors.mutedFg;
+  }
+
+  let hash = 0;
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+  }
+
+  return TEAM_CHAT_AUTHOR_COLORS[hash % TEAM_CHAT_AUTHOR_COLORS.length];
 }
 
 function getTeamChatMessageInitials(author: string) {
@@ -9911,7 +9947,7 @@ const styles = StyleSheet.create({
   messageAuthor: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '800',
     flexShrink: 1,
   },
