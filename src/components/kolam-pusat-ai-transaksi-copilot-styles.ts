@@ -221,14 +221,6 @@ export const transaksiCopilotStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  healthOk: {
-    backgroundColor: V.colors.successSoft,
-    borderColor: V.colors.success,
-  },
-  healthBad: {
-    backgroundColor: V.colors.dangerSoft,
-    borderColor: V.colors.danger,
-  },
   healthPlatform: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,

@@ -230,7 +230,7 @@ function BotHealthSection({
             Kesehatan Bot — Katak Terbang
           </Text>
           <Text style={styles.sectionDesc}>
-            {`Status runtime dari AM (bukan simulasi).${
+            {`Status runtime dari AM.${
               health?.checkedAt
                 ? ` Diperiksa ${formatKolamTransaksiCopilotWib(health.checkedAt)}.`
                 : ''
@@ -253,15 +253,7 @@ function BotHealthSection({
           {(health?.platforms ?? []).map(platform => (
             <View
               key={platform.platform}
-              style={[
-                styles.healthRow,
-                platform.enabled && platform.healthy === true
-                  ? styles.healthOk
-                  : null,
-                platform.enabled && platform.healthy === false
-                  ? styles.healthBad
-                  : null,
-              ]}>
+              style={styles.healthRow}>
               <Text style={styles.healthPlatform}>{platform.platform}</Text>
               <Text style={styles.healthState}>
                 {platform.enabled
