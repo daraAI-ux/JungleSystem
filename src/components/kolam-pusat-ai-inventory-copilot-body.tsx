@@ -19,6 +19,7 @@ import {
 import { getKolamFileUrl } from '../lib/file-url';
 import type { KolamPusatAiInventoryCopilotController } from '../hooks/use-kolam-pusat-ai-inventory-copilot-controller';
 import { KolamButton } from './kolam-button';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamSwitch } from './kolam-switch';
@@ -91,37 +92,65 @@ export function KolamPusatAiInventoryCopilotBody({
                 }`}
               </Text>
 
-              <Text style={styles.sectionTitle}>Kesehatan stok (SKU)</Text>
-              <View style={styles.kpiGrid}>
-                <KpiTile title="Low stock" value={counts.lowStock} />
-                <KpiTile title="Habis" value={counts.outOfStock} />
-                <KpiTile title="Slow movers (90h)" value={counts.slowMovers} />
-                <KpiTile title="SKU kritis" value={counts.criticalSku} />
-              </View>
-
-              <Text style={styles.sectionTitle}>Operasi gudang</Text>
-              <View style={styles.kpiGrid}>
-                <KpiTile
-                  hint={
-                    counts.agedOpenOpname > 0
-                      ? `${counts.agedOpenOpname} >48j · d${counts.opnameDraft}/r${counts.opnameInReview}/p${counts.opnameReadyToPost}`
-                      : undefined
-                  }
-                  title="Opname terbuka"
-                  value={counts.openOpnameSessions}
-                />
-                <KpiTile
-                  hint={`qty Δ ${counts.opnameVarianceQty}`}
-                  title="Variance (14h)"
-                  value={counts.opnameVarianceDocs}
-                />
-                <KpiTile title="GRN backlog" value={counts.receivingBacklog} />
-                <KpiTile
-                  hint={`antrian pack ${counts.packQueueTotal}`}
-                  title="Pack SLA risk"
-                  value={counts.packSlaRisk}
-                />
-              </View>
+              <KolamDetailSummaryCard
+                fieldColumns={4}
+                fields={[
+                  {
+                    id: 'low-stock',
+                    label: 'Low stock',
+                    value: formatInventorySummaryNumber(counts.lowStock),
+                  },
+                  {
+                    id: 'out-of-stock',
+                    label: 'Habis',
+                    value: formatInventorySummaryNumber(counts.outOfStock),
+                  },
+                  {
+                    id: 'slow-movers',
+                    label: 'Slow movers (90h)',
+                    value: formatInventorySummaryNumber(counts.slowMovers),
+                  },
+                  {
+                    id: 'critical-sku',
+                    label: 'SKU kritis',
+                    value: formatInventorySummaryNumber(counts.criticalSku),
+                  },
+                  {
+                    id: 'open-opname',
+                    label: 'Opname terbuka',
+                    value: renderInventorySummaryValue(
+                      counts.openOpnameSessions,
+                      counts.agedOpenOpname > 0
+                        ? `${counts.agedOpenOpname} >48j · d${counts.opnameDraft}/r${counts.opnameInReview}/p${counts.opnameReadyToPost}`
+                        : undefined,
+                    ),
+                  },
+                  {
+                    id: 'opname-variance',
+                    label: 'Variance (14h)',
+                    value: renderInventorySummaryValue(
+                      counts.opnameVarianceDocs,
+                      `qty ${counts.opnameVarianceQty}`,
+                    ),
+                  },
+                  {
+                    id: 'grn-backlog',
+                    label: 'GRN backlog',
+                    value: formatInventorySummaryNumber(
+                      counts.receivingBacklog,
+                    ),
+                  },
+                  {
+                    id: 'pack-sla-risk',
+                    label: 'Pack SLA risk',
+                    value: renderInventorySummaryValue(
+                      counts.packSlaRisk,
+                      `antrian pack ${counts.packQueueTotal}`,
+                    ),
+                  },
+                ]}
+                title="Kesehatan stok & operasi gudang"
+              />
 
               <View style={styles.listGrid}>
                 <ListCard lines={dashboard.lowStockLines} title="Low stock" />
@@ -371,20 +400,17 @@ function BotProfileSection({
   );
 }
 
-function KpiTile({
-  title,
-  value,
-  hint,
-}: {
-  title: string;
-  value: number;
-  hint?: string;
-}) {
+function formatInventorySummaryNumber(value: number) {
+  return value.toLocaleString('id-ID');
+}
+
+function renderInventorySummaryValue(value: number, hint?: string) {
   return (
-    <View style={styles.kpiCard}>
-      <Text style={styles.kpiLabel}>{title}</Text>
-      <Text style={styles.kpiValue}>{value.toLocaleString('id-ID')}</Text>
-      {hint ? <Text style={styles.kpiTrend}>{hint}</Text> : null}
+    <View>
+      <Text style={styles.summaryValue}>
+        {formatInventorySummaryNumber(value)}
+      </Text>
+      {hint ? <Text style={styles.summaryHint}>{hint}</Text> : null}
     </View>
   );
 }

@@ -302,42 +302,14 @@ export const inventoryCopilotStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  kpiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  kpiCard: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexBasis: '23%',
-    flexGrow: 1,
-    minWidth: 120,
-    overflow: 'hidden',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  kpiTop: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
-    gap: 2,
-  },
-  kpiLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    marginBottom: 0,
-  },
-  kpiValue: {
+  summaryValue: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 19,
   },
-  kpiTrend: {
+  summaryHint: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 10,
