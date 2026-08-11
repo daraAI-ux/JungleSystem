@@ -1237,56 +1237,176 @@ function KolamUserDetailSurface({
           title="Informasi dasar"
         />
 
-        <View style={styles.detailGrid}>
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Status Akun</Text>
-            <DetailBadgeRow
-              label="Status Akun"
-              badges={[
-                {
-                  intent: getUserAccountStatusIntent(user),
-                  label: getKolamUserAccountStatusLabel(user),
-                },
-              ]}
-            />
-            {user.resignedAt ? (
-              <DetailRow
-                label="Tanggal Resign"
-                value={formatUserDateTime(user.resignedAt)}
-              />
-            ) : null}
-            <DetailBadgeRow
-              label="Assign sebagai CS"
-              badges={[
-                {
-                  intent: user.csActive ? 'success' : 'secondary',
-                  label: user.csActive ? 'CS Aktif' : 'Tidak Ditugaskan',
-                },
-              ]}
-            />
-            <DetailBadgeRow
-              label="Status Online"
-              badges={[
-                {
-                  intent: user.statusOnline ? 'success' : 'secondary',
-                  label: user.statusOnline ? 'Online' : 'Offline',
-                },
-              ]}
-            />
-            <DetailRow
-              label="Terakhir Online"
-              value={formatUserDateTime(user.lastOnline)}
-            />
-            <DetailRow
-              label="Dibuat Pada"
-              value={formatUserDateTime(user.createdAt)}
-            />
-            <DetailRow
-              label="Terakhir Diperbarui"
-              value={formatUserDateTime(user.updatedAt)}
-            />
-          </View>
-        </View>
+        <KolamDetailSummaryCard
+          description="Status akun dan data kepegawaian"
+          fieldColumns={3}
+          fields={[
+            {
+              id: 'account-status',
+              label: 'Status Akun',
+              value: (
+                <KolamStatusBadge
+                  intent={getUserAccountStatusIntent(user)}
+                  label={getKolamUserAccountStatusLabel(user)}
+                />
+              ),
+            },
+            ...(user.resignedAt
+              ? [
+                  {
+                    id: 'resigned-at',
+                    label: 'Tanggal Resign',
+                    value: formatUserDateTime(user.resignedAt),
+                  },
+                ]
+              : []),
+            {
+              id: 'cs-assignment',
+              label: 'Assign sebagai CS',
+              value: (
+                <KolamStatusBadge
+                  intent={user.csActive ? 'success' : 'secondary'}
+                  label={user.csActive ? 'CS Aktif' : 'Tidak Ditugaskan'}
+                />
+              ),
+            },
+            {
+              id: 'online-status',
+              label: 'Status Online',
+              value: (
+                <KolamStatusBadge
+                  intent={user.statusOnline ? 'success' : 'secondary'}
+                  label={user.statusOnline ? 'Online' : 'Offline'}
+                />
+              ),
+            },
+            {
+              id: 'last-online',
+              label: 'Terakhir Online',
+              value: formatUserDateTime(user.lastOnline),
+            },
+            {
+              id: 'created-at',
+              label: 'Dibuat Pada',
+              value: formatUserDateTime(user.createdAt),
+            },
+            {
+              id: 'updated-at',
+              label: 'Terakhir Diperbarui',
+              value: formatUserDateTime(user.updatedAt),
+            },
+            ...(user.isEmployee
+              ? [
+                  {
+                    id: 'employee-number',
+                    label: 'Nomor Karyawan',
+                    value: user.employee.employeeNumber || '-',
+                  },
+                  {
+                    id: 'position',
+                    label: 'Jabatan',
+                    value: user.employee.position || '-',
+                  },
+                  {
+                    id: 'department',
+                    label: 'Departemen',
+                    value: user.employee.department || '-',
+                  },
+                  {
+                    id: 'employee-status',
+                    label: 'Status',
+                    value: (
+                      <KolamStatusBadge
+                        intent={getUserEmployeeStatusIntent(user.employee.status)}
+                        label={formatUserEmployeeStatus(user.employee.status)}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'hire-date',
+                    label: 'Tanggal Mulai Bekerja',
+                    value: formatUserLongDate(user.employee.hireDate),
+                  },
+                  {
+                    id: 'work-duration',
+                    label: 'Masa Kerja',
+                    value: formatUserWorkDuration(user.employee.hireDate),
+                  },
+                  {
+                    id: 'first-time-working',
+                    label: 'Pekerjaan Pertama',
+                    value: (
+                      <KolamStatusBadge
+                        intent={
+                          user.employee.firstTimeWorking
+                            ? 'success'
+                            : 'secondary'
+                        }
+                        label={user.employee.firstTimeWorking ? 'Ya' : 'Tidak'}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'schedule',
+                    label: 'Jadwal',
+                    value: formatUserScheduleType(user.employee.schedule.type),
+                  },
+                  {
+                    id: 'shift-hours',
+                    label: 'Jam Shift',
+                    value: formatUserShiftRange(user.employee.schedule),
+                  },
+                  {
+                    id: 'work-days',
+                    label: 'Hari Kerja',
+                    value: formatUserWorkDays(user.employee.schedule.workDays),
+                  },
+                  ...(canViewSalary
+                    ? [
+                        {
+                          id: 'salary',
+                          label: 'Gaji Bulanan',
+                          value: formatUserCurrency(user.employee.salary),
+                        },
+                        {
+                          id: 'salary-date',
+                          label: 'Tanggal Gajian',
+                          value:
+                            user.employee.salaryDate == null
+                              ? '-'
+                              : `Tanggal ${user.employee.salaryDate} setiap bulan`,
+                        },
+                      ]
+                    : []),
+                  {
+                    id: 'pkp-status',
+                    label: 'Status PKP',
+                    value: (
+                      <KolamStatusBadge
+                        intent={user.employee.isPkp ? 'success' : 'secondary'}
+                        label={
+                          user.employee.isPkp
+                            ? 'PKP berlaku'
+                            : 'Bukan PKP / tidak berlaku'
+                        }
+                      />
+                    ),
+                  },
+                  ...(user.employee.isPkp && user.employee.pkpNotes
+                    ? [
+                        {
+                          id: 'pkp-notes',
+                          label: 'Catatan PKP',
+                          value: user.employee.pkpNotes,
+                        },
+                      ]
+                    : []),
+                ]
+              : []),
+          ]}
+          style={styles.userSummaryCard}
+          title="Status akun & karyawan"
+        />
 
         <View style={styles.detailGrid}>
           <View style={styles.detailPanel}>
@@ -1321,92 +1441,6 @@ function KolamUserDetailSurface({
               ]}
             />
           </View>
-
-          {user.isEmployee ? (
-            <View style={styles.detailPanel}>
-              <Text style={styles.detailPanelTitle}>Informasi Karyawan</Text>
-              <DetailRow
-                label="Nomor Karyawan"
-                value={user.employee.employeeNumber || '-'}
-              />
-              <DetailRow label="Jabatan" value={user.employee.position || '-'} />
-              <DetailRow
-                label="Departemen"
-                value={user.employee.department || '-'}
-              />
-              <DetailBadgeRow
-                label="Status"
-                badges={[
-                  {
-                    intent: getUserEmployeeStatusIntent(user.employee.status),
-                    label: formatUserEmployeeStatus(user.employee.status),
-                  },
-                ]}
-              />
-              <DetailRow
-                label="Tanggal Mulai Bekerja"
-                value={formatUserLongDate(user.employee.hireDate)}
-              />
-              <DetailRow
-                label="Masa Kerja"
-                value={formatUserWorkDuration(user.employee.hireDate)}
-              />
-              <DetailBadgeRow
-                label="Pekerjaan Pertama"
-                badges={[
-                  {
-                    intent: user.employee.firstTimeWorking
-                      ? 'success'
-                      : 'secondary',
-                    label: user.employee.firstTimeWorking ? 'Ya' : 'Tidak',
-                  },
-                ]}
-              />
-              <DetailRow
-                label="Jadwal"
-                value={formatUserScheduleType(user.employee.schedule.type)}
-              />
-              <DetailRow
-                label="Jam Shift"
-                value={formatUserShiftRange(user.employee.schedule)}
-              />
-              <DetailRow
-                label="Hari Kerja"
-                numberOfLines={3}
-                value={formatUserWorkDays(user.employee.schedule.workDays)}
-              />
-              {canViewSalary ? (
-                <>
-                  <DetailRow
-                    label="Gaji Bulanan"
-                    value={formatUserCurrency(user.employee.salary)}
-                  />
-                  <DetailRow
-                    label="Tanggal Gajian"
-                    value={
-                      user.employee.salaryDate == null
-                        ? '-'
-                        : `Tanggal ${user.employee.salaryDate} setiap bulan`
-                    }
-                  />
-                </>
-              ) : null}
-              <DetailBadgeRow
-                label="Status PKP"
-                badges={[
-                  {
-                    intent: user.employee.isPkp ? 'success' : 'secondary',
-                    label: user.employee.isPkp
-                      ? 'PKP berlaku'
-                      : 'Bukan PKP / tidak berlaku',
-                  },
-                ]}
-              />
-              {user.employee.isPkp && user.employee.pkpNotes ? (
-                <DetailRow label="Catatan PKP" value={user.employee.pkpNotes} />
-              ) : null}
-            </View>
-          ) : null}
         </View>
 
         {user.isEmployee &&
