@@ -4140,6 +4140,20 @@ function KolamChatRailDetailPanel({
                           <Text style={styles.messageAuthor}>
                             {message.author}
                           </Text>
+                          <Text
+                            style={[
+                              styles.messageMeta,
+                              styles.messageMetaInline,
+                            ]}
+                          >
+                            {[
+                              formatRelativeTime(message.sentAt),
+                              getTeamChatEditedLabel(message),
+                              message.status,
+                            ]
+                              .filter(Boolean)
+                              .join(' | ')}
+                          </Text>
                         </View>
                       ) : (
                         <Text style={styles.messageAuthor}>
@@ -4263,15 +4277,17 @@ function KolamChatRailDetailPanel({
                           ) : null}
                         </>
                       )}
-                      <Text style={styles.messageMeta}>
-                        {[
-                          formatRelativeTime(message.sentAt),
-                          getTeamChatEditedLabel(message),
-                          message.status,
-                        ]
-                          .filter(Boolean)
-                          .join(' | ')}
-                      </Text>
+                      {mode === 'team-chat' ? null : (
+                        <Text style={styles.messageMeta}>
+                          {[
+                            formatRelativeTime(message.sentAt),
+                            getTeamChatEditedLabel(message),
+                            message.status,
+                          ]
+                            .filter(Boolean)
+                            .join(' | ')}
+                        </Text>
+                      )}
                     </View>
                   );
                 }}
@@ -9882,6 +9898,7 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '800',
+    flexShrink: 1,
   },
   messageBody: {
     color: V.colors.fg,
@@ -10497,6 +10514,10 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 10,
     fontWeight: '700',
+  },
+  messageMetaInline: {
+    flexShrink: 0,
+    marginLeft: 'auto',
   },
   emptyDetailText: {
     color: V.colors.mutedFg,
