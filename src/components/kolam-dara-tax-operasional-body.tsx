@@ -17,10 +17,12 @@ import {
 } from '../services/kolam-dara-tax-api';
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
 type FakturTab = 'sales' | 'po';
+const FAKTUR_PAGE_SIZE = 10;
 
 /** FE Operasional: TaxPhase3 + TaxPhase4Compliance + TaxMissingFaktur. */
 export function KolamDaraTaxOperasionalBody({
@@ -45,6 +47,8 @@ export function KolamDaraTaxOperasionalBody({
   const [sales, setSales] = useState<KolamDaraTaxMissingFakturSale[]>([]);
   const [po, setPo] = useState<KolamDaraTaxMissingFakturPo[]>([]);
   const [fakturLoading, setFakturLoading] = useState(false);
+  const [salesPage, setSalesPage] = useState(1);
+  const [poPage, setPoPage] = useState(1);
 
   const loadMissing = useCallback(async () => {
     setFakturLoading(true);
@@ -65,6 +69,14 @@ export function KolamDaraTaxOperasionalBody({
       void loadMissing();
     }
   }, [loadMissing, taxEnabled]);
+
+  useEffect(() => {
+    setSalesPage(1);
+  }, [sales.length]);
+
+  useEffect(() => {
+    setPoPage(1);
+  }, [po.length]);
 
   if (!taxEnabled) {
     return null;
@@ -294,53 +306,121 @@ export function KolamDaraTaxOperasionalBody({
               ]}
             />
             {fakturTab === 'sales' ? (
-              sales.length === 0 ? (
-                <Text style={styles.meta}>
-                  Tidak ada penjualan yang perlu faktur.
-                </Text>
-              ) : (
-                sales.map(row => (
-                  <View key={row.id} style={styles.fakturRow}>
-                    <Pressable
-                      accessibilityRole="link"
-                      onPress={() => onRouteChange?.(`/sales/${row.id}`)}>
-                      <Text style={styles.link}>{row.invoiceCode}</Text>
-                    </Pressable>
-                    <Text style={styles.meta}>
-                      {formatKolamDaraTaxIdr(row.finalTotal)}
-                    </Text>
-                    <KolamStatusBadge
-                      intent="warning"
-                      label={row.fakturStatus}
-                    />
-                  </View>
-                ))
-              )
-            ) : po.length === 0 ? (
-              <Text style={styles.meta}>
-                Tidak ada PO yang perlu faktur masukan.
-              </Text>
+              <KolamListTableComposition
+                columns={[
+                  {
+                    flex: 1.4,
+                    id: 'invoice',
+                    label: 'Invoice',
+                    render: row => (
+                      <Pressable
+                        accessibilityRole="link"
+                        onPress={() => onRouteChange?.(`/sales/${row.id}`)}>
+                        <Text style={styles.link}>{row.invoiceCode}</Text>
+                      </Pressable>
+                    ),
+                  },
+                  {
+                    align: 'right',
+                    flex: 1,
+                    id: 'total',
+                    label: 'Total',
+                    render: row => (
+                      <Text style={styles.tdMono}>
+                        {formatKolamDaraTaxIdr(row.finalTotal)}
+                      </Text>
+                    ),
+                  },
+                  {
+                    align: 'center',
+                    flex: 0.8,
+                    id: 'status',
+                    label: 'Status',
+                    render: row => (
+                      <KolamStatusBadge
+                        intent="warning"
+                        label={row.fakturStatus}
+                      />
+                    ),
+                  },
+                ]}
+                emptyTitle="Tidak ada penjualan yang perlu faktur."
+                getRowKey={row => row.id}
+                loading={fakturLoading}
+                pagination={{
+                  onPageChange: setSalesPage,
+                  page: salesPage,
+                  pageSize: FAKTUR_PAGE_SIZE,
+                  total: sales.length,
+                }}
+                rows={sales.slice(
+                  (salesPage - 1) * FAKTUR_PAGE_SIZE,
+                  salesPage * FAKTUR_PAGE_SIZE,
+                )}
+              />
             ) : (
-              po.map(row => (
-                <View key={row.id} style={styles.fakturRow}>
-                  <View style={styles.fakturBody}>
-                    <Pressable
-                      accessibilityRole="link"
-                      onPress={() =>
-                        onRouteChange?.(`/purchase-order/${row.id}`)
-                      }>
-                      <Text style={styles.link}>{row.poCode}</Text>
-                    </Pressable>
-                    {row.vendorName ? (
-                      <Text style={styles.meta}>{row.vendorName}</Text>
-                    ) : null}
-                    <Text style={styles.meta}>
-                      {formatKolamDaraTaxIdr(row.finalTotal)}
-                    </Text>
-                  </View>
-                  <KolamStatusBadge intent="warning" label={row.fakturStatus} />
-                </View>
-              ))
+              <KolamListTableComposition
+                columns={[
+                  {
+                    flex: 1.2,
+                    id: 'po',
+                    label: 'PO',
+                    render: row => (
+                      <Pressable
+                        accessibilityRole="link"
+                        onPress={() =>
+                          onRouteChange?.(`/purchase-order/${row.id}`)
+                        }>
+                        <Text style={styles.link}>{row.poCode}</Text>
+                      </Pressable>
+                    ),
+                  },
+                  {
+                    flex: 1.2,
+                    id: 'vendor',
+                    label: 'Vendor',
+                    render: row => (
+                      <Text style={styles.td}>{row.vendorName || '-'}</Text>
+                    ),
+                  },
+                  {
+                    align: 'right',
+                    flex: 1,
+                    id: 'total',
+                    label: 'Total',
+                    render: row => (
+                      <Text style={styles.tdMono}>
+                        {formatKolamDaraTaxIdr(row.finalTotal)}
+                      </Text>
+                    ),
+                  },
+                  {
+                    align: 'center',
+                    flex: 0.8,
+                    id: 'status',
+                    label: 'Status',
+                    render: row => (
+                      <KolamStatusBadge
+                        intent="warning"
+                        label={row.fakturStatus}
+                      />
+                    ),
+                  },
+                ]}
+                emptyTitle="Tidak ada PO yang perlu faktur masukan."
+                getRowKey={row => row.id}
+                loading={fakturLoading}
+                pagination={{
+                  onPageChange: setPoPage,
+                  page: poPage,
+                  pageSize: FAKTUR_PAGE_SIZE,
+                  total: po.length,
+                }}
+                rows={po.slice(
+                  (poPage - 1) * FAKTUR_PAGE_SIZE,
+                  poPage * FAKTUR_PAGE_SIZE,
+                )}
+              />
             )}
           </View>
         </>
@@ -450,23 +530,6 @@ const styles = StyleSheet.create({
   colNum: {flex: 1, minWidth: 72, textAlign: 'right'},
   sptButton: {
     alignSelf: 'flex-start',
-  },
-  fakturRow: {
-    alignItems: 'center',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  fakturBody: {
-    flex: 1,
-    gap: 2,
-    minWidth: 140,
   },
   link: {
     color: V.colors.primary,
