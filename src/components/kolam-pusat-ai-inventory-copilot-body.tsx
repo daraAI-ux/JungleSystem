@@ -332,9 +332,6 @@ function BotProfileSection({
       <View style={styles.botStripHead}>
         <View style={styles.heading}>
           <Text style={styles.sectionTitle}>Profil Bot — Pangeran Isopod</Text>
-          <Text style={styles.sectionDesc}>
-            Foto & nama bot deterministik Inventory Copilot.
-          </Text>
         </View>
         <View style={styles.botStripActions}>
           {photoUri ? (
