@@ -139,18 +139,18 @@ export function KolamDaraSeoApprovalsBody({
       },
       {
         align: 'center' as const,
-        flex: 0.9,
+        flex: 0.62,
         id: 'status',
         label: 'Status',
         render: (item: KolamDaraSeoSuggestion) => (
-          <Text numberOfLines={2} style={styles.tableCenterText}>
+          <Text numberOfLines={1} style={styles.tableCenterText}>
             {formatKolamDaraSeoSuggestionStatus(item.status)}
           </Text>
         ),
       },
       {
         align: 'center' as const,
-        flex: 0.6,
+        flex: 0.42,
         id: 'score',
         label: 'Skor',
         render: (item: KolamDaraSeoSuggestion) => (
@@ -348,6 +348,8 @@ export function KolamDaraSeoApprovalsBody({
                 void controller.onOpenDetail(item.id);
               }}
               size="sm"
+              style={styles.reviewButton}
+              textStyle={styles.reviewButtonText}
             />
           )}
           rows={controller.pageItems}
@@ -719,17 +721,25 @@ const styles = StyleSheet.create({
   tableCenterText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
     width: '100%',
   },
   tableCenterStrong: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
     width: '100%',
+  },
+  reviewButton: {
+    minHeight: 28,
+    minWidth: 0,
+    paddingHorizontal: 8,
+  },
+  reviewButtonText: {
+    fontSize: 11,
   },
   list: {
     gap: 8,
