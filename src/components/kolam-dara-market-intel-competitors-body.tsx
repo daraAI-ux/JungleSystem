@@ -7,6 +7,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {SvgXml} from 'react-native-svg';
+import {KOLAM_AI_MODULE_ICON_SVG} from '../assets/icons/ai-module-icon-svg';
+import {KOLAM_DOWNLOAD_TOPBAR_ICON_SVG} from '../assets/icons/download-topbar-icon-svg';
+import {KOLAM_NEW_BUTTON_ICON_SVG} from '../assets/icons/new-button-icon-svg';
 import {
   KOLAM_DARA_MARKET_INTEL_COMPETITOR_CHANNELS,
   formatKolamDaraMarketIntelCompetitorFetchStatus,
@@ -28,6 +32,19 @@ import {KolamEmptyState} from './kolam-empty-state';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+
+const KOLAM_COMPETITOR_ADD_ICON_XML = KOLAM_NEW_BUTTON_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.primaryFg,
+);
+const KOLAM_COMPETITOR_LOAD_ICON_XML = KOLAM_DOWNLOAD_TOPBAR_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.primaryFg,
+);
+const KOLAM_COMPETITOR_DARA_ICON_XML = KOLAM_AI_MODULE_ICON_SVG.replace(
+  /#000000/g,
+  V.colors.primaryFg,
+);
 
 /** FE `DaraMarketCompetitorsPage` — dual-view list/detail. */
 export function KolamDaraMarketIntelCompetitorsBody({
@@ -137,26 +154,53 @@ function CompetitorsToolbar({
               />
             ) : (
               <KolamButton
-                label="+ Add kompetitor"
+                icon={
+                  <SvgXml
+                    height="100%"
+                    width="100%"
+                    xml={KOLAM_COMPETITOR_ADD_ICON_XML}
+                  />
+                }
+                label="Add kompetitor"
                 onPress={controller.onToggleAddCompetitor}
                 size="sm"
+                style={styles.actionButton}
+                textStyle={styles.actionButtonText}
               />
             )}
             <KolamButton
               disabled={controller.loading}
+              icon={
+                <SvgXml
+                  height="100%"
+                  width="100%"
+                  xml={KOLAM_COMPETITOR_LOAD_ICON_XML}
+                />
+              }
               label={controller.loading ? 'Memuat…' : 'Muat'}
               onPress={() => {
                 void controller.onRefresh();
               }}
               size="sm"
+              style={styles.actionButton}
+              textStyle={styles.actionButtonText}
             />
             <KolamButton
               disabled={controller.busy}
+              icon={
+                <SvgXml
+                  height="100%"
+                  width="100%"
+                  xml={KOLAM_COMPETITOR_DARA_ICON_XML}
+                />
+              }
               label="Laporkan DARA"
               onPress={() => {
                 void controller.onSendReport();
               }}
               size="sm"
+              style={styles.actionButton}
+              textStyle={styles.actionButtonText}
             />
           </View>
         </View>
@@ -477,6 +521,13 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     position: 'relative',
     zIndex: 100000,
+  },
+  actionButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  actionButtonText: {
+    color: V.colors.primaryFg,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
