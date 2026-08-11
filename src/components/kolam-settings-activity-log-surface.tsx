@@ -155,9 +155,7 @@ export function KolamSettingsActivityLogSurface({
                 );
               })}
             </View>
-            <View style={kolamTableToolbarStyles.actions}>
-              <KolamActionControlButton label="Refresh" onPress={onRefresh} />
-            </View>
+            <View style={kolamTableToolbarStyles.actions} />
           </View>
         </View>
         {activeFilterControl && panelAnchor ? (
