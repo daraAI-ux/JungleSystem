@@ -1787,7 +1787,9 @@ function CustomerPointTransactionsCard({
   result: KolamCustomerPointTransactionsResult;
 }) {
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={[styles.detailCard, styles.customerPointTransactionsCard]}
+      variant="settingsWebConfig">
       <SectionTitle
         description="Riwayat perubahan poin pelanggan"
         title="Riwayat transaksi poin"
@@ -2925,6 +2927,11 @@ const styles = StyleSheet.create({
   customerTaxProfileCard: {
     backgroundColor: '#f5f0ff',
     borderColor: '#d8c7ff',
+  },
+  customerPointTransactionsCard: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   customerTaxProfileBody: {
     gap: 12,
