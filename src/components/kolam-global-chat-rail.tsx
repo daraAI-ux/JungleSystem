@@ -74,6 +74,7 @@ import {
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
+import {fetchKolamShippingDeliveryStats} from '../services/kolam-dara-shipping-copilot-api';
 import {
   pickNativeAssetFile,
   pickNativeImageFile,
@@ -829,19 +830,25 @@ export function KolamGlobalChatRail({
   React.useEffect(() => {
     let active = true;
     getKolamWebSetting()
-      .then(webSetting => {
+      .then(async webSetting => {
+        const stats =
+          mode === 'inbox'
+            ? await fetchKolamShippingDeliveryStats('month').catch(() => null)
+            : null;
         if (active) {
           const katakTerbangWorkerPhotoUrl = readStringField(
             webSetting,
             'katakTerbangWorkerPhotoUrl',
           );
+          const katakTerbangProfilePhotoUrl =
+            stats?.katakTerbangProfile.photoUrl || '';
           setDaraAvatarState({
             imageUrl: resolveDaraAvatarImageUrl(
               readStringField(webSetting, 'daraAvatarUrl'),
               katakTerbangWorkerPhotoUrl,
             ),
             katakTerbangImageUrl: resolveKatakTerbangAvatarImageUrl(
-              katakTerbangWorkerPhotoUrl,
+              katakTerbangProfilePhotoUrl || katakTerbangWorkerPhotoUrl,
             ),
           });
         }
@@ -851,7 +858,7 @@ export function KolamGlobalChatRail({
     return () => {
       active = false;
     };
-  }, []);
+  }, [mode]);
 
   React.useEffect(() => {
     if (selectedItemId && !items.some(item => item.id === selectedItemId)) {

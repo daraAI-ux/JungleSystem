@@ -38,6 +38,7 @@ import {
   pickNativeAssetFile,
   pickNativeImageFile,
 } from '../src/services/native-file-picker';
+import {fetchKolamShippingDeliveryStats} from '../src/services/kolam-dara-shipping-copilot-api';
 
 const mockSoundPlay = jest.fn();
 const openUrlMock = jest
@@ -82,6 +83,10 @@ jest.mock('../src/hooks/use-kolam-chat-platform-health', () => ({
 
 jest.mock('../src/hooks/use-kolam-notification-sound-settings', () => ({
   useKolamNotificationSoundSettings: jest.fn(),
+}));
+
+jest.mock('../src/services/kolam-dara-shipping-copilot-api', () => ({
+  fetchKolamShippingDeliveryStats: jest.fn(),
 }));
 
 jest.mock('../src/services/kolam-api', () => {
@@ -190,6 +195,10 @@ const getChatTemplatesMock = getKolamChatTemplates as jest.MockedFunction<
 const getWebSettingMock = getKolamWebSetting as jest.MockedFunction<
   typeof getKolamWebSetting
 >;
+const fetchShippingStatsMock =
+  fetchKolamShippingDeliveryStats as jest.MockedFunction<
+    typeof fetchKolamShippingDeliveryStats
+  >;
 const searchMarketplaceListingsMock =
   searchKolamChatMarketplaceListings as jest.MockedFunction<
     typeof searchKolamChatMarketplaceListings
@@ -303,6 +312,7 @@ describe('KolamGlobalChatRail', () => {
     getChatTemplatesMock.mockClear();
     searchMarketplaceListingsMock.mockClear();
     getWebSettingMock.mockClear();
+    fetchShippingStatsMock.mockClear();
     getChatAnalyticsMock.mockResolvedValue({
       avgReplyDelayMinutes: 4,
       lateReplyCount: 1,
@@ -334,6 +344,36 @@ describe('KolamGlobalChatRail', () => {
     getWebSettingMock.mockResolvedValue({
       daraAvatarUrl: '/media/dara/avatar.png',
       katakTerbangWorkerPhotoUrl: '/media/katak-terbang/photo.jpg',
+    });
+    fetchShippingStatsMock.mockResolvedValue({
+      generatedAt: '2026-08-11T00:00:00.000Z',
+      range: 'month',
+      note: '',
+      dara: {
+        byChannel: {shopee: 0, tokopedia: 0, web: 0},
+        change: 0,
+        data: [],
+        value: 0,
+      },
+      bot: {
+        byChannel: {shopee: 0, tokopedia: 0, web: 0},
+        change: 0,
+        data: [],
+        value: 0,
+      },
+      katakTerbangProfile: {
+        name: 'Katak Terbang',
+        photoUrl: '/media/katak-terbang/profile-live.jpg',
+      },
+      channelSources: {
+        shopee: {logo: '', name: 'Shopee', sourceId: ''},
+        tokopedia: {
+          logo: '',
+          name: 'Tokopedia',
+          sourceId: '',
+        },
+        web: {logo: '', name: 'Webstore', sourceId: ''},
+      },
     });
     getChatContactDetailsMock.mockResolvedValue({
       contact: {
@@ -1821,7 +1861,7 @@ describe('KolamGlobalChatRail', () => {
         .some(
           node =>
             node.props.source?.uri ===
-            'https://amfibi.dunia-anura.com/media/katak-terbang/photo.jpg',
+            'https://amfibi.dunia-anura.com/media/katak-terbang/profile-live.jpg',
         ),
     ).toBe(true);
   });
