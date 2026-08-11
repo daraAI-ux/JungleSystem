@@ -1,6 +1,7 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {SvgXml} from 'react-native-svg';
+import {KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG} from '../assets/icons/dara-market-intel-module-icon-svg';
 import {KOLAM_LUP_SEARCH_ICON_SVG} from '../assets/icons/lup-search-icon-svg';
 import {
   formatKolamDaraMarketIntelIdr,
@@ -19,6 +20,11 @@ const KOLAM_SCAN_BUTTON_ICON_XML = KOLAM_LUP_SEARCH_ICON_SVG.replace(
   /currentColor/g,
   V.colors.primaryFg,
 );
+const KOLAM_MONITOR_BUTTON_ICON_XML =
+  KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG.replace(
+    /#000000/g,
+    V.colors.primaryFg,
+  );
 
 /** FE `DaraMarketIntelDashboardPage` body — KPI cards (not SEO donuts). */
 export function KolamDaraMarketIntelDashboardBody({
@@ -151,12 +157,21 @@ export function KolamDaraMarketIntelDashboardBody({
                   textStyle={styles.scanActionButtonText}
                 />
                 <KolamButton
+                  icon={
+                    <SvgXml
+                      height="100%"
+                      width="100%"
+                      xml={KOLAM_MONITOR_BUTTON_ICON_XML}
+                    />
+                  }
                   label="Monitor kompetitor"
                   onPress={() =>
                     onRouteChange?.(
                       '/campaign/dara-market-intel/competitors',
                     )
                   }
+                  style={styles.scanActionButton}
+                  textStyle={styles.scanActionButtonText}
                 />
                 <KolamButton
                   intent="primary"
