@@ -670,8 +670,8 @@ describe('KolamDaraTrainingSurface', () => {
     expect(text).toContain('Katalog');
     expect(text).toContain('Kelola');
     expect(text).toContain('Whites Tree Frog');
-    expect(text).toContain('Sebelumnya');
-    expect(text).toContain('Berikutnya');
+    expect(text).toContain('Halaman sebelumnya');
+    expect(text).toContain('Halaman berikutnya');
     expect(visionSpeciesMock).toHaveBeenCalledWith(
       expect.objectContaining({page: 1}),
     );

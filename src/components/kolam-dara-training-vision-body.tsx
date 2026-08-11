@@ -67,6 +67,7 @@ import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -232,7 +233,7 @@ export function KolamDaraTrainingVisionBody({
     KolamDaraTrainingVisionSpecies[]
   >([]);
   const [speciesPage, setSpeciesPage] = useState(1);
-  const [speciesPages, setSpeciesPages] = useState(1);
+  const [speciesTotal, setSpeciesTotal] = useState(0);
   const [speciesQ, setSpeciesQ] = useState('');
   const [speciesSearch, setSpeciesSearch] = useState('');
   const [selectedSpecies, setSelectedSpecies] =
@@ -244,7 +245,7 @@ export function KolamDaraTrainingVisionBody({
     KolamDaraTrainingVisionProduct[]
   >([]);
   const [productPage, setProductPage] = useState(1);
-  const [productPages, setProductPages] = useState(1);
+  const [productTotal, setProductTotal] = useState(0);
   const [productQ, setProductQ] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [selectedProduct, setSelectedProduct] =
@@ -319,9 +320,9 @@ export function KolamDaraTrainingVisionBody({
         ]);
       setStats(st);
       setSpeciesRows(sp.rows);
-      setSpeciesPages(sp.pages);
+      setSpeciesTotal(sp.total);
       setProductRows(pr.rows);
-      setProductPages(pr.pages);
+      setProductTotal(pr.total);
       setFeedbackRows(fb.rows);
       setFeedbackPages(fb.pages);
       setHardNegatives(hn);
@@ -976,84 +977,89 @@ export function KolamDaraTrainingVisionBody({
                 />
               </View>
             </View>
-            {loading ? (
-              <Text style={styles.meta}>Memuat…</Text>
-            ) : speciesRows.length === 0 ? (
-              <Text style={styles.meta}>Tidak ada species.</Text>
-            ) : (
-              <>
-                <View style={styles.tableHead}>
-                  <Text style={[styles.th, styles.colName]}>Species</Text>
-                  <Text style={[styles.th, styles.colCount]}>Katalog</Text>
-                  <Text style={[styles.th, styles.colCount]}>Training</Text>
-                  <Text style={[styles.th, styles.colReady]}>Status</Text>
-                  <Text style={[styles.th, styles.colAction]} />
-                </View>
-                {speciesRows.map(row => {
-                  const trainStatus = formatKolamDaraTrainingVisionTrainStatusLabel(
-                    row.trainingCount,
-                    stats?.minTrainingPhotos ??
-                      KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
-                    row.catalogPhotoCount,
-                  );
-                  return (
-                    <View key={row.speciesId} style={styles.tableRow}>
-                      <View style={styles.colName}>
-                        <Text style={styles.tdStrong}>{row.displayName}</Text>
-                        {row.scientificName ? (
-                          <Text style={styles.tdMuted}>
-                            {row.scientificName}
-                          </Text>
-                        ) : null}
-                      </View>
-                      <Text style={[styles.td, styles.colCount]}>
-                        {row.catalogPhotoCount}
-                      </Text>
-                      <Text style={[styles.td, styles.colCount]}>
-                        {row.trainingCount}
-                      </Text>
-                      <View style={styles.colReady}>
-                        <KolamStatusBadge
-                          intent={trainStatus.ready ? 'success' : 'muted'}
-                          label={trainStatus.label}
-                        />
-                      </View>
-                      <View style={styles.colAction}>
-                        <KolamButton
-                          intent="secondary"
-                          label="Kelola"
-                          onPress={() => {
-                            void openSpecies(row);
-                          }}
-                          size="sm"
-                        />
-                      </View>
+            <KolamListTableComposition
+              columns={[
+                {
+                  flex: 2.3,
+                  id: 'species',
+                  label: 'Species',
+                  render: row => (
+                    <View>
+                      <Text style={styles.tdStrong}>{row.displayName}</Text>
+                      {row.scientificName ? (
+                        <Text style={styles.tdMuted}>
+                          {row.scientificName}
+                        </Text>
+                      ) : null}
                     </View>
-                  );
-                })}
-                {speciesPages > 1 ? (
-                  <View style={styles.pager}>
-                    <KolamButton
-                      disabled={speciesPage <= 1}
-                      intent="secondary"
-                      label="Sebelumnya"
-                      onPress={() => setSpeciesPage(p => Math.max(1, p - 1))}
-                      size="sm"
-                    />
-                    <Text style={styles.meta}>
-                      {speciesPage}/{speciesPages}
-                    </Text>
-                    <KolamButton
-                      disabled={speciesPage >= speciesPages}
-                      intent="secondary"
-                      label="Berikutnya"
-                      onPress={() => setSpeciesPage(p => p + 1)}
-                      size="sm"
-                    />
-                  </View>
-                ) : null}
-              </>
-            )}
+                  ),
+                },
+                {
+                  align: 'center',
+                  flex: 0.75,
+                  id: 'catalog',
+                  label: 'Katalog',
+                  render: row => (
+                    <Text style={styles.td}>{row.catalogPhotoCount}</Text>
+                  ),
+                },
+                {
+                  align: 'center',
+                  flex: 0.75,
+                  id: 'training',
+                  label: 'Training',
+                  render: row => (
+                    <Text style={styles.td}>{row.trainingCount}</Text>
+                  ),
+                },
+                {
+                  align: 'center',
+                  flex: 1,
+                  id: 'status',
+                  label: 'Status',
+                  render: row => {
+                    const trainStatus =
+                      formatKolamDaraTrainingVisionTrainStatusLabel(
+                        row.trainingCount,
+                        stats?.minTrainingPhotos ??
+                          KOLAM_DARA_TRAINING_VISION_MIN_SPECIES_PHOTOS,
+                        row.catalogPhotoCount,
+                      );
+                    return (
+                      <KolamStatusBadge
+                        intent={trainStatus.ready ? 'success' : 'muted'}
+                        label={trainStatus.label}
+                      />
+                    );
+                  },
+                },
+              ]}
+              emptyTitle={loading ? 'Memuat...' : 'Tidak ada species'}
+              getRowKey={row => row.speciesId}
+              loading={loading}
+              pagination={
+                !loading && speciesTotal > 0
+                  ? {
+                      onPageChange: setSpeciesPage,
+                      page: speciesPage,
+                      pageSize: KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
+                      total: speciesTotal,
+                    }
+                  : undefined
+              }
+              renderActions={row => (
+                <KolamButton
+                  intent="secondary"
+                  label="Kelola"
+                  onPress={() => {
+                    void openSpecies(row);
+                  }}
+                  size="sm"
+                />
+              )}
+              rows={loading ? [] : speciesRows}
+              showFooter={!loading && speciesTotal > 0}
+            />
           </View>
         </>
       ) : null}
@@ -1142,79 +1148,82 @@ export function KolamDaraTrainingVisionBody({
                 />
               </View>
             </View>
-            {loading ? (
-              <Text style={styles.meta}>Memuat…</Text>
-            ) : productRows.length === 0 ? (
-              <Text style={styles.meta}>Tidak ada produk.</Text>
-            ) : (
-              <>
-                <View style={styles.tableHead}>
-                  <Text style={[styles.th, styles.colName]}>Produk</Text>
-                  <Text style={[styles.th, styles.colCount]}>Katalog</Text>
-                  <Text style={[styles.th, styles.colCount]}>Training</Text>
-                  <Text style={[styles.th, styles.colReady]}>Status</Text>
-                  <Text style={[styles.th, styles.colAction]} />
-                </View>
-                {productRows.map(row => {
-                  const trainStatus = formatKolamDaraTrainingVisionTrainStatusLabel(
-                    row.trainingCount,
-                    stats?.minProductTrainingPhotos ??
-                      KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
-                    row.catalogPhotoCount,
-                  );
-                  return (
-                    <View key={row.productId} style={styles.tableRow}>
-                      <Text style={[styles.tdStrong, styles.colName]}>
-                        {row.displayName}
-                      </Text>
-                      <Text style={[styles.td, styles.colCount]}>
-                        {row.catalogPhotoCount}
-                      </Text>
-                      <Text style={[styles.td, styles.colCount]}>
-                        {row.trainingCount}
-                      </Text>
-                      <View style={styles.colReady}>
-                        <KolamStatusBadge
-                          intent={trainStatus.ready ? 'success' : 'muted'}
-                          label={trainStatus.label}
-                        />
-                      </View>
-                      <View style={styles.colAction}>
-                        <KolamButton
-                          intent="secondary"
-                          label="Kelola"
-                          onPress={() => {
-                            void openProduct(row);
-                          }}
-                          size="sm"
-                        />
-                      </View>
-                    </View>
-                  );
-                })}
-                {productPages > 1 ? (
-                  <View style={styles.pager}>
-                    <KolamButton
-                      disabled={productPage <= 1}
-                      intent="secondary"
-                      label="Sebelumnya"
-                      onPress={() => setProductPage(p => Math.max(1, p - 1))}
-                      size="sm"
-                    />
-                    <Text style={styles.meta}>
-                      {productPage}/{productPages}
-                    </Text>
-                    <KolamButton
-                      disabled={productPage >= productPages}
-                      intent="secondary"
-                      label="Berikutnya"
-                      onPress={() => setProductPage(p => p + 1)}
-                      size="sm"
-                    />
-                  </View>
-                ) : null}
-              </>
-            )}
+            <KolamListTableComposition
+              columns={[
+                {
+                  flex: 2.3,
+                  id: 'product',
+                  label: 'Produk',
+                  render: row => (
+                    <Text style={styles.tdStrong}>{row.displayName}</Text>
+                  ),
+                },
+                {
+                  align: 'center',
+                  flex: 0.75,
+                  id: 'catalog',
+                  label: 'Katalog',
+                  render: row => (
+                    <Text style={styles.td}>{row.catalogPhotoCount}</Text>
+                  ),
+                },
+                {
+                  align: 'center',
+                  flex: 0.75,
+                  id: 'training',
+                  label: 'Training',
+                  render: row => (
+                    <Text style={styles.td}>{row.trainingCount}</Text>
+                  ),
+                },
+                {
+                  align: 'center',
+                  flex: 1,
+                  id: 'status',
+                  label: 'Status',
+                  render: row => {
+                    const trainStatus =
+                      formatKolamDaraTrainingVisionTrainStatusLabel(
+                        row.trainingCount,
+                        stats?.minProductTrainingPhotos ??
+                          KOLAM_DARA_TRAINING_VISION_MIN_PRODUCT_PHOTOS,
+                        row.catalogPhotoCount,
+                      );
+                    return (
+                      <KolamStatusBadge
+                        intent={trainStatus.ready ? 'success' : 'muted'}
+                        label={trainStatus.label}
+                      />
+                    );
+                  },
+                },
+              ]}
+              emptyTitle={loading ? 'Memuat...' : 'Tidak ada produk'}
+              getRowKey={row => row.productId}
+              loading={loading}
+              pagination={
+                !loading && productTotal > 0
+                  ? {
+                      onPageChange: setProductPage,
+                      page: productPage,
+                      pageSize: KOLAM_DARA_TRAINING_VISION_LIST_PAGE_SIZE,
+                      total: productTotal,
+                    }
+                  : undefined
+              }
+              renderActions={row => (
+                <KolamButton
+                  intent="secondary"
+                  label="Kelola"
+                  onPress={() => {
+                    void openProduct(row);
+                  }}
+                  size="sm"
+                />
+              )}
+              rows={loading ? [] : productRows}
+              showFooter={!loading && productTotal > 0}
+            />
           </View>
         </>
       ) : null}
