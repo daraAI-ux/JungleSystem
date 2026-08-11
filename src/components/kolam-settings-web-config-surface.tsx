@@ -3681,7 +3681,6 @@ export function KolamSettingsWebConfigSurface({
           disabled={disabled || kpiStatus === 'saving' || !kpiPluginEnabled}
           draft={kpiSettingsDraft}
           message={kpiMessage}
-          onRefreshPreview={onRefreshKpiWeeklyPreview}
           onSave={onSaveKpiSettings}
           onSetField={setKpiSettingsDraftField}
           onToggleRule={setKpiEnabledRule}
@@ -6181,7 +6180,6 @@ function KpiSettingsPanel({
   disabled,
   draft,
   message,
-  onRefreshPreview,
   onSave,
   onSetField,
   onToggleRule,
@@ -6192,7 +6190,6 @@ function KpiSettingsPanel({
   disabled: boolean;
   draft: KpiSettingsDraft;
   message: string;
-  onRefreshPreview: () => void;
   onSave: () => void;
   onSetField: <Key extends keyof KpiSettingsDraft>(
     key: Key,
@@ -6517,19 +6514,7 @@ function KpiSettingsPanel({
         </View>
       </KpiSettingsSection>
 
-      <KpiSettingsSection
-        action={
-          <KolamActionControlButton
-            disabled={disabled || busy}
-            intent="secondary"
-            label={status === 'loading' ? 'Memuat...' : 'Dry-run'}
-            loading={status === 'loading'}
-            loadingLabel="Memuat..."
-            onPress={onRefreshPreview}
-          />
-        }
-        title="Preview pengumuman mingguan (DARA)"
-      >
+      <KpiSettingsSection title="Preview pengumuman mingguan (DARA)">
         {preview ? (
           <View style={styles.kpiPreviewStack}>
             <Text style={styles.marketplaceOverviewDetail}>
