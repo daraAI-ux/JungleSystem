@@ -53,9 +53,9 @@ const CUSTOMER_LIST_COLUMNS = [
   {id: 'customer', label: 'Pelanggan', flex: 1.55, align: 'left'},
   {id: 'contact', label: 'Kontak', flex: 1.25, align: 'left'},
   {id: 'location', label: 'Lokasi', flex: 1.25, align: 'left'},
-  {id: 'points', label: 'Poin', flex: 0.65, align: 'right'},
-  {id: 'status', label: 'Status', flex: 1.05, align: 'left'},
-  {id: 'created', label: 'Dibuat', flex: 0.95, align: 'right'},
+  {id: 'points', label: 'Poin', flex: 0.65, align: 'center'},
+  {id: 'status', label: 'Status', flex: 1.05, align: 'center'},
+  {id: 'created', label: 'Dibuat', flex: 0.95, align: 'center'},
 ] as const;
 
 type CustomerListColumnId = (typeof CUSTOMER_LIST_COLUMNS)[number]['id'];
@@ -942,7 +942,7 @@ function renderCustomerListCell(
           style={styles.customerPointBadge}
         />
       ) : (
-        <Text style={[styles.customerSubText, styles.customerTextRight]}>
+        <Text style={[styles.customerSubText, styles.customerTextCenter]}>
           0
         </Text>
       );
@@ -983,7 +983,7 @@ function renderCustomerListCell(
       );
     case 'created':
       return (
-        <Text style={[styles.customerSubText, styles.customerTextRight]}>
+        <Text style={[styles.customerSubText, styles.customerTextCenter]}>
           {formatCustomerDate(customer.createdAt)}
         </Text>
       );
@@ -1388,13 +1388,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  customerTextRight: {
-    textAlign: 'right',
+  customerTextCenter: {
+    textAlign: 'center',
   },
   customerPointBadge: {
-    alignSelf: 'flex-end',
+    alignSelf: 'center',
   },
   customerStatusStack: {
+    alignItems: 'center',
     gap: 4,
     minWidth: 0,
   },
@@ -1403,12 +1404,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+    justifyContent: 'center',
   },
   customerExternalRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+    justifyContent: 'center',
   },
   customerExternalDot: {
     alignItems: 'center',
