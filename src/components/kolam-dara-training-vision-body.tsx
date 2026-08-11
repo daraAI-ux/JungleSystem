@@ -864,6 +864,143 @@ export function KolamDaraTrainingVisionBody({
             ) : null}
           </View>
 
+          <KolamDetailSummaryCard
+            actions={
+              <View style={styles.headActions}>
+                <KolamDropdownSelect
+                  label="Periode"
+                  onChange={value => setBaselineDays(Number(value) || 30)}
+                  options={[
+                    {label: '7 hari', value: '7'},
+                    {label: '30 hari', value: '30'},
+                    {label: '90 hari', value: '90'},
+                  ]}
+                  value={String(baselineDays)}
+                />
+                <KolamRefreshButton
+                  accessibilityLabel="Refresh"
+                  disabled={loading}
+                  intent="secondary"
+                  onPress={() => {
+                    void load();
+                  }}
+                  size="sm"
+                />
+              </View>
+            }
+            description="Audit produksi: abstain, auto-reply vision, false-match CS."
+            fieldColumns={4}
+            fields={
+              baselineKpi ?
+                [
+                  {
+                    id: 'inbox-source',
+                    label: 'Sumber inbox',
+                    value: (
+                      <PipelineSummaryFieldValue
+                        hint={
+                          baselineKpi.inboxEventCount != null ?
+                            `${baselineKpi.inboxEventCount} event`
+                          : undefined
+                        }
+                        value={baselineKpi.inboxSource || '-'}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'abstain-rate',
+                    label: 'Abstain rate',
+                    value: (
+                      <PipelineSummaryFieldValue
+                        hint={`${baselineKpi.inboxClarifyAbstain} dari ${
+                          baselineKpi.inboxAutoReply +
+                          baselineKpi.inboxClarifyAbstain
+                        } attempt katalog`}
+                        value={`${baselineKpi.inboxAbstainRate ?? 0}%`}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'auto-reply-vision',
+                    label: 'Auto-reply vision',
+                    value: (
+                      <PipelineSummaryFieldValue
+                        hint={`Match ${baselineKpi.inboxVisionMatch} - Ambigu ${baselineKpi.inboxVisionAmbiguous} - LLM ${baselineKpi.inboxVisionLlm}`}
+                        value={`${baselineKpi.inboxAutoReplyRate ?? 0}%`}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'false-match-cs',
+                    label: 'False match CS',
+                    value: (
+                      <PipelineSummaryFieldValue
+                        hint={`${baselineKpi.feedbackFalseMatch}/${baselineKpi.feedbackTotal} koreksi`}
+                        value={`${baselineKpi.feedbackFalseMatchRate ?? 0}%`}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'precision-proxy',
+                    label: 'Precision estimasi',
+                    value: (
+                      <PipelineSummaryFieldValue
+                        hint="Butuh koreksi CS + auto-reply di periode sama"
+                        value={
+                          baselineKpi.precisionPct != null ?
+                            `${baselineKpi.precisionPct}%`
+                          : '-'
+                        }
+                      />
+                    ),
+                  },
+                  {
+                    id: 'payment-ocr',
+                    label: 'Bukti bayar',
+                    value: baselineKpi.inboxPayment,
+                  },
+                  {
+                    id: 'skip-dedup',
+                    label: 'Skip dedup foto',
+                    value: baselineKpi.inboxSkippedDedup,
+                  },
+                  {
+                    id: 'siglip-latest',
+                    label: 'Holdout SigLIP',
+                    value:
+                      baselineKpi.latestHoldoutSiglipAccuracy != null ?
+                        `${baselineKpi.latestHoldoutSiglipAccuracy}%`
+                      : '-',
+                  },
+                ]
+              : [
+                  {
+                    id: 'empty',
+                    label: 'Status',
+                    value: 'Belum ada data KPI untuk periode ini.',
+                  },
+                ]
+            }
+            sections={
+              baselineKpi?.inboxByMatchMethod.length ?
+                [
+                  {
+                    id: 'match-method',
+                    title: 'Metode auto-reply',
+                    content: (
+                      <Text style={styles.meta}>
+                        {baselineKpi.inboxByMatchMethod
+                          .map(row => `${row.method} ${row.count}`)
+                          .join(' - ')}
+                      </Text>
+                    ),
+                  },
+                ]
+              : undefined
+            }
+            title="Baseline KPI"
+          />
+
           <View style={styles.card}>
             <View style={styles.cardHead}>
               <View style={styles.headCopy}>
@@ -1348,115 +1485,6 @@ export function KolamDaraTrainingVisionBody({
             />
           </View>
         </>
-      ) : null}
-
-      {section === 'baseline' ? (
-        <View style={styles.card}>
-          <View style={styles.cardHead}>
-            <View style={styles.headCopy}>
-              <Text style={styles.sectionTitle}>Baseline KPI (Fase 0)</Text>
-              <Text style={styles.meta}>
-                Audit produksi: abstain (klarifikasi), auto-reply vision, false
-                match dari koreksi CS. Event inbox dicatat sejak deploy modul
-                ini; periode lama fallback ke pesan `daraMeta`.
-              </Text>
-            </View>
-            <View style={styles.headActions}>
-              <KolamDropdownSelect
-                label="Periode"
-                onChange={value => setBaselineDays(Number(value) || 30)}
-                options={[
-                  {label: '7 hari', value: '7'},
-                  {label: '30 hari', value: '30'},
-                  {label: '90 hari', value: '90'},
-                ]}
-                value={String(baselineDays)}
-              />
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={loading}
-                intent="secondary"
-
-                onPress={() => {
-                  void load();
-                }}
-                size="sm"
-              />
-            </View>
-          </View>
-
-          {baselineKpi ?
-            <>
-              <Text style={styles.meta}>
-                Sumber inbox:{' '}
-                <Text style={styles.metaStrong}>
-                  {baselineKpi.inboxSource || '—'}
-                </Text>
-                {baselineKpi.inboxEventCount != null
-                  ? ` · ${baselineKpi.inboxEventCount} event`
-                  : ''}
-              </Text>
-              <View style={styles.statGrid}>
-                <StatBox
-                  hint={`${baselineKpi.inboxClarifyAbstain} dari ${
-                    baselineKpi.inboxAutoReply +
-                    baselineKpi.inboxClarifyAbstain
-                  } attempt katalog`}
-                  label="Abstain / klarifikasi"
-                  value={`${baselineKpi.inboxAbstainRate ?? 0}%`}
-                />
-                <StatBox
-                  hint={`Match ${baselineKpi.inboxVisionMatch} · Ambigu ${baselineKpi.inboxVisionAmbiguous} · LLM ${baselineKpi.inboxVisionLlm}`}
-                  label="Auto-reply vision"
-                  value={`${baselineKpi.inboxAutoReplyRate ?? 0}%`}
-                />
-                <StatBox
-                  hint={`${baselineKpi.feedbackFalseMatch}/${baselineKpi.feedbackTotal} koreksi`}
-                  label="False match (CS label)"
-                  value={`${baselineKpi.feedbackFalseMatchRate ?? 0}%`}
-                />
-                <StatBox
-                  hint="Butuh koreksi CS + auto-reply di periode sama"
-                  label="Precision estimasi"
-                  value={
-                    baselineKpi.precisionPct != null ?
-                      `${baselineKpi.precisionPct}%`
-                    : '—'
-                  }
-                />
-              </View>
-              <View style={styles.statGrid}>
-                <StatBox
-                  label="Bukti bayar"
-                  value={baselineKpi.inboxPayment}
-                />
-                <StatBox
-                  label="Skip dedup foto"
-                  value={baselineKpi.inboxSkippedDedup}
-                />
-                <StatBox
-                  label="Holdout SigLIP terakhir"
-                  value={
-                    baselineKpi.latestHoldoutSiglipAccuracy != null ?
-                      `${baselineKpi.latestHoldoutSiglipAccuracy}%`
-                    : '—'
-                  }
-                />
-              </View>
-              {baselineKpi.inboxByMatchMethod.length > 0 ? (
-                <Text style={styles.meta}>
-                  Metode auto-reply:{' '}
-                  {baselineKpi.inboxByMatchMethod
-                    .map(row => `${row.method} ${row.count}`)
-                    .join(' · ')}
-                </Text>
-              ) : null}
-              {baselineKpi.precisionNote ? (
-                <Text style={styles.meta}>{baselineKpi.precisionNote}</Text>
-              ) : null}
-            </>
-          : <Text style={styles.meta}>Belum ada data KPI untuk periode ini.</Text>}
-        </View>
       ) : null}
 
       {section === 'luar' ? (

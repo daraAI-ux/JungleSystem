@@ -26,6 +26,7 @@ export type KolamDetailSummaryCardProps = {
   body?: React.ReactNode;
   /** Label above `body` when body is present. */
   bodyTitle?: string;
+  actions?: React.ReactNode;
   description?: string;
   fieldColumns?: 2 | 3 | 4;
   fields: KolamDetailSummaryField[];
@@ -58,6 +59,7 @@ function SummaryBodyPanel({
  * Suitable for contract/party summaries across modules.
  */
 export function KolamDetailSummaryCard({
+  actions,
   body,
   bodyTitle,
   description,
@@ -105,11 +107,14 @@ export function KolamDetailSummaryCard({
       style={style ? [styles.card, style] : styles.card}
       variant="compact"
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        {description ? (
-          <Text style={styles.description}>{description}</Text>
-        ) : null}
+      <View style={actions ? styles.headerRow : styles.header}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+          {description ? (
+            <Text style={styles.description}>{description}</Text>
+          ) : null}
+        </View>
+        {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
 
       {leading ? (
@@ -141,7 +146,21 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   header: {
+    flexShrink: 1,
     gap: 4,
+  },
+  headerRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  actions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   title: {
     color: V.colors.fg,
