@@ -78,7 +78,7 @@ export const transaksiCopilotStyles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
   },
   sideBySideGrid: {
     alignItems: 'stretch',
