@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {SvgXml} from 'react-native-svg';
+import {KOLAM_PPN_ICON_SVG} from '../assets/icons/ppn-icon-svg';
 import {KOLAM_TAX_ICON_SVG} from '../assets/icons/tax-icon-svg';
 import {
   formatKolamDaraTaxDateId,
@@ -62,6 +63,7 @@ export function KolamDaraTaxRingkasanBody({
             value={formatKolamDaraTaxIdr(overview.sales.revenueIdr)}
           />
           <KpiCard
+            icon={KOLAM_PPN_ICON_SVG}
             label="PPN keluaran"
             meta={`DPP ${formatKolamDaraTaxIdr(overview.sales.ppnOutput.dpp)}`}
             tone="violet"
