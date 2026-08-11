@@ -1263,6 +1263,28 @@ export function KolamSettingsWebConfigSurface({
   const showSitemapSettings = activeTabId === 'sitemap';
   const showSyncSettings = activeTabId === 'sync';
   const showKpiSettings = activeTabId === 'kpi';
+  const [marketplaceHeroEditorOpen, setMarketplaceHeroEditorOpen] =
+    React.useState(false);
+  const openMarketplaceHeroCreate = React.useCallback(() => {
+    onClearMarketplaceHeroDraft();
+    setMarketplaceHeroEditorOpen(true);
+  }, [onClearMarketplaceHeroDraft]);
+  const openMarketplaceHeroEdit = React.useCallback(
+    (slide: KolamHeroSlide) => {
+      onEditMarketplaceHeroSlide(slide);
+      setMarketplaceHeroEditorOpen(true);
+    },
+    [onEditMarketplaceHeroSlide],
+  );
+  const closeMarketplaceHeroEditor = React.useCallback(() => {
+    onClearMarketplaceHeroDraft();
+    setMarketplaceHeroEditorOpen(false);
+  }, [onClearMarketplaceHeroDraft]);
+  React.useEffect(() => {
+    if (marketplaceLandingTabId !== 'hero') {
+      setMarketplaceHeroEditorOpen(false);
+    }
+  }, [marketplaceLandingTabId]);
   const provinceDropdownOptions = React.useMemo(
     () => createRegionDropdownOptions('Provinsi', regionProvinceRows),
     [regionProvinceRows],
@@ -5726,13 +5748,13 @@ export function KolamSettingsWebConfigSurface({
                 onDeleteHeroSlide={onDeleteMarketplaceHeroSlide}
                 onEditAnnouncementBanner={onEditMarketplaceAnnouncementBanner}
                 onEditCategoryBanner={onEditMarketplaceCategoryBanner}
-                onEditHeroSlide={onEditMarketplaceHeroSlide}
+                onEditHeroSlide={openMarketplaceHeroEdit}
                 onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
                 onMoveBioactiveStep={onMoveMarketplaceBioactiveStep}
                 onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
                 onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
                 onMoveHeroSlide={onMoveMarketplaceHeroSlide}
-                onAddHeroSlide={onClearMarketplaceHeroDraft}
+                onAddHeroSlide={openMarketplaceHeroCreate}
                 onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
                 onUploadBioactiveStepImage={
                   onUploadMarketplaceBioactiveStepImage
@@ -5750,7 +5772,9 @@ export function KolamSettingsWebConfigSurface({
                 onUploadYoutubeBackground={onUploadMarketplaceYoutubeBackground}
                 overview={marketplaceLandingOverview}
               />
-              <MarketplaceLandingControlsPanel
+              {marketplaceLandingTabId !== 'hero' ||
+              marketplaceHeroEditorOpen ? (
+                <MarketplaceLandingControlsPanel
                 activeTabId={marketplaceLandingTabId}
                 announcementDraft={marketplaceLandingAnnouncementDraft}
                 categoryDraft={marketplaceLandingCategoryDraft}
@@ -5762,7 +5786,7 @@ export function KolamSettingsWebConfigSurface({
                 notices={marketplaceLandingOverview.customerNotices}
                 onClearAnnouncementDraft={onClearMarketplaceAnnouncementDraft}
                 onClearCategoryDraft={onClearMarketplaceCategoryDraft}
-                onClearHeroDraft={onClearMarketplaceHeroDraft}
+                onClearHeroDraft={closeMarketplaceHeroEditor}
                 onClearNoticeDraft={onClearMarketplaceLandingNoticeDraft}
                 onDeleteNotice={onDeleteMarketplaceLandingNotice}
                 onEditNotice={onEditMarketplaceLandingNotice}
@@ -5788,6 +5812,7 @@ export function KolamSettingsWebConfigSurface({
                 setYoutubeDraftField={setMarketplaceLandingYoutubeDraftField}
                 youtubeDraft={marketplaceLandingYoutubeDraft}
               />
+              ) : null}
             </>
           ) : (
             <WebContentRowsPanel
@@ -7383,11 +7408,7 @@ function MarketplaceHeroSlidesPanel({
           <KolamActionControlButton
             disabled={previewDisabled}
             label="Preview"
-            onPress={() => {
-              if (!previewDisabled) {
-                onEdit(items.find(item => item.isActive !== false) ?? items[0]);
-              }
-            }}
+            onPress={() => undefined}
           />
           <KolamActionControlButton
             disabled={disabled}
@@ -8024,7 +8045,7 @@ function MarketplaceLandingControlsPanel({
             />
             <KolamActionControlButton
               disabled={disabled}
-              label="Baru"
+              label="Tutup"
               tone="positive"
               onPress={onClearHeroDraft}
             />
