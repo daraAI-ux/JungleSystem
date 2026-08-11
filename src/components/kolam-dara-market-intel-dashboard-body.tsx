@@ -1,5 +1,7 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {SvgXml} from 'react-native-svg';
+import {KOLAM_LUP_SEARCH_ICON_SVG} from '../assets/icons/lup-search-icon-svg';
 import {
   formatKolamDaraMarketIntelIdr,
   formatKolamDaraMarketIntelTaxSource,
@@ -12,6 +14,11 @@ import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+
+const KOLAM_SCAN_BUTTON_ICON_XML = KOLAM_LUP_SEARCH_ICON_SVG.replace(
+  /currentColor/g,
+  V.colors.primaryFg,
+);
 
 /** FE `DaraMarketIntelDashboardPage` body — KPI cards (not SEO donuts). */
 export function KolamDaraMarketIntelDashboardBody({
@@ -91,6 +98,13 @@ export function KolamDaraMarketIntelDashboardBody({
               <>
                 <KolamButton
                   disabled={jobsProgress.isRunning('market.scan_bulk')}
+                  icon={
+                    <SvgXml
+                      height="100%"
+                      width="100%"
+                      xml={KOLAM_SCAN_BUTTON_ICON_XML}
+                    />
+                  }
                   label={
                     jobsProgress.isRunning('market.scan_bulk')
                       ? 'Scan…'
@@ -105,11 +119,20 @@ export function KolamDaraMarketIntelDashboardBody({
                       )
                       .then(() => controller.onRefresh());
                   }}
+                  style={styles.scanActionButton}
+                  textStyle={styles.scanActionButtonText}
                 />
                 <KolamButton
                   disabled={jobsProgress.isRunning(
                     'market.channel_pricing_scan',
                   )}
+                  icon={
+                    <SvgXml
+                      height="100%"
+                      width="100%"
+                      xml={KOLAM_SCAN_BUTTON_ICON_XML}
+                    />
+                  }
                   label={
                     jobsProgress.isRunning('market.channel_pricing_scan')
                       ? 'Channel…'
@@ -124,6 +147,8 @@ export function KolamDaraMarketIntelDashboardBody({
                       )
                       .then(() => controller.onRefresh());
                   }}
+                  style={styles.scanActionButton}
+                  textStyle={styles.scanActionButtonText}
                 />
                 <KolamButton
                   label="Monitor kompetitor"
@@ -340,6 +365,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     minHeight: 40,
     overflow: 'visible',
+  },
+  scanActionButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  scanActionButtonText: {
+    color: V.colors.primaryFg,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
