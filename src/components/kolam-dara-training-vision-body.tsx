@@ -761,6 +761,112 @@ export function KolamDaraTrainingVisionBody({
           <View style={styles.card}>
             <View style={styles.cardHead}>
               <View style={styles.headCopy}>
+                <Text style={styles.sectionTitle}>Eval holdout</Text>
+                <Text style={styles.meta}>
+                  Uji akurasi tanpa bocor train: SigLIP pada foto training
+                  holdout (~20%), YOLO species/produk pada valid-set export.
+                  Hasil disimpan untuk perbandingan run.
+                </Text>
+              </View>
+              {canManage ? (
+                <KolamButton
+                  disabled={!!busy}
+                  label="Jalankan eval holdout"
+                  onPress={() => {
+                    void runBusy('eval-holdout', async () => {
+                      const r = await runKolamDaraTrainingVisionHoldoutEval({});
+                      setEvalRun(r);
+                      const runs =
+                        await listKolamDaraTrainingVisionEvalRuns(8);
+                      setEvalHistory(runs);
+                      setNotice(
+                        r ?
+                          `SigLIP ${r.siglip?.accuracy ?? 0}% - YOLO sp ${r.yoloSpecies?.accuracy ?? 0}%`
+                        : 'Eval selesai',
+                      );
+                    });
+                  }}
+                  size="sm"
+                />
+              ) : null}
+            </View>
+
+            {evalRun ? (
+              <>
+                <View style={styles.inlineMeta}>
+                  <Text style={styles.meta}>
+                    Terakhir:{' '}
+                    <Text style={styles.metaStrong}>
+                      {formatKolamDaraTrainingVisionDateTime(
+                        evalRun.finishedAt || evalRun.startedAt,
+                      )}
+                    </Text>
+                  </Text>
+                  <KolamStatusBadge intent="muted" label={evalRun.status} />
+                </View>
+                <View style={styles.statGrid}>
+                  <EvalMetricBox
+                    hint="CLIP-only, exclude foto query dari indeks"
+                    metric={evalRun.siglip}
+                    title="SigLIP holdout"
+                  />
+                  <EvalMetricBox
+                    metric={evalRun.yoloSpecies}
+                    title="YOLO species (valid-set)"
+                  />
+                  <EvalMetricBox
+                    metric={evalRun.yoloProduct}
+                    title="YOLO produk (valid-set)"
+                  />
+                </View>
+              </>
+            ) : (
+              <Text style={styles.meta}>
+                Belum ada run eval. Export dataset YOLO dulu, rebuild indeks
+                SigLIP, lalu jalankan eval holdout.
+              </Text>
+            )}
+
+            {evalHistory.length > 1 ? (
+              <>
+                <Text style={styles.sectionTitle}>Riwayat run</Text>
+                <View style={styles.tableHead}>
+                  <Text style={[styles.th, styles.colDateWide]}>Waktu</Text>
+                  <Text style={[styles.th, styles.colMetric]}>SigLIP</Text>
+                  <Text style={[styles.th, styles.colMetric]}>YOLO sp</Text>
+                  <Text style={[styles.th, styles.colMetric]}>YOLO pr</Text>
+                </View>
+                {evalHistory.map(row => (
+                  <View key={row.id} style={styles.tableRow}>
+                    <Text style={[styles.tdMuted, styles.colDateWide]}>
+                      {formatKolamDaraTrainingVisionDateTime(
+                        row.finishedAt || row.startedAt,
+                      )}
+                    </Text>
+                    <Text style={[styles.td, styles.colMetric]}>
+                      {row.siglip?.accuracy != null ?
+                        `${row.siglip.accuracy}%`
+                      : '-'}
+                    </Text>
+                    <Text style={[styles.td, styles.colMetric]}>
+                      {row.yoloSpecies?.accuracy != null ?
+                        `${row.yoloSpecies.accuracy}%`
+                      : '-'}
+                    </Text>
+                    <Text style={[styles.td, styles.colMetric]}>
+                      {row.yoloProduct?.accuracy != null ?
+                        `${row.yoloProduct.accuracy}%`
+                      : '-'}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <View style={styles.headCopy}>
                 <Text style={styles.sectionTitle}>Indeks visual katalog</Text>
                 <Text style={styles.meta}>
                   Engine embed:{' '}
@@ -1242,113 +1348,6 @@ export function KolamDaraTrainingVisionBody({
             />
           </View>
         </>
-      ) : null}
-
-      {section === 'eval' ? (
-        <View style={styles.card}>
-          <View style={styles.cardHead}>
-            <View style={styles.headCopy}>
-              <Text style={styles.sectionTitle}>Eval holdout</Text>
-              <Text style={styles.meta}>
-                Uji akurasi tanpa bocor train: SigLIP pada foto training
-                holdout (~20%), YOLO species/produk pada valid-set export.
-                Hasil disimpan untuk perbandingan run.
-              </Text>
-            </View>
-            {canManage ? (
-              <KolamButton
-                disabled={!!busy}
-                label="Jalankan eval holdout"
-                onPress={() => {
-                  void runBusy('eval-holdout', async () => {
-                    const r = await runKolamDaraTrainingVisionHoldoutEval({});
-                    setEvalRun(r);
-                    const runs = await listKolamDaraTrainingVisionEvalRuns(8);
-                    setEvalHistory(runs);
-                    setNotice(
-                      r ?
-                        `SigLIP ${r.siglip?.accuracy ?? 0}% · YOLO sp ${r.yoloSpecies?.accuracy ?? 0}%`
-                      : 'Eval selesai',
-                    );
-                  });
-                }}
-                size="sm"
-              />
-            ) : null}
-          </View>
-
-          {evalRun ? (
-            <>
-              <View style={styles.inlineMeta}>
-                <Text style={styles.meta}>
-                  Terakhir:{' '}
-                  <Text style={styles.metaStrong}>
-                    {formatKolamDaraTrainingVisionDateTime(
-                      evalRun.finishedAt || evalRun.startedAt,
-                    )}
-                  </Text>
-                </Text>
-                <KolamStatusBadge intent="muted" label={evalRun.status} />
-              </View>
-              <View style={styles.statGrid}>
-                <EvalMetricBox
-                  hint="CLIP-only, exclude foto query dari indeks"
-                  metric={evalRun.siglip}
-                  title="SigLIP holdout"
-                />
-                <EvalMetricBox
-                  metric={evalRun.yoloSpecies}
-                  title="YOLO species (valid-set)"
-                />
-                <EvalMetricBox
-                  metric={evalRun.yoloProduct}
-                  title="YOLO produk (valid-set)"
-                />
-              </View>
-            </>
-          ) : (
-            <Text style={styles.meta}>
-              Belum ada run eval. Export dataset YOLO dulu, rebuild indeks
-              SigLIP, lalu jalankan eval holdout.
-            </Text>
-          )}
-
-          {evalHistory.length > 1 ? (
-            <>
-              <Text style={styles.sectionTitle}>Riwayat run</Text>
-              <View style={styles.tableHead}>
-                <Text style={[styles.th, styles.colDateWide]}>Waktu</Text>
-                <Text style={[styles.th, styles.colMetric]}>SigLIP</Text>
-                <Text style={[styles.th, styles.colMetric]}>YOLO sp</Text>
-                <Text style={[styles.th, styles.colMetric]}>YOLO pr</Text>
-              </View>
-              {evalHistory.map(row => (
-                <View key={row.id} style={styles.tableRow}>
-                  <Text style={[styles.tdMuted, styles.colDateWide]}>
-                    {formatKolamDaraTrainingVisionDateTime(
-                      row.finishedAt || row.startedAt,
-                    )}
-                  </Text>
-                  <Text style={[styles.td, styles.colMetric]}>
-                    {row.siglip?.accuracy != null ?
-                      `${row.siglip.accuracy}%`
-                    : '—'}
-                  </Text>
-                  <Text style={[styles.td, styles.colMetric]}>
-                    {row.yoloSpecies?.accuracy != null ?
-                      `${row.yoloSpecies.accuracy}%`
-                    : '—'}
-                  </Text>
-                  <Text style={[styles.td, styles.colMetric]}>
-                    {row.yoloProduct?.accuracy != null ?
-                      `${row.yoloProduct.accuracy}%`
-                    : '—'}
-                  </Text>
-                </View>
-              ))}
-            </>
-          ) : null}
-        </View>
       ) : null}
 
       {section === 'baseline' ? (
