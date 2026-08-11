@@ -88,6 +88,7 @@ import {
   replaceKolamSalePaymentProof,
   requestKolamSaleBiteshipPickup,
   requestKolamSaleMarketplacePickup,
+  rescheduleKolamSaleBiteshipPickup,
   resolveKolamSaleLivestockAllocation,
   setKolamSaleBiteshipWaybill,
   updateKolamSale,
@@ -177,7 +178,15 @@ export interface KolamSalesController {
   onRemoveCreateItem: (key: string) => void;
   onRemoveCustomCost: (key: string) => void;
   onReplacePaymentProof: (proofId: string, localUri: string) => Promise<boolean>;
-  onRequestBiteshipPickup: () => Promise<boolean>;
+  onRequestBiteshipPickup: (body?: {
+    collectionMethod?: 'pickup' | 'drop_off';
+    deliveryDate?: string;
+    deliveryTime?: string;
+  }) => Promise<boolean>;
+  onRescheduleBiteshipPickup: (body?: {
+    deliveryDate?: string;
+    deliveryTime?: string;
+  }) => Promise<boolean>;
   onSetBiteshipWaybill: (
     itemId: string,
     waybillId: string,
@@ -1159,25 +1168,68 @@ export function useKolamSalesController(route: string): KolamSalesController {
     }
   }, []);
 
-  const onRequestBiteshipPickup = useCallback(async () => {
-    const sale = selectedSale;
-    if (!sale) {
-      return false;
-    }
-    setMutating(true);
-    setError(null);
-    try {
-      await requestKolamSaleBiteshipPickup(sale.id);
-      setStatusMessage('Request pickup Biteship dikirim.');
-      await refreshDetail();
-      return true;
-    } catch (mutationError) {
-      setError(formatKolamSaleMutationError(mutationError));
-      return false;
-    } finally {
-      setMutating(false);
-    }
-  }, [refreshDetail, selectedSale]);
+  const onRequestBiteshipPickup = useCallback(
+    async (body?: {
+      collectionMethod?: 'pickup' | 'drop_off';
+      deliveryDate?: string;
+      deliveryTime?: string;
+    }) => {
+      const sale = selectedSale;
+      if (!sale) {
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      try {
+        await requestKolamSaleBiteshipPickup(sale.id, body ?? {});
+        const isDropoff = body?.collectionMethod === 'drop_off';
+        const isRebook = sale.deliveryStatus === 'waiting_pickup';
+        setStatusMessage(
+          isDropoff
+            ? 'Order drop-off berhasil — cetak label & antar ke counter kurir'
+            : isRebook
+              ? 'Book ulang Biteship berhasil — menunggu jemput kurir'
+              : 'Request jemput kurir berhasil — menunggu di jemput kurir',
+        );
+        await refreshDetail();
+        return true;
+      } catch (mutationError) {
+        setError(formatKolamSaleMutationError(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [refreshDetail, selectedSale],
+  );
+
+  const onRescheduleBiteshipPickup = useCallback(
+    async (body?: {deliveryDate?: string; deliveryTime?: string}) => {
+      const sale = selectedSale;
+      if (!sale) {
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      try {
+        await rescheduleKolamSaleBiteshipPickup(sale.id, body ?? {});
+        const isInstant = !body?.deliveryDate?.trim();
+        setStatusMessage(
+          isInstant
+            ? 'Jemput ulang Biteship berhasil (sekarang)'
+            : 'Reschedule pickup Biteship berhasil',
+        );
+        await refreshDetail();
+        return true;
+      } catch (mutationError) {
+        setError(formatKolamSaleMutationError(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [refreshDetail, selectedSale],
+  );
 
   const onSetBiteshipWaybill = useCallback(
     async (itemId: string, waybillId: string) => {
@@ -1318,6 +1370,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     onRemoveCustomCost,
     onReplacePaymentProof,
     onRequestBiteshipPickup,
+    onRescheduleBiteshipPickup,
     onRequestMarketplacePickup,
     onResolveLivestockAllocation,
     onSetBiteshipWaybill,

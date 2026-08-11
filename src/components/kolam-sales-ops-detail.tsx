@@ -59,6 +59,15 @@ import {
   type KolamSaleStatusTransitionTarget,
 } from '../domain/kolam-sales';
 import {
+  defaultKolamBiteshipScheduleFields,
+  firstKolamBiteshipScheduledLabel,
+  isKolamBiteshipCheckoutItem,
+  isKolamBiteshipInstantCourier,
+  resolveKolamBiteshipItemBooking,
+  showKolamWebstoreBiteshipRequest,
+  showKolamWebstoreBiteshipReschedule,
+} from '../domain/kolam-biteship-booking';
+import {
   buildKolamComplaintCreateRoute,
   KOLAM_COMPLAINT_ROOT,
 } from '../domain/kolam-complaint';
@@ -78,6 +87,7 @@ import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
+import {KolamDateField} from './kolam-date-field';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import {
@@ -122,6 +132,13 @@ export function KolamSalesOpsDetail({
     useState<KolamSaleStatusTransitionTarget | null>(null);
   const [pendingDelivery, setPendingDelivery] =
     useState<KolamSaleDeliveryTransitionTarget | null>(null);
+  const [biteshipModalOpen, setBiteshipModalOpen] = useState(false);
+  const [biteshipModalMode, setBiteshipModalMode] = useState<
+    'request' | 'reschedule'
+  >('request');
+  const [biteshipCollectionMethod, setBiteshipCollectionMethod] = useState<
+    'pickup' | 'drop_off'
+  >('pickup');
 
   if (controller.loading && !sale) {
     return (
@@ -168,12 +185,34 @@ export function KolamSalesOpsDetail({
         isOfflineSource,
       })
     : [];
-  const canRequestBiteshipPickup =
-    !marketplaceManaged &&
-    !skipShipping &&
-    isOfflineSource &&
-    sale.status === 'paid' &&
-    (!sale.deliveryStatus || sale.deliveryStatus === 'none');
+  const biteshipItems = sale.items.filter(isKolamBiteshipCheckoutItem);
+  const biteshipIsInstant = biteshipItems.some(item =>
+    isKolamBiteshipInstantCourier(item.biteshipCourierCode),
+  );
+  const biteshipSupportsDropoff = biteshipItems.some(
+    item =>
+      item.biteshipCourierCode.trim() &&
+      !isKolamBiteshipInstantCourier(item.biteshipCourierCode),
+  );
+  const showWebstoreBiteshipRequest = showKolamWebstoreBiteshipRequest(sale);
+  const showWebstoreBiteshipReschedule =
+    showKolamWebstoreBiteshipReschedule(sale);
+  const biteshipScheduledLabel = firstKolamBiteshipScheduledLabel(biteshipItems);
+  const biteshipRequestLabel =
+    sale.deliveryStatus === 'waiting_pickup'
+      ? 'Book ulang Biteship'
+      : 'Request jemput kurir (Biteship)';
+  const biteshipRescheduleLabel = biteshipIsInstant
+    ? 'Jemput ulang sekarang (Biteship)'
+    : 'Reschedule pickup (Biteship)';
+  const openBiteshipModal = (
+    mode: 'request' | 'reschedule',
+    collection: 'pickup' | 'drop_off' = 'pickup',
+  ) => {
+    setBiteshipModalMode(mode);
+    setBiteshipCollectionMethod(collection);
+    setBiteshipModalOpen(true);
+  };
   const marketplaceFulfillment = getKolamSaleMarketplaceFulfillment(sale);
   const showTokopediaPickupRequest = needsKolamTokopediaPickupRequest(sale);
   const showTokopediaDropOffBadge = shouldShowKolamTokopediaDropOffBadge(sale);
@@ -189,7 +228,7 @@ export function KolamSalesOpsDetail({
   const saleCouriers = getKolamSaleCouriers(sale);
   const saleServiceLabel = getKolamSaleServiceLabel(sale);
   const saleTrackingNumber = getKolamSaleTrackingNumber(sale);
-  const biteshipWaybillItems = sale.items.filter(isKolamBiteshipCheckoutItem);
+  const biteshipWaybillItems = biteshipItems;
   const sourceLogoUri = resolveKolamSaleSourceLogoUri(
     sale,
     controller.sources,
@@ -779,18 +818,53 @@ export function KolamSalesOpsDetail({
 
               {showDeliveryActions ? (
                 <>
-                  {allowedDeliveryTransitions.length === 0 ? (
+                  {allowedDeliveryTransitions.length === 0 &&
+                  !showWebstoreBiteshipRequest &&
+                  !showWebstoreBiteshipReschedule ? (
                     <Text style={styles.metaText}>
                       Tidak ada transisi pengiriman yang tersedia.
                     </Text>
                   ) : null}
-                  {canRequestBiteshipPickup ? (
+                  {biteshipScheduledLabel &&
+                  (showWebstoreBiteshipRequest ||
+                    showWebstoreBiteshipReschedule) ? (
+                    <KolamStatusBadge
+                      intent="success"
+                      label={`Jadwal jemput Biteship · ${biteshipScheduledLabel}`}
+                    />
+                  ) : null}
+                  {showWebstoreBiteshipRequest ? (
                     <KolamButton
                       disabled={controller.mutating}
-                      label="Request pickup Biteship"
-                      onPress={() => {
-                        void controller.onRequestBiteshipPickup();
-                      }}
+                      intent="primary"
+                      label={
+                        controller.mutating
+                          ? 'Memproses…'
+                          : biteshipRequestLabel
+                      }
+                      onPress={() => openBiteshipModal('request', 'pickup')}
+                    />
+                  ) : null}
+                  {showWebstoreBiteshipRequest && biteshipSupportsDropoff ? (
+                    <KolamButton
+                      disabled={controller.mutating}
+                      label={
+                        controller.mutating
+                          ? 'Memproses…'
+                          : 'Antar ke counter (Biteship)'
+                      }
+                      onPress={() => openBiteshipModal('request', 'drop_off')}
+                    />
+                  ) : null}
+                  {showWebstoreBiteshipReschedule ? (
+                    <KolamButton
+                      disabled={controller.mutating}
+                      label={
+                        controller.mutating
+                          ? 'Memproses…'
+                          : biteshipRescheduleLabel
+                      }
+                      onPress={() => openBiteshipModal('reschedule')}
                     />
                   ) : null}
                 </>
@@ -1282,6 +1356,19 @@ export function KolamSalesOpsDetail({
         title="Konfirmasi pengiriman"
         visible={Boolean(pendingDelivery)}
       />
+      <KolamBiteshipPickupModal
+        biteshipIsInstant={biteshipIsInstant}
+        biteshipSupportsDropoff={biteshipSupportsDropoff}
+        collectionMethod={biteshipCollectionMethod}
+        deliveryStatus={sale.deliveryStatus}
+        mutating={controller.mutating}
+        mode={biteshipModalMode}
+        onClose={() => setBiteshipModalOpen(false)}
+        onCollectionMethodChange={setBiteshipCollectionMethod}
+        onRequest={controller.onRequestBiteshipPickup}
+        onReschedule={controller.onRescheduleBiteshipPickup}
+        visible={biteshipModalOpen}
+      />
     </View>
   );
 }
@@ -1768,47 +1855,211 @@ function KolamBiteshipWaybillItem({
   );
 }
 
-function isKolamBiteshipCheckoutItem(item: KolamSaleItem) {
+function KolamBiteshipPickupModal({
+  biteshipIsInstant,
+  biteshipSupportsDropoff,
+  collectionMethod,
+  deliveryStatus,
+  mode,
+  mutating,
+  onClose,
+  onCollectionMethodChange,
+  onRequest,
+  onReschedule,
+  visible,
+}: {
+  biteshipIsInstant: boolean;
+  biteshipSupportsDropoff: boolean;
+  collectionMethod: 'pickup' | 'drop_off';
+  deliveryStatus: string;
+  mode: 'request' | 'reschedule';
+  mutating: boolean;
+  onClose: () => void;
+  onCollectionMethodChange: (value: 'pickup' | 'drop_off') => void;
+  onRequest: (body?: {
+    collectionMethod?: 'pickup' | 'drop_off';
+    deliveryDate?: string;
+    deliveryTime?: string;
+  }) => Promise<boolean>;
+  onReschedule: (body?: {
+    deliveryDate?: string;
+    deliveryTime?: string;
+  }) => Promise<boolean>;
+  visible: boolean;
+}) {
+  const defaults = defaultKolamBiteshipScheduleFields();
+  const [schedulePickup, setSchedulePickup] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState(defaults.deliveryDate);
+  const [deliveryTime, setDeliveryTime] = useState(defaults.deliveryTime);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    const next = defaultKolamBiteshipScheduleFields();
+    setDeliveryDate(next.deliveryDate);
+    setDeliveryTime(next.deliveryTime);
+    setSchedulePickup(!biteshipIsInstant && mode === 'reschedule');
+    setLocalError(null);
+  }, [visible, mode, biteshipIsInstant]);
+
+  const isDropoff = collectionMethod === 'drop_off';
+  const allowSchedule = !biteshipIsInstant && !isDropoff;
+  const useSchedule =
+    allowSchedule && (schedulePickup || mode === 'reschedule');
+
+  const title =
+    mode === 'reschedule'
+      ? biteshipIsInstant
+        ? 'Jemput ulang Biteship (sekarang)'
+        : 'Reschedule pickup Biteship'
+      : isDropoff
+        ? 'Antar ke counter (Biteship drop-off)'
+        : deliveryStatus === 'waiting_pickup'
+          ? 'Book ulang Biteship'
+          : 'Request jemput kurir Biteship';
+
+  const description =
+    mode === 'reschedule'
+      ? biteshipIsInstant
+        ? 'Order lama dibatalkan lalu dibuat ulang tanpa jadwal (kurir instant tidak mendukung scheduled pickup).'
+        : 'Order lama akan dibatalkan dan dibuat ulang dengan jadwal baru (via API Biteship).'
+      : isDropoff
+        ? 'Buat order Biteship dengan metode drop-off. Cetak label resi lalu antar paket ke counter kurir terdekat.'
+        : biteshipIsInstant
+          ? 'Kirim permintaan jemput sekarang. Kurir instant (Gojek/Grab/dll.) tidak mendukung jadwal pickup.'
+          : 'Kirim permintaan jemput ke kurir. Opsional: tentukan jadwal pickup.';
+
+  const confirmLabel = mutating
+    ? 'Memproses…'
+    : mode === 'reschedule'
+      ? biteshipIsInstant
+        ? 'Jemput ulang sekarang'
+        : 'Simpan jadwal baru'
+      : isDropoff
+        ? 'Buat order drop-off'
+        : deliveryStatus === 'waiting_pickup'
+          ? 'Book ulang'
+          : 'Request pickup';
+
+  const submit = async () => {
+    setLocalError(null);
+    if (useSchedule && (!deliveryDate.trim() || !deliveryTime.trim())) {
+      setLocalError('Isi tanggal dan jam pickup');
+      return;
+    }
+    const scheduleBody = useSchedule
+      ? {
+          deliveryDate: deliveryDate.trim(),
+          deliveryTime: deliveryTime.trim(),
+        }
+      : {};
+    const ok =
+      mode === 'reschedule'
+        ? await onReschedule(scheduleBody)
+        : await onRequest({
+            collectionMethod,
+            ...scheduleBody,
+          });
+    if (ok) {
+      onClose();
+    }
+  };
+
   return (
-    item.shippingSource === 'biteship' ||
-    Boolean(
-      item.biteshipCourierCode.trim() && item.biteshipServiceCode.trim(),
-    )
+    <KolamModalDialog
+      description={description}
+      footer={
+        <>
+          <KolamCancelButton disabled={mutating} onPress={onClose} />
+          <KolamSaveButton
+            disabled={mutating}
+            label={confirmLabel}
+            onPress={() => {
+              void submit();
+            }}
+          />
+        </>
+      }
+      maxWidth={520}
+      onClose={onClose}
+      title={title}
+      visible={visible}
+      width={520}
+    >
+      <View style={styles.biteshipModalBody}>
+        {mode === 'request' && biteshipSupportsDropoff ? (
+          <View style={styles.biteshipModalOptionGroup}>
+            <Pressable
+              accessibilityRole="radio"
+              disabled={mutating}
+              onPress={() => onCollectionMethodChange('pickup')}
+              style={styles.biteshipModalOptionRow}
+            >
+              <Text style={styles.primaryText}>
+                {collectionMethod === 'pickup' ? '●' : '○'} Jemput kurir
+                (pickup)
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="radio"
+              disabled={mutating}
+              onPress={() => {
+                onCollectionMethodChange('drop_off');
+                setSchedulePickup(false);
+              }}
+              style={styles.biteshipModalOptionRow}
+            >
+              <Text style={styles.primaryText}>
+                {collectionMethod === 'drop_off' ? '●' : '○'} Antar ke counter
+                (drop-off)
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {collectionMethod === 'pickup' && !biteshipIsInstant ? (
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{
+              checked: schedulePickup || mode === 'reschedule',
+              disabled: mode === 'reschedule' || mutating,
+            }}
+            disabled={mode === 'reschedule' || mutating}
+            onPress={() => setSchedulePickup(value => !value)}
+            style={styles.biteshipModalOptionRow}
+          >
+            <Text style={styles.primaryText}>
+              {schedulePickup || mode === 'reschedule' ? '☑' : '☐'} Tentukan
+              jadwal pickup (delivery scheduled)
+            </Text>
+          </Pressable>
+        ) : null}
+        {collectionMethod === 'pickup' &&
+        !biteshipIsInstant &&
+        (schedulePickup || mode === 'reschedule') ? (
+          <View style={styles.biteshipScheduleRow}>
+            <KolamDateField
+              label="Tanggal pickup"
+              onChange={setDeliveryDate}
+              style={styles.biteshipScheduleField}
+              value={deliveryDate}
+            />
+            <KolamFormTextField
+              label="Jam pickup"
+              onChangeText={setDeliveryTime}
+              placeholder="10:00"
+              style={styles.biteshipScheduleField}
+              value={deliveryTime}
+            />
+          </View>
+        ) : null}
+        {localError ? (
+          <Text style={styles.biteshipFailedText}>{localError}</Text>
+        ) : null}
+      </View>
+    </KolamModalDialog>
   );
-}
-
-function resolveKolamBiteshipItemBooking(
-  item: KolamSaleItem,
-  saleStatus: string,
-  histories: KolamSaleHistory[],
-): {
-  message?: string;
-  orderId?: string;
-  state: 'booked' | 'pending' | 'failed';
-} | null {
-  if (!isKolamBiteshipCheckoutItem(item)) {
-    return null;
-  }
-  if (item.biteshipWaybillId.trim()) {
-    return { state: 'booked', orderId: item.biteshipOrderId || undefined };
-  }
-  if (saleStatus !== 'paid') {
-    return null;
-  }
-
-  const failNote = [...histories].reverse().find(history => {
-    const note = history.note || '';
-    return (
-      note.includes('Biteship auto-booking failed') ||
-      note.includes(`skipped for item ${item.id}`)
-    );
-  })?.note;
-
-  if (failNote) {
-    return { state: 'failed', message: failNote };
-  }
-
-  return { state: 'pending' };
 }
 
 function commissionRuleLabel(
@@ -2528,6 +2779,26 @@ const styles = StyleSheet.create({
     color: V.colors.danger,
     fontSize: 12,
     fontWeight: '600',
+  },
+  biteshipModalBody: {
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  biteshipModalOptionGroup: {
+    gap: 8,
+  },
+  biteshipModalOptionRow: {
+    paddingVertical: 4,
+  },
+  biteshipScheduleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  biteshipScheduleField: {
+    flex: 1,
+    minWidth: 160,
   },
   biteshipWaybillInputRow: {
     alignItems: 'center',

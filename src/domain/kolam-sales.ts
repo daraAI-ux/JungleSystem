@@ -143,6 +143,7 @@ export type KolamSaleItem = {
   biteshipOrderId: string;
   itemDeliveryStatus: string;
   biteshipTrackingOrderStatus: string;
+  biteshipTrackingDeliveryDatetime: string;
   shippingMethodId: string;
   shippingMethodName: string;
   productId: string;
@@ -3677,6 +3678,10 @@ function normalizeSaleItem(value: unknown, index: number): KolamSaleItem {
     biteshipOrderId: getString(record, 'biteshipOrderId'),
     itemDeliveryStatus: getString(record, 'itemDeliveryStatus'),
     biteshipTrackingOrderStatus: getString(biteshipTracking, 'orderStatus'),
+    biteshipTrackingDeliveryDatetime: getString(
+      biteshipTracking,
+      'deliveryDatetime',
+    ),
     shippingMethodId: resolveShippingMethodId(record.shippingMethod),
     shippingMethodName: resolveShippingMethodName(record.shippingMethod),
     productId:

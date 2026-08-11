@@ -351,10 +351,45 @@ export async function getKolamSalesNotificationSummary(): Promise<KolamSaleNotif
 
 export async function requestKolamSaleBiteshipPickup(
   saleId: string,
+  body: {
+    collectionMethod?: 'pickup' | 'drop_off';
+    deliveryDate?: string;
+    deliveryTime?: string;
+  } = {},
 ): Promise<unknown> {
+  const payload: Record<string, unknown> = {};
+  if (body.collectionMethod) {
+    payload.collectionMethod = body.collectionMethod;
+  }
+  if (body.deliveryDate?.trim()) {
+    payload.deliveryDate = body.deliveryDate.trim();
+  }
+  if (body.deliveryTime?.trim()) {
+    payload.deliveryTime = body.deliveryTime.trim();
+  }
   return kolamRequest<unknown>(
     `/biteship/sales/${encodeURIComponent(saleId)}/request-pickup`,
-    { method: 'POST', body: {} },
+    {method: 'POST', body: payload},
+  );
+}
+
+export async function rescheduleKolamSaleBiteshipPickup(
+  saleId: string,
+  body: {
+    deliveryDate?: string;
+    deliveryTime?: string;
+  } = {},
+): Promise<unknown> {
+  const payload: Record<string, unknown> = {};
+  if (body.deliveryDate?.trim()) {
+    payload.deliveryDate = body.deliveryDate.trim();
+  }
+  if (body.deliveryTime?.trim()) {
+    payload.deliveryTime = body.deliveryTime.trim();
+  }
+  return kolamRequest<unknown>(
+    `/biteship/sales/${encodeURIComponent(saleId)}/reschedule-pickup`,
+    {method: 'POST', body: payload},
   );
 }
 
