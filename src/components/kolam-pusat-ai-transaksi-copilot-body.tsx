@@ -81,6 +81,13 @@ export function KolamPusatAiTransaksiCopilotBody({
 
           <View style={styles.deliveryPanel}>
             <View style={styles.deliveryPanelHeader}>
+              {stats?.generatedAt ? (
+                <Text style={styles.meta}>
+                  {`Statistik diperbarui ${formatKolamTransaksiCopilotWib(stats.generatedAt)} · ${stats.note}`}
+                </Text>
+              ) : (
+                <View />
+              )}
               <View style={styles.rangeTabs}>
                 {KOLAM_TRANSAKSI_COPILOT_RANGES.map(item => {
                   const active = range === item.id;
@@ -124,12 +131,6 @@ export function KolamPusatAiTransaksiCopilotBody({
               </View>
             )}
           </View>
-
-          {stats?.generatedAt ? (
-            <Text style={styles.meta}>
-              {`Statistik diperbarui ${formatKolamTransaksiCopilotWib(stats.generatedAt)} · ${stats.note}`}
-            </Text>
-          ) : null}
 
           <View style={styles.opsBlock}>
             <Text style={styles.sectionTitle}>Console operasi</Text>
