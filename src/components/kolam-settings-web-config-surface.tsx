@@ -3688,7 +3688,6 @@ export function KolamSettingsWebConfigSurface({
           pluginEnabled={kpiPluginEnabled}
           preview={kpiPreview}
           status={kpiStatus}
-          summaryRows={kpiSummaryRows}
         />
       ) : null}
       {showSitemapSettings ? (
@@ -6189,7 +6188,6 @@ function KpiSettingsPanel({
   pluginEnabled,
   preview,
   status,
-  summaryRows,
 }: {
   disabled: boolean;
   draft: KpiSettingsDraft;
@@ -6204,7 +6202,6 @@ function KpiSettingsPanel({
   pluginEnabled: boolean;
   preview: KolamKpiWeeklyAnnouncePreview | null;
   status: 'idle' | 'loading' | 'live' | 'saving' | 'error' | 'disabled';
-  summaryRows: KpiSettingsSummaryRow[];
 }) {
   const busy = status === 'loading' || status === 'saving';
   const levelRows = parseKpiLevelEditorRows(draft.levelsText);
@@ -6286,13 +6283,6 @@ function KpiSettingsPanel({
 
   return (
     <View style={styles.kpiSettingsStack}>
-      <View style={styles.kpiSettingsMetaRow}>
-        <Text style={styles.marketplaceOverviewMeta}>
-          Rules v{summaryRows.find(row => row.id === 'version')?.value ?? '-'} |
-          Plugin bundle v0.9.1
-        </Text>
-      </View>
-
       <KpiSettingsSection title="Poin dasar (prioritas task)">
         <View style={styles.kpiSettingsGridFour}>
           <KpiCompactNumberField
@@ -10994,13 +10984,6 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 12,
     fontWeight: '700',
-  },
-  kpiSettingsMetaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'space-between',
   },
   kpiSettingsSection: {
     borderColor: '#e5e7eb',
