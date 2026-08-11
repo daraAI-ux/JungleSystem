@@ -1,5 +1,5 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   formatKolamDaraTrainingFineTuneSourceCounts,
   KOLAM_DARA_TRAINING_FINE_TUNE_DATASET_FILTERS,
@@ -12,8 +12,8 @@ import {
   type KolamDaraTrainingFineTuneRun,
   type KolamDaraTrainingFineTuneSummary,
 } from '../domain/kolam-dara-training';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {ApiError} from '../lib/api-error';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { ApiError } from '../lib/api-error';
 import {
   exportKolamDaraTrainingFineTuneJsonl,
   fetchKolamDaraTrainingFineTuneBenchmark,
@@ -24,8 +24,9 @@ import {
   listKolamDaraTrainingFineTuneRuns,
   updateKolamDaraTrainingFineTuneDatasetItem,
 } from '../services/kolam-dara-training-api';
-import {KolamButton} from './kolam-button';
-import {KolamStatusBadge} from './kolam-status-badge';
+import { KolamButton } from './kolam-button';
+import { KolamListTableComposition } from './kolam-list-table-composition';
+import { KolamStatusBadge } from './kolam-status-badge';
 
 const PAGE_SIZE = 10;
 
@@ -42,9 +43,9 @@ export function KolamDaraTrainingFineTuneBody({
   const [candidates, setCandidates] = useState<
     KolamDaraTrainingFineTuneDatasetItem[]
   >([]);
-  const [dataset, setDataset] = useState<KolamDaraTrainingFineTuneDatasetItem[]>(
-    [],
-  );
+  const [dataset, setDataset] = useState<
+    KolamDaraTrainingFineTuneDatasetItem[]
+  >([]);
   const [benchmark, setBenchmark] = useState<
     KolamDaraTrainingFineTuneBenchmarkScenario[]
   >([]);
@@ -53,7 +54,7 @@ export function KolamDaraTrainingFineTuneBody({
     useState<KolamDaraTrainingFineTuneDatasetFilter>('all');
   const [candidatePage, setCandidatePage] = useState(1);
   const [datasetPage, setDatasetPage] = useState(1);
-  const [datasetPages, setDatasetPages] = useState(1);
+  const [datasetTotal, setDatasetTotal] = useState(0);
   const [benchmarkPage, setBenchmarkPage] = useState(1);
   const [runsPage, setRunsPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -68,7 +69,7 @@ export function KolamDaraTrainingFineTuneBody({
     try {
       const [s, c, d, b, r] = await Promise.all([
         fetchKolamDaraTrainingFineTuneSummary(),
-        listKolamDaraTrainingFineTuneCandidates({limit: 200}),
+        listKolamDaraTrainingFineTuneCandidates({ limit: 200 }),
         listKolamDaraTrainingFineTuneDataset({
           page: nextDatasetPage,
           limit: PAGE_SIZE,
@@ -80,7 +81,9 @@ export function KolamDaraTrainingFineTuneBody({
       setSummary(s);
       setCandidates(Array.isArray(c) ? c : []);
       setDataset(Array.isArray(d?.rows) ? d.rows : []);
-      setDatasetPages(Math.max(1, Number(d?.pages) || 1));
+      setDatasetTotal(
+        Number(d?.total) || (Array.isArray(d?.rows) ? d.rows.length : 0),
+      );
       setBenchmark(Array.isArray(b?.scenarios) ? b.scenarios : []);
       setRuns(Array.isArray(r) ? r : []);
       setNotice('');
@@ -89,8 +92,8 @@ export function KolamDaraTrainingFineTuneBody({
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal memuat Fine-tuning DARA',
+          ? err.message
+          : 'Gagal memuat Fine-tuning DARA',
       );
     } finally {
       setLoading(false);
@@ -139,7 +142,9 @@ export function KolamDaraTrainingFineTuneBody({
   const importCandidates = async () => {
     setBusy('import');
     try {
-      const res = await importKolamDaraTrainingFineTuneCandidates({limit: 120});
+      const res = await importKolamDaraTrainingFineTuneCandidates({
+        limit: 120,
+      });
       setNotice(res.message);
       setCandidatePage(1);
       await load();
@@ -148,8 +153,8 @@ export function KolamDaraTrainingFineTuneBody({
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal import kandidat',
+          ? err.message
+          : 'Gagal import kandidat',
       );
     } finally {
       setBusy(null);
@@ -174,7 +179,7 @@ export function KolamDaraTrainingFineTuneBody({
   const exportJsonl = async () => {
     setBusy('export');
     try {
-      const res = await exportKolamDaraTrainingFineTuneJsonl({minItems: 1});
+      const res = await exportKolamDaraTrainingFineTuneJsonl({ minItems: 1 });
       setNotice(res.message);
       await load();
     } catch (err) {
@@ -182,8 +187,8 @@ export function KolamDaraTrainingFineTuneBody({
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal export JSONL',
+          ? err.message
+          : 'Gagal export JSONL',
       );
     } finally {
       setBusy(null);
@@ -270,8 +275,8 @@ export function KolamDaraTrainingFineTuneBody({
         </View>
         <Text style={styles.meta}>
           Fine-tuned model tidak boleh menjadi sumber fakta bisnis. Jika model
-          lambat, gagal, atau ditolak quality guard, DARA wajib fallback ke model
-          lama.
+          lambat, gagal, atau ditolak quality guard, DARA wajib fallback ke
+          model lama.
         </Text>
       </View>
 
@@ -282,19 +287,13 @@ export function KolamDaraTrainingFineTuneBody({
             Preview dari frasa, koreksi produk, review percakapan, eval, dan
             planner audit. Import tidak membuat rule baru.
           </Text>
-          <View style={styles.tableHead}>
-            <Text style={[styles.th, styles.colSource]}>Sumber</Text>
-            <Text style={[styles.th, styles.colInput]}>Input</Text>
-            <Text style={[styles.th, styles.colValid]}>Validasi</Text>
-          </View>
-          {visibleCandidates.length === 0 ? (
-            <Text style={styles.meta}>Tidak ada kandidat.</Text>
-          ) : (
-            visibleCandidates.map(row => (
-              <View
-                key={`${row.sourceType}:${row.sourceId}:${row.id}`}
-                style={styles.tableRow}>
-                <View style={styles.colSource}>
+          <KolamListTableComposition
+            columns={[
+              {
+                flex: 1,
+                id: 'source',
+                label: 'Sumber',
+                render: row => (
                   <KolamStatusBadge
                     intent="muted"
                     label={
@@ -304,11 +303,23 @@ export function KolamDaraTrainingFineTuneBody({
                     }
                     numberOfLines={1}
                   />
-                </View>
-                <Text numberOfLines={2} style={[styles.td, styles.colInput]}>
-                  {row.input || '—'}
-                </Text>
-                <View style={styles.colValid}>
+                ),
+              },
+              {
+                flex: 1.6,
+                id: 'input',
+                label: 'Input',
+                render: row => (
+                  <Text numberOfLines={2} style={styles.td}>
+                    {row.input || '-'}
+                  </Text>
+                ),
+              },
+              {
+                flex: 0.9,
+                id: 'validation',
+                label: 'Validasi',
+                render: row => (
                   <KolamStatusBadge
                     intent={resolveKolamDaraTrainingFineTuneStatusIntent(
                       row.validationStatus,
@@ -320,15 +331,18 @@ export function KolamDaraTrainingFineTuneBody({
                     }
                     numberOfLines={1}
                   />
-                </View>
-              </View>
-            ))
-          )}
-          <TablePager
-            onNext={() => setCandidatePage(page => page + 1)}
-            onPrev={() => setCandidatePage(page => Math.max(1, page - 1))}
-            page={candidatePage}
-            pages={candidatePages}
+                ),
+              },
+            ]}
+            emptyTitle="Tidak ada kandidat."
+            getRowKey={row => row.id}
+            pagination={{
+              onPageChange: setCandidatePage,
+              page: candidatePage,
+              pageSize: PAGE_SIZE,
+              total: candidates.length,
+            }}
+            rows={visibleCandidates}
           />
         </View>
 
@@ -338,22 +352,13 @@ export function KolamDaraTrainingFineTuneBody({
             Dataset berisi PII disamarkan, sedangkan secret/API key/token
             diblokir sebelum training.
           </Text>
-          <View style={styles.tableHead}>
-            <Text style={[styles.th, styles.colStatus]}>Status</Text>
-            <Text style={[styles.th, styles.colInput]}>Contoh</Text>
-            <Text style={[styles.th, styles.colValid]}>Validasi</Text>
-            {canManage ? (
-              <Text style={[styles.th, styles.colAction]}>Aksi</Text>
-            ) : null}
-          </View>
-          {dataset.length === 0 ? (
-            <Text style={styles.meta}>
-              Belum ada dataset tersimpan. Import kandidat dulu.
-            </Text>
-          ) : (
-            dataset.map(row => (
-              <View key={row.id} style={styles.tableRow}>
-                <View style={styles.colStatus}>
+          <KolamListTableComposition
+            columns={[
+              {
+                flex: 0.9,
+                id: 'status',
+                label: 'Status',
+                render: row => (
                   <KolamStatusBadge
                     intent={resolveKolamDaraTrainingFineTuneStatusIntent(
                       row.status,
@@ -364,11 +369,23 @@ export function KolamDaraTrainingFineTuneBody({
                     }
                     numberOfLines={1}
                   />
-                </View>
-                <Text numberOfLines={2} style={[styles.td, styles.colInput]}>
-                  {row.input || '—'}
-                </Text>
-                <View style={styles.colValid}>
+                ),
+              },
+              {
+                flex: 1.6,
+                id: 'input',
+                label: 'Contoh',
+                render: row => (
+                  <Text numberOfLines={2} style={styles.td}>
+                    {row.input || '-'}
+                  </Text>
+                ),
+              },
+              {
+                flex: 0.9,
+                id: 'validation',
+                label: 'Validasi',
+                render: row => (
                   <KolamStatusBadge
                     intent={resolveKolamDaraTrainingFineTuneStatusIntent(
                       row.validationStatus,
@@ -380,9 +397,21 @@ export function KolamDaraTrainingFineTuneBody({
                     }
                     numberOfLines={1}
                   />
-                </View>
-                {canManage ? (
-                  <View style={styles.colAction}>
+                ),
+              },
+            ]}
+            emptyTitle="Belum ada dataset tersimpan. Import kandidat dulu."
+            getRowKey={row => row.id}
+            loading={loading}
+            pagination={{
+              onPageChange: setDatasetPage,
+              page: datasetPage,
+              pageSize: PAGE_SIZE,
+              total: datasetTotal,
+            }}
+            renderActions={
+              canManage
+                ? row => (
                     <KolamButton
                       disabled={
                         row.status === 'approved' ||
@@ -396,19 +425,17 @@ export function KolamDaraTrainingFineTuneBody({
                       }}
                       size="sm"
                     />
-                  </View>
-                ) : null}
-              </View>
-            ))
-          )}
+                  )
+                : undefined
+            }
+            rows={dataset}
+          />
           <View style={styles.filterRow}>
             {KOLAM_DARA_TRAINING_FINE_TUNE_DATASET_FILTERS.map(id => (
               <KolamButton
                 key={id}
                 intent={status === id ? 'primary' : 'secondary'}
-                label={
-                  KOLAM_DARA_TRAINING_FINE_TUNE_STATUS_LABELS[id] || id
-                }
+                label={KOLAM_DARA_TRAINING_FINE_TUNE_STATUS_LABELS[id] || id}
                 onPress={() => {
                   setStatus(id);
                   setDatasetPage(1);
@@ -417,13 +444,6 @@ export function KolamDaraTrainingFineTuneBody({
               />
             ))}
           </View>
-          <TablePager
-            disabled={loading}
-            onNext={() => setDatasetPage(page => page + 1)}
-            onPrev={() => setDatasetPage(page => Math.max(1, page - 1))}
-            page={datasetPage}
-            pages={datasetPages}
-          />
         </View>
       </View>
 
@@ -434,35 +454,47 @@ export function KolamDaraTrainingFineTuneBody({
             Baseline minimal 50 skenario untuk memastikan fine-tune tidak
             merusak kemampuan DARA yang sudah ada.
           </Text>
-          <View style={styles.tableHead}>
-            <Text style={[styles.th, styles.colIndex]}>#</Text>
-            <Text style={[styles.th, styles.colQuery]}>Pertanyaan</Text>
-            <Text style={[styles.th, styles.colExpect]}>Ekspektasi</Text>
-          </View>
-          {visibleBenchmark.length === 0 ? (
-            <Text style={styles.meta}>Belum ada skenario benchmark.</Text>
-          ) : (
-            visibleBenchmark.map(row => (
-              <View key={row.id} style={styles.tableRow}>
-                <Text style={[styles.tdMuted, styles.colIndex]}>{row.index}</Text>
-                <Text numberOfLines={2} style={[styles.td, styles.colQuery]}>
-                  {row.query}
-                </Text>
-                <View style={styles.colExpect}>
+          <KolamListTableComposition
+            columns={[
+              {
+                align: 'center',
+                flex: 0.35,
+                id: 'index',
+                label: '#',
+                render: row => <Text style={styles.tdMuted}>{row.index}</Text>,
+              },
+              {
+                flex: 1.6,
+                id: 'query',
+                label: 'Pertanyaan',
+                render: row => (
+                  <Text numberOfLines={2} style={styles.td}>
+                    {row.query}
+                  </Text>
+                ),
+              },
+              {
+                flex: 1,
+                id: 'expectation',
+                label: 'Ekspektasi',
+                render: row => (
                   <KolamStatusBadge
                     intent="muted"
-                    label={row.expectedCapability || '—'}
+                    label={row.expectedCapability || '-'}
                     numberOfLines={1}
                   />
-                </View>
-              </View>
-            ))
-          )}
-          <TablePager
-            onNext={() => setBenchmarkPage(page => page + 1)}
-            onPrev={() => setBenchmarkPage(page => Math.max(1, page - 1))}
-            page={benchmarkPage}
-            pages={benchmarkPages}
+                ),
+              },
+            ]}
+            emptyTitle="Belum ada skenario benchmark."
+            getRowKey={row => row.id}
+            pagination={{
+              onPageChange: setBenchmarkPage,
+              page: benchmarkPage,
+              pageSize: PAGE_SIZE,
+              total: benchmark.length,
+            }}
+            rows={visibleBenchmark}
           />
         </View>
 
@@ -472,47 +504,62 @@ export function KolamDaraTrainingFineTuneBody({
             Registry model bersifat manual/offline sampai training real
             diaktifkan dan lolos quality gate.
           </Text>
-          <View style={styles.tableHead}>
-            <Text style={[styles.th, styles.colRun]}>Run</Text>
-            <Text style={[styles.th, styles.colStatus]}>Status</Text>
-            <Text style={[styles.th, styles.colModel]}>Model</Text>
-            <Text style={[styles.th, styles.colRuntime]}>Runtime</Text>
-          </View>
-          {visibleRuns.length === 0 ? (
-            <Text style={styles.meta}>
-              Belum ada run. Export JSONL akan membuat run draft.
-            </Text>
-          ) : (
-            visibleRuns.map(row => (
-              <View key={row.id} style={styles.tableRow}>
-                <Text numberOfLines={1} style={[styles.td, styles.colRun]}>
-                  {row.runKey}
-                </Text>
-                <View style={styles.colStatus}>
+          <KolamListTableComposition
+            columns={[
+              {
+                flex: 1.2,
+                id: 'run',
+                label: 'Run',
+                render: row => (
+                  <Text numberOfLines={1} style={styles.td}>
+                    {row.runKey}
+                  </Text>
+                ),
+              },
+              {
+                flex: 0.9,
+                id: 'status',
+                label: 'Status',
+                render: row => (
                   <KolamStatusBadge
                     intent={row.status === 'succeeded' ? 'success' : 'muted'}
                     label={row.status}
                     numberOfLines={1}
                   />
-                </View>
-                <Text numberOfLines={1} style={[styles.tdMuted, styles.colModel]}>
-                  {row.modelName || row.baseModel || '—'}
-                </Text>
-                <View style={styles.colRuntime}>
+                ),
+              },
+              {
+                flex: 1.2,
+                id: 'model',
+                label: 'Model',
+                render: row => (
+                  <Text numberOfLines={1} style={styles.tdMuted}>
+                    {row.modelName || row.baseModel || '-'}
+                  </Text>
+                ),
+              },
+              {
+                flex: 0.8,
+                id: 'runtime',
+                label: 'Runtime',
+                render: row => (
                   <KolamStatusBadge
                     intent={row.runtimeEligible ? 'warning' : 'muted'}
                     label={row.runtimeEligible ? 'Eligible' : 'Off'}
                     numberOfLines={1}
                   />
-                </View>
-              </View>
-            ))
-          )}
-          <TablePager
-            onNext={() => setRunsPage(page => page + 1)}
-            onPrev={() => setRunsPage(page => Math.max(1, page - 1))}
-            page={runsPage}
-            pages={runsPages}
+                ),
+              },
+            ]}
+            emptyTitle="Belum ada run. Export JSONL akan membuat run draft."
+            getRowKey={row => row.id}
+            pagination={{
+              onPageChange: setRunsPage,
+              page: runsPage,
+              pageSize: PAGE_SIZE,
+              total: runs.length,
+            }}
+            rows={visibleRuns}
           />
         </View>
       </View>
@@ -523,46 +570,6 @@ export function KolamDaraTrainingFineTuneBody({
 function slicePage<T>(rows: T[], page: number, pageSize: number) {
   const start = (Math.max(1, page) - 1) * pageSize;
   return rows.slice(start, start + pageSize);
-}
-
-function TablePager({
-  disabled = false,
-  onNext,
-  onPrev,
-  page,
-  pages,
-}: {
-  disabled?: boolean;
-  onNext: () => void;
-  onPrev: () => void;
-  page: number;
-  pages: number;
-}) {
-  if (pages <= 1) {
-    return null;
-  }
-
-  return (
-    <View style={styles.pager}>
-      <KolamButton
-        disabled={disabled || page <= 1}
-        intent="secondary"
-        label="Sebelumnya"
-        onPress={onPrev}
-        size="sm"
-      />
-      <Text style={styles.meta}>
-        {page}/{pages}
-      </Text>
-      <KolamButton
-        disabled={disabled || page >= pages}
-        intent="secondary"
-        label="Berikutnya"
-        onPress={onNext}
-        size="sm"
-      />
-    </View>
-  );
 }
 
 function StatBox({
@@ -583,7 +590,8 @@ function StatBox({
         tone === 'ok' ? styles.statOk : null,
         tone === 'warn' ? styles.statWarn : null,
         tone === 'danger' ? styles.statDanger : null,
-      ]}>
+      ]}
+    >
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statValue}>{value}</Text>
       {hint ? <Text style={styles.statHint}>{hint}</Text> : null}
@@ -592,7 +600,7 @@ function StatBox({
 }
 
 const styles = StyleSheet.create({
-  root: {gap: 12},
+  root: { gap: 12 },
   card: {
     backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
@@ -610,8 +618,8 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'space-between',
   },
-  headCopy: {flex: 1, flexShrink: 1, gap: 4, minWidth: 180},
-  headActions: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  headCopy: { flex: 1, flexShrink: 1, gap: 4, minWidth: 180 },
+  headActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   sectionTitle: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -687,35 +695,6 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 4,
   },
-  pager: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  tableHead: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    gap: 6,
-    paddingBottom: 6,
-  },
-  tableRow: {
-    alignItems: 'flex-start',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 6,
-    paddingVertical: 8,
-  },
-  th: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
   td: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -726,15 +705,4 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
   },
-  colSource: {flex: 1, minWidth: 80},
-  colInput: {flex: 1.6, minWidth: 100},
-  colValid: {flex: 0.9, minWidth: 72},
-  colStatus: {flex: 0.9, minWidth: 72},
-  colAction: {flex: 0.8, minWidth: 80},
-  colIndex: {flex: 0.35, minWidth: 28},
-  colQuery: {flex: 1.6, minWidth: 100},
-  colExpect: {flex: 1, minWidth: 80},
-  colRun: {flex: 1.2, minWidth: 90},
-  colModel: {flex: 1.2, minWidth: 90},
-  colRuntime: {flex: 0.8, minWidth: 72},
 });
