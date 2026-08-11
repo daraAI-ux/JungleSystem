@@ -5812,72 +5812,105 @@ function WebContentLauncherPanel({
   status: 'idle' | 'loading' | 'live' | 'error';
 }) {
   return (
-    <View style={styles.marketplaceOverview}>
-      <KolamCopyStack
-        items={[
-          {
-            id: 'title',
-            text: 'Konten Web',
-            style: styles.marketplaceOverviewTitle,
-          },
-          ...(status === 'loading'
-            ? [
-                {
-                  id: 'meta',
-                  text: 'Memuat...',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]
-            : status === 'error'
-            ? [
-                {
-                  id: 'meta',
-                  text: message,
-                  style: styles.marketplaceOverviewError,
-                },
-              ]
-            : []),
-        ]}
-      />
-      <View style={styles.marketplaceOverviewRows}>
+    <View style={styles.webContentLauncher}>
+      {status === 'loading' || status === 'error' ? (
+        <KolamCopyStack
+          items={[
+            {
+              id: 'meta',
+              text: status === 'loading' ? 'Memuat...' : message,
+              style:
+                status === 'loading'
+                  ? styles.marketplaceOverviewMeta
+                  : styles.marketplaceOverviewError,
+            },
+          ]}
+        />
+      ) : null}
+      <View style={styles.webContentLauncherGrid}>
         {items.map(item => (
-          <View key={item.id} style={styles.marketplaceOverviewRow}>
-            <KolamCopyStack
-              containerStyle={styles.marketplaceOverviewCopy}
-              items={[
-                {
-                  id: `${item.id}-label`,
-                  text: item.label,
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: `${item.id}-detail`,
-                  text: item.detail,
-                  style: styles.marketplaceOverviewDetail,
-                },
+          <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            onPress={() => onSelect(item.id)}
+            style={[
+              styles.webContentLauncherCard,
+              activePanelId === item.id
+                ? styles.webContentLauncherCardActive
+                : null,
+            ]}
+          >
+            <View
+              style={[
+                styles.webContentLauncherIcon,
+                activePanelId === item.id
+                  ? styles.webContentLauncherIconActive
+                  : null,
               ]}
-            />
-            <View style={styles.notificationSoundActions}>
+            >
+              <SvgXml
+                height={20}
+                width={20}
+                xml={getWebContentLauncherIconXml(item.id)}
+              />
+            </View>
+            <View style={styles.webContentLauncherCopy}>
               <KolamCopyStack
                 items={[
                   {
-                    id: `${item.id}-value`,
-                    text: item.value,
-                    style: styles.marketplaceOverviewValue,
+                    id: `${item.id}-label`,
+                    text: getWebContentLauncherTitle(item.id),
+                    style: styles.webContentLauncherTitle,
+                  },
+                  {
+                    id: `${item.id}-detail`,
+                    text: getWebContentLauncherDescription(item.id),
+                    style: styles.webContentLauncherDetail,
                   },
                 ]}
               />
-              <KolamActionControlButton
-                intent={activePanelId === item.id ? 'primary' : undefined}
-                label={activePanelId === item.id ? 'Open' : 'View'}
-                onPress={() => onSelect(item.id)}
-              />
             </View>
-          </View>
+          </Pressable>
         ))}
       </View>
     </View>
   );
+}
+
+function getWebContentLauncherTitle(
+  id: 'marketplace' | 'blog' | 'blog-topics',
+) {
+  if (id === 'marketplace') {
+    return 'Landing marketplace';
+  }
+  if (id === 'blog') {
+    return 'Artikel blog';
+  }
+  return 'Topik blog';
+}
+
+function getWebContentLauncherDescription(
+  id: 'marketplace' | 'blog' | 'blog-topics',
+) {
+  if (id === 'marketplace') {
+    return 'Hero & promosi toko';
+  }
+  if (id === 'blog') {
+    return 'Posting publikasi';
+  }
+  return 'Kategori artikel';
+}
+
+function getWebContentLauncherIconXml(
+  id: 'marketplace' | 'blog' | 'blog-topics',
+) {
+  if (id === 'marketplace') {
+    return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.5 12h17M12 3.5c2.6 2.3 4 5.2 4 8.5s-1.4 6.2-4 8.5M12 3.5C9.4 5.8 8 8.7 8 12s1.4 6.2 4 8.5M4.8 7.5h14.4M4.8 16.5h14.4M20.5 12a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0Z" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  if (id === 'blog') {
+    return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4.5h8l3 3v12H7a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2Z" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4.5v3h3M8.5 11h7M8.5 14h7M8.5 17h4.5" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.5 5.5A2.5 2.5 0 0 1 9 3h9.5v15.5H9A2.5 2.5 0 0 0 6.5 21V5.5Z" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 7h5.5M10 10h4M6.5 5.5A2.5 2.5 0 0 0 4 8v11a2 2 0 0 0 2 2h.5" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 
 function MarketplaceLandingSubTabs({
@@ -10073,6 +10106,63 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 12,
     fontWeight: '700',
+  },
+  webContentLauncher: {
+    gap: 10,
+  },
+  webContentLauncherCard: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 260,
+    gap: 12,
+    minHeight: 82,
+    minWidth: 220,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  webContentLauncherCardActive: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#16a34a',
+  },
+  webContentLauncherCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  webContentLauncherDetail: {
+    color: '#6b7280',
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  webContentLauncherGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  webContentLauncherIcon: {
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  webContentLauncherIconActive: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#86efac',
+  },
+  webContentLauncherTitle: {
+    color: '#111827',
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   notificationSoundActions: {
     flexDirection: 'row',
