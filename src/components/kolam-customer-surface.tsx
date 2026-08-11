@@ -1,13 +1,23 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {
   getKolamCustomerLocationText,
   type KolamCustomer,
   type KolamCustomerAddress,
   type KolamCustomerExternalAccount,
   type KolamCustomerListResult,
+  type KolamCustomerPointTransaction,
+  type KolamCustomerPointTransactionsResult,
   type KolamCustomerSavePayload,
 } from '../domain/kolam-customer';
+import {
+  canEditKolamTaxPartyProfile,
+  createEmptyKolamTaxPartyProfileFormState,
+  hasKolamTaxPartyNpwp,
+  type KolamTaxPartyProfileFormState,
+} from '../domain/kolam-tax-party';
+import type {SettingsTabVisibilityContext} from '../domain/settings-surface';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
@@ -16,9 +26,14 @@ import {
   deleteKolamCustomerPhoto,
   getKolamCustomerDetail,
   getKolamCustomerList,
+  getKolamCustomerPointTransactions,
   updateKolamCustomer,
   uploadKolamCustomerPhoto,
 } from '../services/kolam-customer-api';
+import {
+  getKolamTaxPartyProfile,
+  upsertKolamTaxPartyProfile,
+} from '../services/kolam-financial-settings-api';
 import {pickNativeImageFile} from '../services/native-file-picker';
 import type {
   KolamCustomerList,
@@ -66,6 +81,88 @@ const CUSTOMER_GENDER_OPTIONS = [
   {label: 'Perempuan', value: 'female'},
 ] as const;
 
+const CUSTOMER_POINT_TRANSACTION_COLUMNS: Array<
+  KolamListTableColumn<KolamCustomerPointTransaction>
+> = [
+  {
+    align: 'left',
+    flex: 1.25,
+    id: 'type',
+    label: 'Tipe',
+    render: transaction => (
+      <KolamStatusBadge
+        intent={getCustomerPointTransactionIntent(transaction.type)}
+        label={getCustomerPointTransactionLabel(transaction.type)}
+      />
+    ),
+  },
+  {
+    align: 'left',
+    flex: 1.45,
+    id: 'description',
+    label: 'Keterangan',
+    render: transaction => (
+      <View style={styles.customerPointTransactionCopy}>
+        <Text numberOfLines={1} style={styles.customerMetaText}>
+          {transaction.description || 'Transaksi poin'}
+        </Text>
+        {transaction.sale?.invoiceCode ? (
+          <Text numberOfLines={1} style={styles.customerSubText}>
+            {transaction.sale.invoiceCode}
+          </Text>
+        ) : null}
+      </View>
+    ),
+  },
+  {
+    align: 'center',
+    flex: 0.95,
+    id: 'method',
+    label: 'Metode',
+    render: transaction => (
+      <KolamStatusBadge
+        intent={transaction.method === 'manual' ? 'secondary' : 'info'}
+        label={
+          transaction.method === 'manual'
+            ? 'Manual'
+            : transaction.method || 'Produk'
+        }
+      />
+    ),
+  },
+  {
+    align: 'right',
+    flex: 0.8,
+    id: 'points',
+    label: 'Poin',
+    render: transaction => (
+      <Text
+        style={[
+          styles.customerPointTransactionPoints,
+          transaction.points > 0
+            ? styles.customerPointTransactionPointsIn
+            : transaction.points < 0
+              ? styles.customerPointTransactionPointsOut
+              : null,
+        ]}>
+        {transaction.points > 0 ? '+' : ''}
+        {formatCustomerNumber(transaction.points)}
+      </Text>
+    ),
+  },
+  {
+    align: 'center',
+    flex: 0.95,
+    id: 'created',
+    label: 'Dibuat',
+    render: transaction => (
+      <Text style={[styles.customerSubText, styles.customerTextCenter]}>
+        {formatCustomerDate(transaction.createdAt)}
+      </Text>
+    ),
+  },
+];
+
 const INITIAL_CUSTOMER_LIST: KolamCustomerListResult = {
   items: [],
   pagination: {
@@ -75,6 +172,17 @@ const INITIAL_CUSTOMER_LIST: KolamCustomerListResult = {
     totalPages: 1,
   },
 };
+
+const INITIAL_CUSTOMER_POINT_TRANSACTIONS: KolamCustomerPointTransactionsResult =
+  {
+    items: [],
+    pagination: {
+      limit: 10,
+      page: 1,
+      total: 0,
+      totalPages: 1,
+    },
+  };
 
 export function KolamCustomerSurface({
   customer,
@@ -342,10 +450,23 @@ function KolamCustomerDetailSurface({
   customerId: string;
   onRouteChange?: (route: string) => void;
 }) {
+  const {authUser} = useKolamAuthContext();
   const [customer, setCustomer] = React.useState<KolamCustomer | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [photoSaving, setPhotoSaving] = React.useState(false);
+  const [taxProfile, setTaxProfile] =
+    React.useState<KolamTaxPartyProfileFormState>(() =>
+      createEmptyKolamTaxPartyProfileFormState(),
+    );
+  const [taxProfileLoaded, setTaxProfileLoaded] = React.useState(false);
+  const [taxProfileSaving, setTaxProfileSaving] = React.useState(false);
+  const [pointTransactions, setPointTransactions] = React.useState(
+    INITIAL_CUSTOMER_POINT_TRANSACTIONS,
+  );
+  const [pointTransactionsLoading, setPointTransactionsLoading] =
+    React.useState(false);
+  const [pointTransactionsPage, setPointTransactionsPage] = React.useState(1);
 
   React.useEffect(() => {
     let active = true;
@@ -386,6 +507,83 @@ function KolamCustomerDetailSurface({
       active = false;
     };
   }, [customerId]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customer?.id) {
+      setTaxProfile(createEmptyKolamTaxPartyProfileFormState());
+      setTaxProfileLoaded(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setTaxProfileLoaded(false);
+    void getKolamTaxPartyProfile('customer', customer.id)
+      .then(profile => {
+        if (!active) {
+          return;
+        }
+
+        setTaxProfile({
+          legalName: profile.legalName || customer.name,
+          npwp: profile.npwp,
+          npwp16: profile.npwp16,
+        });
+      })
+      .catch(() => {
+        if (active) {
+          setTaxProfile(createEmptyKolamTaxPartyProfileFormState(customer.name));
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setTaxProfileLoaded(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customer?.id, customer?.name]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customerId) {
+      setPointTransactions(INITIAL_CUSTOMER_POINT_TRANSACTIONS);
+      return () => {
+        active = false;
+      };
+    }
+
+    setPointTransactionsLoading(true);
+    void getKolamCustomerPointTransactions({
+      id: customerId,
+      limit: 10,
+      page: pointTransactionsPage,
+    })
+      .then(result => {
+        if (active) {
+          setPointTransactions(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPointTransactions(INITIAL_CUSTOMER_POINT_TRANSACTIONS);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setPointTransactionsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customerId, pointTransactionsPage]);
 
   if (loading && !customer) {
     return (
@@ -463,6 +661,54 @@ function KolamCustomerDetailSurface({
       setPhotoSaving(false);
     }
   };
+  const handleChangeTaxProfile = React.useCallback(
+    (patch: Partial<KolamTaxPartyProfileFormState>) => {
+      setTaxProfile(current => ({...current, ...patch}));
+    },
+    [],
+  );
+  const handleSaveTaxProfile = React.useCallback(async () => {
+    if (!customer || taxProfileSaving) {
+      return;
+    }
+
+    const npwpDigits = taxProfile.npwp.replace(/\D/g, '');
+    const npwp16Digits = taxProfile.npwp16.replace(/\D/g, '');
+
+    if (npwpDigits && npwpDigits.length !== 15) {
+      setError('NPWP 15 digit harus berisi 15 angka.');
+      return;
+    }
+
+    if (npwp16Digits && npwp16Digits.length !== 16) {
+      setError('NPWP 16 digit harus berisi 16 angka.');
+      return;
+    }
+
+    setTaxProfileSaving(true);
+    setError('');
+    try {
+      const saved = await upsertKolamTaxPartyProfile('customer', customer.id, {
+        legalName: taxProfile.legalName.trim() || customer.name,
+        npwp: taxProfile.npwp.trim(),
+        npwp16: taxProfile.npwp16.trim(),
+      });
+      setTaxProfile({
+        legalName: saved.legalName || customer.name,
+        npwp: saved.npwp,
+        npwp16: saved.npwp16,
+      });
+      setTaxProfileLoaded(true);
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal menyimpan profil pajak.',
+      );
+    } finally {
+      setTaxProfileSaving(false);
+    }
+  }, [customer, taxProfile, taxProfileSaving]);
 
   return (
     <View style={styles.detailSurface}>
@@ -642,6 +888,21 @@ function KolamCustomerDetailSurface({
           </View>
         ) : null}
       </View>
+
+      <CustomerTaxProfileCard
+        authUser={authUser}
+        form={taxProfile}
+        loaded={taxProfileLoaded}
+        onChange={handleChangeTaxProfile}
+        onSave={handleSaveTaxProfile}
+        saving={taxProfileSaving}
+      />
+
+      <CustomerPointTransactionsCard
+        loading={pointTransactionsLoading}
+        onPageChange={setPointTransactionsPage}
+        result={pointTransactions}
+      />
     </View>
   );
 }
@@ -1088,7 +1349,7 @@ function CustomerPictureSummaryBox({
   return (
     <View style={styles.customerSummaryPictureBox}>
       <View style={styles.photoSectionHeader}>
-        <SectionTitle description="Foto pelanggan" title="Foto" />
+        <SectionTitle description="" title="Foto" />
         <KolamButton
           disabled={photoSaving}
           label={photoSaving ? 'Memproses...' : 'Unggah Foto'}
@@ -1131,6 +1392,142 @@ function CustomerPictureSummaryBox({
           </Text>
         </View>
       )}
+    </View>
+  );
+}
+
+function CustomerTaxProfileCard({
+  authUser,
+  form,
+  loaded,
+  onChange,
+  onSave,
+  saving,
+}: {
+  authUser: SettingsTabVisibilityContext | null | undefined;
+  form: KolamTaxPartyProfileFormState;
+  loaded: boolean;
+  onChange: (patch: Partial<KolamTaxPartyProfileFormState>) => void;
+  onSave: () => Promise<void>;
+  saving: boolean;
+}) {
+  const canEdit = canEditKolamTaxPartyProfile(authUser);
+  const hasNpwp = loaded && hasKolamTaxPartyNpwp(form);
+
+  return (
+    <KolamContentFrame
+      style={[styles.detailCard, styles.customerTaxProfileCard]}
+      variant="settingsWebConfig">
+      <View style={styles.taxHeader}>
+        <Text style={styles.sectionTitle}>Profil pajak</Text>
+        {loaded ? (
+          <KolamStatusBadge
+            intent={hasNpwp ? 'success' : 'warning'}
+            label={hasNpwp ? 'NPWP tercatat' : 'Belum NPWP'}
+          />
+        ) : null}
+      </View>
+      {!loaded ? (
+        <KolamEmptyState compact message="Memuat profil pajak." title="Memuat" />
+      ) : (
+        <View style={styles.customerTaxProfileBody}>
+          <View style={styles.formSplitRow}>
+            <View style={styles.formSplitCell}>
+              <CustomerFieldShell label="NPWP 15 digit">
+                <KolamFormTextField
+                  editable={canEdit && !saving}
+                  mode="numeric"
+                  onChangeText={npwp => onChange({npwp})}
+                  placeholder="15 digit"
+                  style={styles.customerFormFieldValue}
+                  value={form.npwp}
+                />
+              </CustomerFieldShell>
+            </View>
+            <View style={styles.formSplitCell}>
+              <CustomerFieldShell label="NPWP 16 digit">
+                <KolamFormTextField
+                  editable={canEdit && !saving}
+                  mode="numeric"
+                  onChangeText={npwp16 => onChange({npwp16})}
+                  placeholder="16 digit"
+                  style={styles.customerFormFieldValue}
+                  value={form.npwp16}
+                />
+              </CustomerFieldShell>
+            </View>
+          </View>
+          <CustomerFieldShell label="Nama legal (faktur)">
+            <KolamFormTextField
+              editable={canEdit && !saving}
+              onChangeText={legalName => onChange({legalName})}
+              placeholder="Nama legal untuk faktur"
+              style={styles.customerFormFieldValue}
+              value={form.legalName}
+            />
+          </CustomerFieldShell>
+          {canEdit ? (
+            <View style={styles.formActions}>
+              <KolamSaveButton
+                disabled={saving}
+                label={saving ? 'Menyimpan...' : 'Simpan NPWP'}
+                onPress={() => void onSave()}
+              />
+            </View>
+          ) : (
+            <Text style={styles.switchHint}>Mode baca saja.</Text>
+          )}
+        </View>
+      )}
+    </KolamContentFrame>
+  );
+}
+
+function CustomerPointTransactionsCard({
+  loading,
+  onPageChange,
+  result,
+}: {
+  loading: boolean;
+  onPageChange: (page: number) => void;
+  result: KolamCustomerPointTransactionsResult;
+}) {
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <SectionTitle
+        description="Riwayat perubahan poin pelanggan"
+        title="Riwayat transaksi poin"
+      />
+      <KolamListTableComposition
+        columns={CUSTOMER_POINT_TRANSACTION_COLUMNS}
+        emptyTitle={
+          loading ? 'Memuat transaksi poin...' : 'Belum ada transaksi poin'
+        }
+        getRowKey={row => row.id}
+        loading={loading}
+        pagination={{
+          onPageChange,
+          page: result.pagination.page,
+          pageSize: result.pagination.limit,
+          total: result.pagination.total,
+        }}
+        rows={loading ? [] : result.items}
+      />
+    </KolamContentFrame>
+  );
+}
+
+function CustomerFieldShell({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <View style={styles.customerFieldShell}>
+      <Text style={styles.customerFieldLabel}>{label}</Text>
+      {children}
     </View>
   );
 }
@@ -1297,6 +1694,36 @@ function getCustomerStatusIntent(status: string) {
   }
 
   return 'muted' as const;
+}
+
+function getCustomerPointTransactionLabel(type: string) {
+  switch (type) {
+    case 'earned':
+      return 'Masuk';
+    case 'used':
+      return 'Dipakai';
+    case 'adjusted':
+      return 'Penyesuaian';
+    case 'expired':
+      return 'Kedaluwarsa';
+    default:
+      return type || '-';
+  }
+}
+
+function getCustomerPointTransactionIntent(type: string) {
+  switch (type) {
+    case 'earned':
+      return 'success' as const;
+    case 'used':
+      return 'danger' as const;
+    case 'adjusted':
+      return 'warning' as const;
+    case 'expired':
+      return 'secondary' as const;
+    default:
+      return 'muted' as const;
+  }
 }
 
 function getCustomerExternalLabel(account: KolamCustomerExternalAccount) {
@@ -1616,6 +2043,69 @@ const styles = StyleSheet.create({
     color: V.colors.fg,
     fontSize: 13,
     lineHeight: 20,
+  },
+  customerTaxProfileCard: {
+    backgroundColor: '#f5f0ff',
+    borderColor: '#d8c7ff',
+  },
+  customerTaxProfileBody: {
+    gap: 12,
+  },
+  taxHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  formSplitRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  formSplitCell: {
+    flexBasis: 260,
+    flexGrow: 1,
+    minWidth: 0,
+  },
+  customerFieldShell: {
+    gap: 6,
+  },
+  customerFieldLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  customerFormFieldValue: {
+    width: '100%',
+  },
+  formActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  switchHint: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  customerPointTransactionCopy: {
+    gap: 2,
+    minWidth: 0,
+  },
+  customerPointTransactionPoints: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'right',
+  },
+  customerPointTransactionPointsIn: {
+    color: V.colors.success,
+  },
+  customerPointTransactionPointsOut: {
+    color: V.colors.danger,
   },
   sectionTitleBlock: {
     gap: 3,

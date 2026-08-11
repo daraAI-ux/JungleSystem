@@ -2,9 +2,12 @@ import {appConfig} from '../config/app';
 import {
   normalizeKolamCustomerDetail,
   normalizeKolamCustomerListResult,
+  normalizeKolamCustomerPointTransactionsResult,
   type KolamCustomer,
   type KolamCustomerListQuery,
   type KolamCustomerListResult,
+  type KolamCustomerPointTransactionsResult,
+  type KolamCustomerPointTransactionType,
   type KolamCustomerSavePayload,
 } from '../domain/kolam-customer';
 import {apiRequest} from '../lib/api-client';
@@ -119,6 +122,31 @@ export async function deleteKolamCustomerPhoto(
   );
 
   return normalizeCustomerPhotoResponse(response, 'remaining');
+}
+
+export async function getKolamCustomerPointTransactions({
+  id,
+  limit = 10,
+  page = 1,
+  type,
+}: {
+  id: string;
+  limit?: number;
+  page?: number;
+  type?: KolamCustomerPointTransactionType;
+}): Promise<KolamCustomerPointTransactionsResult> {
+  const response = await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(id)}/point-transactions`,
+    {
+      query: {
+        limit,
+        page,
+        ...(type?.trim() ? {type: type.trim()} : {}),
+      },
+    },
+  );
+
+  return normalizeKolamCustomerPointTransactionsResult(response, {limit, page});
 }
 
 function kolamRequest<T>(

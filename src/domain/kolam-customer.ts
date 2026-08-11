@@ -68,6 +68,43 @@ export interface KolamCustomerListResult {
   pagination: KolamCustomerPagination;
 }
 
+export type KolamCustomerPointTransactionType =
+  | 'earned'
+  | 'used'
+  | 'adjusted'
+  | 'expired'
+  | string;
+
+export interface KolamCustomerPointTransactionSale {
+  id: string;
+  invoiceCode: string;
+  finalTotal: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface KolamCustomerPointTransactionUser {
+  id: string;
+  name: string;
+  username: string;
+}
+
+export interface KolamCustomerPointTransaction {
+  id: string;
+  type: KolamCustomerPointTransactionType;
+  method: string;
+  description: string;
+  points: number;
+  sale: KolamCustomerPointTransactionSale | null;
+  createdBy: KolamCustomerPointTransactionUser | null;
+  createdAt: string;
+}
+
+export interface KolamCustomerPointTransactionsResult {
+  items: KolamCustomerPointTransaction[];
+  pagination: KolamCustomerPagination;
+}
+
 export interface KolamCustomerSavePayload {
   address: string;
   email: string;
@@ -107,6 +144,32 @@ export function normalizeKolamCustomerDetail(payload: unknown) {
   return normalizeKolamCustomer(record.data ?? payload);
 }
 
+export function normalizeKolamCustomerPointTransactionsResult(
+  payload: unknown,
+  fallback: Required<Pick<KolamCustomerListQuery, 'limit' | 'page'>>,
+): KolamCustomerPointTransactionsResult {
+  const record = asRecord(payload);
+  const rows = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  const items = rows
+    .map(normalizeKolamCustomerPointTransaction)
+    .filter(
+      (item): item is KolamCustomerPointTransaction => Boolean(item),
+    );
+
+  return {
+    items,
+    pagination: normalizeKolamCustomerPagination(
+      record.pagination,
+      items.length,
+      fallback,
+    ),
+  };
+}
+
 export function normalizeKolamCustomer(value: unknown): KolamCustomer | null {
   const record = asRecord(value);
   const id = getString(record, '_id') || getString(record, 'id');
@@ -139,6 +202,68 @@ export function normalizeKolamCustomer(value: unknown): KolamCustomer | null {
     updatedAt: getString(record, 'updatedAt'),
     username: getString(record, 'username'),
     verifiedStatus: getBoolean(record, 'verified_status') ?? false,
+  };
+}
+
+function normalizeKolamCustomerPointTransaction(
+  value: unknown,
+): KolamCustomerPointTransaction | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    createdAt: getString(record, 'createdAt'),
+    createdBy: normalizeKolamCustomerPointTransactionUser(record.createdBy),
+    description: getString(record, 'description'),
+    id,
+    method: getString(record, 'method'),
+    points: getNumber(record, 'points') ?? 0,
+    sale: normalizeKolamCustomerPointTransactionSale(record.sale),
+    type: getString(record, 'type'),
+  };
+}
+
+function normalizeKolamCustomerPointTransactionSale(
+  value: unknown,
+): KolamCustomerPointTransactionSale | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    createdAt: getString(record, 'createdAt'),
+    finalTotal: getNumber(record, 'finalTotal') ?? 0,
+    id,
+    invoiceCode: getString(record, 'invoiceCode'),
+    status: getString(record, 'status'),
+  };
+}
+
+function normalizeKolamCustomerPointTransactionUser(
+  value: unknown,
+): KolamCustomerPointTransactionUser | null {
+  const record = asRecord(value);
+  const id = getString(record, '_id') || getString(record, 'id');
+
+  if (!id) {
+    return null;
+  }
+
+  const firstName = getString(record, 'first_name');
+  const lastName = getString(record, 'last_name');
+  const name = [firstName, lastName].filter(Boolean).join(' ');
+
+  return {
+    id,
+    name: name || getString(record, 'name') || getString(record, 'username'),
+    username: getString(record, 'username'),
   };
 }
 
