@@ -396,14 +396,6 @@ function OwnerCopilotDashboardContent({
 
   return (
     <View style={styles.ownerBody}>
-      <Text style={styles.ownerMeta}>
-        {`Periode Night Ops: ${dash.windowLabel}${
-          dash.generatedAt
-            ? ` · diperbarui ${formatKolamOwnerCopilotWib(dash.generatedAt)}`
-            : ''
-        }`}
-      </Text>
-
       <KolamDetailSummaryCard
         fieldColumns={4}
         fields={[
