@@ -81,6 +81,10 @@ export const poCopilotStyles = StyleSheet.create({
     gap: 12,
     justifyContent: 'space-between',
   },
+  deliveryPanelHeaderMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
   sideBySideGrid: {
     alignItems: 'stretch',
     flexDirection: 'row',

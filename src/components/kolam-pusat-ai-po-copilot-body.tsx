@@ -78,13 +78,13 @@ export function KolamPusatAiPoCopilotBody({
           <View style={styles.deliveryPanel}>
             <View style={styles.deliveryPanelHeader}>
               {stats?.generatedAt ? (
-                <Text style={styles.meta}>
+                <Text style={[styles.meta, styles.deliveryPanelHeaderMeta]}>
                   {`Statistik diperbarui ${formatKolamPoCopilotWib(
                     stats.generatedAt,
                   )}${stats.note ? ` · ${stats.note}` : ''}`}
                 </Text>
               ) : (
-                <View />
+                <View style={styles.deliveryPanelHeaderMeta} />
               )}
               <View style={styles.rangeTabs}>
                 {KOLAM_PO_COPILOT_RANGES.map(item => {
