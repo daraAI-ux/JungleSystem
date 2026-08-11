@@ -3,6 +3,7 @@ import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {SvgXml} from 'react-native-svg';
 import {KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG} from '../assets/icons/dara-market-intel-module-icon-svg';
 import {KOLAM_LUP_SEARCH_ICON_SVG} from '../assets/icons/lup-search-icon-svg';
+import {KOLAM_POTENSI_ICON_SVG} from '../assets/icons/potensi-icon-svg';
 import {
   formatKolamDaraMarketIntelIdr,
   formatKolamDaraMarketIntelTaxSource,
@@ -260,13 +261,22 @@ export function KolamDaraMarketIntelDashboardBody({
                 </Text>
               </View>
             ) : null}
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Potensi hemat pembelian</Text>
-              <Text style={styles.kpiValue}>
-                {formatKolamDaraMarketIntelIdr(
-                  dashboard.totals.purchaseSavingsPotential,
-                )}
-              </Text>
+            <View style={[styles.kpiCard, styles.kpiCardWithIcon]}>
+              <View style={styles.kpiCopy}>
+                <Text style={styles.kpiLabel}>Potensi hemat pembelian</Text>
+                <Text style={styles.kpiValue}>
+                  {formatKolamDaraMarketIntelIdr(
+                    dashboard.totals.purchaseSavingsPotential,
+                  )}
+                </Text>
+              </View>
+              <View style={styles.kpiPotensiIcon}>
+                <SvgXml
+                  height="100%"
+                  width="100%"
+                  xml={KOLAM_POTENSI_ICON_SVG}
+                />
+              </View>
             </View>
           </View>
 
@@ -445,6 +455,22 @@ const styles = StyleSheet.create({
     minWidth: 160,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  kpiCardWithIcon: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  kpiCopy: {
+    flexShrink: 1,
+    gap: 8,
+    minWidth: 0,
+  },
+  kpiPotensiIcon: {
+    flexShrink: 0,
+    height: 58,
+    marginLeft: 12,
+    width: 58,
   },
   kpiLabel: {
     color: V.colors.mutedFg,
