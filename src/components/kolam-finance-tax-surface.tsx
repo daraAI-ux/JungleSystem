@@ -96,6 +96,8 @@ export function KolamFinanceTaxSurface({
                   value: opt.id,
                 }))}
                 showLabelInTrigger={false}
+                style={styles.periodDropdown}
+                triggerStyle={styles.periodDropdownTrigger}
                 value={controller.period}
               />
             </View>
@@ -318,6 +320,14 @@ const styles = StyleSheet.create({
   },
   maintenanceButtonText: {
     color: V.colors.primaryFg,
+  },
+  periodDropdown: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 220,
+  },
+  periodDropdownTrigger: {
+    width: '100%',
   },
   scroll: {
     flex: 1,
