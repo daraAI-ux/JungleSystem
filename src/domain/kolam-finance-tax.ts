@@ -10,7 +10,7 @@ export const KOLAM_FINANCE_TAX_PROFILE_ROUTE = '/finance/settings/tax-profile';
 
 /** FE HeaderDescription — also shell nav description. */
 export const KOLAM_DARA_TAX_DESCRIPTION =
-  'Estimasi compliance per periode. Bukan pelaporan otomatis ke DJP.';
+  'Ringkasan estimasi pajak, faktur, setoran, dan kepatuhan per periode.';
 
 export type KolamDaraTaxTabId =
   | 'ringkasan'

@@ -604,7 +604,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Pajak Keuangan',
         route: '/finance/tax',
         description:
-          'Estimasi compliance per periode. Bukan pelaporan otomatis ke DJP.',
+          'Ringkasan estimasi pajak, faktur, setoran, dan kepatuhan per periode.',
         moduleIcon: 'daraTax',
         requiredAccess: ['kolam'],
       },
