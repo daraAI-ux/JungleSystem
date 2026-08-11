@@ -13,13 +13,13 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import {SvgXml} from 'react-native-svg';
-import {useKolamAuthContext} from '../context/kolam-app-contexts';
-import {KOLAM_CALL_ICON_SVG} from '../assets/icons/call-icon-svg';
-import {KOLAM_DELETE_ROOM_ICON_SVG} from '../assets/icons/delete-room-icon-svg';
-import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
-import {resolveKolamTeamChatBotAvatarRawUrl} from '../domain/kolam-team-chat-bot-display';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import { SvgXml } from 'react-native-svg';
+import { useKolamAuthContext } from '../context/kolam-app-contexts';
+import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
+import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
+import { classifyKolamChatLiveEvent } from '../domain/kolam-chat-live-classifier';
+import { resolveKolamTeamChatBotAvatarRawUrl } from '../domain/kolam-team-chat-bot-display';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   type KolamChatLiveEvent,
   type KolamChatLiveStreamStatus,
@@ -29,12 +29,12 @@ import {
   type KolamChatRailDetailMessage,
   useKolamChatRailDetail,
 } from '../hooks/use-kolam-chat-rail-detail';
-import {useKolamChatPlatformHealth} from '../hooks/use-kolam-chat-platform-health';
-import {useKolamChatRailLiveSync} from '../hooks/use-kolam-chat-rail-live-sync';
-import {useKolamChatRailReadonlyData} from '../hooks/use-kolam-chat-rail-readonly-data';
-import {useKolamNotificationSoundSettings} from '../hooks/use-kolam-notification-sound-settings';
-import {getKolamFileUrl} from '../lib/file-url';
-import {formatRupiah} from '../lib/money';
+import { useKolamChatPlatformHealth } from '../hooks/use-kolam-chat-platform-health';
+import { useKolamChatRailLiveSync } from '../hooks/use-kolam-chat-rail-live-sync';
+import { useKolamChatRailReadonlyData } from '../hooks/use-kolam-chat-rail-readonly-data';
+import { useKolamNotificationSoundSettings } from '../hooks/use-kolam-notification-sound-settings';
+import { getKolamFileUrl } from '../lib/file-url';
+import { formatRupiah } from '../lib/money';
 import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
@@ -76,32 +76,35 @@ import {
   searchKolamChatMarketplaceListings,
   updateKolamChatLabel,
 } from '../services/kolam-api';
-import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
-import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
-import {fetchKolamShippingDeliveryStats} from '../services/kolam-dara-shipping-copilot-api';
+import { createKolamNotificationSoundService } from '../services/kolam-notification-sound-service';
+import { createKolamRuntimeNotificationSoundAdapter } from '../services/kolam-notification-sound-runtime';
+import { fetchKolamShippingDeliveryStats } from '../services/kolam-dara-shipping-copilot-api';
 import {
   pickNativeAssetFile,
   pickNativeImageFile,
   type NativeImagePickerResult,
 } from '../services/native-file-picker';
-import {KolamBadge} from './kolam-badge';
-import {KolamConfirmDialog} from './kolam-confirm-dialog';
-import {KolamEmptyState} from './kolam-empty-state';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamHoverTooltip} from './kolam-hover-tooltip';
-import {KolamIconButton} from './kolam-icon-button';
-import {KolamMappedList} from './kolam-mapped-list';
-import {openKolamMediaPreview} from './kolam-media-preview-dialog';
-import {KolamModalDialog} from './kolam-modal-dialog';
-import {KolamModalBackdrop} from './kolam-modal-backdrop';
-import {KolamNotesField} from './kolam-notes-field';
-import {KolamPressable} from './kolam-pressable';
-import {KolamProfileAvatarContent} from './kolam-profile-avatar-content';
-import {KolamResetButton} from './kolam-reset-button';
-import {KolamRemoteImage} from './kolam-remote-image';
-import {KolamStatusIndicatorIcon} from './kolam-status-indicator-icon';
-import {KolamTopNavigationChatIcon} from './kolam-top-navigation-chat-icon';
-import {resolveProfilePhotoUrl, type SignedInUser} from '../services/auth-api';
+import { KolamBadge } from './kolam-badge';
+import { KolamConfirmDialog } from './kolam-confirm-dialog';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamHoverTooltip } from './kolam-hover-tooltip';
+import { KolamIconButton } from './kolam-icon-button';
+import { KolamMappedList } from './kolam-mapped-list';
+import { openKolamMediaPreview } from './kolam-media-preview-dialog';
+import { KolamModalDialog } from './kolam-modal-dialog';
+import { KolamModalBackdrop } from './kolam-modal-backdrop';
+import { KolamNotesField } from './kolam-notes-field';
+import { KolamPressable } from './kolam-pressable';
+import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
+import { KolamResetButton } from './kolam-reset-button';
+import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamStatusIndicatorIcon } from './kolam-status-indicator-icon';
+import { KolamTopNavigationChatIcon } from './kolam-top-navigation-chat-icon';
+import {
+  resolveProfilePhotoUrl,
+  type SignedInUser,
+} from '../services/auth-api';
 
 export type KolamGlobalChatRailMode = 'inbox' | 'team-chat';
 type KolamChatRailInboxAssignmentFilter = 'all' | 'assigned' | 'unassigned';
@@ -313,8 +316,8 @@ interface KolamChatRailItem {
 }
 
 type KolamTeamMentionTextPart =
-  | {type: 'text'; value: string}
-  | {type: 'mention'; raw: string; username: string};
+  | { type: 'text'; value: string }
+  | { type: 'mention'; raw: string; username: string };
 
 interface KolamDaraThinkingLiveSignal {
   key: number;
@@ -378,7 +381,7 @@ export function KolamGlobalChatRail({
   mode: KolamGlobalChatRailMode;
   onClose: () => void;
 }) {
-  const {authUser} = useKolamAuthContext();
+  const { authUser } = useKolamAuthContext();
   const content = getChatRailContent(mode);
   const [inboxFilter, setInboxFilter] =
     React.useState<KolamChatRailInboxFilter>({
@@ -408,7 +411,7 @@ export function KolamGlobalChatRail({
     () => buildInboxListParams(inboxFilter),
     [inboxFilter],
   );
-  const data = useKolamChatRailReadonlyData({inboxParams, mode});
+  const data = useKolamChatRailReadonlyData({ inboxParams, mode });
   const platformHealth = useKolamChatPlatformHealth({
     enabled: mode === 'inbox',
   });
@@ -501,7 +504,7 @@ export function KolamGlobalChatRail({
     selectedId:
       mode === 'team-chat' && daraHeaderMenuOpen ? daraWindowRoomId : null,
   });
-  const {syncFromLiveClassification} = useKolamChatRailLiveSync({
+  const { syncFromLiveClassification } = useKolamChatRailLiveSync({
     refreshDetail: detail.refresh,
     refreshList: data.refresh,
   });
@@ -569,7 +572,7 @@ export function KolamGlobalChatRail({
         handleBackToList();
       }
       await data.refresh();
-      setDeleteRoomState({busy: false, target: null});
+      setDeleteRoomState({ busy: false, target: null });
     } catch (error) {
       setDeleteRoomState({
         busy: false,
@@ -660,7 +663,10 @@ export function KolamGlobalChatRail({
         );
       }
 
-      if (classification.refreshCallState && classification.targetId === selectedItemId) {
+      if (
+        classification.refreshCallState &&
+        classification.targetId === selectedItemId
+      ) {
         void detail.refreshCall();
       }
 
@@ -686,7 +692,7 @@ export function KolamGlobalChatRail({
     const runFallbackRefresh = () => {
       Promise.resolve(data.refresh()).catch(() => undefined);
       if (selectedItemId) {
-        Promise.resolve(detail.refresh({quiet: true})).catch(() => undefined);
+        Promise.resolve(detail.refresh({ quiet: true })).catch(() => undefined);
       }
     };
     const isLiveStale = () =>
@@ -699,12 +705,18 @@ export function KolamGlobalChatRail({
         runFallbackRefresh();
       }
     }, CHAT_LIVE_FALLBACK_INTERVAL_MS);
-    (timer as {unref?: () => void}).unref?.();
+    (timer as { unref?: () => void }).unref?.();
 
     return () => {
       clearInterval(timer);
     };
-  }, [data.refresh, detail.refresh, liveLastEventAt, liveStatus, selectedItemId]);
+  }, [
+    data.refresh,
+    detail.refresh,
+    liveLastEventAt,
+    liveStatus,
+    selectedItemId,
+  ]);
 
   React.useEffect(() => {
     setSelectedItemId(null);
@@ -714,7 +726,7 @@ export function KolamGlobalChatRail({
     setDaraThinkingLiveSignal(null);
     setLabelsManagerOpen(false);
     setCreateRoomOpen(false);
-    setCreateRoomDraft({category: 'meeting', description: '', name: ''});
+    setCreateRoomDraft({ category: 'meeting', description: '', name: '' });
     setCreateRoomBusy(false);
     setCreateRoomMessage(undefined);
     setCreateRoomError(undefined);
@@ -728,7 +740,7 @@ export function KolamGlobalChatRail({
 
   React.useEffect(() => {
     if (mode !== 'inbox') {
-      setAnalyticsState({data: null, loading: false});
+      setAnalyticsState({ data: null, loading: false });
       return;
     }
 
@@ -748,7 +760,7 @@ export function KolamGlobalChatRail({
     })
       .then(data => {
         if (active) {
-          setAnalyticsState({data, loading: false});
+          setAnalyticsState({ data, loading: false });
         }
       })
       .catch(error => {
@@ -771,7 +783,7 @@ export function KolamGlobalChatRail({
 
   React.useEffect(() => {
     if (mode !== 'inbox') {
-      setLabelsState({items: [], loading: false});
+      setLabelsState({ items: [], loading: false });
       return;
     }
 
@@ -784,7 +796,7 @@ export function KolamGlobalChatRail({
     getKolamChatLabels()
       .then(items => {
         if (active) {
-          setLabelsState({items, loading: false});
+          setLabelsState({ items, loading: false });
         }
       })
       .catch(error => {
@@ -807,7 +819,7 @@ export function KolamGlobalChatRail({
 
   React.useEffect(() => {
     if (mode !== 'inbox') {
-      setTemplatesState({items: [], loading: false});
+      setTemplatesState({ items: [], loading: false });
       return;
     }
 
@@ -820,7 +832,7 @@ export function KolamGlobalChatRail({
     getKolamChatTemplates()
       .then(items => {
         if (active) {
-          setTemplatesState({items, loading: false});
+          setTemplatesState({ items, loading: false });
         }
       })
       .catch(error => {
@@ -915,9 +927,13 @@ export function KolamGlobalChatRail({
     }
 
     if (mode === 'inbox') {
-      const access = getInboxComposerAccess(detail.conversation, currentUserId, {
-        csCanReply: inboxCanReply,
-      });
+      const access = getInboxComposerAccess(
+        detail.conversation,
+        currentUserId,
+        {
+          csCanReply: inboxCanReply,
+        },
+      );
       const blocked = Boolean(
         access.disabled || access.blockedReason || access.lockedBy,
       );
@@ -943,7 +959,7 @@ export function KolamGlobalChatRail({
     }
 
     const sendOptions = replyTarget
-      ? {replyToMessageId: replyTarget.id}
+      ? { replyToMessageId: replyTarget.id }
       : undefined;
 
     if (pendingAttachment) {
@@ -1000,7 +1016,7 @@ export function KolamGlobalChatRail({
       });
       await data.refresh();
       setCreateRoomOpen(false);
-      setCreateRoomDraft({category: 'meeting', description: '', name: ''});
+      setCreateRoomDraft({ category: 'meeting', description: '', name: '' });
       setCreateRoomMessage(undefined);
       setSelectedItemId(room._id);
     } catch (error) {
@@ -1019,7 +1035,7 @@ export function KolamGlobalChatRail({
 
     let cancelled = false;
     const search = directState.search.trim();
-    setDirectState(current => ({...current, loading: true}));
+    setDirectState(current => ({ ...current, loading: true }));
 
     const timer = setTimeout(() => {
       getKolamUserPickerRows(search)
@@ -1054,7 +1070,7 @@ export function KolamGlobalChatRail({
   }, [directState.open, directState.search, mode]);
 
   const handleOpenDirect = React.useCallback(
-    async (target: {dara?: boolean; user?: KolamUserPickerRow}) => {
+    async (target: { dara?: boolean; user?: KolamUserPickerRow }) => {
       if (mode !== 'team-chat' || directState.busyTarget) {
         return;
       }
@@ -1074,7 +1090,7 @@ export function KolamGlobalChatRail({
 
       try {
         const room = await openKolamTeamChatDirect(
-          target.dara ? {dara: true} : {userId},
+          target.dara ? { dara: true } : { userId },
         );
         await data.refresh();
         setSelectedItemId(room._id);
@@ -1111,7 +1127,7 @@ export function KolamGlobalChatRail({
     setDaraWindowError(undefined);
 
     try {
-      const room = await openKolamTeamChatDirect({dara: true});
+      const room = await openKolamTeamChatDirect({ dara: true });
       setDaraWindowRoomId(room._id);
       await data.refresh();
     } catch (error) {
@@ -1121,13 +1137,7 @@ export function KolamGlobalChatRail({
     } finally {
       setDaraWindowBusy(false);
     }
-  }, [
-    daraWindowBusy,
-    daraWindowDetail,
-    daraWindowRoomId,
-    data,
-    mode,
-  ]);
+  }, [daraWindowBusy, daraWindowDetail, daraWindowRoomId, data, mode]);
   const handleCloseDaraWindow = React.useCallback(() => {
     setDaraHeaderMenuOpen(false);
     setDaraComposerText('');
@@ -1158,7 +1168,9 @@ export function KolamGlobalChatRail({
   }, [daraWindowBusy, daraWindowDetail.loading, daraWindowDetail.sending]);
   const handlePickDaraEmoji = React.useCallback(
     (emoji: string) => {
-      const nextText = `${daraComposerText}${daraComposerText ? ' ' : ''}${emoji}`;
+      const nextText = `${daraComposerText}${
+        daraComposerText ? ' ' : ''
+      }${emoji}`;
       setDaraComposerText(nextText);
       setDaraEmojiPickerOpen(false);
       daraWindowDetail.signalTyping(true);
@@ -1188,7 +1200,12 @@ export function KolamGlobalChatRail({
     await daraWindowDetail.sendMessage(body);
     setDaraComposerText('');
     daraWindowDetail.signalTyping(false);
-  }, [daraComposerText, daraPendingAttachment, daraWindowBusy, daraWindowDetail]);
+  }, [
+    daraComposerText,
+    daraPendingAttachment,
+    daraWindowBusy,
+    daraWindowDetail,
+  ]);
 
   return (
     <>
@@ -1258,7 +1275,8 @@ export function KolamGlobalChatRail({
                     }}
                     size={28}
                     radius="md"
-                    variant="framed">
+                    variant="framed"
+                  >
                     <KolamTeamChatAddRoomIcon />
                   </KolamIconButton>
                 ) : null}
@@ -1282,7 +1300,8 @@ export function KolamGlobalChatRail({
               onPress={onClose}
               size={28}
               radius="full"
-              variant="ghost">
+              variant="ghost"
+            >
               <KolamStatusIndicatorIcon
                 color={V.colors.mutedFg}
                 kind="triangle-left"
@@ -1298,185 +1317,194 @@ export function KolamGlobalChatRail({
               labels={labelsState.items}
               onChange={setInboxFilter}
             />
-        ) : null}
+          ) : null}
 
-        {mode === 'team-chat' && canCreateRoom ? (
-          <KolamTeamChatCreateRoomPanel
-            busy={createRoomBusy}
-            draft={createRoomDraft}
-            errorMessage={createRoomError}
-            message={createRoomMessage}
-            onChange={setCreateRoomDraft}
-            onSubmit={handleCreateRoom}
-            onToggle={() => {
-              setCreateRoomError(undefined);
-              setCreateRoomMessage(undefined);
-              setCreateRoomOpen(false);
-            }}
-            open={createRoomOpen}
-          />
-        ) : null}
+          {mode === 'team-chat' && canCreateRoom ? (
+            <KolamTeamChatCreateRoomPanel
+              busy={createRoomBusy}
+              draft={createRoomDraft}
+              errorMessage={createRoomError}
+              message={createRoomMessage}
+              onChange={setCreateRoomDraft}
+              onSubmit={handleCreateRoom}
+              onToggle={() => {
+                setCreateRoomError(undefined);
+                setCreateRoomMessage(undefined);
+                setCreateRoomOpen(false);
+              }}
+              open={createRoomOpen}
+            />
+          ) : null}
 
-        {mode === 'team-chat' && !detailOpen ? (
-          <KolamTeamChatDirectPanel
-            currentUserId={currentUserId}
-            onChangeSearch={search =>
-              setDirectState(current => ({
-                ...current,
-                errorMessage: undefined,
-                search,
-              }))
-            }
-            onOpenDara={() => {
-              handleOpenDirect({dara: true}).catch(() => undefined);
-            }}
-            onOpenUser={user => {
-              handleOpenDirect({user}).catch(() => undefined);
-            }}
-            onToggle={() =>
-              setDirectState(current => ({
-                ...current,
-                errorMessage: undefined,
-                message: undefined,
-                open: !current.open,
-              }))
-            }
-            state={directState}
-          />
-        ) : null}
+          {mode === 'team-chat' && !detailOpen ? (
+            <KolamTeamChatDirectPanel
+              currentUserId={currentUserId}
+              onChangeSearch={search =>
+                setDirectState(current => ({
+                  ...current,
+                  errorMessage: undefined,
+                  search,
+                }))
+              }
+              onOpenDara={() => {
+                handleOpenDirect({ dara: true }).catch(() => undefined);
+              }}
+              onOpenUser={user => {
+                handleOpenDirect({ user }).catch(() => undefined);
+              }}
+              onToggle={() =>
+                setDirectState(current => ({
+                  ...current,
+                  errorMessage: undefined,
+                  message: undefined,
+                  open: !current.open,
+                }))
+              }
+              state={directState}
+            />
+          ) : null}
 
-        {selectedItem ? (
-          <KolamChatRailDetailPanel
-            composerText={composerText}
-            currentUserId={currentUserId}
-            daraAvatarUrl={daraAvatarState.imageUrl}
-            katakTerbangAvatarUrl={daraAvatarState.katakTerbangImageUrl}
-            rajaAnemonAvatarUrl={daraAvatarState.rajaAnemonImageUrl}
-            pangeranIsopodAvatarUrl={daraAvatarState.pangeranIsopodImageUrl}
-            canPurgeMessages={canPurgeTeamChatRoomMessages(authUser?.roleKey)}
-            daraThinkingLiveSignal={daraThinkingLiveSignal}
-            deleteRoomBusy={deleteRoomState.busy}
-            detail={detail}
-            inboxCanReply={inboxCanReply}
-            labels={labelsState.items}
-            mode={mode}
-            onComposerTextChange={handleComposerTextChange}
-            onPendingAttachmentClear={() => setPendingAttachment(null)}
-            onPendingAttachmentPick={handleChooseAttachment}
-            onReplyCancel={() => setReplyTarget(null)}
-            onReplyToMessage={setReplyTarget}
-            onBack={handleBackToList}
-            onDeleteTeamRoomRequest={() =>
-              handleRequestDeleteTeamRoom(selectedItem)
-            }
-            onSend={handleSend}
-            pendingAttachment={pendingAttachment}
-            replyTarget={replyTarget}
-            selectedItem={selectedItem}
-            templatesState={templatesState}
-          />
-        ) : null}
+          {selectedItem ? (
+            <KolamChatRailDetailPanel
+              composerText={composerText}
+              currentUserId={currentUserId}
+              daraAvatarUrl={daraAvatarState.imageUrl}
+              katakTerbangAvatarUrl={daraAvatarState.katakTerbangImageUrl}
+              rajaAnemonAvatarUrl={daraAvatarState.rajaAnemonImageUrl}
+              pangeranIsopodAvatarUrl={daraAvatarState.pangeranIsopodImageUrl}
+              canPurgeMessages={canPurgeTeamChatRoomMessages(authUser?.roleKey)}
+              daraThinkingLiveSignal={daraThinkingLiveSignal}
+              deleteRoomBusy={deleteRoomState.busy}
+              detail={detail}
+              inboxCanReply={inboxCanReply}
+              labels={labelsState.items}
+              mode={mode}
+              onComposerTextChange={handleComposerTextChange}
+              onPendingAttachmentClear={() => setPendingAttachment(null)}
+              onPendingAttachmentPick={handleChooseAttachment}
+              onReplyCancel={() => setReplyTarget(null)}
+              onReplyToMessage={setReplyTarget}
+              onBack={handleBackToList}
+              onDeleteTeamRoomRequest={() =>
+                handleRequestDeleteTeamRoom(selectedItem)
+              }
+              onSend={handleSend}
+              pendingAttachment={pendingAttachment}
+              replyTarget={replyTarget}
+              selectedItem={selectedItem}
+              templatesState={templatesState}
+            />
+          ) : null}
 
-        {data.errorMessage ? (
-          <KolamEmptyState
-            compact
-            message={data.errorMessage}
-            title="Data chat belum bisa dibaca"
-          />
-        ) : null}
+          {data.errorMessage ? (
+            <KolamEmptyState
+              compact
+              message={data.errorMessage}
+              title="Data chat belum bisa dibaca"
+            />
+          ) : null}
 
-        {!data.loading && !data.errorMessage && items.length === 0 ? (
-          <KolamEmptyState
-            compact
-            message={content.emptyMessage}
-            title={content.emptyTitle}
-          />
-        ) : null}
+          {!data.loading && !data.errorMessage && items.length === 0 ? (
+            <KolamEmptyState
+              compact
+              message={content.emptyMessage}
+              title={content.emptyTitle}
+            />
+          ) : null}
 
-        {!data.errorMessage && items.length > 0 && !detailOpen ? (
-          <ScrollView
-            style={styles.listScroll}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator>
-            <KolamMappedList
-              items={items}
-              getKey={item => item.id}
-              renderItem={item => (
-                <KolamPressable
-                  accessibilityLabel={`${content.selectLabel} ${item.title}`}
-                  accessibilityState={{selected: item.id === selectedItemId}}
-                  onPress={() => setSelectedItemId(item.id)}
-                  style={[
-                    styles.row,
-                    mode === 'inbox' &&
-                      item.unreadCount > 0 &&
-                      styles.rowUnread,
-                    item.id === selectedItemId && styles.rowSelected,
-                  ]}>
-                  {mode === 'inbox' && item.platform ? (
-                    <View
-                      accessibilityLabel={`Logo platform ${item.metaLabel}`}
-                      style={styles.rowPlatformLogoShell}>
-                      <KolamPlatformFilterLogo platform={item.platform} />
-                    </View>
-                  ) : null}
-                  <View style={styles.rowCopy}>
-                    <View style={styles.rowTopLine}>
-                      <Text numberOfLines={1} style={styles.rowTitle}>
-                        {item.title}
-                      </Text>
-                      {item.unreadCount > 0 ? (
-                        <KolamBadge
-                          horizontalPadding={6}
-                          intent="primary"
-                          label={
-                            item.unreadCount > 99 ? '99+' : item.unreadCount
-                          }
-                          style={styles.rowUnreadBadge}
-                        />
-                      ) : null}
-                      <Text style={styles.rowTime}>{item.timeLabel}</Text>
-                    </View>
-                    <Text numberOfLines={2} style={styles.rowPreview}>
-                      {item.preview}
-                    </Text>
-                    <View style={styles.rowMetaLine}>
-                      {mode === 'team-chat' ? (
-                        <KolamBadge
-                          intent="muted"
-                          label={item.metaLabel}
-                          shape="square"
-                        />
-                      ) : null}
-                      {item.secondaryMetaLabel ? (
-                        <Text numberOfLines={1} style={styles.rowSubMeta}>
-                          {item.secondaryMetaLabel}
-                        </Text>
-                      ) : null}
-                    </View>
-                    {mode === 'inbox' && item.labels?.length ? (
-                      <View style={styles.rowLabelLine}>
-                        <KolamMappedList
-                          items={item.labels}
-                          getKey={label => label._id}
-                          renderItem={label => (
-                            <KolamChatLabelPill label={label} />
-                          )}
-                        />
+          {!data.errorMessage && items.length > 0 && !detailOpen ? (
+            <ScrollView
+              style={styles.listScroll}
+              contentContainerStyle={styles.list}
+              showsVerticalScrollIndicator
+            >
+              <KolamMappedList
+                items={items}
+                getKey={item => item.id}
+                renderItem={item => (
+                  <KolamPressable
+                    accessibilityLabel={`${content.selectLabel} ${item.title}`}
+                    accessibilityState={{
+                      selected: item.id === selectedItemId,
+                    }}
+                    onPress={() => setSelectedItemId(item.id)}
+                    style={[
+                      styles.row,
+                      mode === 'inbox' &&
+                        item.unreadCount > 0 &&
+                        styles.rowUnread,
+                      item.id === selectedItemId && styles.rowSelected,
+                    ]}
+                  >
+                    {mode === 'inbox' && item.platform ? (
+                      <View
+                        accessibilityLabel={`Logo platform ${item.metaLabel}`}
+                        style={styles.rowPlatformLogoShell}
+                      >
+                        <KolamPlatformFilterLogo platform={item.platform} />
                       </View>
                     ) : null}
-                  </View>
-                  {mode === 'inbox' && item.handledByDara ? (
-                    <KolamInboxDaraAvatar imageUrl={daraAvatarState.imageUrl} />
-                  ) : mode === 'inbox' && item.assignedStaff ? (
-                    <KolamInboxAssignedStaffAvatar staff={item.assignedStaff} />
-                  ) : null}
-                </KolamPressable>
-              )}
-            />
-          </ScrollView>
-        ) : null}
-      </View>
+                    <View style={styles.rowCopy}>
+                      <View style={styles.rowTopLine}>
+                        <Text numberOfLines={1} style={styles.rowTitle}>
+                          {item.title}
+                        </Text>
+                        {item.unreadCount > 0 ? (
+                          <KolamBadge
+                            horizontalPadding={6}
+                            intent="primary"
+                            label={
+                              item.unreadCount > 99 ? '99+' : item.unreadCount
+                            }
+                            style={styles.rowUnreadBadge}
+                          />
+                        ) : null}
+                        <Text style={styles.rowTime}>{item.timeLabel}</Text>
+                      </View>
+                      <Text numberOfLines={2} style={styles.rowPreview}>
+                        {item.preview}
+                      </Text>
+                      <View style={styles.rowMetaLine}>
+                        {mode === 'team-chat' ? (
+                          <KolamBadge
+                            intent="muted"
+                            label={item.metaLabel}
+                            shape="square"
+                          />
+                        ) : null}
+                        {item.secondaryMetaLabel ? (
+                          <Text numberOfLines={1} style={styles.rowSubMeta}>
+                            {item.secondaryMetaLabel}
+                          </Text>
+                        ) : null}
+                      </View>
+                      {mode === 'inbox' && item.labels?.length ? (
+                        <View style={styles.rowLabelLine}>
+                          <KolamMappedList
+                            items={item.labels}
+                            getKey={label => label._id}
+                            renderItem={label => (
+                              <KolamChatLabelPill label={label} />
+                            )}
+                          />
+                        </View>
+                      ) : null}
+                    </View>
+                    {mode === 'inbox' && item.handledByDara ? (
+                      <KolamInboxDaraAvatar
+                        imageUrl={daraAvatarState.imageUrl}
+                      />
+                    ) : mode === 'inbox' && item.assignedStaff ? (
+                      <KolamInboxAssignedStaffAvatar
+                        staff={item.assignedStaff}
+                      />
+                    ) : null}
+                  </KolamPressable>
+                )}
+              />
+            </ScrollView>
+          ) : null}
+        </View>
       </View>
       {mode === 'team-chat' && daraHeaderMenuOpen ? (
         <KolamTeamChatDaraWindow
@@ -1571,7 +1599,7 @@ function KolamInboxFilterPanel({
   );
   const labelOptions = React.useMemo(
     () => [
-      {label: 'Semua label', value: 'all'},
+      { label: 'Semua label', value: 'all' },
       ...labels.map(label => ({
         label: label.name,
         value: label._id,
@@ -1587,7 +1615,7 @@ function KolamInboxFilterPanel({
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if (searchDraft !== filter.search) {
-        onChange({...filter, search: searchDraft});
+        onChange({ ...filter, search: searchDraft });
       }
     }, 250);
 
@@ -1616,7 +1644,7 @@ function KolamInboxFilterPanel({
           accessibilityLabel="Filter status inbox"
           label="Status"
           menuPlacement="inline"
-          onChange={status => onChange({...filter, status})}
+          onChange={status => onChange({ ...filter, status })}
           options={statusOptions}
           style={styles.filterDropdown}
           triggerStyle={styles.filterDropdownTrigger}
@@ -1627,7 +1655,7 @@ function KolamInboxFilterPanel({
           accessibilityLabel="Filter tugas inbox"
           label="Tugas"
           menuPlacement="inline"
-          onChange={assignment => onChange({...filter, assignment})}
+          onChange={assignment => onChange({ ...filter, assignment })}
           options={assignmentOptions}
           style={styles.filterDropdown}
           triggerStyle={styles.filterDropdownTrigger}
@@ -1638,7 +1666,7 @@ function KolamInboxFilterPanel({
           accessibilityLabel="Filter label inbox"
           label="Label"
           menuPlacement="inline"
-          onChange={labelId => onChange({...filter, labelId})}
+          onChange={labelId => onChange({ ...filter, labelId })}
           options={labelOptions}
           searchable={labels.length > 6}
           style={styles.filterDropdown}
@@ -1652,14 +1680,15 @@ function KolamInboxFilterPanel({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterChipRow}>
+          contentContainerStyle={styles.filterChipRow}
+        >
           <KolamMappedList
             items={INBOX_PLATFORM_FILTERS}
             getKey={platform => platform}
             renderItem={platform => (
               <KolamPlatformFilterChip
                 active={filter.platform === platform}
-                onPress={() => onChange({...filter, platform})}
+                onPress={() => onChange({ ...filter, platform })}
                 platform={platform}
               />
             )}
@@ -1703,12 +1732,10 @@ function KolamChatHealthMenu({
     <View style={styles.chatHealthMenuHost}>
       <KolamPressable
         accessibilityLabel={`Analisa koneksi chat. ${summaryLabel}`}
-        accessibilityState={{expanded: open}}
+        accessibilityState={{ expanded: open }}
         onPress={onToggle}
-        style={[
-          styles.chatHealthButton,
-          open && styles.chatHealthButtonActive,
-        ]}>
+        style={[styles.chatHealthButton, open && styles.chatHealthButtonActive]}
+      >
         <KolamPlatformHealthGlow state={aggregateState} />
         <View style={styles.chatHealthRadarIcon}>
           <View style={styles.chatHealthRadarDotPrimary} />
@@ -1737,9 +1764,7 @@ function KolamChatHealthMenu({
           <KolamMappedList
             items={healthState.platforms}
             getKey={row => String(row.platform)}
-            renderItem={row => (
-              <KolamChatHealthPlatformRow row={row} />
-            )}
+            renderItem={row => <KolamChatHealthPlatformRow row={row} />}
           />
 
           {!healthState.platforms.length ? (
@@ -1776,7 +1801,8 @@ function KolamChatHealthPlatformRow({
             style={[
               styles.chatHealthStatusPill,
               getChatHealthStatusPillStyle(row.state),
-            ]}>
+            ]}
+          >
             {formatChatHealthState(row.state)}
           </Text>
         </View>
@@ -1807,23 +1833,28 @@ function KolamChatAnalyticsMenu({
   const summaryLabel = state.loading
     ? 'Memuat analisa'
     : state.errorMessage
-      ? 'Analisa belum terbaca'
-      : `${formatMetricNumber(totalChats)} chat, rating ${formatRating(avgRating)}`;
+    ? 'Analisa belum terbaca'
+    : `${formatMetricNumber(totalChats)} chat, rating ${formatRating(
+        avgRating,
+      )}`;
 
   return (
     <View style={styles.chatHeaderMenuHost}>
       <KolamPressable
         accessibilityLabel={`Analisa performa chat. ${summaryLabel}`}
-        accessibilityState={{expanded: open}}
+        accessibilityState={{ expanded: open }}
         onPress={onToggle}
         style={[
           styles.chatAnalyticsButton,
           open && styles.chatHealthButtonActive,
-        ]}>
+        ]}
+      >
         <View style={styles.chatAnalyticsIcon}>
           <View style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarLow]} />
           <View style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarMid]} />
-          <View style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarHigh]} />
+          <View
+            style={[styles.chatAnalyticsBar, styles.chatAnalyticsBarHigh]}
+          />
         </View>
       </KolamPressable>
 
@@ -1878,12 +1909,13 @@ function KolamPlatformFilterChip({
   return (
     <KolamPressable
       accessibilityLabel={`Filter ${label}`}
-      accessibilityState={{selected: active}}
+      accessibilityState={{ selected: active }}
       onPress={onPress}
       style={[
         styles.platformFilterChip,
         active && styles.platformFilterChipActive,
-      ]}>
+      ]}
+    >
       <KolamPlatformFilterLogo platform={platform} />
     </KolamPressable>
   );
@@ -1911,10 +1943,10 @@ function KolamPlatformFilterLogo({
           platform === 'tokopedia'
             ? TOKOPEDIA_LOGO
             : platform === 'shopee'
-              ? SHOPEE_LOGO
-              : platform === 'tiktok'
-                ? TIKTOK_LOGO
-                : WHATSAPP_LOGO
+            ? SHOPEE_LOGO
+            : platform === 'tiktok'
+            ? TIKTOK_LOGO
+            : WHATSAPP_LOGO
         }
         style={[
           styles.platformLogoImage,
@@ -1927,7 +1959,8 @@ function KolamPlatformFilterLogo({
   if (platform === 'store') {
     return (
       <View
-        style={[styles.storeLogoBag, offline && styles.storeLogoBagOffline]}>
+        style={[styles.storeLogoBag, offline && styles.storeLogoBagOffline]}
+      >
         <View
           style={[
             styles.storeLogoHandle,
@@ -1941,12 +1974,10 @@ function KolamPlatformFilterLogo({
   if (platform === 'instagram') {
     return (
       <View
-        style={[styles.instagramLogo, offline && styles.instagramLogoOffline]}>
+        style={[styles.instagramLogo, offline && styles.instagramLogoOffline]}
+      >
         <View
-          style={[
-            styles.instagramLens,
-            offline && styles.instagramLensOffline,
-          ]}
+          style={[styles.instagramLens, offline && styles.instagramLensOffline]}
         />
         <View
           style={[
@@ -1986,7 +2017,7 @@ interface KolamPlatformGlowState {
   tone: KolamPlatformGlowTone;
 }
 
-function KolamPlatformHealthGlow({state}: {state: KolamPlatformGlowState}) {
+function KolamPlatformHealthGlow({ state }: { state: KolamPlatformGlowState }) {
   const pulse = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -2057,7 +2088,7 @@ function KolamPlatformHealthGlow({state}: {state: KolamPlatformGlowState}) {
           {
             backgroundColor: state.color,
             opacity: haloOpacity,
-            transform: [{scale: haloScale}],
+            transform: [{ scale: haloScale }],
           },
         ]}
       />
@@ -2068,7 +2099,7 @@ function KolamPlatformHealthGlow({state}: {state: KolamPlatformGlowState}) {
           {
             borderColor: state.color,
             opacity,
-            transform: [{scale}],
+            transform: [{ scale }],
           },
         ]}
       />
@@ -2257,7 +2288,10 @@ function KolamChatRailAnalyticsPanel({
         <Text style={styles.errorText}>{state.errorMessage}</Text>
       ) : (
         <View style={styles.analyticsGrid}>
-          <KolamChatRailMetric label="Total" value={formatMetricNumber(totalChats)} />
+          <KolamChatRailMetric
+            label="Total"
+            value={formatMetricNumber(totalChats)}
+          />
           <KolamChatRailMetric label="Rating" value={formatRating(avgRating)} />
           <KolamChatRailMetric
             label="Delay"
@@ -2273,7 +2307,13 @@ function KolamChatRailAnalyticsPanel({
   );
 }
 
-function KolamChatRailMetric({label, value}: {label: string; value: string}) {
+function KolamChatRailMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
     <View style={styles.analyticsMetric}>
       <Text style={styles.analyticsMetricLabel}>{label}</Text>
@@ -2295,7 +2335,8 @@ function KolamInboxAssignedStaffAvatar({
     <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label={label}>
       <View
         accessibilityLabel={`Staff menangani ${label}`}
-        style={styles.rowStaffAvatar}>
+        style={styles.rowStaffAvatar}
+      >
         <KolamProfileAvatarContent
           imageStyle={styles.rowStaffAvatarImage}
           imageUrl={photoUri}
@@ -2307,12 +2348,13 @@ function KolamInboxAssignedStaffAvatar({
   );
 }
 
-function KolamInboxDaraAvatar({imageUrl}: {imageUrl: string | null}) {
+function KolamInboxDaraAvatar({ imageUrl }: { imageUrl: string | null }) {
   return (
     <KolamHoverTooltip containerStyle={styles.rowStaffTooltip} label="DARA">
       <View
         accessibilityLabel="DARA menangani chat"
-        style={[styles.rowStaffAvatar, styles.rowDaraAvatar]}>
+        style={[styles.rowStaffAvatar, styles.rowDaraAvatar]}
+      >
         <KolamProfileAvatarContent
           imageStyle={styles.rowStaffAvatarImage}
           imageUrl={imageUrl}
@@ -2339,13 +2381,14 @@ function KolamTeamChatDaraHeaderMenu({
     <View style={styles.chatHeaderMenuHost}>
       <KolamPressable
         accessibilityLabel="Buka jendela DARA team chat"
-        accessibilityState={{busy, expanded: open}}
+        accessibilityState={{ busy, expanded: open }}
         onPress={onOpenWindow}
         style={[
           styles.teamDaraHeaderButton,
           open && styles.chatHealthButtonActive,
           busy && styles.composerIconButtonDisabled,
-        ]}>
+        ]}
+      >
         <KolamProfileAvatarContent
           imageStyle={styles.teamDaraHeaderAvatarImage}
           imageUrl={imageUrl}
@@ -2431,7 +2474,7 @@ function KolamTeamChatDaraWindow({
   onSend: () => Promise<void>;
   pendingAttachment: NativeImagePickerResult | null;
 }) {
-  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const panelSize = React.useMemo(
     () => getDaraWindowPanelSize(windowWidth, windowHeight),
     [windowHeight, windowWidth],
@@ -2468,7 +2511,9 @@ function KolamTeamChatDaraWindow({
       const nextText =
         composerText.match(/@([a-zA-Z0-9_.-]{0,32})$/) !== null
           ? composerText.replace(/@([a-zA-Z0-9_.-]{0,32})$/, tag)
-          : `${composerText}${composerText.endsWith(' ') || !composerText ? '' : ' '}${tag}`;
+          : `${composerText}${
+              composerText.endsWith(' ') || !composerText ? '' : ' '
+            }${tag}`;
 
       onComposerTextChange(nextText);
     },
@@ -2500,7 +2545,8 @@ function KolamTeamChatDaraWindow({
           height: panelSize.height,
           width: panelSize.width,
         },
-      ]}>
+      ]}
+    >
       <View style={styles.teamDaraWindowHeader}>
         <View style={styles.teamDaraWindowDragHandle}>
           <View style={styles.teamDaraHeaderLargeAvatar}>
@@ -2519,7 +2565,8 @@ function KolamTeamChatDaraWindow({
         <KolamPressable
           accessibilityLabel="Tutup jendela DARA team chat"
           onPress={onClose}
-          style={styles.teamDaraWindowCloseButton}>
+          style={styles.teamDaraWindowCloseButton}
+        >
           <Text style={styles.teamDaraWindowCloseText}>Tutup</Text>
         </KolamPressable>
       </View>
@@ -2543,7 +2590,8 @@ function KolamTeamChatDaraWindow({
               accessibilityLabel="Hapus lampiran chat"
               disabled={composerDisabled}
               onPress={onPendingAttachmentClear}
-              style={styles.pendingAttachmentRemove}>
+              style={styles.pendingAttachmentRemove}
+            >
               <Text style={styles.pendingAttachmentRemoveText}>x</Text>
             </KolamPressable>
           </View>
@@ -2569,7 +2617,8 @@ function KolamTeamChatDaraWindow({
             styles.composerShell,
             styles.teamDaraComposerShell,
             composerDisabled && styles.composerShellBlocked,
-          ]}>
+          ]}
+        >
           <TextInput
             accessibilityLabel="Tulis pesan DARA team chat"
             editable={!composerDisabled}
@@ -2594,7 +2643,8 @@ function KolamTeamChatDaraWindow({
                 style={[
                   styles.composerIconButton,
                   composerDisabled && styles.composerIconButtonDisabled,
-                ]}>
+                ]}
+              >
                 <Text style={styles.composerIconButtonText}>+</Text>
               </KolamPressable>
               <KolamPressable
@@ -2605,7 +2655,8 @@ function KolamTeamChatDaraWindow({
                   styles.composerIconButton,
                   emojiPickerOpen && styles.composerIconButtonActive,
                   composerDisabled && styles.composerIconButtonDisabled,
-                ]}>
+                ]}
+              >
                 <Text style={styles.composerIconButtonText}>:)</Text>
               </KolamPressable>
             </View>
@@ -2629,16 +2680,16 @@ function KolamTeamChatDaraWindowMessages({
 }) {
   const messages = detail.messages;
   const displayedError = errorMessage || detail.errorMessage;
-  const messageScrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(
-    null,
-  );
+  const messageScrollRef = React.useRef<React.ElementRef<
+    typeof ScrollView
+  > | null>(null);
   const messageScrollKey = React.useMemo(
     () => messages.map(message => message.id).join('|'),
     [messages],
   );
 
   React.useEffect(() => {
-    messageScrollRef.current?.scrollToEnd({animated: false});
+    messageScrollRef.current?.scrollToEnd({ animated: false });
   }, [messageScrollKey]);
 
   if (loading || detail.loading) {
@@ -2677,11 +2728,12 @@ function KolamTeamChatDaraWindowMessages({
       accessibilityLabel="Daftar pesan DARA team chat"
       contentContainerStyle={styles.teamDaraWindowMessageList}
       onContentSizeChange={() => {
-        messageScrollRef.current?.scrollToEnd({animated: false});
+        messageScrollRef.current?.scrollToEnd({ animated: false });
       }}
       ref={messageScrollRef}
       style={styles.teamDaraWindowMessageScroll}
-      showsVerticalScrollIndicator>
+      showsVerticalScrollIndicator
+    >
       <KolamMappedList
         items={messages}
         getKey={message => message.id}
@@ -2692,7 +2744,8 @@ function KolamTeamChatDaraWindowMessages({
               message.mine
                 ? styles.teamDaraWindowMessageMine
                 : styles.teamDaraWindowMessageOther,
-            ]}>
+            ]}
+          >
             <View style={styles.teamMessageAuthorRow}>
               <View style={styles.teamMessageAvatar}>
                 <KolamProfileAvatarContent
@@ -2734,12 +2787,13 @@ function KolamChatSettingsMenu({
     <View style={styles.chatHeaderMenuHost}>
       <KolamPressable
         accessibilityLabel="Pengaturan chat"
-        accessibilityState={{expanded: open}}
+        accessibilityState={{ expanded: open }}
         onPress={onToggle}
         style={[
           styles.chatSettingsButton,
           open && styles.chatHealthButtonActive,
-        ]}>
+        ]}
+      >
         <View style={styles.chatSettingsIcon}>
           <View style={styles.chatSettingsIconCore} />
           <View
@@ -2799,7 +2853,8 @@ function KolamChatSettingsMenuItem({
     <KolamPressable
       accessibilityLabel={`Buka ${label}`}
       onPress={onPress}
-      style={styles.chatSettingsMenuItem}>
+      style={styles.chatSettingsMenuItem}
+    >
       <View style={styles.chatSettingsMenuBullet} />
       <Text style={styles.chatSettingsMenuLabel}>{label}</Text>
     </KolamPressable>
@@ -2826,7 +2881,7 @@ function KolamChatLabelsManagerDialog({
   onClose: () => void;
   onLabelsChange: (labels: KolamChatLabel[]) => void;
 }) {
-  const [draft, setDraft] = React.useState({color: '#3b82f6', name: ''});
+  const [draft, setDraft] = React.useState({ color: '#3b82f6', name: '' });
   const [editing, setEditing] = React.useState<KolamChatLabel | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
@@ -2836,7 +2891,7 @@ function KolamChatLabelsManagerDialog({
 
   const resetForm = React.useCallback(() => {
     setEditing(null);
-    setDraft({color: '#3b82f6', name: ''});
+    setDraft({ color: '#3b82f6', name: '' });
     setErrorMessage(undefined);
   }, []);
 
@@ -2871,9 +2926,9 @@ function KolamChatLabelsManagerDialog({
     setErrorMessage(undefined);
     try {
       if (editing) {
-        await updateKolamChatLabel(editing._id, {color, name});
+        await updateKolamChatLabel(editing._id, { color, name });
       } else {
-        await createKolamChatLabel({color, name});
+        await createKolamChatLabel({ color, name });
       }
       await refreshLabels();
       resetForm();
@@ -2915,18 +2970,18 @@ function KolamChatLabelsManagerDialog({
         <KolamModalBackdrop onPress={onClose} />
         <View
           accessibilityLabel="Popup label percakapan"
-          style={styles.chatLabelsDialog}>
+          style={styles.chatLabelsDialog}
+        >
           <View style={styles.chatLabelsDialogHeader}>
             <View>
-              <Text style={styles.chatLabelsDialogTitle}>
-                Label percakapan
-              </Text>
+              <Text style={styles.chatLabelsDialogTitle}>Label percakapan</Text>
             </View>
             <KolamPressable
               accessibilityLabel="Tutup popup label percakapan"
               disabled={busy}
               onPress={onClose}
-              style={styles.chatLabelsCloseButton}>
+              style={styles.chatLabelsCloseButton}
+            >
               <Text style={styles.chatLabelsCloseText}>Tutup</Text>
             </KolamPressable>
           </View>
@@ -2946,7 +3001,8 @@ function KolamChatLabelsManagerDialog({
                   style={[
                     styles.chatLabelsSmallButton,
                     busy && styles.attachButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.chatLabelsSmallButtonText}>
                     New Label
                   </Text>
@@ -2959,7 +3015,8 @@ function KolamChatLabelsManagerDialog({
               ) : (
                 <ScrollView
                   style={styles.chatLabelsListScroll}
-                  showsVerticalScrollIndicator>
+                  showsVerticalScrollIndicator
+                >
                   <KolamMappedList
                     items={labels}
                     getKey={label => label._id}
@@ -2978,7 +3035,10 @@ function KolamChatLabelsManagerDialog({
                                 },
                               ]}
                             />
-                            <Text numberOfLines={1} style={styles.chatLabelsName}>
+                            <Text
+                              numberOfLines={1}
+                              style={styles.chatLabelsName}
+                            >
                               {label.name}
                             </Text>
                           </View>
@@ -2990,7 +3050,8 @@ function KolamChatLabelsManagerDialog({
                               style={[
                                 styles.chatLabelsIconButton,
                                 busy && styles.attachButtonDisabled,
-                              ]}>
+                              ]}
+                            >
                               <Text style={styles.chatLabelsIconButtonText}>
                                 Edit
                               </Text>
@@ -3004,12 +3065,14 @@ function KolamChatLabelsManagerDialog({
                                   styles.chatLabelsIconButton,
                                   styles.chatLabelsDeleteButton,
                                   busy && styles.attachButtonDisabled,
-                                ]}>
+                                ]}
+                              >
                                 <Text
                                   style={[
                                     styles.chatLabelsIconButtonText,
                                     styles.chatLabelsDeleteText,
-                                  ]}>
+                                  ]}
+                                >
                                   Hapus
                                 </Text>
                               </KolamPressable>
@@ -3047,7 +3110,7 @@ function KolamChatLabelsManagerDialog({
                   accessibilityLabel="Preview warna label"
                   style={[
                     styles.chatLabelsColorPreview,
-                    {backgroundColor: normalizeChatLabelColor(draft.color)},
+                    { backgroundColor: normalizeChatLabelColor(draft.color) },
                   ]}
                 />
                 <TextInput
@@ -3080,7 +3143,7 @@ function KolamChatLabelsManagerDialog({
                     }
                     style={[
                       styles.chatLabelsSwatch,
-                      {backgroundColor: color},
+                      { backgroundColor: color },
                       normalizeChatLabelColor(draft.color) === color &&
                         styles.chatLabelsSwatchActive,
                     ]}
@@ -3096,7 +3159,8 @@ function KolamChatLabelsManagerDialog({
                     style={[
                       styles.chatLabelsActionButton,
                       busy && styles.attachButtonDisabled,
-                    ]}>
+                    ]}
+                  >
                     <Text style={styles.chatLabelsActionText}>Cancel</Text>
                   </KolamPressable>
                 ) : null}
@@ -3108,7 +3172,8 @@ function KolamChatLabelsManagerDialog({
                     styles.chatLabelsActionButton,
                     styles.chatLabelsActionButtonPrimary,
                     (busy || !draft.name.trim()) && styles.attachButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.chatLabelsActionPrimaryText}>
                     {busy ? 'Saving...' : 'Save'}
                   </Text>
@@ -3133,7 +3198,8 @@ function KolamChatLabelsManagerDialog({
                   style={[
                     styles.chatLabelsActionButton,
                     busy && styles.attachButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.chatLabelsActionText}>Batal</Text>
                 </KolamPressable>
                 <KolamPressable
@@ -3144,7 +3210,8 @@ function KolamChatLabelsManagerDialog({
                     styles.chatLabelsActionButton,
                     styles.chatLabelsActionButtonDanger,
                     busy && styles.attachButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.chatLabelsActionPrimaryText}>
                     {busy ? 'Menghapus...' : 'Hapus'}
                   </Text>
@@ -3196,7 +3263,8 @@ function KolamTeamChatCreateRoomPanel({
             accessibilityLabel="Tutup popup room baru"
             disabled={busy}
             onPress={onToggle}
-            style={styles.chatLabelsCloseButton}>
+            style={styles.chatLabelsCloseButton}
+          >
             <Text style={styles.chatLabelsCloseText}>Batal</Text>
           </KolamPressable>
           <KolamPressable
@@ -3207,13 +3275,15 @@ function KolamTeamChatCreateRoomPanel({
               styles.createRoomSubmit,
               styles.createRoomFooterSubmit,
               (busy || !draft.name.trim()) && styles.attachButtonDisabled,
-            ]}>
+            ]}
+          >
             <Text style={styles.createRoomSubmitText}>
               {busy ? 'Membuat...' : 'Simpan'}
             </Text>
           </KolamPressable>
         </>
-      }>
+      }
+    >
       {message ? <Text style={styles.createRoomMessage}>{message}</Text> : null}
       {errorMessage ? (
         <Text style={styles.createRoomError}>{errorMessage}</Text>
@@ -3223,7 +3293,7 @@ function KolamTeamChatCreateRoomPanel({
         <TextInput
           accessibilityLabel="Nama room team chat"
           editable={!busy}
-          onChangeText={name => onChange(current => ({...current, name}))}
+          onChangeText={name => onChange(current => ({ ...current, name }))}
           placeholder="Nama"
           placeholderTextColor={V.colors.mutedFg}
           style={styles.createRoomInput}
@@ -3234,21 +3304,23 @@ function KolamTeamChatCreateRoomPanel({
             <KolamPressable
               key={category}
               accessibilityLabel={`Pilih kategori room ${category}`}
-              accessibilityState={{selected: draft.category === category}}
+              accessibilityState={{ selected: draft.category === category }}
               disabled={busy}
-              onPress={() => onChange(current => ({...current, category}))}
+              onPress={() => onChange(current => ({ ...current, category }))}
               style={[
                 styles.createRoomCategoryButton,
                 draft.category === category &&
                   styles.createRoomCategoryButtonActive,
                 busy && styles.attachButtonDisabled,
-              ]}>
+              ]}
+            >
               <Text
                 style={[
                   styles.createRoomCategoryText,
                   draft.category === category &&
                     styles.createRoomCategoryTextActive,
-                ]}>
+                ]}
+              >
                 {category === 'meeting' ? 'Meeting' : 'Project'}
               </Text>
             </KolamPressable>
@@ -3259,7 +3331,7 @@ function KolamTeamChatCreateRoomPanel({
           editable={!busy}
           multiline
           onChangeText={description =>
-            onChange(current => ({...current, description}))
+            onChange(current => ({ ...current, description }))
           }
           placeholder="Deskripsi"
           placeholderTextColor={V.colors.mutedFg}
@@ -3302,7 +3374,8 @@ function KolamTeamChatDirectPanel({
           style={[
             styles.createRoomToggle,
             state.busyTarget && styles.attachButtonDisabled,
-          ]}>
+          ]}
+        >
           <Text style={styles.createRoomToggleText}>
             {state.open ? 'Tutup' : 'Direct'}
           </Text>
@@ -3325,7 +3398,8 @@ function KolamTeamChatDirectPanel({
             style={[
               styles.directPrimaryButton,
               state.busyTarget && styles.attachButtonDisabled,
-            ]}>
+            ]}
+          >
             <Text style={styles.createRoomSubmitText}>
               {state.busyTarget === 'dara' ? 'Membuka DARA...' : 'Chat DARA'}
             </Text>
@@ -3358,7 +3432,8 @@ function KolamTeamChatDirectPanel({
                 style={[
                   styles.directUserRow,
                   state.busyTarget && styles.attachButtonDisabled,
-                ]}>
+                ]}
+              >
                 <View style={styles.directUserCopy}>
                   <Text style={styles.directUserName}>{label}</Text>
                   {user.username ? (
@@ -3382,7 +3457,8 @@ function KolamTeamChatTrashIcon() {
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={styles.teamRoomTrashIcon}>
+      style={styles.teamRoomTrashIcon}
+    >
       <View style={styles.teamRoomTrashHandle} />
       <View style={styles.teamRoomTrashLid} />
       <View style={styles.teamRoomTrashCan}>
@@ -3410,7 +3486,8 @@ function KolamTeamChatAddRoomIcon() {
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={styles.teamChatAddRoomIcon}>
+      style={styles.teamChatAddRoomIcon}
+    >
       <View style={styles.teamChatAddRoomIconHorizontal} />
       <View style={styles.teamChatAddRoomIconVertical} />
     </View>
@@ -3481,8 +3558,9 @@ function KolamChatRailDetailPanel({
   const [editingMessageId, setEditingMessageId] = React.useState<string | null>(
     null,
   );
-  const [openTeamActionMessageId, setOpenTeamActionMessageId] =
-    React.useState<string | null>(null);
+  const [openTeamActionMessageId, setOpenTeamActionMessageId] = React.useState<
+    string | null
+  >(null);
   const [editingDraft, setEditingDraft] = React.useState('');
   const [messageSearchDraft, setMessageSearchDraft] = React.useState('');
   const [purgeConfirmVisible, setPurgeConfirmVisible] = React.useState(false);
@@ -3499,9 +3577,9 @@ function KolamChatRailDetailPanel({
       items: [],
       loading: false,
     });
-  const messageScrollRef = React.useRef<React.ElementRef<typeof ScrollView> | null>(
-    null,
-  );
+  const messageScrollRef = React.useRef<React.ElementRef<
+    typeof ScrollView
+  > | null>(null);
   const inboxComposerAccess =
     mode === 'inbox'
       ? getInboxComposerAccess(detail.conversation, currentUserId, {
@@ -3565,7 +3643,7 @@ function KolamChatRailDetailPanel({
     setEmojiPickerOpen(false);
     setTemplateSearch('');
     setMarketplaceSearch('');
-    setMarketplacePickerState({items: [], loading: false});
+    setMarketplacePickerState({ items: [], loading: false });
     setDaraThinkingLine('');
     setEditingMessageId(null);
     setOpenTeamActionMessageId(null);
@@ -3574,14 +3652,14 @@ function KolamChatRailDetailPanel({
     setPurgeConfirmVisible(false);
     setPurgeStatusMessage(null);
     setContactDetailsOpen(false);
-    setContactDetailsState({data: null, loading: false});
+    setContactDetailsState({ data: null, loading: false });
   }, [selectedItem.id]);
 
   React.useEffect(() => {
     if (!marketplaceAttachPlatform) {
       setMarketplacePickerOpen(false);
       setMarketplaceSearch('');
-      setMarketplacePickerState({items: [], loading: false});
+      setMarketplacePickerState({ items: [], loading: false });
     }
   }, [marketplaceAttachPlatform]);
 
@@ -3638,14 +3716,16 @@ function KolamChatRailDetailPanel({
   React.useEffect(() => {
     if (
       daraThinkingLine &&
-      detail.messages.some(message => !message.mine && message.author === 'DARA')
+      detail.messages.some(
+        message => !message.mine && message.author === 'DARA',
+      )
     ) {
       setDaraThinkingLine('');
     }
   }, [daraThinkingLine, detail.messages]);
 
   const scrollMessagesToEnd = React.useCallback(() => {
-    messageScrollRef.current?.scrollToEnd({animated: false});
+    messageScrollRef.current?.scrollToEnd({ animated: false });
   }, []);
 
   React.useEffect(() => {
@@ -3684,7 +3764,9 @@ function KolamChatRailDetailPanel({
       const nextText =
         composerText.match(/@([a-zA-Z0-9_.-]{0,32})$/) !== null
           ? composerText.replace(/@([a-zA-Z0-9_.-]{0,32})$/, tag)
-          : `${composerText}${composerText.endsWith(' ') || !composerText ? '' : ' '}${tag}`;
+          : `${composerText}${
+              composerText.endsWith(' ') || !composerText ? '' : ' '
+            }${tag}`;
 
       onComposerTextChange(nextText);
     },
@@ -3743,7 +3825,9 @@ function KolamChatRailDetailPanel({
   );
 
   const handleStartEditMessage = React.useCallback(
-    (message: ReturnType<typeof useKolamChatRailDetail>['messages'][number]) => {
+    (
+      message: ReturnType<typeof useKolamChatRailDetail>['messages'][number],
+    ) => {
       setEditingMessageId(message.id);
       setOpenTeamActionMessageId(null);
       setEditingDraft(message.body);
@@ -3795,10 +3879,10 @@ function KolamChatRailDetailPanel({
       loading: true,
     }));
 
-    getKolamChatContactDetails(selectedItem.id, {ordersLimit: 5})
+    getKolamChatContactDetails(selectedItem.id, { ordersLimit: 5 })
       .then(data => {
         if (active) {
-          setContactDetailsState({data, loading: false});
+          setContactDetailsState({ data, loading: false });
         }
       })
       .catch(error => {
@@ -3829,544 +3913,574 @@ function KolamChatRailDetailPanel({
 
   return (
     <>
-    <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
-      <View
-        style={[
-          styles.selectedBanner,
-          mode === 'team-chat' ? styles.selectedBannerTeam : null,
-        ]}>
-        <View style={styles.selectedTitleRow}>
-          {onBack ? (
-            <KolamPressable
-              accessibilityLabel={backAccessibilityLabel}
-              onPress={onBack}
-              style={styles.detailBackButton}>
-              <KolamStatusIndicatorIcon
-                color={V.colors.primary}
-                kind="triangle-left"
-              />
-            </KolamPressable>
-          ) : null}
-          <View style={styles.selectedTitleBlock}>
-            <Text numberOfLines={1} style={styles.selectedTitle}>
-              {selectedItem.title}
-            </Text>
-            {mode === 'team-chat' ? (
-              <Text numberOfLines={1} style={styles.presenceMetaInline}>
-                {formatTeamChatPresence(detail.presence)}
-              </Text>
-            ) : null}
-          </View>
-          {canDeleteSelectedTeamRoom ? (
-            <KolamPressable
-              accessibilityLabel={`Hapus room ${selectedItem.title}`}
-              disabled={deleteRoomBusy}
-              onPress={onDeleteTeamRoomRequest}
-              style={[
-                styles.detailDeleteRoomButton,
-                deleteRoomBusy && styles.composerIconButtonDisabled,
-              ]}>
-              <KolamTeamChatDeleteRoomIcon />
-            </KolamPressable>
-          ) : null}
-        </View>
-        {mode === 'inbox' && selectedItem.preview ? (
-          <Text numberOfLines={2} style={styles.selectedMeta}>
-            {selectedItem.preview}
-          </Text>
-        ) : null}
-        {mode === 'team-chat' ? (
-          <KolamChatCallStrip currentUserId={currentUserId} detail={detail} />
-        ) : null}
-        {mode === 'team-chat' ? (
-          <View style={styles.messageSearchBar}>
-            <TextInput
-              accessibilityLabel="Cari pesan team chat"
-              editable={!detail.messageSearchLoading}
-              onChangeText={setMessageSearchDraft}
-              onSubmitEditing={() => void handleSearchMessages()}
-              placeholder="Cari pesan..."
-              placeholderTextColor={V.colors.mutedFg}
-              style={styles.messageSearchInput}
-              value={messageSearchDraft}
-            />
-            <KolamPressable
-              accessibilityLabel="Jalankan pencarian pesan team chat"
-              disabled={!messageSearchDraft.trim() || detail.messageSearchLoading}
-              onPress={() => void handleSearchMessages()}
-              style={[
-                styles.messageSearchButton,
-                (!messageSearchDraft.trim() || detail.messageSearchLoading) &&
-                  styles.attachButtonDisabled,
-              ]}>
-              <Text style={styles.messageSearchButtonText}>
-                {detail.messageSearchLoading ? '...' : 'Cari'}
-              </Text>
-            </KolamPressable>
-            {isMessageSearchActive ? (
-              <KolamResetButton
-                accessibilityLabel="Bersihkan pencarian pesan team chat"
-                disabled={detail.messageSearchLoading}
-                onPress={handleClearMessageSearch}
-                style={[
-                  styles.messageSearchButton,
-                  styles.messageSearchButtonGhost,
-                  detail.messageSearchLoading && styles.attachButtonDisabled,
-                ]}
-              />
-            ) : null}
-            {canPurgeMessages ? (
+      <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
+        <View
+          style={[
+            styles.selectedBanner,
+            mode === 'team-chat' ? styles.selectedBannerTeam : null,
+          ]}
+        >
+          <View style={styles.selectedTitleRow}>
+            {onBack ? (
               <KolamPressable
-                accessibilityLabel="Hapus semua chat"
-                disabled={detail.purgingMessages}
-                onPress={() => {
-                  setPurgeStatusMessage(null);
-                  setPurgeConfirmVisible(true);
-                }}
+                accessibilityLabel={backAccessibilityLabel}
+                onPress={onBack}
+                style={styles.detailBackButton}
+              >
+                <KolamStatusIndicatorIcon
+                  color={V.colors.primary}
+                  kind="triangle-left"
+                />
+              </KolamPressable>
+            ) : null}
+            <View style={styles.selectedTitleBlock}>
+              <Text numberOfLines={1} style={styles.selectedTitle}>
+                {selectedItem.title}
+              </Text>
+              {mode === 'team-chat' ? (
+                <Text numberOfLines={1} style={styles.presenceMetaInline}>
+                  {formatTeamChatPresence(detail.presence)}
+                </Text>
+              ) : null}
+            </View>
+            {canDeleteSelectedTeamRoom ? (
+              <KolamPressable
+                accessibilityLabel={`Hapus room ${selectedItem.title}`}
+                disabled={deleteRoomBusy}
+                onPress={onDeleteTeamRoomRequest}
                 style={[
-                  styles.messagePurgeButton,
-                  detail.purgingMessages && styles.composerIconButtonDisabled,
-                ]}>
-                <KolamTeamChatTrashIcon />
+                  styles.detailDeleteRoomButton,
+                  deleteRoomBusy && styles.composerIconButtonDisabled,
+                ]}
+              >
+                <KolamTeamChatDeleteRoomIcon />
               </KolamPressable>
             ) : null}
           </View>
-        ) : null}
-        {mode === 'team-chat' && purgeStatusMessage ? (
-          <Text style={styles.purgeStatusMeta}>{purgeStatusMessage}</Text>
-        ) : null}
-        {mode === 'inbox' ? (
-          <KolamInboxActionStrip
-            currentUserId={currentUserId}
-            detail={detail}
-            detailsOpen={contactDetailsOpen}
-            labels={labels}
-            onDetailsToggle={() => setContactDetailsOpen(current => !current)}
+          {mode === 'inbox' && selectedItem.preview ? (
+            <Text numberOfLines={2} style={styles.selectedMeta}>
+              {selectedItem.preview}
+            </Text>
+          ) : null}
+          {mode === 'team-chat' ? (
+            <KolamChatCallStrip currentUserId={currentUserId} detail={detail} />
+          ) : null}
+          {mode === 'team-chat' ? (
+            <View style={styles.messageSearchBar}>
+              <TextInput
+                accessibilityLabel="Cari pesan team chat"
+                editable={!detail.messageSearchLoading}
+                onChangeText={setMessageSearchDraft}
+                onSubmitEditing={() => void handleSearchMessages()}
+                placeholder="Cari pesan..."
+                placeholderTextColor={V.colors.mutedFg}
+                style={styles.messageSearchInput}
+                value={messageSearchDraft}
+              />
+              <KolamPressable
+                accessibilityLabel="Jalankan pencarian pesan team chat"
+                disabled={
+                  !messageSearchDraft.trim() || detail.messageSearchLoading
+                }
+                onPress={() => void handleSearchMessages()}
+                style={[
+                  styles.messageSearchButton,
+                  (!messageSearchDraft.trim() || detail.messageSearchLoading) &&
+                    styles.attachButtonDisabled,
+                ]}
+              >
+                <Text style={styles.messageSearchButtonText}>
+                  {detail.messageSearchLoading ? '...' : 'Cari'}
+                </Text>
+              </KolamPressable>
+              {isMessageSearchActive ? (
+                <KolamResetButton
+                  accessibilityLabel="Bersihkan pencarian pesan team chat"
+                  disabled={detail.messageSearchLoading}
+                  onPress={handleClearMessageSearch}
+                  style={[
+                    styles.messageSearchButton,
+                    styles.messageSearchButtonGhost,
+                    detail.messageSearchLoading && styles.attachButtonDisabled,
+                  ]}
+                />
+              ) : null}
+              {canPurgeMessages ? (
+                <KolamPressable
+                  accessibilityLabel="Hapus semua chat"
+                  disabled={detail.purgingMessages}
+                  onPress={() => {
+                    setPurgeStatusMessage(null);
+                    setPurgeConfirmVisible(true);
+                  }}
+                  style={[
+                    styles.messagePurgeButton,
+                    detail.purgingMessages && styles.composerIconButtonDisabled,
+                  ]}
+                >
+                  <KolamTeamChatTrashIcon />
+                </KolamPressable>
+              ) : null}
+            </View>
+          ) : null}
+          {mode === 'team-chat' && purgeStatusMessage ? (
+            <Text style={styles.purgeStatusMeta}>{purgeStatusMessage}</Text>
+          ) : null}
+          {mode === 'inbox' ? (
+            <KolamInboxActionStrip
+              currentUserId={currentUserId}
+              detail={detail}
+              detailsOpen={contactDetailsOpen}
+              labels={labels}
+              onDetailsToggle={() => setContactDetailsOpen(current => !current)}
+            />
+          ) : null}
+        </View>
+
+        {mode === 'inbox' && contactDetailsOpen ? (
+          <KolamChatContactDetailsPanel
+            conversation={detail.conversation}
+            state={contactDetailsState}
           />
         ) : null}
-      </View>
 
-      {mode === 'inbox' && contactDetailsOpen ? (
-        <KolamChatContactDetailsPanel
-          conversation={detail.conversation}
-          state={contactDetailsState}
-        />
-      ) : null}
-
-      {mode === 'inbox' && detail.conversation?.handoverNote?.text ? (
-        <KolamInboxHandoverNoteBanner
-          note={detail.conversation.handoverNote}
-        />
-      ) : null}
-
-      <View style={[styles.messagePane, fullPage && styles.messagePaneFull]}>
-        {detail.loading ? (
-          <Text style={styles.metaText}>Memuat pesan...</Text>
+        {mode === 'inbox' && detail.conversation?.handoverNote?.text ? (
+          <KolamInboxHandoverNoteBanner
+            note={detail.conversation.handoverNote}
+          />
         ) : null}
 
-        {detail.errorMessage ? (
-          <Text style={styles.errorText}>{detail.errorMessage}</Text>
-        ) : null}
+        <View style={[styles.messagePane, fullPage && styles.messagePaneFull]}>
+          {detail.loading ? (
+            <Text style={styles.metaText}>Memuat pesan...</Text>
+          ) : null}
 
-        {!detail.loading &&
-        !detail.errorMessage &&
-        displayedMessages.length === 0 ? (
-          <Text style={styles.emptyDetailText}>
-            {isMessageSearchActive
-              ? `Tidak ada hasil untuk "${detail.messageSearchQuery}".`
-              : 'Belum ada pesan.'}
-          </Text>
-        ) : null}
+          {detail.errorMessage ? (
+            <Text style={styles.errorText}>{detail.errorMessage}</Text>
+          ) : null}
 
-        {isMessageSearchActive ? (
-          <Text style={styles.messageSearchMeta}>
-            {`${displayedMessages.length} hasil untuk "${detail.messageSearchQuery}"`}
-          </Text>
-        ) : null}
+          {!detail.loading &&
+          !detail.errorMessage &&
+          displayedMessages.length === 0 ? (
+            <Text style={styles.emptyDetailText}>
+              {isMessageSearchActive
+                ? `Tidak ada hasil untuk "${detail.messageSearchQuery}".`
+                : 'Belum ada pesan.'}
+            </Text>
+          ) : null}
 
-        {displayedMessages.length > 0 ? (
-          <ScrollView
-            ref={messageScrollRef}
-            style={[styles.messageScroll, fullPage && styles.messageScrollFull]}
-            contentContainerStyle={styles.messageList}
-            onContentSizeChange={scrollMessagesToEnd}
-            onLayout={scrollMessagesToEnd}
-            showsVerticalScrollIndicator>
-            <KolamMappedList
-              items={displayedMessages}
-              getKey={message => message.id}
-              renderItem={message => {
-                const isEditing = editingMessageId === message.id;
-                const canEdit =
-                  mode === 'team-chat'
-                    ? canEditTeamChatMessage(message, currentUserId)
-                    : canEditInboxMessage(message, currentUserId);
-                const canReply =
-                  mode === 'team-chat' ||
-                  canReplyToInboxConversation(detail.conversation);
+          {isMessageSearchActive ? (
+            <Text style={styles.messageSearchMeta}>
+              {`${displayedMessages.length} hasil untuk "${detail.messageSearchQuery}"`}
+            </Text>
+          ) : null}
 
-                return (
-                  <View
-                    style={[
-                      styles.messageBubble,
-                      message.mine
-                        ? styles.messageBubbleMine
-                        : styles.messageBubbleOther,
-                    ]}>
-                    {mode === 'team-chat' || isInboxDetailAiMessage(message) ? (
-                      <View style={styles.teamMessageAuthorRow}>
-                        <View style={styles.teamMessageAvatar}>
-                          <KolamProfileAvatarContent
-                            imageStyle={styles.teamMessageAvatarImage}
-                            imageUrl={
-                              mode === 'team-chat'
-                                ? getTeamChatMessageAvatarUrl(
-                                    message,
-                                    daraAvatarUrl,
-                                    {
+          {displayedMessages.length > 0 ? (
+            <ScrollView
+              ref={messageScrollRef}
+              style={[
+                styles.messageScroll,
+                fullPage && styles.messageScrollFull,
+              ]}
+              contentContainerStyle={styles.messageList}
+              onContentSizeChange={scrollMessagesToEnd}
+              onLayout={scrollMessagesToEnd}
+              showsVerticalScrollIndicator
+            >
+              <KolamMappedList
+                items={displayedMessages}
+                getKey={message => message.id}
+                renderItem={message => {
+                  const isEditing = editingMessageId === message.id;
+                  const canEdit =
+                    mode === 'team-chat'
+                      ? canEditTeamChatMessage(message, currentUserId)
+                      : canEditInboxMessage(message, currentUserId);
+                  const canReply =
+                    mode === 'team-chat' ||
+                    canReplyToInboxConversation(detail.conversation);
+
+                  return (
+                    <View
+                      style={[
+                        styles.messageBubble,
+                        message.mine
+                          ? styles.messageBubbleMine
+                          : styles.messageBubbleOther,
+                      ]}
+                    >
+                      {mode === 'team-chat' ||
+                      isInboxDetailAiMessage(message) ? (
+                        <View style={styles.teamMessageAuthorRow}>
+                          <View style={styles.teamMessageAvatar}>
+                            <KolamProfileAvatarContent
+                              imageStyle={styles.teamMessageAvatarImage}
+                              imageUrl={
+                                mode === 'team-chat'
+                                  ? getTeamChatMessageAvatarUrl(
+                                      message,
+                                      daraAvatarUrl,
+                                      {
+                                        katakTerbangAvatarUrl,
+                                        rajaAnemonAvatarUrl,
+                                        pangeranIsopodAvatarUrl,
+                                      },
+                                    )
+                                  : getInboxAiMessageAvatarUrl(
+                                      message,
                                       katakTerbangAvatarUrl,
-                                      rajaAnemonAvatarUrl,
-                                      pangeranIsopodAvatarUrl,
-                                    },
-                                  )
-                                : getInboxAiMessageAvatarUrl(
-                                    message,
-                                    katakTerbangAvatarUrl,
-                                  )
-                            }
-                            initials={getTeamChatMessageInitials(message.author)}
-                            textStyle={styles.teamMessageAvatarText}
-                          />
+                                    )
+                              }
+                              initials={getTeamChatMessageInitials(
+                                message.author,
+                              )}
+                              textStyle={styles.teamMessageAvatarText}
+                            />
+                          </View>
+                          <Text style={styles.messageAuthor}>
+                            {message.author}
+                          </Text>
                         </View>
+                      ) : (
                         <Text style={styles.messageAuthor}>
                           {message.author}
                         </Text>
-                      </View>
-                    ) : (
-                      <Text style={styles.messageAuthor}>{message.author}</Text>
-                    )}
-                    {mode === 'team-chat' && message.replyPreview?.body ? (
-                      <KolamTeamChatReplyPreviewCard
-                        replyPreview={message.replyPreview}
-                      />
-                    ) : null}
-                    {isEditing ? (
-                      <View style={styles.editMessageComposer}>
-                        <TextInput
-                          accessibilityLabel={`Edit pesan ${message.author}`}
-                          editable={!detail.sending}
-                          multiline
-                          onChangeText={setEditingDraft}
-                          placeholder="Edit pesan"
-                          placeholderTextColor={V.colors.mutedFg}
-                          style={styles.editMessageInput}
-                          value={editingDraft}
+                      )}
+                      {mode === 'team-chat' && message.replyPreview?.body ? (
+                        <KolamTeamChatReplyPreviewCard
+                          replyPreview={message.replyPreview}
                         />
-                        <View style={styles.editMessageActions}>
-                          <KolamPressable
-                            accessibilityLabel="Batalkan edit pesan chat"
-                            disabled={detail.sending}
-                            onPress={handleCancelEditMessage}
-                            style={[
-                              styles.editMessageButton,
-                              detail.sending && styles.attachButtonDisabled,
-                            ]}>
-                            <Text style={styles.editMessageButtonText}>
-                              Batal
-                            </Text>
-                          </KolamPressable>
-                          <KolamPressable
-                            accessibilityLabel="Simpan edit pesan chat"
-                            disabled={!editingDraft.trim() || detail.sending}
-                            onPress={() => handleSaveEditMessage(message.id)}
-                            style={[
-                              styles.editMessageButton,
-                              styles.editMessageButtonPrimary,
-                              (!editingDraft.trim() || detail.sending) &&
-                                styles.attachButtonDisabled,
-                            ]}>
-                            <Text style={styles.editMessageButtonPrimaryText}>
-                              {detail.sending ? 'Menyimpan' : 'Simpan'}
-                            </Text>
-                          </KolamPressable>
+                      ) : null}
+                      {isEditing ? (
+                        <View style={styles.editMessageComposer}>
+                          <TextInput
+                            accessibilityLabel={`Edit pesan ${message.author}`}
+                            editable={!detail.sending}
+                            multiline
+                            onChangeText={setEditingDraft}
+                            placeholder="Edit pesan"
+                            placeholderTextColor={V.colors.mutedFg}
+                            style={styles.editMessageInput}
+                            value={editingDraft}
+                          />
+                          <View style={styles.editMessageActions}>
+                            <KolamPressable
+                              accessibilityLabel="Batalkan edit pesan chat"
+                              disabled={detail.sending}
+                              onPress={handleCancelEditMessage}
+                              style={[
+                                styles.editMessageButton,
+                                detail.sending && styles.attachButtonDisabled,
+                              ]}
+                            >
+                              <Text style={styles.editMessageButtonText}>
+                                Batal
+                              </Text>
+                            </KolamPressable>
+                            <KolamPressable
+                              accessibilityLabel="Simpan edit pesan chat"
+                              disabled={!editingDraft.trim() || detail.sending}
+                              onPress={() => handleSaveEditMessage(message.id)}
+                              style={[
+                                styles.editMessageButton,
+                                styles.editMessageButtonPrimary,
+                                (!editingDraft.trim() || detail.sending) &&
+                                  styles.attachButtonDisabled,
+                              ]}
+                            >
+                              <Text style={styles.editMessageButtonPrimaryText}>
+                                {detail.sending ? 'Menyimpan' : 'Simpan'}
+                              </Text>
+                            </KolamPressable>
+                          </View>
                         </View>
-                      </View>
-                    ) : (
-                      <>
-                        {mode === 'team-chat' ? (
-                          message.body ? (
-                            <KolamTeamMentionText body={message.body} />
-                          ) : null
-                        ) : message.body ||
-                          message.content ||
-                          message.replyContent ||
-                          message.daraMeta ? (
+                      ) : (
+                        <>
+                          {mode === 'team-chat' ? (
+                            message.body ? (
+                              <KolamTeamMentionText body={message.body} />
+                            ) : null
+                          ) : message.body ||
+                            message.content ||
+                            message.replyContent ||
+                            message.daraMeta ? (
                             <KolamInboxRichMessageContent message={message} />
-                        ) : null}
-                        {message.attachments.length > 0 ? (
-                          <KolamChatAttachmentList
-                            attachments={message.attachments}
-                          />
-                        ) : null}
-                        {mode === 'team-chat' && message.linkPreviews.length > 0 ? (
-                          <KolamChatLinkPreviewList
-                            previews={message.linkPreviews}
-                          />
-                        ) : null}
-                        {mode === 'team-chat' && message.embeds.length > 0 ? (
-                          <KolamChatEmbedList embeds={message.embeds} />
-                        ) : null}
-                        {mode === 'team-chat' ? (
-                          <KolamChatReactionControls
-                            canEdit={canEdit}
-                            disabled={detail.sending}
-                            message={message}
-                            onClose={() => setOpenTeamActionMessageId(null)}
-                            onEdit={() => handleStartEditMessage(message)}
-                            onReact={emoji =>
-                              detail.reactToMessage(message.id, emoji)
-                            }
-                            onReply={() =>
-                              onReplyToMessage({
-                                author: message.author,
-                                body: getTeamChatReplyTargetBody(message),
-                                id: message.id,
-                              })
-                            }
-                            onToggle={() =>
-                              setOpenTeamActionMessageId(current =>
-                                current === message.id ? null : message.id,
-                              )
-                            }
-                            open={openTeamActionMessageId === message.id}
-                          />
-                        ) : null}
-                        {mode === 'inbox' ? (
-                          <KolamInboxMessageActions
-                            canEdit={canEdit}
-                            canReply={canReply}
-                            disabled={detail.sending}
-                            message={message}
-                            onEdit={() => handleStartEditMessage(message)}
-                            onReply={() =>
-                              onReplyToMessage({
-                                author: message.author,
-                                body: getInboxReplyTargetBody(message),
-                                id: message.id,
-                              })
-                            }
-                          />
-                        ) : null}
-                      </>
-                    )}
-                    <Text style={styles.messageMeta}>
-                      {[
-                        formatRelativeTime(message.sentAt),
-                        getTeamChatEditedLabel(message),
-                        message.status,
-                      ]
-                        .filter(Boolean)
-                        .join(' | ')}
-                    </Text>
-                  </View>
-                );
-              }}
-            />
-          </ScrollView>
-        ) : null}
+                          ) : null}
+                          {message.attachments.length > 0 ? (
+                            <KolamChatAttachmentList
+                              attachments={message.attachments}
+                            />
+                          ) : null}
+                          {mode === 'team-chat' &&
+                          message.linkPreviews.length > 0 ? (
+                            <KolamChatLinkPreviewList
+                              previews={message.linkPreviews}
+                            />
+                          ) : null}
+                          {mode === 'team-chat' && message.embeds.length > 0 ? (
+                            <KolamChatEmbedList embeds={message.embeds} />
+                          ) : null}
+                          {mode === 'team-chat' ? (
+                            <KolamChatReactionControls
+                              canEdit={canEdit}
+                              disabled={detail.sending}
+                              message={message}
+                              onClose={() => setOpenTeamActionMessageId(null)}
+                              onEdit={() => handleStartEditMessage(message)}
+                              onReact={emoji =>
+                                detail.reactToMessage(message.id, emoji)
+                              }
+                              onReply={() =>
+                                onReplyToMessage({
+                                  author: message.author,
+                                  body: getTeamChatReplyTargetBody(message),
+                                  id: message.id,
+                                })
+                              }
+                              onToggle={() =>
+                                setOpenTeamActionMessageId(current =>
+                                  current === message.id ? null : message.id,
+                                )
+                              }
+                              open={openTeamActionMessageId === message.id}
+                            />
+                          ) : null}
+                          {mode === 'inbox' ? (
+                            <KolamInboxMessageActions
+                              canEdit={canEdit}
+                              canReply={canReply}
+                              disabled={detail.sending}
+                              message={message}
+                              onEdit={() => handleStartEditMessage(message)}
+                              onReply={() =>
+                                onReplyToMessage({
+                                  author: message.author,
+                                  body: getInboxReplyTargetBody(message),
+                                  id: message.id,
+                                })
+                              }
+                            />
+                          ) : null}
+                        </>
+                      )}
+                      <Text style={styles.messageMeta}>
+                        {[
+                          formatRelativeTime(message.sentAt),
+                          getTeamChatEditedLabel(message),
+                          message.status,
+                        ]
+                          .filter(Boolean)
+                          .join(' | ')}
+                      </Text>
+                    </View>
+                  );
+                }}
+              />
+            </ScrollView>
+          ) : null}
 
-        {daraThinkingLine ? (
-          <KolamDaraThinkingBubble line={daraThinkingLine} />
-        ) : null}
-      </View>
-
-      {pendingAttachment ? (
-        <View style={styles.pendingAttachment}>
-          <Text numberOfLines={1} style={styles.pendingAttachmentText}>
-            {attachmentLabel}
-          </Text>
-          <KolamPressable
-            accessibilityLabel="Hapus lampiran chat"
-            disabled={detail.sending}
-            onPress={onPendingAttachmentClear}
-            style={styles.pendingAttachmentRemove}>
-            <Text style={styles.pendingAttachmentRemoveText}>x</Text>
-          </KolamPressable>
+          {daraThinkingLine ? (
+            <KolamDaraThinkingBubble line={daraThinkingLine} />
+          ) : null}
         </View>
-      ) : null}
 
-      {replyTarget ? (
-        <KolamChatReplyComposerStrip
-          disabled={detail.sending}
-          onCancel={onReplyCancel}
-          replyTarget={replyTarget}
-        />
-      ) : null}
+        {pendingAttachment ? (
+          <View style={styles.pendingAttachment}>
+            <Text numberOfLines={1} style={styles.pendingAttachmentText}>
+              {attachmentLabel}
+            </Text>
+            <KolamPressable
+              accessibilityLabel="Hapus lampiran chat"
+              disabled={detail.sending}
+              onPress={onPendingAttachmentClear}
+              style={styles.pendingAttachmentRemove}
+            >
+              <Text style={styles.pendingAttachmentRemoveText}>x</Text>
+            </KolamPressable>
+          </View>
+        ) : null}
 
-      {mode === 'inbox' && templatePickerOpen ? (
-        <KolamChatTemplatePicker
-          onClose={() => setTemplatePickerOpen(false)}
-          onPick={template => {
-            onComposerTextChange(template.body);
-            setTemplatePickerOpen(false);
-          }}
-          onSearchChange={setTemplateSearch}
-          search={templateSearch}
-          state={templatesState}
-          templates={filteredTemplates}
-        />
-      ) : null}
+        {replyTarget ? (
+          <KolamChatReplyComposerStrip
+            disabled={detail.sending}
+            onCancel={onReplyCancel}
+            replyTarget={replyTarget}
+          />
+        ) : null}
 
-      {marketplaceAttachPlatform && marketplacePickerOpen ? (
-        <KolamChatMarketplaceProductPicker
-          disabled={detail.sending || inboxComposerBlocked}
-          onClose={() => setMarketplacePickerOpen(false)}
-          onPick={item => {
-            if (detail.sending || inboxComposerBlocked) {
-              return;
-            }
-            setMarketplacePickerOpen(false);
-            detail.sendMarketplaceProduct(item).catch(() => undefined);
-          }}
-          onSearchChange={setMarketplaceSearch}
-          platform={marketplaceAttachPlatform}
-          search={marketplaceSearch}
-          state={marketplacePickerState}
-        />
-      ) : null}
+        {mode === 'inbox' && templatePickerOpen ? (
+          <KolamChatTemplatePicker
+            onClose={() => setTemplatePickerOpen(false)}
+            onPick={template => {
+              onComposerTextChange(template.body);
+              setTemplatePickerOpen(false);
+            }}
+            onSearchChange={setTemplateSearch}
+            search={templateSearch}
+            state={templatesState}
+            templates={filteredTemplates}
+          />
+        ) : null}
 
-      {emojiPickerOpen ? (
-        <KolamChatComposerEmojiPicker
-          disabled={detail.sending || inboxComposerBlocked}
-          onPick={handlePickComposerEmoji}
-        />
-      ) : null}
+        {marketplaceAttachPlatform && marketplacePickerOpen ? (
+          <KolamChatMarketplaceProductPicker
+            disabled={detail.sending || inboxComposerBlocked}
+            onClose={() => setMarketplacePickerOpen(false)}
+            onPick={item => {
+              if (detail.sending || inboxComposerBlocked) {
+                return;
+              }
+              setMarketplacePickerOpen(false);
+              detail.sendMarketplaceProduct(item).catch(() => undefined);
+            }}
+            onSearchChange={setMarketplaceSearch}
+            platform={marketplaceAttachPlatform}
+            search={marketplaceSearch}
+            state={marketplacePickerState}
+          />
+        ) : null}
 
-      {inboxComposerBlocked ? (
-        <KolamInboxComposerGate access={inboxComposerAccess} />
-      ) : null}
+        {emojiPickerOpen ? (
+          <KolamChatComposerEmojiPicker
+            disabled={detail.sending || inboxComposerBlocked}
+            onPick={handlePickComposerEmoji}
+          />
+        ) : null}
 
-      {mode === 'team-chat' && mentionOptions.length > 0 ? (
-        <KolamTeamMentionPicker
-          disabled={detail.sending}
-          onPick={handlePickMention}
-          options={mentionOptions}
-        />
-      ) : null}
+        {inboxComposerBlocked ? (
+          <KolamInboxComposerGate access={inboxComposerAccess} />
+        ) : null}
 
-      <View style={styles.composer}>
-        <View
-          style={[
-            styles.composerShell,
-            inboxComposerBlocked && styles.composerShellBlocked,
-          ]}>
-          <TextInput
-            accessibilityLabel={
-              mode === 'team-chat'
-                ? 'Tulis pesan team chat'
-                : 'Tulis pesan inbox'
-            }
-            editable={!detail.sending && !inboxComposerBlocked}
-            multiline
-            onChangeText={handleComposerInputChange}
-            onKeyPress={handleComposerKeyPress}
-            onSubmitEditing={handleSubmitComposer}
-            placeholder={
-              mode === 'team-chat' && !detail.teamRoomMetadata.daraReplyEnabled
-                ? 'Tulis pesan... @dara nonaktif'
-                : inboxComposerBlocked
+        {mode === 'team-chat' && mentionOptions.length > 0 ? (
+          <KolamTeamMentionPicker
+            disabled={detail.sending}
+            onPick={handlePickMention}
+            options={mentionOptions}
+          />
+        ) : null}
+
+        <View style={styles.composer}>
+          <View
+            style={[
+              styles.composerShell,
+              inboxComposerBlocked && styles.composerShellBlocked,
+            ]}
+          >
+            <TextInput
+              accessibilityLabel={
+                mode === 'team-chat'
+                  ? 'Tulis pesan team chat'
+                  : 'Tulis pesan inbox'
+              }
+              editable={!detail.sending && !inboxComposerBlocked}
+              multiline
+              onChangeText={handleComposerInputChange}
+              onKeyPress={handleComposerKeyPress}
+              onSubmitEditing={handleSubmitComposer}
+              placeholder={
+                mode === 'team-chat' &&
+                !detail.teamRoomMetadata.daraReplyEnabled
+                  ? 'Tulis pesan... @dara nonaktif'
+                  : inboxComposerBlocked
                   ? 'Chat belum bisa dibalas'
                   : 'Tulis pesan...'
-            }
-            placeholderTextColor={V.colors.mutedFg}
-            style={styles.composerInput}
-            submitBehavior="submit"
-            value={composerText}
-          />
-          <View style={styles.composerToolbar}>
-            <View style={styles.composerToolGroup}>
-              {mode === 'team-chat' ? (
+              }
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.composerInput}
+              submitBehavior="submit"
+              value={composerText}
+            />
+            <View style={styles.composerToolbar}>
+              <View style={styles.composerToolGroup}>
+                {mode === 'team-chat' ? (
+                  <KolamPressable
+                    accessibilityLabel="Lampirkan file team chat"
+                    disabled={detail.sending}
+                    onPress={onPendingAttachmentPick}
+                    style={[
+                      styles.composerIconButton,
+                      detail.sending && styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.composerIconButtonText}>+</Text>
+                  </KolamPressable>
+                ) : null}
+                {mode === 'inbox' ? (
+                  <KolamPressable
+                    accessibilityLabel="Lampirkan gambar inbox"
+                    disabled={detail.sending || inboxComposerBlocked}
+                    onPress={onPendingAttachmentPick}
+                    style={[
+                      styles.composerIconButton,
+                      (detail.sending || inboxComposerBlocked) &&
+                        styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.composerIconButtonText}>+</Text>
+                  </KolamPressable>
+                ) : null}
+                {marketplaceAttachPlatform ? (
+                  <KolamPressable
+                    accessibilityLabel={marketplaceAttachLabel}
+                    disabled={detail.sending || inboxComposerBlocked}
+                    onPress={() => {
+                      setMarketplacePickerOpen(current => !current);
+                      setEmojiPickerOpen(false);
+                      setTemplatePickerOpen(false);
+                    }}
+                    style={[
+                      styles.composerIconButton,
+                      marketplacePickerOpen && styles.composerIconButtonActive,
+                      (detail.sending || inboxComposerBlocked) &&
+                        styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <KolamPlatformFilterLogo
+                      platform={marketplaceAttachPlatform}
+                    />
+                  </KolamPressable>
+                ) : null}
                 <KolamPressable
-                  accessibilityLabel="Lampirkan file team chat"
-                  disabled={detail.sending}
-                  onPress={onPendingAttachmentPick}
-                  style={[
-                    styles.composerIconButton,
-                    detail.sending && styles.composerIconButtonDisabled,
-                  ]}>
-                  <Text style={styles.composerIconButtonText}>+</Text>
-                </KolamPressable>
-              ) : null}
-              {mode === 'inbox' ? (
-                <KolamPressable
-                  accessibilityLabel="Lampirkan gambar inbox"
-                  disabled={detail.sending || inboxComposerBlocked}
-                  onPress={onPendingAttachmentPick}
-                  style={[
-                    styles.composerIconButton,
-                    (detail.sending || inboxComposerBlocked) &&
-                      styles.composerIconButtonDisabled,
-                  ]}>
-                  <Text style={styles.composerIconButtonText}>+</Text>
-                </KolamPressable>
-              ) : null}
-              {marketplaceAttachPlatform ? (
-                <KolamPressable
-                  accessibilityLabel={marketplaceAttachLabel}
+                  accessibilityLabel="Buka emoji chat"
                   disabled={detail.sending || inboxComposerBlocked}
                   onPress={() => {
-                    setMarketplacePickerOpen(current => !current);
-                    setEmojiPickerOpen(false);
+                    setEmojiPickerOpen(current => !current);
                     setTemplatePickerOpen(false);
-                  }}
-                  style={[
-                    styles.composerIconButton,
-                    marketplacePickerOpen && styles.composerIconButtonActive,
-                    (detail.sending || inboxComposerBlocked) &&
-                      styles.composerIconButtonDisabled,
-                  ]}>
-                  <KolamPlatformFilterLogo platform={marketplaceAttachPlatform} />
-                </KolamPressable>
-              ) : null}
-              <KolamPressable
-                accessibilityLabel="Buka emoji chat"
-                disabled={detail.sending || inboxComposerBlocked}
-                onPress={() => {
-                  setEmojiPickerOpen(current => !current);
-                  setTemplatePickerOpen(false);
-                  setMarketplacePickerOpen(false);
-                }}
-                style={[
-                  styles.composerIconButton,
-                  emojiPickerOpen && styles.composerIconButtonActive,
-                  (detail.sending || inboxComposerBlocked) &&
-                    styles.composerIconButtonDisabled,
-                ]}>
-                <Text style={styles.composerIconButtonText}>:)</Text>
-              </KolamPressable>
-              {mode === 'inbox' ? (
-                <KolamPressable
-                  accessibilityLabel="Buka template chat"
-                  disabled={detail.sending || inboxComposerBlocked}
-                  onPress={() => {
-                    setTemplatePickerOpen(current => !current);
-                    setEmojiPickerOpen(false);
                     setMarketplacePickerOpen(false);
                   }}
                   style={[
                     styles.composerIconButton,
-                    templatePickerOpen && styles.composerIconButtonActive,
+                    emojiPickerOpen && styles.composerIconButtonActive,
                     (detail.sending || inboxComposerBlocked) &&
                       styles.composerIconButtonDisabled,
-                  ]}>
-                  <Text style={styles.composerIconButtonText}>T</Text>
+                  ]}
+                >
+                  <Text style={styles.composerIconButtonText}>:)</Text>
                 </KolamPressable>
-              ) : null}
+                {mode === 'inbox' ? (
+                  <KolamPressable
+                    accessibilityLabel="Buka template chat"
+                    disabled={detail.sending || inboxComposerBlocked}
+                    onPress={() => {
+                      setTemplatePickerOpen(current => !current);
+                      setEmojiPickerOpen(false);
+                      setMarketplacePickerOpen(false);
+                    }}
+                    style={[
+                      styles.composerIconButton,
+                      templatePickerOpen && styles.composerIconButtonActive,
+                      (detail.sending || inboxComposerBlocked) &&
+                        styles.composerIconButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.composerIconButtonText}>T</Text>
+                  </KolamPressable>
+                ) : null}
+              </View>
             </View>
           </View>
         </View>
       </View>
-    </View>
       <KolamConfirmDialog
         cancelLabel="Batal"
         confirmLabel={detail.purgingMessages ? 'Menghapus...' : 'Hapus'}
@@ -4422,7 +4536,8 @@ function KolamChatTemplatePicker({
         <KolamPressable
           accessibilityLabel="Tutup template chat"
           onPress={onClose}
-          style={styles.templatePickerClose}>
+          style={styles.templatePickerClose}
+        >
           <Text style={styles.templatePickerCloseText}>x</Text>
         </KolamPressable>
       </View>
@@ -4444,7 +4559,10 @@ function KolamChatTemplatePicker({
         <Text style={styles.templatePickerMessage}>Tidak ada template.</Text>
       ) : null}
       {!state.loading && !state.errorMessage && templates.length > 0 ? (
-        <ScrollView style={styles.templateListScroll} showsVerticalScrollIndicator>
+        <ScrollView
+          style={styles.templateListScroll}
+          showsVerticalScrollIndicator
+        >
           <KolamMappedList
             items={templates}
             getKey={template => template._id}
@@ -4452,7 +4570,8 @@ function KolamChatTemplatePicker({
               <KolamPressable
                 accessibilityLabel={`Pilih template ${template.title}`}
                 onPress={() => onPick(template)}
-                style={styles.templateRow}>
+                style={styles.templateRow}
+              >
                 <View style={styles.templateRowCopy}>
                   <Text numberOfLines={1} style={styles.templateRowTitle}>
                     {template.title}
@@ -4496,9 +4615,7 @@ function KolamChatMarketplaceProductPicker({
     <View style={styles.marketplacePicker}>
       <View style={styles.templatePickerHeader}>
         <View style={styles.templatePickerCopy}>
-          <Text style={styles.templatePickerTitle}>
-            Produk {platformLabel}
-          </Text>
+          <Text style={styles.templatePickerTitle}>Produk {platformLabel}</Text>
           <Text style={styles.templatePickerMeta}>
             Listing ter-map sync. Attach aktif di fase berikutnya.
           </Text>
@@ -4506,7 +4623,8 @@ function KolamChatMarketplaceProductPicker({
         <KolamPressable
           accessibilityLabel="Tutup produk marketplace"
           onPress={onClose}
-          style={styles.templatePickerClose}>
+          style={styles.templatePickerClose}
+        >
           <Text style={styles.templatePickerCloseText}>x</Text>
         </KolamPressable>
       </View>
@@ -4532,7 +4650,10 @@ function KolamChatMarketplaceProductPicker({
         </Text>
       ) : null}
       {!state.loading && !state.errorMessage && state.items.length > 0 ? (
-        <ScrollView style={styles.marketplaceListScroll} showsVerticalScrollIndicator>
+        <ScrollView
+          style={styles.marketplaceListScroll}
+          showsVerticalScrollIndicator
+        >
           <KolamMappedList
             items={state.items}
             getKey={item =>
@@ -4548,9 +4669,13 @@ function KolamChatMarketplaceProductPicker({
                 style={[
                   styles.marketplaceListingRow,
                   disabled && styles.marketplaceListingRowDisabled,
-                ]}>
+                ]}
+              >
                 <View style={styles.marketplaceListingCopy}>
-                  <Text numberOfLines={2} style={styles.marketplaceListingTitle}>
+                  <Text
+                    numberOfLines={2}
+                    style={styles.marketplaceListingTitle}
+                  >
                     {item.listingName || item.name}
                   </Text>
                   <Text numberOfLines={1} style={styles.marketplaceListingMeta}>
@@ -4608,7 +4733,8 @@ function KolamChatComposerEmojiPicker({
             style={[
               styles.emojiPickerButton,
               disabled && styles.composerIconButtonDisabled,
-            ]}>
+            ]}
+          >
             <Text style={styles.emojiPickerButtonText}>{emoji}</Text>
           </KolamPressable>
         )}
@@ -4642,8 +4768,14 @@ function KolamTeamMentionPicker({
                 styles.mentionOption,
                 option.isAi && styles.mentionOptionAi,
                 disabled && styles.attachButtonDisabled,
-              ]}>
-              <View style={[styles.mentionAvatar, option.isAi && styles.mentionAvatarAi]}>
+              ]}
+            >
+              <View
+                style={[
+                  styles.mentionAvatar,
+                  option.isAi && styles.mentionAvatarAi,
+                ]}
+              >
                 <Text style={styles.mentionAvatarText}>
                   {getMentionInitials(option.label)}
                 </Text>
@@ -4664,7 +4796,7 @@ function KolamTeamMentionPicker({
   );
 }
 
-function KolamTeamMentionText({body}: {body: string}) {
+function KolamTeamMentionText({ body }: { body: string }) {
   const parts = splitTeamChatMentionText(body);
 
   return (
@@ -4679,11 +4811,10 @@ function KolamTeamMentionText({body}: {body: string}) {
           <Text
             key={`m-${index}-${part.username}`}
             accessibilityLabel={
-              isDara
-                ? 'Mention DARA'
-                : `Mention ${part.username}`
+              isDara ? 'Mention DARA' : `Mention ${part.username}`
             }
-            style={[styles.messageMention, isDara && styles.messageMentionAi]}>
+            style={[styles.messageMention, isDara && styles.messageMentionAi]}
+          >
             {part.raw}
           </Text>
         );
@@ -4703,7 +4834,8 @@ function KolamTeamChatReplyPreviewCard({
   return (
     <View
       accessibilityLabel={`Reply preview ${senderName}`}
-      style={styles.replyPreviewCard}>
+      style={styles.replyPreviewCard}
+    >
       <Text numberOfLines={1} style={styles.replyPreviewSender}>
         {senderName}
       </Text>
@@ -4727,11 +4859,15 @@ function getTeamChatReplyTargetBody(
   }
 
   if (message.embeds.length > 0) {
-    return message.embeds[0]?.title?.trim() || message.embeds[0]?.refId || 'Embed';
+    return (
+      message.embeds[0]?.title?.trim() || message.embeds[0]?.refId || 'Embed'
+    );
   }
 
   if (message.linkPreviews.length > 0) {
-    return message.linkPreviews[0]?.title ?? message.linkPreviews[0]?.url ?? 'Link';
+    return (
+      message.linkPreviews[0]?.title ?? message.linkPreviews[0]?.url ?? 'Link'
+    );
   }
 
   return 'Pesan';
@@ -4856,10 +4992,7 @@ function isInboxDetailAiMessage(message: KolamChatRailDetailMessage) {
 }
 
 function getTeamChatMessageInitials(author: string) {
-  const words = author
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const words = author.trim().split(/\s+/).filter(Boolean);
   const initials = words
     .slice(0, 2)
     .map(word => word[0])
@@ -4967,9 +5100,12 @@ function KolamInboxRichMessageContent({
       ) : image ? (
         <>
           <KolamPressable
-            accessibilityLabel={`Buka gambar inbox ${content?.fileName || 'Gambar'}`}
+            accessibilityLabel={`Buka gambar inbox ${
+              content?.fileName || 'Gambar'
+            }`}
             onPress={() => setLightboxUri(image.previewUri)}
-            style={styles.inboxRichImagePressable}>
+            style={styles.inboxRichImagePressable}
+          >
             <KolamRemoteImage
               accessibilityLabel={content?.fileName || 'Gambar inbox'}
               resizeMode="contain"
@@ -4990,9 +5126,7 @@ function KolamInboxRichMessageContent({
       ) : (
         <Text style={styles.messageBody}>{message.body}</Text>
       )}
-      {message.daraMeta ? (
-        <KolamInboxDaraMeta meta={message.daraMeta} />
-      ) : null}
+      {message.daraMeta ? <KolamInboxDaraMeta meta={message.daraMeta} /> : null}
     </View>
   );
 }
@@ -5001,7 +5135,9 @@ function KolamInboxReplyPreview({
   reply,
 }: {
   reply: NonNullable<
-    ReturnType<typeof useKolamChatRailDetail>['messages'][number]['replyContent']
+    ReturnType<
+      typeof useKolamChatRailDetail
+    >['messages'][number]['replyContent']
   >;
 }) {
   const imageUri = normalizeChatMediaUri(reply.imageUrl);
@@ -5031,13 +5167,14 @@ function KolamInboxReplyPreview({
 function KolamInboxYoutubeCard({
   youtube,
 }: {
-  youtube: {title?: string; url: string; videoId?: string};
+  youtube: { title?: string; url: string; videoId?: string };
 }) {
   return (
     <KolamPressable
       accessibilityLabel="Buka YouTube inbox"
       onPress={() => openInboxExternalUrl(youtube.url)}
-      style={styles.inboxRichCard}>
+      style={styles.inboxRichCard}
+    >
       <View style={styles.inboxRichCardIcon}>
         <Text style={styles.inboxRichCardIconText}>YT</Text>
       </View>
@@ -5054,7 +5191,7 @@ function KolamInboxYoutubeCard({
   );
 }
 
-function KolamInboxProductCard({card}: {card: KolamInboxResolvedCard}) {
+function KolamInboxProductCard({ card }: { card: KolamInboxResolvedCard }) {
   const content = (
     <>
       {card.imageUrl ? (
@@ -5108,20 +5245,24 @@ function KolamInboxProductCard({card}: {card: KolamInboxResolvedCard}) {
       <KolamPressable
         accessibilityLabel={`Buka card ${card.title}`}
         onPress={() => openInboxExternalUrl(card.actionUrl)}
-        style={styles.inboxRichCard}>
+        style={styles.inboxRichCard}
+      >
         {content}
       </KolamPressable>
     );
   }
 
   return (
-    <View accessibilityLabel={`Card ${card.title}`} style={styles.inboxRichCard}>
+    <View
+      accessibilityLabel={`Card ${card.title}`}
+      style={styles.inboxRichCard}
+    >
       {content}
     </View>
   );
 }
 
-function KolamInboxLinkedCard({card}: {card: KolamInboxLinkedCardData}) {
+function KolamInboxLinkedCard({ card }: { card: KolamInboxLinkedCardData }) {
   const content = (
     <>
       <View style={styles.inboxRichCardIcon}>
@@ -5146,14 +5287,18 @@ function KolamInboxLinkedCard({card}: {card: KolamInboxLinkedCardData}) {
       <KolamPressable
         accessibilityLabel={`Buka linked card ${card.title}`}
         onPress={() => openInboxExternalUrl(card.actionUrl)}
-        style={styles.inboxRichCard}>
+        style={styles.inboxRichCard}
+      >
         {content}
       </KolamPressable>
     );
   }
 
   return (
-    <View accessibilityLabel={`Linked card ${card.title}`} style={styles.inboxRichCard}>
+    <View
+      accessibilityLabel={`Linked card ${card.title}`}
+      style={styles.inboxRichCard}
+    >
       {content}
     </View>
   );
@@ -5169,7 +5314,12 @@ function KolamInboxImageLightbox({
   uri: string | null;
 }) {
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={Boolean(uri)}>
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible={Boolean(uri)}
+    >
       <View style={styles.inboxLightboxRoot}>
         <KolamModalBackdrop onPress={onClose} />
         <View style={styles.inboxLightboxFrame}>
@@ -5185,7 +5335,8 @@ function KolamInboxImageLightbox({
           <KolamPressable
             accessibilityLabel="Tutup gambar inbox"
             onPress={onClose}
-            style={styles.inboxLightboxClose}>
+            style={styles.inboxLightboxClose}
+          >
             <Text style={styles.inboxLightboxCloseText}>Tutup</Text>
           </KolamPressable>
         </View>
@@ -5234,7 +5385,8 @@ function KolamChatReplyComposerStrip({
   return (
     <View
       accessibilityLabel={`Membalas pesan ${replyTarget.author}`}
-      style={styles.replyComposerStrip}>
+      style={styles.replyComposerStrip}
+    >
       <View style={styles.replyComposerCopy}>
         <Text numberOfLines={1} style={styles.replyComposerTitle}>
           Balas {replyTarget.author}
@@ -5250,16 +5402,20 @@ function KolamChatReplyComposerStrip({
         style={[
           styles.replyComposerCancel,
           disabled && styles.attachButtonDisabled,
-        ]}>
+        ]}
+      >
         <Text style={styles.replyComposerCancelText}>x</Text>
       </KolamPressable>
     </View>
   );
 }
 
-function KolamDaraThinkingBubble({line}: {line: string}) {
+function KolamDaraThinkingBubble({ line }: { line: string }) {
   return (
-    <View accessibilityLabel="DARA thinking bubble" style={styles.daraThinkingRow}>
+    <View
+      accessibilityLabel="DARA thinking bubble"
+      style={styles.daraThinkingRow}
+    >
       <View style={styles.daraThinkingAvatar}>
         <Text style={styles.daraThinkingAvatarText}>DA</Text>
       </View>
@@ -5296,7 +5452,9 @@ function KolamChatContactDetailsPanel({
     <View style={styles.contactDetailsPanel}>
       <View style={styles.contactDetailsHeader}>
         <View style={styles.contactAvatar}>
-          <Text style={styles.contactAvatarText}>{getContactInitial(displayName)}</Text>
+          <Text style={styles.contactAvatarText}>
+            {getContactInitial(displayName)}
+          </Text>
         </View>
         <View style={styles.contactHeaderCopy}>
           <Text numberOfLines={1} style={styles.contactName}>
@@ -5309,7 +5467,9 @@ function KolamChatContactDetailsPanel({
       </View>
 
       {state.loading ? (
-        <Text style={styles.contactDetailsMessage}>Memuat detail kontak...</Text>
+        <Text style={styles.contactDetailsMessage}>
+          Memuat detail kontak...
+        </Text>
       ) : null}
 
       {!state.loading && state.errorMessage ? (
@@ -5317,14 +5477,27 @@ function KolamChatContactDetailsPanel({
       ) : null}
 
       {!state.loading && !state.errorMessage ? (
-        <ScrollView style={styles.contactDetailsScroll} showsVerticalScrollIndicator>
+        <ScrollView
+          style={styles.contactDetailsScroll}
+          showsVerticalScrollIndicator
+        >
           <View style={styles.contactDetailsContent}>
             <KolamContactDetailsSection title="CONTACT">
-              <KolamContactDetailRow label="Phone" value={customer?.phone || '-'} />
-              <KolamContactDetailRow label="Email" value={customer?.email || '-'} />
+              <KolamContactDetailRow
+                label="Phone"
+                value={customer?.phone || '-'}
+              />
+              <KolamContactDetailRow
+                label="Email"
+                value={customer?.email || '-'}
+              />
               <KolamContactDetailRow
                 label="Joined"
-                value={customer?.createdAt ? formatJoinedMonth(customer.createdAt) : '-'}
+                value={
+                  customer?.createdAt
+                    ? formatJoinedMonth(customer.createdAt)
+                    : '-'
+                }
               />
             </KolamContactDetailsSection>
 
@@ -5343,7 +5516,8 @@ function KolamChatContactDetailsPanel({
 
             {recentOrders.length > 0 ? (
               <KolamContactDetailsSection
-                title={`ORDER HISTORY (${metrics.ordersCount})`}>
+                title={`ORDER HISTORY (${metrics.ordersCount})`}
+              >
                 <View style={styles.orderList}>
                   <KolamMappedList
                     items={recentOrders}
@@ -5403,7 +5577,7 @@ function KolamContactDetailRow({
   );
 }
 
-function KolamContactOrderRow({order}: {order: KolamChatContactOrder}) {
+function KolamContactOrderRow({ order }: { order: KolamChatContactOrder }) {
   return (
     <View style={styles.orderRow}>
       <View style={styles.orderCopy}>
@@ -5411,7 +5585,10 @@ function KolamContactOrderRow({order}: {order: KolamChatContactOrder}) {
           {order.invoiceCode}
         </Text>
         <Text numberOfLines={1} style={styles.orderMeta}>
-          {[formatOrderDate(order.transactionDate), `${order.itemsCount ?? 0} item`]
+          {[
+            formatOrderDate(order.transactionDate),
+            `${order.itemsCount ?? 0} item`,
+          ]
             .filter(Boolean)
             .join(' | ')}
         </Text>
@@ -5420,7 +5597,9 @@ function KolamContactOrderRow({order}: {order: KolamChatContactOrder}) {
         <Text numberOfLines={1} style={styles.orderAmount}>
           {formatRupiah(order.finalTotal ?? 0)}
         </Text>
-        <Text style={styles.orderStatus}>{formatOrderStatus(order.status)}</Text>
+        <Text style={styles.orderStatus}>
+          {formatOrderStatus(order.status)}
+        </Text>
       </View>
     </View>
   );
@@ -5488,8 +5667,8 @@ function KolamInboxActionStrip({
           {assignedLabel
             ? `CS: ${assignedLabel}`
             : conversation.isAiHandled
-              ? 'DARA menangani'
-              : 'Belum ditugaskan'}
+            ? 'DARA menangani'
+            : 'Belum ditugaskan'}
         </Text>
       </View>
       <View style={styles.inboxActionButtons}>
@@ -5502,7 +5681,8 @@ function KolamInboxActionStrip({
             styles.callButtonGhost,
             labelPickerOpen && styles.callButtonActive,
             detail.sending && styles.callButtonDisabled,
-          ]}>
+          ]}
+        >
           <Text style={styles.callButtonGhostText}>Label</Text>
         </KolamPressable>
         <KolamPressable
@@ -5514,15 +5694,22 @@ function KolamInboxActionStrip({
             styles.callButtonGhost,
             detailsOpen && styles.callButtonActive,
             detail.sending && styles.callButtonDisabled,
-          ]}>
+          ]}
+        >
           <Text style={styles.callButtonGhostText}>Detail kontak</Text>
         </KolamPressable>
         <KolamPressable
           accessibilityLabel="Toggle inbox conversation status"
           disabled={detail.sending}
           onPress={detail.toggleInboxStatus}
-          style={[styles.callButton, detail.sending && styles.callButtonDisabled]}>
-          <Text style={styles.callButtonText}>{isClosed ? 'Reopen' : 'Resolve'}</Text>
+          style={[
+            styles.callButton,
+            detail.sending && styles.callButtonDisabled,
+          ]}
+        >
+          <Text style={styles.callButtonText}>
+            {isClosed ? 'Reopen' : 'Resolve'}
+          </Text>
         </KolamPressable>
         {!isClosed && !assignedToMe && currentUserId ? (
           <KolamPressable
@@ -5537,7 +5724,8 @@ function KolamInboxActionStrip({
               styles.callButtonGhost,
               handoverNoteOpen && styles.callButtonActive,
               detail.sending && styles.callButtonDisabled,
-            ]}>
+            ]}
+          >
             <Text style={styles.callButtonGhostText}>Assign saya</Text>
           </KolamPressable>
         ) : null}
@@ -5550,7 +5738,8 @@ function KolamInboxActionStrip({
               styles.callButton,
               styles.callButtonGhost,
               detail.sending && styles.callButtonDisabled,
-            ]}>
+            ]}
+          >
             <Text style={styles.callButtonGhostText}>
               {conversation.isAiHandled ? 'AI off' : 'AI on'}
             </Text>
@@ -5579,7 +5768,8 @@ function KolamInboxActionStrip({
                 styles.callButton,
                 styles.callButtonGhost,
                 detail.sending && styles.callButtonDisabled,
-              ]}>
+              ]}
+            >
               <Text style={styles.callButtonGhostText}>Batal</Text>
             </KolamPressable>
             <KolamPressable
@@ -5589,7 +5779,8 @@ function KolamInboxActionStrip({
               style={[
                 styles.callButton,
                 detail.sending && styles.callButtonDisabled,
-              ]}>
+              ]}
+            >
               <Text style={styles.callButtonText}>
                 {detail.sending ? 'Mengirim...' : 'Assign'}
               </Text>
@@ -5609,13 +5800,13 @@ function KolamInboxActionStrip({
   );
 }
 
-function KolamChatLabelPill({label}: {label: KolamChatLabel}) {
+function KolamChatLabelPill({ label }: { label: KolamChatLabel }) {
   return (
     <View style={styles.inboxLabelPill}>
       <View
         style={[
           styles.inboxLabelDot,
-          {backgroundColor: normalizeChatLabelColor(label.color)},
+          { backgroundColor: normalizeChatLabelColor(label.color) },
         ]}
       />
       <Text numberOfLines={1} style={styles.inboxLabelText}>
@@ -5657,11 +5848,12 @@ function KolamInboxLabelPicker({
                     styles.inboxLabelOption,
                     active && styles.inboxLabelOptionActive,
                     disabled && styles.callButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <View
                     style={[
                       styles.inboxLabelDot,
-                      {backgroundColor: normalizeChatLabelColor(label.color)},
+                      { backgroundColor: normalizeChatLabelColor(label.color) },
                     ]}
                   />
                   <Text numberOfLines={1} style={styles.inboxLabelOptionText}>
@@ -5696,7 +5888,8 @@ function KolamInboxHandoverNoteBanner({
   return (
     <View
       accessibilityLabel="Catatan handover percakapan"
-      style={styles.inboxHandoverBanner}>
+      style={styles.inboxHandoverBanner}
+    >
       <Text style={styles.inboxHandoverBannerTitle}>Catatan handover</Text>
       {fromName || toName ? (
         <Text style={styles.inboxHandoverBannerRoute}>
@@ -5723,12 +5916,16 @@ function KolamChatCallStrip({
   const primaryLabel = detail.callBusy
     ? 'Memproses...'
     : activeCall
-      ? getCallStatusLabel(activeCall.status)
-      : null;
-  const secondaryLabel = activeCall
-    ? `${activeCall.participantCount ?? activeCall.participants?.length ?? 0} peserta`
+    ? getCallStatusLabel(activeCall.status)
     : null;
-  const showCallCopy = Boolean(primaryLabel || detail.callErrorMessage || secondaryLabel);
+  const secondaryLabel = activeCall
+    ? `${
+        activeCall.participantCount ?? activeCall.participants?.length ?? 0
+      } peserta`
+    : null;
+  const showCallCopy = Boolean(
+    primaryLabel || detail.callErrorMessage || secondaryLabel,
+  );
   const myParticipant = activeCall?.participants?.find(
     participant => getCallParticipantUserId(participant) === currentUserId,
   );
@@ -5768,7 +5965,11 @@ function KolamChatCallStrip({
                 accessibilityLabel="Join team chat call"
                 disabled={detail.callBusy}
                 onPress={detail.joinCall}
-                style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
+                style={[
+                  styles.callButton,
+                  detail.callBusy && styles.callButtonDisabled,
+                ]}
+              >
                 <Text style={styles.callButtonText}>Join</Text>
               </KolamPressable>
               {activeCall.status === 'ringing' ? (
@@ -5780,7 +5981,8 @@ function KolamChatCallStrip({
                     styles.callButton,
                     styles.callButtonGhost,
                     detail.callBusy && styles.callButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.callButtonGhostText}>Tolak</Text>
                 </KolamPressable>
               ) : null}
@@ -5792,7 +5994,8 @@ function KolamChatCallStrip({
                   styles.callButton,
                   styles.callButtonDanger,
                   detail.callBusy && styles.callButtonDisabled,
-                ]}>
+                ]}
+              >
                 <Text style={styles.callButtonText}>End</Text>
               </KolamPressable>
             </>
@@ -5805,12 +6008,9 @@ function KolamChatCallStrip({
                 styles.callButton,
                 styles.callIconButton,
                 detail.callBusy && styles.callButtonDisabled,
-              ]}>
-              <SvgXml
-                height="100%"
-                width="100%"
-                xml={KOLAM_CALL_ICON_SVG}
-              />
+              ]}
+            >
+              <SvgXml height="100%" width="100%" xml={KOLAM_CALL_ICON_SVG} />
             </KolamPressable>
           )}
         </View>
@@ -5826,7 +6026,8 @@ function KolamChatCallStrip({
                 styles.callButton,
                 styles.callButtonGhost,
                 detail.callBusy && styles.callButtonDisabled,
-              ]}>
+              ]}
+            >
               <Text style={styles.callButtonGhostText}>
                 {handRaised ? 'Turunkan' : 'Raise'}
               </Text>
@@ -5841,7 +6042,8 @@ function KolamChatCallStrip({
                 styles.callButton,
                 styles.callButtonGhost,
                 detail.callBusy && styles.callButtonDisabled,
-              ]}>
+              ]}
+            >
               <Text style={styles.callButtonGhostText}>
                 Ulang {noAnswerCount}
               </Text>
@@ -5855,7 +6057,8 @@ function KolamChatCallStrip({
               styles.callButton,
               styles.callButtonGhost,
               detail.callBusy && styles.callButtonDisabled,
-            ]}>
+            ]}
+          >
             <Text style={styles.callButtonGhostText}>Handover</Text>
           </KolamPressable>
         </View>
@@ -5865,13 +6068,15 @@ function KolamChatCallStrip({
           <KolamMappedList
             items={participantControls}
             getKey={item => item.userId ?? 'participant'}
-            renderItem={({participant, userId}) => (
+            renderItem={({ participant, userId }) => (
               <View style={styles.callParticipantRow}>
                 <Text numberOfLines={1} style={styles.callParticipantText}>
                   {getCallParticipantLabel(participant)}
                 </Text>
                 <KolamPressable
-                  accessibilityLabel={`${participant.muted ? 'Unmute' : 'Mute'} team chat participant`}
+                  accessibilityLabel={`${
+                    participant.muted ? 'Unmute' : 'Mute'
+                  } team chat participant`}
                   disabled={detail.callBusy || !userId}
                   onPress={() =>
                     userId
@@ -5884,7 +6089,8 @@ function KolamChatCallStrip({
                     styles.callButton,
                     styles.callButtonGhost,
                     detail.callBusy && styles.callButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.callButtonGhostText}>
                     {participant.muted ? 'Unmute' : 'Mute'}
                   </Text>
@@ -6008,13 +6214,18 @@ function KolamChatLinkPreview({
   preview: KolamTeamChatLinkPreview;
 }) {
   const previewImage = getTeamChatLinkPreviewImage(preview);
-  const imageUri = previewImage ? getKolamFileUrl(previewImage) ?? previewImage : '';
+  const imageUri = previewImage
+    ? getKolamFileUrl(previewImage) ?? previewImage
+    : '';
   const title = preview.title?.trim() || preview.url;
   const description = preview.description?.trim();
   const siteName = preview.siteName?.trim();
 
   return (
-    <View accessibilityLabel={`Link preview ${title}`} style={styles.chatPreviewCard}>
+    <View
+      accessibilityLabel={`Link preview ${title}`}
+      style={styles.chatPreviewCard}
+    >
       {imageUri ? (
         <KolamRemoteImage
           accessibilityLabel={`Gambar link preview ${title}`}
@@ -6044,7 +6255,7 @@ function KolamChatLinkPreview({
   );
 }
 
-function KolamChatEmbedList({embeds}: {embeds: KolamTeamChatEmbed[]}) {
+function KolamChatEmbedList({ embeds }: { embeds: KolamTeamChatEmbed[] }) {
   return (
     <View style={styles.chatEmbedList}>
       <KolamMappedList
@@ -6056,16 +6267,21 @@ function KolamChatEmbedList({embeds}: {embeds: KolamTeamChatEmbed[]}) {
   );
 }
 
-function KolamChatEmbedCard({embed}: {embed: KolamTeamChatEmbed}) {
+function KolamChatEmbedCard({ embed }: { embed: KolamTeamChatEmbed }) {
   const label = getTeamChatEmbedTypeLabel(embed.type);
   const title = embed.title?.trim() || embed.refId;
   const subtitle = embed.subtitle?.trim();
   const href = getTeamChatEmbedHref(embed);
 
   return (
-    <View accessibilityLabel={`Embed ${label} ${title}`} style={styles.chatEmbedCard}>
+    <View
+      accessibilityLabel={`Embed ${label} ${title}`}
+      style={styles.chatEmbedCard}
+    >
       <View style={styles.chatEmbedIcon}>
-        <Text style={styles.chatEmbedIconText}>{getTeamChatEmbedInitial(label)}</Text>
+        <Text style={styles.chatEmbedIconText}>
+          {getTeamChatEmbedInitial(label)}
+        </Text>
       </View>
       <View style={styles.chatEmbedCopy}>
         <Text numberOfLines={1} style={styles.chatEmbedKicker}>
@@ -6115,7 +6331,11 @@ function KolamInboxMessageActions({
           accessibilityLabel={`Balas pesan ${message.author}`}
           disabled={disabled}
           onPress={onReply}
-          style={[styles.replyActionButton, disabled && styles.attachButtonDisabled]}>
+          style={[
+            styles.replyActionButton,
+            disabled && styles.attachButtonDisabled,
+          ]}
+        >
           <Text style={styles.replyActionText}>Balas</Text>
         </KolamPressable>
       ) : null}
@@ -6128,7 +6348,8 @@ function KolamInboxMessageActions({
             styles.replyActionButton,
             styles.editActionButton,
             disabled && styles.attachButtonDisabled,
-          ]}>
+          ]}
+        >
           <Text style={styles.replyActionText}>Edit</Text>
         </KolamPressable>
       ) : null}
@@ -6162,14 +6383,15 @@ function KolamChatReactionControls({
       <View style={styles.teamBubbleActionRow}>
         <KolamPressable
           accessibilityLabel={`Aksi pesan ${message.author}`}
-          accessibilityState={{expanded: open}}
+          accessibilityState={{ expanded: open }}
           disabled={disabled}
           onPress={onToggle}
           style={[
             styles.teamBubbleActionButton,
             open && styles.teamBubbleActionButtonOpen,
             disabled && styles.attachButtonDisabled,
-          ]}>
+          ]}
+        >
           <Text style={styles.teamBubbleActionButtonText}>...</Text>
         </KolamPressable>
 
@@ -6190,7 +6412,8 @@ function KolamChatReactionControls({
                     style={[
                       styles.reactionButton,
                       disabled && styles.reactionButtonDisabled,
-                    ]}>
+                    ]}
+                  >
                     <Text style={styles.reactionButtonText}>{emoji}</Text>
                   </KolamPressable>
                 )}
@@ -6207,7 +6430,8 @@ function KolamChatReactionControls({
                 style={[
                   styles.replyActionButton,
                   disabled && styles.attachButtonDisabled,
-                ]}>
+                ]}
+              >
                 <Text style={styles.replyActionText}>Balas</Text>
               </KolamPressable>
               {canEdit ? (
@@ -6222,7 +6446,8 @@ function KolamChatReactionControls({
                     styles.replyActionButton,
                     styles.editActionButton,
                     disabled && styles.attachButtonDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.replyActionText}>Edit</Text>
                 </KolamPressable>
               ) : null}
@@ -6244,7 +6469,8 @@ function KolamChatReactionControls({
                 style={[
                   styles.reactionPill,
                   reaction.mine && styles.reactionPillMine,
-                ]}>
+                ]}
+              >
                 <Text style={styles.reactionPillText}>
                   {reaction.emoji} {reaction.count}
                 </Text>
@@ -6263,7 +6489,8 @@ function getChatRailContent(mode: KolamGlobalChatRailMode) {
       accessibilityLabel: 'Panel kanan Team chat',
       iconKind: 'team' as const,
       emptyTitle: 'Belum ada room aktif',
-      emptyMessage: 'Room team chat akan muncul di sini setelah backend mengirim data.',
+      emptyMessage:
+        'Room team chat akan muncul di sini setelah backend mengirim data.',
       itemLabel: 'room',
       selectLabel: 'Pilih room',
       title: 'Team chat',
@@ -6381,7 +6608,7 @@ function buildInboxListParams(
 }
 
 function conversationFitsAssignmentFilter(
-  conversation: {assignedStaffId?: KolamChatStaffRef | string | null},
+  conversation: { assignedStaffId?: KolamChatStaffRef | string | null },
   filter: KolamChatRailInboxFilter['assignment'],
 ) {
   if (filter === 'all') {
@@ -6415,16 +6642,14 @@ function canCreateTeamChatRoom(user?: SignedInUser | null) {
     return true;
   }
 
-  if ((user as {isOwner?: boolean}).isOwner === true) {
+  if ((user as { isOwner?: boolean }).isOwner === true) {
     return true;
   }
 
   return permissionAllowsChatCreate(user.permissions);
 }
 
-function permissionAllowsChatCreate(
-  permissions?: SignedInUser['permissions'],
-) {
+function permissionAllowsChatCreate(permissions?: SignedInUser['permissions']) {
   return Boolean(
     permissions?.some(permission => {
       const resource = String(permission.resource ?? '')
@@ -6442,7 +6667,9 @@ function permissionAllowsChatCreate(
 }
 
 function normalizeChatRoleKey(roleKey?: string | null) {
-  return String(roleKey ?? '').toLowerCase().trim();
+  return String(roleKey ?? '')
+    .toLowerCase()
+    .trim();
 }
 
 function getInboxComposerAccess(
@@ -6451,7 +6678,7 @@ function getInboxComposerAccess(
     | null
     | undefined,
   currentUserId?: string,
-  options: {csCanReply: boolean} = {csCanReply: false},
+  options: { csCanReply: boolean } = { csCanReply: false },
 ): KolamInboxComposerAccess {
   if (!conversation) {
     return {
@@ -6574,7 +6801,7 @@ function resolveInboxImageContent(
   const legacy = parseInboxLegacyImageText(body);
   const legacyUri = legacy ? normalizeChatMediaUri(legacy) : null;
   return legacyUri
-    ? {caption: '', previewUri: legacyUri, thumbnailUri: legacyUri}
+    ? { caption: '', previewUri: legacyUri, thumbnailUri: legacyUri }
     : null;
 }
 
@@ -6650,8 +6877,8 @@ function resolveInboxCard(
       content?.type === 'marketplace_product_card' || card.marketplace
         ? 'marketplace'
         : card.entityType === 'species'
-          ? 'species'
-          : 'product';
+        ? 'species'
+        : 'product';
     return {
       actionUrl: normalizeInboxActionUrl(card.detailHref || card.imageUrl),
       imageUrl: normalizeChatMediaUri(card.imageUrl) ?? undefined,
@@ -6679,14 +6906,14 @@ function resolveInboxCard(
           content.type === 'species_card'
             ? 'species'
             : content.type === 'marketplace_product_card'
-              ? 'marketplace'
-              : 'product',
+            ? 'marketplace'
+            : 'product',
         label: getInboxCardLabel(
           content.type === 'species_card'
             ? 'species'
             : content.type === 'marketplace_product_card'
-              ? 'marketplace'
-              : 'product',
+            ? 'marketplace'
+            : 'product',
         ),
         title,
       };
@@ -6706,7 +6933,9 @@ function parseInboxLegacyImageText(text: string) {
   return /^https?:\/\//i.test(url) ? url : null;
 }
 
-function parseInboxLegacyProductText(text: string): KolamInboxResolvedCard | null {
+function parseInboxLegacyProductText(
+  text: string,
+): KolamInboxResolvedCard | null {
   const trimmed = text.trim();
   if (!trimmed.startsWith('[Product]')) {
     return null;
@@ -6743,17 +6972,17 @@ function parseInboxLegacyProductText(text: string): KolamInboxResolvedCard | nul
 function resolveInboxLinkedCard(body: string): KolamInboxLinkedCardData | null {
   const invoice = parseInboxTaggedCard(body, 'Invoice');
   if (invoice) {
-    return {...invoice, icon: 'INV', label: 'Invoice'};
+    return { ...invoice, icon: 'INV', label: 'Invoice' };
   }
 
   const project = parseInboxTaggedCard(body, 'Project');
   if (project) {
-    return {...project, icon: 'PRJ', label: 'Proyek'};
+    return { ...project, icon: 'PRJ', label: 'Proyek' };
   }
 
   const complaint = parseInboxTaggedCard(body, 'Complaint');
   if (complaint) {
-    return {...complaint, icon: 'CMP', label: 'Komplain'};
+    return { ...complaint, icon: 'CMP', label: 'Komplain' };
   }
 
   return null;
@@ -6924,7 +7153,7 @@ function getConversationTitle({
   contactId,
   platform,
 }: {
-  contactId?: string | {displayName?: string};
+  contactId?: string | { displayName?: string };
   platform?: string;
 }) {
   if (contactId && typeof contactId === 'object') {
@@ -7102,7 +7331,9 @@ function formatMarketplaceComposerToolLabel(platform: 'shopee' | 'tokopedia') {
 function formatMarketplaceListingMeta(item: KolamChatMarketplaceListingHit) {
   const parts = [
     item.sku ? `SKU ${item.sku}` : '',
-    item.goodsId || item.productId ? `ID ${item.goodsId || item.productId}` : '',
+    item.goodsId || item.productId
+      ? `ID ${item.goodsId || item.productId}`
+      : '',
     item.entityType === 'species' ? 'Species' : 'Product',
   ].filter(Boolean);
 
@@ -7136,14 +7367,16 @@ function getTeamChatPresenceFromLiveEvent(
     return null;
   }
 
-  const presence = (event.payload as {presence?: unknown}).presence;
+  const presence = (event.payload as { presence?: unknown }).presence;
   if (!presence || typeof presence !== 'object') {
     return null;
   }
 
   const record = presence as Partial<KolamTeamChatPresence>;
   return {
-    onlineCount: Number.isFinite(record.onlineCount) ? record.onlineCount ?? 0 : 0,
+    onlineCount: Number.isFinite(record.onlineCount)
+      ? record.onlineCount ?? 0
+      : 0,
     typingUserIds: Array.isArray(record.typingUserIds)
       ? record.typingUserIds.filter(id => typeof id === 'string')
       : [],
@@ -7209,7 +7442,7 @@ function getInboxMessagePatchFromLiveEvent(event: KolamChatLiveEvent) {
     ) as KolamChatMessage['senderType'];
   }
 
-  return Object.keys(patch).length ? {messageId, patch} : null;
+  return Object.keys(patch).length ? { messageId, patch } : null;
 }
 
 function getInboxMessageCreatedFromLiveEvent(event: KolamChatLiveEvent) {
@@ -7322,7 +7555,9 @@ function getStringRecordValue(
 
 function formatTeamChatPresence(presence: KolamTeamChatPresence) {
   const parts = [
-    presence.onlineCount > 0 ? `${presence.onlineCount} online` : 'Tidak ada yang online',
+    presence.onlineCount > 0
+      ? `${presence.onlineCount} online`
+      : 'Tidak ada yang online',
     presence.viewingCount > 0 ? `${presence.viewingCount} melihat` : '',
     presence.typingUserIds.length > 0
       ? `${presence.typingUserIds.length} mengetik...`
@@ -7346,7 +7581,9 @@ function getCallStatusLabel(status: string) {
 }
 
 function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
-  return typeof participant.user === 'string' ? participant.user : participant.user?._id;
+  return typeof participant.user === 'string'
+    ? participant.user
+    : participant.user?._id;
 }
 
 function getCallParticipantLabel(participant: KolamTeamChatCallParticipant) {
@@ -7478,7 +7715,7 @@ function splitTeamChatMentionText(body: string): KolamTeamMentionTextPart[] {
   while ((match = mentionPattern.exec(text)) !== null) {
     const start = match.index;
     if (start > last) {
-      parts.push({type: 'text', value: text.slice(last, start)});
+      parts.push({ type: 'text', value: text.slice(last, start) });
     }
 
     parts.push({
@@ -7490,10 +7727,10 @@ function splitTeamChatMentionText(body: string): KolamTeamMentionTextPart[] {
   }
 
   if (last < text.length) {
-    parts.push({type: 'text', value: text.slice(last)});
+    parts.push({ type: 'text', value: text.slice(last) });
   }
 
-  return parts.length > 0 ? parts : [{type: 'text', value: text}];
+  return parts.length > 0 ? parts : [{ type: 'text', value: text }];
 }
 
 function shouldShowDaraThinking({
@@ -7520,7 +7757,7 @@ function buildTeamMentionOptions(
   const options: KolamTeamMentionOption[] = [];
 
   if (includeDara && (!q || 'dara'.includes(q) || q.includes('dar'))) {
-    options.push({id: 'dara', isAi: true, label: 'DARA', username: 'dara'});
+    options.push({ id: 'dara', isAi: true, label: 'DARA', username: 'dara' });
   }
 
   bots.forEach(bot => {
@@ -7555,7 +7792,7 @@ function buildTeamMentionOptions(
       return;
     }
 
-    options.push({id: member._id || username, label, username});
+    options.push({ id: member._id || username, label, username });
   });
 
   return options.slice(0, 12);
@@ -7643,7 +7880,7 @@ function getTeamChatEmbedInitial(label: string) {
 }
 
 function getTeamChatLinkPreviewImage(preview: KolamTeamChatLinkPreview) {
-  const maybeImageUrl = (preview as {imageUrl?: unknown}).imageUrl;
+  const maybeImageUrl = (preview as { imageUrl?: unknown }).imageUrl;
   if (typeof maybeImageUrl === 'string' && maybeImageUrl.trim()) {
     return maybeImageUrl.trim();
   }
@@ -7652,7 +7889,7 @@ function getTeamChatLinkPreviewImage(preview: KolamTeamChatLinkPreview) {
 }
 
 function getTeamChatEmbedHref(embed: KolamTeamChatEmbed) {
-  const maybeHref = (embed as {href?: unknown}).href;
+  const maybeHref = (embed as { href?: unknown }).href;
   if (typeof maybeHref === 'string' && maybeHref.trim()) {
     return maybeHref.trim();
   }
@@ -8021,7 +8258,7 @@ const styles = StyleSheet.create({
     shadowColor: '#111827',
     shadowOpacity: 0.16,
     shadowRadius: 14,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
   },
   chatAnalyticsPopover: {
     position: 'absolute',
@@ -8039,7 +8276,7 @@ const styles = StyleSheet.create({
     shadowColor: '#111827',
     shadowOpacity: 0.16,
     shadowRadius: 14,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
   },
   chatSettingsPopover: {
     position: 'absolute',
@@ -8057,7 +8294,7 @@ const styles = StyleSheet.create({
     shadowColor: '#111827',
     shadowOpacity: 0.16,
     shadowRadius: 14,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
   },
   teamDaraWindow: {
     // Same anchor class as profile user menu — final position on first paint.
@@ -8073,7 +8310,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: 12,
     shadowColor: V.colors.fg,
-    shadowOffset: {width: 0, height: 16},
+    shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.18,
     shadowRadius: 24,
     zIndex: 2000,
@@ -8268,7 +8505,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     shadowColor: V.colors.fg,
-    shadowOffset: {width: 0, height: 16},
+    shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.18,
     shadowRadius: 24,
     zIndex: 3,
@@ -9601,7 +9838,8 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   messageBubble: {
-    maxWidth: '86%',
+    alignSelf: 'stretch',
+    maxWidth: '100%',
     padding: 9,
     borderRadius: V.radius.lg,
     borderColor: V.colors.border,
@@ -9610,17 +9848,12 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   messageBubbleMine: {
-    alignSelf: 'flex-end',
     backgroundColor: V.colors.primarySoft,
     borderColor: V.colors.primary,
   },
   messageBubbleOther: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderWidth: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 2,
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
   },
   teamMessageAuthorRow: {
     alignItems: 'center',
