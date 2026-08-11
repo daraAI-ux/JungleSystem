@@ -249,8 +249,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
   botAvatar: {
     borderRadius: 999,
     flexShrink: 0,
-    height: 56,
-    width: 56,
+    height: 72,
+    width: 72,
   },
   botAvatarPh: {
     alignItems: 'center',
@@ -259,9 +259,9 @@ export const transaksiCopilotStyles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     flexShrink: 0,
-    height: 56,
+    height: 72,
     justifyContent: 'center',
-    width: 56,
+    width: 72,
   },
   botAvatarPhText: {
     color: V.colors.mutedFg,

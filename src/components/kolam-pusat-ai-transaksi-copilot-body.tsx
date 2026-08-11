@@ -25,6 +25,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSwitch} from './kolam-switch';
 import {transaksiCopilotStyles as styles} from './kolam-pusat-ai-transaksi-copilot-styles';
 
@@ -298,7 +299,14 @@ function BotProfileSection({
         </View>
         <View style={styles.botStripActions}>
           {photoUri ? (
-            <Image source={{uri: photoUri}} style={styles.botAvatar} />
+            <KolamRemoteImage
+              accessibilityLabel="Avatar Katak Terbang"
+              resizeMode="cover"
+              revision={photoUri}
+              scope="transaksi-copilot-katak-avatar"
+              sourceUri={photoUri}
+              style={styles.botAvatar}
+            />
           ) : (
             <View style={styles.botAvatarPh}>
               <Text style={styles.botAvatarPhText}>BOT</Text>
