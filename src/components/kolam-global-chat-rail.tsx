@@ -1364,6 +1364,7 @@ export function KolamGlobalChatRail({
             katakTerbangAvatarUrl={daraAvatarState.katakTerbangImageUrl}
             rajaAnemonAvatarUrl={daraAvatarState.rajaAnemonImageUrl}
             pangeranIsopodAvatarUrl={daraAvatarState.pangeranIsopodImageUrl}
+            canPurgeMessages={canPurgeTeamChatRoomMessages(authUser?.roleKey)}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
             deleteRoomBusy={deleteRoomState.busy}
             detail={detail}
@@ -3405,6 +3406,7 @@ function KolamChatRailDetailPanel({
   katakTerbangAvatarUrl,
   rajaAnemonAvatarUrl,
   pangeranIsopodAvatarUrl,
+  canPurgeMessages,
   daraThinkingLiveSignal,
   deleteRoomBusy,
   detail,
@@ -3430,6 +3432,7 @@ function KolamChatRailDetailPanel({
   katakTerbangAvatarUrl: string | null;
   rajaAnemonAvatarUrl: string | null;
   pangeranIsopodAvatarUrl: string | null;
+  canPurgeMessages: boolean;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   deleteRoomBusy: boolean;
   detail: ReturnType<typeof useKolamChatRailDetail>;
@@ -3464,6 +3467,10 @@ function KolamChatRailDetailPanel({
     React.useState<string | null>(null);
   const [editingDraft, setEditingDraft] = React.useState('');
   const [messageSearchDraft, setMessageSearchDraft] = React.useState('');
+  const [purgeConfirmVisible, setPurgeConfirmVisible] = React.useState(false);
+  const [purgeStatusMessage, setPurgeStatusMessage] = React.useState<
+    string | null
+  >(null);
   const [contactDetailsState, setContactDetailsState] =
     React.useState<KolamChatRailContactDetailsState>({
       data: null,
@@ -3546,6 +3553,8 @@ function KolamChatRailDetailPanel({
     setOpenTeamActionMessageId(null);
     setEditingDraft('');
     setMessageSearchDraft('');
+    setPurgeConfirmVisible(false);
+    setPurgeStatusMessage(null);
     setContactDetailsOpen(false);
     setContactDetailsState({data: null, loading: false});
   }, [selectedItem.id]);
@@ -3801,8 +3810,13 @@ function KolamChatRailDetailPanel({
     mode === 'team-chat' && canDeleteTeamChatRoom(selectedItem);
 
   return (
+    <>
     <View style={[styles.detailPanel, fullPage && styles.detailPanelFull]}>
-      <View style={styles.selectedBanner}>
+      <View
+        style={[
+          styles.selectedBanner,
+          mode === 'team-chat' ? styles.selectedBannerTeam : null,
+        ]}>
         <View style={styles.selectedTitleRow}>
           {onBack ? (
             <KolamPressable
@@ -3815,9 +3829,16 @@ function KolamChatRailDetailPanel({
               />
             </KolamPressable>
           ) : null}
-          <Text numberOfLines={1} style={styles.selectedTitle}>
-            {selectedItem.title}
-          </Text>
+          <View style={styles.selectedTitleBlock}>
+            <Text numberOfLines={1} style={styles.selectedTitle}>
+              {selectedItem.title}
+            </Text>
+            {mode === 'team-chat' ? (
+              <Text numberOfLines={1} style={styles.presenceMetaInline}>
+                {formatTeamChatPresence(detail.presence)}
+              </Text>
+            ) : null}
+          </View>
           {canDeleteSelectedTeamRoom ? (
             <KolamPressable
               accessibilityLabel={`Hapus room ${selectedItem.title}`}
@@ -3831,12 +3852,9 @@ function KolamChatRailDetailPanel({
             </KolamPressable>
           ) : null}
         </View>
-        <Text numberOfLines={2} style={styles.selectedMeta}>
-          {selectedItem.preview}
-        </Text>
-        {mode === 'team-chat' ? (
-          <Text numberOfLines={1} style={styles.presenceMeta}>
-            {formatTeamChatPresence(detail.presence)}
+        {mode === 'inbox' && selectedItem.preview ? (
+          <Text numberOfLines={2} style={styles.selectedMeta}>
+            {selectedItem.preview}
           </Text>
         ) : null}
         {mode === 'team-chat' ? (
@@ -3879,7 +3897,25 @@ function KolamChatRailDetailPanel({
                 ]}
               />
             ) : null}
+            {canPurgeMessages ? (
+              <KolamPressable
+                accessibilityLabel="Hapus semua chat"
+                disabled={detail.purgingMessages}
+                onPress={() => {
+                  setPurgeStatusMessage(null);
+                  setPurgeConfirmVisible(true);
+                }}
+                style={[
+                  styles.messagePurgeButton,
+                  detail.purgingMessages && styles.composerIconButtonDisabled,
+                ]}>
+                <KolamTeamChatTrashIcon />
+              </KolamPressable>
+            ) : null}
           </View>
+        ) : null}
+        {mode === 'team-chat' && purgeStatusMessage ? (
+          <Text style={styles.purgeStatusMeta}>{purgeStatusMessage}</Text>
         ) : null}
         {mode === 'inbox' ? (
           <KolamInboxActionStrip
@@ -4313,6 +4349,31 @@ function KolamChatRailDetailPanel({
         </View>
       </View>
     </View>
+      <KolamConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel={detail.purgingMessages ? 'Menghapus...' : 'Hapus'}
+        destructive
+        message="Hapus SEMUA pesan di room ini? Tindakan tidak bisa dibatalkan."
+        onCancel={() => {
+          if (!detail.purgingMessages) {
+            setPurgeConfirmVisible(false);
+          }
+        }}
+        onConfirm={() => {
+          void (async () => {
+            try {
+              const deletedCount = await detail.purgeMessages();
+              setPurgeConfirmVisible(false);
+              setPurgeStatusMessage(`${deletedCount} pesan dihapus`);
+            } catch {
+              setPurgeConfirmVisible(false);
+            }
+          })();
+        }}
+        title="Hapus semua chat?"
+        visible={purgeConfirmVisible}
+      />
+    </>
   );
 }
 
@@ -6252,6 +6313,24 @@ function getChatRailItems(
 function canDeleteTeamChatRoom(item: KolamChatRailItem) {
   return (
     item.teamRoomCategory === 'meeting' || item.teamRoomCategory === 'project'
+  );
+}
+
+/** BE `isAdminRole` / FE plugin purge button — admin only. */
+const TEAM_CHAT_PURGE_ADMIN_ROLE_KEYS = new Set([
+  'super_admin',
+  'super_administrator',
+  'super-admin',
+  'super-administrator',
+  'superadministrator',
+  'admin',
+]);
+
+function canPurgeTeamChatRoomMessages(roleKey?: string | null) {
+  return TEAM_CHAT_PURGE_ADMIN_ROLE_KEYS.has(
+    String(roleKey || '')
+      .trim()
+      .toLowerCase(),
   );
 }
 
@@ -8958,11 +9037,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 4,
   },
+  selectedBannerTeam: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 8,
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+  },
   selectedTitleRow: {
     minHeight: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  selectedTitleBlock: {
+    minWidth: 0,
+    flex: 1,
+    gap: 1,
   },
   detailBackButton: {
     width: 20,
@@ -8974,13 +9066,13 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   detailDeleteRoomButton: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
-    borderColor: 'rgba(220, 38, 38, 0.34)',
+    borderRadius: V.radius.md,
+    borderColor: 'rgba(220, 38, 38, 0.28)',
     borderWidth: 1,
     backgroundColor: 'rgba(254, 242, 242, 0.98)',
   },
@@ -9035,11 +9127,10 @@ const styles = StyleSheet.create({
   },
   selectedTitle: {
     minWidth: 0,
-    flex: 1,
-    color: V.colors.primary,
+    color: V.colors.fg,
     fontFamily: V.fontFamily,
-    fontSize: 13,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '800',
   },
   selectedMeta: {
     color: V.colors.fg,
@@ -9053,28 +9144,43 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  presenceMetaInline: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  purgeStatusMeta: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+  },
   messageSearchBar: {
-    marginTop: 6,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    gap: 6,
   },
   messageSearchInput: {
     minWidth: 0,
     flex: 1,
-    minHeight: 32,
+    minHeight: 30,
+    height: 30,
     borderRadius: V.radius.md,
     borderColor: V.colors.border,
     borderWidth: 1,
     paddingHorizontal: 10,
+    paddingVertical: 0,
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     backgroundColor: V.colors.bg,
   },
   messageSearchButton: {
-    minHeight: 32,
+    minHeight: 30,
+    height: 30,
     paddingHorizontal: 10,
     borderRadius: V.radius.md,
     alignItems: 'center',
@@ -9086,11 +9192,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
   },
+  messagePurgeButton: {
+    width: 30,
+    height: 30,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: V.radius.md,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+  },
   messageSearchButtonText: {
     color: V.colors.primaryFg,
     fontFamily: V.fontFamily,
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: '800',
   },
   messageSearchButtonGhostText: {
     color: V.colors.fg,

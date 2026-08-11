@@ -2114,6 +2114,21 @@ export async function deleteKolamTeamChatRoom(roomId: string): Promise<void> {
   );
 }
 
+/** Admin-only — FE `usePurgeTeamChatRoom` / DELETE messages + `{ confirm: "HAPUS" }`. */
+export async function purgeKolamTeamChatRoomMessages(
+  roomId: string,
+): Promise<{deletedCount: number}> {
+  const response = await kolamDelete<{
+    success?: boolean;
+    deletedCount?: number;
+    message?: string;
+  }>(`/team-chat/rooms/${encodeURIComponent(roomId)}/messages`, {
+    confirm: 'HAPUS',
+  });
+
+  return {deletedCount: Number(response.deletedCount) || 0};
+}
+
 export async function getKolamTeamChatMembers(
   roomId: string,
 ): Promise<KolamTeamChatMembersPayload> {
@@ -2780,10 +2795,11 @@ function kolamPost<T>(path: string, body: unknown) {
   });
 }
 
-function kolamDelete<T>(path: string) {
+function kolamDelete<T>(path: string, body?: unknown) {
   return apiRequest<T>({
     method: 'DELETE',
     path,
+    body,
     baseUrl: appConfig.kolamApiBaseUrl,
     sourceHeader: appConfig.kolamSourceHeader,
   });

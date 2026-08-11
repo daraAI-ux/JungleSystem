@@ -20,6 +20,7 @@ import {
   markKolamTeamChatRoomRead,
   muteKolamTeamChatCallParticipant,
   postKolamTeamChatPresence,
+  purgeKolamTeamChatRoomMessages,
   raiseKolamTeamChatCallHand,
   redialKolamTeamChatCall,
   searchKolamTeamChatMessages,
@@ -135,8 +136,10 @@ export interface KolamChatRailDetailState {
   messageSearchResults: KolamChatRailDetailMessage[] | null;
   muteCallParticipant: (userId: string) => Promise<void>;
   presence: KolamTeamChatPresence;
+  purgingMessages: boolean;
   clearTeamMessageSearch: () => void;
   editMessage: (messageId: string, body: string) => Promise<void>;
+  purgeMessages: () => Promise<number>;
   patchInboxMessageFromLive: (
     messageId: string,
     patch: Partial<KolamChatMessage>,
@@ -202,6 +205,7 @@ export function useKolamChatRailDetail({
   });
   const [callErrorMessage, setCallErrorMessage] = useState<string | undefined>();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const [purgingMessages, setPurgingMessages] = useState(false);
   const [presence, setPresence] = useState<KolamTeamChatPresence>(
     EMPTY_TEAM_CHAT_PRESENCE,
   );
@@ -727,6 +731,31 @@ export function useKolamChatRailDetail({
     setMessageSearchLoading(false);
   }, []);
 
+  const purgeMessages = useCallback(async () => {
+    if (!selectedId || mode !== 'team-chat' || purgingMessages) {
+      return 0;
+    }
+
+    setPurgingMessages(true);
+    setErrorMessage(undefined);
+
+    try {
+      const result = await purgeKolamTeamChatRoomMessages(selectedId);
+      setMessages([]);
+      clearTeamMessageSearch();
+      return result.deletedCount;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Gagal menghapus pesan room.';
+      setErrorMessage(message);
+      throw error instanceof Error ? error : new Error(message);
+    } finally {
+      setPurgingMessages(false);
+    }
+  }, [clearTeamMessageSearch, mode, purgingMessages, selectedId]);
+
   const runInboxConversationAction = useCallback(
     async (action: () => Promise<KolamChatConversation>) => {
       if (mode !== 'inbox' || !selectedId || sending) {
@@ -934,6 +963,8 @@ export function useKolamChatRailDetail({
     muteCallParticipant,
     patchInboxMessageFromLive,
     presence,
+    purgeMessages,
+    purgingMessages,
     reactToMessage,
     redialCall,
     refreshCall,
