@@ -85,8 +85,9 @@ export function KolamDaraTaxRingkasanBody({
         </View>
       ) : null}
 
+      <View style={styles.summaryGrid}>
       {series && series.ppnOutputByMonth.length > 1 ? (
-        <View style={styles.card}>
+        <View style={[styles.card, styles.summaryMainCard]}>
           <Pressable
             accessibilityRole="button"
             onPress={() => setSeriesOpen(open => !open)}>
@@ -123,7 +124,7 @@ export function KolamDaraTaxRingkasanBody({
       ) : null}
 
       {scores && Object.keys(scores).length ? (
-        <View style={styles.card}>
+        <View style={[styles.card, styles.summarySideCard]}>
           <Text style={styles.meta}>Compliance Score</Text>
           <Text style={styles.scoreHero}>
             {overall != null ? `${overall}/100` : '—'}
@@ -140,6 +141,7 @@ export function KolamDaraTaxRingkasanBody({
           </View>
         </View>
       ) : null}
+      </View>
 
       {dashboard.risks.count > 0 ? (
         <View style={[styles.card, styles.riskCard]}>
@@ -254,6 +256,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  summaryGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  summaryMainCard: {
+    flexBasis: 0,
+    flexGrow: 3,
+    minWidth: 360,
+  },
+  summarySideCard: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 220,
   },
   kpiCard: {
     backgroundColor: V.colors.bg,
