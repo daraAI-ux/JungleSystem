@@ -9865,7 +9865,7 @@ const styles = StyleSheet.create({
     borderRadius: V.radius.lg,
     borderColor: V.colors.border,
     borderWidth: 1,
-    backgroundColor: V.colors.bg,
+    backgroundColor: V.colors.sidebar,
     overflow: 'hidden',
   },
   detailPanelFull: {
