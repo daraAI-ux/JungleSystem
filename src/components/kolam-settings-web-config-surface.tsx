@@ -4489,28 +4489,34 @@ export function KolamSettingsWebConfigSurface({
                 }
               />
             ))}
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={settingsFieldWidth}
-              label="Menit packing"
-              description="Validasi BE: 5 sampai 240 menit."
-              value={draft.daraFulfillmentPackingMinutes}
-              onChangeText={value =>
-                setDraftField('daraFulfillmentPackingMinutes', value)
-              }
-              placeholder="30"
-            />
-            <KolamTextFieldRow
-              variant="settingsForm"
-              fieldWidth={settingsFieldWidth}
-              label="Maksimal perpanjangan packing"
-              description="Validasi BE: 0 sampai 5 kali."
-              value={draft.daraFulfillmentPackingMaxExtensions}
-              onChangeText={value =>
-                setDraftField('daraFulfillmentPackingMaxExtensions', value)
-              }
-              placeholder="1"
-            />
+            <View style={styles.notificationToggleGrid}>
+              <View style={styles.notificationToggleBox}>
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={settingsFieldWidth}
+                  label="Menit packing"
+                  description="Validasi BE: 5 sampai 240 menit."
+                  value={draft.daraFulfillmentPackingMinutes}
+                  onChangeText={value =>
+                    setDraftField('daraFulfillmentPackingMinutes', value)
+                  }
+                  placeholder="30"
+                />
+              </View>
+              <View style={styles.notificationToggleBox}>
+                <KolamTextFieldRow
+                  variant="settingsForm"
+                  fieldWidth={settingsFieldWidth}
+                  label="Maksimal perpanjangan packing"
+                  description="Validasi BE: 0 sampai 5 kali."
+                  value={draft.daraFulfillmentPackingMaxExtensions}
+                  onChangeText={value =>
+                    setDraftField('daraFulfillmentPackingMaxExtensions', value)
+                  }
+                  placeholder="1"
+                />
+              </View>
+            </View>
           </View>
 
           <View
