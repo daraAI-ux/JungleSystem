@@ -1072,14 +1072,26 @@ function KolamCustomerDetailSurface({
             </Text>
           ) : null}
         </View>
-        <View style={styles.detailActions}>
-          <KolamEditButton
-            intent="primary"
-            onPress={() => onRouteChange?.(`/customers/${customer.id}/edit`)}
-          />
-          <KolamDaftarButton
-            onPress={() => onRouteChange?.('/customers')}
-          />
+      </View>
+
+      <View style={styles.toolbarWrap}>
+        <View style={styles.toolbarShell}>
+          <View style={styles.detailToolbarContextWrap}>
+            <Text numberOfLines={1} style={styles.detailToolbarContext}>
+              {customer.name}
+            </Text>
+          </View>
+          <View style={styles.actionRow}>
+            <KolamDaftarButton
+              onPress={() => onRouteChange?.('/customers')}
+              style={styles.toolbarButton}
+            />
+            <KolamEditButton
+              intent="primary"
+              onPress={() => onRouteChange?.(`/customers/${customer.id}/edit`)}
+              style={styles.toolbarButton}
+            />
+          </View>
         </View>
       </View>
 
@@ -2857,6 +2869,20 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: 'flex-end',
     paddingLeft: 8,
+  },
+  detailToolbarContextWrap: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    minWidth: 0,
+    paddingHorizontal: 8,
+  },
+  detailToolbarContext: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   searchInput: {
     flexBasis: 260,
