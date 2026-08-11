@@ -94,32 +94,72 @@ export function KolamDaraTaxRingkasanBody({
       ) : null}
 
       <View style={styles.summaryGrid}>
-        {series && series.ppnOutputByMonth.length > 1 ? (
-          <View style={[styles.card, styles.summaryMainCard]}>
-            <Text style={styles.sectionTitle}>
-              PPN keluaran per bulan (estimasi faktur)
-            </Text>
-            {series.ppnOutputByMonth.map(row => (
-              <View key={row.period} style={styles.seriesRow}>
-                <Text style={styles.seriesPeriod}>{row.period}</Text>
-                <View style={styles.seriesTrack}>
-                  <View
-                    style={[
-                      styles.seriesFill,
-                      {
-                        width: `${Math.round(
-                          (row.ppnIdr / seriesMax) * 100,
-                        )}%`,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.seriesAmount}>
-                  {formatKolamDaraTaxIdr(row.ppnIdr)}
+        {(series && series.ppnOutputByMonth.length > 1) ||
+        dashboard.risks.count > 0 ||
+        dashboard.complianceHighlights.length > 0 ? (
+          <View style={styles.summaryMainColumn}>
+            {series && series.ppnOutputByMonth.length > 1 ? (
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>
+                  PPN keluaran per bulan (estimasi faktur)
                 </Text>
-                <Text style={styles.seriesMeta}>{`${row.orderCount} ord`}</Text>
+                {series.ppnOutputByMonth.map(row => (
+                  <View key={row.period} style={styles.seriesRow}>
+                    <Text style={styles.seriesPeriod}>{row.period}</Text>
+                    <View style={styles.seriesTrack}>
+                      <View
+                        style={[
+                          styles.seriesFill,
+                          {
+                            width: `${Math.round(
+                              (row.ppnIdr / seriesMax) * 100,
+                            )}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.seriesAmount}>
+                      {formatKolamDaraTaxIdr(row.ppnIdr)}
+                    </Text>
+                    <Text
+                      style={styles.seriesMeta}>{`${row.orderCount} ord`}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
+            ) : null}
+
+            {dashboard.risks.count > 0 ? (
+              <View style={[styles.card, styles.riskCard]}>
+                <Text style={styles.sectionTitle}>
+                  {`Perlu perhatian (${dashboard.risks.count})`}
+                </Text>
+                {dashboard.risks.alerts.map((alert, index) => (
+                  <View
+                    key={`${alert.code || alert.title}-${index}`}
+                    style={styles.alertRow}>
+                    <KolamStatusBadge
+                      intent={severityIntent(alert.severity)}
+                      label={alert.severity}
+                    />
+                    <View style={styles.alertBody}>
+                      <Text style={styles.alertTitle}>{alert.title}</Text>
+                      {alert.message ? (
+                        <Text style={styles.meta}>{alert.message}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : dashboard.complianceHighlights.length > 0 ? (
+              <View style={[styles.card, styles.highlightCard]}>
+                <Text style={styles.sectionTitle}>Perlu perhatian</Text>
+                {dashboard.complianceHighlights.map(item => (
+                  <Text key={item} style={styles.meta}>
+                    {`• ${item}`}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
           </View>
         ) : null}
 
@@ -169,39 +209,6 @@ export function KolamDaraTaxRingkasanBody({
           </View>
         ) : null}
       </View>
-
-      {dashboard.risks.count > 0 ? (
-        <View style={[styles.card, styles.riskCard]}>
-          <Text style={styles.sectionTitle}>
-            {`Perlu perhatian (${dashboard.risks.count})`}
-          </Text>
-          {dashboard.risks.alerts.map((alert, index) => (
-            <View
-              key={`${alert.code || alert.title}-${index}`}
-              style={styles.alertRow}>
-              <KolamStatusBadge
-                intent={severityIntent(alert.severity)}
-                label={alert.severity}
-              />
-              <View style={styles.alertBody}>
-                <Text style={styles.alertTitle}>{alert.title}</Text>
-                {alert.message ? (
-                  <Text style={styles.meta}>{alert.message}</Text>
-                ) : null}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : dashboard.complianceHighlights.length > 0 ? (
-        <View style={[styles.card, styles.highlightCard]}>
-          <Text style={styles.sectionTitle}>Perlu perhatian</Text>
-          {dashboard.complianceHighlights.map(item => (
-            <Text key={item} style={styles.meta}>
-              {`• ${item}`}
-            </Text>
-          ))}
-        </View>
-      ) : null}
 
     </View>
   );
@@ -281,9 +288,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
-  summaryMainCard: {
+  summaryMainColumn: {
     flexBasis: 0,
     flexGrow: 3,
+    gap: 12,
     minWidth: 360,
   },
   summarySideColumn: {
