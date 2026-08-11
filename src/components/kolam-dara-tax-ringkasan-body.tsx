@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {SvgXml} from 'react-native-svg';
 import {KOLAM_NETTO_ICON_SVG} from '../assets/icons/netto-icon-svg';
+import {KOLAM_PPH21_ICON_SVG} from '../assets/icons/pph21-icon-svg';
 import {KOLAM_PPN_ICON_SVG} from '../assets/icons/ppn-icon-svg';
 import {KOLAM_TAX_ICON_SVG} from '../assets/icons/tax-icon-svg';
 import {
@@ -79,6 +80,7 @@ export function KolamDaraTaxRingkasanBody({
             value={formatKolamDaraTaxIdr(overview.netPpnEstimate)}
           />
           <KpiCard
+            icon={KOLAM_PPH21_ICON_SVG}
             label="PPh 21 komisi"
             meta={`Bruto ${formatKolamDaraTaxIdr(
               overview.commissionPph21?.grossIdr ?? 0,
