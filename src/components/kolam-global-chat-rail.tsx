@@ -9417,9 +9417,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     gap: 8,
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderWidth: 1,
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderWidth: 0,
   },
   selectedTitleRow: {
     minHeight: 20,
