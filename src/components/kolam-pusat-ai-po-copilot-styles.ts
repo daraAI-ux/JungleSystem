@@ -191,13 +191,6 @@ export const poCopilotStyles = StyleSheet.create({
     fontSize: 12,
     textDecorationLine: 'underline',
   },
-  roomRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 12,
-  },
   roomSelect: {
     flexBasis: 256,
     flexGrow: 1,

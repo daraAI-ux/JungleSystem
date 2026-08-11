@@ -170,18 +170,6 @@ function NotifyRoomSection({
         Room Team Chat untuk log & perintah PO Copilot (DARA / Raja Anemon).
       </Text>
       <View style={styles.notifyRow}>
-        <View style={styles.notifyToggle}>
-          <KolamSwitch
-            active={controller.notifyEnabled}
-            disabled={controller.roomSaving}
-            onPress={() => {
-              void controller.onSetNotifyEnabled(!controller.notifyEnabled);
-            }}
-          />
-          <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
-        </View>
-      </View>
-      <View style={styles.roomRow}>
         <View style={styles.roomSelect}>
           <KolamDropdownSelect
             accessibilityLabel="Team Chat room"
@@ -197,6 +185,16 @@ function NotifyRoomSection({
             showLabelInTrigger
             value={controller.selectedRoomId || roomOptions[0]?.value || ''}
           />
+        </View>
+        <View style={styles.notifyToggle}>
+          <KolamSwitch
+            active={controller.notifyEnabled}
+            disabled={controller.roomSaving}
+            onPress={() => {
+              void controller.onSetNotifyEnabled(!controller.notifyEnabled);
+            }}
+          />
+          <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
         </View>
       </View>
     </View>
