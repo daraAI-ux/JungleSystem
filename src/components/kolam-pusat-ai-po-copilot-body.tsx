@@ -34,6 +34,7 @@ export function KolamPusatAiPoCopilotBody({
   onRouteChange?: (route: string) => void;
 }) {
   const { stats, opsLog, loading, error, notice, range } = controller;
+  const notifyRoomRoute = controller.health?.notifyRoom?.webHref;
 
   return (
     <ScrollView
@@ -47,6 +48,15 @@ export function KolamPusatAiPoCopilotBody({
             <Text style={styles.title}>PO Copilot</Text>
             <Text style={styles.desc}>{KOLAM_PO_COPILOT_DESCRIPTION}</Text>
           </View>
+          <View style={styles.shellActions}>
+            {notifyRoomRoute ? (
+              <KolamButton
+                intent="primary"
+                label="Buka room DARA"
+                onPress={() => onRouteChange?.(notifyRoomRoute)}
+              />
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.body}>
@@ -57,10 +67,7 @@ export function KolamPusatAiPoCopilotBody({
 
           <View style={styles.sideBySideGrid}>
             <View style={styles.sideBySideItem}>
-              <NotifyRoomSection
-                controller={controller}
-                onRouteChange={onRouteChange}
-              />
+              <NotifyRoomSection controller={controller} />
             </View>
             <View style={styles.sideBySideItem}>
               <BotProfileSection controller={controller} />
@@ -148,16 +155,13 @@ export function KolamPusatAiPoCopilotBody({
 
 function NotifyRoomSection({
   controller,
-  onRouteChange,
 }: {
   controller: KolamPusatAiPoCopilotController;
-  onRouteChange?: (route: string) => void;
 }) {
   const roomOptions = controller.rooms.map(room => ({
     label: formatKolamPoCopilotRoomLabel(room),
     value: room._id,
   }));
-  const href = controller.health?.notifyRoom?.webHref;
 
   return (
     <View style={[styles.sectionCard, styles.botStrip]}>
@@ -176,14 +180,6 @@ function NotifyRoomSection({
           />
           <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
         </View>
-        {href ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => onRouteChange?.(href)}
-          >
-            <Text style={styles.link}>Buka room</Text>
-          </Pressable>
-        ) : null}
       </View>
       <View style={styles.roomRow}>
         <View style={styles.roomSelect}>
