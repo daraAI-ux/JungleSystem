@@ -84,8 +84,13 @@ const SEARCH_DEBOUNCE_MS = 350;
 const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
 const USER_KASBON_TABLE_PAGE_SIZE = 10;
 const USER_ATTENDANCE_TABLE_PAGE_SIZE = 10;
+const USER_BONUS_TABLE_PAGE_SIZE = 10;
 
-type UserPayrollHistoryTab = 'deductions' | 'kasbons' | 'attendance';
+type UserPayrollHistoryTab =
+  | 'deductions'
+  | 'kasbons'
+  | 'attendance'
+  | 'bonuses';
 
 const EMPLOYEE_FILTER_OPTIONS: Array<{
   label: string;
@@ -785,6 +790,7 @@ function KolamUserDetailSurface({
   const [deductionPage, setDeductionPage] = React.useState(1);
   const [kasbonPage, setKasbonPage] = React.useState(1);
   const [attendancePage, setAttendancePage] = React.useState(1);
+  const [bonusPage, setBonusPage] = React.useState(1);
   const [activePayrollTab, setActivePayrollTab] =
     React.useState<UserPayrollHistoryTab>('deductions');
   const [payrollLoading, setPayrollLoading] = React.useState(false);
@@ -853,8 +859,11 @@ function KolamUserDetailSurface({
       ...(canViewAttendance
         ? [{id: 'attendance' as const, label: 'Absensi Karyawan'}]
         : []),
+      ...(canViewBonus
+        ? [{id: 'bonuses' as const, label: 'Riwayat Bonus'}]
+        : []),
     ],
-    [canViewAttendance, canViewDeductions, canViewKasbon],
+    [canViewAttendance, canViewBonus, canViewDeductions, canViewKasbon],
   );
   const selectedPayrollTab = payrollTabs.some(tab => tab.id === activePayrollTab)
     ? activePayrollTab
@@ -1101,6 +1110,84 @@ function KolamUserDetailSurface({
     ],
     [],
   );
+  const bonusColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamUserBonusItem>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 1.35,
+        id: 'code',
+        label: 'Kode',
+        render: item => (
+          <Text style={styles.userMetaText}>{item.code || 'Bonus'}</Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.7,
+        id: 'amount',
+        label: 'Jumlah',
+        render: item => (
+          <Text style={[styles.payrollEntryAmount, styles.userTableTextCenter]}>
+            {formatUserCurrency(item.amount)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 1.25,
+        id: 'reason',
+        label: 'Alasan',
+        render: item => (
+          <Text
+            numberOfLines={2}
+            style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {item.reason || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.75,
+        id: 'status',
+        label: 'Status',
+        render: item => (
+          <View style={styles.userTableBadgeCell}>
+            <KolamStatusBadge
+              intent={getPayrollStatusIntent(item.status)}
+              label={formatPayrollStatus(item.status)}
+              numberOfLines={1}
+              style={styles.userTableBadge}
+            />
+          </View>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'executed',
+        label: 'Dieksekusi',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.executedAt || item.createdAt)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'created',
+        label: 'Dibuat',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.createdAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
   const visibleDeductions = React.useMemo(() => {
     const pageStart = (deductionPage - 1) * USER_DEDUCTION_TABLE_PAGE_SIZE;
 
@@ -1125,6 +1212,14 @@ function KolamUserDetailSurface({
       pageStart + USER_ATTENDANCE_TABLE_PAGE_SIZE,
     );
   }, [attendancePage, attendanceRecords]);
+  const visibleBonuses = React.useMemo(() => {
+    const pageStart = (bonusPage - 1) * USER_BONUS_TABLE_PAGE_SIZE;
+
+    return payrollSummary.bonuses.slice(
+      pageStart,
+      pageStart + USER_BONUS_TABLE_PAGE_SIZE,
+    );
+  }, [bonusPage, payrollSummary.bonuses]);
 
   React.useEffect(() => {
     const maxPage = Math.max(
@@ -1160,6 +1255,17 @@ function KolamUserDetailSurface({
       setAttendancePage(maxPage);
     }
   }, [attendancePage, attendanceRecords.length]);
+
+  React.useEffect(() => {
+    const maxPage = Math.max(
+      1,
+      Math.ceil(payrollSummary.bonuses.length / USER_BONUS_TABLE_PAGE_SIZE),
+    );
+
+    if (bonusPage > maxPage) {
+      setBonusPage(maxPage);
+    }
+  }, [bonusPage, payrollSummary.bonuses.length]);
 
   React.useEffect(() => {
     let active = true;
@@ -1876,45 +1982,25 @@ function KolamUserDetailSurface({
                 ) : null}
               </>
             ) : null}
-          </View>
-        ) : null}
-
-        {user.isEmployee && canViewBonus ? (
-          <View style={styles.detailGrid}>
-            <View style={styles.detailPanel}>
-              <Text style={styles.detailPanelTitle}>Riwayat Bonus</Text>
-              {payrollLoading ? (
-                <Text style={styles.detailSubtitle}>Memuat bonus...</Text>
-              ) : payrollSummary.bonuses.length ? (
-                payrollSummary.bonuses.map(item => (
-                  <View key={item.id || item.code} style={styles.payrollEntry}>
-                    <View style={styles.payrollEntryHeader}>
-                      <Text numberOfLines={1} style={styles.payrollEntryTitle}>
-                        {item.code || 'Bonus'}
-                      </Text>
-                      <KolamStatusBadge
-                        intent={getPayrollStatusIntent(item.status)}
-                        label={formatPayrollStatus(item.status)}
-                        numberOfLines={1}
-                      />
-                    </View>
-                    <Text style={styles.payrollEntryAmount}>
-                      {formatUserCurrency(item.amount)}
-                    </Text>
-                    <Text numberOfLines={2} style={styles.detailSubtitle}>
-                      {item.reason || '-'}
-                    </Text>
-                    <Text style={styles.payrollEntryDate}>
-                      {formatUserDateTime(item.executedAt || item.createdAt)}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.detailSubtitle}>
-                  Belum ada bonus yang diberikan.
-                </Text>
-              )}
-            </View>
+            {selectedPayrollTab === 'bonuses' ? (
+              <KolamListTableComposition
+                columns={bonusColumns}
+                emptyTitle={
+                  payrollLoading
+                    ? 'Memuat bonus...'
+                    : 'Belum ada bonus yang diberikan.'
+                }
+                getRowKey={item => item.id || item.code}
+                loading={payrollLoading}
+                pagination={{
+                  onPageChange: setBonusPage,
+                  page: bonusPage,
+                  pageSize: USER_BONUS_TABLE_PAGE_SIZE,
+                  total: payrollSummary.bonuses.length,
+                }}
+                rows={payrollLoading ? [] : visibleBonuses}
+              />
+            ) : null}
           </View>
         ) : null}
         {user.isEmployee &&
