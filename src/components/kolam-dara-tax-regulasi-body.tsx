@@ -96,6 +96,46 @@ function draftStatusIntent(status: string): KolamStatusBadgeIntent {
   return 'secondary';
 }
 
+function formatRegulationStatusLabel(status: string) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (normalized === 'active') {
+    return 'Aktif';
+  }
+  if (normalized === 'superseded') {
+    return 'Digantikan';
+  }
+  if (normalized === 'rejected') {
+    return 'Ditolak';
+  }
+  if (normalized === 'pending_review') {
+    return 'Menunggu ulasan';
+  }
+  if (normalized === 'approved') {
+    return 'Disetujui';
+  }
+  return status || '—';
+}
+
+function formatWatcherRuntimeStatusLabel(status: string) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!normalized) {
+    return '—';
+  }
+  if (normalized === 'idle') {
+    return 'Siaga';
+  }
+  if (normalized === 'running') {
+    return 'Berjalan';
+  }
+  if (normalized === 'disabled') {
+    return 'Nonaktif';
+  }
+  if (normalized === 'error') {
+    return 'Bermasalah';
+  }
+  return status.replace(/[_-]+/g, ' ');
+}
+
 function kitabStatusIntent(code: string): KolamStatusBadgeIntent {
   if (code === 'ok') {
     return 'success';
@@ -202,7 +242,7 @@ export function KolamDaraTaxRegulasiBody({
         id: tab.id,
         label:
           tab.id === 'draft' && pendingDraftCount > 0
-            ? `Draft (${pendingDraftCount})`
+            ? `Draf (${pendingDraftCount})`
             : tab.label,
       })),
     [canApprove, isAdmin, pendingDraftCount],
@@ -258,7 +298,7 @@ export function KolamDaraTaxRegulasiBody({
       setDraftFormulas(next);
     } catch (err) {
       setDrafts([]);
-      onNotice(errorMessage(err, 'Gagal memuat draft'));
+      onNotice(errorMessage(err, 'Gagal memuat draf'));
     } finally {
       setDraftsLoading(false);
     }
@@ -281,7 +321,7 @@ export function KolamDaraTaxRegulasiBody({
       setKnowledge(await fetchKolamDaraTaxKnowledge());
     } catch (err) {
       setKnowledge([]);
-      onNotice(errorMessage(err, 'Gagal memuat knowledge'));
+      onNotice(errorMessage(err, 'Gagal memuat basis pengetahuan'));
     } finally {
       setKnowledgeLoading(false);
     }
@@ -368,8 +408,8 @@ export function KolamDaraTaxRegulasiBody({
           {!activeVersion && isAdmin ? (
             <View style={styles.roseBanner}>
               <Text style={styles.roseText}>
-                Belum ada versi regulasi aktif. Jalankan Bootstrap di
-                Maintenance.
+                Belum ada versi regulasi aktif. Jalankan inisialisasi di
+                Pemeliharaan.
               </Text>
             </View>
           ) : null}
@@ -392,17 +432,19 @@ export function KolamDaraTaxRegulasiBody({
             <Text style={styles.meta}>Memuat…</Text>
           ) : (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Regulation Watcher</Text>
+              <Text style={styles.sectionTitle}>Pemantau regulasi</Text>
               <Text style={styles.meta}>
-                Pantau perubahan regulasi dari sumber eksternal. Toggle modul di
-                Settings → AI-Tools.
+                Pantau perubahan regulasi dari sumber eksternal. Aktifkan modul di
+                Pengaturan → Alat AI.
               </Text>
               {taxStatus ? (
                 <View style={styles.dl}>
                   <View style={styles.dlItem}>
-                    <Text style={styles.meta}>Status runtime</Text>
+                    <Text style={styles.meta}>Status proses</Text>
                     <Text style={styles.tdStrong}>
-                      {taxStatus.watcherRuntimeStatus || '—'}
+                      {formatWatcherRuntimeStatusLabel(
+                        taxStatus.watcherRuntimeStatus,
+                      )}
                     </Text>
                   </View>
                   <View style={styles.dlItem}>
@@ -418,7 +460,7 @@ export function KolamDaraTaxRegulasiBody({
                     <Text style={styles.td}>
                       {`${taxStatus.monitored}/${taxStatus.total} sumber dimonitor${
                         taxStatus.withError > 0
-                          ? ` · ${taxStatus.withError} error`
+                          ? ` · ${taxStatus.withError} bermasalah`
                           : ''
                       }${
                         taxStatus.dueNow > 0
@@ -429,7 +471,7 @@ export function KolamDaraTaxRegulasiBody({
                   </View>
                 </View>
               ) : (
-                <Text style={styles.meta}>Status watcher belum dimuat.</Text>
+                <Text style={styles.meta}>Status pemantau belum dimuat.</Text>
               )}
 
               {(taxStatus?.sources.length ?? 0) > 0 ? (
@@ -500,11 +542,11 @@ export function KolamDaraTaxRegulasiBody({
                         />
                       }
                       intent="outline"
-                      label={
-                        watcherRunning
-                          ? 'Memeriksa…'
-                          : 'Jalankan watcher sekarang'
-                      }
+      label={
+        watcherRunning
+          ? 'Memeriksa…'
+          : 'Jalankan pemantau sekarang'
+      }
                       onPress={onRunWatcher}
                       style={styles.watcherButton}
                       textStyle={styles.watcherButtonText}
@@ -515,7 +557,7 @@ export function KolamDaraTaxRegulasiBody({
 
               {taxStatus?.checkedAt ? (
                 <Text style={styles.meta}>
-                  {`Snapshot: ${formatKolamDaraTaxDateTimeId(
+                  {`Cuplikan: ${formatKolamDaraTaxDateTimeId(
                     taxStatus.checkedAt,
                   )}`}
                 </Text>
@@ -674,7 +716,7 @@ export function KolamDaraTaxRegulasiBody({
                                   onNotice(r.error);
                                 } else if (r.changed) {
                                   onNotice(
-                                    'Perubahan terdeteksi — cek tab Draft',
+                                    'Perubahan terdeteksi — cek tab Draf',
                                   );
                                 } else {
                                   onNotice('Tidak ada perubahan');
@@ -777,11 +819,11 @@ export function KolamDaraTaxRegulasiBody({
 
       {rmsSubTab === 'draft' ? (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Draft regulasi</Text>
+          <Text style={styles.sectionTitle}>Draf regulasi</Text>
           {draftsLoading ? (
             <Text style={styles.meta}>Memuat…</Text>
           ) : drafts.length === 0 ? (
-            <Text style={styles.meta}>Tidak ada draft.</Text>
+            <Text style={styles.meta}>Tidak ada draf.</Text>
           ) : (
             drafts.map(d => {
               const pending = d.status === 'pending_review';
@@ -794,7 +836,7 @@ export function KolamDaraTaxRegulasiBody({
                     </Text>
                     <KolamStatusBadge
                       intent={draftStatusIntent(d.status)}
-                      label={d.status}
+                      label={formatRegulationStatusLabel(d.status)}
                     />
                   </View>
                   <Text style={styles.meta}>
@@ -867,11 +909,11 @@ export function KolamDaraTaxRegulasiBody({
                         <KolamButton
                           disabled={draftBusyId === d.id}
                           intent="primary"
-                          label="Approve"
+                          label="Setujui"
                           onPress={() => {
                             setDraftBusyId(d.id);
                             approveKolamDaraTaxRegulationDraft(d.id, {
-                              note: 'Approved via RMS',
+                              note: 'Disetujui via RMS',
                               formulas: draftFormulas[d.id],
                             })
                               .then(() => {
@@ -881,7 +923,7 @@ export function KolamDaraTaxRegulasiBody({
                               })
                               .catch(err =>
                                 onNotice(
-                                  errorMessage(err, 'Gagal approve'),
+                                  errorMessage(err, 'Gagal menyetujui'),
                                 ),
                               )
                               .finally(() => setDraftBusyId(null));
@@ -895,7 +937,7 @@ export function KolamDaraTaxRegulasiBody({
                             setDraftBusyId(d.id);
                             rejectKolamDaraTaxRegulationDraft(
                               d.id,
-                              'Rejected via RMS',
+                              'Ditolak via RMS',
                             )
                               .then(() => {
                                 onNotice('Ditolak');
@@ -944,27 +986,27 @@ export function KolamDaraTaxRegulasiBody({
                       <View style={styles.rowActions}>
                         <KolamStatusBadge
                           intent={versionStatusIntent(v.status)}
-                          label={v.status}
+                          label={formatRegulationStatusLabel(v.status)}
                         />
                         {canApprove && v.status === 'superseded' ? (
                           <KolamButton
                             disabled={rollbackBusyId === v.id}
                             intent="outline"
-                            label="Rollback"
+                            label="Pulihkan"
                             onPress={() => {
                               setRollbackBusyId(v.id);
                               rollbackKolamDaraTaxRegulationVersion(
                                 v.id,
-                                'Rollback via RMS',
+                                'Dipulihkan via RMS',
                               )
                                 .then(() => {
-                                  onNotice('Rollback OK');
+                                  onNotice('Pemulihan berhasil');
                                   void loadVersions();
                                   onRefreshMonitoring();
                                 })
                                 .catch(err =>
                                   onNotice(
-                                    errorMessage(err, 'Rollback gagal'),
+                                    errorMessage(err, 'Pemulihan gagal'),
                                   ),
                                 )
                                 .finally(() => setRollbackBusyId(null));
@@ -1003,7 +1045,7 @@ export function KolamDaraTaxRegulasiBody({
                     compareKolamDaraTaxRegulationVersions(compareA, compareB)
                       .then(setCompareResult)
                       .catch(err =>
-                        onNotice(errorMessage(err, 'Compare gagal')),
+                        onNotice(errorMessage(err, 'Gagal membandingkan')),
                       )
                       .finally(() => setCompareLoading(false));
                   }}
@@ -1027,7 +1069,7 @@ export function KolamDaraTaxRegulasiBody({
 
       {rmsSubTab === 'kb' ? (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Knowledge base</Text>
+          <Text style={styles.sectionTitle}>Basis pengetahuan</Text>
           {knowledgeLoading ? (
             <Text style={styles.meta}>Memuat…</Text>
           ) : knowledge.length === 0 ? (
@@ -1057,7 +1099,7 @@ export function KolamDaraTaxRegulasiBody({
 
       {rmsSubTab === 'audit' && canApprove ? (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Audit log</Text>
+          <Text style={styles.sectionTitle}>Log audit</Text>
           {auditLoading ? (
             <Text style={styles.meta}>Memuat…</Text>
           ) : auditLogs.length === 0 ? (
@@ -1112,20 +1154,20 @@ export function KolamDaraTaxRegulasiBody({
 
       {rmsSubTab === 'maintenance' && isAdmin ? (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Maintenance</Text>
+          <Text style={styles.sectionTitle}>Pemeliharaan</Text>
           <View style={styles.rowActions}>
             <KolamButton
               disabled={maintenanceBusy}
               intent="primary"
-              label="Bootstrap knowledge ID"
+              label="Inisialisasi pengetahuan ID"
               onPress={() => {
                 setMaintenanceBusy(true);
                 runKolamDaraTaxBootstrap()
                   .then(() => {
-                    onNotice('Bootstrap OK');
+                    onNotice('Inisialisasi berhasil');
                     onRefreshMonitoring();
                   })
-                  .catch(() => onNotice('Bootstrap gagal'))
+                  .catch(() => onNotice('Inisialisasi gagal'))
                   .finally(() => setMaintenanceBusy(false));
               }}
             />
@@ -1134,43 +1176,43 @@ export function KolamDaraTaxRegulasiBody({
               intent="outline"
               label={
                 maintenanceBusy
-                  ? 'Backfill…'
-                  : 'Backfill snapshot (dry-run)'
+                  ? 'Mengisi ulang…'
+                  : 'Uji isi ulang cuplikan'
               }
               onPress={() => {
                 setMaintenanceBusy(true);
                 runKolamDaraTaxSnapshotBackfill({dryRun: true, limit: 100})
                   .then(msg => {
-                    onNotice(msg || 'Dry-run selesai');
+                    onNotice(msg || 'Uji jalan selesai');
                     onRefreshMonitoring();
                   })
-                  .catch(() => onNotice('Backfill dry-run gagal'))
+                  .catch(() => onNotice('Uji isi ulang gagal'))
                   .finally(() => setMaintenanceBusy(false));
               }}
             />
             <KolamButton
               disabled={maintenanceBusy}
               intent="outline"
-              label="Backfill snapshot (apply)"
+              label="Terapkan isi ulang cuplikan"
               onPress={() => {
                 setMaintenanceBusy(true);
                 runKolamDaraTaxSnapshotBackfill({dryRun: false, limit: 200})
                   .then(msg => {
-                    onNotice(msg || 'Backfill diterapkan');
+                    onNotice(msg || 'Isi ulang diterapkan');
                     onRefreshMonitoring();
                   })
-                  .catch(() => onNotice('Backfill gagal'))
+                  .catch(() => onNotice('Isi ulang gagal'))
                   .finally(() => setMaintenanceBusy(false));
               }}
             />
             <KolamButton
               disabled={maintenanceBusy}
               intent="outline"
-              label="Dry-run reaccrue PPh 21"
+              label="Uji hitung ulang PPh 21"
               onPress={() => {
                 setMaintenanceBusy(true);
                 runKolamDaraTaxReaccruePph21({dryRun: true, limit: 500})
-                  .then(msg => onNotice(msg || 'Dry-run selesai'))
+                  .then(msg => onNotice(msg || 'Uji jalan selesai'))
                   .catch(() => onNotice('Gagal'))
                   .finally(() => setMaintenanceBusy(false));
               }}
@@ -1178,7 +1220,7 @@ export function KolamDaraTaxRegulasiBody({
             <KolamButton
               disabled={maintenanceBusy}
               intent="outline"
-              label="Apply reaccrue PPh 21"
+              label="Terapkan hitung ulang PPh 21"
               onPress={() => {
                 setMaintenanceBusy(true);
                 runKolamDaraTaxReaccruePph21({dryRun: false, limit: 500})

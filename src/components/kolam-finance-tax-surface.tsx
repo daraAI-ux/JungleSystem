@@ -91,7 +91,7 @@ export function KolamFinanceTaxSurface({
       {!controller.taxEnabled ? (
         <View style={styles.disabledBanner}>
           <Text style={styles.disabledBannerText}>
-            DARA Tax nonaktif. Aktifkan di Settings → AI-Tools.
+            DARA Pajak nonaktif. Aktifkan di Pengaturan → Alat AI.
           </Text>
         </View>
       ) : null}

@@ -22,18 +22,18 @@ export const KOLAM_DARA_TAX_RMS_TABS: Array<{
   {id: 'ringkasan', label: 'Ringkasan'},
   {id: 'kitab', label: 'Kitab'},
   {id: 'sumber', label: 'Sumber'},
-  {id: 'draft', label: 'Draft'},
+  {id: 'draft', label: 'Draf'},
   {id: 'versi', label: 'Versi'},
-  {id: 'kb', label: 'Knowledge'},
-  {id: 'audit', label: 'Audit', approveOnly: true},
-  {id: 'maintenance', label: 'Maintenance', adminOnly: true},
+  {id: 'kb', label: 'Basis pengetahuan'},
+  {id: 'audit', label: 'Log audit', approveOnly: true},
+  {id: 'maintenance', label: 'Pemeliharaan', adminOnly: true},
 ];
 
 export const KOLAM_DARA_TAX_WATCH_STATUS_LABEL: Record<string, string> = {
   never_checked: 'Belum dicek',
   waiting_interval: 'OK',
   due: 'Perlu cek',
-  error: 'Error',
+  error: 'Bermasalah',
   disabled: 'Nonaktif',
 };
 

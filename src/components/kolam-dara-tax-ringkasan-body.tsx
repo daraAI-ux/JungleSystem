@@ -64,8 +64,8 @@ export function KolamDaraTaxRingkasanBody({
         <View style={styles.kpiGrid}>
           <KpiCard
             icon={KOLAM_TAX_ICON_SVG}
-            label="Penjualan (paid, est. PPN)"
-            meta={`${overview.sales.orderCount} order`}
+            label="Penjualan lunas (estimasi PPN)"
+            meta={`${overview.sales.orderCount} pesanan`}
             value={formatKolamDaraTaxIdr(overview.sales.revenueIdr)}
           />
           <KpiCard
@@ -77,7 +77,7 @@ export function KolamDaraTaxRingkasanBody({
           />
           <KpiCard
             icon={KOLAM_NETTO_ICON_SVG}
-            label="PPN neto (est.)"
+            label="PPN neto (estimasi)"
             meta={`Masukan ${formatKolamDaraTaxIdr(
               overview.purchases.ppnInput.ppn,
             )}`}
@@ -129,7 +129,7 @@ export function KolamDaraTaxRingkasanBody({
                       {formatKolamDaraTaxIdr(row.ppnIdr)}
                     </Text>
                     <Text
-                      style={styles.seriesMeta}>{`${row.orderCount} ord`}</Text>
+                      style={styles.seriesMeta}>{`${row.orderCount} psn`}</Text>
                   </View>
                 ))}
               </View>
@@ -174,7 +174,7 @@ export function KolamDaraTaxRingkasanBody({
           <View style={styles.summarySideColumn}>
             {scores && Object.keys(scores).length ? (
               <View style={styles.card}>
-                <Text style={styles.meta}>Compliance Score</Text>
+                <Text style={styles.meta}>Skor kepatuhan</Text>
                 <Text style={styles.scoreHero}>
                   {overall != null ? `${overall}/100` : '—'}
                 </Text>
@@ -264,7 +264,7 @@ function TaxCompanyProfileCard({profile}: {profile: KolamTaxCompanyProfile}) {
         },
         {
           id: 'defaultPpnRate',
-          label: 'Tarif PPN default',
+          label: 'Tarif PPN bawaan',
           value:
             profile.defaultPpnRate != null
               ? `${profile.defaultPpnRate}%`

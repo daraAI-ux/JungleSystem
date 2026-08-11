@@ -35,6 +35,17 @@ import {KolamRupiahField} from './kolam-rupiah-field';
 import {KolamStatusBadge} from './kolam-status-badge';
 
 /** FE `TaxSettlementPanel` (tab Setoran / pelunasan). */
+function formatSettlementStatusLabel(status: string) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (normalized === 'verified') {
+    return 'Terverifikasi';
+  }
+  if (normalized === 'unverified') {
+    return 'Belum diverifikasi';
+  }
+  return status ? status.replace(/[_-]+/g, ' ') : '—';
+}
+
 export function KolamDaraTaxSetoranBody() {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<KolamDaraTaxSettlement[]>([]);
@@ -93,7 +104,7 @@ export function KolamDaraTaxSetoranBody() {
   const submit = async () => {
     const num = Number(amount);
     if (!title.trim() || !walletId || !Number.isFinite(num) || num <= 0) {
-      setNotice('Lengkapi judul, wallet, dan jumlah');
+      setNotice('Lengkapi judul, dompet, dan jumlah');
       return;
     }
     setSaving(true);
@@ -107,7 +118,7 @@ export function KolamDaraTaxSetoranBody() {
         periodKey: periodKey.trim() || undefined,
         note: note.trim() || undefined,
       });
-      setNotice('Setoran dibuat — verifikasi untuk debit wallet & R&E');
+      setNotice('Setoran dibuat — verifikasi untuk debit dompet & R&E');
       setOpen(false);
       resetForm();
       await load();
@@ -148,8 +159,8 @@ export function KolamDaraTaxSetoranBody() {
     <View style={styles.root}>
       <View style={styles.head}>
         <Text style={styles.meta}>
-          Catat setoran DJP — debit wallet setelah verifikasi, masuk Finance
-          Summary.
+          Catat setoran DJP — debit dompet setelah verifikasi, masuk Ringkasan
+          Keuangan.
         </Text>
         <KolamButton
           label="Setoran baru"
@@ -187,7 +198,7 @@ export function KolamDaraTaxSetoranBody() {
                 <Text style={styles.meta}>{row.periodKey || '—'}</Text>
                 <KolamStatusBadge
                   intent={row.status === 'verified' ? 'success' : 'warning'}
-                  label={row.status}
+                  label={formatSettlementStatusLabel(row.status)}
                 />
                 <Text style={styles.meta}>
                   {formatKolamDaraTaxDateId(row.executedAt)}
@@ -227,7 +238,7 @@ export function KolamDaraTaxSetoranBody() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Setoran pajak baru</Text>
             <Text style={styles.meta}>
-              Debit wallet setelah verifikasi. Periode opsional (YYYY-MM).
+              Debit dompet setelah verifikasi. Periode opsional (YYYY-MM).
             </Text>
             <KolamDetailScrollSurface contentContainerStyle={styles.form}>
               <KolamDropdownSelect
@@ -261,10 +272,10 @@ export function KolamDaraTaxSetoranBody() {
                 value={periodKey}
               />
               <KolamDropdownSelect
-                label="Wallet"
+                label="Dompet"
                 onChange={setWalletId}
                 options={[
-                  {label: 'Pilih wallet', value: ''},
+                  {label: 'Pilih dompet', value: ''},
                   ...wallets.map(w => ({
                     label: w.name,
                     value: w.id,

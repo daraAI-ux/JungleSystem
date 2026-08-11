@@ -8,7 +8,10 @@ import {
   type KolamDaraTaxMissingFakturSale,
   type KolamDaraTaxSptPpnMasaPreview,
 } from '../domain/kolam-dara-tax';
-import type {KolamDaraTaxPeriod} from '../domain/kolam-finance-tax';
+import {
+  KOLAM_DARA_TAX_PERIOD_OPTIONS,
+  type KolamDaraTaxPeriod,
+} from '../domain/kolam-finance-tax';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {copyTextToClipboard} from '../lib/native-clipboard';
 import {
@@ -23,6 +26,39 @@ import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
 type FakturTab = 'sales' | 'po';
 const FAKTUR_PAGE_SIZE = 10;
+
+function formatDaraTaxPeriodLabel(period: KolamDaraTaxPeriod) {
+  return (
+    KOLAM_DARA_TAX_PERIOD_OPTIONS.find(option => option.id === period)?.label ??
+    period
+  );
+}
+
+function formatFakturStatusLabel(status: string) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (normalized === 'missing') {
+    return 'Belum tercatat';
+  }
+  if (normalized === 'needed') {
+    return 'Perlu faktur';
+  }
+  if (normalized === 'pending') {
+    return 'Menunggu';
+  }
+  if (normalized === 'issued') {
+    return 'Terbit';
+  }
+  if (normalized === 'uploaded') {
+    return 'Terunggah';
+  }
+  if (normalized === 'verified') {
+    return 'Terverifikasi';
+  }
+  if (normalized === 'none') {
+    return 'Tidak ada';
+  }
+  return status ? status.replace(/[_-]+/g, ' ') : '—';
+}
 
 /** FE Operasional: TaxPhase3 + TaxPhase4Compliance + TaxMissingFaktur. */
 export function KolamDaraTaxOperasionalBody({
@@ -109,22 +145,25 @@ export function KolamDaraTaxOperasionalBody({
             <View style={styles.card}>
               <View style={styles.cardHead}>
                 <Text style={styles.sectionTitle}>
-                  Alokasi PPN per source penjualan
+                  Alokasi PPN per sumber penjualan
                 </Text>
-                <KolamStatusBadge intent="secondary" label={period} />
+                <KolamStatusBadge
+                  intent="secondary"
+                  label={formatDaraTaxPeriodLabel(period)}
+                />
               </View>
               {allocation.disclaimer ? (
                 <Text style={styles.meta}>{allocation.disclaimer}</Text>
               ) : null}
               {allocation.bySource.length === 0 ? (
                 <Text style={styles.meta}>
-                  Tidak ada penjualan eligible di periode ini.
+                  Tidak ada penjualan yang memenuhi syarat di periode ini.
                 </Text>
               ) : (
                 <View>
                   <View style={styles.tableHead}>
-                    <Text style={[styles.th, styles.colSource]}>Source</Text>
-                    <Text style={[styles.th, styles.colNum]}>Order</Text>
+                    <Text style={[styles.th, styles.colSource]}>Sumber</Text>
+                    <Text style={[styles.th, styles.colNum]}>Pesanan</Text>
                     <Text style={[styles.th, styles.colNum]}>DPP</Text>
                     <Text style={[styles.th, styles.colNum]}>PPN keluaran</Text>
                   </View>
@@ -170,7 +209,7 @@ export function KolamDaraTaxOperasionalBody({
             <View style={styles.card}>
               <View style={styles.cardHead}>
                 <Text style={styles.sectionTitle}>
-                  Preview jurnal pajak (estimasi)
+                  Pratinjau jurnal pajak (estimasi)
                 </Text>
                 <KolamStatusBadge
                   intent={journal.balanced ? 'success' : 'warning'}
@@ -239,11 +278,14 @@ export function KolamDaraTaxOperasionalBody({
 
           <View style={styles.sptCard}>
             <View style={styles.cardHead}>
-              <Text style={styles.sectionTitle}>Pre-fill SPT Masa PPN</Text>
-              <KolamStatusBadge intent="secondary" label={period} />
+              <Text style={styles.sectionTitle}>Pra-isi SPT Masa PPN</Text>
+              <KolamStatusBadge
+                intent="secondary"
+                label={formatDaraTaxPeriodLabel(period)}
+              />
             </View>
             <Text style={styles.meta}>
-              Referensi form 1111 — unduh JSON untuk review & input manual
+              Referensi form 1111 — unduh JSON untuk tinjauan dan input manual
               Coretax.
             </Text>
             {!sptPreview ? (
@@ -254,11 +296,11 @@ export function KolamDaraTaxOperasionalBody({
                   {`Wajib pajak: ${sptPreview.taxpayer.legalName || '—'}`}
                   {sptPreview.taxpayer.npwp
                     ? ` · NPWP ${sptPreview.taxpayer.npwp}`
-                    : ' · NPWP belum diisi (Settings → Finansial)'}
+                    : ' · NPWP belum diisi (Pengaturan → Finansial)'}
                 </Text>
                 <KolamButton
                   intent="secondary"
-                  label={`Unduh JSON pre-fill SPT (${sptPreview.period})`}
+                  label={`Unduh JSON pra-isi SPT (${sptPreview.period})`}
                   onPress={() => {
                     void copySpt();
                   }}
@@ -275,7 +317,7 @@ export function KolamDaraTaxOperasionalBody({
                 Faktur pajak belum tercatat
               </Text>
               <KolamRefreshButton
-                accessibilityLabel="Refresh"
+                accessibilityLabel="Muat ulang"
                 disabled={fakturLoading}
 
                 onPress={() => {
@@ -285,8 +327,8 @@ export function KolamDaraTaxOperasionalBody({
               />
             </View>
             <Text style={styles.meta}>
-              Penjualan (faktur keluaran) dan PO masukan yang eligible tapi belum
-              ada nomor seri.
+              Penjualan (faktur keluaran) dan PO masukan yang memenuhi syarat
+              tapi belum ada nomor seri.
             </Text>
             <KolamSurfacePanelTabs
               onSelectTab={(tabId: FakturTab) => setFakturTab(tabId)}
@@ -339,7 +381,7 @@ export function KolamDaraTaxOperasionalBody({
                     render: row => (
                       <KolamStatusBadge
                         intent="warning"
-                        label={row.fakturStatus}
+                        label={formatFakturStatusLabel(row.fakturStatus)}
                       />
                     ),
                   },
@@ -402,7 +444,7 @@ export function KolamDaraTaxOperasionalBody({
                     render: row => (
                       <KolamStatusBadge
                         intent="warning"
-                        label={row.fakturStatus}
+                        label={formatFakturStatusLabel(row.fakturStatus)}
                       />
                     ),
                   },

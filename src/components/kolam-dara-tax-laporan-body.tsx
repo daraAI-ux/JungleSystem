@@ -40,7 +40,7 @@ export function KolamDaraTaxLaporanBody({
         reportType: 'monthly_summary',
         period,
       });
-      setNotice('Draft laporan dibuat');
+      setNotice('Draf laporan dibuat');
       await onRefresh();
     } catch (err) {
       setNotice(
@@ -48,7 +48,7 @@ export function KolamDaraTaxLaporanBody({
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Gagal membuat draft',
+            : 'Gagal membuat draf',
       );
     } finally {
       setCreating(false);
@@ -62,12 +62,12 @@ export function KolamDaraTaxLaporanBody({
       ) : (
         <View style={styles.card}>
           <View style={styles.cardHead}>
-            <Text style={styles.sectionTitle}>Draft laporan pajak</Text>
+            <Text style={styles.sectionTitle}>Draf laporan pajak</Text>
             {canDraft ? (
               <KolamButton
                 disabled={creating}
                 intent="secondary"
-                label={creating ? 'Membuat…' : 'Buat draft ringkasan'}
+                label={creating ? 'Membuat…' : 'Buat draf ringkasan'}
                 onPress={() => {
                   void onCreate();
                 }}
@@ -78,12 +78,15 @@ export function KolamDaraTaxLaporanBody({
           <Text style={styles.meta}>Ringkasan estimasi periode terpilih.</Text>
           {notice ? <Text style={styles.notice}>{notice}</Text> : null}
           {reports.length === 0 ? (
-            <Text style={styles.meta}>Belum ada draft laporan.</Text>
+            <Text style={styles.meta}>Belum ada draf laporan.</Text>
           ) : (
             reports.map(row => (
               <View key={row.id} style={styles.row}>
                 <Text style={styles.rowTitle}>{row.title}</Text>
-                <KolamStatusBadge intent="secondary" label={row.status} />
+                <KolamStatusBadge
+                  intent="secondary"
+                  label={formatReportStatusLabel(row.status)}
+                />
               </View>
             ))
           )}
@@ -91,6 +94,23 @@ export function KolamDaraTaxLaporanBody({
       )}
     </View>
   );
+}
+
+function formatReportStatusLabel(status: string) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (normalized === 'draft') {
+    return 'Draf';
+  }
+  if (normalized === 'approved') {
+    return 'Disetujui';
+  }
+  if (normalized === 'rejected') {
+    return 'Ditolak';
+  }
+  if (normalized === 'submitted') {
+    return 'Dikirim';
+  }
+  return status || '—';
 }
 
 const styles = StyleSheet.create({
