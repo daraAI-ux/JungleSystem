@@ -131,6 +131,8 @@ export function KolamPusatAiRingkasanSurface({
           controller={ownerController}
           onRouteChange={onRouteChange}
         />
+      ) : selectedTab === 'dara-settings' ? (
+        <KolamPusatAiDaraSettingsBody />
       ) : selectedTab === 'log-dara' ? (
         <KolamPusatAiLogDaraBody controller={logDaraController} />
       ) : selectedTab === 'transaksi-copilot' ? (
@@ -152,6 +154,29 @@ export function KolamPusatAiRingkasanSurface({
         <KolamEmptyState title="Belum tersedia" />
       )}
     </View>
+  );
+}
+
+function KolamPusatAiDaraSettingsBody() {
+  const {
+    useKolamSettingsPanelController,
+  } = require('./kolam-settings-panel-controller') as typeof import('./kolam-settings-panel-controller');
+  const {
+    KolamSettingsSurfaceFrame,
+  } = require('./kolam-settings-surface-frame') as typeof import('./kolam-settings-surface-frame');
+  const settingsController = useKolamSettingsPanelController(
+    [],
+    'web-settings',
+    'ai',
+  );
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.daraSettingsContent}
+      style={styles.daraSettingsScroll}
+    >
+      <KolamSettingsSurfaceFrame controller={settingsController} />
+    </ScrollView>
   );
 }
 
@@ -861,6 +886,12 @@ const styles = StyleSheet.create({
     borderBottomColor: V.colors.border,
     borderBottomWidth: 1,
     paddingBottom: 4,
+  },
+  daraSettingsContent: {
+    paddingBottom: 16,
+  },
+  daraSettingsScroll: {
+    flex: 1,
   },
   quickLinkButton: {
     backgroundColor: '#374151',

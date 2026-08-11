@@ -11,6 +11,7 @@ export const KOLAM_PUSAT_AI_JOBS_LEGACY = '/campaign/dara-jobs';
 export type KolamPusatAiHubTabId =
   | 'ringkasan'
   | 'owner-copilot'
+  | 'dara-settings'
   | 'log-dara'
   | 'transaksi-copilot'
   | 'po-copilot'
@@ -29,6 +30,7 @@ export const KOLAM_PUSAT_AI_HUB_TABS: Array<{
   {id: 'transaksi-copilot', label: 'Transaksi Copilot', adminOnly: true},
   {id: 'po-copilot', label: 'PO Copilot', adminOnly: true},
   {id: 'inventory-copilot', label: 'Inventory Copilot', adminOnly: true},
+  {id: 'dara-settings', label: 'Pengaturan DARA', adminOnly: true},
   {id: 'log-dara', label: 'Log DARA', adminOnly: true},
 ];
 
@@ -99,6 +101,13 @@ export function getKolamPusatAiHubTab(route: string): KolamPusatAiHubTab {
   }
   if (raw === 'log-dara') {
     return 'log-dara';
+  }
+  if (
+    raw === 'dara-settings' ||
+    raw === 'ai-settings' ||
+    raw === 'settings'
+  ) {
+    return 'dara-settings';
   }
   if (
     raw === 'transaksi-copilot' ||

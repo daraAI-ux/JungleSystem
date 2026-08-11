@@ -27,6 +27,9 @@ describe('kolam-pusat-ai domain', () => {
     expect(getKolamPusatAiHubTab('/pusat-ai?tab=warehouse-copilot')).toBe(
       'inventory-copilot',
     );
+    expect(getKolamPusatAiHubTab('/pusat-ai?tab=dara-settings')).toBe(
+      'dara-settings',
+    );
     expect(buildKolamPusatAiHubRoute('ringkasan')).toBe('/pusat-ai');
   });
 
@@ -40,6 +43,7 @@ describe('kolam-pusat-ai domain', () => {
       'Transaksi Copilot',
       'PO Copilot',
       'Inventory Copilot',
+      'Pengaturan DARA',
       'Log DARA',
     ]);
   });

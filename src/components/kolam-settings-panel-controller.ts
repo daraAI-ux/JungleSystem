@@ -1014,13 +1014,16 @@ const emptyActivityLogFilters: SettingsActivityLogFilterState = {
 export function useKolamSettingsPanelController(
   activityEntries: SyncActivityEntry[],
   initialActiveSurfaceId: SettingsSurfaceItem['id'] = 'web-settings',
+  initialActiveSettingsTabId: SettingsTabId = getDefaultSettingsTabIdForSurface(
+    initialActiveSurfaceId,
+  ),
 ) {
   const stats = getSettingsSurfaceStats();
   const [activeSurfaceId, setActiveSurfaceId] = useState<
     SettingsSurfaceItem['id']
   >(initialActiveSurfaceId);
   const [activeSettingsTabId, setActiveSettingsTabId] = useState<SettingsTabId>(
-    getDefaultSettingsTabIdForSurface(initialActiveSurfaceId),
+    initialActiveSettingsTabId,
   );
   const [settingsVisibilityContext, setSettingsVisibilityContext] = useState<
     SettingsTabVisibilityContext | null | undefined

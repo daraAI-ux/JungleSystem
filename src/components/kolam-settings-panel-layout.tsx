@@ -9,12 +9,14 @@ export function KolamSettingsPanelLayout({
 }: {
   controller: KolamSettingsPanelController;
 }) {
+  const tabItems = controller.settingsTabItems.filter(item => item.id !== 'ai');
+
   return (
     <KolamModulePanel title="Pengaturan" hint="">
       <KolamMappedControlTabList
         accessibilityLabel="settings native tabs"
         selectedId={controller.activeSettingsTabId}
-        items={controller.settingsTabItems}
+        items={tabItems}
         onSelect={tabId => controller.selectSettingsTab(tabId)}
         getItem={item => ({
           id: item.id,
