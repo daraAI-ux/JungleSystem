@@ -9852,7 +9852,7 @@ const styles = StyleSheet.create({
     borderColor: V.colors.primary,
   },
   messageBubbleOther: {
-    backgroundColor: V.colors.mutedSoft,
+    backgroundColor: V.colors.bg,
     borderColor: V.colors.border,
   },
   teamMessageAuthorRow: {
