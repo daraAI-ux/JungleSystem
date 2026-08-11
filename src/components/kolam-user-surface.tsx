@@ -1820,27 +1820,38 @@ function KolamUserDetailSurface({
             {selectedPayrollTab === 'attendance' ? (
               <>
                 <View style={styles.attendanceSummaryGrid}>
-                  <DetailRow
-                    label="Periode Gaji"
-                    value={
-                      attendancePeriodKey
+                  <View style={styles.attendanceSummaryItem}>
+                    <Text style={styles.attendanceSummaryLabel}>
+                      Periode Gaji:
+                    </Text>
+                    <Text style={styles.attendanceSummaryValue}>
+                      {attendancePeriodKey
                         ? formatAttendancePeriodLabel(
                             attendancePeriodKey,
                             attendanceSettings.payrollCutoffDay,
                           )
-                        : '-'
-                    }
-                  />
-                  <DetailRow
-                    label="Face Enrollment"
-                    value={formatFaceEnrollment(faceEnrollment)}
-                  />
+                        : '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.attendanceSummaryItem}>
+                    <Text style={styles.attendanceSummaryLabel}>
+                      Face Enrollment:
+                    </Text>
+                    <Text style={styles.attendanceSummaryValue}>
+                      {formatFaceEnrollment(faceEnrollment)}
+                    </Text>
+                  </View>
                   {faceEnrollment?.photoPath ? (
-                    <DetailRow
-                      label="Foto Referensi"
-                      numberOfLines={2}
-                      value={faceEnrollment.photoPath}
-                    />
+                    <View style={styles.attendanceSummaryItem}>
+                      <Text style={styles.attendanceSummaryLabel}>
+                        Foto Referensi:
+                      </Text>
+                      <Text
+                        numberOfLines={2}
+                        style={styles.attendanceSummaryValue}>
+                        {faceEnrollment.photoPath}
+                      </Text>
+                    </View>
                   ) : null}
                 </View>
                 <KolamListTableComposition
@@ -4147,9 +4158,31 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   attendanceSummaryGrid: {
+    alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 12,
+  },
+  attendanceSummaryItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 1,
+    gap: 4,
+  },
+  attendanceSummaryLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  attendanceSummaryValue: {
+    color: V.colors.fg,
+    flexShrink: 1,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   detailRow: {
     gap: 4,
