@@ -13,7 +13,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import {SvgXml} from 'react-native-svg';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
+import {KOLAM_CALL_ICON_SVG} from '../assets/icons/call-icon-svg';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
@@ -5643,10 +5645,11 @@ function KolamChatCallStrip({
     ? 'Memproses...'
     : activeCall
       ? getCallStatusLabel(activeCall.status)
-      : 'Tidak ada call aktif';
+      : null;
   const secondaryLabel = activeCall
     ? `${activeCall.participantCount ?? activeCall.participants?.length ?? 0} peserta`
-    : 'Siap mulai call grup';
+    : null;
+  const showCallCopy = Boolean(primaryLabel || detail.callErrorMessage || secondaryLabel);
   const myParticipant = activeCall?.participants?.find(
     participant => getCallParticipantUserId(participant) === currentUserId,
   );
@@ -5665,14 +5668,20 @@ function KolamChatCallStrip({
       .slice(0, 3) ?? [];
 
   return (
-    <View style={styles.callStrip}>
+    <View style={[styles.callStrip, !activeCall && styles.callStripIdle]}>
       <View style={styles.callTopLine}>
-        <View style={styles.callCopy}>
-          <Text style={styles.callTitle}>{primaryLabel}</Text>
-          <Text numberOfLines={1} style={styles.callMeta}>
-            {detail.callErrorMessage || secondaryLabel}
-          </Text>
-        </View>
+        {showCallCopy ? (
+          <View style={styles.callCopy}>
+            {primaryLabel ? (
+              <Text style={styles.callTitle}>{primaryLabel}</Text>
+            ) : null}
+            {detail.callErrorMessage || secondaryLabel ? (
+              <Text numberOfLines={1} style={styles.callMeta}>
+                {detail.callErrorMessage || secondaryLabel}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
         <View style={styles.callActions}>
           {activeCall ? (
             <>
@@ -5713,8 +5722,16 @@ function KolamChatCallStrip({
               accessibilityLabel="Start team chat call"
               disabled={detail.callBusy}
               onPress={detail.startCall}
-              style={[styles.callButton, detail.callBusy && styles.callButtonDisabled]}>
-              <Text style={styles.callButtonText}>Call</Text>
+              style={[
+                styles.callButton,
+                styles.callIconButton,
+                detail.callBusy && styles.callButtonDisabled,
+              ]}>
+              <SvgXml
+                height="100%"
+                width="100%"
+                xml={KOLAM_CALL_ICON_SVG}
+              />
             </KolamPressable>
           )}
         </View>
@@ -9082,13 +9099,20 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   callStrip: {
-    marginTop: 6,
-    padding: 8,
-    borderRadius: V.radius.lg,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: V.radius.md,
     borderColor: V.colors.border,
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 6,
+  },
+  callStripIdle: {
+    alignSelf: 'flex-start',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
   },
   inboxActionStrip: {
     marginTop: 6,
@@ -9301,6 +9325,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: V.colors.primary,
+  },
+  callIconButton: {
+    borderRadius: 16,
+    height: 32,
+    minHeight: 32,
+    paddingHorizontal: 0,
+    width: 32,
   },
   callButtonGhost: {
     borderColor: V.colors.border,

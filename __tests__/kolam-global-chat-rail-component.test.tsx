@@ -253,6 +253,8 @@ function getDefaultDetailMock() {
     patchInboxMessageFromLive: jest.fn(),
     upsertInboxMessageFromLive: jest.fn(),
     presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
+    purgeMessages: jest.fn(),
+    purgingMessages: false,
     clearTeamMessageSearch: jest.fn(),
     reactToMessage: jest.fn(),
     redialCall: jest.fn(),
