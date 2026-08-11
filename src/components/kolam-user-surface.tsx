@@ -85,7 +85,7 @@ const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
 const USER_KASBON_TABLE_PAGE_SIZE = 10;
 const USER_ATTENDANCE_TABLE_PAGE_SIZE = 10;
 
-type UserPayrollHistoryTab = 'deductions' | 'kasbons';
+type UserPayrollHistoryTab = 'deductions' | 'kasbons' | 'attendance';
 
 const EMPLOYEE_FILTER_OPTIONS: Array<{
   label: string;
@@ -850,8 +850,11 @@ function KolamUserDetailSurface({
         ? [{id: 'deductions' as const, label: 'Potongan Gaji'}]
         : []),
       ...(canViewKasbon ? [{id: 'kasbons' as const, label: 'Kasbon'}] : []),
+      ...(canViewAttendance
+        ? [{id: 'attendance' as const, label: 'Absensi Karyawan'}]
+        : []),
     ],
-    [canViewDeductions, canViewKasbon],
+    [canViewAttendance, canViewDeductions, canViewKasbon],
   );
   const selectedPayrollTab = payrollTabs.some(tab => tab.id === activePayrollTab)
     ? activePayrollTab
@@ -1814,6 +1817,54 @@ function KolamUserDetailSurface({
                 rows={payrollLoading ? [] : visibleKasbons}
               />
             ) : null}
+            {selectedPayrollTab === 'attendance' ? (
+              <>
+                <View style={styles.attendanceSummaryGrid}>
+                  <DetailRow
+                    label="Periode Gaji"
+                    value={
+                      attendancePeriodKey
+                        ? formatAttendancePeriodLabel(
+                            attendancePeriodKey,
+                            attendanceSettings.payrollCutoffDay,
+                          )
+                        : '-'
+                    }
+                  />
+                  <DetailRow
+                    label="Face Enrollment"
+                    value={formatFaceEnrollment(faceEnrollment)}
+                  />
+                  {faceEnrollment?.photoPath ? (
+                    <DetailRow
+                      label="Foto Referensi"
+                      numberOfLines={2}
+                      value={faceEnrollment.photoPath}
+                    />
+                  ) : null}
+                </View>
+                <KolamListTableComposition
+                  columns={attendanceColumns}
+                  emptyTitle={
+                    attendanceLoading
+                      ? 'Memuat absensi...'
+                      : 'Belum ada catatan absensi pada periode ini.'
+                  }
+                  getRowKey={item => item.id || item.dateKey}
+                  loading={attendanceLoading}
+                  pagination={{
+                    onPageChange: setAttendancePage,
+                    page: attendancePage,
+                    pageSize: USER_ATTENDANCE_TABLE_PAGE_SIZE,
+                    total: attendanceRecords.length,
+                  }}
+                  rows={attendanceLoading ? [] : visibleAttendanceRecords}
+                />
+                {attendanceError ? (
+                  <Text style={styles.formErrorText}>{attendanceError}</Text>
+                ) : null}
+              </>
+            ) : null}
           </View>
         ) : null}
 
@@ -1947,55 +1998,6 @@ function KolamUserDetailSurface({
                   </View>
                 ))}
               </View>
-            ) : null}
-          </View>
-        ) : null}
-        {user.isEmployee && canViewAttendance ? (
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Absensi Karyawan</Text>
-            <View style={styles.attendanceSummaryGrid}>
-              <DetailRow
-                label="Periode Gaji"
-                value={
-                  attendancePeriodKey
-                    ? formatAttendancePeriodLabel(
-                        attendancePeriodKey,
-                        attendanceSettings.payrollCutoffDay,
-                      )
-                    : '-'
-                }
-              />
-              <DetailRow
-                label="Face Enrollment"
-                value={formatFaceEnrollment(faceEnrollment)}
-              />
-              {faceEnrollment?.photoPath ? (
-                <DetailRow
-                  label="Foto Referensi"
-                  numberOfLines={2}
-                  value={faceEnrollment.photoPath}
-                />
-              ) : null}
-            </View>
-            <KolamListTableComposition
-              columns={attendanceColumns}
-              emptyTitle={
-                attendanceLoading
-                  ? 'Memuat absensi...'
-                  : 'Belum ada catatan absensi pada periode ini.'
-              }
-              getRowKey={item => item.id || item.dateKey}
-              loading={attendanceLoading}
-              pagination={{
-                onPageChange: setAttendancePage,
-                page: attendancePage,
-                pageSize: USER_ATTENDANCE_TABLE_PAGE_SIZE,
-                total: attendanceRecords.length,
-              }}
-              rows={attendanceLoading ? [] : visibleAttendanceRecords}
-            />
-            {attendanceError ? (
-              <Text style={styles.formErrorText}>{attendanceError}</Text>
             ) : null}
           </View>
         ) : null}
