@@ -45,6 +45,7 @@ import {
 } from '../services/kolam-dara-tax-api';
 import { KolamButton } from './kolam-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamRefreshIcon } from './kolam-refresh-icon';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -56,6 +57,8 @@ type DraftFormulas = {
   pph23Rate?: number;
   umkmFinalRate?: number;
 };
+
+const DRAFT_PAGE_SIZE = 10;
 
 function watchStatusIntent(status: string): KolamStatusBadgeIntent {
   if (status === 'waiting_interval') {
@@ -208,6 +211,7 @@ export function KolamDaraTaxRegulasiBody({
     Record<string, DraftFormulas>
   >({});
   const [draftBusyId, setDraftBusyId] = useState<string | null>(null);
+  const [draftPage, setDraftPage] = useState(1);
 
   const [versions, setVersions] =
     useState<KolamDaraTaxRegulationVersion[]>(versionsProp);
@@ -300,8 +304,10 @@ export function KolamDaraTaxRegulasiBody({
         }
       }
       setDraftFormulas(next);
+      setDraftPage(1);
     } catch (err) {
       setDrafts([]);
+      setDraftPage(1);
       onNotice(errorMessage(err, 'Gagal memuat draf'));
     } finally {
       setDraftsLoading(false);
@@ -825,141 +831,190 @@ export function KolamDaraTaxRegulasiBody({
       {rmsSubTab === 'draft' ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Draf regulasi</Text>
-          {draftsLoading ? (
-            <Text style={styles.meta}>Memuat…</Text>
-          ) : drafts.length === 0 ? (
-            <Text style={styles.meta}>Tidak ada draf.</Text>
-          ) : (
-            drafts.map(d => {
-              const pending = d.status === 'pending_review';
-              const f = draftFormulas[d.id] ?? {};
-              return (
-                <View key={d.id} style={styles.listCard}>
-                  <View style={styles.cardHead}>
-                    <Text style={[styles.tdStrong, styles.flexShrink]}>
-                      {d.title}
-                    </Text>
-                    <KolamStatusBadge
-                      intent={draftStatusIntent(d.status)}
-                      label={formatRegulationStatusLabel(d.status)}
-                    />
-                  </View>
-                  <Text style={styles.meta}>
+          <KolamListTableComposition
+            columns={[
+              {
+                flex: 1.4,
+                id: 'title',
+                label: 'Perubahan',
+                render: d => <Text style={styles.tdStrong}>{d.title}</Text>,
+              },
+              {
+                flex: 1.8,
+                id: 'summary',
+                label: 'Ringkasan',
+                render: d => (
+                  <Text style={styles.td}>
                     {d.changeDiffSummary || d.aiSummary || '—'}
                   </Text>
-                  {d.lawReferences.length > 0 ? (
-                    <Text style={styles.meta}>
-                      {d.lawReferences.join(' · ')}
-                    </Text>
-                  ) : null}
-                  {pending && canApprove ? (
-                    <>
-                      <View style={styles.formulaRow}>
-                        <View style={styles.formulaField}>
-                          <Text style={styles.meta}>PPN %</Text>
-                          <TextInput
-                            keyboardType="numeric"
-                            onChangeText={v =>
-                              setDraftFormulas(prev => ({
-                                ...prev,
-                                [d.id]: {
-                                  ...prev[d.id],
-                                  ppnRate: Number(v) || 0,
-                                },
-                              }))
-                            }
-                            placeholderTextColor={V.colors.mutedFg}
-                            style={styles.input}
-                            value={String(f.ppnRate ?? '')}
-                          />
-                        </View>
-                        <View style={styles.formulaField}>
-                          <Text style={styles.meta}>PPh 23 %</Text>
-                          <TextInput
-                            keyboardType="numeric"
-                            onChangeText={v =>
-                              setDraftFormulas(prev => ({
-                                ...prev,
-                                [d.id]: {
-                                  ...prev[d.id],
-                                  pph23Rate: Number(v) || 0,
-                                },
-                              }))
-                            }
-                            placeholderTextColor={V.colors.mutedFg}
-                            style={styles.input}
-                            value={String(f.pph23Rate ?? '')}
-                          />
-                        </View>
-                        <View style={styles.formulaField}>
-                          <Text style={styles.meta}>UMKM final %</Text>
-                          <TextInput
-                            keyboardType="numeric"
-                            onChangeText={v =>
-                              setDraftFormulas(prev => ({
-                                ...prev,
-                                [d.id]: {
-                                  ...prev[d.id],
-                                  umkmFinalRate: Number(v) || 0,
-                                },
-                              }))
-                            }
-                            placeholderTextColor={V.colors.mutedFg}
-                            style={styles.input}
-                            value={String(f.umkmFinalRate ?? '')}
-                          />
-                        </View>
+                ),
+              },
+              {
+                flex: 1.2,
+                id: 'references',
+                label: 'Referensi',
+                render: d => (
+                  <Text style={styles.meta}>
+                    {d.lawReferences.length > 0
+                      ? d.lawReferences.join(' · ')
+                      : '—'}
+                  </Text>
+                ),
+              },
+              {
+                align: 'center',
+                flex: 0.8,
+                id: 'status',
+                label: 'Status',
+                render: d => (
+                  <KolamStatusBadge
+                    intent={draftStatusIntent(d.status)}
+                    label={formatRegulationStatusLabel(d.status)}
+                  />
+                ),
+              },
+              {
+                flex: 1.4,
+                id: 'formula',
+                label: 'Formula',
+                render: d => {
+                  const pending = d.status === 'pending_review';
+                  const f = draftFormulas[d.id] ?? {};
+                  if (!pending || !canApprove) {
+                    return <Text style={styles.meta}>—</Text>;
+                  }
+                  return (
+                    <View style={styles.draftFormulaGrid}>
+                      <View style={styles.draftFormulaField}>
+                        <Text style={styles.meta}>PPN %</Text>
+                        <TextInput
+                          keyboardType="numeric"
+                          onChangeText={v =>
+                            setDraftFormulas(prev => ({
+                              ...prev,
+                              [d.id]: {
+                                ...prev[d.id],
+                                ppnRate: Number(v) || 0,
+                              },
+                            }))
+                          }
+                          placeholderTextColor={V.colors.mutedFg}
+                          style={styles.input}
+                          value={String(f.ppnRate ?? '')}
+                        />
                       </View>
-                      <View style={styles.rowActions}>
-                        <KolamButton
-                          disabled={draftBusyId === d.id}
-                          intent="primary"
-                          label="Setujui"
-                          onPress={() => {
-                            setDraftBusyId(d.id);
-                            approveKolamDaraTaxRegulationDraft(d.id, {
-                              note: 'Disetujui via RMS',
-                              formulas: draftFormulas[d.id],
+                      <View style={styles.draftFormulaField}>
+                        <Text style={styles.meta}>PPh 23 %</Text>
+                        <TextInput
+                          keyboardType="numeric"
+                          onChangeText={v =>
+                            setDraftFormulas(prev => ({
+                              ...prev,
+                              [d.id]: {
+                                ...prev[d.id],
+                                pph23Rate: Number(v) || 0,
+                              },
+                            }))
+                          }
+                          placeholderTextColor={V.colors.mutedFg}
+                          style={styles.input}
+                          value={String(f.pph23Rate ?? '')}
+                        />
+                      </View>
+                      <View style={styles.draftFormulaField}>
+                        <Text style={styles.meta}>UMKM final %</Text>
+                        <TextInput
+                          keyboardType="numeric"
+                          onChangeText={v =>
+                            setDraftFormulas(prev => ({
+                              ...prev,
+                              [d.id]: {
+                                ...prev[d.id],
+                                umkmFinalRate: Number(v) || 0,
+                              },
+                            }))
+                          }
+                          placeholderTextColor={V.colors.mutedFg}
+                          style={styles.input}
+                          value={String(f.umkmFinalRate ?? '')}
+                        />
+                      </View>
+                    </View>
+                  );
+                },
+              },
+              {
+                flex: 1,
+                id: 'actions',
+                label: 'Aksi',
+                render: d => {
+                  const pending = d.status === 'pending_review';
+                  if (!pending || !canApprove) {
+                    return <Text style={styles.meta}>—</Text>;
+                  }
+                  return (
+                    <View style={styles.rowActions}>
+                      <KolamButton
+                        disabled={draftBusyId === d.id}
+                        intent="primary"
+                        label="Setujui"
+                        onPress={() => {
+                          setDraftBusyId(d.id);
+                          approveKolamDaraTaxRegulationDraft(d.id, {
+                            note: 'Disetujui via RMS',
+                            formulas: draftFormulas[d.id],
+                          })
+                            .then(() => {
+                              onNotice('Disetujui');
+                              void loadDrafts();
+                              onRefreshMonitoring();
                             })
-                              .then(() => {
-                                onNotice('Disetujui');
-                                void loadDrafts();
-                                onRefreshMonitoring();
-                              })
-                              .catch(err =>
-                                onNotice(errorMessage(err, 'Gagal menyetujui')),
-                              )
-                              .finally(() => setDraftBusyId(null));
-                          }}
-                        />
-                        <KolamButton
-                          disabled={draftBusyId === d.id}
-                          intent="outline"
-                          label="Tolak"
-                          onPress={() => {
-                            setDraftBusyId(d.id);
-                            rejectKolamDaraTaxRegulationDraft(
-                              d.id,
-                              'Ditolak via RMS',
+                            .catch(err =>
+                              onNotice(errorMessage(err, 'Gagal menyetujui')),
                             )
-                              .then(() => {
-                                onNotice('Ditolak');
-                                void loadDrafts();
-                                onRefreshMonitoring();
-                              })
-                              .catch(err =>
-                                onNotice(errorMessage(err, 'Gagal tolak')),
-                              )
-                              .finally(() => setDraftBusyId(null));
-                          }}
-                        />
-                      </View>
-                    </>
-                  ) : null}
-                </View>
-              );
-            })
-          )}
+                            .finally(() => setDraftBusyId(null));
+                        }}
+                      />
+                      <KolamButton
+                        disabled={draftBusyId === d.id}
+                        intent="outline"
+                        label="Tolak"
+                        onPress={() => {
+                          setDraftBusyId(d.id);
+                          rejectKolamDaraTaxRegulationDraft(
+                            d.id,
+                            'Ditolak via RMS',
+                          )
+                            .then(() => {
+                              onNotice('Ditolak');
+                              void loadDrafts();
+                              onRefreshMonitoring();
+                            })
+                            .catch(err =>
+                              onNotice(errorMessage(err, 'Gagal tolak')),
+                            )
+                            .finally(() => setDraftBusyId(null));
+                        }}
+                      />
+                    </View>
+                  );
+                },
+              },
+            ]}
+            emptyTitle="Tidak ada draf."
+            getRowKey={d => d.id}
+            loading={draftsLoading}
+            pagination={{
+              onPageChange: setDraftPage,
+              page: draftPage,
+              pageSize: DRAFT_PAGE_SIZE,
+              total: drafts.length,
+            }}
+            rows={drafts.slice(
+              (draftPage - 1) * DRAFT_PAGE_SIZE,
+              draftPage * DRAFT_PAGE_SIZE,
+            )}
+          />
         </View>
       ) : null}
 
@@ -1452,15 +1507,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
     padding: 10,
   },
-  formulaRow: {
+  draftFormulaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
-  formulaField: {
+  draftFormulaField: {
     flexGrow: 1,
     gap: 4,
-    minWidth: 100,
+    minWidth: 86,
   },
   compareRow: {
     alignItems: 'flex-end',
