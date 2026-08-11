@@ -4237,52 +4237,58 @@ function KolamChatRailDetailPanel({
                       ) : (
                         <>
                           {mode === 'team-chat' ? (
-                            message.body ? (
-                              <KolamTeamMentionText body={message.body} />
-                            ) : null
+                            <View style={styles.teamMessageContentActionRow}>
+                              <View style={styles.teamMessageContentStack}>
+                                {message.body ? (
+                                  <KolamTeamMentionText body={message.body} />
+                                ) : null}
+                                {message.attachments.length > 0 ? (
+                                  <KolamChatAttachmentList
+                                    attachments={message.attachments}
+                                  />
+                                ) : null}
+                                {message.linkPreviews.length > 0 ? (
+                                  <KolamChatLinkPreviewList
+                                    previews={message.linkPreviews}
+                                  />
+                                ) : null}
+                                {message.embeds.length > 0 ? (
+                                  <KolamChatEmbedList embeds={message.embeds} />
+                                ) : null}
+                              </View>
+                              <KolamChatReactionControls
+                                canEdit={canEdit}
+                                disabled={detail.sending}
+                                message={message}
+                                onClose={() => setOpenTeamActionMessageId(null)}
+                                onEdit={() => handleStartEditMessage(message)}
+                                onReact={emoji =>
+                                  detail.reactToMessage(message.id, emoji)
+                                }
+                                onReply={() =>
+                                  onReplyToMessage({
+                                    author: message.author,
+                                    body: getTeamChatReplyTargetBody(message),
+                                    id: message.id,
+                                  })
+                                }
+                                onToggle={() =>
+                                  setOpenTeamActionMessageId(current =>
+                                    current === message.id ? null : message.id,
+                                  )
+                                }
+                                open={openTeamActionMessageId === message.id}
+                              />
+                            </View>
                           ) : message.body ||
                             message.content ||
                             message.replyContent ||
                             message.daraMeta ? (
                             <KolamInboxRichMessageContent message={message} />
                           ) : null}
-                          {message.attachments.length > 0 ? (
+                          {mode === 'inbox' && message.attachments.length > 0 ? (
                             <KolamChatAttachmentList
                               attachments={message.attachments}
-                            />
-                          ) : null}
-                          {mode === 'team-chat' &&
-                          message.linkPreviews.length > 0 ? (
-                            <KolamChatLinkPreviewList
-                              previews={message.linkPreviews}
-                            />
-                          ) : null}
-                          {mode === 'team-chat' && message.embeds.length > 0 ? (
-                            <KolamChatEmbedList embeds={message.embeds} />
-                          ) : null}
-                          {mode === 'team-chat' ? (
-                            <KolamChatReactionControls
-                              canEdit={canEdit}
-                              disabled={detail.sending}
-                              message={message}
-                              onClose={() => setOpenTeamActionMessageId(null)}
-                              onEdit={() => handleStartEditMessage(message)}
-                              onReact={emoji =>
-                                detail.reactToMessage(message.id, emoji)
-                              }
-                              onReply={() =>
-                                onReplyToMessage({
-                                  author: message.author,
-                                  body: getTeamChatReplyTargetBody(message),
-                                  id: message.id,
-                                })
-                              }
-                              onToggle={() =>
-                                setOpenTeamActionMessageId(current =>
-                                  current === message.id ? null : message.id,
-                                )
-                              }
-                              open={openTeamActionMessageId === message.id}
                             />
                           ) : null}
                           {mode === 'inbox' ? (
@@ -9957,6 +9963,16 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  teamMessageContentActionRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  teamMessageContentStack: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
   },
   inboxRichStack: {
     gap: 7,
