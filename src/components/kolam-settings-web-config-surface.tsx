@@ -6291,16 +6291,6 @@ function KpiSettingsPanel({
           Rules v{summaryRows.find(row => row.id === 'version')?.value ?? '-'} |
           Plugin bundle v0.9.1
         </Text>
-        <Text
-          style={[
-            styles.kpiSettingsBadge,
-            pluginEnabled
-              ? styles.kpiSettingsBadgeLive
-              : styles.kpiSettingsBadgeDisabled,
-          ]}
-        >
-          {pluginEnabled ? 'FE bundle' : 'Plugin nonaktif'}
-        </Text>
       </View>
 
       <KpiSettingsSection title="Poin dasar (prioritas task)">
@@ -10981,21 +10971,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 13,
     fontWeight: '800',
-  },
-  kpiSettingsBadge: {
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: '800',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  kpiSettingsBadgeDisabled: {
-    backgroundColor: '#fee2e2',
-    color: '#b91c1c',
-  },
-  kpiSettingsBadgeLive: {
-    backgroundColor: '#f3f4f6',
-    color: '#374151',
   },
   kpiSettingsGridFive: {
     alignItems: 'flex-start',
