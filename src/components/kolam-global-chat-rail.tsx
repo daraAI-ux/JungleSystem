@@ -9842,18 +9842,14 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     padding: 9,
     borderRadius: V.radius.lg,
-    borderColor: V.colors.border,
-    borderWidth: 1,
     backgroundColor: V.colors.mutedSoft,
     gap: 3,
   },
   messageBubbleMine: {
     backgroundColor: V.colors.primarySoft,
-    borderColor: V.colors.primary,
   },
   messageBubbleOther: {
     backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
   },
   teamMessageAuthorRow: {
     alignItems: 'center',
