@@ -190,8 +190,6 @@ function NotifyRoomSection({
           />
           <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
         </View>
-      </View>
-      <View style={styles.roomRow}>
         <View style={styles.roomSelect}>
           <KolamDropdownSelect
             accessibilityLabel="Team Chat room"

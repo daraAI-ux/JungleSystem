@@ -199,8 +199,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
     marginTop: 12,
   },
   roomSelect: {
-    flexBasis: 256,
-    flexGrow: 1,
+    flexBasis: 280,
+    flexGrow: 0,
     maxWidth: 448,
     minWidth: 224,
   },
