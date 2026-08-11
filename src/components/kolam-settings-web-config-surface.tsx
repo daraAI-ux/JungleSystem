@@ -9892,10 +9892,15 @@ const styles = StyleSheet.create({
   },
   marketplaceAssetRow: {
     alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+    paddingHorizontal: 12,
     paddingVertical: 10,
   },
   marketplaceAssetSection: {
