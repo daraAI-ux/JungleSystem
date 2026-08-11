@@ -45,6 +45,7 @@ import {
 } from '../services/kolam-dara-tax-api';
 import {KolamButton} from './kolam-button';
 import {KolamRefreshButton} from './kolam-refresh-button';
+import {KolamRefreshIcon} from './kolam-refresh-icon';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamStatusBadge} from './kolam-status-badge';
 import type {KolamStatusBadgeIntent} from './kolam-status-badge-types';
@@ -476,13 +477,27 @@ export function KolamDaraTaxRegulasiBody({
                   {watcherIsWatching ? (
                     <KolamButton
                       disabled
+                      icon={
+                        <KolamRefreshIcon
+                          color={V.colors.primaryFg}
+                          size={14}
+                        />
+                      }
                       intent="outline"
                       label="Sedang memeriksa…"
+                      style={styles.watcherButton}
+                      textStyle={styles.watcherButtonText}
                     />
                   ) : (
                     <KolamButton
                       disabled={
                         !taxStatus?.watcherEnabled || watcherRunning
+                      }
+                      icon={
+                        <KolamRefreshIcon
+                          color={V.colors.primaryFg}
+                          size={14}
+                        />
                       }
                       intent="outline"
                       label={
@@ -491,6 +506,8 @@ export function KolamDaraTaxRegulasiBody({
                           : 'Jalankan watcher sekarang'
                       }
                       onPress={onRunWatcher}
+                      style={styles.watcherButton}
+                      textStyle={styles.watcherButtonText}
                     />
                   )}
                 </View>
@@ -1333,6 +1350,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  watcherButton: {
+    backgroundColor: '#374151',
+    borderColor: '#374151',
+  },
+  watcherButtonText: {
+    color: V.colors.primaryFg,
   },
   flexShrink: {
     flex: 1,
