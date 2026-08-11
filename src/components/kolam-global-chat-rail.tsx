@@ -9417,7 +9417,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: V.colors.primary,
+    backgroundColor: 'transparent',
     padding: 7,
   },
   teamRoomTrashIcon: {
