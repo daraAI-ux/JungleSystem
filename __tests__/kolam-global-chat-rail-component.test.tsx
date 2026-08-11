@@ -1785,7 +1785,6 @@ describe('KolamGlobalChatRail', () => {
           linkPreviews: [],
           mine: false,
           reactions: [],
-          senderIsAi: true,
           sentAt: '2026-07-28T08:00:00.000Z',
         },
       ],

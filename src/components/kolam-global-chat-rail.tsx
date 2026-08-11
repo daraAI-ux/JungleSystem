@@ -3897,7 +3897,7 @@ function KolamChatRailDetailPanel({
                         ? styles.messageBubbleMine
                         : styles.messageBubbleOther,
                     ]}>
-                    {mode === 'team-chat' || message.senderIsAi ? (
+                    {mode === 'team-chat' || isInboxDetailAiMessage(message) ? (
                       <View style={styles.teamMessageAuthorRow}>
                         <View style={styles.teamMessageAvatar}>
                           <KolamProfileAvatarContent
@@ -4669,7 +4669,7 @@ function getInboxAiMessageAvatarUrl(
   message: KolamChatRailDetailMessage,
   katakTerbangAvatarUrl: string | null,
 ) {
-  if (!message.senderIsAi) {
+  if (!isInboxDetailAiMessage(message)) {
     return resolveProfilePhotoUrl(message.senderProfilePicture);
   }
 
@@ -4677,6 +4677,16 @@ function getInboxAiMessageAvatarUrl(
     resolveProfilePhotoUrl(message.senderProfilePicture) ||
     katakTerbangAvatarUrl ||
     resolveDaraAvatarImageUrl()
+  );
+}
+
+function isInboxDetailAiMessage(message: KolamChatRailDetailMessage) {
+  const author = message.author.trim().toLowerCase();
+  return (
+    message.senderIsAi === true ||
+    Boolean(message.daraMeta) ||
+    author === 'dara' ||
+    author.includes('katak terbang')
   );
 }
 
@@ -6955,6 +6965,14 @@ function getInboxMessagePatchFromLiveEvent(event: KolamChatLiveEvent) {
   }
   if (message.daraMeta !== undefined) {
     patch.daraMeta = message.daraMeta as KolamChatMessage['daraMeta'];
+  }
+  if (message.senderName !== undefined) {
+    patch.senderName = readLiveString(message.senderName);
+  }
+  if (message.senderType !== undefined) {
+    patch.senderType = readLiveString(
+      message.senderType,
+    ) as KolamChatMessage['senderType'];
   }
 
   return Object.keys(patch).length ? {messageId, patch} : null;

@@ -963,6 +963,8 @@ function mapInboxMessage(
   message: KolamChatMessage,
   buyerDisplayName?: string,
 ): KolamChatRailDetailMessage {
+  const senderIsAi = isInboxAiMessage(message);
+
   return {
     attachments: [],
     content: message.content ?? null,
@@ -976,7 +978,7 @@ function mapInboxMessage(
     reactions: [],
     replyContent: message.replyContent ?? null,
     replyPreview: null,
-    senderIsAi: message.senderType === 'ai_agent',
+    senderIsAi,
     senderId: getInboxSenderStaffId(message),
     sentAt: message.sentAt ?? message.createdAt,
     editedAt: message.editedAt ?? null,
@@ -1016,6 +1018,20 @@ function mapInboxMessagePatch(
 
   if (patch.daraMeta !== undefined) {
     next.daraMeta = patch.daraMeta ?? null;
+    next.senderIsAi = isInboxAiMessage({
+      daraMeta: patch.daraMeta ?? undefined,
+      senderName: current.author,
+      senderType: current.senderIsAi ? 'ai_agent' : undefined,
+    } as KolamChatMessage);
+  }
+
+  if (patch.senderName !== undefined || patch.senderType !== undefined) {
+    next.senderIsAi = isInboxAiMessage({
+      daraMeta: next.daraMeta ?? current.daraMeta ?? undefined,
+      senderName:
+        typeof patch.senderName === 'string' ? patch.senderName : current.author,
+      senderType: patch.senderType,
+    } as KolamChatMessage);
   }
 
   return next;
@@ -1164,6 +1180,19 @@ function getInboxAuthor(message: KolamChatMessage, buyerDisplayName?: string) {
   }
 
   return message.senderName || buyerDisplayName || 'Buyer';
+}
+
+function isInboxAiMessage(message: Partial<KolamChatMessage>) {
+  if (message.senderType === 'ai_agent' || message.daraMeta) {
+    return true;
+  }
+
+  const senderName = String(message.senderName ?? '').trim().toLowerCase();
+  return (
+    senderName === 'dara' ||
+    senderName.includes('dara') ||
+    senderName.includes('katak terbang')
+  );
 }
 
 function getInboxBuyerDisplayName(
