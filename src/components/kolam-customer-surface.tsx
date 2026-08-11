@@ -1089,38 +1089,6 @@ function KolamCustomerDetailSurface({
 
   return (
     <View style={styles.detailSurface}>
-      <View style={styles.detailHeader}>
-        <View style={styles.detailHeading}>
-          <View style={styles.detailTitleRow}>
-            <Text style={styles.detailTitle}>{customer.name}</Text>
-            <KolamStatusBadge
-              intent={getCustomerStatusIntent(customer.status)}
-              label={getCustomerStatusLabel(customer.status)}
-              numberOfLines={1}
-            />
-            {customer.verifiedStatus ? (
-              <KolamStatusBadge
-                intent="success"
-                label="Terverifikasi"
-                numberOfLines={1}
-              />
-            ) : null}
-            {customer.accountRestricted ? (
-              <KolamStatusBadge
-                intent="danger"
-                label="Dibatasi"
-                numberOfLines={1}
-              />
-            ) : null}
-          </View>
-          {customer.notes ? (
-            <Text numberOfLines={2} style={styles.detailSubtitle}>
-              {customer.notes}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-
       <View style={styles.toolbarWrap}>
         <View style={styles.toolbarShell}>
           <View style={styles.detailToolbarSpacer} />
