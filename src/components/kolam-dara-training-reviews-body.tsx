@@ -18,6 +18,7 @@ import {
 } from '../services/kolam-dara-training-api';
 import {KolamButton} from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
+import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamNotesField} from './kolam-notes-field';
 import {KolamStatusBadge} from './kolam-status-badge';
@@ -111,8 +112,6 @@ export function KolamDaraTrainingReviewsBody({
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-
   return (
     <View style={styles.root}>
       <View style={styles.card}>
@@ -139,89 +138,101 @@ export function KolamDaraTrainingReviewsBody({
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
-        {loading ? (
-          <Text style={styles.meta}>Memuat…</Text>
-        ) : rows.length === 0 ? (
-          <Text style={styles.meta}>Tidak ada data review DARA.</Text>
-        ) : (
-          <>
-            <View style={styles.tableHead}>
-              <Text style={[styles.th, styles.colDate]}>Tanggal</Text>
-              <Text style={[styles.th, styles.colContact]}>Kontak</Text>
-              <Text style={[styles.th, styles.colChannel]}>Channel</Text>
-              <Text style={[styles.th, styles.colRating]}>★</Text>
-              <Text style={[styles.th, styles.colComment]}>Komentar buyer</Text>
-              <Text style={[styles.th, styles.colAction]}>
-                {status === 'done' ? 'Catatan review' : 'Aksi'}
-              </Text>
-            </View>
-            {rows.map(row => (
-              <View key={row.id} style={styles.tableRow}>
-                <Text style={[styles.tdMuted, styles.colDate]}>
+        <KolamListTableComposition
+          columns={[
+            {
+              flex: 1,
+              id: 'date',
+              label: 'Tanggal',
+              render: row => (
+                <Text numberOfLines={2} style={styles.tdMuted}>
                   {formatKolamDaraTrainingDateTime(
                     row.conversationStartedAt || row.createdAt,
                   )}
                 </Text>
-                <Text numberOfLines={2} style={[styles.td, styles.colContact]}>
+              ),
+            },
+            {
+              flex: 1,
+              id: 'contact',
+              label: 'Kontak',
+              render: row => (
+                <Text numberOfLines={2} style={styles.td}>
                   {row.contactLabel}
                 </Text>
-                <View style={styles.colChannel}>
-                  <KolamStatusBadge
-                    intent="muted"
-                    label={row.platform}
-                    numberOfLines={1}
+              ),
+            },
+            {
+              flex: 0.8,
+              id: 'channel',
+              label: 'Channel',
+              render: row => (
+                <KolamStatusBadge
+                  intent="muted"
+                  label={row.platform}
+                  numberOfLines={1}
+                />
+              ),
+            },
+            {
+              align: 'center',
+              flex: 0.42,
+              id: 'rating',
+              label: 'Star',
+              render: row => (
+                <Text style={styles.tdStrong}>{row.rating}</Text>
+              ),
+            },
+            {
+              flex: 1.35,
+              id: 'comment',
+              label: 'Komentar buyer',
+              render: row => (
+                <Text numberOfLines={2} style={styles.tdMuted}>
+                  {row.customerComment || '-'}
+                </Text>
+              ),
+            },
+            {
+              flex: 1.1,
+              id: 'action',
+              label: status === 'done' ? 'Catatan review' : 'Aksi',
+              render: row =>
+                status === 'done' ? (
+                  <Text numberOfLines={3} style={styles.tdMuted}>
+                    {row.reviewNotes || '-'}
+                  </Text>
+                ) : (
+                  <KolamButton
+                    intent="secondary"
+                    label="Review"
+                    onPress={() => {
+                      setActive(row);
+                      setNotes('');
+                      setNotice('');
+                    }}
+                    size="sm"
                   />
-                </View>
-                <Text style={[styles.tdStrong, styles.colRating]}>
-                  {row.rating}
-                </Text>
-                <Text numberOfLines={2} style={[styles.tdMuted, styles.colComment]}>
-                  {row.customerComment || '—'}
-                </Text>
-                <View style={styles.colAction}>
-                  {status === 'done' ? (
-                    <Text numberOfLines={3} style={styles.tdMuted}>
-                      {row.reviewNotes || '—'}
-                    </Text>
-                  ) : (
-                    <KolamButton
-                      intent="secondary"
-                      label="Review"
-                      onPress={() => {
-                        setActive(row);
-                        setNotes('');
-                        setNotice('');
-                      }}
-                      size="sm"
-                    />
-                  )}
-                </View>
-              </View>
-            ))}
-          </>
-        )}
+                ),
+            },
+          ]}
+          emptyTitle={loading ? 'Memuat...' : 'Tidak ada data review DARA'}
+          getRowKey={row => row.id}
+          loading={loading}
+          pagination={
+            !loading && total > 0
+              ? {
+                  onPageChange: setPage,
+                  page,
+                  pageSize: PAGE_SIZE,
+                  total,
+                }
+              : undefined
+          }
+          rows={loading ? [] : rows}
+          showFooter={!loading && total > 0}
+        />
 
-        {total > PAGE_SIZE ? (
-          <View style={styles.pager}>
-            <KolamButton
-              disabled={page <= 1 || loading}
-              intent="secondary"
-              label="←"
-              onPress={() => setPage(current => Math.max(1, current - 1))}
-              size="sm"
-            />
-            <Text style={styles.meta}>
-              {page} / {totalPages}
-            </Text>
-            <KolamButton
-              disabled={page * PAGE_SIZE >= total || loading}
-              intent="secondary"
-              label="→"
-              onPress={() => setPage(current => current + 1)}
-              size="sm"
-            />
-          </View>
-        ) : null}
       </View>
 
       <Modal
@@ -317,27 +328,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  tableHead: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    gap: 6,
-    paddingBottom: 6,
-  },
-  tableRow: {
-    alignItems: 'flex-start',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 6,
-    paddingVertical: 8,
-  },
-  th: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-  },
   td: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
@@ -353,17 +343,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-  },
-  colDate: {flex: 1.1, minWidth: 88},
-  colContact: {flex: 1.2, minWidth: 90},
-  colChannel: {flex: 0.9, minWidth: 72},
-  colRating: {flex: 0.4, minWidth: 28},
-  colComment: {flex: 1.4, minWidth: 100},
-  colAction: {flex: 1.2, minWidth: 96},
-  pager: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
   },
   modalRoot: {
     alignItems: 'center',
