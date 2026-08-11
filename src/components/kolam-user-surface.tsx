@@ -79,6 +79,7 @@ import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {KolamToggleRow} from './kolam-toggle-row';
 
 const SEARCH_DEBOUNCE_MS = 350;
+const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
 
 const EMPLOYEE_FILTER_OPTIONS: Array<{
   label: string;
@@ -775,6 +776,7 @@ function KolamUserDetailSurface({
   const [payrollSummary, setPayrollSummary] = React.useState(
     EMPTY_USER_PAYROLL_SUMMARY,
   );
+  const [deductionPage, setDeductionPage] = React.useState(1);
   const [payrollLoading, setPayrollLoading] = React.useState(false);
   const [payrollError, setPayrollError] = React.useState('');
   const [ratingSummary, setRatingSummary] = React.useState(
@@ -830,6 +832,105 @@ function KolamUserDetailSurface({
     (isSuperAdmin ||
       hasSettingsPermission(permissionContext, 'salary', 'view') ||
       hasSettingsPermission(permissionContext, 'staff_attendance', 'view'));
+  const deductionColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamUserDeductionItem>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 1,
+        id: 'code',
+        label: 'Kode',
+        render: item => (
+          <Text numberOfLines={1} style={styles.userMetaText}>
+            {item.code || 'Potongan'}
+          </Text>
+        ),
+      },
+      {
+        align: 'right',
+        flex: 0.8,
+        id: 'amount',
+        label: 'Jumlah',
+        render: item => (
+          <Text style={styles.payrollEntryAmount}>
+            {formatUserCurrency(item.amount)}
+          </Text>
+        ),
+      },
+      {
+        align: 'left',
+        flex: 1.6,
+        id: 'reason',
+        label: 'Alasan',
+        render: item => (
+          <Text numberOfLines={2} style={styles.detailSubtitle}>
+            {item.reason || item.rejectionReason || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.9,
+        id: 'status',
+        label: 'Status',
+        render: item => (
+          <View style={styles.userTableBadgeCell}>
+            <KolamStatusBadge
+              intent={getPayrollStatusIntent(item.status)}
+              label={formatPayrollStatus(item.status)}
+              numberOfLines={1}
+              style={styles.userTableBadge}
+            />
+          </View>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'created',
+        label: 'Dibuat',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.createdAt)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.95,
+        id: 'reviewed',
+        label: 'Direview',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatUserDateTime(item.reviewedAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
+  const visibleDeductions = React.useMemo(() => {
+    const pageStart = (deductionPage - 1) * USER_DEDUCTION_TABLE_PAGE_SIZE;
+
+    return payrollSummary.deductions.slice(
+      pageStart,
+      pageStart + USER_DEDUCTION_TABLE_PAGE_SIZE,
+    );
+  }, [deductionPage, payrollSummary.deductions]);
+
+  React.useEffect(() => {
+    const maxPage = Math.max(
+      1,
+      Math.ceil(
+        payrollSummary.deductions.length / USER_DEDUCTION_TABLE_PAGE_SIZE,
+      ),
+    );
+
+    if (deductionPage > maxPage) {
+      setDeductionPage(maxPage);
+    }
+  }, [deductionPage, payrollSummary.deductions.length]);
 
   React.useEffect(() => {
     let active = true;
@@ -1440,8 +1541,31 @@ function KolamUserDetailSurface({
           title="Status akun & karyawan"
         />
 
+        {user.isEmployee && canViewDeductions ? (
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>Potongan Gaji</Text>
+            <KolamListTableComposition
+              columns={deductionColumns}
+              emptyTitle={
+                payrollLoading
+                  ? 'Memuat potongan gaji...'
+                  : 'Tidak ada pengajuan potongan gaji.'
+              }
+              getRowKey={item => item.id || item.code}
+              loading={payrollLoading}
+              pagination={{
+                onPageChange: setDeductionPage,
+                page: deductionPage,
+                pageSize: USER_DEDUCTION_TABLE_PAGE_SIZE,
+                total: payrollSummary.deductions.length,
+              }}
+              rows={payrollLoading ? [] : visibleDeductions}
+            />
+          </View>
+        ) : null}
+
         {user.isEmployee &&
-        (canViewBonus || canViewDeductions || canViewKasbon) ? (
+        (canViewBonus || canViewKasbon) ? (
           <View style={styles.detailGrid}>
             {canViewBonus ? (
               <View style={styles.detailPanel}>
@@ -1475,45 +1599,6 @@ function KolamUserDetailSurface({
                 ) : (
                   <Text style={styles.detailSubtitle}>
                     Belum ada bonus yang diberikan.
-                  </Text>
-                )}
-              </View>
-            ) : null}
-
-            {canViewDeductions ? (
-              <View style={styles.detailPanel}>
-                <Text style={styles.detailPanelTitle}>Potongan Gaji</Text>
-                {payrollLoading ? (
-                  <Text style={styles.detailSubtitle}>
-                    Memuat potongan gaji...
-                  </Text>
-                ) : payrollSummary.deductions.length ? (
-                  payrollSummary.deductions.map(item => (
-                    <View key={item.id || item.code} style={styles.payrollEntry}>
-                      <View style={styles.payrollEntryHeader}>
-                        <Text numberOfLines={1} style={styles.payrollEntryTitle}>
-                          {item.code || 'Potongan'}
-                        </Text>
-                        <KolamStatusBadge
-                          intent={getPayrollStatusIntent(item.status)}
-                          label={formatPayrollStatus(item.status)}
-                          numberOfLines={1}
-                        />
-                      </View>
-                      <Text style={styles.payrollEntryAmount}>
-                        {formatUserCurrency(item.amount)}
-                      </Text>
-                      <Text numberOfLines={2} style={styles.detailSubtitle}>
-                        {item.reason || item.rejectionReason || '-'}
-                      </Text>
-                      <Text style={styles.payrollEntryDate}>
-                        {formatUserDateTime(item.reviewedAt || item.createdAt)}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.detailSubtitle}>
-                    Tidak ada pengajuan potongan gaji.
                   </Text>
                 )}
               </View>
@@ -1564,10 +1649,12 @@ function KolamUserDetailSurface({
                 )}
               </View>
             ) : null}
-            {payrollError ? (
-              <Text style={styles.formErrorText}>{payrollError}</Text>
-            ) : null}
           </View>
+        ) : null}
+        {user.isEmployee &&
+        (canViewBonus || canViewDeductions || canViewKasbon) &&
+        payrollError ? (
+          <Text style={styles.formErrorText}>{payrollError}</Text>
         ) : null}
 
         {user.isEmployee && (canViewRating || canViewAttendance) ? (
@@ -3773,6 +3860,17 @@ const styles = StyleSheet.create({
   userSummaryCard: {
     alignSelf: 'stretch',
     width: '100%',
+  },
+  userTableBadgeCell: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+  },
+  userTableBadge: {
+    alignSelf: 'center',
+  },
+  userTableTextCenter: {
+    textAlign: 'center',
   },
   accessBadgeRow: {
     alignItems: 'center',
