@@ -12,6 +12,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
   createKolamCustomer,
+  deleteKolamCustomer,
   deleteKolamCustomerPhoto,
   getKolamCustomerDetail,
   getKolamCustomerList,
@@ -30,6 +31,7 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamEditButton} from './kolam-edit-button';
 import {KolamContentFrame} from './kolam-content-frame';
+import {KolamDeleteConfirmDialog} from './kolam-delete-confirm-dialog';
 import {
   KolamDetailMediaPreview,
   type KolamDetailMediaItem,
@@ -147,6 +149,10 @@ function KolamCustomerListSurface({
   const [pagination, setPagination] = React.useState(
     INITIAL_CUSTOMER_LIST.pagination,
   );
+  const [deleteTarget, setDeleteTarget] = React.useState<KolamCustomer | null>(
+    null,
+  );
+  const [deleting, setDeleting] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -234,6 +240,35 @@ function KolamCustomerListSurface({
     : searchEmpty
       ? `Tidak ada pelanggan untuk "${search.trim()}"`
       : 'Belum ada pelanggan';
+  const handleDeleteCustomer = React.useCallback(() => {
+    if (!deleteTarget || deleting) {
+      return;
+    }
+
+    setDeleting(true);
+    setError('');
+    void deleteKolamCustomer(deleteTarget.id)
+      .then(() => {
+        setItems(current =>
+          current.filter(customer => customer.id !== deleteTarget.id),
+        );
+        setPagination(current => ({
+          ...current,
+          total: Math.max(0, current.total - 1),
+        }));
+        setDeleteTarget(null);
+      })
+      .catch(errorResult => {
+        setError(
+          errorResult instanceof Error
+            ? errorResult.message
+            : 'Gagal menghapus pelanggan.',
+        );
+      })
+      .finally(() => {
+        setDeleting(false);
+      });
+  }, [deleteTarget, deleting]);
 
   return (
     <View style={styles.stack}>
@@ -280,11 +315,23 @@ function KolamCustomerListSurface({
         renderActions={customer => (
           <KolamCustomerListActions
             customer={customer}
+            onDelete={() => setDeleteTarget(customer)}
             onRouteChange={onRouteChange}
           />
         )}
         rowStyle={styles.customerListRow}
         rows={customerTableRows}
+      />
+      <KolamDeleteConfirmDialog
+        itemLabel={deleteTarget?.name}
+        itemType="pelanggan"
+        onCancel={() => {
+          if (!deleting) {
+            setDeleteTarget(null);
+          }
+        }}
+        onConfirm={handleDeleteCustomer}
+        visible={Boolean(deleteTarget)}
       />
     </View>
   );
@@ -992,9 +1039,11 @@ function renderCustomerListCell(
 
 function KolamCustomerListActions({
   customer,
+  onDelete,
   onRouteChange,
 }: {
   customer: KolamCustomer;
+  onDelete: () => void;
   onRouteChange?: (route: string) => void;
 }) {
   const customerRouteId = encodeURIComponent(customer.id);
@@ -1012,9 +1061,8 @@ function KolamCustomerListActions({
           onPress: () => onRouteChange?.(`/customers/${customerRouteId}/edit`),
         },
         {
-          disabled: true,
           label: 'Hapus',
-          onPress: () => undefined,
+          onPress: onDelete,
           tone: 'danger',
         },
       ]}

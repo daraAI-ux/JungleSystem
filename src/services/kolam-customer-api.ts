@@ -80,6 +80,12 @@ export async function updateKolamCustomer(
   return customer;
 }
 
+export async function deleteKolamCustomer(id: string): Promise<void> {
+  await kolamRequest<unknown>(`/customer/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function uploadKolamCustomerPhoto(
   id: string,
   localUri: string,
