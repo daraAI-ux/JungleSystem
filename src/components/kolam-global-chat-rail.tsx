@@ -4849,6 +4849,7 @@ function KolamTeamMentionText({ body }: { body: string }) {
         }
 
         const isDara = part.username.toLowerCase() === 'dara';
+        const label = part.username.trim() || part.raw.replace(/^@/, '');
         return (
           <Text
             key={`m-${index}-${part.username}`}
@@ -4857,7 +4858,7 @@ function KolamTeamMentionText({ body }: { body: string }) {
             }
             style={[styles.messageMention, isDara && styles.messageMentionAi]}
           >
-            {part.raw}
+            {label}
           </Text>
         );
       })}
@@ -10089,13 +10090,18 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   messageMention: {
+    backgroundColor: V.colors.primarySoft,
+    borderRadius: 6,
     color: V.colors.primary,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '900',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
   },
   messageMentionAi: {
-    color: V.colors.danger,
+    backgroundColor: V.colors.infoSoft,
+    color: V.colors.info,
   },
   daraThinkingRow: {
     maxWidth: '86%',
