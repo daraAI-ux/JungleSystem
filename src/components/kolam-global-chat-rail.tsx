@@ -4848,32 +4848,44 @@ function KolamTeamMentionText({ body }: { body: string }) {
   const parts = splitTeamChatMentionText(body);
 
   return (
-    <Text style={styles.messageBody}>
+    <View style={styles.messageBodyFlow}>
       {parts.map((part, index) => {
         if (part.type === 'text') {
-          return part.value;
+          return (
+            <Text key={`t-${index}`} style={styles.messageBodyText}>
+              {part.value}
+            </Text>
+          );
         }
 
         const isDara = part.username.toLowerCase() === 'dara';
         const label = part.username.trim() || part.raw.replace(/^@/, '');
         const mentionColors = getTeamChatMentionColorSet(part.username);
         return (
-          <Text
+          <View
             key={`m-${index}-${part.username}`}
             accessibilityLabel={
               isDara ? 'Mention DARA' : `Mention ${part.username}`
             }
             style={[
               styles.messageMention,
-              mentionColors,
+              {backgroundColor: mentionColors.backgroundColor},
               isDara && styles.messageMentionAi,
             ]}
           >
-            {label}
-          </Text>
+            <Text
+              style={[
+                styles.messageMentionText,
+                {color: mentionColors.color},
+                isDara && styles.messageMentionTextAi,
+              ]}
+            >
+              {label}
+            </Text>
+          </View>
         );
       })}
-    </Text>
+    </View>
   );
 }
 
@@ -10004,6 +10016,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
+  messageBodyFlow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  messageBodyText: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   teamMessageContentActionRow: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -10146,17 +10169,26 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   messageMention: {
+    alignItems: 'center',
     backgroundColor: V.colors.primarySoft,
     borderRadius: 999,
+    justifyContent: 'center',
+    marginHorizontal: 2,
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  messageMentionText: {
     color: V.colors.primary,
     fontFamily: V.fontFamily,
     fontSize: 12,
+    lineHeight: 15,
     fontWeight: '900',
-    paddingHorizontal: 7,
-    paddingVertical: 1,
   },
   messageMentionAi: {
     backgroundColor: V.colors.infoSoft,
+  },
+  messageMentionTextAi: {
     color: V.colors.info,
   },
   daraThinkingRow: {
