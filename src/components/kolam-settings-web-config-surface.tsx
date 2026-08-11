@@ -26,6 +26,7 @@ import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
+import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
@@ -788,6 +789,8 @@ const daraKnowledgeCategories = [
   ['panduan_operasional', 'Panduan operasional'],
 ] as const;
 
+const REGION_TABLE_PAGE_SIZE = 10;
+
 export function KolamSettingsWebConfigSurface({
   fields,
   maintenanceMode,
@@ -1294,6 +1297,29 @@ export function KolamSettingsWebConfigSurface({
       })),
     [regionSyncSummaryRows],
   );
+  const [regionPage, setRegionPage] = React.useState(1);
+  const regionPageCount = Math.max(
+    1,
+    Math.ceil(regionRows.length / REGION_TABLE_PAGE_SIZE),
+  );
+  const safeRegionPage = Math.min(regionPage, regionPageCount);
+  const pagedRegionRows = React.useMemo(
+    () =>
+      regionRows.slice(
+        (safeRegionPage - 1) * REGION_TABLE_PAGE_SIZE,
+        safeRegionPage * REGION_TABLE_PAGE_SIZE,
+      ),
+    [regionRows, safeRegionPage],
+  );
+  React.useEffect(() => {
+    setRegionPage(1);
+  }, [
+    regionLevel,
+    selectedDistrict,
+    selectedProvince,
+    selectedRegency,
+    selectedVillage,
+  ]);
   const generalFormSections = sections.filter(section => section.id === 'logo');
   const settingsFieldWidth = 460;
   const [storedMapsBrowserKey, setStoredMapsBrowserKey] = React.useState('');
@@ -4204,76 +4230,98 @@ export function KolamSettingsWebConfigSurface({
                   text: 'Table Region',
                   style: styles.marketplaceOverviewTitle,
                 },
-                {
-                  id: 'region-table-meta',
-                  text: `${regionRows.length} rows ditampilkan dari limit 2000, urut code dari backend.`,
-                  style: styles.marketplaceOverviewMeta,
-                },
               ]}
             />
-            <View style={styles.regionTable}>
-              <View style={[styles.regionTableRow, styles.regionTableHeader]}>
-                {[
-                  'Code',
-                  'Name',
-                  'Level',
-                  'Parent',
-                  'Postal Code',
-                  'Updated',
-                ].map(column => (
+            <KolamListTableComposition
+              columns={[
+                {
+                  flex: 1,
+                  id: 'code',
+                  label: 'Code',
+                  render: region => (
                     <Text
-                      key={column}
-                      style={[
-                        styles.regionTableCell,
-                        styles.regionTableHeaderCell,
-                        column === 'Name' && styles.regionTableNameCell,
-                      ]}
+                      numberOfLines={1}
+                      style={[styles.regionTableText, styles.regionTableMono]}
                     >
-                      {column}
+                      {region.code}
                     </Text>
-                  ))}
-              </View>
-              {regionRows.map(region => (
-                <View
-                  key={region._id || region.code}
-                  style={styles.regionTableRow}
-                >
-                  <Text style={[styles.regionTableCell, styles.regionTableMono]}>
-                    {region.code}
-                  </Text>
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.regionTableCell, styles.regionTableNameCell]}
-                  >
-                    {region.name}
-                  </Text>
-                  <Text style={styles.regionTableCell}>{region.level}</Text>
-                  <Text style={[styles.regionTableCell, styles.regionTableMono]}>
-                    {region.parentCode || '-'}
-                  </Text>
-                  <Text style={[styles.regionTableCell, styles.regionTableMono]}>
-                    {region.postalCode || '-'}
-                  </Text>
-                  <Text style={styles.regionTableCell}>
-                    {formatRegionUpdatedAt(region.updatedAt)}
-                  </Text>
-                </View>
-              ))}
-              {regionRows.length === 0 ? (
-                <KolamCopyStack
-                  items={[
-                    {
-                      id: 'region-empty',
-                      text:
-                        regionSyncStatus === 'loading'
-                          ? 'Memuat wilayah...'
-                          : 'Belum ada region untuk filter ini.',
-                      style: styles.marketplaceOverviewMeta,
-                    },
-                  ]}
-                />
-              ) : null}
-            </View>
+                  ),
+                },
+                {
+                  flex: 1.8,
+                  id: 'name',
+                  label: 'Name',
+                  render: region => (
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.regionTableText, styles.regionTableNameText]}
+                    >
+                      {region.name}
+                    </Text>
+                  ),
+                },
+                {
+                  flex: 0.9,
+                  id: 'level',
+                  label: 'Level',
+                  render: region => (
+                    <Text numberOfLines={1} style={styles.regionTableText}>
+                      {region.level}
+                    </Text>
+                  ),
+                },
+                {
+                  flex: 1,
+                  id: 'parent',
+                  label: 'Parent',
+                  render: region => (
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.regionTableText, styles.regionTableMono]}
+                    >
+                      {region.parentCode || '-'}
+                    </Text>
+                  ),
+                },
+                {
+                  flex: 1,
+                  id: 'postal-code',
+                  label: 'Postal Code',
+                  render: region => (
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.regionTableText, styles.regionTableMono]}
+                    >
+                      {region.postalCode || '-'}
+                    </Text>
+                  ),
+                },
+                {
+                  flex: 1.2,
+                  id: 'updated',
+                  label: 'Updated',
+                  render: region => (
+                    <Text numberOfLines={1} style={styles.regionTableText}>
+                      {formatRegionUpdatedAt(region.updatedAt)}
+                    </Text>
+                  ),
+                },
+              ]}
+              emptyTitle={
+                regionSyncStatus === 'loading'
+                  ? 'Memuat wilayah...'
+                  : 'Belum ada region untuk filter ini.'
+              }
+              getRowKey={region => region._id || region.code}
+              loading={regionSyncStatus === 'loading'}
+              pagination={{
+                onPageChange: setRegionPage,
+                page: safeRegionPage,
+                pageSize: REGION_TABLE_PAGE_SIZE,
+                total: regionRows.length,
+              }}
+              rows={pagedRegionRows}
+            />
           </View>
         </>
       ) : null}
@@ -10309,40 +10357,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 30,
   },
-  regionTable: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  regionTableRow: {
-    alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    minHeight: 36,
-  },
-  regionTableHeader: {
-    backgroundColor: V.colors.muted,
-  },
-  regionTableCell: {
+  regionTableText: {
     color: V.colors.fg,
-    flexBasis: 118,
-    flexShrink: 0,
     fontSize: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
-  regionTableHeaderCell: {
-    color: V.colors.mutedFg,
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  regionTableNameCell: {
-    flexBasis: 220,
-    flexGrow: 1,
-    flexShrink: 1,
+  regionTableNameText: {
+    fontWeight: '600',
   },
   regionTableMono: {
     fontFamily: Platform.select({
