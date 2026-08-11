@@ -4856,13 +4856,18 @@ function KolamTeamMentionText({ body }: { body: string }) {
 
         const isDara = part.username.toLowerCase() === 'dara';
         const label = part.username.trim() || part.raw.replace(/^@/, '');
+        const mentionColors = getTeamChatMentionColorSet(part.username);
         return (
           <Text
             key={`m-${index}-${part.username}`}
             accessibilityLabel={
               isDara ? 'Mention DARA' : `Mention ${part.username}`
             }
-            style={[styles.messageMention, isDara && styles.messageMentionAi]}
+            style={[
+              styles.messageMention,
+              mentionColors,
+              isDara && styles.messageMentionAi,
+            ]}
           >
             {label}
           </Text>
@@ -5051,22 +5056,57 @@ const TEAM_CHAT_AUTHOR_COLORS = [
   '#0f766e',
 ] as const;
 
+const TEAM_CHAT_AUTHOR_SOFT_COLORS = [
+  '#dbeafe',
+  '#ede9fe',
+  '#fce7f3',
+  '#ffedd5',
+  '#cffafe',
+  '#e0e7ff',
+  '#ffe4e6',
+  '#ccfbf1',
+] as const;
+
 function getTeamChatAuthorDisplayColor(message: KolamChatRailDetailMessage) {
   if (message.senderIsAi || message.botKey) {
     return V.colors.mutedFg;
   }
 
   const key = (message.senderId || message.author || '').trim();
+  return getTeamChatAuthorColorFromKey(key);
+}
+
+function getTeamChatMentionColorSet(username: string) {
+  const normalized = username.trim().toLowerCase();
+  if (!normalized || normalized === 'dara') {
+    return {
+      backgroundColor: V.colors.infoSoft,
+      color: V.colors.info,
+    };
+  }
+
+  const index = getTeamChatAuthorColorIndex(normalized);
+  return {
+    backgroundColor: TEAM_CHAT_AUTHOR_SOFT_COLORS[index],
+    color: TEAM_CHAT_AUTHOR_COLORS[index],
+  };
+}
+
+function getTeamChatAuthorColorFromKey(key: string) {
   if (!key) {
     return V.colors.mutedFg;
   }
 
+  return TEAM_CHAT_AUTHOR_COLORS[getTeamChatAuthorColorIndex(key)];
+}
+
+function getTeamChatAuthorColorIndex(key: string) {
   let hash = 0;
   for (let index = 0; index < key.length; index += 1) {
     hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
   }
 
-  return TEAM_CHAT_AUTHOR_COLORS[hash % TEAM_CHAT_AUTHOR_COLORS.length];
+  return hash % TEAM_CHAT_AUTHOR_COLORS.length;
 }
 
 function getTeamChatMessageInitials(author: string) {
@@ -10107,12 +10147,12 @@ const styles = StyleSheet.create({
   },
   messageMention: {
     backgroundColor: V.colors.primarySoft,
-    borderRadius: 6,
+    borderRadius: 999,
     color: V.colors.primary,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '900',
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 1,
   },
   messageMentionAi: {
