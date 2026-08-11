@@ -44,6 +44,7 @@ import {
   runKolamDaraTaxSnapshotBackfill,
 } from '../services/kolam-dara-tax-api';
 import { KolamButton } from './kolam-button';
+import { KolamCancelButton } from './kolam-cancel-button';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamRefreshIcon } from './kolam-refresh-icon';
@@ -975,9 +976,8 @@ export function KolamDaraTaxRegulasiBody({
                             .finally(() => setDraftBusyId(null));
                         }}
                       />
-                      <KolamButton
+                      <KolamCancelButton
                         disabled={draftBusyId === d.id}
-                        intent="outline"
                         label="Tolak"
                         onPress={() => {
                           setDraftBusyId(d.id);
