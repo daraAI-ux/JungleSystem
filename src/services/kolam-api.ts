@@ -535,6 +535,8 @@ export interface KolamTeamChatMessage {
   senderType?: 'user' | 'ai';
   botKey?: string;
   botName?: string;
+  /** Snapshot foto bot (Katak Terbang / Raja Anemon / dll.) — FE plugin `botAvatarUrl`. */
+  botAvatarUrl?: string;
   body?: string;
   attachments?: KolamTeamChatAttachment[];
   reactions?: KolamTeamChatReaction[];

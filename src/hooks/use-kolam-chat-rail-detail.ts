@@ -92,6 +92,8 @@ export interface KolamChatRailDetailMessage {
   senderIsAi?: boolean;
   senderId?: string | null;
   senderProfilePicture?: string | null;
+  botKey?: string | null;
+  botAvatarUrl?: string | null;
   sentAt?: string;
   editedAt?: string | null;
   editedByName?: string | null;
@@ -1123,6 +1125,8 @@ function mapTeamChatMessage(
     senderIsAi: isAi,
     senderId: getTeamChatSenderId(message),
     senderProfilePicture: getTeamChatSenderProfilePicture(message),
+    botKey: message.botKey?.trim() || null,
+    botAvatarUrl: message.botAvatarUrl?.trim() || null,
     sentAt: message.createdAt,
     editedAt: message.editedAt ?? null,
     editedByName: message.editedByName ?? null,

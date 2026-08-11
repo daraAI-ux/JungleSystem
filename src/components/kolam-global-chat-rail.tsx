@@ -245,6 +245,8 @@ interface KolamChatRailContactDetailsState {
 interface KolamChatRailDaraAvatarState {
   imageUrl: string | null;
   katakTerbangImageUrl: string | null;
+  rajaAnemonImageUrl: string | null;
+  pangeranIsopodImageUrl: string | null;
 }
 
 interface KolamInboxComposerAccess {
@@ -353,9 +355,46 @@ function resolveDaraAvatarImageUrl(
   return getKolamFileUrl(path) ?? path;
 }
 
-function resolveKatakTerbangAvatarImageUrl(stored?: string | null) {
+function resolveBotAvatarImageUrl(stored?: string | null) {
   const path = normalizeDaraAvatarPath(stored);
   return path ? getKolamFileUrl(path) ?? path : null;
+}
+
+function resolveKatakTerbangAvatarImageUrl(stored?: string | null) {
+  return resolveBotAvatarImageUrl(stored);
+}
+
+/** FE plugin chat `TeamChatUserAvatar` — bot foto dulu, DARA hanya fallback AI tanpa foto bot. */
+function resolveTeamChatBotAvatarRawUrl({
+  botAvatarUrl,
+  botKey,
+  katakTerbangAvatarUrl,
+  rajaAnemonAvatarUrl,
+  pangeranIsopodAvatarUrl,
+}: {
+  botAvatarUrl?: string | null;
+  botKey?: string | null;
+  katakTerbangAvatarUrl?: string | null;
+  rajaAnemonAvatarUrl?: string | null;
+  pangeranIsopodAvatarUrl?: string | null;
+}) {
+  const key = String(botKey || '')
+    .trim()
+    .toLowerCase();
+  const fromMessage = String(botAvatarUrl || '').trim();
+  if (fromMessage) {
+    return fromMessage;
+  }
+  if (key === 'katak_terbang') {
+    return String(katakTerbangAvatarUrl || '').trim();
+  }
+  if (key === 'raja_anemon') {
+    return String(rajaAnemonAvatarUrl || '').trim();
+  }
+  if (key === 'pangeran_isopod') {
+    return String(pangeranIsopodAvatarUrl || '').trim();
+  }
+  return '';
 }
 
 export function KolamGlobalChatRail({
@@ -439,6 +478,8 @@ export function KolamGlobalChatRail({
     React.useState<KolamChatRailDaraAvatarState>(() => ({
       imageUrl: resolveDaraAvatarImageUrl(),
       katakTerbangImageUrl: null,
+      rajaAnemonImageUrl: null,
+      pangeranIsopodImageUrl: null,
     }));
   const items = getChatRailItems(
     mode,
@@ -849,6 +890,12 @@ export function KolamGlobalChatRail({
             ),
             katakTerbangImageUrl: resolveKatakTerbangAvatarImageUrl(
               katakTerbangProfilePhotoUrl || katakTerbangWorkerPhotoUrl,
+            ),
+            rajaAnemonImageUrl: resolveBotAvatarImageUrl(
+              readStringField(webSetting, 'rajaAnemonWorkerPhotoUrl'),
+            ),
+            pangeranIsopodImageUrl: resolveBotAvatarImageUrl(
+              readStringField(webSetting, 'pangeranIsopodWorkerPhotoUrl'),
             ),
           });
         }
@@ -1313,6 +1360,8 @@ export function KolamGlobalChatRail({
             currentUserId={currentUserId}
             daraAvatarUrl={daraAvatarState.imageUrl}
             katakTerbangAvatarUrl={daraAvatarState.katakTerbangImageUrl}
+            rajaAnemonAvatarUrl={daraAvatarState.rajaAnemonImageUrl}
+            pangeranIsopodAvatarUrl={daraAvatarState.pangeranIsopodImageUrl}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
             deleteRoomBusy={deleteRoomState.busy}
             detail={detail}
@@ -3352,6 +3401,8 @@ function KolamChatRailDetailPanel({
   currentUserId,
   daraAvatarUrl,
   katakTerbangAvatarUrl,
+  rajaAnemonAvatarUrl,
+  pangeranIsopodAvatarUrl,
   daraThinkingLiveSignal,
   deleteRoomBusy,
   detail,
@@ -3375,6 +3426,8 @@ function KolamChatRailDetailPanel({
   currentUserId?: string;
   daraAvatarUrl: string | null;
   katakTerbangAvatarUrl: string | null;
+  rajaAnemonAvatarUrl: string | null;
+  pangeranIsopodAvatarUrl: string | null;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   deleteRoomBusy: boolean;
   detail: ReturnType<typeof useKolamChatRailDetail>;
@@ -3914,6 +3967,11 @@ function KolamChatRailDetailPanel({
                                 ? getTeamChatMessageAvatarUrl(
                                     message,
                                     daraAvatarUrl,
+                                    {
+                                      katakTerbangAvatarUrl,
+                                      rajaAnemonAvatarUrl,
+                                      pangeranIsopodAvatarUrl,
+                                    },
                                   )
                                 : getInboxAiMessageAvatarUrl(
                                     message,
@@ -4664,7 +4722,26 @@ function getPendingChatAttachmentLabel(file: NativeImagePickerResult) {
 function getTeamChatMessageAvatarUrl(
   message: KolamChatRailDetailMessage,
   daraAvatarUrl: string | null,
+  botAvatarFallback?: {
+    katakTerbangAvatarUrl?: string | null;
+    rajaAnemonAvatarUrl?: string | null;
+    pangeranIsopodAvatarUrl?: string | null;
+  },
 ) {
+  const rawBotAvatar = resolveTeamChatBotAvatarRawUrl({
+    botAvatarUrl: message.botAvatarUrl,
+    botKey: message.botKey,
+    katakTerbangAvatarUrl: botAvatarFallback?.katakTerbangAvatarUrl,
+    rajaAnemonAvatarUrl: botAvatarFallback?.rajaAnemonAvatarUrl,
+    pangeranIsopodAvatarUrl: botAvatarFallback?.pangeranIsopodAvatarUrl,
+  });
+  if (rawBotAvatar) {
+    return (
+      resolveProfilePhotoUrl(rawBotAvatar) ||
+      resolveBotAvatarImageUrl(rawBotAvatar)
+    );
+  }
+
   if (message.senderIsAi) {
     return daraAvatarUrl || resolveDaraAvatarImageUrl();
   }
