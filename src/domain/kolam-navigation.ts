@@ -334,14 +334,14 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         label: 'Lokasi',
         route: '/locations',
         description: 'Kelola lokasi gudang, lantai, rak, dan area penyimpanan',
-        group: 'Inventory',
+        group: 'Inventori',
         moduleIcon: 'location',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Assets',
+        label: 'Aset',
         route: '/assets',
-        description: 'Asset inventory tracked in the live Kolam app',
+        description: 'Inventori aset yang dilacak dari aplikasi Kolam live',
         group: 'Stok',
         requiredAccess: ['kolam'],
       },
@@ -357,7 +357,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Media',
         route: '/media',
-        description: 'Browse all images and videos in the media folder',
+        description: 'Telusuri semua gambar dan video di folder media',
         moduleIcon: 'media',
         requiredAccess: ['kolam'],
       },
@@ -370,7 +370,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Purchase Order',
+        label: 'Pesanan Pembelian',
         route: '/purchase-order',
         description: 'Buat dan kelola pesanan pembelian',
         group: 'Pengadaan',
@@ -404,7 +404,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Teranura',
         route: '/teranura',
-        description: 'Teranura animal records and statistics workspace',
+        description: 'Data hewan Teranura dan workspace statistik',
         group: 'Stok Hidup',
         moduleIcon: 'teranura',
         requiredAccess: ['kolam'],
@@ -412,14 +412,14 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Freyer',
         route: '/freyer',
-        description: 'Freyer breeding and hardware-linked records',
+        description: 'Data breeding Freyer dan perangkat yang tertaut',
         group: 'Stok Hidup',
         requiredAccess: ['kolam'],
       },
       {
         label: 'IoT Freyer',
         route: '/iot-freyer',
-        description: 'IoT Freyer monitoring route from live Kolam',
+        description: 'Rute pemantauan IoT Freyer dari Kolam live',
         group: 'Stok Hidup',
         requiredAccess: ['kolam'],
       },
@@ -479,50 +479,50 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'DARA Jobs',
+        label: 'Tugas DARA',
         route: '/pusat-ai',
-        description: 'DARA campaign job queue from live Kolam',
+        description: 'Antrian tugas kampanye DARA dari Kolam live',
         group: 'Kampanye',
         moduleIcon: 'ai',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'DARA Marketing',
+        label: 'Marketing DARA',
         route: '/campaign/dara-marketing',
-        description: 'Marketing automation surface from live Kolam',
+        description: 'Surface otomasi marketing dari Kolam live',
         group: 'Kampanye',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'DARA AI Market Intelligence',
+        label: 'Intel Pasar DARA AI',
         route: '/campaign/dara-market-intel',
         description:
-          'Monitor harga & supplier, rekomendasi pricing/pembelian. Semua saran butuh approval — terapkan harga manual di produk setelah disetujui.',
+          'Pantau harga dan pemasok, rekomendasi harga dan pembelian. Semua saran perlu persetujuan; terapkan harga manual di produk setelah disetujui.',
         group: 'Kampanye',
         moduleIcon: 'daraMarketIntel',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'DARA SEO & Market Intelligence',
+        label: 'DARA SEO & Intel Pasar',
         route: '/campaign/dara-seo',
         description:
-          'Analisa, rekomendasi, dan draft perubahan. Mutasi produk hanya setelah approval.',
+          'Analisa, rekomendasi, dan draf perubahan. Mutasi produk hanya setelah persetujuan.',
         group: 'Kampanye',
         moduleIcon: 'daraSeo',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Discount Approval',
+        label: 'Persetujuan Diskon',
         route: '/sales/discount-approval',
-        description: 'Discount request approvals',
+        description: 'Persetujuan permintaan diskon',
         group: 'Kampanye',
         moduleIcon: 'discountApproval',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Vouchers',
+        label: 'Voucher',
         route: '/vouchers',
-        description: 'Discount codes for marketplace customers',
+        description: 'Kode diskon untuk pelanggan marketplace',
         group: 'Kampanye',
         moduleIcon: 'voucher',
         requiredAccess: ['kolam'],
@@ -667,7 +667,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Payment Method',
+        label: 'Metode Pembayaran',
         route: '/payment-methods',
         description: 'Metode pembayaran yang diterima',
         group: 'Pengaturan Keuangan',
@@ -689,7 +689,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'KPI Tim',
         route: '/list-of-users/kpi',
-        description: 'Dashboard kinerja tim (admin)',
+        description: 'Dasbor kinerja tim (admin)',
         moduleIcon: 'kpiTeam',
         requiredAccess: ['kolam'],
       },
@@ -735,43 +735,43 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
       {
         label: 'Overtime',
         route: '/list-of-users/overtime',
-        description: 'Staff overtime records and approvals',
-        group: 'Staff',
+        description: 'Data lembur staf dan persetujuannya',
+        group: 'Staf',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Staff Attendance',
+        label: 'Absensi Staf',
         route: '/staff-attendance',
-        description: 'Attendance overview and staff presence records',
-        group: 'Staff Attendance',
+        description: 'Ringkasan absensi dan data kehadiran staf',
+        group: 'Absensi Staf',
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Staff Leaves',
+        label: 'Cuti Staf',
         route: '/staff-attendance/leaves',
         description: 'Leave requests and attendance exceptions',
-        group: 'Staff Attendance',
+        group: 'Absensi Staf',
         requiredAccess: ['kolam'],
       },
       {
         label: 'My Attendance',
         route: '/staff-attendance/me',
         description: 'Signed-in staff attendance self-service route',
-        group: 'Staff Attendance',
+        group: 'Absensi Staf',
         requiredAccess: ['kolam'],
       },
       {
         label: 'Portal',
         route: '/portal',
-        description: 'Staff portal, KPI, and slip access routes',
-        group: 'Staff',
+        description: 'Portal staf, KPI, dan rute akses slip',
+        group: 'Staf',
         requiredAccess: ['kolam'],
       },
       {
         label: 'Manajemen Tugas',
         route: '/task-manager',
         description: 'Kelola tugas, tugas terjadwal, dan pengaturan tugas',
-        group: 'Staff',
+        group: 'Staf',
         moduleIcon: 'taskManager',
         requiredAccess: ['kolam'],
       },
@@ -796,7 +796,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Taxonomy Request',
+        label: 'Permintaan Taksonomi',
         route: '/taxonomy-request',
         description: 'Pending taxonomy approval requests',
         group: 'Enclonura Management',
@@ -810,7 +810,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Storage Logs',
+        label: 'Log Penyimpanan',
         route: '/storage-history',
         description: 'History of storage additions and deductions',
         group: 'Enclonura Storage',
@@ -827,7 +827,7 @@ const sidebarFallbackDescriptions: Record<string, string> = {
   '/products/archive': 'Arsip produk (riwayat baca saja)',
   '/list-of-users/dara-training':
     'Kamus respons cepat, consent pengiriman, koreksi ranking produk, dan vision inbox (species + produk + bukti bayar).',
-  '/list-of-users/kpi': 'Dashboard kinerja tim (admin)',
+  '/list-of-users/kpi': 'Dasbor kinerja tim (admin)',
   '/task-manager/settings/categories': 'Kategori dinamis (admin)',
   '/task-manager/settings/task-types':
     'Katalog tipe tugas dinamis (dosing, maintenance, kustom)',
@@ -1155,10 +1155,10 @@ function sidebarItem(
 
 const dashboardRuntimeRouteContexts: KolamNavigationItem[] = [
   {
-    label: 'Inventory',
+    label: 'Inventori',
     route: '/inventory',
-    description: 'Dashboard inventory summary and count cards',
-    group: 'Dashboard',
+    description: 'Ringkasan dasbor inventori dan kartu jumlah',
+    group: 'Dasbor',
     requiredAccess: ['kolam'],
   },
   {
@@ -1961,10 +1961,10 @@ const kolamNavigationRouteVariantSpecs: Array<{
   {
     baseRoute: '/campaign/dara-market-intel',
     labelSuffix: 'Persetujuan',
-    label: 'Persetujuan Market Intelligence',
+    label: 'Persetujuan Intel Pasar',
     route: '/campaign/dara-market-intel/approvals',
     description:
-      'Review dan setujui rekomendasi pricing/pembelian — harga diterapkan manual di produk.',
+      'Ulas dan setujui rekomendasi harga/pembelian; harga diterapkan manual di produk.',
   },
   {
     baseRoute: '/campaign/dara-market-intel',
@@ -1979,7 +1979,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     label: 'Kesehatan Toko',
     route: '/campaign/dara-market-intel/kesehatan',
     description:
-      'Scan kelengkapan field Edit Produk — produk skor 100% tidak ditampilkan. Brand dinilai sebagai parameter, bukan filter.',
+      'Scan kelengkapan field Edit Produk; produk skor 100% tidak ditampilkan. Merek dinilai sebagai parameter, bukan filter.',
   },
   {
     baseRoute: '/campaign/dara-market-intel',
@@ -1987,7 +1987,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     label: 'DARA Peralatan',
     route: '/campaign/dara-market-intel/peralatan',
     description:
-      'Bulk harga & monitor biaya platform Shopee/Tokopedia — profil toko, URL regulasi, mapping AI fee untuk estimasi HPP.',
+      'Harga massal dan pantau biaya platform Shopee/Tokopedia; profil toko, URL regulasi, mapping biaya AI untuk estimasi HPP.',
   },
   {
     baseRoute: '/campaign/dara-seo',
@@ -1995,12 +1995,12 @@ const kolamNavigationRouteVariantSpecs: Array<{
     label: 'Persetujuan Perubahan SEO',
     route: '/campaign/dara-seo/approvals',
     description:
-      'Review draft AI untuk produk, blog, dan livestock — lalu terapkan setelah approve.',
+      'Ulas draf AI untuk produk, blog, dan ternak; lalu terapkan setelah disetujui.',
   },
   {
     baseRoute: '/campaign/dara-seo',
     labelSuffix: 'Log audit',
-    label: 'Audit Logs',
+    label: 'Log Audit',
     route: '/campaign/dara-seo/audit-logs',
     description: 'Riwayat aktivitas DARA SEO.',
   },
@@ -2014,18 +2014,18 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Keywords',
-    label: 'Keyword Opportunities',
+    labelSuffix: 'Kata kunci',
+    label: 'Peluang Kata Kunci',
     route: '/campaign/dara-seo/keywords',
     description:
-      'Peluang keyword dari audit DARA SEO — prioritas berdasarkan skor peluang.',
+      'Peluang kata kunci dari audit DARA SEO; prioritas berdasarkan skor peluang.',
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Mentions',
-    label: 'Brand & SERP Mentions',
+    labelSuffix: 'Sebutan',
+    label: 'Sebutan Brand & SERP',
     route: '/campaign/dara-seo/mentions',
-    description: 'Mentions brand, hasil SERP, kompetitor, dan backlink.',
+    description: 'Sebutan brand, hasil SERP, kompetitor, dan backlink.',
   },
   {
     baseRoute: '/campaign/dara-seo',
@@ -2033,7 +2033,7 @@ const kolamNavigationRouteVariantSpecs: Array<{
     label: 'Ranking SERP',
     route: '/campaign/dara-seo/rankings',
     description:
-      'Hasil yang sudah di-fetch & disimpan (cron, test integrasi, atau fetch manual).',
+      'Hasil yang sudah diambil dan disimpan (cron, tes integrasi, atau ambil manual).',
   },
   {
     baseRoute: '/campaign/dara-seo',
@@ -2044,16 +2044,16 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Social Insights',
-    label: 'Social Insights',
+    labelSuffix: 'Insight sosial',
+    label: 'Insight Sosial',
     route: '/campaign/dara-seo/social-insights',
     description:
-      'Instagram & TikTok via akun inbox AM. Setelah fetch, browser kembali standby poll DM.',
+      'Instagram & TikTok via akun inbox AM. Setelah ambil data, browser kembali standby polling DM.',
   },
   {
     baseRoute: '/campaign/dara-seo',
-    labelSuffix: 'Website',
-    label: 'SEO Website (Homepage)',
+    labelSuffix: 'Situs web',
+    label: 'SEO Situs Web (Beranda)',
     route: '/campaign/dara-seo/website',
     description:
       'Meta title, description, dan keyword untuk halaman utama toko publik — perubahan via approval.',

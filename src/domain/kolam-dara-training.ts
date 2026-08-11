@@ -7,7 +7,7 @@ export const KOLAM_DARA_TRAINING_ROOT = '/list-of-users/dara-training';
 
 /** FE HeaderDescription — also shell nav description. */
 export const KOLAM_DARA_TRAINING_DESCRIPTION =
-  'Kamus respons cepat, consent pengiriman, koreksi ranking produk, dan vision inbox (species + produk + bukti bayar).';
+  'Kamus respons cepat, persetujuan pengiriman, koreksi ranking produk, dan kotak masuk visi (spesies, produk, bukti bayar).';
 
 export type KolamDaraTrainingTabId =
   | 'phrases'
@@ -23,12 +23,12 @@ export const KOLAM_DARA_TRAINING_TABS: Array<{
   label: string;
 }> = [
   {id: 'phrases', label: 'Frasa respons cepat'},
-  {id: 'fulfillment', label: 'Consent kirim'},
+  {id: 'fulfillment', label: 'Persetujuan kirim'},
   {id: 'products', label: 'Koreksi produk'},
-  {id: 'vision', label: 'Vision inbox'},
-  {id: 'videoStudio', label: 'Video Studio'},
-  {id: 'reviews', label: 'Review percakapan'},
-  {id: 'fineTune', label: 'Fine-tuning'},
+  {id: 'vision', label: 'Kotak masuk visi'},
+  {id: 'videoStudio', label: 'Studio video'},
+  {id: 'reviews', label: 'Ulasan percakapan'},
+  {id: 'fineTune', label: 'Penyetelan model'},
 ];
 
 export const KOLAM_DARA_TRAINING_DEFAULT_TAB: KolamDaraTrainingTabId =
@@ -221,7 +221,7 @@ export const KOLAM_DARA_TRAINING_FINE_TUNE_SOURCE_LABELS: Record<string, string>
   {
     phrase_rule: 'Frasa',
     search_feedback: 'Koreksi produk',
-    conversation_review: 'Review chat',
+    conversation_review: 'Ulasan chat',
     eval_case: 'Eval',
     planner_audit: 'Planner audit',
     team_chat_feedback: 'Feedback Team Chat',
@@ -231,13 +231,13 @@ export const KOLAM_DARA_TRAINING_FINE_TUNE_SOURCE_LABELS: Record<string, string>
 export const KOLAM_DARA_TRAINING_FINE_TUNE_STATUS_LABELS: Record<string, string> =
   {
     candidate: 'Kandidat',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    exported: 'Exported',
+    approved: 'Disetujui',
+    rejected: 'Ditolak',
+    exported: 'Diekspor',
     valid: 'Valid',
-    needs_review: 'Review',
-    blocked: 'Blocked',
-    all: 'all',
+    needs_review: 'Perlu ulasan',
+    blocked: 'Diblokir',
+    all: 'Semua',
   };
 
 export const KOLAM_DARA_TRAINING_FINE_TUNE_DATASET_FILTERS: KolamDaraTrainingFineTuneDatasetFilter[] =
@@ -718,7 +718,7 @@ export function normalizeKolamDaraTrainingFineTuneImportResult(
   const root = asRecord(payload);
   const data = asRecord(root.data);
   return {
-    message: String(root.message || '').trim() || 'Import selesai',
+    message: String(root.message || '').trim() || 'Impor selesai',
     imported: asNumber(data.imported),
     updated: asNumber(data.updated),
     blocked: asNumber(data.blocked),
@@ -731,7 +731,7 @@ export function normalizeKolamDaraTrainingFineTuneExportResult(
   const root = asRecord(payload);
   const data = asRecord(root.data);
   return {
-    message: String(root.message || '').trim() || 'Export selesai',
+    message: String(root.message || '').trim() || 'Ekspor selesai',
     filePath: String(data.filePath || '').trim(),
     lineCount: asNumber(data.lineCount),
   };

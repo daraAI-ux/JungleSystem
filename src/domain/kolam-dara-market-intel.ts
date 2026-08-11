@@ -22,7 +22,7 @@ export const KOLAM_DARA_MARKET_INTEL_TABS: Array<{
 }> = [
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: 'Dasbor',
     href: KOLAM_DARA_MARKET_INTEL_ROOT,
   },
   {
@@ -48,11 +48,11 @@ export const KOLAM_DARA_MARKET_INTEL_TABS: Array<{
 ];
 
 /** FE SeoPageShell title (dashboard). */
-export const KOLAM_DARA_MARKET_INTEL_TITLE = 'DARA AI Market Intelligence';
+export const KOLAM_DARA_MARKET_INTEL_TITLE = 'Intel Pasar DARA AI';
 
 /** FE SeoPageShell description (dashboard). */
 export const KOLAM_DARA_MARKET_INTEL_DESCRIPTION =
-  'Monitor harga & supplier, rekomendasi pricing/pembelian. Semua saran butuh approval — terapkan harga manual di produk setelah disetujui.';
+  'Pantau harga dan pemasok, rekomendasi harga dan pembelian. Semua saran perlu persetujuan; terapkan harga manual di produk setelah disetujui.';
 
 export type KolamDaraMarketIntelPermissionEntry = {
   resource?: string | null;
@@ -505,16 +505,16 @@ export function formatKolamDaraMarketIntelCategory(
   category: KolamDaraMarketIntelRecCategory,
 ) {
   if (category === 'pricing') {
-    return 'Pricing';
+    return 'Harga';
   }
   if (category === 'purchasing') {
     return 'Pembelian';
   }
   if (category === 'channel_pricing') {
-    return 'Channel';
+    return 'Kanal';
   }
   if (category === 'supplier') {
-    return 'Supplier';
+    return 'Pemasok';
   }
   if (category === 'competitor_alert') {
     return 'Kompetitor';

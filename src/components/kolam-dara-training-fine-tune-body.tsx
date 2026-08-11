@@ -93,7 +93,7 @@ export function KolamDaraTrainingFineTuneBody({
           ? err.message
           : err instanceof Error
           ? err.message
-          : 'Gagal memuat Fine-tuning DARA',
+          : 'Gagal memuat penyetelan model DARA',
       );
     } finally {
       setLoading(false);
@@ -167,10 +167,10 @@ export function KolamDaraTrainingFineTuneBody({
       await updateKolamDaraTrainingFineTuneDatasetItem(id, {
         status: 'approved',
       });
-      setNotice('Dataset item approved');
+      setNotice('Item dataset disetujui');
       await load();
     } catch {
-      setNotice('Gagal approve dataset');
+      setNotice('Gagal menyetujui dataset');
     } finally {
       setBusy(null);
     }
@@ -188,7 +188,7 @@ export function KolamDaraTrainingFineTuneBody({
           ? err.message
           : err instanceof Error
           ? err.message
-          : 'Gagal export JSONL',
+          : 'Gagal ekspor JSONL',
       );
     } finally {
       setBusy(null);
@@ -196,7 +196,7 @@ export function KolamDaraTrainingFineTuneBody({
   };
 
   if (loading && !summary) {
-    return <Text style={styles.meta}>Memuat Fine-tuning DARA…</Text>;
+    return <Text style={styles.meta}>Memuat penyetelan model DARA…</Text>;
   }
 
   const approvedCount = summary?.approvedCount ?? 0;
@@ -209,10 +209,10 @@ export function KolamDaraTrainingFineTuneBody({
       <View style={styles.card}>
         <View style={styles.cardHead}>
           <View style={styles.headCopy}>
-            <Text style={styles.sectionTitle}>Fine-tuning foundation</Text>
+            <Text style={styles.sectionTitle}>Fondasi penyetelan model</Text>
             <Text style={styles.meta}>
-              Dataset dan registry optional untuk Team Chat / AI Room. Rule,
-              tools, RAG, memory, quality guard, dan eval existing tetap menjadi
+              Dataset dan registry opsional untuk Team Chat / Ruang AI. Rule,
+              tools, RAG, memori, penjaga kualitas, dan eval yang ada tetap menjadi
               jalur utama DARA.
             </Text>
           </View>
@@ -221,7 +221,7 @@ export function KolamDaraTrainingFineTuneBody({
               <KolamButton
                 disabled={busy === 'import'}
                 intent="secondary"
-                label={busy === 'import' ? 'Import…' : 'Import kandidat'}
+                label={busy === 'import' ? 'Impor…' : 'Impor kandidat'}
                 onPress={() => {
                   void importCandidates();
                 }}
@@ -229,7 +229,7 @@ export function KolamDaraTrainingFineTuneBody({
               />
               <KolamButton
                 disabled={busy === 'export' || approvedCount < 1}
-                label={busy === 'export' ? 'Export…' : 'Export JSONL'}
+                label={busy === 'export' ? 'Ekspor…' : 'Ekspor JSONL'}
                 onPress={() => {
                   void exportJsonl();
                 }}
@@ -250,13 +250,13 @@ export function KolamDaraTrainingFineTuneBody({
             value={summary?.datasetTotal ?? 0}
           />
           <StatBox
-            label="Approved"
+            label="Disetujui"
             tone={approvedCount > 0 ? 'ok' : 'warn'}
             value={approvedCount}
           />
           <StatBox
             hint="Secret/API key ditolak"
-            label="Blocked"
+            label="Diblokir"
             tone={blockedCount > 0 ? 'danger' : 'ok'}
             value={blockedCount}
           />
@@ -274,8 +274,8 @@ export function KolamDaraTrainingFineTuneBody({
           />
         </View>
         <Text style={styles.meta}>
-          Fine-tuned model tidak boleh menjadi sumber fakta bisnis. Jika model
-          lambat, gagal, atau ditolak quality guard, DARA wajib fallback ke
+          Model hasil penyetelan tidak boleh menjadi sumber fakta bisnis. Jika model
+          lambat, gagal, atau ditolak penjaga kualitas, DARA wajib fallback ke
           model lama.
         </Text>
       </View>
@@ -284,8 +284,8 @@ export function KolamDaraTrainingFineTuneBody({
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Dataset kandidat</Text>
           <Text style={styles.meta}>
-            Preview dari frasa, koreksi produk, review percakapan, eval, dan
-            planner audit. Import tidak membuat rule baru.
+            Pratinjau dari frasa, koreksi produk, ulasan percakapan, eval, dan
+            planner audit. Impor tidak membuat rule baru.
           </Text>
           <KolamListTableComposition
             columns={[
@@ -400,7 +400,7 @@ export function KolamDaraTrainingFineTuneBody({
                 ),
               },
             ]}
-            emptyTitle="Belum ada dataset tersimpan. Import kandidat dulu."
+            emptyTitle="Belum ada dataset tersimpan. Impor kandidat dulu."
             getRowKey={row => row.id}
             loading={loading}
             pagination={{
@@ -419,7 +419,7 @@ export function KolamDaraTrainingFineTuneBody({
                         busy === row.id
                       }
                       intent="secondary"
-                      label="Approve"
+                      label="Setujui"
                       onPress={() => {
                         void approveItem(row.id);
                       }}
@@ -451,7 +451,7 @@ export function KolamDaraTrainingFineTuneBody({
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Eval benchmark</Text>
           <Text style={styles.meta}>
-            Baseline minimal 50 skenario untuk memastikan fine-tune tidak
+            Baseline minimal 50 skenario untuk memastikan penyetelan model tidak
             merusak kemampuan DARA yang sudah ada.
           </Text>
           <KolamListTableComposition
@@ -499,17 +499,17 @@ export function KolamDaraTrainingFineTuneBody({
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Training runs / registry</Text>
+          <Text style={styles.sectionTitle}>Riwayat training / registry</Text>
           <Text style={styles.meta}>
             Registry model bersifat manual/offline sampai training real
-            diaktifkan dan lolos quality gate.
+            diaktifkan dan lolos gerbang kualitas.
           </Text>
           <KolamListTableComposition
             columns={[
               {
                 flex: 1.2,
                 id: 'run',
-                label: 'Run',
+                label: 'Proses',
                 render: row => (
                   <Text numberOfLines={1} style={styles.td}>
                     {row.runKey}
@@ -545,13 +545,13 @@ export function KolamDaraTrainingFineTuneBody({
                 render: row => (
                   <KolamStatusBadge
                     intent={row.runtimeEligible ? 'warning' : 'muted'}
-                    label={row.runtimeEligible ? 'Eligible' : 'Off'}
+                    label={row.runtimeEligible ? 'Layak' : 'Nonaktif'}
                     numberOfLines={1}
                   />
                 ),
               },
             ]}
-            emptyTitle="Belum ada run. Export JSONL akan membuat run draft."
+            emptyTitle="Belum ada proses. Ekspor JSONL akan membuat draf proses."
             getRowKey={row => row.id}
             pagination={{
               onPageChange: setRunsPage,

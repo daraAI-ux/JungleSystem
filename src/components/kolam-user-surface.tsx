@@ -415,7 +415,7 @@ function KolamUserCreateSurface({
         {message ? <Text style={styles.formSuccessText}>{message}</Text> : null}
 
         <View style={styles.formGrid}>
-          <UserFormField label="Username" required>
+          <UserFormField label="Nama Pengguna" required>
             <KolamFormTextField
               editable={!saving}
               onChangeText={value => setField('username', value)}
@@ -471,7 +471,7 @@ function KolamUserCreateSurface({
                 label="Peran"
                 onChange={value => setField('role', value)}
                 options={[
-                  {label: rolesLoading ? 'Memuat peran...' : 'Pilih Role', value: ''},
+                  {label: rolesLoading ? 'Memuat peran...' : 'Pilih Peran', value: ''},
                   ...roles.map(role => ({
                     label: role.name || role.key,
                     value: role.key,
@@ -2153,7 +2153,7 @@ function KolamUserEditSurface({
               </Text>
             </View>
           </View>
-          <UserFormField label="Username">
+          <UserFormField label="Nama Pengguna">
             <KolamFormTextField
               editable={!formDisabled}
               onChangeText={value => setField('username', value)}
@@ -2219,7 +2219,7 @@ function KolamUserEditSurface({
                 label="Peran"
                 onChange={value => setField('role', value)}
                 options={[
-                  {label: rolesLoading ? 'Memuat peran...' : 'Pilih Role', value: ''},
+                  {label: rolesLoading ? 'Memuat peran...' : 'Pilih Peran', value: ''},
                   ...roles.map(role => ({
                     label: role.name || role.key,
                     value: role.key,
@@ -3215,7 +3215,7 @@ function formatUserEmergencyContact(contact: KolamUserBiodataEmergencyContact) {
 
 function validateCreateUserForm(form: KolamUserCreatePayload) {
   if (!form.username.trim()) {
-    return 'Username wajib diisi';
+    return 'Nama pengguna wajib diisi';
   }
 
   if (!form.first_name.trim()) {

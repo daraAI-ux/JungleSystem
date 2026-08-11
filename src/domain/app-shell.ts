@@ -203,7 +203,7 @@ export const shellModules: ShellModule[] = [
     moduleIcon: 'settings',
     sourceRepo: 'E:\\Projects\\_latest-da\\da-inventory-frontend',
     summary:
-      'Pengaturan web, role management, activity log, dan audit akses Kolam.',
+      'Pengaturan web, manajemen peran, log aktivitas, dan audit akses Kolam.',
     routes: ['pengaturan'],
   },
   {
@@ -272,7 +272,7 @@ export const shellModules: ShellModule[] = [
     moduleIcon: 'automation',
     sourceRepo: 'E:\\Projects\\da-automation-management',
     summary:
-      'Automation management, workflow otomasi, backend routes, dan dashboard AM.',
+      'Manajemen otomasi, alur kerja otomasi, rute backend, dan dasbor AM.',
     routes: [
       '/',
       'tasks',
@@ -322,7 +322,7 @@ export function getShellAreaCoverage(
     area,
     moduleCount: areaModules.length,
     routeCount,
-    summaryLabel: `${areaModules.length} modul / ${routeCount} route`,
+    summaryLabel: `${areaModules.length} modul / ${routeCount} rute`,
   };
 }
 

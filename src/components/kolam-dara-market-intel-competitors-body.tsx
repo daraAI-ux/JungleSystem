@@ -367,7 +367,7 @@ function CompetitorsDetailView({
           </View>
         ) : null}
 
-        <Text style={styles.fieldLabel}>Channel & URL barang kompetitor</Text>
+        <Text style={styles.fieldLabel}>Kanal & URL barang kompetitor</Text>
         <View style={styles.channelRow}>
           {KOLAM_DARA_MARKET_INTEL_COMPETITOR_CHANNELS.map(channel => (
             <Pressable
@@ -502,7 +502,7 @@ function CompetitorLinkRow({
       <View style={styles.linkActions}>
         <KolamButton
           disabled={rowBusy}
-          label={fetchingId === link.id ? '…' : 'Fetch'}
+          label={fetchingId === link.id ? '…' : 'Ambil'}
           onPress={onFetch}
         />
         <KolamDeleteButton disabled={rowBusy} label="Hapus" onPress={onDelete} />

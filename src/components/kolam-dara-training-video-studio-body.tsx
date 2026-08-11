@@ -105,7 +105,7 @@ export function KolamDaraTrainingVideoStudioBody({
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Gagal memuat Video Studio',
+            : 'Gagal memuat studio video',
       );
     } finally {
       setLoading(false);
@@ -206,7 +206,7 @@ export function KolamDaraTrainingVideoStudioBody({
       setUpload(result);
       if (result.requiresPublicUrl) {
         setNotice(
-          'Upload tersimpan lokal. Tambahkan URL publik/signed URL sebelum submit ke BytePlus.',
+          'Unggahan tersimpan lokal. Tambahkan URL publik/signed URL sebelum kirim ke BytePlus.',
         );
       } else {
         setNotice('Video RAW siap dipakai');
@@ -217,7 +217,7 @@ export function KolamDaraTrainingVideoStudioBody({
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Upload video gagal',
+            : 'Unggah video gagal',
       );
     } finally {
       setBusy(false);
@@ -270,7 +270,7 @@ export function KolamDaraTrainingVideoStudioBody({
           VIDEO_STUDIO_JOB_HISTORY_LIMIT,
         ),
       );
-      setNotice('Task BytePlus dikirim');
+      setNotice('Tugas BytePlus dikirim');
       void pollUntilTerminal(job);
     } catch (err) {
       setNotice(
@@ -327,7 +327,7 @@ export function KolamDaraTrainingVideoStudioBody({
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Gagal membatalkan job',
+            : 'Gagal membatalkan tugas',
       );
     } finally {
       setBusy(false);
@@ -368,7 +368,7 @@ export function KolamDaraTrainingVideoStudioBody({
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Retry job gagal',
+            : 'Coba ulang tugas gagal',
       );
     } finally {
       setBusy(false);
@@ -445,7 +445,7 @@ export function KolamDaraTrainingVideoStudioBody({
                 <KolamButton
                   disabled={!selectedFile?.uri || busy || !canManage}
                   intent="secondary"
-                  label={busy ? 'Upload…' : 'Upload RAW'}
+                  label={busy ? 'Unggah…' : 'Unggah RAW'}
                   onPress={() => {
                     void handleUpload();
                   }}
@@ -494,7 +494,7 @@ export function KolamDaraTrainingVideoStudioBody({
               />
               <View style={styles.dropdownCell}>
                 <KolamDropdownSelect
-                  label="Ratio video"
+                  label="Rasio video"
                   menuPlacement="inline"
                   onChange={setAspectRatio}
                   options={aspectRatioOptions.map(item => ({
@@ -506,14 +506,14 @@ export function KolamDaraTrainingVideoStudioBody({
                   triggerStyle={styles.dropdownTrigger}
                   value={aspectRatio}
                 />
-                <Text style={styles.hint}>Auto tidak memaksa 16:9.</Text>
+                <Text style={styles.hint}>Otomatis tidak memaksa 16:9.</Text>
               </View>
               <KolamDropdownSelect
                 label="Resolusi"
                 menuPlacement="inline"
                 onChange={setResolution}
                 options={resolutionOptions.map(item => ({
-                  label: item || 'Auto',
+                  label: item || 'Otomatis',
                   value: item,
                 }))}
                 style={styles.dropdownCell}
@@ -575,7 +575,7 @@ export function KolamDaraTrainingVideoStudioBody({
               />
               <KolamButton
                 disabled={!canSubmit || busy}
-                label={busy ? 'Kirim…' : 'Kirim task'}
+                label={busy ? 'Kirim…' : 'Kirim tugas'}
                 onPress={() => {
                   void handleSubmit();
                 }}
@@ -594,7 +594,7 @@ export function KolamDaraTrainingVideoStudioBody({
                       ? formatKolamDaraTrainingVideoStudioDate(
                           activeJob.updatedAt,
                         )
-                      : 'Belum ada job aktif'}
+                      : 'Belum ada tugas aktif'}
                   </Text>
                 </View>
                 {activeJob ? (
@@ -636,7 +636,7 @@ export function KolamDaraTrainingVideoStudioBody({
                           ),
                       );
                     }}>
-                    <Text style={styles.downloadLink}>Download hasil</Text>
+                    <Text style={styles.downloadLink}>Unduh hasil</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -705,7 +705,7 @@ export function KolamDaraTrainingVideoStudioBody({
 
             <View style={styles.historyPanel}>
               <View style={styles.panelHead}>
-                <Text style={styles.panelTitle}>Histori job</Text>
+                <Text style={styles.panelTitle}>Histori tugas</Text>
                 <KolamRefreshButton
                   accessibilityLabel="Refresh"
                   disabled={busy}

@@ -82,7 +82,7 @@ export function KolamDaraSeoRankingsBody({
                     controller.fetchBusy || !controller.keywordInput.trim()
                   }
                   intent="primary"
-                  label={controller.fetchBusy ? 'Mengambil…' : 'Fetch & simpan'}
+                  label={controller.fetchBusy ? 'Mengambil…' : 'Ambil & simpan'}
                   onPress={() => {
                     void controller.onFetchKeyword();
                   }}

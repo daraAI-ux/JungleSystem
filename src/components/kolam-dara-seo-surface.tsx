@@ -289,7 +289,7 @@ function KolamDaraSeoDashboardBody({
       },
       {
         id: 'vis',
-        label: 'Search Visibility',
+        label: 'Visibilitas Pencarian',
         display: `${dashboard.searchVisibility}%`,
         pct: dashboard.searchVisibility,
         status: 'Cukup',
@@ -378,14 +378,14 @@ function KolamDaraSeoDashboardBody({
                     disabled={jobsProgress.isRunning('seo.bulk_species')}
                     label={
                       jobsProgress.isRunning('seo.bulk_species')
-                        ? 'Audit livestock…'
-                        : 'Audit 30 livestock'
+                        ? 'Audit ternak…'
+                        : 'Audit 30 ternak'
                     }
                     onPress={() => {
                       void jobsProgress.onStartSeoJob(
                         'seo.bulk_species',
                         {limit: 30, generateDraft: true},
-                        'Audit bulk livestock',
+                        'Audit massal ternak',
                       );
                     }}
                   />

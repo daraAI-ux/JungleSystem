@@ -260,6 +260,7 @@ export interface KolamEnclosureListFilters {
   limit: number;
   livestockPurpose: KolamEnclosureLivestockFilter;
   enclosureType: KolamEnclosureTypeFilter;
+  customer?: string;
 }
 
 export interface KolamEnclosureListResult {
@@ -646,6 +647,9 @@ export function createKolamEnclosureListQuery(
   }
   if (filters.enclosureType !== 'all') {
     query.enclosure_type = filters.enclosureType;
+  }
+  if (filters.customer?.trim()) {
+    query.customer = filters.customer.trim();
   }
 
   return query;

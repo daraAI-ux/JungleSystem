@@ -95,7 +95,7 @@ export const KOLAM_DARA_TRAINING_VIDEO_STUDIO_STATUS_LABEL: Record<
   string
 > = {
   queued: 'Antre',
-  uploading: 'Upload',
+  uploading: 'Unggah',
   submitted: 'Terkirim',
   processing: 'Diproses',
   succeeded: 'Selesai',
@@ -107,7 +107,7 @@ export const KOLAM_DARA_TRAINING_VIDEO_STUDIO_RATIO_LABEL: Record<
   string,
   string
 > = {
-  '': 'Auto / ikut sumber',
+  '': 'Otomatis / ikut sumber',
   '21:9': '21:9 Cinematic wide',
   '16:9': '16:9 Landscape',
   '4:3': '4:3 Standard',

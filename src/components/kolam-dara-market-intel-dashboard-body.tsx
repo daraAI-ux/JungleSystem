@@ -143,7 +143,7 @@ export function KolamDaraMarketIntelDashboardBody({
                   }
                   label={
                     jobsProgress.isRunning('market.channel_pricing_scan')
-                      ? 'Channel…'
+                      ? 'Kanal…'
                       : 'Scan channel'
                   }
                   onPress={() => {

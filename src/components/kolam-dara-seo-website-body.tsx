@@ -74,7 +74,7 @@ export function KolamDaraSeoWebsiteBody({
               <KolamSeoAuditButton
                 disabled={auditing}
                 intent="primary"
-                label={auditing ? 'Mengaudit…' : 'Audit + draft'}
+                label={auditing ? 'Mengaudit…' : 'Audit + draf'}
                 onPress={() => {
                   void jobsProgress.onStartSeoJob(
                     AUDIT_JOB_TYPE,
@@ -129,7 +129,7 @@ export function KolamDaraSeoWebsiteBody({
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Keywords (pisah koma)</Text>
+            <Text style={styles.fieldLabel}>Kata kunci (pisah koma)</Text>
             <TextInput
               onChangeText={controller.onSetKeywordsInput}
               style={styles.input}

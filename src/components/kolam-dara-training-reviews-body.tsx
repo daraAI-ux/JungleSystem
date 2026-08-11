@@ -25,7 +25,7 @@ import {KolamStatusBadge} from './kolam-status-badge';
 
 const PAGE_SIZE = 20;
 
-/** FE `DaraConversationReviewsTab` — Review percakapan DARA. */
+/** FE `DaraConversationReviewsTab` — Ulasan percakapan DARA. */
 export function KolamDaraTrainingReviewsBody({
   refreshKey = 0,
 }: {
@@ -86,7 +86,7 @@ export function KolamDaraTrainingReviewsBody({
       return;
     }
     if (!notes.trim()) {
-      setNotice('Catatan review wajib diisi');
+      setNotice('Catatan ulasan wajib diisi');
       return;
     }
     setSaving(true);
@@ -97,7 +97,7 @@ export function KolamDaraTrainingReviewsBody({
       );
       setActive(null);
       setNotes('');
-      setNotice('Review DARA disimpan');
+      setNotice('Ulasan DARA disimpan');
       await load();
     } catch (err) {
       setNotice(
@@ -115,7 +115,7 @@ export function KolamDaraTrainingReviewsBody({
   return (
     <View style={styles.root}>
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Review percakapan DARA</Text>
+        <Text style={styles.sectionTitle}>Ulasan percakapan DARA</Text>
         <Text style={styles.meta}>
           Rating rendah (1–3) dari chat pure DARA — catat kendala untuk perbaikan
           model.
@@ -124,7 +124,7 @@ export function KolamDaraTrainingReviewsBody({
         <View style={styles.filterRow}>
           <KolamButton
             intent={status === 'pending' ? 'primary' : 'secondary'}
-            label="Menunggu review"
+            label="Menunggu ulasan"
             onPress={() => selectStatus('pending')}
             size="sm"
           />
@@ -165,7 +165,7 @@ export function KolamDaraTrainingReviewsBody({
             {
               flex: 0.8,
               id: 'channel',
-              label: 'Channel',
+              label: 'Kanal',
               render: row => (
                 <KolamStatusBadge
                   intent="muted"
@@ -178,7 +178,7 @@ export function KolamDaraTrainingReviewsBody({
               align: 'center',
               flex: 0.42,
               id: 'rating',
-              label: 'Star',
+              label: 'Bintang',
               render: row => (
                 <Text style={styles.tdStrong}>{row.rating}</Text>
               ),
@@ -186,7 +186,7 @@ export function KolamDaraTrainingReviewsBody({
             {
               flex: 1.35,
               id: 'comment',
-              label: 'Komentar buyer',
+              label: 'Komentar pembeli',
               render: row => (
                 <Text numberOfLines={2} style={styles.tdMuted}>
                   {row.customerComment || '-'}
@@ -196,7 +196,7 @@ export function KolamDaraTrainingReviewsBody({
             {
               flex: 1.1,
               id: 'action',
-              label: status === 'done' ? 'Catatan review' : 'Aksi',
+              label: status === 'done' ? 'Catatan ulasan' : 'Aksi',
               render: row =>
                 status === 'done' ? (
                   <Text numberOfLines={3} style={styles.tdMuted}>
@@ -205,7 +205,7 @@ export function KolamDaraTrainingReviewsBody({
                 ) : (
                   <KolamButton
                     intent="secondary"
-                    label="Review"
+                    label="Ulas"
                     onPress={() => {
                       setActive(row);
                       setNotes('');
@@ -216,7 +216,7 @@ export function KolamDaraTrainingReviewsBody({
                 ),
             },
           ]}
-          emptyTitle={loading ? 'Memuat...' : 'Tidak ada data review DARA'}
+          emptyTitle={loading ? 'Memuat...' : 'Tidak ada data ulasan DARA'}
           getRowKey={row => row.id}
           loading={loading}
           pagination={
@@ -254,7 +254,7 @@ export function KolamDaraTrainingReviewsBody({
           />
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              Review DARA — ★{active?.rating ?? ''}
+              Ulasan DARA — ★{active?.rating ?? ''}
             </Text>
             <Text style={styles.meta}>
               {active?.contactLabel} · {active?.platform}
@@ -281,7 +281,7 @@ export function KolamDaraTrainingReviewsBody({
               />
               <KolamButton
                 disabled={saving}
-                label={saving ? 'Menyimpan…' : 'Selesai review'}
+                label={saving ? 'Menyimpan…' : 'Selesai ulasan'}
                 onPress={() => {
                   void saveReview();
                 }}

@@ -23,7 +23,7 @@ export const KOLAM_DARA_SEO_TABS: Array<{
   label: string;
   href: string;
 }> = [
-  {id: 'dashboard', label: 'Dashboard', href: KOLAM_DARA_SEO_ROOT},
+  {id: 'dashboard', label: 'Dasbor', href: KOLAM_DARA_SEO_ROOT},
   {
     id: 'approvals',
     label: 'Persetujuan',
@@ -34,12 +34,12 @@ export const KOLAM_DARA_SEO_TABS: Array<{
     label: 'Ranking SERP',
     href: `${KOLAM_DARA_SEO_ROOT}/rankings`,
   },
-  {id: 'website', label: 'Website', href: `${KOLAM_DARA_SEO_ROOT}/website`},
-  {id: 'keywords', label: 'Keywords', href: `${KOLAM_DARA_SEO_ROOT}/keywords`},
-  {id: 'mentions', label: 'Mentions', href: `${KOLAM_DARA_SEO_ROOT}/mentions`},
+  {id: 'website', label: 'Situs web', href: `${KOLAM_DARA_SEO_ROOT}/website`},
+  {id: 'keywords', label: 'Kata kunci', href: `${KOLAM_DARA_SEO_ROOT}/keywords`},
+  {id: 'mentions', label: 'Sebutan', href: `${KOLAM_DARA_SEO_ROOT}/mentions`},
   {
     id: 'social-insights',
-    label: 'Social Insights',
+    label: 'Insight sosial',
     href: `${KOLAM_DARA_SEO_ROOT}/social-insights`,
   },
   {id: 'sentiment', label: 'Sentimen', href: `${KOLAM_DARA_SEO_ROOT}/sentiment`},
@@ -55,9 +55,9 @@ export const KOLAM_DARA_SEO_TABS: Array<{
   },
 ];
 
-export const KOLAM_DARA_SEO_TITLE = 'DARA SEO & Market Intelligence';
+export const KOLAM_DARA_SEO_TITLE = 'DARA SEO & Intel Pasar';
 export const KOLAM_DARA_SEO_DESCRIPTION =
-  'Analisa, rekomendasi, dan draft perubahan. Mutasi produk hanya setelah approval.';
+  'Analisa, rekomendasi, dan draf perubahan. Mutasi produk hanya setelah persetujuan.';
 
 export type KolamDaraSeoStatus = {
   seoEnabled: boolean;
@@ -186,7 +186,7 @@ export const KOLAM_DARA_SEO_TARGET_TABS: Array<{
   {id: 'product', label: 'Produk'},
   {id: 'blog', label: 'Blog'},
   {id: 'species', label: 'Livestock'},
-  {id: 'website', label: 'Website'},
+  {id: 'website', label: 'Situs web'},
 ];
 
 export const KOLAM_DARA_SEO_STATUS_FILTERS: Array<{
@@ -414,15 +414,15 @@ export function formatKolamDaraSeoWorkflowHint(
       return 'Menunggu staff marketing mengirim ke antrian approval.';
     case 'pending_approval':
       if (canApprove && hasPendingItems) {
-        return 'Review perubahan di bawah, lalu Approve (terapkan) atau Tolak / Tunda.';
+        return 'Ulas perubahan di bawah, lalu setujui (terapkan) atau tolak / tunda.';
       }
       return 'Menunggu persetujuan admin.';
     case 'deferred':
       if (canApprove && hasPendingItems) {
-        return 'Ditunda sebelumnya — masih bisa Approve jika siap diterapkan.';
+        return 'Ditunda sebelumnya — masih bisa disetujui jika siap diterapkan.';
       }
       if (!hasPendingItems) {
-        return 'Ditunda tanpa draft. Klik «Buat draft SEO» lalu Approve & terapkan.';
+        return 'Ditunda tanpa draf. Klik «Buat draf SEO» lalu setujui & terapkan.';
       }
       return 'Ditunda. Tidak ada aksi wajib.';
     case 'applied':
@@ -1117,7 +1117,7 @@ export function formatKolamDaraSeoSocialStatusLabel(status: string) {
     return 'Sukses';
   }
   if (status === 'pending') {
-    return 'Fetching…';
+    return 'Mengambil…';
   }
   if (status === 'failed') {
     return 'Gagal';

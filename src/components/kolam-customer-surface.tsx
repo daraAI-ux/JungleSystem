@@ -18,6 +18,10 @@ import {
   type KolamCustomerStorageResult,
 } from '../domain/kolam-customer';
 import {
+  type KolamEnclosure,
+  type KolamEnclosureListResult,
+} from '../domain/kolam-enclosure';
+import {
   canEditKolamTaxPartyProfile,
   createEmptyKolamTaxPartyProfileFormState,
   hasKolamTaxPartyNpwp,
@@ -43,6 +47,7 @@ import {
   updateKolamCustomer,
   uploadKolamCustomerPhoto,
 } from '../services/kolam-customer-api';
+import {getKolamEnclosures} from '../services/kolam-enclosure-api';
 import {downloadKolamLayananSubscriptionInvoice} from '../services/kolam-layanan-api';
 import {downloadKolamProyekInvoice} from '../services/kolam-proyek-api';
 import {downloadKolamSaleInvoice} from '../services/kolam-sales-api';
@@ -203,6 +208,16 @@ const INITIAL_CUSTOMER_POINT_TRANSACTIONS: KolamCustomerPointTransactionsResult 
 
 const INITIAL_CUSTOMER_STORAGE: KolamCustomerStorageResult = {
   items: [],
+  pagination: {
+    limit: 50,
+    page: 1,
+    total: 0,
+    totalPages: 1,
+  },
+};
+
+const INITIAL_CUSTOMER_ENCLOSURES: KolamEnclosureListResult = {
+  data: [],
   pagination: {
     limit: 50,
     page: 1,
@@ -512,6 +527,11 @@ function KolamCustomerDetailSurface({
   );
   const [customerStorageLoading, setCustomerStorageLoading] =
     React.useState(false);
+  const [customerEnclosures, setCustomerEnclosures] = React.useState(
+    INITIAL_CUSTOMER_ENCLOSURES,
+  );
+  const [customerEnclosuresLoading, setCustomerEnclosuresLoading] =
+    React.useState(false);
   const [customerActivity, setCustomerActivity] = React.useState(
     INITIAL_CUSTOMER_ACTIVITY,
   );
@@ -674,6 +694,47 @@ function KolamCustomerDetailSurface({
       .finally(() => {
         if (active) {
           setCustomerStorageLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customerId]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!customerId) {
+      setCustomerEnclosures(INITIAL_CUSTOMER_ENCLOSURES);
+      return () => {
+        active = false;
+      };
+    }
+
+    setCustomerEnclosuresLoading(true);
+    void getKolamEnclosures({
+      customer: customerId,
+      enclosureType: 'all',
+      limit: 50,
+      livestockPurpose: 'all',
+      page: 1,
+      scope: 'client_linked',
+      search: '',
+    })
+      .then(result => {
+        if (active) {
+          setCustomerEnclosures(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setCustomerEnclosures(INITIAL_CUSTOMER_ENCLOSURES);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setCustomerEnclosuresLoading(false);
         }
       });
 
@@ -1076,7 +1137,7 @@ function KolamCustomerDetailSurface({
               },
               {
                 id: 'username',
-                label: 'Username',
+                label: 'Nama Pengguna',
                 value: customer.username ? `@${customer.username}` : '-',
               },
               {
@@ -1182,6 +1243,12 @@ function KolamCustomerDetailSurface({
         saving={freyerSaving}
         selectedId={selectedFreyerId}
         unattached={unattachedFreyerDevices}
+      />
+
+      <CustomerEnclosuresCard
+        loading={customerEnclosuresLoading}
+        onRouteChange={onRouteChange}
+        result={customerEnclosures}
       />
 
       <CustomerStorageCard
@@ -1710,7 +1777,7 @@ function CustomerTaxProfileCard({
 
   return (
     <KolamContentFrame
-      style={[styles.detailCard, styles.customerTaxProfileCard]}
+      style={[styles.detailCard, styles.customerDetailSectionCard]}
       variant="settingsWebConfig">
       <View style={styles.taxHeader}>
         <Text style={styles.sectionTitle}>Profil pajak</Text>
@@ -1788,7 +1855,7 @@ function CustomerPointTransactionsCard({
 }) {
   return (
     <KolamContentFrame
-      style={[styles.detailCard, styles.customerPointTransactionsCard]}
+      style={[styles.detailCard, styles.customerDetailSectionCard]}
       variant="settingsWebConfig">
       <SectionTitle
         description="Riwayat perubahan poin pelanggan"
@@ -1841,7 +1908,9 @@ function CustomerFreyerDevicesCard({
   ];
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={[styles.detailCard, styles.customerDetailSectionCard]}
+      variant="settingsWebConfig">
       <View style={styles.customerCardHeaderRow}>
         <SectionTitle
           description="Alat IoT yang tertaut ke pelanggan"
@@ -1902,6 +1971,95 @@ function CustomerFreyerDevicesCard({
   );
 }
 
+function CustomerEnclosuresCard({
+  loading,
+  onRouteChange,
+  result,
+}: {
+  loading: boolean;
+  onRouteChange?: (route: string) => void;
+  result: KolamEnclosureListResult;
+}) {
+  const rows = result.data;
+  const total = result.pagination.total || rows.length;
+
+  return (
+    <KolamContentFrame
+      style={[styles.detailCard, styles.customerDetailSectionCard]}
+      variant="settingsWebConfig">
+      <View style={styles.customerCardHeaderRow}>
+        <SectionTitle
+          description="Kandang tertaut ke pelanggan"
+          title="Kandang pelanggan"
+        />
+        <View style={styles.customerHeaderActions}>
+          <KolamStatusBadge
+            intent={rows.length ? 'success' : 'secondary'}
+            label={`${total} kandang`}
+          />
+          <KolamButton
+            label="Semua kandang"
+            onPress={() => onRouteChange?.('/enclosures?scope=client_linked')}
+          />
+        </View>
+      </View>
+      {loading ? (
+        <KolamEmptyState compact message="Memuat kandang." title="Memuat" />
+      ) : rows.length ? (
+        <View style={styles.customerEnclosureList}>
+          {total > rows.length ? (
+            <Text style={styles.customerSubText}>
+              Menampilkan {rows.length} dari {total} kandang.
+            </Text>
+          ) : null}
+          {rows.map(enclosure => (
+            <CustomerEnclosureRow
+              enclosure={enclosure}
+              key={enclosure.id}
+              onRouteChange={onRouteChange}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.customerEmptyPanel}>
+          <Text style={styles.customerSubText}>
+            Belum ada kandang pelanggan.
+          </Text>
+        </View>
+      )}
+    </KolamContentFrame>
+  );
+}
+
+function CustomerEnclosureRow({
+  enclosure,
+  onRouteChange,
+}: {
+  enclosure: KolamEnclosure;
+  onRouteChange?: (route: string) => void;
+}) {
+  return (
+    <View style={styles.customerEnclosureRow}>
+      <View style={styles.customerEnclosureCopy}>
+        <Text numberOfLines={1} style={styles.customerMetaText}>
+          {enclosure.name || enclosure.code || 'Kandang'}
+        </Text>
+        <Text numberOfLines={1} style={styles.customerSubText}>
+          {enclosure.code || '-'} | {getCustomerEnclosureLocationLabel(enclosure)}
+        </Text>
+      </View>
+      <KolamStatusBadge
+        intent={getCustomerEnclosureStatusIntent(enclosure.status)}
+        label={enclosure.status || '-'}
+      />
+      <KolamButton
+        label="Lihat"
+        onPress={() => onRouteChange?.(`/enclosures/${enclosure.id}`)}
+      />
+    </View>
+  );
+}
+
 function CustomerStorageCard({
   loading,
   result,
@@ -1910,11 +2068,13 @@ function CustomerStorageCard({
   result: KolamCustomerStorageResult;
 }) {
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={[styles.detailCard, styles.customerDetailSectionCard]}
+      variant="settingsWebConfig">
       <View style={styles.customerCardHeaderRow}>
         <SectionTitle
           description="Stok milik pelanggan yang tersimpan di gudang"
-          title="Customer Storage"
+          title="Penyimpanan Pelanggan"
         />
         <KolamStatusBadge
           intent={result.items.length ? 'success' : 'secondary'}
@@ -1922,7 +2082,7 @@ function CustomerStorageCard({
         />
       </View>
       {loading ? (
-        <KolamEmptyState compact message="Memuat storage." title="Memuat" />
+        <KolamEmptyState compact message="Memuat penyimpanan." title="Memuat" />
       ) : result.items.length ? (
         <View style={styles.customerStorageList}>
           {result.items.map(item => (
@@ -1931,7 +2091,7 @@ function CustomerStorageCard({
         </View>
       ) : (
         <View style={styles.customerEmptyPanel}>
-          <Text style={styles.customerSubText}>Belum ada customer storage.</Text>
+          <Text style={styles.customerSubText}>Belum ada penyimpanan pelanggan.</Text>
         </View>
       )}
     </KolamContentFrame>
@@ -2018,7 +2178,7 @@ function CustomerActivityInvoiceCard({
         align: 'left',
         flex: 1,
         id: 'invoice',
-        label: 'Invoice',
+        label: 'Faktur',
         render: project => (
           <Text numberOfLines={1} style={styles.customerSubText}>
             {project.invoiceCode || '-'}
@@ -2081,7 +2241,7 @@ function CustomerActivityInvoiceCard({
         align: 'left',
         flex: 1,
         id: 'invoice',
-        label: 'Invoice',
+        label: 'Faktur',
         render: subscription => (
           <Text numberOfLines={1} style={styles.customerSubText}>
             {subscription.invoiceCode || '-'}
@@ -2110,7 +2270,7 @@ function CustomerActivityInvoiceCard({
         align: 'left',
         flex: 1.25,
         id: 'invoice',
-        label: 'Kode Invoice',
+        label: 'Kode Faktur',
         render: sale => (
           <Text numberOfLines={1} style={styles.customerMetaText}>
             {sale.invoiceCode || '-'}
@@ -2156,10 +2316,12 @@ function CustomerActivityInvoiceCard({
   );
 
   return (
-    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+    <KolamContentFrame
+      style={[styles.detailCard, styles.customerDetailSectionCard]}
+      variant="settingsWebConfig">
       <SectionTitle
-        description="Proyek kustom, langganan layanan, dan invoice pembelian"
-        title="Aktivitas & Invoice"
+        description="Proyek kustom, langganan layanan, dan faktur pembelian"
+        title="Aktivitas & Faktur"
       />
       <View style={styles.customerActivityStack}>
         <CustomerActivityTableSection
@@ -2177,7 +2339,7 @@ function CustomerActivityInvoiceCard({
                 <KolamPdfDownloadButton
                   disabled={Boolean(downloadingInvoice)}
                   iconOnly
-                  label="Unduh invoice proyek"
+                  label="Unduh faktur proyek"
                   loading={downloadingInvoice === `project-${project.id}`}
                   onPress={() => void onDownloadProjectInvoice(project)}
                 />
@@ -2205,7 +2367,7 @@ function CustomerActivityInvoiceCard({
                 <KolamPdfDownloadButton
                   disabled={Boolean(downloadingInvoice)}
                   iconOnly
-                  label="Unduh invoice layanan"
+                  label="Unduh faktur layanan"
                   loading={downloadingInvoice === `subscription-${subscription.id}`}
                   onPress={() => void onDownloadSubscriptionInvoice(subscription)}
                 />
@@ -2218,13 +2380,13 @@ function CustomerActivityInvoiceCard({
 
         <CustomerActivityTableSection
           count={result.sales.length}
-          title="Invoice Pembelian"
+          title="Faktur Pembelian"
         >
           <KolamListTableComposition
             actionsColumn
             columns={saleColumns}
             emptyTitle={
-              loading ? 'Memuat invoice...' : 'Belum ada invoice pembelian'
+              loading ? 'Memuat faktur...' : 'Belum ada faktur pembelian'
             }
             getRowKey={row => row.id}
             loading={loading}
@@ -2232,7 +2394,7 @@ function CustomerActivityInvoiceCard({
               <KolamPdfDownloadButton
                 disabled={Boolean(downloadingInvoice)}
                 iconOnly
-                label="Unduh invoice"
+                label="Unduh faktur"
                 loading={downloadingInvoice === `sale-${sale.id}`}
                 onPress={() => void onDownloadSaleInvoice(sale)}
               />
@@ -2493,6 +2655,22 @@ function getCustomerPointTransactionLabel(type: string) {
       return 'Kedaluwarsa';
     default:
       return type || '-';
+  }
+}
+
+function getCustomerEnclosureLocationLabel(enclosure: KolamEnclosure) {
+  return enclosure.location?.name || '-';
+}
+
+function getCustomerEnclosureStatusIntent(status: string) {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'success';
+    case 'inactive':
+    case 'disabled':
+      return 'secondary';
+    default:
+      return 'secondary';
   }
 }
 
@@ -2924,11 +3102,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
-  customerTaxProfileCard: {
-    backgroundColor: '#f5f0ff',
-    borderColor: '#d8c7ff',
-  },
-  customerPointTransactionsCard: {
+  customerDetailSectionCard: {
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
@@ -2999,6 +3173,13 @@ const styles = StyleSheet.create({
     gap: 10,
     justifyContent: 'space-between',
   },
+  customerHeaderActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
   customerFreyerList: {
     gap: 8,
   },
@@ -3032,6 +3213,27 @@ const styles = StyleSheet.create({
   customerFreyerSelect: {
     flex: 1,
     minWidth: 260,
+  },
+  customerEnclosureList: {
+    gap: 8,
+  },
+  customerEnclosureRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  customerEnclosureCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 180,
   },
   customerStorageList: {
     gap: 8,
