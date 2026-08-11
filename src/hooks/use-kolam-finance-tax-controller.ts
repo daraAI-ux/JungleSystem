@@ -14,7 +14,6 @@ import {
   getKolamDaraTaxTab,
   getKolamFinanceTaxSurfaceMode,
   KOLAM_DARA_TAX_DEFAULT_PERIOD,
-  KOLAM_FINANCE_TAX_PROFILE_ROUTE,
   type KolamDaraTaxPeriod,
 } from '../domain/kolam-finance-tax';
 import {ApiError} from '../lib/api-error';
@@ -101,12 +100,19 @@ export function useKolamFinanceTaxController(
     setLoading(true);
     setError('');
     try {
-      const [settingSettled, dashSettled, seriesSettled, versionsSettled] =
+      const [
+        settingSettled,
+        dashSettled,
+        seriesSettled,
+        versionsSettled,
+        profileSettled,
+      ] =
         await Promise.allSettled([
           getKolamWebSetting(),
           fetchKolamDaraTaxDashboard(period),
           fetchKolamDaraTaxOverviewSeries(6),
           fetchKolamDaraTaxRegulationVersions(),
+          getKolamTaxCompanyProfile(),
         ]);
 
       if (settingSettled.status === 'fulfilled') {
@@ -138,7 +144,10 @@ export function useKolamFinanceTaxController(
       } else {
         setRegulationVersions([]);
       }
-      setProfile(null);
+
+      setProfile(
+        profileSettled.status === 'fulfilled' ? profileSettled.value : null,
+      );
     } finally {
       setLoading(false);
     }
@@ -182,34 +191,6 @@ export function useKolamFinanceTaxController(
     }
   }, [mode]);
 
-  const loadProfile = useCallback(async () => {
-    if (mode !== 'tax-profile') {
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const nextProfile = await getKolamTaxCompanyProfile();
-      setProfile(nextProfile);
-      setDashboard(null);
-      setSeries(null);
-      setAllocation(null);
-      setJournal(null);
-      setSptPreview(null);
-    } catch (err) {
-      setProfile(null);
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : 'Gagal memuat profil pajak',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [mode]);
-
   const onRunWatcher = useCallback(async () => {
     setWatcherRunning(true);
     setNotice('');
@@ -241,10 +222,6 @@ export function useKolamFinanceTaxController(
   }, [loadCore, loadMonitoring]);
 
   const onRefresh = useCallback(async () => {
-    if (mode === 'tax-profile') {
-      await loadProfile();
-      return;
-    }
     await loadCore();
     if (selectedTab === 'operasional') {
       await loadOperasional();
@@ -256,18 +233,13 @@ export function useKolamFinanceTaxController(
     loadCore,
     loadMonitoring,
     loadOperasional,
-    loadProfile,
     mode,
     selectedTab,
   ]);
 
   useEffect(() => {
-    if (mode === 'tax-profile') {
-      void loadProfile();
-      return;
-    }
     void loadCore();
-  }, [loadCore, loadProfile, mode]);
+  }, [loadCore]);
 
   useEffect(() => {
     if (mode !== 'dashboard' || selectedTab !== 'operasional') {
@@ -308,5 +280,3 @@ export function useKolamFinanceTaxController(
     onRefresh,
   };
 }
-
-export {KOLAM_FINANCE_TAX_PROFILE_ROUTE};

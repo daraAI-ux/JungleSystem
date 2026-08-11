@@ -184,7 +184,6 @@ export const shellModules: ShellModule[] = [
       'blog-topics',
       'finance/bonus',
       'finance/payroll',
-      'finance/settings/tax-profile',
       'finance/tax',
       'list-of-users/hr',
       'list-of-users/kpi',

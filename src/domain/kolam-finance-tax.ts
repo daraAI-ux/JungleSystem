@@ -1,12 +1,10 @@
 /**
- * Finance tax routes — FE `/finance/tax` (DARA Inteligensi Pajak) +
- * `/finance/settings/tax-profile`.
+ * Finance tax routes — FE `/finance/tax` (DARA Inteligensi Pajak).
  *
  * SoT: DA-Dara-Plugin `dara-tax-dashboard` + `tax-intelligence-dashboard`.
  */
 
 export const KOLAM_FINANCE_TAX_ROOT = '/finance/tax';
-export const KOLAM_FINANCE_TAX_PROFILE_ROUTE = '/finance/settings/tax-profile';
 
 /** FE HeaderDescription — also shell nav description. */
 export const KOLAM_DARA_TAX_DESCRIPTION =
@@ -51,19 +49,13 @@ export type KolamDaraTaxPermissionEntry = {
 
 export function isKolamFinanceTaxRoute(route: string): boolean {
   const path = normalizeTaxPath(route);
-  return (
-    path === KOLAM_FINANCE_TAX_ROOT ||
-    path === KOLAM_FINANCE_TAX_PROFILE_ROUTE
-  );
+  return path === KOLAM_FINANCE_TAX_ROOT;
 }
 
 export function getKolamFinanceTaxSurfaceMode(
   route: string,
-): 'dashboard' | 'tax-profile' {
-  const path = normalizeTaxPath(route);
-  if (path === KOLAM_FINANCE_TAX_PROFILE_ROUTE) {
-    return 'tax-profile';
-  }
+): 'dashboard' {
+  void route;
   return 'dashboard';
 }
 

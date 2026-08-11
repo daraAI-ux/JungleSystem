@@ -13,6 +13,8 @@ import {
   type KolamDaraTaxOverviewSeries,
 } from '../domain/kolam-dara-tax';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import type {KolamTaxCompanyProfile} from '../services/kolam-financial-settings-api';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamStatusBadge} from './kolam-status-badge';
 
@@ -21,11 +23,13 @@ export function KolamDaraTaxRingkasanBody({
   dashboard,
   error,
   loading,
+  profile,
   series,
 }: {
   dashboard: KolamDaraTaxDashboard | null;
   error: string;
   loading: boolean;
+  profile: KolamTaxCompanyProfile | null;
   series: KolamDaraTaxOverviewSeries | null;
 }) {
   const overview = dashboard?.overview ?? null;
@@ -95,9 +99,12 @@ export function KolamDaraTaxRingkasanBody({
 
       <View style={styles.summaryGrid}>
         {(series && series.ppnOutputByMonth.length > 1) ||
+        profile ||
         dashboard.risks.count > 0 ||
         dashboard.complianceHighlights.length > 0 ? (
           <View style={styles.summaryMainColumn}>
+            {profile ? <TaxCompanyProfileCard profile={profile} /> : null}
+
             {series && series.ppnOutputByMonth.length > 1 ? (
               <View style={styles.card}>
                 <Text style={styles.sectionTitle}>
@@ -211,6 +218,71 @@ export function KolamDaraTaxRingkasanBody({
       </View>
 
     </View>
+  );
+}
+
+function TaxCompanyProfileCard({profile}: {profile: KolamTaxCompanyProfile}) {
+  return (
+    <KolamDetailSummaryCard
+      fieldColumns={3}
+      fields={[
+        {
+          id: 'companyName',
+          label: 'Nama',
+          value: profile.companyName,
+        },
+        {
+          id: 'legalName',
+          label: 'Nama legal',
+          value: profile.legalName,
+        },
+        {
+          id: 'npwp',
+          label: 'NPWP',
+          value: profile.npwp,
+        },
+        {
+          id: 'npwp16',
+          label: 'NPWP16',
+          value: profile.npwp16,
+        },
+        {
+          id: 'isPkp',
+          label: 'PKP',
+          value:
+            profile.isPkp == null ? undefined : profile.isPkp ? 'Ya' : 'Tidak',
+        },
+        {
+          id: 'pricesIncludeTax',
+          label: 'Harga termasuk PPN',
+          value:
+            profile.pricesIncludeTax == null
+              ? undefined
+              : profile.pricesIncludeTax
+                ? 'Ya'
+                : 'Tidak',
+        },
+        {
+          id: 'defaultPpnRate',
+          label: 'Tarif PPN default',
+          value:
+            profile.defaultPpnRate != null
+              ? `${profile.defaultPpnRate}%`
+              : undefined,
+        },
+        {
+          id: 'taxOffice',
+          label: 'Kantor pajak',
+          value: profile.taxOffice,
+        },
+        {
+          id: 'notes',
+          label: 'Catatan',
+          value: profile.notes,
+        },
+      ]}
+      title="Profil pajak perusahaan"
+    />
   );
 }
 

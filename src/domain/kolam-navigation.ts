@@ -595,12 +595,6 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         requiredAccess: ['kolam'],
       },
       {
-        label: 'Tax Profile',
-        route: '/finance/settings/tax-profile',
-        description: 'Pengaturan profil pajak untuk keuangan dan penggajian',
-        requiredAccess: ['kolam'],
-      },
-      {
         label: 'Pajak Keuangan',
         route: '/finance/tax',
         description:
