@@ -4476,20 +4476,41 @@ export function KolamSettingsWebConfigSurface({
                 },
               ]}
             />
-            {daraFulfillmentToggleRows.map(row => (
-              <KolamToggleRow
-                key={row.id}
-                variant="settingsForm"
-                label={row.label}
-                description={row.description}
-                active={draft[row.field] === true}
-                onPress={() =>
-                  !daraControlsDisabled &&
-                  draft.daraBusinessEnabled &&
-                  setDraftField(row.field, !(draft[row.field] === true))
-                }
-              />
-            ))}
+            <View style={styles.notificationToggleGrid}>
+              {daraFulfillmentToggleRows
+                .filter(row => row.id === 'auto' || row.id === 'webstore')
+                .map(row => (
+                  <View key={row.id} style={styles.notificationToggleBox}>
+                    <KolamToggleRow
+                      variant="settingsForm"
+                      label={row.label}
+                      description={row.description}
+                      active={draft[row.field] === true}
+                      onPress={() =>
+                        !daraControlsDisabled &&
+                        draft.daraBusinessEnabled &&
+                        setDraftField(row.field, !(draft[row.field] === true))
+                      }
+                    />
+                  </View>
+                ))}
+            </View>
+            {daraFulfillmentToggleRows
+              .filter(row => row.id !== 'auto' && row.id !== 'webstore')
+              .map(row => (
+                <KolamToggleRow
+                  key={row.id}
+                  variant="settingsForm"
+                  label={row.label}
+                  description={row.description}
+                  active={draft[row.field] === true}
+                  onPress={() =>
+                    !daraControlsDisabled &&
+                    draft.daraBusinessEnabled &&
+                    setDraftField(row.field, !(draft[row.field] === true))
+                  }
+                />
+              ))}
             <View style={styles.notificationToggleGrid}>
               <View
                 style={[
