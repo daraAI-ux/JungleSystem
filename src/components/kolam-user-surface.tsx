@@ -68,6 +68,10 @@ import {
 } from './kolam-dropdown-select';
 import {KolamDateField} from './kolam-date-field';
 import {KolamEmptyState} from './kolam-empty-state';
+import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {
   KolamListTableComposition,
@@ -87,6 +91,7 @@ const USER_KASBON_TABLE_PAGE_SIZE = 10;
 const USER_ATTENDANCE_TABLE_PAGE_SIZE = 10;
 const USER_BONUS_TABLE_PAGE_SIZE = 10;
 const USER_RATING_TABLE_PAGE_SIZE = 10;
+const USER_EMPLOYEE_FILTER_PANEL_WIDTH = 240;
 
 type UserPayrollHistoryTab =
   | 'deductions'
@@ -523,6 +528,10 @@ function KolamUserListSurface({
   const [activeFilterPanel, setActiveFilterPanel] = React.useState<
     'employee' | null
   >(null);
+  const [panelAnchor, setPanelAnchor] =
+    React.useState<KolamFilterPanelAnchor | null>(null);
+  const toolbarRef = React.useRef<View>(null);
+  const employeeTriggerRef = React.useRef<View>(null);
   const [deleteTarget, setDeleteTarget] =
     React.useState<KolamUserListItem | null>(null);
   const [deletingUser, setDeletingUser] = React.useState(false);
@@ -638,6 +647,48 @@ function KolamUserListSurface({
   const employeeFilterLabel =
     EMPLOYEE_FILTER_OPTIONS.find(option => option.value === employeeFilter)
       ?.label ?? 'Semua Status Karyawan';
+
+  const openFilterPanel = () => {
+    if (activeFilterPanel === 'employee') {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        employeeTriggerRef.current,
+        USER_EMPLOYEE_FILTER_PANEL_WIDTH,
+        anchor => {
+          setPanelAnchor(anchor);
+          setActiveFilterPanel('employee');
+        },
+      );
+    });
+  };
+
+  const closeFilterPanel = () => {
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+  };
+
+  React.useEffect(() => {
+    if (activeFilterPanel !== 'employee') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      measureFilterPanelAnchor(
+        toolbarRef.current,
+        employeeTriggerRef.current,
+        USER_EMPLOYEE_FILTER_PANEL_WIDTH,
+        setPanelAnchor,
+      );
+    });
+  }, [activeFilterPanel]);
   const safePage = Math.min(page, Math.max(1, pagination.totalPages));
   const userTableColumns = React.useMemo(
     () => createUserListColumns(kasbonPendingSummary),
@@ -670,7 +721,7 @@ function KolamUserListSurface({
 
   return (
     <View style={styles.surface}>
-      <View style={styles.toolbarWrap}>
+      <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={styles.toolbarShell}>
           <View style={styles.filterRow}>
             <KolamFormTextField
@@ -680,15 +731,17 @@ function KolamUserListSurface({
               style={styles.searchInput}
               value={search}
             />
-            <KolamTableFilterTrigger
-              active={activeFilterPanel === 'employee' || employeeFilter !== 'all'}
-              label={employeeFilterLabel}
-              onPress={() =>
-                setActiveFilterPanel(current =>
-                  current === 'employee' ? null : 'employee',
-                )
-              }
-            />
+            <View ref={employeeTriggerRef} collapsable={false}>
+              <KolamTableFilterTrigger
+                active={
+                  activeFilterPanel === 'employee' || employeeFilter !== 'all'
+                }
+                label={employeeFilterLabel}
+                onPress={openFilterPanel}
+                open={activeFilterPanel === 'employee'}
+                variant="quiet"
+              />
+            </View>
           </View>
           <View style={styles.actionRow}>
             {canVerifyKasbon && kasbonPendingSummary.total > 0 ? (
@@ -708,8 +761,8 @@ function KolamUserListSurface({
             />
           </View>
         </View>
-        {activeFilterPanel === 'employee' ? (
-          <View style={[styles.filterOverlayPanel, styles.filterPanelEmployee]}>
+        {activeFilterPanel === 'employee' && panelAnchor ? (
+          <View style={[styles.filterOverlayPanel, panelAnchor]}>
             <View style={styles.filterPanelContent}>
               {EMPLOYEE_FILTER_OPTIONS.map(option => (
                 <KolamButton
@@ -718,7 +771,7 @@ function KolamUserListSurface({
                   label={option.label}
                   onPress={() => {
                     setEmployeeFilter(option.value);
-                    setActiveFilterPanel(null);
+                    closeFilterPanel();
                     setPage(1);
                   }}
                   style={styles.filterPanelOption}
@@ -4136,11 +4189,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 16,
     top: 48,
-    width: 240,
+    width: USER_EMPLOYEE_FILTER_PANEL_WIDTH,
     zIndex: 120000,
-  },
-  filterPanelEmployee: {
-    left: 226,
   },
   filterPanelContent: {
     gap: 4,
