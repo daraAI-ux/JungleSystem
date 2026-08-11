@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -36,6 +37,7 @@ import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import { appConfig } from '../config/app';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   geocodeKolamStaffAttendanceWorkSite,
@@ -5730,6 +5732,7 @@ export function KolamSettingsWebConfigSurface({
                 onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
                 onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
                 onMoveHeroSlide={onMoveMarketplaceHeroSlide}
+                onAddHeroSlide={onClearMarketplaceHeroDraft}
                 onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
                 onUploadBioactiveStepImage={
                   onUploadMarketplaceBioactiveStepImage
@@ -7010,6 +7013,7 @@ function MarketplaceLandingOverviewPanel({
   onMoveCategoryBanner,
   onMoveFeaturedCollection,
   onMoveHeroSlide,
+  onAddHeroSlide,
   onUploadAnnouncementImage,
   onUploadBioactiveStepImage,
   onUploadCategoryBannerImage,
@@ -7052,6 +7056,7 @@ function MarketplaceLandingOverviewPanel({
   ) => void;
   onMoveFeaturedCollection: (index: number, direction: -1 | 1) => void;
   onMoveHeroSlide: (slide: KolamHeroSlide, direction: -1 | 1) => void;
+  onAddHeroSlide: () => void;
   onUploadAnnouncementImage: (banner: KolamAnnouncementBanner) => void;
   onUploadBioactiveStepImage: (index: number) => void;
   onUploadCategoryBannerImage: (banner: KolamCategoryBanner) => void;
@@ -7149,10 +7154,23 @@ function MarketplaceLandingOverviewPanel({
       row.id === 'featured-collections' || row.id === 'bioactive-ecosystem'
     );
   });
-  const showAssetSection = activeTabId !== 'notices';
+  const showAssetSection = activeTabId !== 'notices' && activeTabId !== 'hero';
 
   return (
     <View style={styles.marketplaceOverview}>
+      {activeTabId === 'hero' ? (
+        <MarketplaceHeroSlidesPanel
+          disabled={disabled}
+          items={overview.heroSlides}
+          onAdd={onAddHeroSlide}
+          onDelete={onDeleteHeroSlide}
+          onEdit={onEditHeroSlide}
+          onMove={onMoveHeroSlide}
+          onUpload={onUploadHeroImage}
+          status={assetStatus}
+        />
+      ) : (
+        <>
       <KolamCopyStack
         items={[
           {
@@ -7209,6 +7227,8 @@ function MarketplaceLandingOverviewPanel({
           </View>
         ))}
       </View>
+        </>
+      )}
       {showAssetSection ? (
       <View style={styles.marketplaceAssetSection}>
         <KolamCopyStack
@@ -7261,21 +7281,6 @@ function MarketplaceLandingOverviewPanel({
               status={assetStatus}
             />
           </View>
-        ) : null}
-        {activeTabId === 'hero' ? (
-          <MarketplaceAssetRows
-            disabled={disabled}
-            emptyText="Belum ada hero slide untuk penggantian gambar."
-            getId={item => `hero:${item._id}`}
-            getLabel={item => item.title || item._id}
-            items={overview.heroSlides}
-            onDelete={onDeleteHeroSlide}
-            onEdit={onEditHeroSlide}
-            onMove={onMoveHeroSlide}
-            onUpload={onUploadHeroImage}
-            status={assetStatus}
-            title="Gambar hero slide"
-          />
         ) : null}
         {activeTabId === 'category' ? (
           <MarketplaceAssetRows
@@ -7339,6 +7344,214 @@ function MarketplaceLandingOverviewPanel({
       ) : null}
     </View>
   );
+}
+
+function MarketplaceHeroSlidesPanel({
+  disabled,
+  items,
+  onAdd,
+  onDelete,
+  onEdit,
+  onMove,
+  onUpload,
+  status,
+}: {
+  disabled: boolean;
+  items: KolamHeroSlide[];
+  onAdd: () => void;
+  onDelete: (slide: KolamHeroSlide) => void;
+  onEdit: (slide: KolamHeroSlide) => void;
+  onMove: (slide: KolamHeroSlide, direction: -1 | 1) => void;
+  onUpload: (slide: KolamHeroSlide) => void;
+  status: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
+}) {
+  const activeCount = items.filter(item => item.isActive !== false).length;
+  const previewDisabled = disabled || items.length === 0;
+
+  return (
+    <View style={styles.marketplaceHeroSlides}>
+      <View style={styles.marketplaceHeroSlidesToolbar}>
+        <View style={styles.marketplaceHeroActiveCopy}>
+          <Text style={styles.marketplaceOverviewMeta}>Active:</Text>
+          <Text style={styles.marketplaceHeroActiveBadge}>
+            {String(activeCount)}
+          </Text>
+        </View>
+        <View style={styles.marketplaceAssetActions}>
+          <KolamActionControlButton
+            disabled={previewDisabled}
+            label="Preview"
+            onPress={() => {
+              if (!previewDisabled) {
+                onEdit(items.find(item => item.isActive !== false) ?? items[0]);
+              }
+            }}
+          />
+          <KolamActionControlButton
+            disabled={disabled}
+            intent="primary"
+            label="Add Slide"
+            onPress={onAdd}
+          />
+        </View>
+      </View>
+      {items.length ? (
+        <View style={styles.marketplaceHeroSlideList}>
+          {items.map((slide, index) => {
+            const id = `hero:${slide._id}`;
+            const imageUri = resolveMarketplaceLandingImageUri(slide.image);
+            return (
+              <View key={slide._id} style={styles.marketplaceHeroSlideCard}>
+                <View style={styles.marketplaceHeroSlideImageWrap}>
+                  {imageUri ? (
+                    <Image
+                      resizeMode="cover"
+                      source={{uri: imageUri}}
+                      style={styles.marketplaceHeroSlideImage}
+                    />
+                  ) : (
+                    <View style={styles.marketplaceHeroSlideImageFallback}>
+                      <SvgXml
+                        height={24}
+                        width={24}
+                        xml={getMarketplaceLandingTabIconXml('hero', true)}
+                      />
+                    </View>
+                  )}
+                  <Text style={styles.marketplaceHeroSlideIndex}>
+                    {String(index + 1)}
+                  </Text>
+                </View>
+                <View style={styles.marketplaceHeroSlideCopy}>
+                  <View style={styles.marketplaceHeroSlideTitleRow}>
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceHeroSlideTitle}
+                    >
+                      {slide.title || '-'}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.marketplaceHeroSlideStatus,
+                        slide.isActive === false
+                          ? styles.marketplaceHeroSlideStatusDraft
+                          : null,
+                      ]}
+                    >
+                      {slide.isActive === false ? 'Draft' : 'Active'}
+                    </Text>
+                  </View>
+                  {slide.subtitle ? (
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceHeroSlideSubtitle}
+                    >
+                      {slide.subtitle}
+                    </Text>
+                  ) : null}
+                  <View style={styles.marketplaceHeroSlideLinks}>
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceHeroSlideLink}
+                    >
+                      {`${slide.linkText || 'Link'} -> ${slide.link || '/'}`}
+                    </Text>
+                    {slide.secondaryLink || slide.secondaryLinkText ? (
+                      <Text
+                        numberOfLines={1}
+                        style={styles.marketplaceHeroSlideLink}
+                      >
+                        {`${slide.secondaryLinkText || 'Secondary'} -> ${
+                          slide.secondaryLink || '/'
+                        }`}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+                <View style={styles.marketplaceHeroSlideActions}>
+                  <MarketplaceAssetButton
+                    disabled={disabled || index === 0}
+                    id={id}
+                    label="Naik"
+                    onPress={() => onMove(slide, -1)}
+                    status={status}
+                  />
+                  <MarketplaceAssetButton
+                    disabled={disabled || index === items.length - 1}
+                    id={id}
+                    label="Turun"
+                    onPress={() => onMove(slide, 1)}
+                    status={status}
+                  />
+                  <KolamEditButton
+                    disabled={disabled}
+                    onPress={() => onEdit(slide)}
+                  />
+                  <MarketplaceAssetButton
+                    disabled={disabled}
+                    id={id}
+                    label="Gambar"
+                    onPress={() => onUpload(slide)}
+                    status={status}
+                  />
+                  <MarketplaceAssetButton
+                    disabled={disabled}
+                    id={id}
+                    intent="danger"
+                    label="Hapus"
+                    onPress={() => onDelete(slide)}
+                    status={status}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.marketplaceHeroEmpty}>
+          <SvgXml
+            height={32}
+            width={32}
+            xml={getMarketplaceLandingTabIconXml('hero', true)}
+          />
+          <Text style={styles.marketplaceHeroEmptyTitle}>
+            Create Your First Slide
+          </Text>
+          <Text style={styles.marketplaceOverviewMeta}>
+            Hero slides tampil di carousel landing page.
+          </Text>
+          <KolamActionControlButton
+            disabled={disabled}
+            intent="primary"
+            label="Add First Slide"
+            onPress={onAdd}
+          />
+          <Text style={styles.marketplaceOverviewMeta}>
+            Recommended: 1280 x 180 px
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function resolveMarketplaceLandingImageUri(image: string | undefined) {
+  const value = String(image || '').trim();
+  if (!value) {
+    return '';
+  }
+  if (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('file://') ||
+    value.startsWith('data:')
+  ) {
+    return value;
+  }
+  const base = appConfig.fileBaseUrl.replace(/\/+$/, '');
+  return `${base}/${value.replace(/^\/+/, '')}`;
 }
 
 function MarketplaceAssetRows<Item>({
@@ -9919,6 +10132,159 @@ const styles = StyleSheet.create({
   },
   marketplaceControlSection: {
     gap: 10,
+  },
+  marketplaceHeroActiveBadge: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#86efac',
+    borderRadius: 5,
+    borderWidth: 1,
+    color: '#166534',
+    fontSize: 12,
+    fontWeight: '800',
+    minWidth: 22,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    textAlign: 'center',
+  },
+  marketplaceHeroActiveCopy: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  marketplaceHeroEmpty: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 10,
+    justifyContent: 'center',
+    minHeight: 180,
+    padding: 18,
+  },
+  marketplaceHeroEmptyTitle: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  marketplaceHeroSlideActions: {
+    alignItems: 'stretch',
+    backgroundColor: '#f9fafb',
+    borderLeftColor: V.colors.border,
+    borderLeftWidth: 1,
+    flexShrink: 0,
+    gap: 6,
+    justifyContent: 'center',
+    padding: 8,
+    width: 118,
+  },
+  marketplaceHeroSlideCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    minHeight: 148,
+    overflow: 'hidden',
+  },
+  marketplaceHeroSlideCopy: {
+    flex: 1,
+    gap: 8,
+    justifyContent: 'center',
+    minWidth: 220,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  marketplaceHeroSlideImage: {
+    height: '100%',
+    width: '100%',
+  },
+  marketplaceHeroSlideImageFallback: {
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    height: '100%',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  marketplaceHeroSlideImageWrap: {
+    backgroundColor: '#f3f4f6',
+    flexShrink: 0,
+    minHeight: 148,
+    overflow: 'hidden',
+    position: 'relative',
+    width: 260,
+  },
+  marketplaceHeroSlideIndex: {
+    backgroundColor: 'rgba(17, 24, 39, 0.72)',
+    borderRadius: 5,
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+    left: 8,
+    minWidth: 24,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    position: 'absolute',
+    textAlign: 'center',
+    top: 8,
+  },
+  marketplaceHeroSlideLink: {
+    color: '#6b7280',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  marketplaceHeroSlideLinks: {
+    gap: 2,
+    marginTop: 'auto',
+  },
+  marketplaceHeroSlideList: {
+    gap: 10,
+  },
+  marketplaceHeroSlideStatus: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#86efac',
+    borderRadius: 5,
+    borderWidth: 1,
+    color: '#166534',
+    flexShrink: 0,
+    fontSize: 11,
+    fontWeight: '800',
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+  },
+  marketplaceHeroSlideStatusDraft: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#e5e7eb',
+    color: '#4b5563',
+  },
+  marketplaceHeroSlideSubtitle: {
+    color: '#6b7280',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  marketplaceHeroSlideTitle: {
+    color: '#111827',
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    minWidth: 0,
+  },
+  marketplaceHeroSlideTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  marketplaceHeroSlides: {
+    gap: 14,
+  },
+  marketplaceHeroSlidesToolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
   },
   marketplaceLandingTab: {
     alignItems: 'center',
