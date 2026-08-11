@@ -574,246 +574,250 @@ export function KolamDaraTaxRegulasiBody({
       ) : null}
 
       {rmsSubTab === 'kitab' ? (
-        <View style={styles.card}>
-          <View style={styles.cardHead}>
-            <View style={styles.flexShrink}>
-              <Text style={styles.sectionTitle}>Kitab regulasi</Text>
-              {kitab ? (
-                <Text style={styles.meta}>
-                  {[kitab.legalName, kitab.taxpayerLabel]
-                    .filter(Boolean)
-                    .join(' · ') || '—'}
-                </Text>
-              ) : null}
-              {kitab?.activeVersionNumber || kitab?.activeTitle ? (
-                <Text style={styles.meta}>
-                  {[kitab.activeVersionNumber, kitab.activeTitle]
-                    .filter(Boolean)
-                    .join(' — ')}
-                </Text>
-              ) : null}
+        <View style={styles.stack}>
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <View style={styles.flexShrink}>
+                <Text style={styles.sectionTitle}>Kitab regulasi</Text>
+                {kitab ? (
+                  <Text style={styles.meta}>
+                    {[kitab.legalName, kitab.taxpayerLabel]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
+                  </Text>
+                ) : null}
+                {kitab?.activeVersionNumber || kitab?.activeTitle ? (
+                  <Text style={styles.meta}>
+                    {[kitab.activeVersionNumber, kitab.activeTitle]
+                      .filter(Boolean)
+                      .join(' — ')}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={styles.rowActions}>
+                {isAdmin ? (
+                  <KolamButton
+                    disabled={kitabAiRunning}
+                    intent="primary"
+                    label={kitabAiRunning ? 'AI mengisi…' : 'Isi AI'}
+                    onPress={() => {
+                      setKitabAiRunning(true);
+                      aiFillKolamDaraTaxKitab()
+                        .then(result => {
+                          setKitab(result);
+                          onNotice('Kitab diisi AI');
+                        })
+                        .catch(err =>
+                          onNotice(errorMessage(err, 'Gagal isi kitab via AI')),
+                        )
+                        .finally(() => setKitabAiRunning(false));
+                    }}
+                  />
+                ) : null}
+              </View>
             </View>
-            <View style={styles.rowActions}>
-              {isAdmin ? (
-                <KolamButton
-                  disabled={kitabAiRunning}
-                  intent="primary"
-                  label={kitabAiRunning ? 'AI mengisi…' : 'Isi AI'}
-                  onPress={() => {
-                    setKitabAiRunning(true);
-                    aiFillKolamDaraTaxKitab()
-                      .then(result => {
-                        setKitab(result);
-                        onNotice('Kitab diisi AI');
-                      })
-                      .catch(err =>
-                        onNotice(errorMessage(err, 'Gagal isi kitab via AI')),
-                      )
-                      .finally(() => setKitabAiRunning(false));
-                  }}
-                />
-              ) : null}
-            </View>
+
+            {kitabLoading && !kitab ? (
+              <Text style={styles.meta}>Memuat kitab…</Text>
+            ) : kitab ? (
+              <>
+                <View style={styles.tableHead}>
+                  <Text style={[styles.th, styles.colModul]}>Modul</Text>
+                  <Text style={[styles.th, styles.colFormula]}>Rumus</Text>
+                  <Text style={[styles.th, styles.colHukum]}>Hukum</Text>
+                  <Text style={[styles.th, styles.colStatus]}>Status</Text>
+                </View>
+                {kitab.rows.map(row => (
+                  <View key={row.moduleId || row.modul} style={styles.tableRow}>
+                    <Text style={[styles.tdStrong, styles.colModul]}>
+                      {row.modul}
+                    </Text>
+                    <Text style={[styles.tdMono, styles.colFormula]}>
+                      {row.systemFormula || '—'}
+                    </Text>
+                    <Text style={[styles.td, styles.colHukum]}>
+                      {row.dasarHukum || '—'}
+                    </Text>
+                    <View style={styles.colStatus}>
+                      <KolamStatusBadge
+                        intent={kitabStatusIntent(row.statusCode)}
+                        label={row.statusLabel || row.statusCode || '—'}
+                      />
+                    </View>
+                  </View>
+                ))}
+                {kitab.disclaimer ? (
+                  <Text style={styles.metaTiny}>{kitab.disclaimer}</Text>
+                ) : null}
+              </>
+            ) : null}
           </View>
 
-          {kitabLoading && !kitab ? (
-            <Text style={styles.meta}>Memuat kitab…</Text>
-          ) : kitab ? (
-            <>
-              <View style={styles.tableHead}>
-                <Text style={[styles.th, styles.colModul]}>Modul</Text>
-                <Text style={[styles.th, styles.colFormula]}>Rumus</Text>
-                <Text style={[styles.th, styles.colHukum]}>Hukum</Text>
-                <Text style={[styles.th, styles.colStatus]}>Status</Text>
-              </View>
-              {kitab.rows.map(row => (
-                <View key={row.moduleId || row.modul} style={styles.tableRow}>
-                  <Text style={[styles.tdStrong, styles.colModul]}>
-                    {row.modul}
-                  </Text>
-                  <Text style={[styles.tdMono, styles.colFormula]}>
-                    {row.systemFormula || '—'}
-                  </Text>
-                  <Text style={[styles.td, styles.colHukum]}>
-                    {row.dasarHukum || '—'}
-                  </Text>
-                  <View style={styles.colStatus}>
-                    <KolamStatusBadge
-                      intent={kitabStatusIntent(row.statusCode)}
-                      label={row.statusLabel || row.statusCode || '—'}
-                    />
-                  </View>
-                </View>
-              ))}
-              {kitab.disclaimer ? (
-                <Text style={styles.metaTiny}>{kitab.disclaimer}</Text>
-              ) : null}
-            </>
-          ) : null}
-
-          <View style={styles.sourceSection}>
-            <Text style={styles.sectionTitle}>Sumber regulasi</Text>
-            {sourcesLoading ? (
-              <Text style={styles.meta}>Memuat…</Text>
-            ) : (
-              <View style={styles.sourceGrid}>
-                <View style={styles.sourceListColumn}>
-                  {sources.length === 0 ? (
-                    <Text style={styles.meta}>Belum ada sumber.</Text>
-                  ) : (
-                    sources.map(src => (
-                      <View key={src.id} style={styles.listCard}>
-                        <View style={styles.cardHead}>
-                          <Pressable
-                            accessibilityRole="link"
-                            disabled={!src.url}
-                            onPress={() => {
-                              if (src.url) {
-                                void Linking.openURL(src.url);
-                              }
-                            }}
-                            style={styles.flexShrink}
-                          >
-                            <Text style={styles.tdStrong}>{src.name}</Text>
-                            <Text style={styles.link}>{src.url}</Text>
-                          </Pressable>
-                          <KolamStatusBadge
-                            intent={
-                              src.isActive === false
-                                ? 'secondary'
-                                : watchStatusIntent(src.watchStatus)
-                            }
-                            label={
-                              src.isActive === false
-                                ? 'Nonaktif'
-                                : KOLAM_DARA_TAX_WATCH_STATUS_LABEL[
-                                    src.watchStatus
-                                  ] ??
-                                  (src.watchStatus || '—')
-                            }
-                          />
-                        </View>
-                        {isAdmin ? (
-                          <View style={styles.rowActions}>
-                            <KolamButton
-                              disabled={checkingSourceId != null}
-                              intent="outline"
-                              label={
-                                checkingSourceId === src.id
-                                  ? 'Mengecek…'
-                                  : 'Cek'
-                              }
+          <View style={styles.card}>
+            <View style={styles.sourceSection}>
+              <Text style={styles.sectionTitle}>Sumber regulasi</Text>
+              {sourcesLoading ? (
+                <Text style={styles.meta}>Memuat…</Text>
+              ) : (
+                <View style={styles.sourceGrid}>
+                  <View style={styles.sourceListColumn}>
+                    {sources.length === 0 ? (
+                      <Text style={styles.meta}>Belum ada sumber.</Text>
+                    ) : (
+                      sources.map(src => (
+                        <View key={src.id} style={styles.listCard}>
+                          <View style={styles.cardHead}>
+                            <Pressable
+                              accessibilityRole="link"
+                              disabled={!src.url}
                               onPress={() => {
-                                setCheckingSourceId(src.id);
-                                checkKolamDaraTaxRegulationSource(src.id)
-                                  .then(r => {
-                                    if (r.error) {
-                                      onNotice(r.error);
-                                    } else if (r.changed) {
-                                      onNotice(
-                                        'Perubahan terdeteksi — cek tab Draf',
-                                      );
-                                    } else {
-                                      onNotice('Tidak ada perubahan');
-                                    }
-                                    void loadSources();
-                                    onRefreshMonitoring();
-                                  })
-                                  .catch(err =>
-                                    onNotice(
-                                      errorMessage(err, 'Gagal cek URL'),
-                                    ),
-                                  )
-                                  .finally(() => setCheckingSourceId(null));
+                                if (src.url) {
+                                  void Linking.openURL(src.url);
+                                }
                               }}
+                              style={styles.flexShrink}
+                            >
+                              <Text style={styles.tdStrong}>{src.name}</Text>
+                              <Text style={styles.link}>{src.url}</Text>
+                            </Pressable>
+                            <KolamStatusBadge
+                              intent={
+                                src.isActive === false
+                                  ? 'secondary'
+                                  : watchStatusIntent(src.watchStatus)
+                              }
+                              label={
+                                src.isActive === false
+                                  ? 'Nonaktif'
+                                  : KOLAM_DARA_TAX_WATCH_STATUS_LABEL[
+                                      src.watchStatus
+                                    ] ??
+                                    (src.watchStatus || '—')
+                              }
                             />
-                            {src.isActive !== false ? (
+                          </View>
+                          {isAdmin ? (
+                            <View style={styles.rowActions}>
                               <KolamButton
+                                disabled={checkingSourceId != null}
                                 intent="outline"
-                                label="Nonaktifkan"
+                                label={
+                                  checkingSourceId === src.id
+                                    ? 'Mengecek…'
+                                    : 'Cek'
+                                }
                                 onPress={() => {
-                                  deleteKolamDaraTaxRegulationSource(src.id)
-                                    .then(() => {
-                                      onNotice('Sumber dinonaktifkan');
+                                  setCheckingSourceId(src.id);
+                                  checkKolamDaraTaxRegulationSource(src.id)
+                                    .then(r => {
+                                      if (r.error) {
+                                        onNotice(r.error);
+                                      } else if (r.changed) {
+                                        onNotice(
+                                          'Perubahan terdeteksi — cek tab Draf',
+                                        );
+                                      } else {
+                                        onNotice('Tidak ada perubahan');
+                                      }
                                       void loadSources();
                                       onRefreshMonitoring();
                                     })
                                     .catch(err =>
                                       onNotice(
-                                        errorMessage(
-                                          err,
-                                          'Gagal menonaktifkan sumber',
-                                        ),
+                                        errorMessage(err, 'Gagal cek URL'),
                                       ),
-                                    );
+                                    )
+                                    .finally(() => setCheckingSourceId(null));
                                 }}
                               />
-                            ) : null}
-                          </View>
-                        ) : null}
-                      </View>
-                    ))
-                  )}
-                </View>
-
-                {isAdmin ? (
-                  <View style={styles.sourceFormColumn}>
-                    <View style={styles.addForm}>
-                      <Text style={styles.tdStrong}>Tambah sumber</Text>
-                      <TextInput
-                        accessibilityLabel="Nama"
-                        onChangeText={setSourceName}
-                        placeholder="Nama"
-                        placeholderTextColor={V.colors.mutedFg}
-                        style={styles.input}
-                        value={sourceName}
-                      />
-                      <TextInput
-                        accessibilityLabel="URL"
-                        autoCapitalize="none"
-                        onChangeText={setSourceUrl}
-                        placeholder="URL"
-                        placeholderTextColor={V.colors.mutedFg}
-                        style={styles.input}
-                        value={sourceUrl}
-                      />
-                      <KolamButton
-                        disabled={sourceCreating}
-                        intent="outline"
-                        label={sourceCreating ? 'Menambah…' : 'Tambah'}
-                        onPress={() => {
-                          if (!sourceName.trim() || !sourceUrl.trim()) {
-                            onNotice('Nama dan URL wajib');
-                            return;
-                          }
-                          setSourceCreating(true);
-                          createKolamDaraTaxRegulationSource({
-                            name: sourceName.trim(),
-                            url: sourceUrl.trim(),
-                            authority: 'manual',
-                            checkIntervalHours: 24,
-                            isActive: true,
-                          })
-                            .then(() => {
-                              onNotice('Sumber ditambahkan');
-                              setSourceName('');
-                              setSourceUrl('');
-                              void loadSources();
-                              onRefreshMonitoring();
-                            })
-                            .catch(err =>
-                              onNotice(
-                                errorMessage(err, 'Gagal menambah sumber'),
-                              ),
-                            )
-                            .finally(() => setSourceCreating(false));
-                        }}
-                      />
-                    </View>
+                              {src.isActive !== false ? (
+                                <KolamButton
+                                  intent="outline"
+                                  label="Nonaktifkan"
+                                  onPress={() => {
+                                    deleteKolamDaraTaxRegulationSource(src.id)
+                                      .then(() => {
+                                        onNotice('Sumber dinonaktifkan');
+                                        void loadSources();
+                                        onRefreshMonitoring();
+                                      })
+                                      .catch(err =>
+                                        onNotice(
+                                          errorMessage(
+                                            err,
+                                            'Gagal menonaktifkan sumber',
+                                          ),
+                                        ),
+                                      );
+                                  }}
+                                />
+                              ) : null}
+                            </View>
+                          ) : null}
+                        </View>
+                      ))
+                    )}
                   </View>
-                ) : null}
-              </View>
-            )}
+
+                  {isAdmin ? (
+                    <View style={styles.sourceFormColumn}>
+                      <View style={styles.addForm}>
+                        <Text style={styles.tdStrong}>Tambah sumber</Text>
+                        <TextInput
+                          accessibilityLabel="Nama"
+                          onChangeText={setSourceName}
+                          placeholder="Nama"
+                          placeholderTextColor={V.colors.mutedFg}
+                          style={styles.input}
+                          value={sourceName}
+                        />
+                        <TextInput
+                          accessibilityLabel="URL"
+                          autoCapitalize="none"
+                          onChangeText={setSourceUrl}
+                          placeholder="URL"
+                          placeholderTextColor={V.colors.mutedFg}
+                          style={styles.input}
+                          value={sourceUrl}
+                        />
+                        <KolamButton
+                          disabled={sourceCreating}
+                          intent="outline"
+                          label={sourceCreating ? 'Menambah…' : 'Tambah'}
+                          onPress={() => {
+                            if (!sourceName.trim() || !sourceUrl.trim()) {
+                              onNotice('Nama dan URL wajib');
+                              return;
+                            }
+                            setSourceCreating(true);
+                            createKolamDaraTaxRegulationSource({
+                              name: sourceName.trim(),
+                              url: sourceUrl.trim(),
+                              authority: 'manual',
+                              checkIntervalHours: 24,
+                              isActive: true,
+                            })
+                              .then(() => {
+                                onNotice('Sumber ditambahkan');
+                                setSourceName('');
+                                setSourceUrl('');
+                                void loadSources();
+                                onRefreshMonitoring();
+                              })
+                              .catch(err =>
+                                onNotice(
+                                  errorMessage(err, 'Gagal menambah sumber'),
+                                ),
+                              )
+                              .finally(() => setSourceCreating(false));
+                          }}
+                        />
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </View>
           </View>
         </View>
       ) : null}
@@ -1293,11 +1297,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   sourceSection: {
-    borderTopColor: V.colors.border,
-    borderTopWidth: 1,
     gap: 8,
-    marginTop: 4,
-    paddingTop: 12,
   },
   sourceGrid: {
     alignItems: 'flex-start',
