@@ -5939,17 +5939,115 @@ function MarketplaceLandingSubTabs({
   ) => void;
 }) {
   return (
-    <View style={styles.marketplaceAssetActions}>
+    <View style={styles.marketplaceLandingTabBar}>
       {items.map(item => (
-        <KolamActionControlButton
+        <Pressable
           key={item.id}
-          intent={activeTabId === item.id ? 'primary' : undefined}
-          label={`${item.label} ${item.value}`}
           onPress={() => onSelect(item.id)}
-        />
+          style={[
+            styles.marketplaceLandingTab,
+            activeTabId === item.id ? styles.marketplaceLandingTabActive : null,
+          ]}
+        >
+          <SvgXml
+            height={16}
+            width={16}
+            xml={getMarketplaceLandingTabIconXml(item.id, activeTabId === item.id)}
+          />
+          <Text
+            style={[
+              styles.marketplaceLandingTabLabel,
+              activeTabId === item.id
+                ? styles.marketplaceLandingTabLabelActive
+                : null,
+            ]}
+          >
+            {getMarketplaceLandingTabLabel(item.id)}
+          </Text>
+          {shouldShowMarketplaceLandingTabBadge(item.id) ? (
+            <Text style={styles.marketplaceLandingTabBadge}>{item.value}</Text>
+          ) : null}
+        </Pressable>
       ))}
     </View>
   );
+}
+
+function getMarketplaceLandingTabLabel(
+  id:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices',
+) {
+  if (id === 'featured') {
+    return 'Unggulan';
+  }
+  if (id === 'category') {
+    return 'Category Banners';
+  }
+  if (id === 'cta') {
+    return 'CTA Section';
+  }
+  if (id === 'youtube') {
+    return 'YouTube Section';
+  }
+  if (id === 'announcement') {
+    return 'Announcement Banner';
+  }
+  if (id === 'notices') {
+    return 'Pengumuman Teks';
+  }
+  return 'Hero Slides';
+}
+
+function shouldShowMarketplaceLandingTabBadge(
+  id:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices',
+) {
+  return id === 'hero' || id === 'category' || id === 'announcement';
+}
+
+function getMarketplaceLandingTabIconXml(
+  id:
+    | 'hero'
+    | 'featured'
+    | 'category'
+    | 'cta'
+    | 'youtube'
+    | 'announcement'
+    | 'notices',
+  active: boolean,
+) {
+  const color = active ? '#0f766e' : '#6b7280';
+  if (id === 'hero') {
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5h7v7H4V5ZM13 5h7v7h-7V5ZM4 14h7v5H4v-5ZM13 14h7v5h-7v-5Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+  }
+  if (id === 'featured') {
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.5l1.8 4.4 4.7.4-3.6 3.1 1.1 4.6-4-2.4-4 2.4 1.1-4.6-3.6-3.1 4.7-.4L12 3.5Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/><path d="M19 16.5l1 2.1 2 .2-1.5 1.3.5 2-2-1.1-2 1.1.5-2-1.5-1.3 2-.2 1-2.1Z" stroke="${color}" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+  }
+  if (id === 'category') {
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h3A2.5 2.5 0 0 1 12 6.5v3A2.5 2.5 0 0 1 9.5 12h-3A2.5 2.5 0 0 1 4 9.5v-3ZM14 6.5A2.5 2.5 0 0 1 16.5 4h1A2.5 2.5 0 0 1 20 6.5v3a2.5 2.5 0 0 1-2.5 2.5h-1A2.5 2.5 0 0 1 14 9.5v-3ZM4 16.5A2.5 2.5 0 0 1 6.5 14h11a2.5 2.5 0 0 1 2.5 2.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+  }
+  if (id === 'cta') {
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 14.5h3l7.5 3.5v-12L8 9.5H5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 14.5l1 5h2.5l-1.3-4.1M18.5 9.5l2-1.5M19 12h2.5M18.5 14.5l2 1.5" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+  if (id === 'youtube') {
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.5A3.5 3.5 0 0 1 7.5 5h9A3.5 3.5 0 0 1 20 8.5v7a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 4 15.5v-7Z" stroke="${color}" stroke-width="1.8"/><path d="M10.5 9.2v5.6l4.7-2.8-4.7-2.8Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+  }
+  if (id === 'announcement') {
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 7.5h15v9h-15v-9Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 15l3-3 2 2 2.5-3 2.5 4M8.5 10h.01" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 10.5v3A2.5 2.5 0 0 0 7.5 16H9l1.5 3 1.5-3h4.5A2.5 2.5 0 0 0 19 13.5v-7A2.5 2.5 0 0 0 16.5 4h-9A2.5 2.5 0 0 0 5 6.5v1" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 8h8M8 11h5" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 }
 
 function WebContentRowsPanel({
@@ -9763,6 +9861,46 @@ const styles = StyleSheet.create({
   },
   marketplaceControlSection: {
     gap: 10,
+  },
+  marketplaceLandingTab: {
+    alignItems: 'center',
+    borderBottomColor: 'transparent',
+    borderBottomWidth: 2,
+    flexDirection: 'row',
+    gap: 7,
+    minHeight: 42,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  marketplaceLandingTabActive: {
+    borderBottomColor: '#0f766e',
+  },
+  marketplaceLandingTabBadge: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 999,
+    color: '#4b5563',
+    fontSize: 11,
+    fontWeight: '800',
+    minWidth: 22,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    textAlign: 'center',
+  },
+  marketplaceLandingTabBar: {
+    borderBottomColor: '#e5e7eb',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
+  marketplaceLandingTabLabel: {
+    color: '#6b7280',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  marketplaceLandingTabLabelActive: {
+    color: '#0f766e',
   },
   poNotificationToggleBox: {
     backgroundColor: '#f9fafb',
