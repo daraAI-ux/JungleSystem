@@ -75,12 +75,16 @@ import {
 import {KolamNotesField} from './kolam-notes-field';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
+import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
+import type {KolamSurfacePanelTab} from './kolam-surface-panel-types';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {KolamToggleRow} from './kolam-toggle-row';
 
 const SEARCH_DEBOUNCE_MS = 350;
 const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
 const USER_KASBON_TABLE_PAGE_SIZE = 10;
+
+type UserPayrollHistoryTab = 'deductions' | 'kasbons';
 
 const EMPLOYEE_FILTER_OPTIONS: Array<{
   label: string;
@@ -779,6 +783,8 @@ function KolamUserDetailSurface({
   );
   const [deductionPage, setDeductionPage] = React.useState(1);
   const [kasbonPage, setKasbonPage] = React.useState(1);
+  const [activePayrollTab, setActivePayrollTab] =
+    React.useState<UserPayrollHistoryTab>('deductions');
   const [payrollLoading, setPayrollLoading] = React.useState(false);
   const [payrollError, setPayrollError] = React.useState('');
   const [ratingSummary, setRatingSummary] = React.useState(
@@ -834,6 +840,20 @@ function KolamUserDetailSurface({
     (isSuperAdmin ||
       hasSettingsPermission(permissionContext, 'salary', 'view') ||
       hasSettingsPermission(permissionContext, 'staff_attendance', 'view'));
+  const payrollTabs = React.useMemo<
+    Array<KolamSurfacePanelTab<UserPayrollHistoryTab>>
+  >(
+    () => [
+      ...(canViewDeductions
+        ? [{id: 'deductions' as const, label: 'Potongan Gaji'}]
+        : []),
+      ...(canViewKasbon ? [{id: 'kasbons' as const, label: 'Kasbon'}] : []),
+    ],
+    [canViewDeductions, canViewKasbon],
+  );
+  const selectedPayrollTab = payrollTabs.some(tab => tab.id === activePayrollTab)
+    ? activePayrollTab
+    : payrollTabs[0]?.id ?? 'deductions';
   const deductionColumns = React.useMemo<
     Array<KolamListTableColumn<KolamUserDeductionItem>>
   >(
@@ -1646,51 +1666,53 @@ function KolamUserDetailSurface({
           title="Status akun & karyawan"
         />
 
-        {user.isEmployee && canViewDeductions ? (
+        {user.isEmployee && payrollTabs.length ? (
           <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Potongan Gaji</Text>
-            <KolamListTableComposition
-              columns={deductionColumns}
-              emptyTitle={
-                payrollLoading
-                  ? 'Memuat potongan gaji...'
-                  : 'Tidak ada pengajuan potongan gaji.'
-              }
-              getRowKey={item => item.id || item.code}
-              loading={payrollLoading}
-              pagination={{
-                onPageChange: setDeductionPage,
-                page: deductionPage,
-                pageSize: USER_DEDUCTION_TABLE_PAGE_SIZE,
-                total: payrollSummary.deductions.length,
-              }}
-              rows={payrollLoading ? [] : visibleDeductions}
-            />
-          </View>
-        ) : null}
-
-        {user.isEmployee && canViewKasbon ? (
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>
-              Kasbon (Uang Muka Gaji)
-            </Text>
-            <KolamListTableComposition
-              columns={kasbonColumns}
-              emptyTitle={
-                payrollLoading
-                  ? 'Memuat kasbon...'
-                  : 'Tidak ada pengajuan kasbon.'
-              }
-              getRowKey={item => item.id || item.code}
-              loading={payrollLoading}
-              pagination={{
-                onPageChange: setKasbonPage,
-                page: kasbonPage,
-                pageSize: USER_KASBON_TABLE_PAGE_SIZE,
-                total: payrollSummary.kasbons.length,
-              }}
-              rows={payrollLoading ? [] : visibleKasbons}
-            />
+            <View style={styles.payrollTabsWrap}>
+              <KolamSurfacePanelTabs
+                onSelectTab={setActivePayrollTab}
+                selectedTabId={selectedPayrollTab}
+                tabs={payrollTabs}
+              />
+            </View>
+            {selectedPayrollTab === 'deductions' ? (
+              <KolamListTableComposition
+                columns={deductionColumns}
+                emptyTitle={
+                  payrollLoading
+                    ? 'Memuat potongan gaji...'
+                    : 'Tidak ada pengajuan potongan gaji.'
+                }
+                getRowKey={item => item.id || item.code}
+                loading={payrollLoading}
+                pagination={{
+                  onPageChange: setDeductionPage,
+                  page: deductionPage,
+                  pageSize: USER_DEDUCTION_TABLE_PAGE_SIZE,
+                  total: payrollSummary.deductions.length,
+                }}
+                rows={payrollLoading ? [] : visibleDeductions}
+              />
+            ) : null}
+            {selectedPayrollTab === 'kasbons' ? (
+              <KolamListTableComposition
+                columns={kasbonColumns}
+                emptyTitle={
+                  payrollLoading
+                    ? 'Memuat kasbon...'
+                    : 'Tidak ada pengajuan kasbon.'
+                }
+                getRowKey={item => item.id || item.code}
+                loading={payrollLoading}
+                pagination={{
+                  onPageChange: setKasbonPage,
+                  page: kasbonPage,
+                  pageSize: USER_KASBON_TABLE_PAGE_SIZE,
+                  total: payrollSummary.kasbons.length,
+                }}
+                rows={payrollLoading ? [] : visibleKasbons}
+              />
+            ) : null}
           </View>
         ) : null}
 
@@ -4042,6 +4064,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
     lineHeight: 22,
+  },
+  payrollTabsWrap: {
+    alignSelf: 'flex-start',
   },
   detailRow: {
     gap: 4,
