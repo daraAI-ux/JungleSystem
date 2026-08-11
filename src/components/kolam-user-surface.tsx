@@ -4164,7 +4164,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flexBasis: 220,
     flexGrow: 1,
-    maxWidth: 360,
     minWidth: 180,
   },
   toolbarButton: {
