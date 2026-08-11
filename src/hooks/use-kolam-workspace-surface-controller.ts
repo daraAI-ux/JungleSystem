@@ -157,6 +157,11 @@ export function useKolamWorkspaceSurfaceController({
 }) {
   const handleDashboardRoute = useCallback<WorkspaceDashboardRouteHandler>(
     route => {
+      if (isTeamChatRoute(route)) {
+        onDashboardRouteContext?.(route);
+        return;
+      }
+
       const module = getDashboardRouteModule(route);
 
       onSelectModule(module);
@@ -336,6 +341,11 @@ export function useKolamWorkspaceSurfaceController({
     onSalesGraphRangeSelect,
     salesGraphRange,
   });
+}
+
+function isTeamChatRoute(route: string): boolean {
+  const path = route.trim().split('?')[0]?.replace(/\/+$/, '');
+  return path === '/team-chat';
 }
 
 function getDashboardRouteModule(route: string): AppModule {

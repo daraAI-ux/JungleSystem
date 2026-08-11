@@ -236,6 +236,9 @@ describe('Kolam workspace surface controller hook', () => {
     requireController(latest).workspace.onDashboardRoute?.('/products/product-1');
     requireController(latest).workspace.onDashboardRoute?.('/inventory');
     requireController(latest).workspace.onDashboardRoute?.('/raw-materials');
+    requireController(latest).workspace.onDashboardRoute?.(
+      '/team-chat?room=room-ops',
+    );
 
     expect(selectedModules).toEqual([
       'sales',
@@ -252,6 +255,7 @@ describe('Kolam workspace surface controller hook', () => {
       '/products/product-1',
       '/inventory',
       '/raw-materials',
+      '/team-chat?room=room-ops',
     ]);
     expect(messages).toEqual([
       'Sales native membuka /sales?needsAction=1.',
