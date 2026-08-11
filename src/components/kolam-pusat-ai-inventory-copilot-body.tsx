@@ -34,6 +34,8 @@ export function KolamPusatAiInventoryCopilotBody({
 }) {
   const {dashboard, opsLog, loading, error, notice} = controller;
   const counts = dashboard?.counts;
+  const notifyRoomRoute =
+    dashboard?.teamChat.webHref || controller.health?.notifyRoom?.webHref;
 
   return (
     <ScrollView
@@ -49,6 +51,13 @@ export function KolamPusatAiInventoryCopilotBody({
             </Text>
           </View>
           <View style={styles.shellActions}>
+            {notifyRoomRoute ? (
+              <KolamButton
+                intent="primary"
+                label="Buka room"
+                onPress={() => onRouteChange?.(notifyRoomRoute)}
+              />
+            ) : null}
             <KolamRefreshButton
               accessibilityLabel="Refresh"
               disabled={loading}
@@ -67,12 +76,15 @@ export function KolamPusatAiInventoryCopilotBody({
             <KolamEmptyState message={error} title="Gagal memuat" />
           ) : null}
 
-          <NotifyRoomSection
-            controller={controller}
-            onRouteChange={onRouteChange}
-          />
+          <View style={styles.sideBySideGrid}>
+            <View style={styles.sideBySideItem}>
+              <NotifyRoomSection controller={controller} />
+            </View>
+            <View style={styles.sideBySideItem}>
+              <BotProfileSection controller={controller} />
+            </View>
+          </View>
           <BotHealthSection controller={controller} />
-          <BotProfileSection controller={controller} />
 
           {loading && !dashboard ? (
             <Text style={styles.loadingText}>Memuat…</Text>
@@ -206,20 +218,13 @@ export function KolamPusatAiInventoryCopilotBody({
   );
 }
 
-function NotifyRoomSection({
-  controller,
-  onRouteChange,
-}: {
+function NotifyRoomSection({controller}: {
   controller: KolamPusatAiInventoryCopilotController;
-  onRouteChange?: (route: string) => void;
 }) {
   const roomOptions = controller.rooms.map(room => ({
     label: formatKolamInventoryCopilotRoomLabel(room),
     value: room._id,
   }));
-  const href =
-    controller.dashboard?.teamChat.webHref ||
-    controller.health?.notifyRoom?.webHref;
 
   return (
     <View style={[styles.sectionCard, styles.botStrip]}>
@@ -239,13 +244,6 @@ function NotifyRoomSection({
           />
           <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
         </View>
-        {href ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => onRouteChange?.(href)}>
-            <Text style={styles.link}>Buka room</Text>
-          </Pressable>
-        ) : null}
       </View>
       <View style={styles.roomRow}>
         <View style={styles.roomSelect}>

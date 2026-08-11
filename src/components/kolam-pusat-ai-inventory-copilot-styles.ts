@@ -66,6 +66,17 @@ export const inventoryCopilotStyles = StyleSheet.create({
     flexDirection: 'column',
     gap: 16,
   },
+  sideBySideGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  sideBySideItem: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 320,
+  },
   rangeTabs: {
     backgroundColor: V.colors.muted,
     borderColor: V.colors.border,
