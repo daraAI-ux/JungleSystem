@@ -1,11 +1,5 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   formatKolamDaraTaxDateId,
   formatKolamDaraTaxIdr,
@@ -16,27 +10,29 @@ import {
   type KolamDaraTaxSettlement,
   type KolamDaraTaxSettlementType,
 } from '../domain/kolam-dara-tax-settlement';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {ApiError} from '../lib/api-error';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { ApiError } from '../lib/api-error';
 import {
   createKolamDaraTaxSettlement,
   listKolamDaraTaxSettlements,
   listKolamDaraTaxSettlementWallets,
   verifyKolamDaraTaxSettlement,
 } from '../services/kolam-dara-tax-settlement-api';
-import {KolamButton} from './kolam-button';
-import {KolamCancelButton} from './kolam-cancel-button';
-import {KolamSaveButton} from './kolam-save-button';
-import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamModalBackdrop} from './kolam-modal-backdrop';
-import {KolamNotesField} from './kolam-notes-field';
-import {KolamRupiahField} from './kolam-rupiah-field';
-import {KolamStatusBadge} from './kolam-status-badge';
+import { KolamButton } from './kolam-button';
+import { KolamCancelButton } from './kolam-cancel-button';
+import { KolamSaveButton } from './kolam-save-button';
+import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamModalDialog } from './kolam-modal-dialog';
+import { KolamNotesField } from './kolam-notes-field';
+import { KolamRupiahField } from './kolam-rupiah-field';
+import { KolamStatusBadge } from './kolam-status-badge';
 
 /** FE `TaxSettlementPanel` (tab Setoran / pelunasan). */
 function formatSettlementStatusLabel(status: string) {
-  const normalized = String(status || '').trim().toLowerCase();
+  const normalized = String(status || '')
+    .trim()
+    .toLowerCase();
   if (normalized === 'verified') {
     return 'Terverifikasi';
   }
@@ -49,7 +45,7 @@ function formatSettlementStatusLabel(status: string) {
 export function KolamDaraTaxSetoranBody() {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<KolamDaraTaxSettlement[]>([]);
-  const [wallets, setWallets] = useState<Array<{id: string; name: string}>>(
+  const [wallets, setWallets] = useState<Array<{ id: string; name: string }>>(
     [],
   );
   const [loading, setLoading] = useState(true);
@@ -68,7 +64,7 @@ export function KolamDaraTaxSetoranBody() {
     setLoading(true);
     try {
       const [settlementRows, walletRows] = await Promise.all([
-        listKolamDaraTaxSettlements({limit: 50}),
+        listKolamDaraTaxSettlements({ limit: 50 }),
         listKolamDaraTaxSettlementWallets(),
       ]);
       setRows(settlementRows);
@@ -80,8 +76,8 @@ export function KolamDaraTaxSetoranBody() {
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal memuat setoran pajak',
+          ? err.message
+          : 'Gagal memuat setoran pajak',
       );
     } finally {
       setLoading(false);
@@ -127,11 +123,17 @@ export function KolamDaraTaxSetoranBody() {
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal membuat setoran',
+          ? err.message
+          : 'Gagal membuat setoran',
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const closeModal = () => {
+    if (!saving) {
+      setOpen(false);
     }
   };
 
@@ -147,8 +149,8 @@ export function KolamDaraTaxSetoranBody() {
         err instanceof ApiError
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Gagal verifikasi',
+          ? err.message
+          : 'Gagal verifikasi',
       );
     } finally {
       setVerifyingId(null);
@@ -163,7 +165,7 @@ export function KolamDaraTaxSetoranBody() {
           Keuangan.
         </Text>
         <KolamButton
-          label="Setoran baru"
+          label="Baru"
           onPress={() => {
             setNotice('');
             setOpen(true);
@@ -222,93 +224,84 @@ export function KolamDaraTaxSetoranBody() {
         </View>
       )}
 
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-        transparent
-        visible={open}>
-        <View style={styles.modalRoot}>
-          <KolamModalBackdrop
-            onPress={() => {
-              if (!saving) {
-                setOpen(false);
-              }
-            }}
+      <KolamModalDialog
+        description="Debit dompet setelah verifikasi. Periode opsional (YYYY-MM)."
+        footer={
+          <>
+            <KolamCancelButton
+              disabled={saving}
+              intent="secondary"
+              onPress={closeModal}
+              size="sm"
+            />
+            <KolamSaveButton
+              disabled={saving}
+              label={saving ? 'Menyimpan…' : 'Simpan'}
+              onPress={() => {
+                void submit();
+              }}
+              size="sm"
+            />
+          </>
+        }
+        maxHeight="86%"
+        onClose={closeModal}
+        title="Setoran pajak baru"
+        visible={open}
+        width={560}
+      >
+        <KolamDetailScrollSurface
+          contentContainerStyle={styles.form}
+          style={styles.modalScroll}
+        >
+          <KolamDropdownSelect
+            label="Jenis pajak"
+            onChange={value => setTaxType(value as KolamDaraTaxSettlementType)}
+            options={KOLAM_DARA_TAX_SETTLEMENT_TYPES.map(opt => ({
+              label: opt.label,
+              value: opt.id,
+            }))}
+            showLabelInTrigger={false}
+            value={taxType}
           />
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Setoran pajak baru</Text>
-            <Text style={styles.meta}>
-              Debit dompet setelah verifikasi. Periode opsional (YYYY-MM).
-            </Text>
-            <KolamDetailScrollSurface contentContainerStyle={styles.form}>
-              <KolamDropdownSelect
-                label="Jenis pajak"
-                onChange={value =>
-                  setTaxType(value as KolamDaraTaxSettlementType)
-                }
-                options={KOLAM_DARA_TAX_SETTLEMENT_TYPES.map(opt => ({
-                  label: opt.label,
-                  value: opt.id,
-                }))}
-                showLabelInTrigger={false}
-                value={taxType}
-              />
-              <Field
-                label="Judul"
-                onChangeText={setTitle}
-                placeholder="Setoran PPN Mei 2026"
-                value={title}
-              />
-              <Field
-                currency
-                label="Jumlah"
-                onChangeText={setAmount}
-                value={amount}
-              />
-              <Field
-                label="Periode (YYYY-MM)"
-                onChangeText={setPeriodKey}
-                placeholder="2026-05"
-                value={periodKey}
-              />
-              <KolamDropdownSelect
-                label="Dompet"
-                onChange={setWalletId}
-                options={[
-                  {label: 'Pilih dompet', value: ''},
-                  ...wallets.map(w => ({
-                    label: w.name,
-                    value: w.id,
-                  })),
-                ]}
-                showLabelInTrigger={false}
-                value={walletId}
-              />
-              <KolamNotesField
-                label="Catatan"
-                onChangeText={setNote}
-                value={note}
-              />
-            </KolamDetailScrollSurface>
-            <View style={styles.modalFooter}>
-              <KolamCancelButton
-                disabled={saving}
-                intent="secondary"
-                onPress={() => setOpen(false)}
-                size="sm"
-              />
-              <KolamSaveButton
-                disabled={saving}
-                label={saving ? 'Menyimpan…' : 'Simpan'}
-                onPress={() => {
-                  void submit();
-                }}
-                size="sm"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+          <Field
+            label="Judul"
+            onChangeText={setTitle}
+            placeholder="Setoran PPN Mei 2026"
+            value={title}
+          />
+          <Field
+            currency
+            label="Jumlah"
+            onChangeText={setAmount}
+            value={amount}
+          />
+          <Field
+            label="Periode (YYYY-MM)"
+            onChangeText={setPeriodKey}
+            placeholder="2026-05"
+            value={periodKey}
+          />
+          <KolamDropdownSelect
+            label="Dompet"
+            onChange={setWalletId}
+            options={[
+              { label: 'Pilih dompet', value: '' },
+              ...wallets.map(w => ({
+                label: w.name,
+                value: w.id,
+              })),
+            ]}
+            showLabelInTrigger={false}
+            value={walletId}
+          />
+          <KolamNotesField
+            label="Catatan"
+            onChangeText={setNote}
+            value={note}
+          />
+        </KolamDetailScrollSurface>
+      </KolamModalDialog>
     </View>
   );
 }
@@ -417,33 +410,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  modalRoot: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalCard: {
-    backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 10,
-    maxHeight: '90%',
-    maxWidth: 520,
-    padding: 16,
-    width: '100%',
-    zIndex: 1,
-  },
-  modalTitle: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 15,
-    fontWeight: '700',
-  },
   form: {
     gap: 10,
     paddingBottom: 4,
+  },
+  modalScroll: {
+    flexShrink: 1,
   },
   field: {
     gap: 4,
@@ -468,11 +440,5 @@ const styles = StyleSheet.create({
   inputMultiline: {
     minHeight: 72,
     textAlignVertical: 'top',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-end',
   },
 });
