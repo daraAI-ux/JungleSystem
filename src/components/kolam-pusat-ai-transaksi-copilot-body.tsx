@@ -58,31 +58,6 @@ export function KolamPusatAiTransaksiCopilotBody({
             <Text style={styles.title}>Transaksi Copilot</Text>
             <Text style={styles.desc}>{KOLAM_TRANSAKSI_COPILOT_DESCRIPTION}</Text>
           </View>
-          <View style={styles.shellActions}>
-            <View style={styles.rangeTabs}>
-              {KOLAM_TRANSAKSI_COPILOT_RANGES.map(item => {
-                const active = range === item.id;
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    key={item.id}
-                    onPress={() => controller.onSetRange(item.id)}
-                    style={[
-                      styles.rangeBtn,
-                      active ? styles.rangeBtnActive : null,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.rangeBtnText,
-                        active ? styles.rangeBtnTextActive : null,
-                      ]}>
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
         </View>
 
         <View style={styles.body}>
@@ -104,24 +79,51 @@ export function KolamPusatAiTransaksiCopilotBody({
           </View>
           <BotHealthSection controller={controller} />
 
-          {loading && !stats ? (
-            <Text style={styles.loadingText}>Memuat…</Text>
-          ) : (
-            <View style={styles.kpiGrid}>
-              <DeliveryKpiCard
-                channelSources={channelSources}
-                loading={loading}
-                summary={stats?.dara ?? null}
-                title="Delivery DARA"
-              />
-              <DeliveryKpiCard
-                channelSources={channelSources}
-                loading={loading}
-                summary={stats?.bot ?? null}
-                title="Bot — Katak Terbang"
-              />
+          <View style={styles.deliveryPanel}>
+            <View style={styles.deliveryPanelHeader}>
+              <View style={styles.rangeTabs}>
+                {KOLAM_TRANSAKSI_COPILOT_RANGES.map(item => {
+                  const active = range === item.id;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      key={item.id}
+                      onPress={() => controller.onSetRange(item.id)}
+                      style={[
+                        styles.rangeBtn,
+                        active ? styles.rangeBtnActive : null,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.rangeBtnText,
+                          active ? styles.rangeBtnTextActive : null,
+                        ]}>
+                        {item.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          )}
+            {loading && !stats ? (
+              <Text style={styles.loadingText}>Memuat…</Text>
+            ) : (
+              <View style={styles.kpiGrid}>
+                <DeliveryKpiCard
+                  channelSources={channelSources}
+                  loading={loading}
+                  summary={stats?.dara ?? null}
+                  title="Delivery DARA"
+                />
+                <DeliveryKpiCard
+                  channelSources={channelSources}
+                  loading={loading}
+                  summary={stats?.bot ?? null}
+                  title="Bot — Katak Terbang"
+                />
+              </View>
+            )}
+          </View>
 
           {stats?.generatedAt ? (
             <Text style={styles.meta}>
