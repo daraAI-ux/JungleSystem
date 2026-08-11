@@ -10,6 +10,10 @@ import {
   type KolamCustomerPointTransactionType,
   type KolamCustomerSavePayload,
 } from '../domain/kolam-customer';
+import {
+  normalizeKolamFreyerIotDevice,
+  type KolamFreyerIotDevice,
+} from '../domain/kolam-freyer-iot-device';
 import {apiRequest} from '../lib/api-client';
 
 interface DataResponse<T> {
@@ -149,6 +153,51 @@ export async function getKolamCustomerPointTransactions({
   return normalizeKolamCustomerPointTransactionsResult(response, {limit, page});
 }
 
+export async function getKolamCustomerFreyerDevices(
+  id: string,
+): Promise<KolamFreyerIotDevice[]> {
+  const response = await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(id)}/freyer-devices`,
+  );
+
+  return normalizeCustomerFreyerDeviceList(response);
+}
+
+export async function getKolamUnattachedCustomerFreyerDevices(): Promise<
+  KolamFreyerIotDevice[]
+> {
+  const response = await kolamRequest<unknown>(
+    '/customer/freyer-devices/unattached',
+  );
+
+  return normalizeCustomerFreyerDeviceList(response);
+}
+
+export async function attachKolamFreyerToCustomer(
+  customerId: string,
+  freyerId: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(customerId)}/freyer-devices`,
+    {
+      body: {freyerId},
+      method: 'POST',
+    },
+  );
+}
+
+export async function detachKolamFreyerFromCustomer(
+  customerId: string,
+  freyerId: string,
+): Promise<void> {
+  await kolamRequest<unknown>(
+    `/customer/${encodeURIComponent(customerId)}/freyer-devices/${encodeURIComponent(freyerId)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
 function kolamRequest<T>(
   path: string,
   options: {
@@ -177,6 +226,20 @@ function normalizeCustomerPhotoResponse(payload: unknown, key: string) {
   }
 
   throw new Error('Respons foto pelanggan tidak valid.');
+}
+
+function normalizeCustomerFreyerDeviceList(payload: unknown) {
+  const record = asRecord(payload);
+  const dataRecord = asRecord(record.data);
+  const rows = Array.isArray(payload)
+    ? payload
+    : Array.isArray(record.data)
+      ? record.data
+      : Array.isArray(dataRecord.data)
+        ? dataRecord.data
+        : [];
+
+  return rows.map(normalizeKolamFreyerIotDevice);
 }
 
 function createReactNativeFilePart(

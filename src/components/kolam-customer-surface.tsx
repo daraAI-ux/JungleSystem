@@ -17,16 +17,21 @@ import {
   hasKolamTaxPartyNpwp,
   type KolamTaxPartyProfileFormState,
 } from '../domain/kolam-tax-party';
+import type {KolamFreyerIotDevice} from '../domain/kolam-freyer-iot-device';
 import type {SettingsTabVisibilityContext} from '../domain/settings-surface';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {getKolamFileUrl} from '../lib/file-url';
 import {
+  attachKolamFreyerToCustomer,
   createKolamCustomer,
   deleteKolamCustomer,
   deleteKolamCustomerPhoto,
+  detachKolamFreyerFromCustomer,
   getKolamCustomerDetail,
+  getKolamCustomerFreyerDevices,
   getKolamCustomerList,
   getKolamCustomerPointTransactions,
+  getKolamUnattachedCustomerFreyerDevices,
   updateKolamCustomer,
   uploadKolamCustomerPhoto,
 } from '../services/kolam-customer-api';
@@ -467,6 +472,15 @@ function KolamCustomerDetailSurface({
   const [pointTransactionsLoading, setPointTransactionsLoading] =
     React.useState(false);
   const [pointTransactionsPage, setPointTransactionsPage] = React.useState(1);
+  const [freyerDevices, setFreyerDevices] = React.useState<
+    KolamFreyerIotDevice[]
+  >([]);
+  const [unattachedFreyerDevices, setUnattachedFreyerDevices] = React.useState<
+    KolamFreyerIotDevice[]
+  >([]);
+  const [freyerLoading, setFreyerLoading] = React.useState(false);
+  const [freyerSaving, setFreyerSaving] = React.useState(false);
+  const [selectedFreyerId, setSelectedFreyerId] = React.useState('');
 
   React.useEffect(() => {
     let active = true;
@@ -584,6 +598,36 @@ function KolamCustomerDetailSurface({
       active = false;
     };
   }, [customerId, pointTransactionsPage]);
+
+  const reloadFreyerDevices = React.useCallback(async () => {
+    if (!customerId) {
+      setFreyerDevices([]);
+      setUnattachedFreyerDevices([]);
+      return;
+    }
+
+    setFreyerLoading(true);
+    try {
+      const [attached, unattached] = await Promise.all([
+        getKolamCustomerFreyerDevices(customerId),
+        getKolamUnattachedCustomerFreyerDevices(),
+      ]);
+      setFreyerDevices(attached);
+      setUnattachedFreyerDevices(unattached);
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal memuat perangkat Freyer.',
+      );
+    } finally {
+      setFreyerLoading(false);
+    }
+  }, [customerId]);
+
+  React.useEffect(() => {
+    void reloadFreyerDevices();
+  }, [reloadFreyerDevices]);
 
   if (loading && !customer) {
     return (
@@ -709,6 +753,50 @@ function KolamCustomerDetailSurface({
       setTaxProfileSaving(false);
     }
   }, [customer, taxProfile, taxProfileSaving]);
+  const handleAttachFreyer = React.useCallback(async () => {
+    if (!customer || !selectedFreyerId || freyerSaving) {
+      return;
+    }
+
+    setFreyerSaving(true);
+    setError('');
+    try {
+      await attachKolamFreyerToCustomer(customer.id, selectedFreyerId);
+      setSelectedFreyerId('');
+      await reloadFreyerDevices();
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal menautkan Freyer.',
+      );
+    } finally {
+      setFreyerSaving(false);
+    }
+  }, [customer, freyerSaving, reloadFreyerDevices, selectedFreyerId]);
+  const handleDetachFreyer = React.useCallback(
+    async (freyerId: string) => {
+      if (!customer || freyerSaving) {
+        return;
+      }
+
+      setFreyerSaving(true);
+      setError('');
+      try {
+        await detachKolamFreyerFromCustomer(customer.id, freyerId);
+        await reloadFreyerDevices();
+      } catch (errorResult) {
+        setError(
+          errorResult instanceof Error
+            ? errorResult.message
+            : 'Gagal melepas Freyer.',
+        );
+      } finally {
+        setFreyerSaving(false);
+      }
+    },
+    [customer, freyerSaving, reloadFreyerDevices],
+  );
 
   return (
     <View style={styles.detailSurface}>
@@ -902,6 +990,17 @@ function KolamCustomerDetailSurface({
         loading={pointTransactionsLoading}
         onPageChange={setPointTransactionsPage}
         result={pointTransactions}
+      />
+
+      <CustomerFreyerDevicesCard
+        devices={freyerDevices}
+        loading={freyerLoading}
+        onAttach={handleAttachFreyer}
+        onDetach={handleDetachFreyer}
+        onSelect={setSelectedFreyerId}
+        saving={freyerSaving}
+        selectedId={selectedFreyerId}
+        unattached={unattachedFreyerDevices}
       />
     </View>
   );
@@ -1517,6 +1616,95 @@ function CustomerPointTransactionsCard({
   );
 }
 
+function CustomerFreyerDevicesCard({
+  devices,
+  loading,
+  onAttach,
+  onDetach,
+  onSelect,
+  saving,
+  selectedId,
+  unattached,
+}: {
+  devices: KolamFreyerIotDevice[];
+  loading: boolean;
+  onAttach: () => Promise<void>;
+  onDetach: (freyerId: string) => Promise<void>;
+  onSelect: (freyerId: string) => void;
+  saving: boolean;
+  selectedId: string;
+  unattached: KolamFreyerIotDevice[];
+}) {
+  const options = [
+    {label: 'Pilih Freyer', value: ''},
+    ...unattached.map(device => ({
+      label: `${device.name || 'Freyer'} - ${device.serialNumber || '-'}`,
+      value: device.id,
+    })),
+  ];
+
+  return (
+    <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
+      <View style={styles.customerCardHeaderRow}>
+        <SectionTitle
+          description="Alat IoT yang tertaut ke pelanggan"
+          title="Perangkat Freyer"
+        />
+        <KolamStatusBadge
+          intent={devices.length ? 'success' : 'secondary'}
+          label={`${devices.length} perangkat`}
+        />
+      </View>
+      {loading ? (
+        <KolamEmptyState compact message="Memuat perangkat." title="Memuat" />
+      ) : devices.length ? (
+        <View style={styles.customerFreyerList}>
+          {devices.map(device => (
+            <View key={device.id} style={styles.customerFreyerRow}>
+              <View style={styles.customerFreyerCopy}>
+                <Text numberOfLines={1} style={styles.customerMetaText}>
+                  {device.name || 'Freyer'}
+                </Text>
+                <Text numberOfLines={1} style={styles.customerSubText}>
+                  {device.serialNumber || '-'}
+                </Text>
+              </View>
+              <KolamStatusBadge
+                intent={device.status === 1 ? 'success' : 'secondary'}
+                label={device.status === 1 ? 'On' : 'Off'}
+              />
+              <KolamCancelButton
+                disabled={saving}
+                label="Lepas"
+                onPress={() => void onDetach(device.id)}
+              />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={styles.customerEmptyPanel}>
+          <Text style={styles.customerSubText}>Belum ada Freyer tertaut.</Text>
+        </View>
+      )}
+      <View style={styles.customerFreyerAttachRow}>
+        <View style={styles.customerFreyerSelect}>
+          <KolamDropdownSelect
+            label="Tautkan perangkat"
+            onChange={onSelect}
+            options={options}
+            value={selectedId}
+          />
+        </View>
+        <KolamSaveButton
+          disabled={!selectedId || saving}
+          label={saving ? 'Memproses...' : 'Tautkan'}
+          onPress={() => void onAttach()}
+        />
+      </View>
+    </KolamContentFrame>
+  );
+}
+
 function CustomerFieldShell({
   children,
   label,
@@ -2106,6 +2294,57 @@ const styles = StyleSheet.create({
   },
   customerPointTransactionPointsOut: {
     color: V.colors.danger,
+  },
+  customerCardHeaderRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  customerFreyerList: {
+    gap: 8,
+  },
+  customerFreyerRow: {
+    alignItems: 'center',
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  customerFreyerCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 180,
+  },
+  customerFreyerAttachRow: {
+    alignItems: 'center',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingTop: 12,
+  },
+  customerFreyerSelect: {
+    flex: 1,
+    minWidth: 260,
+  },
+  customerEmptyPanel: {
+    alignItems: 'center',
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 72,
+    padding: 14,
   },
   sectionTitleBlock: {
     gap: 3,
