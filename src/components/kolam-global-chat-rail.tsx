@@ -9418,7 +9418,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 15,
     backgroundColor: 'transparent',
-    padding: 6,
   },
   teamRoomTrashIcon: {
     width: 18,
