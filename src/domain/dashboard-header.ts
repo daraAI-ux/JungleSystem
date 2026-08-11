@@ -160,7 +160,7 @@ const DASHBOARD_TIMEZONE_PATTERN = /^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/;
 
 const syncStatusLabels: Record<UnifiedSourceState, string> = {
   cache: 'Cache',
-  disabled: 'Disabled',
+  disabled: 'Dinonaktifkan',
   fallback: 'Fallback',
   live: 'Live',
   seed: 'Seed',
