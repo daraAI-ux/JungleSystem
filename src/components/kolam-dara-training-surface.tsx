@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { KOLAM_AI_MODULE_ICON_SVG } from '../assets/icons/ai-module-icon-svg';
@@ -20,7 +20,6 @@ import {
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import { useKolamDaraTrainingController } from '../hooks/use-kolam-dara-training-controller';
 import { KolamButton } from './kolam-button';
-import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamDaraTrainingFineTuneBody } from './kolam-dara-training-fine-tune-body';
 import { KolamDaraTrainingFulfillmentBody } from './kolam-dara-training-fulfillment-body';
 import { KolamDaraTrainingPhrasesBody } from './kolam-dara-training-phrases-body';
@@ -66,13 +65,13 @@ export function KolamDaraTrainingSurface({
   const controller = useKolamDaraTrainingController(route, {
     enabled: access.canSee,
   });
-  const [phrasesRefreshKey, setPhrasesRefreshKey] = useState(0);
-  const [fulfillmentRefreshKey, setFulfillmentRefreshKey] = useState(0);
-  const [productsRefreshKey, setProductsRefreshKey] = useState(0);
-  const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
-  const [fineTuneRefreshKey, setFineTuneRefreshKey] = useState(0);
-  const [visionRefreshKey, setVisionRefreshKey] = useState(0);
-  const [videoStudioRefreshKey, setVideoStudioRefreshKey] = useState(0);
+  const phrasesRefreshKey = 0;
+  const fulfillmentRefreshKey = 0;
+  const productsRefreshKey = 0;
+  const reviewsRefreshKey = 0;
+  const fineTuneRefreshKey = 0;
+  const visionRefreshKey = 0;
+  const videoStudioRefreshKey = 0;
 
   const selectedTab = getKolamDaraTrainingTab(route);
   const selectedTabLabel =
@@ -86,17 +85,6 @@ export function KolamDaraTrainingSurface({
         : [],
     [controller.stats],
   );
-
-  const onToolbarRefresh = async () => {
-    await controller.onRefresh();
-    setPhrasesRefreshKey(key => key + 1);
-    setFulfillmentRefreshKey(key => key + 1);
-    setProductsRefreshKey(key => key + 1);
-    setReviewsRefreshKey(key => key + 1);
-    setFineTuneRefreshKey(key => key + 1);
-    setVisionRefreshKey(key => key + 1);
-    setVideoStudioRefreshKey(key => key + 1);
-  };
 
   if (!access.canSee) {
     return (
@@ -137,16 +125,6 @@ export function KolamDaraTrainingSurface({
                   textStyle={styles.toolbarTabButtonText}
                 />
               ))}
-            </View>
-            <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading}
-                onPress={() => {
-                  void onToolbarRefresh();
-                }}
-                size="sm"
-              />
             </View>
           </View>
         </View>
