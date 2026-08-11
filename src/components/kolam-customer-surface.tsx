@@ -1480,6 +1480,7 @@ function KolamCustomerFormSurface({
               options={[...CUSTOMER_GENDER_OPTIONS]}
               showLabelInTrigger={false}
               style={styles.formDropdown}
+              triggerStyle={styles.formDropdownTrigger}
               value={gender}
             />
           </View>
@@ -3417,7 +3418,8 @@ const styles = StyleSheet.create({
   formCard: {
     alignSelf: 'stretch',
     gap: 14,
-    padding: 14,
+    paddingHorizontal: 0,
+    paddingVertical: 14,
     width: '100%',
   },
   formGrid: {
@@ -3445,12 +3447,17 @@ const styles = StyleSheet.create({
     minHeight: 38,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    width: '100%',
   },
   formTextarea: {
     minHeight: 92,
     textAlignVertical: 'top',
   },
   formDropdown: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+  formDropdownTrigger: {
     alignSelf: 'stretch',
     width: '100%',
   },
