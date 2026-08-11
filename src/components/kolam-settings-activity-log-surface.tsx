@@ -400,15 +400,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   statusMuted: {
-    color: V.colors.muted,
-    fontWeight: '700',
+    color: V.colors.fg,
+    fontWeight: '800',
   },
   statusSuccess: {
-    color: '#047857',
-    fontWeight: '800',
+    color: '#065f46',
+    fontWeight: '900',
   },
   statusWarning: {
-    color: '#b45309',
-    fontWeight: '800',
+    color: '#92400e',
+    fontWeight: '900',
   },
 });

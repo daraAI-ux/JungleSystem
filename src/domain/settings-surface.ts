@@ -904,7 +904,6 @@ export function getSettingsActivityLogTableColumns(): SettingsActivityLogTableCo
     Omit<SettingsActivityLogTableColumn, 'sourceComponent'>
   > = [
     { id: 'timestamp', label: 'Waktu', width: 92, isRowHeader: false },
-    { id: 'user', label: 'Pengguna', width: 112, isRowHeader: false },
     { id: 'source', label: 'Sumber', width: 84, isRowHeader: false },
     { id: 'type', label: 'Tipe', width: 68, isRowHeader: false },
     { id: 'method', label: 'Metode', width: 78, isRowHeader: false },
