@@ -4498,6 +4498,7 @@ export function KolamSettingsWebConfigSurface({
                 ]}
               >
                 <KolamCopyStack
+                  containerStyle={styles.daraPackingCopy}
                   items={[
                     {
                       id: 'packing-minutes-label',
@@ -4527,6 +4528,7 @@ export function KolamSettingsWebConfigSurface({
                 ]}
               >
                 <KolamCopyStack
+                  containerStyle={styles.daraPackingCopy}
                   items={[
                     {
                       id: 'packing-extensions-label',
@@ -10075,11 +10077,17 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   daraPackingFieldBox: {
-    gap: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  daraPackingCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   daraPackingInput: {
-    alignSelf: 'stretch',
-    width: '100%',
+    width: 88,
   },
   notificationSettingsStack: {
     gap: 14,
