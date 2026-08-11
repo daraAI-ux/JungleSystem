@@ -2301,12 +2301,13 @@ function CustomerActivityInvoiceCard({
         ),
       },
       {
-        align: 'right',
+        align: 'center',
         flex: 0.9,
         id: 'total',
         label: 'Total',
         render: sale => (
-          <Text style={styles.customerMoneyText}>
+          <Text
+            style={[styles.customerMoneyText, styles.customerMoneyTextCenter]}>
             {formatCustomerCurrency(sale.finalTotal)}
           </Text>
         ),
@@ -2317,10 +2318,13 @@ function CustomerActivityInvoiceCard({
         id: 'status',
         label: 'Status',
         render: sale => (
-          <KolamStatusBadge
-            intent={getCustomerSaleStatusIntent(sale.status)}
-            label={formatCustomerSaleStatus(sale.status)}
-          />
+          <View style={styles.customerInvoiceStatusCell}>
+            <KolamStatusBadge
+              intent={getCustomerSaleStatusIntent(sale.status)}
+              label={formatCustomerSaleStatus(sale.status)}
+              style={styles.customerInvoiceStatusBadge}
+            />
+          </View>
         ),
       },
       {
@@ -3327,6 +3331,17 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 20,
     textAlign: 'right',
+  },
+  customerMoneyTextCenter: {
+    textAlign: 'center',
+  },
+  customerInvoiceStatusCell: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+  },
+  customerInvoiceStatusBadge: {
+    alignSelf: 'center',
   },
   customerEmptyPanel: {
     alignItems: 'center',
