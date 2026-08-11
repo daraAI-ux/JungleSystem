@@ -145,14 +145,17 @@ const CUSTOMER_POINT_TRANSACTION_COLUMNS: Array<
     id: 'method',
     label: 'Metode',
     render: transaction => (
-      <KolamStatusBadge
-        intent={transaction.method === 'manual' ? 'secondary' : 'info'}
-        label={
-          transaction.method === 'manual'
-            ? 'Manual'
-            : transaction.method || 'Produk'
-        }
-      />
+      <View style={styles.customerPointTransactionMethod}>
+        <KolamStatusBadge
+          intent={transaction.method === 'manual' ? 'secondary' : 'info'}
+          label={
+            transaction.method === 'manual'
+              ? 'Manual'
+              : transaction.method || 'Produk'
+          }
+          style={styles.customerPointTransactionMethodBadge}
+        />
+      </View>
     ),
   },
   {
@@ -3221,6 +3224,14 @@ const styles = StyleSheet.create({
   customerPointTransactionCopy: {
     gap: 2,
     minWidth: 0,
+  },
+  customerPointTransactionMethod: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+  },
+  customerPointTransactionMethodBadge: {
+    alignSelf: 'center',
   },
   customerPointTransactionPoints: {
     color: V.colors.fg,
