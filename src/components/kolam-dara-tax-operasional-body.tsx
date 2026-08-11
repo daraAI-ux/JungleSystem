@@ -141,69 +141,117 @@ export function KolamDaraTaxOperasionalBody({
         <Text style={styles.meta}>Memuat data operasional…</Text>
       ) : (
         <>
-          {allocation ? (
-            <View style={styles.card}>
-              <View style={styles.cardHead}>
-                <Text style={styles.sectionTitle}>
-                  Alokasi PPN per sumber penjualan
-                </Text>
-                <KolamStatusBadge
-                  intent="secondary"
-                  label={formatDaraTaxPeriodLabel(period)}
-                />
-              </View>
-              {allocation.disclaimer ? (
-                <Text style={styles.meta}>{allocation.disclaimer}</Text>
-              ) : null}
-              {allocation.bySource.length === 0 ? (
-                <Text style={styles.meta}>
-                  Tidak ada penjualan yang memenuhi syarat di periode ini.
-                </Text>
-              ) : (
-                <View>
-                  <View style={styles.tableHead}>
-                    <Text style={[styles.th, styles.colSource]}>Sumber</Text>
-                    <Text style={[styles.th, styles.colNum]}>Pesanan</Text>
-                    <Text style={[styles.th, styles.colNum]}>DPP</Text>
-                    <Text style={[styles.th, styles.colNum]}>PPN keluaran</Text>
+          <View style={styles.topGrid}>
+            <View style={styles.mainColumn}>
+              {allocation ? (
+                <View style={styles.card}>
+                  <View style={styles.cardHead}>
+                    <Text style={styles.sectionTitle}>
+                      Alokasi PPN per sumber penjualan
+                    </Text>
+                    <KolamStatusBadge
+                      intent="secondary"
+                      label={formatDaraTaxPeriodLabel(period)}
+                    />
                   </View>
-                  {allocation.bySource.map(row => (
-                    <View
-                      key={row.sourceId || row.sourceName}
-                      style={styles.tableRow}>
-                      <View style={styles.colSource}>
-                        <Text style={styles.tdStrong}>{row.sourceName}</Text>
-                        {row.sourceType ? (
-                          <Text style={styles.metaUpper}>{row.sourceType}</Text>
-                        ) : null}
+                  {allocation.disclaimer ? (
+                    <Text style={styles.meta}>{allocation.disclaimer}</Text>
+                  ) : null}
+                  {allocation.bySource.length === 0 ? (
+                    <Text style={styles.meta}>
+                      Tidak ada penjualan yang memenuhi syarat di periode ini.
+                    </Text>
+                  ) : (
+                    <View>
+                      <View style={styles.tableHead}>
+                        <Text style={[styles.th, styles.colSource]}>Sumber</Text>
+                        <Text style={[styles.th, styles.colNum]}>Pesanan</Text>
+                        <Text style={[styles.th, styles.colNum]}>DPP</Text>
+                        <Text style={[styles.th, styles.colNum]}>
+                          PPN keluaran
+                        </Text>
                       </View>
-                      <Text style={[styles.td, styles.colNum]}>
-                        {row.orderCount}
-                      </Text>
-                      <Text style={[styles.tdMono, styles.colNum]}>
-                        {formatKolamDaraTaxIdr(row.dppIdr)}
-                      </Text>
-                      <Text style={[styles.tdMono, styles.colNum]}>
-                        {formatKolamDaraTaxIdr(row.ppnOutputIdr)}
-                      </Text>
+                      {allocation.bySource.map(row => (
+                        <View
+                          key={row.sourceId || row.sourceName}
+                          style={styles.tableRow}>
+                          <View style={styles.colSource}>
+                            <Text style={styles.tdStrong}>{row.sourceName}</Text>
+                            {row.sourceType ? (
+                              <Text style={styles.metaUpper}>
+                                {row.sourceType}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <Text style={[styles.td, styles.colNum]}>
+                            {row.orderCount}
+                          </Text>
+                          <Text style={[styles.tdMono, styles.colNum]}>
+                            {formatKolamDaraTaxIdr(row.dppIdr)}
+                          </Text>
+                          <Text style={[styles.tdMono, styles.colNum]}>
+                            {formatKolamDaraTaxIdr(row.ppnOutputIdr)}
+                          </Text>
+                        </View>
+                      ))}
+                      <View style={[styles.tableRow, styles.totalRow]}>
+                        <Text style={[styles.tdStrong, styles.colSource]}>
+                          Total
+                        </Text>
+                        <Text style={[styles.tdStrong, styles.colNum]}>
+                          {allocation.totals.orderCount}
+                        </Text>
+                        <Text style={[styles.tdMono, styles.colNum]}>
+                          {formatKolamDaraTaxIdr(allocation.totals.dppIdr)}
+                        </Text>
+                        <Text style={[styles.tdMono, styles.colNum]}>
+                          {formatKolamDaraTaxIdr(allocation.totals.ppnOutputIdr)}
+                        </Text>
+                      </View>
                     </View>
-                  ))}
-                  <View style={[styles.tableRow, styles.totalRow]}>
-                    <Text style={[styles.tdStrong, styles.colSource]}>Total</Text>
-                    <Text style={[styles.tdStrong, styles.colNum]}>
-                      {allocation.totals.orderCount}
-                    </Text>
-                    <Text style={[styles.tdMono, styles.colNum]}>
-                      {formatKolamDaraTaxIdr(allocation.totals.dppIdr)}
-                    </Text>
-                    <Text style={[styles.tdMono, styles.colNum]}>
-                      {formatKolamDaraTaxIdr(allocation.totals.ppnOutputIdr)}
-                    </Text>
-                  </View>
+                  )}
                 </View>
-              )}
+              ) : null}
             </View>
-          ) : null}
+            <View style={styles.sideColumn}>
+              <View style={styles.sptCard}>
+                <View style={styles.cardHead}>
+                  <Text style={styles.sectionTitle}>Pra-isi SPT Masa PPN</Text>
+                  <KolamStatusBadge
+                    intent="secondary"
+                    label={formatDaraTaxPeriodLabel(period)}
+                  />
+                </View>
+                <Text style={styles.meta}>
+                  Referensi form 1111 — unduh JSON untuk tinjauan dan input
+                  manual Coretax.
+                </Text>
+                {!sptPreview ? (
+                  <Text style={styles.meta}>Data SPT belum dimuat.</Text>
+                ) : (
+                  <>
+                    <Text style={styles.td}>
+                      {`Wajib pajak: ${
+                        sptPreview.taxpayer.legalName || '—'
+                      }`}
+                      {sptPreview.taxpayer.npwp
+                        ? ` · NPWP ${sptPreview.taxpayer.npwp}`
+                        : ' · NPWP belum diisi (Pengaturan → Finansial)'}
+                    </Text>
+                    <KolamButton
+                      intent="secondary"
+                      label={`Unduh JSON pra-isi SPT (${sptPreview.period})`}
+                      onPress={() => {
+                        void copySpt();
+                      }}
+                      size="sm"
+                      style={styles.sptButton}
+                    />
+                  </>
+                )}
+              </View>
+            </View>
+          </View>
 
           {journal ? (
             <View style={styles.card}>
@@ -275,41 +323,6 @@ export function KolamDaraTaxOperasionalBody({
               )}
             </View>
           ) : null}
-
-          <View style={styles.sptCard}>
-            <View style={styles.cardHead}>
-              <Text style={styles.sectionTitle}>Pra-isi SPT Masa PPN</Text>
-              <KolamStatusBadge
-                intent="secondary"
-                label={formatDaraTaxPeriodLabel(period)}
-              />
-            </View>
-            <Text style={styles.meta}>
-              Referensi form 1111 — unduh JSON untuk tinjauan dan input manual
-              Coretax.
-            </Text>
-            {!sptPreview ? (
-              <Text style={styles.meta}>Data SPT belum dimuat.</Text>
-            ) : (
-              <>
-                <Text style={styles.td}>
-                  {`Wajib pajak: ${sptPreview.taxpayer.legalName || '—'}`}
-                  {sptPreview.taxpayer.npwp
-                    ? ` · NPWP ${sptPreview.taxpayer.npwp}`
-                    : ' · NPWP belum diisi (Pengaturan → Finansial)'}
-                </Text>
-                <KolamButton
-                  intent="secondary"
-                  label={`Unduh JSON pra-isi SPT (${sptPreview.period})`}
-                  onPress={() => {
-                    void copySpt();
-                  }}
-                  size="sm"
-                  style={styles.sptButton}
-                />
-              </>
-            )}
-          </View>
 
           <View style={styles.card}>
             <View style={styles.cardHead}>
@@ -474,6 +487,20 @@ export function KolamDaraTaxOperasionalBody({
 const styles = StyleSheet.create({
   root: {
     gap: 12,
+  },
+  topGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  mainColumn: {
+    flex: 3,
+    minWidth: 520,
+  },
+  sideColumn: {
+    flex: 1,
+    minWidth: 260,
   },
   meta: {
     color: V.colors.mutedFg,
