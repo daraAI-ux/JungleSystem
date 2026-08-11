@@ -821,13 +821,12 @@ function KolamCustomerDetailSurface({
       setPhotoSaving(false);
     }
   };
-  const handleChangeTaxProfile = React.useCallback(
-    (patch: Partial<KolamTaxPartyProfileFormState>) => {
-      setTaxProfile(current => ({...current, ...patch}));
-    },
-    [],
-  );
-  const handleSaveTaxProfile = React.useCallback(async () => {
+  const handleChangeTaxProfile = (
+    patch: Partial<KolamTaxPartyProfileFormState>,
+  ) => {
+    setTaxProfile(current => ({...current, ...patch}));
+  };
+  const handleSaveTaxProfile = async () => {
     if (!customer || taxProfileSaving) {
       return;
     }
@@ -868,8 +867,8 @@ function KolamCustomerDetailSurface({
     } finally {
       setTaxProfileSaving(false);
     }
-  }, [customer, taxProfile, taxProfileSaving]);
-  const handleAttachFreyer = React.useCallback(async () => {
+  };
+  const handleAttachFreyer = async () => {
     if (!customer || !selectedFreyerId || freyerSaving) {
       return;
     }
@@ -889,104 +888,96 @@ function KolamCustomerDetailSurface({
     } finally {
       setFreyerSaving(false);
     }
-  }, [customer, freyerSaving, reloadFreyerDevices, selectedFreyerId]);
-  const handleDetachFreyer = React.useCallback(
-    async (freyerId: string) => {
-      if (!customer || freyerSaving) {
-        return;
-      }
+  };
+  const handleDetachFreyer = async (freyerId: string) => {
+    if (!customer || freyerSaving) {
+      return;
+    }
 
-      setFreyerSaving(true);
-      setError('');
-      try {
-        await detachKolamFreyerFromCustomer(customer.id, freyerId);
-        await reloadFreyerDevices();
-      } catch (errorResult) {
-        setError(
-          errorResult instanceof Error
-            ? errorResult.message
-            : 'Gagal melepas Freyer.',
-        );
-      } finally {
-        setFreyerSaving(false);
-      }
-    },
-    [customer, freyerSaving, reloadFreyerDevices],
-  );
-  const handleDownloadProjectInvoice = React.useCallback(
-    async (project: KolamCustomerProjectActivity) => {
-      if (downloadingInvoice) {
-        return;
-      }
+    setFreyerSaving(true);
+    setError('');
+    try {
+      await detachKolamFreyerFromCustomer(customer.id, freyerId);
+      await reloadFreyerDevices();
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal melepas Freyer.',
+      );
+    } finally {
+      setFreyerSaving(false);
+    }
+  };
+  const handleDownloadProjectInvoice = async (
+    project: KolamCustomerProjectActivity,
+  ) => {
+    if (downloadingInvoice) {
+      return;
+    }
 
-      setDownloadingInvoice(`project-${project.id}`);
-      setError('');
-      try {
-        await downloadKolamProyekInvoice(
-          project.id,
-          project.quotationNumber || project.id,
-        );
-      } catch (errorResult) {
-        setError(
-          errorResult instanceof Error
-            ? errorResult.message
-            : 'Gagal mengunduh invoice proyek.',
-        );
-      } finally {
-        setDownloadingInvoice('');
-      }
-    },
-    [downloadingInvoice],
-  );
-  const handleDownloadSubscriptionInvoice = React.useCallback(
-    async (subscription: KolamCustomerSubscriptionActivity) => {
-      if (downloadingInvoice) {
-        return;
-      }
+    setDownloadingInvoice(`project-${project.id}`);
+    setError('');
+    try {
+      await downloadKolamProyekInvoice(
+        project.id,
+        project.quotationNumber || project.id,
+      );
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal mengunduh invoice proyek.',
+      );
+    } finally {
+      setDownloadingInvoice('');
+    }
+  };
+  const handleDownloadSubscriptionInvoice = async (
+    subscription: KolamCustomerSubscriptionActivity,
+  ) => {
+    if (downloadingInvoice) {
+      return;
+    }
 
-      setDownloadingInvoice(`subscription-${subscription.id}`);
-      setError('');
-      try {
-        await downloadKolamLayananSubscriptionInvoice({
-          id: subscription.id,
-          saleId: subscription.saleId,
-          saleInvoiceCode: subscription.invoiceCode,
-          subscriptionNumber: subscription.subscriptionNumber,
-        });
-      } catch (errorResult) {
-        setError(
-          errorResult instanceof Error
-            ? errorResult.message
-            : 'Gagal mengunduh invoice layanan.',
-        );
-      } finally {
-        setDownloadingInvoice('');
-      }
-    },
-    [downloadingInvoice],
-  );
-  const handleDownloadSaleInvoice = React.useCallback(
-    async (sale: KolamCustomerSaleActivity) => {
-      if (downloadingInvoice) {
-        return;
-      }
+    setDownloadingInvoice(`subscription-${subscription.id}`);
+    setError('');
+    try {
+      await downloadKolamLayananSubscriptionInvoice({
+        id: subscription.id,
+        saleId: subscription.saleId,
+        saleInvoiceCode: subscription.invoiceCode,
+        subscriptionNumber: subscription.subscriptionNumber,
+      });
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal mengunduh invoice layanan.',
+      );
+    } finally {
+      setDownloadingInvoice('');
+    }
+  };
+  const handleDownloadSaleInvoice = async (sale: KolamCustomerSaleActivity) => {
+    if (downloadingInvoice) {
+      return;
+    }
 
-      setDownloadingInvoice(`sale-${sale.id}`);
-      setError('');
-      try {
-        await downloadKolamSaleInvoice(sale.id, sale.invoiceCode || sale.id);
-      } catch (errorResult) {
-        setError(
-          errorResult instanceof Error
-            ? errorResult.message
-            : 'Gagal mengunduh invoice.',
-        );
-      } finally {
-        setDownloadingInvoice('');
-      }
-    },
-    [downloadingInvoice],
-  );
+    setDownloadingInvoice(`sale-${sale.id}`);
+    setError('');
+    try {
+      await downloadKolamSaleInvoice(sale.id, sale.invoiceCode || sale.id);
+    } catch (errorResult) {
+      setError(
+        errorResult instanceof Error
+          ? errorResult.message
+          : 'Gagal mengunduh invoice.',
+      );
+    } finally {
+      setDownloadingInvoice('');
+    }
+  };
 
   return (
     <View style={styles.detailSurface}>
