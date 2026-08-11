@@ -1,6 +1,9 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import {useKolamAuthContext} from '../context/kolam-app-contexts';
+import {
+  useKolamAuthContext,
+  useKolamDataContext,
+} from '../context/kolam-app-contexts';
 import {
   getKolamCustomerLocationText,
   type KolamCustomer,
@@ -506,6 +509,7 @@ function KolamCustomerDetailSurface({
   onRouteChange?: (route: string) => void;
 }) {
   const {authUser} = useKolamAuthContext();
+  const {setDataset} = useKolamDataContext();
   const [customer, setCustomer] = React.useState<KolamCustomer | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -565,6 +569,46 @@ function KolamCustomerDetailSurface({
       .then(nextCustomer => {
         if (active) {
           setCustomer(nextCustomer);
+          setDataset(currentDataset => {
+            const nextListCustomer = {
+              id: nextCustomer.id,
+              name: nextCustomer.name,
+              phone: nextCustomer.phone,
+              email: nextCustomer.email,
+              address: nextCustomer.address,
+            };
+            const existingIndex = currentDataset.customers.findIndex(
+              item => item.id === nextCustomer.id,
+            );
+
+            if (existingIndex === -1) {
+              return {
+                ...currentDataset,
+                customers: [...currentDataset.customers, nextListCustomer],
+              };
+            }
+
+            const currentListCustomer =
+              currentDataset.customers[existingIndex];
+
+            if (
+              currentListCustomer.name === nextListCustomer.name &&
+              currentListCustomer.phone === nextListCustomer.phone &&
+              currentListCustomer.email === nextListCustomer.email &&
+              currentListCustomer.address === nextListCustomer.address
+            ) {
+              return currentDataset;
+            }
+
+            return {
+              ...currentDataset,
+              customers: currentDataset.customers.map(item =>
+                item.id === nextCustomer.id
+                  ? {...item, ...nextListCustomer}
+                  : item,
+              ),
+            };
+          });
         }
       })
       .catch(errorResult => {
@@ -586,7 +630,7 @@ function KolamCustomerDetailSurface({
     return () => {
       active = false;
     };
-  }, [customerId]);
+  }, [customerId, setDataset]);
 
   React.useEffect(() => {
     let active = true;
