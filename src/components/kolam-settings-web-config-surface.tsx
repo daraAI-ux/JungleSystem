@@ -25,6 +25,7 @@ import { KolamChoiceSegment } from './kolam-choice-segment';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
@@ -4490,30 +4491,62 @@ export function KolamSettingsWebConfigSurface({
               />
             ))}
             <View style={styles.notificationToggleGrid}>
-              <View style={styles.notificationToggleBox}>
-                <KolamTextFieldRow
-                  variant="settingsForm"
-                  fieldWidth={settingsFieldWidth}
-                  label="Menit packing"
-                  description="Validasi BE: 5 sampai 240 menit."
-                  value={draft.daraFulfillmentPackingMinutes}
+              <View
+                style={[
+                  styles.notificationToggleBox,
+                  styles.daraPackingFieldBox,
+                ]}
+              >
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'packing-minutes-label',
+                      text: 'Menit packing',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: 'packing-minutes-meta',
+                      text: 'Validasi BE: 5 sampai 240 menit.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
+                <KolamFormTextField
                   onChangeText={value =>
                     setDraftField('daraFulfillmentPackingMinutes', value)
                   }
                   placeholder="30"
+                  style={styles.daraPackingInput}
+                  value={draft.daraFulfillmentPackingMinutes}
                 />
               </View>
-              <View style={styles.notificationToggleBox}>
-                <KolamTextFieldRow
-                  variant="settingsForm"
-                  fieldWidth={settingsFieldWidth}
-                  label="Maksimal perpanjangan packing"
-                  description="Validasi BE: 0 sampai 5 kali."
-                  value={draft.daraFulfillmentPackingMaxExtensions}
+              <View
+                style={[
+                  styles.notificationToggleBox,
+                  styles.daraPackingFieldBox,
+                ]}
+              >
+                <KolamCopyStack
+                  items={[
+                    {
+                      id: 'packing-extensions-label',
+                      text: 'Maksimal perpanjangan packing',
+                      style: styles.marketplaceOverviewLabel,
+                    },
+                    {
+                      id: 'packing-extensions-meta',
+                      text: 'Validasi BE: 0 sampai 5 kali.',
+                      style: styles.marketplaceOverviewMeta,
+                    },
+                  ]}
+                />
+                <KolamFormTextField
                   onChangeText={value =>
                     setDraftField('daraFulfillmentPackingMaxExtensions', value)
                   }
                   placeholder="1"
+                  style={styles.daraPackingInput}
+                  value={draft.daraFulfillmentPackingMaxExtensions}
                 />
               </View>
             </View>
@@ -10040,6 +10073,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     padding: 12,
+  },
+  daraPackingFieldBox: {
+    gap: 10,
+  },
+  daraPackingInput: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   notificationSettingsStack: {
     gap: 14,
