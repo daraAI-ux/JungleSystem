@@ -593,8 +593,9 @@ describe('KolamPusatAiRingkasanSurface', () => {
 
     const text = renderText(renderer!).join(' ');
     expect(text).toContain('Owner Copilot');
-    expect(text).toContain('Bisnis hari ini');
-    expect(text).toContain('Night Ops (24 jam)');
+    expect(text).toContain('Penjualan');
+    expect(text).toContain('Night Ops');
+    expect(text).toContain('Tanya di room DARA');
     expect(text).toContain('Rp 1.000.000');
     expect(text).toContain('Buka room DARA');
     expect(text).toContain('Ringkasan bisnis hari ini');

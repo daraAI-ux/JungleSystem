@@ -69,6 +69,7 @@ import {useKolamPusatAiTransaksiCopilotController} from '../hooks/use-kolam-pusa
 import {KolamButton} from './kolam-button';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamPusatAiInventoryCopilotBody} from './kolam-pusat-ai-inventory-copilot-body';
 import {KolamPusatAiPoCopilotBody} from './kolam-pusat-ai-po-copilot-body';
 import {KolamPusatAiTransaksiCopilotBody} from './kolam-pusat-ai-transaksi-copilot-body';
@@ -398,49 +399,80 @@ function OwnerCopilotDashboardContent({
         }`}
       </Text>
 
-      <View style={styles.ownerCards}>
-        <View style={styles.ownerCard}>
-          <Text style={styles.ownerCardTitle}>Bisnis hari ini</Text>
-          <Text style={styles.ownerCardLine}>
-            {`Penjualan: ${dash.health.salesFormatted} · ${dash.health.orderCount} order`}
-          </Text>
-          <Text style={styles.ownerCardLine}>
-            {`Margin kotor: ${dash.health.marginFormatted}`}
-          </Text>
-          <Text style={styles.ownerCardMuted}>
-            {`Stok rendah: ${dash.health.lowStockCount}`}
-          </Text>
-        </View>
-
-        <View style={styles.ownerCard}>
-          <Text style={styles.ownerCardTitle}>Night Ops (24 jam)</Text>
-          {!dash.nightOps.opsAuditEnabled ? (
-            <Text style={styles.ownerWarn}>{KOLAM_OWNER_COPILOT_AUDIT_OFF}</Text>
-          ) : nightTotal === 0 ? (
-            <Text style={styles.ownerCardMuted}>
-              {KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS}
-            </Text>
-          ) : (
-            <>
-              <Text style={styles.ownerCardLine}>
-                {`Olshop: ${counts.olshop_dispatch} dispatch · ${counts.olshop_defer} defer · ${counts.olshop_fail} gagal · ${counts.olshop_stock_hold} stock hold`}
-              </Text>
-              <Text style={styles.ownerCardLine}>
-                {`Webstore: ${counts.webstore_start} packing · DANA: ${counts.dana_ok} ok · ${counts.dana_fail} gagal`}
-              </Text>
-            </>
-          )}
-        </View>
-
-        <View style={[styles.ownerCard, styles.ownerCardWide]}>
-          <Text style={styles.ownerCardTitle}>Tanya di room DARA</Text>
-          {dash.teamChat.suggestedPrompts.map(prompt => (
-            <Text key={prompt} style={styles.promptChip}>
-              {`«${prompt}»`}
-            </Text>
-          ))}
-        </View>
-      </View>
+      <KolamDetailSummaryCard
+        fieldColumns={4}
+        fields={[
+          {
+            id: 'sales',
+            label: 'Penjualan',
+            value: dash.health.salesFormatted,
+          },
+          {
+            id: 'orders',
+            label: 'Order',
+            value: String(dash.health.orderCount),
+          },
+          {
+            id: 'margin',
+            label: 'Margin kotor',
+            value: dash.health.marginFormatted,
+          },
+          {
+            id: 'low-stock',
+            label: 'Stok rendah',
+            value: String(dash.health.lowStockCount),
+          },
+          {
+            id: 'night-ops',
+            label: 'Night Ops',
+            value: !dash.nightOps.opsAuditEnabled
+              ? KOLAM_OWNER_COPILOT_AUDIT_OFF
+              : nightTotal === 0
+                ? KOLAM_OWNER_COPILOT_EMPTY_NIGHT_OPS
+                : `${nightTotal} event`,
+          },
+          {
+            id: 'olshop',
+            label: 'Olshop',
+            value: [
+              counts.olshop_dispatch,
+              'dispatch',
+              counts.olshop_defer,
+              'defer',
+              counts.olshop_fail,
+              'gagal',
+              counts.olshop_stock_hold,
+              'hold',
+            ].join(' '),
+          },
+          {
+            id: 'webstore',
+            label: 'Webstore',
+            value: `${counts.webstore_start} packing`,
+          },
+          {
+            id: 'dana',
+            label: 'DANA',
+            value: [counts.dana_ok, 'ok', counts.dana_fail, 'gagal'].join(' '),
+          },
+        ]}
+        sections={[
+          {
+            id: 'team-chat-prompts',
+            title: 'Tanya di room DARA',
+            content: (
+              <View style={styles.promptList}>
+                {dash.teamChat.suggestedPrompts.map(prompt => (
+                  <Text key={prompt} style={styles.promptChip}>
+                    {String.fromCharCode(171) + prompt + String.fromCharCode(187)}
+                  </Text>
+                ))}
+              </View>
+            ),
+          },
+        ]}
+        title="Owner Copilot"
+      />
 
       {dash.nightOps.failures.length > 0 ? (
         <View style={[styles.ownerCard, styles.ownerCardDanger]}>
@@ -1181,6 +1213,11 @@ const styles = StyleSheet.create({
     color: V.colors.warning,
     fontFamily: V.fontFamily,
     fontSize: 13,
+  },
+  promptList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   promptChip: {
     backgroundColor: V.colors.bg,
