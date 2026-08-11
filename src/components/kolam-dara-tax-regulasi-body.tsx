@@ -44,6 +44,7 @@ import {
   runKolamDaraTaxSnapshotBackfill,
 } from '../services/kolam-dara-tax-api';
 import {KolamButton} from './kolam-button';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamRefreshIcon} from './kolam-refresh-icon';
 import {KolamDropdownSelect} from './kolam-dropdown-select';
@@ -415,7 +416,7 @@ export function KolamDaraTaxRegulasiBody({
           ) : null}
 
           {activeVersion ? (
-            <View style={styles.card}>
+            <View style={[styles.card, styles.activeRegulationCard]}>
               <Text style={styles.meta}>Regulasi aktif</Text>
               <Text style={styles.sectionTitle}>
                 {`${activeVersion.versionNumber} — ${activeVersion.title}`}
@@ -438,27 +439,27 @@ export function KolamDaraTaxRegulasiBody({
                 Pengaturan → Alat AI.
               </Text>
               {taxStatus ? (
-                <View style={styles.dl}>
-                  <View style={styles.dlItem}>
-                    <Text style={styles.meta}>Status proses</Text>
-                    <Text style={styles.tdStrong}>
-                      {formatWatcherRuntimeStatusLabel(
+                <KolamDetailSummaryCard
+                  fieldColumns={3}
+                  fields={[
+                    {
+                      id: 'runtime',
+                      label: 'Status proses',
+                      value: formatWatcherRuntimeStatusLabel(
                         taxStatus.watcherRuntimeStatus,
-                      )}
-                    </Text>
-                  </View>
-                  <View style={styles.dlItem}>
-                    <Text style={styles.meta}>Jadwal</Text>
-                    <Text style={styles.td}>
-                      {`${taxStatus.watcherCron || '—'} (${
+                      ),
+                    },
+                    {
+                      id: 'schedule',
+                      label: 'Jadwal',
+                      value: `${taxStatus.watcherCron || '—'} (${
                         taxStatus.watcherTimezone || '—'
-                      })`}
-                    </Text>
-                  </View>
-                  <View style={styles.dlItem}>
-                    <Text style={styles.meta}>Ringkasan</Text>
-                    <Text style={styles.td}>
-                      {`${taxStatus.monitored}/${taxStatus.total} sumber dimonitor${
+                      })`,
+                    },
+                    {
+                      id: 'summary',
+                      label: 'Ringkasan',
+                      value: `${taxStatus.monitored}/${taxStatus.total} sumber dimonitor${
                         taxStatus.withError > 0
                           ? ` · ${taxStatus.withError} bermasalah`
                           : ''
@@ -466,10 +467,12 @@ export function KolamDaraTaxRegulasiBody({
                         taxStatus.dueNow > 0
                           ? ` · ${taxStatus.dueNow} perlu cek`
                           : ''
-                      }`}
-                    </Text>
-                  </View>
-                </View>
+                      }`,
+                    },
+                  ]}
+                  style={styles.monitoringSummaryCard}
+                  title="Status pemantau"
+                />
               ) : (
                 <Text style={styles.meta}>Status pemantau belum dimuat.</Text>
               )}
@@ -542,11 +545,11 @@ export function KolamDaraTaxRegulasiBody({
                         />
                       }
                       intent="outline"
-      label={
-        watcherRunning
-          ? 'Memeriksa…'
-          : 'Jalankan pemantau sekarang'
-      }
+                      label={
+                        watcherRunning
+                          ? 'Memeriksa…'
+                          : 'Jalankan pemantau sekarang'
+                      }
                       onPress={onRunWatcher}
                       style={styles.watcherButton}
                       textStyle={styles.watcherButtonText}
@@ -1283,6 +1286,15 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 12,
   },
+  activeRegulationCard: {
+    backgroundColor: '#f5f3ff',
+    borderColor: '#ddd6fe',
+  },
+  monitoringSummaryCard: {
+    backgroundColor: V.colors.mutedSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
   listCard: {
     borderColor: V.colors.border,
     borderRadius: 8,
@@ -1303,12 +1315,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
-  },
-  dl: {
-    gap: 8,
-  },
-  dlItem: {
-    gap: 2,
   },
   tableHead: {
     borderBottomColor: V.colors.border,
