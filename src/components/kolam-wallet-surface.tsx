@@ -1113,16 +1113,12 @@ function WalletTransactionPanel({
   showCreateButton?: boolean;
   showWalletFilter: boolean;
 }) {
-  const [typeOpen, setTypeOpen] = useState(false);
-  const [sourceOpen, setSourceOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [walletOpen, setWalletOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const safePage = Math.max(1, controller.txPagination.page);
 
   const walletOptions = useMemo(
     () => [
-      { label: 'Dompet', value: '' },
+      { label: 'Semua dana', value: '' },
       ...(controller.allWallets.length > 0
         ? controller.allWallets
         : controller.wallets
@@ -1133,29 +1129,6 @@ function WalletTransactionPanel({
     ],
     [controller.allWallets, controller.wallets],
   );
-
-  const walletLabel =
-    walletOptions.find(
-      option => option.value === controller.txFilters.walletId,
-    )?.label ?? 'Dompet';
-  const typeLabel =
-    controller.txFilters.type === 'all'
-      ? 'Tipe'
-      : (KOLAM_WALLET_TX_TYPE_OPTIONS.find(
-          option => option.value === controller.txFilters.type,
-        )?.label ?? 'Tipe');
-  const sourceLabel =
-    controller.txFilters.source === 'all'
-      ? 'Sumber'
-      : (KOLAM_WALLET_TX_SOURCE_OPTIONS.find(
-          option => option.value === controller.txFilters.source,
-        )?.label ?? 'Sumber');
-  const statusLabel =
-    controller.txFilters.confirmStatus === 'all'
-      ? 'Status'
-      : (KOLAM_WALLET_CONFIRM_STATUS_OPTIONS.find(
-          option => option.value === controller.txFilters.confirmStatus,
-        )?.label ?? 'Status');
 
   const transactionColumns = React.useMemo(
     () => buildWalletTransactionColumns(controller),
@@ -1175,71 +1148,44 @@ function WalletTransactionPanel({
             style={styles.txToolbarFiltersScroll}
           >
             {showWalletFilter ? (
-              <KolamButton
-                intent={
-                  walletOpen || Boolean(controller.txFilters.walletId)
-                    ? 'primary'
-                    : 'secondary'
+              <KolamDropdownSelect
+                label="Dana"
+                onChange={value =>
+                  controller.onChangeTxFilters({ walletId: value })
                 }
-                label={walletLabel}
-                onPress={() => {
-                  setTypeOpen(false);
-                  setSourceOpen(false);
-                  setStatusOpen(false);
-                  setWalletOpen(current => !current);
-                }}
-                style={[
-                  styles.filterTrigger,
-                  controller.txFilters.walletId
-                    ? styles.walletFilterActive
-                    : null,
-                ]}
+                options={walletOptions}
+                style={styles.txDropdown}
+                triggerStyle={styles.filterTrigger}
+                value={controller.txFilters.walletId}
               />
             ) : null}
-            <KolamButton
-              intent={
-                typeOpen || controller.txFilters.type !== 'all'
-                  ? 'primary'
-                  : 'secondary'
-              }
-              label={typeLabel}
-              onPress={() => {
-                setWalletOpen(false);
-                setSourceOpen(false);
-                setStatusOpen(false);
-                setTypeOpen(current => !current);
-              }}
-              style={styles.filterTrigger}
+            <KolamDropdownSelect
+              label="Tipe"
+              onChange={value => controller.onChangeTxFilters({ type: value })}
+              options={KOLAM_WALLET_TX_TYPE_OPTIONS}
+              style={styles.txDropdown}
+              triggerStyle={styles.filterTrigger}
+              value={controller.txFilters.type}
             />
-            <KolamButton
-              intent={
-                sourceOpen || controller.txFilters.source !== 'all'
-                  ? 'primary'
-                  : 'secondary'
+            <KolamDropdownSelect
+              label="Sumber"
+              onChange={value =>
+                controller.onChangeTxFilters({ source: value })
               }
-              label={sourceLabel}
-              onPress={() => {
-                setWalletOpen(false);
-                setTypeOpen(false);
-                setStatusOpen(false);
-                setSourceOpen(current => !current);
-              }}
-              style={styles.filterTrigger}
+              options={KOLAM_WALLET_TX_SOURCE_OPTIONS}
+              style={styles.txDropdown}
+              triggerStyle={styles.filterTrigger}
+              value={controller.txFilters.source}
             />
-            <KolamButton
-              intent={
-                statusOpen || controller.txFilters.confirmStatus !== 'all'
-                  ? 'primary'
-                  : 'secondary'
+            <KolamDropdownSelect
+              label="Status"
+              onChange={value =>
+                controller.onChangeTxFilters({ confirmStatus: value })
               }
-              label={statusLabel}
-              onPress={() => {
-                setWalletOpen(false);
-                setTypeOpen(false);
-                setSourceOpen(false);
-                setStatusOpen(current => !current);
-              }}
-              style={styles.filterTrigger}
+              options={KOLAM_WALLET_CONFIRM_STATUS_OPTIONS}
+              style={styles.txDropdown}
+              triggerStyle={styles.filterTrigger}
+              value={controller.txFilters.confirmStatus}
             />
             <KolamToolbarDateFilter
               accessibilityLabel="Tanggal mulai"
@@ -1274,37 +1220,6 @@ function WalletTransactionPanel({
             ]}
           />
         </View>
-
-        {walletOpen ? (
-          <FilterPanel
-            onClose={() => setWalletOpen(false)}
-            onSelect={value => controller.onChangeTxFilters({ walletId: value })}
-            options={walletOptions}
-          />
-        ) : null}
-        {typeOpen ? (
-          <FilterPanel
-            onClose={() => setTypeOpen(false)}
-            onSelect={value => controller.onChangeTxFilters({ type: value })}
-            options={KOLAM_WALLET_TX_TYPE_OPTIONS}
-          />
-        ) : null}
-        {sourceOpen ? (
-          <FilterPanel
-            onClose={() => setSourceOpen(false)}
-            onSelect={value => controller.onChangeTxFilters({ source: value })}
-            options={KOLAM_WALLET_TX_SOURCE_OPTIONS}
-          />
-        ) : null}
-        {statusOpen ? (
-          <FilterPanel
-            onClose={() => setStatusOpen(false)}
-            onSelect={value =>
-              controller.onChangeTxFilters({ confirmStatus: value })
-            }
-            options={KOLAM_WALLET_CONFIRM_STATUS_OPTIONS}
-          />
-        ) : null}
       </View>
 
       <KolamListTableComposition
@@ -1524,39 +1439,6 @@ function WalletProofThumbs({
           <Text style={styles.metaText}>+{proofs.length - 3}</Text>
         ) : null}
       </View>
-    </View>
-  );
-}
-
-function FilterPanel<T extends string>({
-  onClose,
-  onSelect,
-  options,
-}: {
-  onClose: () => void;
-  onSelect: (value: T) => void;
-  options: Array<{ label: string; value: T }>;
-}) {
-  return (
-    <View style={styles.filterPanel}>
-      {options.map(option => (
-        <Pressable
-          key={option.value}
-          onPress={() => {
-            onSelect(option.value);
-            onClose();
-          }}
-          style={styles.filterOption}
-        >
-          <Text style={styles.filterOptionText}>{option.label}</Text>
-        </Pressable>
-      ))}
-      <KolamButton
-        intent="secondary"
-        label="Tutup"
-        onPress={onClose}
-        style={styles.filterClose}
-      />
     </View>
   );
 }
@@ -2564,8 +2446,9 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingRight: 4,
   },
-  walletFilterActive: {
-    maxWidth: 112,
+  txDropdown: {
+    flexShrink: 0,
+    minWidth: 132,
   },
   filterPanel: {
     backgroundColor: V.colors.bg,
