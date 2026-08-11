@@ -92,6 +92,7 @@ import {KolamHoverTooltip} from './kolam-hover-tooltip';
 import {KolamIconButton} from './kolam-icon-button';
 import {KolamMappedList} from './kolam-mapped-list';
 import {openKolamMediaPreview} from './kolam-media-preview-dialog';
+import {KolamModalDialog} from './kolam-modal-dialog';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamNotesField} from './kolam-notes-field';
 import {KolamPressable} from './kolam-pressable';
@@ -3181,93 +3182,92 @@ function KolamTeamChatCreateRoomPanel({
   }
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onToggle}>
-      <View style={styles.chatLabelsDialogHost}>
-        <KolamModalBackdrop onPress={onToggle} />
-        <View
-          accessibilityLabel="Popup room baru team chat"
-          style={[styles.chatLabelsDialog, styles.createRoomDialog]}>
-          <View style={styles.chatLabelsDialogHeader}>
-            <Text style={styles.chatLabelsDialogTitle}>Room baru</Text>
+    <KolamModalDialog
+      accessibilityLabel="Popup room baru team chat"
+      maxHeight="86%"
+      maxWidth="92%"
+      onClose={onToggle}
+      title="Room baru"
+      visible={open}
+      width={420}
+      footer={
+        <>
+          <KolamPressable
+            accessibilityLabel="Tutup popup room baru"
+            disabled={busy}
+            onPress={onToggle}
+            style={styles.chatLabelsCloseButton}>
+            <Text style={styles.chatLabelsCloseText}>Batal</Text>
+          </KolamPressable>
+          <KolamPressable
+            accessibilityLabel="Simpan room team chat"
+            disabled={busy || !draft.name.trim()}
+            onPress={() => void onSubmit()}
+            style={[
+              styles.createRoomSubmit,
+              styles.createRoomFooterSubmit,
+              (busy || !draft.name.trim()) && styles.attachButtonDisabled,
+            ]}>
+            <Text style={styles.createRoomSubmitText}>
+              {busy ? 'Membuat...' : 'Simpan'}
+            </Text>
+          </KolamPressable>
+        </>
+      }>
+      {message ? <Text style={styles.createRoomMessage}>{message}</Text> : null}
+      {errorMessage ? (
+        <Text style={styles.createRoomError}>{errorMessage}</Text>
+      ) : null}
+
+      <View style={styles.createRoomForm}>
+        <TextInput
+          accessibilityLabel="Nama room team chat"
+          editable={!busy}
+          onChangeText={name => onChange(current => ({...current, name}))}
+          placeholder="Nama"
+          placeholderTextColor={V.colors.mutedFg}
+          style={styles.createRoomInput}
+          value={draft.name}
+        />
+        <View style={styles.createRoomCategoryRow}>
+          {(['meeting', 'project'] as const).map(category => (
             <KolamPressable
-              accessibilityLabel="Tutup popup room baru"
+              key={category}
+              accessibilityLabel={`Pilih kategori room ${category}`}
+              accessibilityState={{selected: draft.category === category}}
               disabled={busy}
-              onPress={onToggle}
-              style={styles.chatLabelsCloseButton}>
-              <Text style={styles.chatLabelsCloseText}>Batal</Text>
-            </KolamPressable>
-          </View>
-
-          {message ? (
-            <Text style={styles.createRoomMessage}>{message}</Text>
-          ) : null}
-          {errorMessage ? (
-            <Text style={styles.createRoomError}>{errorMessage}</Text>
-          ) : null}
-
-          <View style={styles.createRoomForm}>
-            <TextInput
-              accessibilityLabel="Nama room team chat"
-              editable={!busy}
-              onChangeText={name => onChange(current => ({...current, name}))}
-              placeholder="Nama"
-              placeholderTextColor={V.colors.mutedFg}
-              style={styles.createRoomInput}
-              value={draft.name}
-            />
-            <View style={styles.createRoomCategoryRow}>
-              {(['meeting', 'project'] as const).map(category => (
-                <KolamPressable
-                  key={category}
-                  accessibilityLabel={`Pilih kategori room ${category}`}
-                  accessibilityState={{selected: draft.category === category}}
-                  disabled={busy}
-                  onPress={() => onChange(current => ({...current, category}))}
-                  style={[
-                    styles.createRoomCategoryButton,
-                    draft.category === category &&
-                      styles.createRoomCategoryButtonActive,
-                    busy && styles.attachButtonDisabled,
-                  ]}>
-                  <Text
-                    style={[
-                      styles.createRoomCategoryText,
-                      draft.category === category &&
-                        styles.createRoomCategoryTextActive,
-                    ]}>
-                    {category === 'meeting' ? 'Meeting' : 'Project'}
-                  </Text>
-                </KolamPressable>
-              ))}
-            </View>
-            <TextInput
-              accessibilityLabel="Deskripsi room team chat"
-              editable={!busy}
-              multiline
-              onChangeText={description =>
-                onChange(current => ({...current, description}))
-              }
-              placeholder="Deskripsi"
-              placeholderTextColor={V.colors.mutedFg}
-              style={[styles.createRoomInput, styles.createRoomDescriptionInput]}
-              value={draft.description}
-            />
-            <KolamPressable
-              accessibilityLabel="Simpan room team chat"
-              disabled={busy || !draft.name.trim()}
-              onPress={() => void onSubmit()}
+              onPress={() => onChange(current => ({...current, category}))}
               style={[
-                styles.createRoomSubmit,
-                (busy || !draft.name.trim()) && styles.attachButtonDisabled,
+                styles.createRoomCategoryButton,
+                draft.category === category &&
+                  styles.createRoomCategoryButtonActive,
+                busy && styles.attachButtonDisabled,
               ]}>
-              <Text style={styles.createRoomSubmitText}>
-                {busy ? 'Membuat...' : 'Simpan'}
+              <Text
+                style={[
+                  styles.createRoomCategoryText,
+                  draft.category === category &&
+                    styles.createRoomCategoryTextActive,
+                ]}>
+                {category === 'meeting' ? 'Meeting' : 'Project'}
               </Text>
             </KolamPressable>
-          </View>
+          ))}
         </View>
+        <TextInput
+          accessibilityLabel="Deskripsi room team chat"
+          editable={!busy}
+          multiline
+          onChangeText={description =>
+            onChange(current => ({...current, description}))
+          }
+          placeholder="Deskripsi"
+          placeholderTextColor={V.colors.mutedFg}
+          style={[styles.createRoomInput, styles.createRoomDescriptionInput]}
+          value={draft.description}
+        />
       </View>
-    </Modal>
+    </KolamModalDialog>
   );
 }
 
@@ -8274,9 +8274,6 @@ const styles = StyleSheet.create({
     zIndex: 3,
     elevation: 30,
   },
-  createRoomDialog: {
-    width: 380,
-  },
   chatLabelsDialogHeader: {
     minHeight: 36,
     flexDirection: 'row',
@@ -9065,6 +9062,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: V.colors.primary,
+  },
+  createRoomFooterSubmit: {
+    minWidth: 96,
+    paddingHorizontal: 14,
   },
   createRoomSubmitText: {
     color: V.colors.primaryFg,
