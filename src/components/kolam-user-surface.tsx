@@ -406,18 +406,20 @@ function KolamUserCreateSurface({
 
   return (
     <View style={styles.detailSurface}>
-      <View style={styles.detailActionRow}>
+      <UserDetailActionToolbar>
         <KolamDaftarButton
           disabled={saving}
           onPress={() => onRouteChange?.('/list-of-users')}
+          style={styles.toolbarButton}
         />
         <KolamButton
           disabled={saving}
           intent="primary"
           label={saving ? 'Membuat...' : 'Buat Pengguna'}
           onPress={handleSubmit}
+          style={styles.toolbarButton}
         />
-      </View>
+      </UserDetailActionToolbar>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.detailTitleBlock}>
@@ -1603,17 +1605,19 @@ function KolamUserDetailSurface({
 
   return (
     <View style={styles.detailSurface}>
-      <View style={styles.detailActionRow}>
+      <UserDetailActionToolbar>
         <KolamDaftarButton
           onPress={() => onRouteChange?.('/list-of-users')}
+          style={styles.toolbarButton}
         />
         <KolamEditButton
           intent="primary"
           onPress={() =>
             onRouteChange?.(`/list-of-users/users/${encodedUserId}/edit`)
           }
+          style={styles.toolbarButton}
         />
-      </View>
+      </UserDetailActionToolbar>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <KolamDetailSummaryCard
@@ -2606,10 +2610,11 @@ function KolamUserEditSurface({
 
   return (
     <View style={styles.detailSurface}>
-      <View style={styles.detailActionRow}>
+      <UserDetailActionToolbar>
         <KolamDaftarButton
           disabled={saving}
           onPress={() => onRouteChange?.('/list-of-users')}
+          style={styles.toolbarButton}
         />
         <KolamButton
           disabled={saving}
@@ -2617,13 +2622,15 @@ function KolamUserEditSurface({
           onPress={() =>
             onRouteChange?.(`/list-of-users/users/${encodedUserId}`)
           }
+          style={styles.toolbarButton}
         />
         <KolamSaveButton
           disabled={formDisabled}
           label={saving ? 'Menyimpan...' : 'Simpan'}
           onPress={handleSubmit}
+          style={styles.toolbarButton}
         />
-      </View>
+      </UserDetailActionToolbar>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
         <View style={styles.detailTitleBlock}>
@@ -3246,6 +3253,17 @@ function DetailRow({
       <Text numberOfLines={numberOfLines} style={styles.detailValue}>
         {value || '-'}
       </Text>
+    </View>
+  );
+}
+
+function UserDetailActionToolbar({children}: {children: React.ReactNode}) {
+  return (
+    <View style={styles.toolbarWrap}>
+      <View style={styles.toolbarShell}>
+        <View style={styles.detailToolbarSpacer} />
+        <View style={styles.actionRow}>{children}</View>
+      </View>
     </View>
   );
 }
@@ -4218,11 +4236,9 @@ const styles = StyleSheet.create({
     gap: 12,
     width: '100%',
   },
-  detailActionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
+  detailToolbarSpacer: {
+    flex: 1,
+    minWidth: 120,
   },
   detailCard: {
     gap: 18,
