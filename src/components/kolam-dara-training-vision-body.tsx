@@ -637,7 +637,7 @@ export function KolamDaraTrainingVisionBody({
         <>
           {stats ? (
             <KolamDetailSummaryCard
-              fieldColumns={3}
+              fieldColumns={4}
               fields={[
                 {
                   id: 'closed-world',

@@ -27,7 +27,7 @@ export type KolamDetailSummaryCardProps = {
   /** Label above `body` when body is present. */
   bodyTitle?: string;
   description?: string;
-  fieldColumns?: 2 | 3;
+  fieldColumns?: 2 | 3 | 4;
   fields: KolamDetailSummaryField[];
   /** Optional visual slot inside the card, before the field grid. */
   leading?: React.ReactNode;
@@ -78,6 +78,7 @@ export function KolamDetailSummaryCard({
             style={[
               styles.fieldCell,
               fieldColumns === 3 && styles.fieldCellThreeColumns,
+              fieldColumns === 4 && styles.fieldCellFourColumns,
             ]}
           >
             <Text style={styles.fieldLabel}>{field.label}</Text>
@@ -191,6 +192,12 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     flexShrink: 1,
     minWidth: 96,
+  },
+  fieldCellFourColumns: {
+    flexBasis: '23%',
+    flexGrow: 0,
+    flexShrink: 1,
+    minWidth: 84,
   },
   fieldLabel: {
     color: V.colors.mutedFg,
