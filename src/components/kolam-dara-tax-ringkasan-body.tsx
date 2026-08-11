@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {SvgXml} from 'react-native-svg';
+import {KOLAM_NETTO_ICON_SVG} from '../assets/icons/netto-icon-svg';
 import {KOLAM_PPN_ICON_SVG} from '../assets/icons/ppn-icon-svg';
 import {KOLAM_TAX_ICON_SVG} from '../assets/icons/tax-icon-svg';
 import {
@@ -70,6 +71,7 @@ export function KolamDaraTaxRingkasanBody({
             value={formatKolamDaraTaxIdr(overview.sales.ppnOutput.ppn)}
           />
           <KpiCard
+            icon={KOLAM_NETTO_ICON_SVG}
             label="PPN neto (est.)"
             meta={`Masukan ${formatKolamDaraTaxIdr(
               overview.purchases.ppnInput.ppn,
