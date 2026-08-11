@@ -156,6 +156,21 @@ function PipelineField({
   );
 }
 
+function PipelineSummaryFieldValue({
+  hint,
+  value,
+}: {
+  hint?: string;
+  value: string | number;
+}) {
+  return (
+    <View style={styles.pipelineFieldRight}>
+      <Text style={styles.pipelineFieldValue}>{value}</Text>
+      {hint ? <Text style={styles.pipelineFieldHint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
 function EvalMetricBox({
   hint,
   metric,
@@ -621,91 +636,123 @@ export function KolamDaraTrainingVisionBody({
         <>
           {stats ? (
             <KolamDetailSummaryCard
-              body={
-                <View style={styles.pipelineColumns}>
-                <View style={styles.pipelineColumn}>
-                  <PipelineField
-                    label="Closed-world"
-                    value={
-                      stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif'
-                    }
-                  />
-                  <PipelineField
-                    hint={stats.embedModelId.split('/').pop()}
-                    label="Embed aktif"
-                    value={stats.embedFamily || 'siglip'}
-                  />
-                  <PipelineField
-                    label="Threshold min"
-                    value={stats.embedMinScore ?? '—'}
-                  />
-                  <PipelineField
-                    label="Indeks model OK"
-                    value={
-                      stats.embedIndexCurrentModel ?? stats.clipIndexClipCount
-                    }
-                  />
-                  <PipelineField
-                    hint={
-                      (stats.embedIndexStale ?? 0) > 0 ?
-                        'Jalankan rebuild dual'
-                      : undefined
-                    }
-                    label="Perlu rebuild"
-                    value={stats.embedIndexStale ?? 0}
-                  />
-                  <PipelineField
-                    hint={
-                      stats.detectCropBackend === 'sam' ?
-                        stats.detectCropModel.split('/').pop() || 'mobile_sam'
-                      : stats.detectCropModel.split('/').pop() || 'yolov8n'
-                    }
-                    label="Detect/crop"
-                    value={stats.detectCropMode || 'auto'}
-                  />
-                  <PipelineField
-                    hint={stats.ocrEngine || undefined}
-                    label="OCR unified"
-                    value={
-                      stats.ocrUnifiedEnabled !== false ? 'Aktif' : 'Nonaktif'
-                    }
-                  />
-                </View>
-                <View style={styles.pipelineColumn}>
-                  <PipelineField
-                    label="Foto training species"
-                    value={stats.speciesTrainingPhotos ?? stats.trainingPhotos}
-                  />
-                  <PipelineField
-                    label="Foto training produk"
-                    value={stats.productTrainingPhotos ?? 0}
-                  />
-                  <PipelineField
-                    label="YOLO species"
-                    value={stats.yoloModelReady ? 'Aktif' : 'Belum'}
-                  />
-                  <PipelineField
-                    hint={
-                      stats.yoloProductClassCount ?
-                        `${stats.yoloProductClassCount} SKU`
-                      : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
-                    }
-                    label="YOLO produk"
-                    value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
-                  />
-                  <PipelineField
-                    hint={`Species ${stats.feedbackSpeciesTotal ?? '—'} · Produk ${stats.feedbackProductTotal ?? '—'}`}
-                    label="Koreksi inbox"
-                    value={stats.feedbackTotal ?? 0}
-                  />
-                  <PipelineField
-                    label="Antrian feedback"
-                    value={stats.feedbackPending ?? 0}
-                  />
-                </View>
-              </View>
-              }
-              fields={[]}
+              fieldColumns={3}
+              fields={[
+                {
+                  id: 'closed-world',
+                  label: 'Closed-world',
+                  value:
+                    stats.closedWorldMode !== false ? 'Aktif' : 'Nonaktif',
+                },
+                {
+                  id: 'embed-active',
+                  label: 'Embed aktif',
+                  value: (
+                    <PipelineSummaryFieldValue
+                      hint={stats.embedModelId.split('/').pop()}
+                      value={stats.embedFamily || 'siglip'}
+                    />
+                  ),
+                },
+                {
+                  id: 'threshold-min',
+                  label: 'Threshold min',
+                  value: stats.embedMinScore ?? '-',
+                },
+                {
+                  id: 'index-model-ok',
+                  label: 'Indeks model OK',
+                  value:
+                    stats.embedIndexCurrentModel ?? stats.clipIndexClipCount,
+                },
+                {
+                  id: 'needs-rebuild',
+                  label: 'Perlu rebuild',
+                  value: (
+                    <PipelineSummaryFieldValue
+                      hint={
+                        (stats.embedIndexStale ?? 0) > 0 ?
+                          'Jalankan rebuild dual'
+                        : undefined
+                      }
+                      value={stats.embedIndexStale ?? 0}
+                    />
+                  ),
+                },
+                {
+                  id: 'detect-crop',
+                  label: 'Detect/crop',
+                  value: (
+                    <PipelineSummaryFieldValue
+                      hint={
+                        stats.detectCropBackend === 'sam' ?
+                          stats.detectCropModel.split('/').pop() ||
+                          'mobile_sam'
+                        : stats.detectCropModel.split('/').pop() || 'yolov8n'
+                      }
+                      value={stats.detectCropMode || 'auto'}
+                    />
+                  ),
+                },
+                {
+                  id: 'ocr-unified',
+                  label: 'OCR unified',
+                  value: (
+                    <PipelineSummaryFieldValue
+                      hint={stats.ocrEngine || undefined}
+                      value={
+                        stats.ocrUnifiedEnabled !== false ?
+                          'Aktif'
+                        : 'Nonaktif'
+                      }
+                    />
+                  ),
+                },
+                {
+                  id: 'species-training-photos',
+                  label: 'Foto training species',
+                  value: stats.speciesTrainingPhotos ?? stats.trainingPhotos,
+                },
+                {
+                  id: 'product-training-photos',
+                  label: 'Foto training produk',
+                  value: stats.productTrainingPhotos ?? 0,
+                },
+                {
+                  id: 'yolo-species',
+                  label: 'YOLO species',
+                  value: stats.yoloModelReady ? 'Aktif' : 'Belum',
+                },
+                {
+                  id: 'yolo-product',
+                  label: 'YOLO produk',
+                  value: (
+                    <PipelineSummaryFieldValue
+                      hint={
+                        stats.yoloProductClassCount ?
+                          `${stats.yoloProductClassCount} SKU`
+                        : `Min ${stats.minProductTrainingPhotos ?? 3} foto/SKU`
+                      }
+                      value={stats.yoloProductModelReady ? 'Aktif' : 'Belum'}
+                    />
+                  ),
+                },
+                {
+                  id: 'inbox-feedback',
+                  label: 'Koreksi inbox',
+                  value: (
+                    <PipelineSummaryFieldValue
+                      hint={`Species ${stats.feedbackSpeciesTotal ?? '-'} - Produk ${stats.feedbackProductTotal ?? '-'}`}
+                      value={stats.feedbackTotal ?? 0}
+                    />
+                  ),
+                },
+                {
+                  id: 'feedback-queue',
+                  label: 'Antrian feedback',
+                  value: stats.feedbackPending ?? 0,
+                },
+              ]}
               title="Status pipeline"
             />
           ) : null}
