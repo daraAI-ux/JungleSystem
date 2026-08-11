@@ -215,11 +215,11 @@ function BotHealthSection({
         <View style={styles.heading}>
           <Text style={styles.sectionTitle}>Kesehatan Bot — Raja Anemon</Text>
           <Text style={styles.sectionDesc}>
-            {`Status kosmetik (otomasi PO belakangan).${
-              health?.checkedAt
-                ? ` Diperiksa ${formatKolamPoCopilotWib(health.checkedAt)}.`
-                : ''
-            }`}
+            {health?.checkedAt
+              ? `Otomasi PO, diperiksa ${formatKolamPoCopilotWib(
+                  health.checkedAt,
+                )}`
+              : 'Otomasi PO'}
           </Text>
         </View>
         <KolamButton
