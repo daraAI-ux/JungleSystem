@@ -77,7 +77,6 @@ export const poCopilotStyles = StyleSheet.create({
   deliveryPanelHeader: {
     alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'space-between',
   },
@@ -102,7 +101,9 @@ export const poCopilotStyles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     flexDirection: 'row',
+    flexShrink: 0,
     gap: 3,
+    marginLeft: 'auto',
     padding: 4,
   },
   rangeBtn: {
