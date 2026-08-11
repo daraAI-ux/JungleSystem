@@ -790,6 +790,7 @@ const daraKnowledgeCategories = [
 ] as const;
 
 const REGION_TABLE_PAGE_SIZE = 10;
+const WEB_CONTENT_ROWS_PAGE_SIZE = 10;
 
 export function KolamSettingsWebConfigSurface({
   fields,
@@ -6059,12 +6060,18 @@ function WebContentRowsPanel({
   topics: KolamBlogTopic[];
   type: 'blog' | 'blog-topics';
 }) {
-  const rows =
+  const [page, setPage] = React.useState(1);
+  const rows: Array<{
+    detail: string;
+    id: string;
+    label: string;
+    value: string;
+  }> =
     type === 'blog'
       ? blogs.map(blog => ({
           id: blog._id,
           label: blog.title,
-          value: blog.status,
+          value: String(blog.status),
           detail: `${blog.slug} | ${
             blog.topics?.map(topic => topic.name).join(', ') || 'Tanpa topik'
           } | views ${blog.viewCount ?? 0}`,
@@ -6077,6 +6084,18 @@ function WebContentRowsPanel({
             topic.color ?? '-'
           }`,
         }));
+  const safePage = Math.min(
+    Math.max(page, 1),
+    Math.max(1, Math.ceil(rows.length / WEB_CONTENT_ROWS_PAGE_SIZE)),
+  );
+  const pagedRows = rows.slice(
+    (safePage - 1) * WEB_CONTENT_ROWS_PAGE_SIZE,
+    safePage * WEB_CONTENT_ROWS_PAGE_SIZE,
+  );
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [type]);
 
   return (
     <View style={styles.marketplaceOverview}>
@@ -6089,47 +6108,44 @@ function WebContentRowsPanel({
           },
         ]}
       />
-      <View style={styles.marketplaceOverviewRows}>
-        {rows.map(row => (
-          <View key={row.id} style={styles.marketplaceOverviewRow}>
-            <KolamCopyStack
-              containerStyle={styles.marketplaceOverviewCopy}
-              items={[
-                {
-                  id: `${row.id}-label`,
-                  text: row.label,
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: `${row.id}-detail`,
-                  text: row.detail,
-                  style: styles.marketplaceOverviewDetail,
-                },
-              ]}
-            />
-            <KolamCopyStack
-              items={[
-                {
-                  id: `${row.id}-value`,
-                  text: row.value,
-                  style: styles.marketplaceOverviewValue,
-                },
-              ]}
-            />
-          </View>
-        ))}
-        {rows.length === 0 ? (
-          <KolamCopyStack
-            items={[
-              {
-                id: 'empty',
-                text: 'Belum ada data live untuk panel ini.',
-                style: styles.marketplaceOverviewMeta,
-              },
-            ]}
-          />
-        ) : null}
-      </View>
+      <KolamListTableComposition
+        columns={[
+          {
+            flex: 2,
+            id: 'title',
+            label: type === 'blog' ? 'Artikel' : 'Topik',
+            render: row => (
+              <View style={styles.webContentTableTitleCell}>
+                <Text numberOfLines={1} style={styles.webContentTableTitle}>
+                  {row.label}
+                </Text>
+                <Text numberOfLines={1} style={styles.webContentTableMeta}>
+                  {row.detail}
+                </Text>
+              </View>
+            ),
+          },
+          {
+            flex: 0.8,
+            id: 'status',
+            label: 'Status',
+            render: row => (
+              <Text numberOfLines={1} style={styles.webContentTableText}>
+                {row.value}
+              </Text>
+            ),
+          },
+        ]}
+        emptyTitle="Belum ada data."
+        getRowKey={row => row.id}
+        pagination={{
+          onPageChange: setPage,
+          page: safePage,
+          pageSize: WEB_CONTENT_ROWS_PAGE_SIZE,
+          total: rows.length,
+        }}
+        rows={pagedRows}
+      />
     </View>
   );
 }
@@ -10301,6 +10317,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 18,
+  },
+  webContentTableMeta: {
+    color: '#6b7280',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  webContentTableText: {
+    color: '#111827',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  webContentTableTitle: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  webContentTableTitleCell: {
+    gap: 2,
+    minWidth: 0,
   },
   notificationSoundActions: {
     flexDirection: 'row',
