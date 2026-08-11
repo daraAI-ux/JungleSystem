@@ -1076,11 +1076,7 @@ function KolamCustomerDetailSurface({
 
       <View style={styles.toolbarWrap}>
         <View style={styles.toolbarShell}>
-          <View style={styles.detailToolbarContextWrap}>
-            <Text numberOfLines={1} style={styles.detailToolbarContext}>
-              {customer.name}
-            </Text>
-          </View>
+          <View style={styles.detailToolbarSpacer} />
           <View style={styles.actionRow}>
             <KolamDaftarButton
               onPress={() => onRouteChange?.('/customers')}
@@ -2870,19 +2866,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingLeft: 8,
   },
-  detailToolbarContextWrap: {
-    alignItems: 'center',
+  detailToolbarSpacer: {
     flex: 1,
-    flexDirection: 'row',
     minWidth: 0,
-    paddingHorizontal: 8,
-  },
-  detailToolbarContext: {
-    color: V.colors.fg,
-    flexShrink: 1,
-    fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18,
   },
   searchInput: {
     flexBasis: 260,

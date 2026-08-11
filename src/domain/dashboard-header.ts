@@ -54,6 +54,7 @@ export interface DashboardHeaderRouteContextInput {
   activeModuleRoute?: ShellModuleRouteEntry | null;
   activeNavigationItem?: KolamNavigationItem | null;
   activePluginRoute?: PluginRouteEntry | null;
+  dataset?: UnifiedDataset;
 }
 
 export interface DashboardHeaderVisualContract {
@@ -228,6 +229,7 @@ export function getDashboardHeaderRouteContext({
   activeModuleRoute,
   activeNavigationItem,
   activePluginRoute,
+  dataset,
 }: DashboardHeaderRouteContextInput): DashboardHeaderRouteContext | null {
   if (activeModuleRoute?.area === 'am') {
     const amRoute = getAmRouteByModuleRoute(activeModuleRoute.route);
@@ -262,7 +264,7 @@ export function getDashboardHeaderRouteContext({
         route: navigationItem.route,
         title: hasInlineDetailHeader
           ? ''
-          : getDashboardRouteTitle(navigationItem),
+          : getDashboardRouteTitle(navigationItem, dataset),
         subtitle: hasInlineDetailHeader ? '' : navigationItem.description ?? '',
       };
     }
@@ -343,7 +345,7 @@ export function getDashboardHeaderRouteContext({
       route: activeNavigationItem.route,
       title: hasInlineDetailHeader
         ? ''
-        : getDashboardRouteTitle(activeNavigationItem),
+        : getDashboardRouteTitle(activeNavigationItem, dataset),
       subtitle: hasInlineDetailHeader
         ? ''
         : activeNavigationItem.description ?? '',
@@ -423,8 +425,12 @@ function getAssetPurchaseDashboardHeaderCopy(routePath: string): {
   return null;
 }
 
-function getDashboardRouteTitle(item: KolamNavigationItem) {
+function getDashboardRouteTitle(
+  item: KolamNavigationItem,
+  dataset?: UnifiedDataset,
+) {
   const routePath = item.route.split('?')[0];
+  const customerDetail = routePath.match(/^\/customers\/([^/]+)$/);
   const brandDetail = routePath.match(
     /^\/label-dan-field\/merek\/([^/]+)(?:\/edit)?$/,
   );
@@ -436,6 +442,17 @@ function getDashboardRouteTitle(item: KolamNavigationItem) {
     /^\/custom-fields\/([^/]+)(?:\/edit)?$/,
   );
   const unitDetail = routePath.match(/^\/units\/([^/]+)(?:\/edit)?$/);
+
+  if (customerDetail?.[1]) {
+    const customerId = decodeURIComponent(customerDetail[1]);
+    const customerName = dataset?.customers.find(
+      customer => customer.id === customerId,
+    )?.name;
+
+    if (customerName) {
+      return customerName;
+    }
+  }
 
   if (brandDetail?.[1] && brandDetail[1] !== 'baru') {
     return decodeURIComponent(brandDetail[1]).replace(/-/g, ' ');

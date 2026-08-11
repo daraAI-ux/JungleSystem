@@ -65,6 +65,7 @@ export function useKolamDashboardHeaderController({
       activeModuleRoute,
       activeNavigationItem,
       activePluginRoute,
+      dataset,
     });
     const eyebrow =
       routeContext?.eyebrow ??
