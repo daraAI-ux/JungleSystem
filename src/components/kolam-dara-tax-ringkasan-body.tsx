@@ -377,8 +377,11 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
+    flexBasis: 0,
     flexGrow: 1,
+    flexShrink: 1,
     gap: 4,
+    minHeight: 92,
     minWidth: 160,
     padding: 12,
   },
@@ -388,8 +391,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   kpiCopy: {
+    flex: 1,
     flexShrink: 1,
     gap: 4,
+    justifyContent: 'center',
     minWidth: 0,
   },
   kpiIcon: {
