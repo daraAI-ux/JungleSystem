@@ -1,6 +1,7 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {SvgXml} from 'react-native-svg';
+import {KOLAM_APPROVAL_ICON_SVG} from '../assets/icons/approval-icon-svg';
 import {KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG} from '../assets/icons/dara-market-intel-module-icon-svg';
 import {KOLAM_LUP_SEARCH_ICON_SVG} from '../assets/icons/lup-search-icon-svg';
 import {KOLAM_POTENSI_ICON_SVG} from '../assets/icons/potensi-icon-svg';
@@ -247,9 +248,20 @@ export function KolamDaraMarketIntelDashboardBody({
       {dashboard ? (
         <>
           <View style={styles.kpiGrid}>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Menunggu approval</Text>
-              <Text style={styles.kpiValue}>{dashboard.pendingApprovals}</Text>
+            <View style={[styles.kpiCard, styles.kpiCardWithIcon]}>
+              <View style={styles.kpiCopy}>
+                <Text style={styles.kpiLabel}>Menunggu approval</Text>
+                <Text style={styles.kpiValue}>
+                  {dashboard.pendingApprovals}
+                </Text>
+              </View>
+              <View style={styles.kpiPotensiIcon}>
+                <SvgXml
+                  height="100%"
+                  width="100%"
+                  xml={KOLAM_APPROVAL_ICON_SVG}
+                />
+              </View>
             </View>
             {canViewMargin &&
             dashboard.totals.extraProfitPotential != null ? (
