@@ -19,15 +19,15 @@ import {
   type KolamDeliveryStatsSummary,
   type KolamShippingOpsEvent,
 } from '../domain/kolam-pusat-ai-transaksi-copilot';
-import {getKolamFileUrl} from '../lib/file-url';
-import type {KolamPusatAiTransaksiCopilotController} from '../hooks/use-kolam-pusat-ai-transaksi-copilot-controller';
-import {KolamButton} from './kolam-button';
-import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamEmptyState} from './kolam-empty-state';
-import {KolamRemoteImage} from './kolam-remote-image';
-import {KolamSwitch} from './kolam-switch';
-import {transaksiCopilotStyles as styles} from './kolam-pusat-ai-transaksi-copilot-styles';
+import { getKolamFileUrl } from '../lib/file-url';
+import type { KolamPusatAiTransaksiCopilotController } from '../hooks/use-kolam-pusat-ai-transaksi-copilot-controller';
+import { KolamButton } from './kolam-button';
+import { KolamDashboardMetricSparkline } from './kolam-dashboard-metric-sparkline';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamRemoteImage } from './kolam-remote-image';
+import { KolamSwitch } from './kolam-switch';
+import { transaksiCopilotStyles as styles } from './kolam-pusat-ai-transaksi-copilot-styles';
 
 export function KolamPusatAiTransaksiCopilotBody({
   controller,
@@ -54,19 +54,22 @@ export function KolamPusatAiTransaksiCopilotBody({
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
-      style={styles.scroll}>
+      style={styles.scroll}
+    >
       <View style={styles.shell}>
         <View style={styles.shellHeader}>
           <View style={styles.heading}>
             <Text style={styles.eyebrow}>Copilot</Text>
             <Text style={styles.title}>Transaksi Copilot</Text>
-            <Text style={styles.desc}>{KOLAM_TRANSAKSI_COPILOT_DESCRIPTION}</Text>
+            <Text style={styles.desc}>
+              {KOLAM_TRANSAKSI_COPILOT_DESCRIPTION}
+            </Text>
           </View>
           <View style={styles.shellActions}>
             {notifyRoomRoute ? (
               <KolamButton
                 intent="primary"
-                label="Buka room DARA"
+                label="Buka room"
                 onPress={() => onRouteChange?.(notifyRoomRoute)}
               />
             ) : null}
@@ -93,7 +96,9 @@ export function KolamPusatAiTransaksiCopilotBody({
             <View style={styles.deliveryPanelHeader}>
               {stats?.generatedAt ? (
                 <Text style={styles.meta}>
-                  {`Statistik diperbarui ${formatKolamTransaksiCopilotWib(stats.generatedAt)} · ${stats.note}`}
+                  {`Statistik diperbarui ${formatKolamTransaksiCopilotWib(
+                    stats.generatedAt,
+                  )} · ${stats.note}`}
                 </Text>
               ) : (
                 <View />
@@ -109,12 +114,14 @@ export function KolamPusatAiTransaksiCopilotBody({
                       style={[
                         styles.rangeBtn,
                         active ? styles.rangeBtnActive : null,
-                      ]}>
+                      ]}
+                    >
                       <Text
                         style={[
                           styles.rangeBtnText,
                           active ? styles.rangeBtnTextActive : null,
-                        ]}>
+                        ]}
+                      >
                         {item.label}
                       </Text>
                     </Pressable>
@@ -201,7 +208,7 @@ function NotifyRoomSection({
             options={
               roomOptions.length
                 ? roomOptions
-                : [{label: 'Tidak ada room', value: ''}]
+                : [{ label: 'Tidak ada room', value: '' }]
             }
             showLabelInTrigger
             value={controller.selectedRoomId || roomOptions[0]?.value || ''}
@@ -222,18 +229,18 @@ function BotHealthSection({
 }: {
   controller: KolamPusatAiTransaksiCopilotController;
 }) {
-  const {health, healthLoading} = controller;
+  const { health, healthLoading } = controller;
   return (
     <View style={[styles.sectionCard, styles.botStrip]}>
       <View style={styles.botStripHead}>
         <View style={styles.heading}>
-          <Text style={styles.sectionTitle}>
-            Kesehatan Bot — Katak Terbang
-          </Text>
+          <Text style={styles.sectionTitle}>Kesehatan Bot — Katak Terbang</Text>
           <Text style={styles.sectionDesc}>
             {`Status runtime dari AM.${
               health?.checkedAt
-                ? ` Diperiksa ${formatKolamTransaksiCopilotWib(health.checkedAt)}.`
+                ? ` Diperiksa ${formatKolamTransaksiCopilotWib(
+                    health.checkedAt,
+                  )}.`
                 : ''
             }`}
           </Text>
@@ -252,9 +259,7 @@ function BotHealthSection({
       ) : (
         <View style={styles.healthGrid}>
           {(health?.platforms ?? []).map(platform => (
-            <View
-              key={platform.platform}
-              style={styles.healthRow}>
+            <View key={platform.platform} style={styles.healthRow}>
               <Text style={styles.healthPlatform}>{platform.platform}</Text>
               <Text style={styles.healthState}>
                 {platform.enabled
@@ -318,7 +323,8 @@ function BotProfileSection({
             onPress={() => {
               void controller.onPickBotPhoto();
             }}
-            style={styles.botUpload}>
+            style={styles.botUpload}
+          >
             <Text style={styles.botUploadText}>
               {controller.photoUploading ? 'Mengunggah…' : 'Unggah foto bot'}
             </Text>
@@ -396,7 +402,7 @@ function DeliveryKpiCard({
                 {loading ? (
                   <Text style={styles.breakdownName}>—</Text>
                 ) : logoUri ? (
-                  <Image source={{uri: logoUri}} style={styles.channelLogo} />
+                  <Image source={{ uri: logoUri }} style={styles.channelLogo} />
                 ) : (
                   <Text style={styles.breakdownName}>
                     {(meta.name || key).replace('Tokopedia', 'Toko')}
@@ -439,7 +445,9 @@ function OpsLogCard({
               <Text style={styles.opsTime}>
                 {formatKolamTransaksiCopilotWib(event.at)}
                 {event.invoiceCode ? (
-                  <Text style={styles.opsInvoice}>{` ${event.invoiceCode}`}</Text>
+                  <Text
+                    style={styles.opsInvoice}
+                  >{` ${event.invoiceCode}`}</Text>
                 ) : null}
               </Text>
               <Text style={styles.opsDetail}>
