@@ -433,7 +433,47 @@ export function KolamDaraTaxRegulasiBody({
             <Text style={styles.meta}>Memuat…</Text>
           ) : (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Pemantau regulasi</Text>
+              <View style={styles.cardHead}>
+                <Text style={styles.sectionTitle}>Pemantau regulasi</Text>
+                {isAdmin ? (
+                  watcherIsWatching ? (
+                    <KolamButton
+                      disabled
+                      icon={
+                        <KolamRefreshIcon
+                          color={V.colors.primaryFg}
+                          size={14}
+                        />
+                      }
+                      intent="outline"
+                      label="Sedang memeriksa…"
+                      style={styles.watcherButton}
+                      textStyle={styles.watcherButtonText}
+                    />
+                  ) : (
+                    <KolamButton
+                      disabled={
+                        !taxStatus?.watcherEnabled || watcherRunning
+                      }
+                      icon={
+                        <KolamRefreshIcon
+                          color={V.colors.primaryFg}
+                          size={14}
+                        />
+                      }
+                      intent="outline"
+                      label={
+                        watcherRunning
+                          ? 'Memeriksa…'
+                          : 'Jalankan pemantau sekarang'
+                      }
+                      onPress={onRunWatcher}
+                      style={styles.watcherButton}
+                      textStyle={styles.watcherButtonText}
+                    />
+                  )
+                ) : null}
+              </View>
               <Text style={styles.meta}>
                 Pantau perubahan regulasi dari sumber eksternal. Aktifkan modul di
                 Pengaturan → Alat AI.
@@ -468,6 +508,11 @@ export function KolamDaraTaxRegulasiBody({
                           ? ` · ${taxStatus.dueNow} perlu cek`
                           : ''
                       }`,
+                    },
+                    {
+                      id: 'snapshot',
+                      label: 'Cuplikan',
+                      value: formatKolamDaraTaxDateTimeId(taxStatus.checkedAt),
                     },
                   ]}
                   style={styles.monitoringSummaryCard}
@@ -515,55 +560,6 @@ export function KolamDaraTaxRegulasiBody({
                     </View>
                   ))}
                 </View>
-              ) : null}
-
-              {isAdmin ? (
-                <View style={styles.rowActions}>
-                  {watcherIsWatching ? (
-                    <KolamButton
-                      disabled
-                      icon={
-                        <KolamRefreshIcon
-                          color={V.colors.primaryFg}
-                          size={14}
-                        />
-                      }
-                      intent="outline"
-                      label="Sedang memeriksa…"
-                      style={styles.watcherButton}
-                      textStyle={styles.watcherButtonText}
-                    />
-                  ) : (
-                    <KolamButton
-                      disabled={
-                        !taxStatus?.watcherEnabled || watcherRunning
-                      }
-                      icon={
-                        <KolamRefreshIcon
-                          color={V.colors.primaryFg}
-                          size={14}
-                        />
-                      }
-                      intent="outline"
-                      label={
-                        watcherRunning
-                          ? 'Memeriksa…'
-                          : 'Jalankan pemantau sekarang'
-                      }
-                      onPress={onRunWatcher}
-                      style={styles.watcherButton}
-                      textStyle={styles.watcherButtonText}
-                    />
-                  )}
-                </View>
-              ) : null}
-
-              {taxStatus?.checkedAt ? (
-                <Text style={styles.meta}>
-                  {`Cuplikan: ${formatKolamDaraTaxDateTimeId(
-                    taxStatus.checkedAt,
-                  )}`}
-                </Text>
               ) : null}
             </View>
           )}
