@@ -1,5 +1,7 @@
-import React, {useMemo, useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import React, {useMemo} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
+import {SvgXml} from 'react-native-svg';
+import {KOLAM_TAX_ICON_SVG} from '../assets/icons/tax-icon-svg';
 import {
   formatKolamDaraTaxDateId,
   formatKolamDaraTaxIdr,
@@ -23,7 +25,6 @@ export function KolamDaraTaxRingkasanBody({
   loading: boolean;
   series: KolamDaraTaxOverviewSeries | null;
 }) {
-  const [seriesOpen, setSeriesOpen] = useState(false);
   const overview = dashboard?.overview ?? null;
   const scores = dashboard?.complianceScores ?? null;
   const overall =
@@ -55,6 +56,7 @@ export function KolamDaraTaxRingkasanBody({
       {overview ? (
         <View style={styles.kpiGrid}>
           <KpiCard
+            icon={KOLAM_TAX_ICON_SVG}
             label="Penjualan (paid, est. PPN)"
             meta={`${overview.sales.orderCount} order`}
             value={formatKolamDaraTaxIdr(overview.sales.revenueIdr)}
@@ -88,17 +90,10 @@ export function KolamDaraTaxRingkasanBody({
       <View style={styles.summaryGrid}>
       {series && series.ppnOutputByMonth.length > 1 ? (
         <View style={[styles.card, styles.summaryMainCard]}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setSeriesOpen(open => !open)}>
-            <Text style={styles.sectionTitle}>
-              {`PPN keluaran per bulan (estimasi faktur)${
-                seriesOpen ? '' : ' ▸'
-              }`}
-            </Text>
-          </Pressable>
-          {seriesOpen
-            ? series.ppnOutputByMonth.map(row => (
+          <Text style={styles.sectionTitle}>
+            PPN keluaran per bulan (estimasi faktur)
+          </Text>
+          {series.ppnOutputByMonth.map(row => (
                 <View key={row.period} style={styles.seriesRow}>
                   <Text style={styles.seriesPeriod}>{row.period}</Text>
                   <View style={styles.seriesTrack}>
@@ -118,8 +113,7 @@ export function KolamDaraTaxRingkasanBody({
                   </Text>
                   <Text style={styles.seriesMeta}>{`${row.orderCount} ord`}</Text>
                 </View>
-              ))
-            : null}
+              ))}
         </View>
       ) : null}
 
@@ -199,28 +193,37 @@ export function KolamDaraTaxRingkasanBody({
 }
 
 function KpiCard({
+  icon,
   label,
   meta,
   tone,
   value,
 }: {
+  icon?: string;
   label: string;
   meta: string;
   tone?: 'violet' | 'amber';
   value: string;
 }) {
   return (
-    <View style={styles.kpiCard}>
-      <Text style={styles.kpiLabel}>{label}</Text>
-      <Text
-        style={[
-          styles.kpiValue,
-          tone === 'violet' ? styles.kpiViolet : null,
-          tone === 'amber' ? styles.kpiAmber : null,
-        ]}>
-        {value}
-      </Text>
-      <Text style={styles.meta}>{meta}</Text>
+    <View style={[styles.kpiCard, icon ? styles.kpiCardWithIcon : null]}>
+      <View style={styles.kpiCopy}>
+        <Text style={styles.kpiLabel}>{label}</Text>
+        <Text
+          style={[
+            styles.kpiValue,
+            tone === 'violet' ? styles.kpiViolet : null,
+            tone === 'amber' ? styles.kpiAmber : null,
+          ]}>
+          {value}
+        </Text>
+        <Text style={styles.meta}>{meta}</Text>
+      </View>
+      {icon ? (
+        <View style={styles.kpiIcon}>
+          <SvgXml height="100%" width="100%" xml={icon} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -282,6 +285,22 @@ const styles = StyleSheet.create({
     gap: 4,
     minWidth: 160,
     padding: 12,
+  },
+  kpiCardWithIcon: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  kpiCopy: {
+    flexShrink: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  kpiIcon: {
+    flexShrink: 0,
+    height: 54,
+    marginLeft: 12,
+    width: 54,
   },
   kpiLabel: {
     color: V.colors.mutedFg,
