@@ -243,6 +243,7 @@ interface KolamChatRailContactDetailsState {
 
 interface KolamChatRailDaraAvatarState {
   imageUrl: string | null;
+  katakTerbangImageUrl: string | null;
 }
 
 interface KolamInboxComposerAccess {
@@ -351,6 +352,11 @@ function resolveDaraAvatarImageUrl(
   return getKolamFileUrl(path) ?? path;
 }
 
+function resolveKatakTerbangAvatarImageUrl(stored?: string | null) {
+  const path = normalizeDaraAvatarPath(stored);
+  return path ? getKolamFileUrl(path) ?? path : null;
+}
+
 export function KolamGlobalChatRail({
   initialSelectedId,
   mode,
@@ -431,6 +437,7 @@ export function KolamGlobalChatRail({
   const [daraAvatarState, setDaraAvatarState] =
     React.useState<KolamChatRailDaraAvatarState>(() => ({
       imageUrl: resolveDaraAvatarImageUrl(),
+      katakTerbangImageUrl: null,
     }));
   const items = getChatRailItems(
     mode,
@@ -824,10 +831,17 @@ export function KolamGlobalChatRail({
     getKolamWebSetting()
       .then(webSetting => {
         if (active) {
+          const katakTerbangWorkerPhotoUrl = readStringField(
+            webSetting,
+            'katakTerbangWorkerPhotoUrl',
+          );
           setDaraAvatarState({
             imageUrl: resolveDaraAvatarImageUrl(
               readStringField(webSetting, 'daraAvatarUrl'),
-              readStringField(webSetting, 'katakTerbangWorkerPhotoUrl'),
+              katakTerbangWorkerPhotoUrl,
+            ),
+            katakTerbangImageUrl: resolveKatakTerbangAvatarImageUrl(
+              katakTerbangWorkerPhotoUrl,
             ),
           });
         }
@@ -1291,6 +1305,7 @@ export function KolamGlobalChatRail({
             composerText={composerText}
             currentUserId={currentUserId}
             daraAvatarUrl={daraAvatarState.imageUrl}
+            katakTerbangAvatarUrl={daraAvatarState.katakTerbangImageUrl}
             daraThinkingLiveSignal={daraThinkingLiveSignal}
             deleteRoomBusy={deleteRoomState.busy}
             detail={detail}
@@ -3329,6 +3344,7 @@ function KolamChatRailDetailPanel({
   composerText,
   currentUserId,
   daraAvatarUrl,
+  katakTerbangAvatarUrl,
   daraThinkingLiveSignal,
   deleteRoomBusy,
   detail,
@@ -3351,6 +3367,7 @@ function KolamChatRailDetailPanel({
   composerText: string;
   currentUserId?: string;
   daraAvatarUrl: string | null;
+  katakTerbangAvatarUrl: string | null;
   daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   deleteRoomBusy: boolean;
   detail: ReturnType<typeof useKolamChatRailDetail>;
@@ -3880,15 +3897,22 @@ function KolamChatRailDetailPanel({
                         ? styles.messageBubbleMine
                         : styles.messageBubbleOther,
                     ]}>
-                    {mode === 'team-chat' ? (
+                    {mode === 'team-chat' || message.senderIsAi ? (
                       <View style={styles.teamMessageAuthorRow}>
                         <View style={styles.teamMessageAvatar}>
                           <KolamProfileAvatarContent
                             imageStyle={styles.teamMessageAvatarImage}
-                            imageUrl={getTeamChatMessageAvatarUrl(
-                              message,
-                              daraAvatarUrl,
-                            )}
+                            imageUrl={
+                              mode === 'team-chat'
+                                ? getTeamChatMessageAvatarUrl(
+                                    message,
+                                    daraAvatarUrl,
+                                  )
+                                : getInboxAiMessageAvatarUrl(
+                                    message,
+                                    katakTerbangAvatarUrl,
+                                  )
+                            }
                             initials={getTeamChatMessageInitials(message.author)}
                             textStyle={styles.teamMessageAvatarText}
                           />
@@ -4639,6 +4663,21 @@ function getTeamChatMessageAvatarUrl(
   }
 
   return resolveProfilePhotoUrl(message.senderProfilePicture);
+}
+
+function getInboxAiMessageAvatarUrl(
+  message: KolamChatRailDetailMessage,
+  katakTerbangAvatarUrl: string | null,
+) {
+  if (!message.senderIsAi) {
+    return resolveProfilePhotoUrl(message.senderProfilePicture);
+  }
+
+  return (
+    resolveProfilePhotoUrl(message.senderProfilePicture) ||
+    katakTerbangAvatarUrl ||
+    resolveDaraAvatarImageUrl()
+  );
 }
 
 function getTeamChatMessageInitials(author: string) {

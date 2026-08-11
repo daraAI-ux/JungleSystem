@@ -1749,6 +1749,84 @@ describe('KolamGlobalChatRail', () => {
     expect(sendMessage).toHaveBeenCalledWith('Siap, masih tersedia. 🙂');
   });
 
+  it('renders Katak Terbang avatar for AI inbox messages', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'DARA bantu follow up',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-1',
+        assignedStaffId: null,
+        isAiHandled: true,
+        labelIds: [],
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          author: 'DARA',
+          body: 'DARA bantu follow up.',
+          embeds: [],
+          id: 'msg-ai-1',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          senderIsAi: true,
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+      ],
+      refresh: jest.fn(),
+      sendAttachment: jest.fn(),
+      sendMessage: jest.fn(),
+      signalTyping: jest.fn(),
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih conversation Buyer Tokopedia');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    expect(
+      renderer!.root
+        .findAllByType(Image)
+        .some(
+          node =>
+            node.props.source?.uri ===
+            'https://amfibi.dunia-anura.com/media/katak-terbang/photo.jpg',
+        ),
+    ).toBe(true);
+  });
+
   it('keeps Shift+Enter as a newline affordance in the chat composer', async () => {
     const sendMessage = jest.fn().mockResolvedValue(undefined);
     useReadonlyDataMock.mockReturnValue({

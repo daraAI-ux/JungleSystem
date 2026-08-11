@@ -976,6 +976,7 @@ function mapInboxMessage(
     reactions: [],
     replyContent: message.replyContent ?? null,
     replyPreview: null,
+    senderIsAi: message.senderType === 'ai_agent',
     senderId: getInboxSenderStaffId(message),
     sentAt: message.sentAt ?? message.createdAt,
     editedAt: message.editedAt ?? null,
