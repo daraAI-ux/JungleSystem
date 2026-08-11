@@ -80,6 +80,7 @@ import {KolamToggleRow} from './kolam-toggle-row';
 
 const SEARCH_DEBOUNCE_MS = 350;
 const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
+const USER_KASBON_TABLE_PAGE_SIZE = 10;
 
 const EMPLOYEE_FILTER_OPTIONS: Array<{
   label: string;
@@ -777,6 +778,7 @@ function KolamUserDetailSurface({
     EMPTY_USER_PAYROLL_SUMMARY,
   );
   const [deductionPage, setDeductionPage] = React.useState(1);
+  const [kasbonPage, setKasbonPage] = React.useState(1);
   const [payrollLoading, setPayrollLoading] = React.useState(false);
   const [payrollError, setPayrollError] = React.useState('');
   const [ratingSummary, setRatingSummary] = React.useState(
@@ -912,6 +914,88 @@ function KolamUserDetailSurface({
     ],
     [],
   );
+  const kasbonColumns = React.useMemo<
+    Array<KolamListTableColumn<KolamUserKasbonItem>>
+  >(
+    () => [
+      {
+        align: 'left',
+        flex: 1.35,
+        id: 'code',
+        label: 'Kode',
+        render: item => (
+          <Text style={styles.userMetaText}>{item.code || 'Kasbon'}</Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.7,
+        id: 'amount',
+        label: 'Jumlah',
+        render: item => (
+          <Text style={[styles.payrollEntryAmount, styles.userTableTextCenter]}>
+            {formatUserCurrency(item.amount)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 1.2,
+        id: 'payment',
+        label: 'Pembayaran',
+        render: item => (
+          <Text
+            numberOfLines={2}
+            style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {formatKasbonPaymentInfo(item)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 1.15,
+        id: 'reason',
+        label: 'Alasan',
+        render: item => (
+          <Text
+            numberOfLines={2}
+            style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {item.reason || item.rejectionReason || '-'}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.75,
+        id: 'status',
+        label: 'Status',
+        render: item => (
+          <View style={styles.userTableBadgeCell}>
+            <KolamStatusBadge
+              intent={getPayrollStatusIntent(item.status)}
+              label={formatPayrollStatus(item.status)}
+              numberOfLines={1}
+              style={styles.userTableBadge}
+            />
+          </View>
+        ),
+      },
+      {
+        align: 'center',
+        flex: 0.9,
+        id: 'month',
+        label: 'Bulan',
+        render: item => (
+          <Text style={[styles.detailSubtitle, styles.userTableTextCenter]}>
+            {item.forMonth
+              ? formatUserLongDate(item.forMonth)
+              : formatUserDateTime(item.createdAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
   const visibleDeductions = React.useMemo(() => {
     const pageStart = (deductionPage - 1) * USER_DEDUCTION_TABLE_PAGE_SIZE;
 
@@ -920,6 +1004,14 @@ function KolamUserDetailSurface({
       pageStart + USER_DEDUCTION_TABLE_PAGE_SIZE,
     );
   }, [deductionPage, payrollSummary.deductions]);
+  const visibleKasbons = React.useMemo(() => {
+    const pageStart = (kasbonPage - 1) * USER_KASBON_TABLE_PAGE_SIZE;
+
+    return payrollSummary.kasbons.slice(
+      pageStart,
+      pageStart + USER_KASBON_TABLE_PAGE_SIZE,
+    );
+  }, [kasbonPage, payrollSummary.kasbons]);
 
   React.useEffect(() => {
     const maxPage = Math.max(
@@ -933,6 +1025,17 @@ function KolamUserDetailSurface({
       setDeductionPage(maxPage);
     }
   }, [deductionPage, payrollSummary.deductions.length]);
+
+  React.useEffect(() => {
+    const maxPage = Math.max(
+      1,
+      Math.ceil(payrollSummary.kasbons.length / USER_KASBON_TABLE_PAGE_SIZE),
+    );
+
+    if (kasbonPage > maxPage) {
+      setKasbonPage(maxPage);
+    }
+  }, [kasbonPage, payrollSummary.kasbons.length]);
 
   React.useEffect(() => {
     let active = true;
@@ -1566,91 +1669,67 @@ function KolamUserDetailSurface({
           </View>
         ) : null}
 
-        {user.isEmployee &&
-        (canViewBonus || canViewKasbon) ? (
-          <View style={styles.detailGrid}>
-            {canViewBonus ? (
-              <View style={styles.detailPanel}>
-                <Text style={styles.detailPanelTitle}>Riwayat Bonus</Text>
-                {payrollLoading ? (
-                  <Text style={styles.detailSubtitle}>Memuat bonus...</Text>
-                ) : payrollSummary.bonuses.length ? (
-                  payrollSummary.bonuses.map(item => (
-                    <View key={item.id || item.code} style={styles.payrollEntry}>
-                      <View style={styles.payrollEntryHeader}>
-                        <Text numberOfLines={1} style={styles.payrollEntryTitle}>
-                          {item.code || 'Bonus'}
-                        </Text>
-                        <KolamStatusBadge
-                          intent={getPayrollStatusIntent(item.status)}
-                          label={formatPayrollStatus(item.status)}
-                          numberOfLines={1}
-                        />
-                      </View>
-                      <Text style={styles.payrollEntryAmount}>
-                        {formatUserCurrency(item.amount)}
-                      </Text>
-                      <Text numberOfLines={2} style={styles.detailSubtitle}>
-                        {item.reason || '-'}
-                      </Text>
-                      <Text style={styles.payrollEntryDate}>
-                        {formatUserDateTime(item.executedAt || item.createdAt)}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.detailSubtitle}>
-                    Belum ada bonus yang diberikan.
-                  </Text>
-                )}
-              </View>
-            ) : null}
+        {user.isEmployee && canViewKasbon ? (
+          <View style={styles.detailPanel}>
+            <Text style={styles.detailPanelTitle}>
+              Kasbon (Uang Muka Gaji)
+            </Text>
+            <KolamListTableComposition
+              columns={kasbonColumns}
+              emptyTitle={
+                payrollLoading
+                  ? 'Memuat kasbon...'
+                  : 'Tidak ada pengajuan kasbon.'
+              }
+              getRowKey={item => item.id || item.code}
+              loading={payrollLoading}
+              pagination={{
+                onPageChange: setKasbonPage,
+                page: kasbonPage,
+                pageSize: USER_KASBON_TABLE_PAGE_SIZE,
+                total: payrollSummary.kasbons.length,
+              }}
+              rows={payrollLoading ? [] : visibleKasbons}
+            />
+          </View>
+        ) : null}
 
-            {canViewKasbon ? (
-              <View style={styles.detailPanel}>
-                <Text style={styles.detailPanelTitle}>
-                  Kasbon (Uang Muka Gaji)
-                </Text>
-                {payrollLoading ? (
-                  <Text style={styles.detailSubtitle}>Memuat kasbon...</Text>
-                ) : payrollSummary.kasbons.length ? (
-                  payrollSummary.kasbons.map(item => (
-                    <View key={item.id || item.code} style={styles.payrollEntry}>
-                      <View style={styles.payrollEntryHeader}>
-                        <Text numberOfLines={1} style={styles.payrollEntryTitle}>
-                          {item.code || 'Kasbon'}
-                        </Text>
-                        <KolamStatusBadge
-                          intent={getPayrollStatusIntent(item.status)}
-                          label={formatPayrollStatus(item.status)}
-                          numberOfLines={1}
-                        />
-                      </View>
-                      <Text style={styles.payrollEntryAmount}>
-                        {formatUserCurrency(item.amount)}
+        {user.isEmployee && canViewBonus ? (
+          <View style={styles.detailGrid}>
+            <View style={styles.detailPanel}>
+              <Text style={styles.detailPanelTitle}>Riwayat Bonus</Text>
+              {payrollLoading ? (
+                <Text style={styles.detailSubtitle}>Memuat bonus...</Text>
+              ) : payrollSummary.bonuses.length ? (
+                payrollSummary.bonuses.map(item => (
+                  <View key={item.id || item.code} style={styles.payrollEntry}>
+                    <View style={styles.payrollEntryHeader}>
+                      <Text numberOfLines={1} style={styles.payrollEntryTitle}>
+                        {item.code || 'Bonus'}
                       </Text>
-                      <Text numberOfLines={2} style={styles.detailSubtitle}>
-                        {formatKasbonPaymentInfo(item)}
-                      </Text>
-                      {item.reason ? (
-                        <Text numberOfLines={2} style={styles.detailSubtitle}>
-                          {item.reason}
-                        </Text>
-                      ) : null}
-                      <Text style={styles.payrollEntryDate}>
-                        {item.forMonth
-                          ? formatUserLongDate(item.forMonth)
-                          : formatUserDateTime(item.createdAt)}
-                      </Text>
+                      <KolamStatusBadge
+                        intent={getPayrollStatusIntent(item.status)}
+                        label={formatPayrollStatus(item.status)}
+                        numberOfLines={1}
+                      />
                     </View>
-                  ))
-                ) : (
-                  <Text style={styles.detailSubtitle}>
-                    Tidak ada pengajuan kasbon.
-                  </Text>
-                )}
-              </View>
-            ) : null}
+                    <Text style={styles.payrollEntryAmount}>
+                      {formatUserCurrency(item.amount)}
+                    </Text>
+                    <Text numberOfLines={2} style={styles.detailSubtitle}>
+                      {item.reason || '-'}
+                    </Text>
+                    <Text style={styles.payrollEntryDate}>
+                      {formatUserDateTime(item.executedAt || item.createdAt)}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.detailSubtitle}>
+                  Belum ada bonus yang diberikan.
+                </Text>
+              )}
+            </View>
           </View>
         ) : null}
         {user.isEmployee &&
