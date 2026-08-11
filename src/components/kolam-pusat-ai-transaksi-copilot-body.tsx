@@ -46,6 +46,9 @@ export function KolamPusatAiTransaksiCopilotBody({
     range,
     channelSources,
   } = controller;
+  const notifyRoomRoute = getNotifyRoomRoute(
+    controller.selectedRoomId || health?.notifyRoom?.id,
+  );
 
   return (
     <ScrollView
@@ -58,6 +61,15 @@ export function KolamPusatAiTransaksiCopilotBody({
             <Text style={styles.title}>Transaksi Copilot</Text>
             <Text style={styles.desc}>{KOLAM_TRANSAKSI_COPILOT_DESCRIPTION}</Text>
           </View>
+          <View style={styles.shellActions}>
+            {notifyRoomRoute ? (
+              <KolamButton
+                intent="primary"
+                label="Buka room DARA"
+                onPress={() => onRouteChange?.(notifyRoomRoute)}
+              />
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.body}>
@@ -68,10 +80,7 @@ export function KolamPusatAiTransaksiCopilotBody({
 
           <View style={styles.sideBySideGrid}>
             <View style={styles.sideBySideItem}>
-              <NotifyRoomSection
-                controller={controller}
-                onRouteChange={onRouteChange}
-              />
+              <NotifyRoomSection controller={controller} />
             </View>
             <View style={styles.sideBySideItem}>
               <BotProfileSection controller={controller} />
@@ -155,16 +164,13 @@ export function KolamPusatAiTransaksiCopilotBody({
 
 function NotifyRoomSection({
   controller,
-  onRouteChange,
 }: {
   controller: KolamPusatAiTransaksiCopilotController;
-  onRouteChange?: (route: string) => void;
 }) {
   const roomOptions = controller.rooms.map(room => ({
     label: formatKolamTransaksiCopilotRoomLabel(room),
     value: room._id,
   }));
-  const href = controller.health?.notifyRoom?.webHref;
 
   return (
     <View style={[styles.sectionCard, styles.botStrip]}>
@@ -184,13 +190,6 @@ function NotifyRoomSection({
           />
           <Text style={styles.notifyLabel}>Notifikasi chat aktif</Text>
         </View>
-        {href ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => onRouteChange?.(href)}>
-            <Text style={styles.link}>Buka room</Text>
-          </Pressable>
-        ) : null}
       </View>
       <View style={styles.roomRow}>
         <View style={styles.roomSelect}>
@@ -212,6 +211,11 @@ function NotifyRoomSection({
       </View>
     </View>
   );
+}
+
+function getNotifyRoomRoute(roomId?: string | null): string {
+  const normalized = String(roomId || '').trim();
+  return normalized ? `/team-chat?room=${encodeURIComponent(normalized)}` : '';
 }
 
 function BotHealthSection({

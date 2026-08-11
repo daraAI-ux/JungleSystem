@@ -637,11 +637,15 @@ describe('KolamPusatAiRingkasanSurface', () => {
   });
 
   it('loads Transaksi Copilot shipping dashboard for admin', async () => {
+    const onRouteChange = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
     await ReactTestRenderer.act(async () => {
       renderer = ReactTestRenderer.create(
-        <KolamPusatAiRingkasanSurface route="/pusat-ai?tab=transaksi-copilot" />,
+        <KolamPusatAiRingkasanSurface
+          onRouteChange={onRouteChange}
+          route="/pusat-ai?tab=transaksi-copilot"
+        />,
       );
       await Promise.resolve();
       await Promise.resolve();
@@ -662,6 +666,16 @@ describe('KolamPusatAiRingkasanSurface', () => {
     expect(fetchStatsMock).toHaveBeenCalled();
     expect(fetchOpsMock).toHaveBeenCalled();
     expect(fetchHealthMock).toHaveBeenCalled();
+
+    const openRoom = renderer!.root.find(
+      node =>
+        typeof node.props.label === 'string' &&
+        node.props.label === 'Buka room DARA',
+    );
+    await ReactTestRenderer.act(async () => {
+      openRoom.props.onPress();
+    });
+    expect(onRouteChange).toHaveBeenCalledWith('/team-chat?room=room-ops');
   });
 
   it('loads PO Copilot dashboard for admin', async () => {
