@@ -103,7 +103,6 @@ export const poCopilotStyles = StyleSheet.create({
     flexDirection: 'row',
     flexShrink: 0,
     gap: 3,
-    marginLeft: 'auto',
     padding: 4,
   },
   rangeBtn: {
