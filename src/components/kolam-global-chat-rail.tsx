@@ -9402,12 +9402,12 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   detailDeleteRoomButton: {
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 15,
     backgroundColor: 'transparent',
   },
   detailRoomCallButton: {
