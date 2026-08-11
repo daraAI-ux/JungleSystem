@@ -2,8 +2,8 @@
  * Transaksi Copilot chrome — layout/spacing from DA-Dara-Plugin
  * `shipping-delivery.css`; colors follow Kolam light theme (`kolam-visual`).
  */
-import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
 export const transaksiCopilotStyles = StyleSheet.create({
   scroll: {
@@ -249,8 +249,8 @@ export const transaksiCopilotStyles = StyleSheet.create({
   botAvatar: {
     borderRadius: 999,
     flexShrink: 0,
-    height: 72,
-    width: 72,
+    height: 56,
+    width: 56,
   },
   botAvatarPh: {
     alignItems: 'center',
@@ -259,9 +259,9 @@ export const transaksiCopilotStyles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     flexShrink: 0,
-    height: 72,
+    height: 56,
     justifyContent: 'center',
-    width: 72,
+    width: 56,
   },
   botAvatarPhText: {
     color: V.colors.mutedFg,
