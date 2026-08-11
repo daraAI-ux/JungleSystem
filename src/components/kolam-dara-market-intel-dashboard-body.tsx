@@ -4,6 +4,7 @@ import {SvgXml} from 'react-native-svg';
 import {KOLAM_DARA_MARKET_INTEL_MODULE_ICON_SVG} from '../assets/icons/dara-market-intel-module-icon-svg';
 import {KOLAM_LUP_SEARCH_ICON_SVG} from '../assets/icons/lup-search-icon-svg';
 import {KOLAM_POTENSI_ICON_SVG} from '../assets/icons/potensi-icon-svg';
+import {KOLAM_PROFIT_ICON_SVG} from '../assets/icons/profit-icon-svg';
 import {
   formatKolamDaraMarketIntelIdr,
   formatKolamDaraMarketIntelTaxSource,
@@ -252,13 +253,22 @@ export function KolamDaraMarketIntelDashboardBody({
             </View>
             {canViewMargin &&
             dashboard.totals.extraProfitPotential != null ? (
-              <View style={styles.kpiCard}>
-                <Text style={styles.kpiLabel}>Potensi profit tambahan</Text>
-                <Text style={styles.kpiValue}>
-                  {formatKolamDaraMarketIntelIdr(
-                    dashboard.totals.extraProfitPotential,
-                  )}
-                </Text>
+              <View style={[styles.kpiCard, styles.kpiCardWithIcon]}>
+                <View style={styles.kpiCopy}>
+                  <Text style={styles.kpiLabel}>Potensi profit tambahan</Text>
+                  <Text style={styles.kpiValue}>
+                    {formatKolamDaraMarketIntelIdr(
+                      dashboard.totals.extraProfitPotential,
+                    )}
+                  </Text>
+                </View>
+                <View style={styles.kpiPotensiIcon}>
+                  <SvgXml
+                    height="100%"
+                    width="100%"
+                    xml={KOLAM_PROFIT_ICON_SVG}
+                  />
+                </View>
               </View>
             ) : null}
             <View style={[styles.kpiCard, styles.kpiCardWithIcon]}>
