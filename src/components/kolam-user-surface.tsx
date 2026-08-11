@@ -1239,7 +1239,7 @@ function KolamUserDetailSurface({
 
         <KolamDetailSummaryCard
           description="Status akun dan data kepegawaian"
-          fieldColumns={3}
+          fieldColumns={4}
           fields={[
             {
               id: 'account-status',
@@ -1294,6 +1294,38 @@ function KolamUserDetailSurface({
               id: 'updated-at',
               label: 'Terakhir Diperbarui',
               value: formatUserDateTime(user.updatedAt),
+            },
+            {
+              id: 'access-pos',
+              label: 'Akses POS',
+              value: (
+                <KolamStatusBadge
+                  intent={user.accessPos ? 'success' : 'danger'}
+                  label={user.accessPos ? 'Memiliki Akses' : 'Tidak Ada Akses'}
+                />
+              ),
+            },
+            {
+              id: 'access-inventory',
+              label: 'Akses Inventori',
+              value: (
+                <KolamStatusBadge
+                  intent={user.accessInventory ? 'success' : 'danger'}
+                  label={
+                    user.accessInventory ? 'Memiliki Akses' : 'Tidak Ada Akses'
+                  }
+                />
+              ),
+            },
+            {
+              id: 'access-am',
+              label: 'Akses AM',
+              value: (
+                <KolamStatusBadge
+                  intent={user.accessAm ? 'success' : 'danger'}
+                  label={user.accessAm ? 'Memiliki Akses' : 'Tidak Ada Akses'}
+                />
+              ),
             },
             ...(user.isEmployee
               ? [
@@ -1407,41 +1439,6 @@ function KolamUserDetailSurface({
           style={styles.userSummaryCard}
           title="Status akun & karyawan"
         />
-
-        <View style={styles.detailGrid}>
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Akses</Text>
-            <DetailBadgeRow
-              label="Akses POS"
-              badges={[
-                {
-                  intent: user.accessPos ? 'success' : 'danger',
-                  label: user.accessPos ? 'Memiliki Akses' : 'Tidak Ada Akses',
-                },
-              ]}
-            />
-            <DetailBadgeRow
-              label="Akses Inventori"
-              badges={[
-                {
-                  intent: user.accessInventory ? 'success' : 'danger',
-                  label: user.accessInventory
-                    ? 'Memiliki Akses'
-                    : 'Tidak Ada Akses',
-                },
-              ]}
-            />
-            <DetailBadgeRow
-              label="Akses AM"
-              badges={[
-                {
-                  intent: user.accessAm ? 'success' : 'danger',
-                  label: user.accessAm ? 'Memiliki Akses' : 'Tidak Ada Akses',
-                },
-              ]}
-            />
-          </View>
-        </View>
 
         {user.isEmployee &&
         (canViewBonus || canViewDeductions || canViewKasbon) ? (
