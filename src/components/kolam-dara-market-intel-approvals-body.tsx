@@ -22,7 +22,6 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraMarketIntelApprovalsController} from '../hooks/use-kolam-dara-market-intel-approvals-controller';
 import {KolamButton} from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
@@ -99,7 +98,7 @@ export function KolamDaraMarketIntelApprovalsBody({
     <View style={styles.root}>
       <View ref={toolbarRef} collapsable={false} style={styles.toolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
-          {/* FE `dara-approvals-toolbar`: all controls flex-end (Brand → Status → Setujui → Refresh). */}
+          {/* FE `dara-approvals-toolbar`: all controls flex-end. */}
           <View style={styles.toolbarEndRow}>
             {brandOptions.length > 1 ? (
               <View ref={brandTriggerRef} collapsable={false}>
@@ -139,14 +138,6 @@ export function KolamDaraMarketIntelApprovalsBody({
                 }}
               />
             ) : null}
-            <KolamRefreshButton
-              accessibilityLabel="Refresh"
-              disabled={controller.loading}
-
-              onPress={() => {
-                void controller.onRefresh();
-              }}
-            />
           </View>
         </View>
 
