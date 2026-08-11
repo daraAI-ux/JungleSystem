@@ -374,22 +374,34 @@ describe('settings web widgets', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Konten Web',
-        'Landing Marketplace',
-        'Blog',
-        'Blog Topics',
-        'Ringkasan Landing Marketplace',
-        'Unggah Aset Marketplace',
-        'Unggah logo',
-        'Unggah avatar DARA',
-        'Hero slide',
-        '1/1 aktif',
+        'Landing marketplace',
+        'Artikel blog',
+        'Topik blog',
+        'Hero Slides',
+        'Active:',
+        'Preview',
+        'Add Slide',
+        'Dunia Anura',
+        'Active',
         'Naik',
         'Turun',
         'Hapus',
-        'Hero baru',
-        'Simpan hero',
-        'Pilih gambar',
+      ]),
+    );
+    expect(renderText(renderer!)).not.toContain('Hero baru');
+    expect(renderText(renderer!)).not.toContain('Simpan hero');
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root.findByProps({label: 'Preview'}).props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Preview',
+        '1 / 1',
+        'Dunia Anura',
+        'Shop Now',
+        '1280 × 180px',
       ]),
     );
   });

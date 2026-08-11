@@ -7392,8 +7392,25 @@ function MarketplaceHeroSlidesPanel({
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
 }) {
-  const activeCount = items.filter(item => item.isActive !== false).length;
+  const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [previewIndex, setPreviewIndex] = React.useState(0);
+  const activeSlides = items.filter(item => item.isActive !== false);
+  const previewSlides = activeSlides.length > 0 ? activeSlides : items;
+  const activeCount = activeSlides.length;
   const previewDisabled = disabled || items.length === 0;
+
+  const openPreview = React.useCallback(
+    (index = 0) => {
+      if (!previewSlides.length) {
+        return;
+      }
+      setPreviewIndex(
+        Math.min(Math.max(index, 0), previewSlides.length - 1),
+      );
+      setPreviewOpen(true);
+    },
+    [previewSlides.length],
+  );
 
   return (
     <View style={styles.marketplaceHeroSlides}>
@@ -7408,7 +7425,7 @@ function MarketplaceHeroSlidesPanel({
           <KolamActionControlButton
             disabled={previewDisabled}
             label="Preview"
-            onPress={() => undefined}
+            onPress={() => openPreview(0)}
           />
           <KolamActionControlButton
             disabled={disabled}
@@ -7541,7 +7558,7 @@ function MarketplaceHeroSlidesPanel({
             Create Your First Slide
           </Text>
           <Text style={styles.marketplaceOverviewMeta}>
-            Hero slides tampil di carousel landing page.
+            Hero slides are displayed on your landing page carousel.
           </Text>
           <KolamActionControlButton
             disabled={disabled}
@@ -7550,11 +7567,189 @@ function MarketplaceHeroSlidesPanel({
             onPress={onAdd}
           />
           <Text style={styles.marketplaceOverviewMeta}>
-            Recommended: 1280 x 180 px
+            Recommended: 1280 × 180 px
           </Text>
         </View>
       )}
+      {previewOpen && previewSlides.length > 0 ? (
+        <MarketplaceHeroPreview
+          initialIndex={previewIndex}
+          onClose={() => setPreviewOpen(false)}
+          slides={previewSlides}
+        />
+      ) : null}
     </View>
+  );
+}
+
+/** FE `HeroPreview` — modal carousel aspect 1280/180; eyebrow not shown. */
+function MarketplaceHeroPreview({
+  initialIndex,
+  onClose,
+  slides,
+}: {
+  initialIndex: number;
+  onClose: () => void;
+  slides: KolamHeroSlide[];
+}) {
+  const [selectedIndex, setSelectedIndex] = React.useState(() =>
+    Math.min(Math.max(initialIndex, 0), Math.max(slides.length - 1, 0)),
+  );
+
+  React.useEffect(() => {
+    setSelectedIndex(
+      Math.min(Math.max(initialIndex, 0), Math.max(slides.length - 1, 0)),
+    );
+  }, [initialIndex, slides.length]);
+
+  const slide = slides[selectedIndex];
+  if (!slide) {
+    return null;
+  }
+
+  const imageUri = resolveMarketplaceLandingImageUri(slide.image);
+  const canNavigate = slides.length > 1;
+  const scrollPrev = () => {
+    setSelectedIndex(current =>
+      current <= 0 ? slides.length - 1 : current - 1,
+    );
+  };
+  const scrollNext = () => {
+    setSelectedIndex(current =>
+      current >= slides.length - 1 ? 0 : current + 1,
+    );
+  };
+
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible>
+      <View style={styles.marketplaceHeroPreviewOverlay}>
+        <Pressable
+          accessibilityLabel="Close preview backdrop"
+          onPress={onClose}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.marketplaceHeroPreviewShell}>
+          <View style={styles.marketplaceHeroPreviewHeader}>
+            <View style={styles.marketplaceHeroPreviewHeaderMeta}>
+              <Text style={styles.marketplaceHeroPreviewBadge}>Preview</Text>
+              <Text style={styles.marketplaceHeroPreviewCount}>
+                {`${selectedIndex + 1} / ${slides.length}`}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityLabel="Close preview"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={styles.marketplaceHeroPreviewClose}>
+              <Text style={styles.marketplaceHeroPreviewCloseLabel}>×</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.marketplaceHeroPreviewStage}>
+            {imageUri ? (
+              <Image
+                resizeMode="cover"
+                source={{uri: imageUri}}
+                style={styles.marketplaceHeroPreviewImage}
+              />
+            ) : (
+              <View style={styles.marketplaceHeroPreviewImageFallback} />
+            )}
+            <View style={styles.marketplaceHeroPreviewContent}>
+              <View style={styles.marketplaceHeroPreviewCopy}>
+                <Text
+                  numberOfLines={2}
+                  style={styles.marketplaceHeroPreviewTitle}>
+                  {slide.title || '-'}
+                </Text>
+                {slide.subtitle ? (
+                  <Text
+                    numberOfLines={2}
+                    style={styles.marketplaceHeroPreviewSubtitle}>
+                    {slide.subtitle}
+                  </Text>
+                ) : null}
+                {slide.description ? (
+                  <Text
+                    numberOfLines={2}
+                    style={styles.marketplaceHeroPreviewDescription}>
+                    {slide.description}
+                  </Text>
+                ) : null}
+                <View style={styles.marketplaceHeroPreviewCtas}>
+                  <View style={styles.marketplaceHeroPreviewPrimaryCta}>
+                    <Text style={styles.marketplaceHeroPreviewPrimaryCtaLabel}>
+                      {slide.linkText || 'Shop Now'}
+                    </Text>
+                  </View>
+                  {slide.secondaryLinkText || slide.secondaryLink ? (
+                    <Text
+                      numberOfLines={1}
+                      style={styles.marketplaceHeroPreviewSecondaryCta}>
+                      {`${slide.secondaryLinkText || 'Pelajari Cara Adopsi'} →`}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+
+            {canNavigate ? (
+              <>
+                <Pressable
+                  accessibilityLabel="Slide sebelumnya"
+                  accessibilityRole="button"
+                  onPress={scrollPrev}
+                  style={[
+                    styles.marketplaceHeroPreviewArrow,
+                    styles.marketplaceHeroPreviewArrowPrev,
+                  ]}>
+                  <Text style={styles.marketplaceHeroPreviewArrowLabel}>‹</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Slide berikutnya"
+                  accessibilityRole="button"
+                  onPress={scrollNext}
+                  style={[
+                    styles.marketplaceHeroPreviewArrow,
+                    styles.marketplaceHeroPreviewArrowNext,
+                  ]}>
+                  <Text style={styles.marketplaceHeroPreviewArrowLabel}>›</Text>
+                </Pressable>
+                <View style={styles.marketplaceHeroPreviewDots}>
+                  {slides.map((item, index) => (
+                    <Pressable
+                      accessibilityLabel={`Go to slide ${index + 1}`}
+                      accessibilityRole="button"
+                      key={item._id}
+                      onPress={() => setSelectedIndex(index)}
+                      style={[
+                        styles.marketplaceHeroPreviewDot,
+                        index === selectedIndex
+                          ? styles.marketplaceHeroPreviewDotActive
+                          : null,
+                      ]}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.marketplaceHeroPreviewFooter}>
+            <Text style={styles.marketplaceHeroPreviewFooterLabel}>
+              1280 × 180px
+            </Text>
+            <Text style={styles.marketplaceHeroPreviewFooterLabel}>
+              ESC to close
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -10306,6 +10501,179 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+  },
+  marketplaceHeroPreviewArrow: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 999,
+    height: 36,
+    justifyContent: 'center',
+    position: 'absolute',
+    top: '50%',
+    transform: [{translateY: -18}],
+    width: 36,
+    zIndex: 2,
+  },
+  marketplaceHeroPreviewArrowLabel: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '600',
+    lineHeight: 30,
+    marginTop: -2,
+  },
+  marketplaceHeroPreviewArrowNext: {
+    right: 12,
+  },
+  marketplaceHeroPreviewArrowPrev: {
+    left: 12,
+  },
+  marketplaceHeroPreviewBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 999,
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  marketplaceHeroPreviewClose: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 999,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  marketplaceHeroPreviewCloseLabel: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '500',
+    lineHeight: 26,
+    marginTop: -2,
+  },
+  marketplaceHeroPreviewContent: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    zIndex: 1,
+  },
+  marketplaceHeroPreviewCopy: {
+    gap: 8,
+    maxWidth: 280,
+  },
+  marketplaceHeroPreviewCount: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 13,
+  },
+  marketplaceHeroPreviewCtas: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  marketplaceHeroPreviewDescription: {
+    color: 'rgba(0, 0, 0, 0.7)',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  marketplaceHeroPreviewDot: {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 999,
+    height: 6,
+    width: 6,
+  },
+  marketplaceHeroPreviewDotActive: {
+    backgroundColor: '#ffffff',
+    width: 16,
+  },
+  marketplaceHeroPreviewDots: {
+    bottom: 12,
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    zIndex: 2,
+  },
+  marketplaceHeroPreviewFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  marketplaceHeroPreviewFooterLabel: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 12,
+  },
+  marketplaceHeroPreviewHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  marketplaceHeroPreviewHeaderMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  marketplaceHeroPreviewImage: {
+    ...StyleSheet.absoluteFillObject,
+    height: '100%',
+    width: '100%',
+  },
+  marketplaceHeroPreviewImageFallback: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#e5e7eb',
+  },
+  marketplaceHeroPreviewOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  marketplaceHeroPreviewPrimaryCta: {
+    backgroundColor: V.colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  marketplaceHeroPreviewPrimaryCtaLabel: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  marketplaceHeroPreviewSecondaryCta: {
+    color: 'rgba(0, 0, 0, 0.8)',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  marketplaceHeroPreviewShell: {
+    maxWidth: 720,
+    width: '100%',
+    zIndex: 1,
+  },
+  marketplaceHeroPreviewStage: {
+    aspectRatio: 1280 / 180,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
+  },
+  marketplaceHeroPreviewSubtitle: {
+    color: 'rgba(0, 0, 0, 0.8)',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  marketplaceHeroPreviewTitle: {
+    color: '#000000',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   marketplaceLandingTab: {
     alignItems: 'center',
