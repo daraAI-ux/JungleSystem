@@ -15,7 +15,6 @@ import {useKolamKpiSummaryController} from '../hooks/use-kolam-kpi-summary-contr
 import {KolamButton} from './kolam-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamListTableComposition} from './kolam-list-table-composition';
-import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamStatsCardStrip} from './kolam-stats-card-strip';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -98,16 +97,6 @@ export function KolamKpiSummaryBody({
                   size="sm"
                 />
               ))}
-            </View>
-            <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Muat ulang"
-                disabled={controller.loading || controller.chartsLoading}
-                onPress={() => {
-                  void controller.onRefresh();
-                }}
-                size="sm"
-              />
             </View>
           </View>
         </View>
