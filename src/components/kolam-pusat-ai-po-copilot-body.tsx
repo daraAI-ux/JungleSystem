@@ -17,14 +17,14 @@ import {
   type KolamPoOpsLogEvent,
   type KolamPoStatsSummary,
 } from '../domain/kolam-pusat-ai-po-copilot';
-import {getKolamFileUrl} from '../lib/file-url';
-import type {KolamPusatAiPoCopilotController} from '../hooks/use-kolam-pusat-ai-po-copilot-controller';
-import {KolamButton} from './kolam-button';
-import {KolamDashboardMetricSparkline} from './kolam-dashboard-metric-sparkline';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamEmptyState} from './kolam-empty-state';
-import {KolamSwitch} from './kolam-switch';
-import {poCopilotStyles as styles} from './kolam-pusat-ai-po-copilot-styles';
+import { getKolamFileUrl } from '../lib/file-url';
+import type { KolamPusatAiPoCopilotController } from '../hooks/use-kolam-pusat-ai-po-copilot-controller';
+import { KolamButton } from './kolam-button';
+import { KolamDashboardMetricSparkline } from './kolam-dashboard-metric-sparkline';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamEmptyState } from './kolam-empty-state';
+import { KolamSwitch } from './kolam-switch';
+import { poCopilotStyles as styles } from './kolam-pusat-ai-po-copilot-styles';
 
 export function KolamPusatAiPoCopilotBody({
   controller,
@@ -33,12 +33,13 @@ export function KolamPusatAiPoCopilotBody({
   controller: KolamPusatAiPoCopilotController;
   onRouteChange?: (route: string) => void;
 }) {
-  const {stats, opsLog, loading, error, notice, range} = controller;
+  const { stats, opsLog, loading, error, notice, range } = controller;
 
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
-      style={styles.scroll}>
+      style={styles.scroll}
+    >
       <View style={styles.shell}>
         <View style={styles.shellHeader}>
           <View style={styles.heading}>
@@ -58,12 +59,14 @@ export function KolamPusatAiPoCopilotBody({
                     style={[
                       styles.rangeBtn,
                       active ? styles.rangeBtnActive : null,
-                    ]}>
+                    ]}
+                  >
                     <Text
                       style={[
                         styles.rangeBtnText,
                         active ? styles.rangeBtnTextActive : null,
-                      ]}>
+                      ]}
+                    >
                       {item.label}
                     </Text>
                   </Pressable>
@@ -79,12 +82,18 @@ export function KolamPusatAiPoCopilotBody({
             <KolamEmptyState message={error} title="Gagal memuat" />
           ) : null}
 
-          <NotifyRoomSection
-            controller={controller}
-            onRouteChange={onRouteChange}
-          />
+          <View style={styles.sideBySideGrid}>
+            <View style={styles.sideBySideItem}>
+              <NotifyRoomSection
+                controller={controller}
+                onRouteChange={onRouteChange}
+              />
+            </View>
+            <View style={styles.sideBySideItem}>
+              <BotProfileSection controller={controller} />
+            </View>
+          </View>
           <BotHealthSection controller={controller} />
-          <BotProfileSection controller={controller} />
 
           {loading && !stats ? (
             <Text style={styles.loadingText}>Memuat…</Text>
@@ -107,9 +116,9 @@ export function KolamPusatAiPoCopilotBody({
 
           {stats?.generatedAt ? (
             <Text style={styles.meta}>
-              {`Statistik diperbarui ${formatKolamPoCopilotWib(stats.generatedAt)}${
-                stats.note ? ` · ${stats.note}` : ''
-              }`}
+              {`Statistik diperbarui ${formatKolamPoCopilotWib(
+                stats.generatedAt,
+              )}${stats.note ? ` · ${stats.note}` : ''}`}
             </Text>
           ) : null}
 
@@ -167,7 +176,8 @@ function NotifyRoomSection({
         {href ? (
           <Pressable
             accessibilityRole="link"
-            onPress={() => onRouteChange?.(href)}>
+            onPress={() => onRouteChange?.(href)}
+          >
             <Text style={styles.link}>Buka room</Text>
           </Pressable>
         ) : null}
@@ -183,7 +193,7 @@ function NotifyRoomSection({
             options={
               roomOptions.length
                 ? roomOptions
-                : [{label: 'Tidak ada room', value: ''}]
+                : [{ label: 'Tidak ada room', value: '' }]
             }
             showLabelInTrigger
             value={controller.selectedRoomId || roomOptions[0]?.value || ''}
@@ -199,7 +209,7 @@ function BotHealthSection({
 }: {
   controller: KolamPusatAiPoCopilotController;
 }) {
-  const {health, healthLoading} = controller;
+  const { health, healthLoading } = controller;
   const procurementAgent = health?.procurementAgent;
 
   return (
@@ -278,9 +288,13 @@ function BotHealthSection({
               {procurementAgent.guardrailBadges.map(badge => (
                 <View
                   key={`${badge.label}:${badge.value}`}
-                  style={styles.badge}>
+                  style={styles.badge}
+                >
                   <Text style={styles.badgeText}>
-                    {`${badge.label}: ${compactKolamPoCopilotText(badge.value, 34)}`}
+                    {`${badge.label}: ${compactKolamPoCopilotText(
+                      badge.value,
+                      34,
+                    )}`}
                   </Text>
                 </View>
               ))}
@@ -315,7 +329,7 @@ function BotProfileSection({
         </View>
         <View style={styles.botStripActions}>
           {photoUri ? (
-            <Image source={{uri: photoUri}} style={styles.botAvatar} />
+            <Image source={{ uri: photoUri }} style={styles.botAvatar} />
           ) : (
             <View style={styles.botAvatarPh}>
               <Text style={styles.botAvatarPhText}>BOT</Text>
@@ -327,7 +341,8 @@ function BotProfileSection({
             onPress={() => {
               void controller.onPickBotPhoto();
             }}
-            style={styles.botUpload}>
+            style={styles.botUpload}
+          >
             <Text style={styles.botUploadText}>
               {controller.photoUploading ? 'Mengunggah…' : 'Unggah foto bot'}
             </Text>
@@ -416,7 +431,9 @@ function OpsLogCard({
               <Text style={styles.opsTime}>
                 {formatKolamPoCopilotWib(event.at)}
                 {event.invoiceCode ? (
-                  <Text style={styles.opsInvoice}>{` ${event.invoiceCode}`}</Text>
+                  <Text
+                    style={styles.opsInvoice}
+                  >{` ${event.invoiceCode}`}</Text>
                 ) : null}
               </Text>
               <Text style={styles.opsDetail}>
@@ -429,9 +446,13 @@ function OpsLogCard({
                   {event.badges.map(badge => (
                     <View
                       key={`${badge.label}:${badge.value}`}
-                      style={styles.badge}>
+                      style={styles.badge}
+                    >
                       <Text style={styles.badgeText}>
-                        {`${badge.label}: ${compactKolamPoCopilotText(badge.value, 28)}`}
+                        {`${badge.label}: ${compactKolamPoCopilotText(
+                          badge.value,
+                          28,
+                        )}`}
                       </Text>
                     </View>
                   ))}

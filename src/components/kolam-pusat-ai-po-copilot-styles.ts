@@ -2,8 +2,8 @@
  * PO Copilot chrome — layout/spacing from DA-Dara-Plugin
  * `shipping-delivery.css` (shared with shipping); colors follow Kolam light theme.
  */
-import {StyleSheet} from 'react-native';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import { StyleSheet } from 'react-native';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 
 export const poCopilotStyles = StyleSheet.create({
   scroll: {
@@ -65,6 +65,17 @@ export const poCopilotStyles = StyleSheet.create({
   body: {
     flexDirection: 'column',
     gap: 16,
+  },
+  sideBySideGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  sideBySideItem: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 320,
   },
   rangeTabs: {
     backgroundColor: V.colors.muted,
