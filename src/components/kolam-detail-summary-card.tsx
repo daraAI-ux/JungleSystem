@@ -71,6 +71,7 @@ export function KolamDetailSummaryCard({
   style,
   title,
 }: KolamDetailSummaryCardProps) {
+  const hasHeader = Boolean(title || description || actions);
   const fieldGrid =
     fields.length > 0 ? (
       <View style={styles.fieldGrid}>
@@ -103,19 +104,21 @@ export function KolamDetailSummaryCard({
 
   return (
     <KolamCardFrame
-      accessibilityLabel={title}
+      accessibilityLabel={title || description || 'Ringkasan'}
       style={style ? [styles.card, style] : styles.card}
       variant="compact"
     >
-      <View style={actions ? styles.headerRow : styles.header}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
-          {description ? (
-            <Text style={styles.description}>{description}</Text>
-          ) : null}
+      {hasHeader ? (
+        <View style={actions ? styles.headerRow : styles.header}>
+          <View style={styles.header}>
+            {title ? <Text style={styles.title}>{title}</Text> : null}
+            {description ? (
+              <Text style={styles.description}>{description}</Text>
+            ) : null}
+          </View>
+          {actions ? <View style={styles.actions}>{actions}</View> : null}
         </View>
-        {actions ? <View style={styles.actions}>{actions}</View> : null}
-      </View>
+      ) : null}
 
       {leading ? (
         <View style={styles.leadingRow}>

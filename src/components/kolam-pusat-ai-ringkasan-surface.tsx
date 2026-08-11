@@ -322,13 +322,18 @@ function KolamPusatAiOwnerCopilotBody({
           <Text style={styles.loadingText}>Memuat…</Text>
         ) : null}
 
-        <OwnerCopilotDaraAvatarCard controller={controller} />
-
         {error && !dash ? (
           <KolamEmptyState message={error} title="Gagal memuat" />
         ) : null}
 
-        {dash ? <OwnerCopilotDashboardContent dash={dash} /> : null}
+        <View style={styles.ownerLayout}>
+          <View style={styles.ownerMainColumn}>
+            {dash ? <OwnerCopilotDashboardContent dash={dash} /> : null}
+          </View>
+          <View style={styles.ownerProfileColumn}>
+            <OwnerCopilotDaraAvatarCard controller={controller} />
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -471,7 +476,7 @@ function OwnerCopilotDashboardContent({
             ),
           },
         ]}
-        title="Owner Copilot"
+        title=""
       />
 
       {dash.nightOps.failures.length > 0 ? (
@@ -1112,6 +1117,22 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  ownerLayout: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  ownerMainColumn: {
+    flexBasis: '72%',
+    flexGrow: 3,
+    minWidth: 520,
+  },
+  ownerProfileColumn: {
+    flexBasis: '23%',
+    flexGrow: 1,
+    minWidth: 240,
   },
   ownerCards: {
     flexDirection: 'row',
