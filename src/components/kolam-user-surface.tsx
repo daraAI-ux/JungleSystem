@@ -1082,98 +1082,98 @@ function KolamUserDetailSurface({
       </View>
 
       <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <View style={styles.detailGrid}>
-          <KolamDetailSummaryCard
-            description="Data profil utama pengguna"
-            fieldColumns={3}
-            fields={[
-              {
-                id: 'name',
-                label: 'Nama',
-                value: user.displayName,
-              },
-              {
-                id: 'email',
-                label: 'Email',
-                value: user.email || '-',
-              },
-              {
-                id: 'phone',
-                label: 'Nomor Telepon',
-                value: user.phoneNumber || '-',
-              },
-              {
-                id: 'role',
-                label: 'Peran',
-                value: (
-                  <KolamStatusBadge
-                    intent="secondary"
-                    label={user.roleLabel || '-'}
-                  />
-                ),
-              },
-              {
-                id: 'employee-status',
-                label: 'Status Karyawan',
-                value: (
-                  <KolamStatusBadge
-                    intent={user.isEmployee ? 'success' : 'secondary'}
-                    label={user.isEmployee ? 'Karyawan' : 'Bukan karyawan'}
-                  />
-                ),
-              },
-              {
-                id: 'flags',
-                label: 'Flag',
-                value: (
-                  <View style={styles.detailBadgeRow}>
-                    {[
-                      ...(user.isOwner
-                        ? [{intent: 'primary' as const, label: 'Pemilik'}]
-                        : []),
-                      ...(user.isEmployee
-                        ? [{intent: 'secondary' as const, label: 'Karyawan'}]
-                        : []),
-                      ...(user.csActive
-                        ? [{intent: 'success' as const, label: 'CS Aktif'}]
-                        : []),
-                      ...(!user.isOwner && !user.isEmployee && !user.csActive
-                        ? [{intent: 'secondary' as const, label: '-'}]
-                        : []),
-                    ].map(flag => (
-                      <KolamStatusBadge
-                        intent={flag.intent}
-                        key={flag.label}
-                        label={flag.label}
-                      />
-                    ))}
-                  </View>
-                ),
-              },
-            ]}
-            leading={
-              <View style={styles.userProfileBlock}>
-                {profilePhotoUrl ? (
-                  <KolamRemoteImage
-                    accessibilityLabel={`Foto profil ${user.displayName}`}
-                    resizeMode="cover"
-                    scope="user-profile"
-                    sourceUri={profilePhotoUrl}
-                    style={styles.userProfileImage}
-                  />
-                ) : (
-                  <View style={styles.userProfileFallback}>
-                    <Text style={styles.userProfileInitials}>
-                      {getUserInitials(user.displayName)}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            }
-            style={styles.userSummaryCard}
-            title="Informasi dasar"
-          />
+        <KolamDetailSummaryCard
+          description="Data profil utama pengguna"
+          fieldColumns={3}
+          fields={[
+            {
+              id: 'name',
+              label: 'Nama',
+              value: user.displayName,
+            },
+            {
+              id: 'email',
+              label: 'Email',
+              value: user.email || '-',
+            },
+            {
+              id: 'phone',
+              label: 'Nomor Telepon',
+              value: user.phoneNumber || '-',
+            },
+            {
+              id: 'role',
+              label: 'Peran',
+              value: (
+                <KolamStatusBadge
+                  intent="secondary"
+                  label={user.roleLabel || '-'}
+                />
+              ),
+            },
+            {
+              id: 'employee-status',
+              label: 'Status Karyawan',
+              value: (
+                <KolamStatusBadge
+                  intent={user.isEmployee ? 'success' : 'secondary'}
+                  label={user.isEmployee ? 'Karyawan' : 'Bukan karyawan'}
+                />
+              ),
+            },
+            {
+              id: 'flags',
+              label: 'Flag',
+              value: (
+                <View style={styles.detailBadgeRow}>
+                  {[
+                    ...(user.isOwner
+                      ? [{intent: 'primary' as const, label: 'Pemilik'}]
+                      : []),
+                    ...(user.isEmployee
+                      ? [{intent: 'secondary' as const, label: 'Karyawan'}]
+                      : []),
+                    ...(user.csActive
+                      ? [{intent: 'success' as const, label: 'CS Aktif'}]
+                      : []),
+                    ...(!user.isOwner && !user.isEmployee && !user.csActive
+                      ? [{intent: 'secondary' as const, label: '-'}]
+                      : []),
+                  ].map(flag => (
+                    <KolamStatusBadge
+                      intent={flag.intent}
+                      key={flag.label}
+                      label={flag.label}
+                    />
+                  ))}
+                </View>
+              ),
+            },
+          ]}
+          leading={
+            <View style={styles.userProfileBlock}>
+              {profilePhotoUrl ? (
+                <KolamRemoteImage
+                  accessibilityLabel={`Foto profil ${user.displayName}`}
+                  resizeMode="cover"
+                  scope="user-profile"
+                  sourceUri={profilePhotoUrl}
+                  style={styles.userProfileImage}
+                />
+              ) : (
+                <View style={styles.userProfileFallback}>
+                  <Text style={styles.userProfileInitials}>
+                    {getUserInitials(user.displayName)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          }
+          style={styles.userSummaryCard}
+          title="Informasi dasar"
+        />
 
+        <View style={styles.detailGrid}>
           <View style={styles.detailPanel}>
             <Text style={styles.detailPanelTitle}>Status Akun</Text>
             <DetailBadgeRow
@@ -3721,8 +3721,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   userSummaryCard: {
-    flexBasis: 640,
-    flexGrow: 2,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   accessBadgeRow: {
     alignItems: 'center',
