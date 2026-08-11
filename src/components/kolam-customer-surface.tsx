@@ -1437,7 +1437,7 @@ function KolamCustomerFormSurface({
       <View style={styles.detailHeader}>
         <View style={styles.detailHeading}>
           <Text style={styles.detailTitle}>
-            {isEdit ? 'Rubah Pelanggan' : 'Pelanggan Baru'}
+            {isEdit ? 'Rubah pelanggan' : 'Pelanggan baru'}
           </Text>
           <Text style={styles.detailSubtitle}>
             {isEdit

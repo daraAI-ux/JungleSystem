@@ -1680,9 +1680,9 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/customers',
-    labelSuffix: 'Create',
+    labelSuffix: 'Tambah pelanggan',
     route: '/customers/create',
-    description: 'Create customer page from live Kolam',
+    description: 'Buat pelanggan baru dari Kolam live',
   },
   {
     baseRoute: '/customers',
@@ -1692,9 +1692,9 @@ const kolamNavigationRouteVariantSpecs: Array<{
   },
   {
     baseRoute: '/customers',
-    labelSuffix: 'Edit',
+    labelSuffix: 'Rubah pelanggan',
     route: '/customers/:id/edit',
-    description: 'Edit customer page from live Kolam',
+    description: 'Perbarui data pelanggan dari Kolam live',
   },
   {
     baseRoute: '/list-of-users',
