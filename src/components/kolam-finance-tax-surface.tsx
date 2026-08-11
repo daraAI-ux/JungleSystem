@@ -59,7 +59,7 @@ export function KolamFinanceTaxSurface({
   const selectedTabLabel =
     KOLAM_DARA_TAX_TABS.find(tab => tab.id === selectedTab)?.label ??
     'Ringkasan';
-  const showMaintenanceActions = selectedTab === 'regulasi' && access.isAdmin;
+  const showMaintenanceActions = access.isAdmin;
 
   const runMaintenance = (
     action: () => Promise<string | void>,
