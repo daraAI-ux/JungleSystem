@@ -94,53 +94,80 @@ export function KolamDaraTaxRingkasanBody({
       ) : null}
 
       <View style={styles.summaryGrid}>
-      {series && series.ppnOutputByMonth.length > 1 ? (
-        <View style={[styles.card, styles.summaryMainCard]}>
-          <Text style={styles.sectionTitle}>
-            PPN keluaran per bulan (estimasi faktur)
-          </Text>
-          {series.ppnOutputByMonth.map(row => (
-                <View key={row.period} style={styles.seriesRow}>
-                  <Text style={styles.seriesPeriod}>{row.period}</Text>
-                  <View style={styles.seriesTrack}>
-                    <View
-                      style={[
-                        styles.seriesFill,
-                        {
-                          width: `${Math.round(
-                            (row.ppnIdr / seriesMax) * 100,
-                          )}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.seriesAmount}>
-                    {formatKolamDaraTaxIdr(row.ppnIdr)}
-                  </Text>
-                  <Text style={styles.seriesMeta}>{`${row.orderCount} ord`}</Text>
+        {series && series.ppnOutputByMonth.length > 1 ? (
+          <View style={[styles.card, styles.summaryMainCard]}>
+            <Text style={styles.sectionTitle}>
+              PPN keluaran per bulan (estimasi faktur)
+            </Text>
+            {series.ppnOutputByMonth.map(row => (
+              <View key={row.period} style={styles.seriesRow}>
+                <Text style={styles.seriesPeriod}>{row.period}</Text>
+                <View style={styles.seriesTrack}>
+                  <View
+                    style={[
+                      styles.seriesFill,
+                      {
+                        width: `${Math.round(
+                          (row.ppnIdr / seriesMax) * 100,
+                        )}%`,
+                      },
+                    ]}
+                  />
                 </View>
-              ))}
-        </View>
-      ) : null}
-
-      {scores && Object.keys(scores).length ? (
-        <View style={[styles.card, styles.summarySideCard]}>
-          <Text style={styles.meta}>Compliance Score</Text>
-          <Text style={styles.scoreHero}>
-            {overall != null ? `${overall}/100` : '—'}
-          </Text>
-          <View style={styles.scoreList}>
-            {KOLAM_DARA_TAX_COMPLIANCE_LABELS.map(item => (
-              <View key={item.key} style={styles.scoreRow}>
-                <Text style={styles.meta}>{item.label}</Text>
-                <Text style={styles.scoreValue}>
-                  {scores[item.key] != null ? `${scores[item.key]}%` : '—'}
+                <Text style={styles.seriesAmount}>
+                  {formatKolamDaraTaxIdr(row.ppnIdr)}
                 </Text>
+                <Text style={styles.seriesMeta}>{`${row.orderCount} ord`}</Text>
               </View>
             ))}
           </View>
-        </View>
-      ) : null}
+        ) : null}
+
+        {(scores && Object.keys(scores).length) || dashboard.deadlines.length ? (
+          <View style={styles.summarySideColumn}>
+            {scores && Object.keys(scores).length ? (
+              <View style={styles.card}>
+                <Text style={styles.meta}>Compliance Score</Text>
+                <Text style={styles.scoreHero}>
+                  {overall != null ? `${overall}/100` : '—'}
+                </Text>
+                <View style={styles.scoreList}>
+                  {KOLAM_DARA_TAX_COMPLIANCE_LABELS.map(item => (
+                    <View key={item.key} style={styles.scoreRow}>
+                      <Text style={styles.meta}>{item.label}</Text>
+                      <Text style={styles.scoreValue}>
+                        {scores[item.key] != null
+                          ? `${scores[item.key]}%`
+                          : '—'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {dashboard.deadlines.length > 0 ? (
+              <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Deadline pajak</Text>
+                {dashboard.deadlines.map((item, index) => (
+                  <View
+                    key={`${item.title}-${index}`}
+                    style={styles.deadlineRow}>
+                    <View style={styles.deadlineBody}>
+                      <Text style={styles.alertTitle}>{item.title}</Text>
+                      {item.taxType ? (
+                        <Text style={styles.meta}>{item.taxType}</Text>
+                      ) : null}
+                    </View>
+                    <Text style={styles.meta}>
+                      {formatKolamDaraTaxDateId(item.dueDate)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       {dashboard.risks.count > 0 ? (
@@ -176,24 +203,6 @@ export function KolamDaraTaxRingkasanBody({
         </View>
       ) : null}
 
-      {dashboard.deadlines.length > 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Deadline pajak</Text>
-          {dashboard.deadlines.map((item, index) => (
-            <View key={`${item.title}-${index}`} style={styles.deadlineRow}>
-              <View style={styles.deadlineBody}>
-                <Text style={styles.alertTitle}>{item.title}</Text>
-                {item.taxType ? (
-                  <Text style={styles.meta}>{item.taxType}</Text>
-                ) : null}
-              </View>
-              <Text style={styles.meta}>
-                {formatKolamDaraTaxDateId(item.dueDate)}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -277,9 +286,10 @@ const styles = StyleSheet.create({
     flexGrow: 3,
     minWidth: 360,
   },
-  summarySideCard: {
+  summarySideColumn: {
     flexBasis: 0,
     flexGrow: 1,
+    gap: 12,
     minWidth: 220,
   },
   kpiCard: {
