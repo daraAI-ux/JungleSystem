@@ -487,6 +487,7 @@ export function KolamGlobalChatRail({
     });
   const currentUserId = authUser?.id;
   const inboxCanReply = canSignedInUserReplyCustomerChat(authUser);
+  const canCreateRoom = canCreateTeamChatRoom(authUser);
   const selectedItem = items.find(item => item.id === selectedItemId) ?? null;
   const detail = useKolamChatRailDetail({
     currentUserId,
@@ -999,7 +1000,8 @@ export function KolamGlobalChatRail({
       await data.refresh();
       setCreateRoomOpen(false);
       setCreateRoomDraft({category: 'meeting', description: '', name: ''});
-      setCreateRoomMessage(`Room "${getRoomTitle(room)}" dibuat.`);
+      setCreateRoomMessage(undefined);
+      setSelectedItemId(room._id);
     } catch (error) {
       setCreateRoomError(
         error instanceof Error ? error.message : 'Room belum bisa dibuat.',
@@ -1243,19 +1245,36 @@ export function KolamGlobalChatRail({
               </>
             ) : null}
             {mode === 'team-chat' ? (
-              <KolamTeamChatDaraHeaderMenu
-                busy={daraWindowBusy}
-                imageUrl={daraAvatarState.imageUrl}
-                onOpenWindow={() => {
-                  if (daraHeaderMenuOpen) {
-                    handleCloseDaraWindow();
-                    return;
-                  }
-                  setDaraHeaderMenuOpen(true);
-                  handleEnsureDaraWindowRoom().catch(() => undefined);
-                }}
-                open={daraHeaderMenuOpen}
-              />
+              <>
+                {canCreateRoom && !detailOpen ? (
+                  <KolamIconButton
+                    accessibilityLabel="Buat ruang baru"
+                    onPress={() => {
+                      setDaraHeaderMenuOpen(false);
+                      setCreateRoomError(undefined);
+                      setCreateRoomMessage(undefined);
+                      setCreateRoomOpen(true);
+                    }}
+                    size={28}
+                    radius="md"
+                    variant="framed">
+                    <KolamTeamChatAddRoomIcon />
+                  </KolamIconButton>
+                ) : null}
+                <KolamTeamChatDaraHeaderMenu
+                  busy={daraWindowBusy}
+                  imageUrl={daraAvatarState.imageUrl}
+                  onOpenWindow={() => {
+                    if (daraHeaderMenuOpen) {
+                      handleCloseDaraWindow();
+                      return;
+                    }
+                    setDaraHeaderMenuOpen(true);
+                    handleEnsureDaraWindowRoom().catch(() => undefined);
+                  }}
+                  open={daraHeaderMenuOpen}
+                />
+              </>
             ) : null}
             <KolamIconButton
               accessibilityLabel="Tutup panel chat"
@@ -1280,7 +1299,7 @@ export function KolamGlobalChatRail({
             />
         ) : null}
 
-        {mode === 'team-chat' && !detailOpen ? (
+        {mode === 'team-chat' && canCreateRoom ? (
           <KolamTeamChatCreateRoomPanel
             busy={createRoomBusy}
             draft={createRoomDraft}
@@ -1289,9 +1308,9 @@ export function KolamGlobalChatRail({
             onChange={setCreateRoomDraft}
             onSubmit={handleCreateRoom}
             onToggle={() => {
-              setCreateRoomOpen(current => !current);
               setCreateRoomError(undefined);
               setCreateRoomMessage(undefined);
+              setCreateRoomOpen(false);
             }}
             open={createRoomOpen}
           />
@@ -3157,92 +3176,98 @@ function KolamTeamChatCreateRoomPanel({
   onToggle: () => void;
   open: boolean;
 }) {
+  if (!open) {
+    return null;
+  }
+
   return (
-    <View style={styles.createRoomPanel}>
-      <View style={styles.createRoomHeader}>
-        <View style={styles.createRoomCopy}>
-          <Text style={styles.createRoomTitle}>Room team</Text>
-          <Text style={styles.createRoomMeta}>Meeting atau project</Text>
-        </View>
-        <KolamPressable
-          accessibilityLabel="Toggle form room team chat"
-          disabled={busy}
-          onPress={onToggle}
-          style={[styles.createRoomToggle, busy && styles.attachButtonDisabled]}>
-          <Text style={styles.createRoomToggleText}>
-            {open ? 'Tutup' : 'Buat'}
-          </Text>
-        </KolamPressable>
-      </View>
-
-      {message ? <Text style={styles.createRoomMessage}>{message}</Text> : null}
-      {errorMessage ? (
-        <Text style={styles.createRoomError}>{errorMessage}</Text>
-      ) : null}
-
-      {open ? (
-        <View style={styles.createRoomForm}>
-          <TextInput
-            accessibilityLabel="Nama room team chat"
-            editable={!busy}
-            onChangeText={name => onChange(current => ({...current, name}))}
-            placeholder="Nama room"
-            placeholderTextColor={V.colors.mutedFg}
-            style={styles.createRoomInput}
-            value={draft.name}
-          />
-          <View style={styles.createRoomCategoryRow}>
-            {(['meeting', 'project'] as const).map(category => (
-              <KolamPressable
-                key={category}
-                accessibilityLabel={`Pilih kategori room ${category}`}
-                accessibilityState={{selected: draft.category === category}}
-                disabled={busy}
-                onPress={() => onChange(current => ({...current, category}))}
-                style={[
-                  styles.createRoomCategoryButton,
-                  draft.category === category &&
-                    styles.createRoomCategoryButtonActive,
-                  busy && styles.attachButtonDisabled,
-                ]}>
-                <Text
-                  style={[
-                    styles.createRoomCategoryText,
-                    draft.category === category &&
-                      styles.createRoomCategoryTextActive,
-                  ]}>
-                  {category === 'meeting' ? 'Meeting' : 'Project'}
-                </Text>
-              </KolamPressable>
-            ))}
+    <Modal transparent animationType="fade" visible onRequestClose={onToggle}>
+      <View style={styles.chatLabelsDialogHost}>
+        <KolamModalBackdrop onPress={onToggle} />
+        <View
+          accessibilityLabel="Popup room baru team chat"
+          style={[styles.chatLabelsDialog, styles.createRoomDialog]}>
+          <View style={styles.chatLabelsDialogHeader}>
+            <Text style={styles.chatLabelsDialogTitle}>Room baru</Text>
+            <KolamPressable
+              accessibilityLabel="Tutup popup room baru"
+              disabled={busy}
+              onPress={onToggle}
+              style={styles.chatLabelsCloseButton}>
+              <Text style={styles.chatLabelsCloseText}>Batal</Text>
+            </KolamPressable>
           </View>
-          <TextInput
-            accessibilityLabel="Deskripsi room team chat"
-            editable={!busy}
-            multiline
-            onChangeText={description =>
-              onChange(current => ({...current, description}))
-            }
-            placeholder="Deskripsi"
-            placeholderTextColor={V.colors.mutedFg}
-            style={[styles.createRoomInput, styles.createRoomDescriptionInput]}
-            value={draft.description}
-          />
-          <KolamPressable
-            accessibilityLabel="Simpan room team chat"
-            disabled={busy || !draft.name.trim()}
-            onPress={() => void onSubmit()}
-            style={[
-              styles.createRoomSubmit,
-              (busy || !draft.name.trim()) && styles.attachButtonDisabled,
-            ]}>
-            <Text style={styles.createRoomSubmitText}>
-              {busy ? 'Membuat...' : 'Simpan room'}
-            </Text>
-          </KolamPressable>
+
+          {message ? (
+            <Text style={styles.createRoomMessage}>{message}</Text>
+          ) : null}
+          {errorMessage ? (
+            <Text style={styles.createRoomError}>{errorMessage}</Text>
+          ) : null}
+
+          <View style={styles.createRoomForm}>
+            <TextInput
+              accessibilityLabel="Nama room team chat"
+              editable={!busy}
+              onChangeText={name => onChange(current => ({...current, name}))}
+              placeholder="Nama"
+              placeholderTextColor={V.colors.mutedFg}
+              style={styles.createRoomInput}
+              value={draft.name}
+            />
+            <View style={styles.createRoomCategoryRow}>
+              {(['meeting', 'project'] as const).map(category => (
+                <KolamPressable
+                  key={category}
+                  accessibilityLabel={`Pilih kategori room ${category}`}
+                  accessibilityState={{selected: draft.category === category}}
+                  disabled={busy}
+                  onPress={() => onChange(current => ({...current, category}))}
+                  style={[
+                    styles.createRoomCategoryButton,
+                    draft.category === category &&
+                      styles.createRoomCategoryButtonActive,
+                    busy && styles.attachButtonDisabled,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.createRoomCategoryText,
+                      draft.category === category &&
+                        styles.createRoomCategoryTextActive,
+                    ]}>
+                    {category === 'meeting' ? 'Meeting' : 'Project'}
+                  </Text>
+                </KolamPressable>
+              ))}
+            </View>
+            <TextInput
+              accessibilityLabel="Deskripsi room team chat"
+              editable={!busy}
+              multiline
+              onChangeText={description =>
+                onChange(current => ({...current, description}))
+              }
+              placeholder="Deskripsi"
+              placeholderTextColor={V.colors.mutedFg}
+              style={[styles.createRoomInput, styles.createRoomDescriptionInput]}
+              value={draft.description}
+            />
+            <KolamPressable
+              accessibilityLabel="Simpan room team chat"
+              disabled={busy || !draft.name.trim()}
+              onPress={() => void onSubmit()}
+              style={[
+                styles.createRoomSubmit,
+                (busy || !draft.name.trim()) && styles.attachButtonDisabled,
+              ]}>
+              <Text style={styles.createRoomSubmitText}>
+                {busy ? 'Membuat...' : 'Simpan'}
+              </Text>
+            </KolamPressable>
+          </View>
         </View>
-      ) : null}
-    </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -3377,6 +3402,18 @@ function KolamTeamChatDeleteRoomIcon() {
       width="100%"
       xml={KOLAM_DELETE_ROOM_ICON_SVG}
     />
+  );
+}
+
+function KolamTeamChatAddRoomIcon() {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={styles.teamChatAddRoomIcon}>
+      <View style={styles.teamChatAddRoomIconHorizontal} />
+      <View style={styles.teamChatAddRoomIconVertical} />
+    </View>
   );
 }
 
@@ -6368,6 +6405,42 @@ function canSignedInUserReplyCustomerChat(user?: SignedInUser | null) {
   return user.csActive === true;
 }
 
+function canCreateTeamChatRoom(user?: SignedInUser | null) {
+  if (!user) {
+    return false;
+  }
+
+  const roleKey = normalizeChatRoleKey(user.roleKey);
+  if (CHAT_ADMIN_ROLE_KEYS.has(roleKey)) {
+    return true;
+  }
+
+  if ((user as {isOwner?: boolean}).isOwner === true) {
+    return true;
+  }
+
+  return permissionAllowsChatCreate(user.permissions);
+}
+
+function permissionAllowsChatCreate(
+  permissions?: SignedInUser['permissions'],
+) {
+  return Boolean(
+    permissions?.some(permission => {
+      const resource = String(permission.resource ?? '')
+        .toLowerCase()
+        .trim();
+      const actions = (permission.actions ?? []).map(action =>
+        String(action).toLowerCase().trim(),
+      );
+      return (
+        resource === 'chat' &&
+        (actions.includes('create') || actions.includes('*'))
+      );
+    }),
+  );
+}
+
 function normalizeChatRoleKey(roleKey?: string | null) {
   return String(roleKey ?? '').toLowerCase().trim();
 }
@@ -8201,6 +8274,9 @@ const styles = StyleSheet.create({
     zIndex: 3,
     elevation: 30,
   },
+  createRoomDialog: {
+    width: 380,
+  },
   chatLabelsDialogHeader: {
     minHeight: 36,
     flexDirection: 'row',
@@ -8862,6 +8938,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: V.colors.bg,
     gap: 8,
+  },
+  teamChatAddRoomIcon: {
+    width: 14,
+    height: 14,
+    position: 'relative',
+  },
+  teamChatAddRoomIconHorizontal: {
+    position: 'absolute',
+    left: 1,
+    right: 1,
+    top: 6,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: V.colors.fg,
+  },
+  teamChatAddRoomIconVertical: {
+    position: 'absolute',
+    top: 1,
+    bottom: 1,
+    left: 6,
+    width: 2,
+    borderRadius: 1,
+    backgroundColor: V.colors.fg,
   },
   createRoomHeader: {
     flexDirection: 'row',

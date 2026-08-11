@@ -927,6 +927,24 @@ describe('KolamGlobalChatRail', () => {
       rooms: [],
       totalUnread: 0,
     });
+    useAuthContextMock.mockReturnValue({
+      accessScope: {am: false, kolam: true, pos: false},
+      authEmail: '',
+      authMessage: '',
+      authPassword: '',
+      authSource: 'kolam',
+      authSourceHint: '',
+      authUser: {csActive: true, id: 'staff-1', roleKey: 'admin'},
+      deviceIdentityStatus: 'missing',
+      displayName: 'Staff',
+      handleSignIn: jest.fn(),
+      handleSignOut: jest.fn(),
+      isSigningIn: false,
+      setAuthEmail: jest.fn(),
+      setAuthMessage: jest.fn(),
+      setAuthPassword: jest.fn(),
+      setAuthSource: jest.fn(),
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -936,10 +954,8 @@ describe('KolamGlobalChatRail', () => {
     });
 
     const toggleButton = renderer!.root
-      .findAllByType(KolamPressable)
-      .find(
-        node => node.props.accessibilityLabel === 'Toggle form room team chat',
-      );
+      .findAll(node => node.props.accessibilityLabel === 'Buat ruang baru')
+      .at(0);
 
     await ReactTestRenderer.act(async () => {
       toggleButton!.props.onPress();
@@ -979,9 +995,6 @@ describe('KolamGlobalChatRail', () => {
       name: 'Launch Ops',
     });
     expect(refresh).toHaveBeenCalledTimes(1);
-    expect(renderText(renderer!)).toEqual(
-      expect.arrayContaining(['Room "Launch Ops" dibuat.']),
-    );
   });
 
   it('opens DARA and staff direct team chat rooms from the rail', async () => {
