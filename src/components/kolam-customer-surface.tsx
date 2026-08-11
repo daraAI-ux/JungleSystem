@@ -33,10 +33,7 @@ import {KolamEditButton} from './kolam-edit-button';
 import {KolamContentFrame} from './kolam-content-frame';
 import {KolamDeleteConfirmDialog} from './kolam-delete-confirm-dialog';
 import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
-import {
-  KolamDetailMediaPreview,
-  type KolamDetailMediaItem,
-} from './kolam-detail-media-preview';
+import type {KolamDetailMediaItem} from './kolam-detail-media-preview';
 import {
   KolamDropdownSelect,
   KolamTableRowActionMenu,
@@ -417,6 +414,7 @@ function KolamCustomerDetailSurface({
   }
 
   const mediaItems = createCustomerMediaItems(customer);
+  const hasAddresses = customer.addresses.length > 0;
   const primaryAddress = getKolamCustomerLocationText(customer);
   const handleUploadPhoto = async () => {
     try {
@@ -519,7 +517,11 @@ function KolamCustomerDetailSurface({
       ) : null}
 
       <View style={styles.detailGrid}>
-        <View style={styles.detailMainColumn}>
+        <View
+          style={[
+            styles.detailMainColumn,
+            !hasAddresses && styles.detailMainColumnFull,
+          ]}>
           <KolamDetailSummaryCard
             body={
               customer.notes ? (
@@ -614,8 +616,8 @@ function KolamCustomerDetailSurface({
           />
         </View>
 
-        <View style={styles.detailSideColumn}>
-          {customer.addresses.length ? (
+        {hasAddresses ? (
+          <View style={styles.detailSideColumn}>
             <KolamContentFrame
               style={styles.detailCard}
               variant="settingsWebConfig">
@@ -644,8 +646,8 @@ function KolamCustomerDetailSurface({
                 ))}
               </View>
             </KolamContentFrame>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -1092,6 +1094,13 @@ function CustomerPictureSummaryBox({
   onUploadPhoto: () => Promise<void>;
   photoSaving: boolean;
 }) {
+  const primaryPhoto = mediaItems[0];
+  const previewItems = mediaItems.map(item => ({
+    id: item.id,
+    title: item.label,
+    uri: item.uri,
+  }));
+
   return (
     <View style={styles.customerSummaryPictureBox}>
       <View style={styles.photoSectionHeader}>
@@ -1102,9 +1111,18 @@ function CustomerPictureSummaryBox({
           onPress={() => void onUploadPhoto()}
         />
       </View>
-      {mediaItems.length ? (
+      {primaryPhoto ? (
         <>
-          <KolamDetailMediaPreview items={mediaItems} title={customer.name} />
+          <View style={styles.customerSummaryPhotoFrame}>
+            <KolamRemoteImage
+              accessibilityLabel={`Foto ${customer.name}`}
+              previewItems={previewItems}
+              resizeMode="cover"
+              scope="customer"
+              sourceUri={primaryPhoto.uri}
+              style={styles.customerSummaryPhotoImage}
+            />
+          </View>
           <View style={styles.photoActionList}>
             {customer.photos.map((photo, index) => (
               <View key={`${photo}-${index}`} style={styles.photoActionRow}>
@@ -1123,7 +1141,7 @@ function CustomerPictureSummaryBox({
           </View>
         </>
       ) : (
-        <View style={styles.detailEmptyBox}>
+        <View style={styles.customerSummaryPhotoEmpty}>
           <Text style={styles.customerSubText}>
             Foto pelanggan belum tersedia.
           </Text>
@@ -1558,6 +1576,10 @@ const styles = StyleSheet.create({
     gap: 14,
     minWidth: 0,
   },
+  detailMainColumnFull: {
+    flex: 1,
+    width: '100%',
+  },
   detailSideColumn: {
     flex: 1,
     gap: 14,
@@ -1568,9 +1590,10 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   customerSummaryPictureLeading: {
-    maxWidth: 320,
-    minWidth: 260,
-    width: 300,
+    flexGrow: 0,
+    maxWidth: 300,
+    minWidth: 240,
+    width: 260,
   },
   customerSummaryPictureBox: {
     backgroundColor: V.colors.bg,
@@ -1579,6 +1602,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
     padding: 10,
+    width: '100%',
+  },
+  customerSummaryPhotoFrame: {
+    aspectRatio: 1,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  customerSummaryPhotoImage: {
+    height: '100%',
+    width: '100%',
+  },
+  customerSummaryPhotoEmpty: {
+    alignItems: 'center',
+    aspectRatio: 1,
+    backgroundColor: V.colors.muted,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    padding: 14,
     width: '100%',
   },
   customerSummaryNotes: {
@@ -1599,16 +1646,6 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontSize: 12,
     lineHeight: 18,
-  },
-  detailEmptyBox: {
-    alignItems: 'center',
-    backgroundColor: V.colors.muted,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 120,
-    justifyContent: 'center',
-    padding: 14,
   },
   photoSectionHeader: {
     alignItems: 'flex-start',
