@@ -6,7 +6,6 @@
 export type KolamDaraTaxRmsSubTab =
   | 'ringkasan'
   | 'kitab'
-  | 'sumber'
   | 'draft'
   | 'versi'
   | 'kb'
@@ -19,14 +18,13 @@ export const KOLAM_DARA_TAX_RMS_TABS: Array<{
   adminOnly?: boolean;
   approveOnly?: boolean;
 }> = [
-  {id: 'ringkasan', label: 'Ringkasan'},
-  {id: 'kitab', label: 'Kitab'},
-  {id: 'sumber', label: 'Sumber'},
-  {id: 'draft', label: 'Draf'},
-  {id: 'versi', label: 'Versi'},
-  {id: 'kb', label: 'Basis pengetahuan'},
-  {id: 'audit', label: 'Log audit', approveOnly: true},
-  {id: 'maintenance', label: 'Pemeliharaan', adminOnly: true},
+  { id: 'ringkasan', label: 'Ringkasan' },
+  { id: 'kitab', label: 'Kitab' },
+  { id: 'draft', label: 'Draf' },
+  { id: 'versi', label: 'Versi' },
+  { id: 'kb', label: 'Basis pengetahuan' },
+  { id: 'audit', label: 'Log audit', approveOnly: true },
+  { id: 'maintenance', label: 'Pemeliharaan', adminOnly: true },
 ];
 
 export const KOLAM_DARA_TAX_WATCH_STATUS_LABEL: Record<string, string> = {
@@ -132,7 +130,7 @@ export type KolamDaraTaxTaxStatus = {
 
 export type KolamDaraTaxVersionCompare = {
   summary: string;
-  formulaDiffs: Array<{field: string; before: string; after: string}>;
+  formulaDiffs: Array<{ field: string; before: string; after: string }>;
 };
 
 function asRecord(value: unknown): Record<string, unknown> {

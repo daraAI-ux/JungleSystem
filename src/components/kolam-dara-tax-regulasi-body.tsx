@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Linking,
   Pressable,
@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {formatKolamDaraTaxDateId} from '../domain/kolam-dara-tax';
+import { formatKolamDaraTaxDateId } from '../domain/kolam-dara-tax';
 import {
   formatKolamDaraTaxDateTimeId,
   KOLAM_DARA_TAX_RMS_TABS,
@@ -23,7 +23,7 @@ import {
   type KolamDaraTaxTaxStatus,
   type KolamDaraTaxVersionCompare,
 } from '../domain/kolam-dara-tax-regulasi';
-import {kolamVisualTokens as V} from '../domain/kolam-visual';
+import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   aiFillKolamDaraTaxKitab,
   approveKolamDaraTaxRegulationDraft,
@@ -43,14 +43,13 @@ import {
   runKolamDaraTaxReaccruePph21,
   runKolamDaraTaxSnapshotBackfill,
 } from '../services/kolam-dara-tax-api';
-import {KolamButton} from './kolam-button';
-import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
-import {KolamRefreshButton} from './kolam-refresh-button';
-import {KolamRefreshIcon} from './kolam-refresh-icon';
-import {KolamDropdownSelect} from './kolam-dropdown-select';
-import {KolamStatusBadge} from './kolam-status-badge';
-import type {KolamStatusBadgeIntent} from './kolam-status-badge-types';
-import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
+import { KolamButton } from './kolam-button';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
+import { KolamRefreshIcon } from './kolam-refresh-icon';
+import { KolamDropdownSelect } from './kolam-dropdown-select';
+import { KolamStatusBadge } from './kolam-status-badge';
+import type { KolamStatusBadgeIntent } from './kolam-status-badge-types';
+import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
 
 type DraftFormulas = {
   ppnRate?: number;
@@ -98,7 +97,9 @@ function draftStatusIntent(status: string): KolamStatusBadgeIntent {
 }
 
 function formatRegulationStatusLabel(status: string) {
-  const normalized = String(status || '').trim().toLowerCase();
+  const normalized = String(status || '')
+    .trim()
+    .toLowerCase();
   if (normalized === 'active') {
     return 'Aktif';
   }
@@ -118,7 +119,9 @@ function formatRegulationStatusLabel(status: string) {
 }
 
 function formatWatcherRuntimeStatusLabel(status: string) {
-  const normalized = String(status || '').trim().toLowerCase();
+  const normalized = String(status || '')
+    .trim()
+    .toLowerCase();
   if (!normalized) {
     return '—';
   }
@@ -149,7 +152,7 @@ function kitabStatusIntent(code: string): KolamStatusBadgeIntent {
 
 function errorMessage(err: unknown, fallback: string) {
   if (err && typeof err === 'object' && 'message' in err) {
-    const msg = String((err as {message?: unknown}).message || '').trim();
+    const msg = String((err as { message?: unknown }).message || '').trim();
     if (msg) {
       return msg;
     }
@@ -185,7 +188,8 @@ export function KolamDaraTaxRegulasiBody({
   onRefreshMonitoring: () => void;
   onNotice: (msg: string) => void;
 }) {
-  const [rmsSubTab, setRmsSubTab] = useState<KolamDaraTaxRmsSubTab>('ringkasan');
+  const [rmsSubTab, setRmsSubTab] =
+    useState<KolamDaraTaxRmsSubTab>('ringkasan');
 
   const [kitab, setKitab] = useState<KolamDaraTaxKitab | null>(null);
   const [kitabLoading, setKitabLoading] = useState(false);
@@ -205,9 +209,8 @@ export function KolamDaraTaxRegulasiBody({
   >({});
   const [draftBusyId, setDraftBusyId] = useState<string | null>(null);
 
-  const [versions, setVersions] = useState<KolamDaraTaxRegulationVersion[]>(
-    versionsProp,
-  );
+  const [versions, setVersions] =
+    useState<KolamDaraTaxRegulationVersion[]>(versionsProp);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [compareA, setCompareA] = useState('');
   const [compareB, setCompareB] = useState('');
@@ -353,7 +356,7 @@ export function KolamDaraTaxRegulasiBody({
   }, [loadKitab, rmsSubTab]);
 
   useEffect(() => {
-    if (rmsSubTab === 'sumber') {
+    if (rmsSubTab === 'kitab') {
       void loadSources();
     }
   }, [loadSources, rmsSubTab]);
@@ -387,7 +390,7 @@ export function KolamDaraTaxRegulasiBody({
   }
 
   const versionOptions = [
-    {label: 'Pilih…', value: ''},
+    { label: 'Pilih…', value: '' },
     ...versions.map(v => ({
       label: v.versionNumber || v.id,
       value: v.id,
@@ -422,7 +425,9 @@ export function KolamDaraTaxRegulasiBody({
                 {`${activeVersion.versionNumber} — ${activeVersion.title}`}
               </Text>
               <Text style={styles.meta}>
-                {`PPN ${activeVersion.ppnRate ?? 11}% · berlaku ${formatKolamDaraTaxDateId(
+                {`PPN ${
+                  activeVersion.ppnRate ?? 11
+                }% · berlaku ${formatKolamDaraTaxDateId(
                   activeVersion.effectiveDate,
                 )}`}
               </Text>
@@ -452,9 +457,7 @@ export function KolamDaraTaxRegulasiBody({
                     />
                   ) : (
                     <KolamButton
-                      disabled={
-                        !taxStatus?.watcherEnabled || watcherRunning
-                      }
+                      disabled={!taxStatus?.watcherEnabled || watcherRunning}
                       icon={
                         <KolamRefreshIcon
                           color={V.colors.primaryFg}
@@ -475,8 +478,8 @@ export function KolamDaraTaxRegulasiBody({
                 ) : null}
               </View>
               <Text style={styles.meta}>
-                Pantau perubahan regulasi dari sumber eksternal. Aktifkan modul di
-                Pengaturan → Alat AI.
+                Pantau perubahan regulasi dari sumber eksternal. Aktifkan modul
+                di Pengaturan → Alat AI.
               </Text>
               {taxStatus ? (
                 <KolamDetailSummaryCard
@@ -499,7 +502,9 @@ export function KolamDaraTaxRegulasiBody({
                     {
                       id: 'summary',
                       label: 'Ringkasan',
-                      value: `${taxStatus.monitored}/${taxStatus.total} sumber dimonitor${
+                      value: `${taxStatus.monitored}/${
+                        taxStatus.total
+                      } sumber dimonitor${
                         taxStatus.withError > 0
                           ? ` · ${taxStatus.withError} bermasalah`
                           : ''
@@ -541,7 +546,8 @@ export function KolamDaraTaxRegulasiBody({
                             if (src.url) {
                               void Linking.openURL(src.url);
                             }
-                          }}>
+                          }}
+                        >
                           <Text style={styles.link}>{src.name || src.url}</Text>
                         </Pressable>
                       </View>
@@ -549,8 +555,9 @@ export function KolamDaraTaxRegulasiBody({
                         <KolamStatusBadge
                           intent={watchStatusIntent(src.watchStatus)}
                           label={
-                            KOLAM_DARA_TAX_WATCH_STATUS_LABEL[src.watchStatus] ??
-                            src.watchStatus
+                            KOLAM_DARA_TAX_WATCH_STATUS_LABEL[
+                              src.watchStatus
+                            ] ?? src.watchStatus
                           }
                         />
                       </View>
@@ -600,9 +607,7 @@ export function KolamDaraTaxRegulasiBody({
                         onNotice('Kitab diisi AI');
                       })
                       .catch(err =>
-                        onNotice(
-                          errorMessage(err, 'Gagal isi kitab via AI'),
-                        ),
+                        onNotice(errorMessage(err, 'Gagal isi kitab via AI')),
                       )
                       .finally(() => setKitabAiRunning(false));
                   }}
@@ -622,9 +627,7 @@ export function KolamDaraTaxRegulasiBody({
                 <Text style={[styles.th, styles.colStatus]}>Status</Text>
               </View>
               {kitab.rows.map(row => (
-                <View
-                  key={row.moduleId || row.modul}
-                  style={styles.tableRow}>
+                <View key={row.moduleId || row.modul} style={styles.tableRow}>
                   <Text style={[styles.tdStrong, styles.colModul]}>
                     {row.modul}
                   </Text>
@@ -647,164 +650,163 @@ export function KolamDaraTaxRegulasiBody({
               ) : null}
             </>
           ) : null}
-        </View>
-      ) : null}
 
-      {rmsSubTab === 'sumber' ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Sumber</Text>
-          {sourcesLoading ? (
-            <Text style={styles.meta}>Memuat…</Text>
-          ) : (
-            <>
-              {sources.length === 0 ? (
-                <Text style={styles.meta}>Belum ada sumber.</Text>
-              ) : (
-                sources.map(src => (
-                  <View key={src.id} style={styles.listCard}>
-                    <View style={styles.cardHead}>
-                      <Pressable
-                        accessibilityRole="link"
-                        disabled={!src.url}
-                        onPress={() => {
-                          if (src.url) {
-                            void Linking.openURL(src.url);
-                          }
-                        }}
-                        style={styles.flexShrink}>
-                        <Text style={styles.tdStrong}>{src.name}</Text>
-                        <Text style={styles.link}>{src.url}</Text>
-                      </Pressable>
-                      <KolamStatusBadge
-                        intent={
-                          src.isActive === false
-                            ? 'secondary'
-                            : watchStatusIntent(src.watchStatus)
-                        }
-                        label={
-                          src.isActive === false
-                            ? 'Nonaktif'
-                            : KOLAM_DARA_TAX_WATCH_STATUS_LABEL[
-                                src.watchStatus
-                              ] ??
-                              (src.watchStatus || '—')
-                        }
-                      />
-                    </View>
-                    {isAdmin ? (
-                      <View style={styles.rowActions}>
-                        <KolamButton
-                          disabled={checkingSourceId != null}
-                          intent="outline"
-                          label={
-                            checkingSourceId === src.id ? 'Mengecek…' : 'Cek'
-                          }
+          <View style={styles.sourceSection}>
+            <Text style={styles.sectionTitle}>Sumber regulasi</Text>
+            {sourcesLoading ? (
+              <Text style={styles.meta}>Memuat…</Text>
+            ) : (
+              <>
+                {sources.length === 0 ? (
+                  <Text style={styles.meta}>Belum ada sumber.</Text>
+                ) : (
+                  sources.map(src => (
+                    <View key={src.id} style={styles.listCard}>
+                      <View style={styles.cardHead}>
+                        <Pressable
+                          accessibilityRole="link"
+                          disabled={!src.url}
                           onPress={() => {
-                            setCheckingSourceId(src.id);
-                            checkKolamDaraTaxRegulationSource(src.id)
-                              .then(r => {
-                                if (r.error) {
-                                  onNotice(r.error);
-                                } else if (r.changed) {
-                                  onNotice(
-                                    'Perubahan terdeteksi — cek tab Draf',
-                                  );
-                                } else {
-                                  onNotice('Tidak ada perubahan');
-                                }
-                                void loadSources();
-                                onRefreshMonitoring();
-                              })
-                              .catch(err =>
-                                onNotice(errorMessage(err, 'Gagal cek URL')),
-                              )
-                              .finally(() => setCheckingSourceId(null));
+                            if (src.url) {
+                              void Linking.openURL(src.url);
+                            }
                           }}
+                          style={styles.flexShrink}
+                        >
+                          <Text style={styles.tdStrong}>{src.name}</Text>
+                          <Text style={styles.link}>{src.url}</Text>
+                        </Pressable>
+                        <KolamStatusBadge
+                          intent={
+                            src.isActive === false
+                              ? 'secondary'
+                              : watchStatusIntent(src.watchStatus)
+                          }
+                          label={
+                            src.isActive === false
+                              ? 'Nonaktif'
+                              : KOLAM_DARA_TAX_WATCH_STATUS_LABEL[
+                                  src.watchStatus
+                                ] ??
+                                (src.watchStatus || '—')
+                          }
                         />
-                        {src.isActive !== false ? (
+                      </View>
+                      {isAdmin ? (
+                        <View style={styles.rowActions}>
                           <KolamButton
+                            disabled={checkingSourceId != null}
                             intent="outline"
-                            label="Nonaktifkan"
+                            label={
+                              checkingSourceId === src.id ? 'Mengecek…' : 'Cek'
+                            }
                             onPress={() => {
-                              deleteKolamDaraTaxRegulationSource(src.id)
-                                .then(() => {
-                                  onNotice('Sumber dinonaktifkan');
+                              setCheckingSourceId(src.id);
+                              checkKolamDaraTaxRegulationSource(src.id)
+                                .then(r => {
+                                  if (r.error) {
+                                    onNotice(r.error);
+                                  } else if (r.changed) {
+                                    onNotice(
+                                      'Perubahan terdeteksi — cek tab Draf',
+                                    );
+                                  } else {
+                                    onNotice('Tidak ada perubahan');
+                                  }
                                   void loadSources();
                                   onRefreshMonitoring();
                                 })
                                 .catch(err =>
-                                  onNotice(
-                                    errorMessage(
-                                      err,
-                                      'Gagal menonaktifkan sumber',
-                                    ),
-                                  ),
-                                );
+                                  onNotice(errorMessage(err, 'Gagal cek URL')),
+                                )
+                                .finally(() => setCheckingSourceId(null));
                             }}
                           />
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </View>
-                ))
-              )}
+                          {src.isActive !== false ? (
+                            <KolamButton
+                              intent="outline"
+                              label="Nonaktifkan"
+                              onPress={() => {
+                                deleteKolamDaraTaxRegulationSource(src.id)
+                                  .then(() => {
+                                    onNotice('Sumber dinonaktifkan');
+                                    void loadSources();
+                                    onRefreshMonitoring();
+                                  })
+                                  .catch(err =>
+                                    onNotice(
+                                      errorMessage(
+                                        err,
+                                        'Gagal menonaktifkan sumber',
+                                      ),
+                                    ),
+                                  );
+                              }}
+                            />
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  ))
+                )}
 
-              {isAdmin ? (
-                <View style={styles.addForm}>
-                  <Text style={styles.tdStrong}>Tambah sumber</Text>
-                  <TextInput
-                    accessibilityLabel="Nama"
-                    onChangeText={setSourceName}
-                    placeholder="Nama"
-                    placeholderTextColor={V.colors.mutedFg}
-                    style={styles.input}
-                    value={sourceName}
-                  />
-                  <TextInput
-                    accessibilityLabel="URL"
-                    autoCapitalize="none"
-                    onChangeText={setSourceUrl}
-                    placeholder="URL"
-                    placeholderTextColor={V.colors.mutedFg}
-                    style={styles.input}
-                    value={sourceUrl}
-                  />
-                  <KolamButton
-                    disabled={sourceCreating}
-                    intent="outline"
-                    label={sourceCreating ? 'Menambah…' : 'Tambah'}
-                    onPress={() => {
-                      if (!sourceName.trim() || !sourceUrl.trim()) {
-                        onNotice('Nama dan URL wajib');
-                        return;
-                      }
-                      setSourceCreating(true);
-                      createKolamDaraTaxRegulationSource({
-                        name: sourceName.trim(),
-                        url: sourceUrl.trim(),
-                        authority: 'manual',
-                        checkIntervalHours: 24,
-                        isActive: true,
-                      })
-                        .then(() => {
-                          onNotice('Sumber ditambahkan');
-                          setSourceName('');
-                          setSourceUrl('');
-                          void loadSources();
-                          onRefreshMonitoring();
+                {isAdmin ? (
+                  <View style={styles.addForm}>
+                    <Text style={styles.tdStrong}>Tambah sumber</Text>
+                    <TextInput
+                      accessibilityLabel="Nama"
+                      onChangeText={setSourceName}
+                      placeholder="Nama"
+                      placeholderTextColor={V.colors.mutedFg}
+                      style={styles.input}
+                      value={sourceName}
+                    />
+                    <TextInput
+                      accessibilityLabel="URL"
+                      autoCapitalize="none"
+                      onChangeText={setSourceUrl}
+                      placeholder="URL"
+                      placeholderTextColor={V.colors.mutedFg}
+                      style={styles.input}
+                      value={sourceUrl}
+                    />
+                    <KolamButton
+                      disabled={sourceCreating}
+                      intent="outline"
+                      label={sourceCreating ? 'Menambah…' : 'Tambah'}
+                      onPress={() => {
+                        if (!sourceName.trim() || !sourceUrl.trim()) {
+                          onNotice('Nama dan URL wajib');
+                          return;
+                        }
+                        setSourceCreating(true);
+                        createKolamDaraTaxRegulationSource({
+                          name: sourceName.trim(),
+                          url: sourceUrl.trim(),
+                          authority: 'manual',
+                          checkIntervalHours: 24,
+                          isActive: true,
                         })
-                        .catch(err =>
-                          onNotice(
-                            errorMessage(err, 'Gagal menambah sumber'),
-                          ),
-                        )
-                        .finally(() => setSourceCreating(false));
-                    }}
-                  />
-                </View>
-              ) : null}
-            </>
-          )}
+                          .then(() => {
+                            onNotice('Sumber ditambahkan');
+                            setSourceName('');
+                            setSourceUrl('');
+                            void loadSources();
+                            onRefreshMonitoring();
+                          })
+                          .catch(err =>
+                            onNotice(
+                              errorMessage(err, 'Gagal menambah sumber'),
+                            ),
+                          )
+                          .finally(() => setSourceCreating(false));
+                      }}
+                    />
+                  </View>
+                ) : null}
+              </>
+            )}
+          </View>
         </View>
       ) : null}
 
@@ -913,9 +915,7 @@ export function KolamDaraTaxRegulasiBody({
                                 onRefreshMonitoring();
                               })
                               .catch(err =>
-                                onNotice(
-                                  errorMessage(err, 'Gagal menyetujui'),
-                                ),
+                                onNotice(errorMessage(err, 'Gagal menyetujui')),
                               )
                               .finally(() => setDraftBusyId(null));
                           }}
@@ -969,9 +969,9 @@ export function KolamDaraTaxRegulasiBody({
                           {`${v.versionNumber} — ${v.title}`}
                         </Text>
                         <Text style={styles.meta}>
-                          {`PPN ${v.ppnRate ?? '—'}% · ${formatKolamDaraTaxDateId(
-                            v.effectiveDate,
-                          )}`}
+                          {`PPN ${
+                            v.ppnRate ?? '—'
+                          }% · ${formatKolamDaraTaxDateId(v.effectiveDate)}`}
                         </Text>
                       </View>
                       <View style={styles.rowActions}>
@@ -1105,7 +1105,10 @@ export function KolamDaraTaxRegulasiBody({
                 </Text>
               </View>
               {auditPaged.items.map(row => (
-                <View key={row.id} style={[styles.tableRow, styles.tableRowTop]}>
+                <View
+                  key={row.id}
+                  style={[styles.tableRow, styles.tableRowTop]}
+                >
                   <Text style={[styles.tdMuted, styles.colAuditTime]}>
                     {formatKolamDaraTaxDateTimeId(row.createdAt)}
                   </Text>
@@ -1166,13 +1169,11 @@ export function KolamDaraTaxRegulasiBody({
               disabled={maintenanceBusy}
               intent="outline"
               label={
-                maintenanceBusy
-                  ? 'Mengisi ulang…'
-                  : 'Uji isi ulang cuplikan'
+                maintenanceBusy ? 'Mengisi ulang…' : 'Uji isi ulang cuplikan'
               }
               onPress={() => {
                 setMaintenanceBusy(true);
-                runKolamDaraTaxSnapshotBackfill({dryRun: true, limit: 100})
+                runKolamDaraTaxSnapshotBackfill({ dryRun: true, limit: 100 })
                   .then(msg => {
                     onNotice(msg || 'Uji jalan selesai');
                     onRefreshMonitoring();
@@ -1187,7 +1188,7 @@ export function KolamDaraTaxRegulasiBody({
               label="Terapkan isi ulang cuplikan"
               onPress={() => {
                 setMaintenanceBusy(true);
-                runKolamDaraTaxSnapshotBackfill({dryRun: false, limit: 200})
+                runKolamDaraTaxSnapshotBackfill({ dryRun: false, limit: 200 })
                   .then(msg => {
                     onNotice(msg || 'Isi ulang diterapkan');
                     onRefreshMonitoring();
@@ -1202,7 +1203,7 @@ export function KolamDaraTaxRegulasiBody({
               label="Uji hitung ulang PPh 21"
               onPress={() => {
                 setMaintenanceBusy(true);
-                runKolamDaraTaxReaccruePph21({dryRun: true, limit: 500})
+                runKolamDaraTaxReaccruePph21({ dryRun: true, limit: 500 })
                   .then(msg => onNotice(msg || 'Uji jalan selesai'))
                   .catch(() => onNotice('Gagal'))
                   .finally(() => setMaintenanceBusy(false));
@@ -1214,7 +1215,7 @@ export function KolamDaraTaxRegulasiBody({
               label="Terapkan hitung ulang PPh 21"
               onPress={() => {
                 setMaintenanceBusy(true);
-                runKolamDaraTaxReaccruePph21({dryRun: false, limit: 500})
+                runKolamDaraTaxReaccruePph21({ dryRun: false, limit: 500 })
                   .then(msg => onNotice(msg || 'Diterapkan'))
                   .catch(() => onNotice('Gagal'))
                   .finally(() => setMaintenanceBusy(false));
@@ -1283,6 +1284,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
+  sourceSection: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    gap: 8,
+    marginTop: 4,
+    paddingTop: 12,
+  },
   listCard: {
     borderColor: V.colors.border,
     borderRadius: 8,
@@ -1350,17 +1358,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontVariant: ['tabular-nums'],
   },
-  colSource: {flex: 1.4, minWidth: 100},
-  colStatus: {flex: 1, minWidth: 72},
-  colChecked: {flex: 1, minWidth: 80},
-  colModul: {flex: 1.2, minWidth: 90},
-  colFormula: {flex: 1.2, minWidth: 90},
-  colHukum: {flex: 1.4, minWidth: 100},
-  colTitle: {flex: 1.6, minWidth: 120},
-  colCategory: {flex: 1, minWidth: 80},
-  colAuditTime: {flex: 1.1, minWidth: 96},
-  colAuditAction: {flex: 1.2, minWidth: 100},
-  colAuditSummary: {flex: 2, minWidth: 140},
+  colSource: { flex: 1.4, minWidth: 100 },
+  colStatus: { flex: 1, minWidth: 72 },
+  colChecked: { flex: 1, minWidth: 80 },
+  colModul: { flex: 1.2, minWidth: 90 },
+  colFormula: { flex: 1.2, minWidth: 90 },
+  colHukum: { flex: 1.4, minWidth: 100 },
+  colTitle: { flex: 1.6, minWidth: 120 },
+  colCategory: { flex: 1, minWidth: 80 },
+  colAuditTime: { flex: 1.1, minWidth: 96 },
+  colAuditAction: { flex: 1.2, minWidth: 100 },
+  colAuditSummary: { flex: 2, minWidth: 140 },
   pager: {
     alignItems: 'center',
     flexDirection: 'row',
