@@ -1149,6 +1149,51 @@ function KolamUserDetailSurface({
                 </View>
               ),
             },
+            {
+              id: 'gender',
+              label: 'Jenis Kelamin',
+              value: formatUserGender(user.biodata.gender),
+            },
+            {
+              id: 'birth-date',
+              label: 'Tanggal Lahir',
+              value: formatUserLongDate(user.biodata.dateOfBirth),
+            },
+            {
+              id: 'birth-place',
+              label: 'Tempat Lahir',
+              value: user.biodata.placeOfBirth || '-',
+            },
+            {
+              id: 'marital-status',
+              label: 'Status Pernikahan',
+              value: formatUserMaritalStatus(user.biodata.maritalStatus),
+            },
+            {
+              id: 'religion',
+              label: 'Agama',
+              value: user.biodata.religion || '-',
+            },
+            {
+              id: 'national-id',
+              label: 'NIK (KTP)',
+              value: user.biodata.nationalId || '-',
+            },
+            {
+              id: 'tax-number',
+              label: 'NPWP',
+              value: user.biodata.taxNumber || '-',
+            },
+            {
+              id: 'address',
+              label: 'Alamat',
+              value: formatUserAddress(user.biodata.address),
+            },
+            {
+              id: 'emergency-contact',
+              label: 'Kontak Darurat',
+              value: formatUserEmergencyContact(user.biodata.emergencyContact),
+            },
           ]}
           leading={
             <View style={styles.userProfileBlock}>
@@ -1168,6 +1213,25 @@ function KolamUserDetailSurface({
                 </View>
               )}
             </View>
+          }
+          sections={
+            user.biodata.photoKtpUri
+              ? [
+                  {
+                    id: 'ktp-photo',
+                    title: 'Foto KTP',
+                    content: (
+                      <KolamRemoteImage
+                        accessibilityLabel={`Foto KTP ${user.displayName}`}
+                        resizeMode="cover"
+                        scope="user-ktp"
+                        sourceUri={user.biodata.photoKtpUri}
+                        style={styles.userKtpImage}
+                      />
+                    ),
+                  },
+                ]
+              : undefined
           }
           style={styles.userSummaryCard}
           title="Informasi dasar"
@@ -1256,51 +1320,6 @@ function KolamUserDetailSurface({
                 },
               ]}
             />
-          </View>
-
-          <View style={styles.detailPanel}>
-            <Text style={styles.detailPanelTitle}>Data Pribadi</Text>
-            <DetailRow
-              label="Jenis Kelamin"
-              value={formatUserGender(user.biodata.gender)}
-            />
-            <DetailRow
-              label="Tanggal Lahir"
-              value={formatUserLongDate(user.biodata.dateOfBirth)}
-            />
-            <DetailRow
-              label="Tempat Lahir"
-              value={user.biodata.placeOfBirth || '-'}
-            />
-            <DetailRow
-              label="Status Pernikahan"
-              value={formatUserMaritalStatus(user.biodata.maritalStatus)}
-            />
-            <DetailRow label="Agama" value={user.biodata.religion || '-'} />
-            <DetailRow label="NIK (KTP)" value={user.biodata.nationalId || '-'} />
-            <DetailRow label="NPWP" value={user.biodata.taxNumber || '-'} />
-            <DetailRow
-              label="Alamat"
-              numberOfLines={3}
-              value={formatUserAddress(user.biodata.address)}
-            />
-            <DetailRow
-              label="Kontak Darurat"
-              numberOfLines={3}
-              value={formatUserEmergencyContact(user.biodata.emergencyContact)}
-            />
-            {user.biodata.photoKtpUri ? (
-              <View style={styles.userKtpBlock}>
-                <Text style={styles.detailLabel}>Foto KTP</Text>
-                <KolamRemoteImage
-                  accessibilityLabel={`Foto KTP ${user.displayName}`}
-                  resizeMode="cover"
-                  scope="user-ktp"
-                  sourceUri={user.biodata.photoKtpUri}
-                  style={styles.userKtpImage}
-                />
-              </View>
-            ) : null}
           </View>
 
           {user.isEmployee ? (
@@ -3773,10 +3792,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '900',
     lineHeight: 36,
-  },
-  userKtpBlock: {
-    gap: 6,
-    marginTop: 4,
   },
   userKtpImage: {
     borderRadius: 8,
