@@ -1472,6 +1472,17 @@ function KolamCustomerFormSurface({
             placeholder="Nama lengkap"
             value={name}
           />
+          <View style={styles.formField}>
+            <Text style={styles.formFieldLabel}>Jenis kelamin</Text>
+            <KolamDropdownSelect<CustomerFormGender>
+              label="Jenis kelamin"
+              onChange={setGender}
+              options={[...CUSTOMER_GENDER_OPTIONS]}
+              showLabelInTrigger={false}
+              style={styles.formDropdown}
+              value={gender}
+            />
+          </View>
           <CustomerTextField
             label="Nomor telepon"
             onChangeText={setPhone}
@@ -1498,17 +1509,6 @@ function KolamCustomerFormSurface({
             placeholder="Catatan (opsional)"
             value={notes}
           />
-          <View style={styles.formField}>
-            <Text style={styles.formFieldLabel}>Jenis kelamin</Text>
-            <KolamDropdownSelect<CustomerFormGender>
-              label="Jenis kelamin"
-              onChange={setGender}
-              options={[...CUSTOMER_GENDER_OPTIONS]}
-              showLabelInTrigger={false}
-              style={styles.formDropdown}
-              value={gender}
-            />
-          </View>
         </View>
       </KolamContentFrame>
     </View>
@@ -3415,14 +3415,19 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   formCard: {
+    alignSelf: 'stretch',
     gap: 14,
     padding: 14,
+    width: '100%',
   },
   formGrid: {
     gap: 12,
+    width: '100%',
   },
   formField: {
+    alignSelf: 'stretch',
     gap: 6,
+    width: '100%',
   },
   formFieldLabel: {
     color: V.colors.mutedFg,
@@ -3446,7 +3451,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   formDropdown: {
-    alignSelf: 'flex-start',
-    minWidth: 220,
+    alignSelf: 'stretch',
+    width: '100%',
   },
 });
