@@ -3476,7 +3476,7 @@ function KolamTeamChatDeleteRoomIcon() {
       height="100%"
       importantForAccessibility="no-hide-descendants"
       width="100%"
-      xml={KOLAM_DELETE_ROOM_ICON_SVG}
+      xml={KOLAM_DELETE_ROOM_ICON_SVG.replace('#e21e2c', V.colors.fg)}
     />
   );
 }
@@ -3955,7 +3955,11 @@ function KolamChatRailDetailPanel({
                   detail.callBusy && styles.composerIconButtonDisabled,
                 ]}
               >
-                <SvgXml height="100%" width="100%" xml={KOLAM_CALL_ICON_SVG} />
+                <SvgXml
+                  height="100%"
+                  width="100%"
+                  xml={KOLAM_CALL_ICON_SVG.replace('#df000c', V.colors.fg)}
+                />
               </KolamPressable>
             ) : null}
             {canDeleteSelectedTeamRoom ? (
