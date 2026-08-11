@@ -171,12 +171,6 @@ export function KolamPusatAiInventoryCopilotBody({
                   preface={dashboard.packHandoffLabel}
                   title="Antrian fisik (GRN / pack)"
                 />
-                {dashboard.slowMoverLines.length ? (
-                  <ListCard
-                    lines={dashboard.slowMoverLines}
-                    title="Slow movers (90h)"
-                  />
-                ) : null}
                 {dashboard.opnameByLocationLines.length ? (
                   <ListCard
                     lines={dashboard.opnameByLocationLines}
@@ -185,16 +179,31 @@ export function KolamPusatAiInventoryCopilotBody({
                 ) : null}
               </View>
 
-              {dashboard.teamChat.suggestedPrompts.length ? (
-                <View style={styles.promptsBox}>
-                  <Text style={styles.promptsTitle}>
-                    Saran prompt room DARA
-                  </Text>
-                  {dashboard.teamChat.suggestedPrompts.map(prompt => (
-                    <Text key={prompt} style={styles.promptItem}>
-                      {`• ${prompt}`}
-                    </Text>
-                  ))}
+              {dashboard.slowMoverLines.length ||
+              dashboard.teamChat.suggestedPrompts.length ? (
+                <View style={styles.slowPromptGrid}>
+                  {dashboard.slowMoverLines.length ? (
+                    <View style={styles.slowPromptItem}>
+                      <ListCard
+                        lines={dashboard.slowMoverLines}
+                        title="Slow movers (90h)"
+                      />
+                    </View>
+                  ) : null}
+                  {dashboard.teamChat.suggestedPrompts.length ? (
+                    <View style={styles.slowPromptItem}>
+                      <View style={styles.promptsBox}>
+                        <Text style={styles.promptsTitle}>
+                          Saran prompt room DARA
+                        </Text>
+                        {dashboard.teamChat.suggestedPrompts.map(prompt => (
+                          <Text key={prompt} style={styles.promptItem}>
+                            {`• ${prompt}`}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
                 </View>
               ) : null}
             </>

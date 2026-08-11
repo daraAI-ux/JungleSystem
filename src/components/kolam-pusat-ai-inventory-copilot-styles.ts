@@ -513,6 +513,17 @@ export const inventoryCopilotStyles = StyleSheet.create({
     lineHeight: 16,
     marginBottom: 4,
   },
+  slowPromptGrid: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  slowPromptItem: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 280,
+  },
   promptsBox: {
     backgroundColor: V.colors.mutedSoft,
     borderColor: V.colors.border,
