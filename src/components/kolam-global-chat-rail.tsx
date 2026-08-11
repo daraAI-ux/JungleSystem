@@ -16,6 +16,7 @@ import {
 import {SvgXml} from 'react-native-svg';
 import {useKolamAuthContext} from '../context/kolam-app-contexts';
 import {KOLAM_CALL_ICON_SVG} from '../assets/icons/call-icon-svg';
+import {KOLAM_DELETE_ROOM_ICON_SVG} from '../assets/icons/delete-room-icon-svg';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
@@ -3399,6 +3400,18 @@ function KolamTeamChatTrashIcon() {
   );
 }
 
+function KolamTeamChatDeleteRoomIcon() {
+  return (
+    <SvgXml
+      accessibilityElementsHidden
+      height="100%"
+      importantForAccessibility="no-hide-descendants"
+      width="100%"
+      xml={KOLAM_DELETE_ROOM_ICON_SVG}
+    />
+  );
+}
+
 function KolamChatRailDetailPanel({
   composerText,
   currentUserId,
@@ -3848,7 +3861,7 @@ function KolamChatRailDetailPanel({
                 styles.detailDeleteRoomButton,
                 deleteRoomBusy && styles.composerIconButtonDisabled,
               ]}>
-              <KolamTeamChatTrashIcon />
+              <KolamTeamChatDeleteRoomIcon />
             </KolamPressable>
           ) : null}
         </View>
@@ -9066,15 +9079,13 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   detailDeleteRoomButton: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: V.radius.md,
-    borderColor: 'rgba(220, 38, 38, 0.28)',
-    borderWidth: 1,
-    backgroundColor: 'rgba(254, 242, 242, 0.98)',
+    borderRadius: 16,
+    backgroundColor: 'transparent',
   },
   teamRoomTrashIcon: {
     width: 18,
