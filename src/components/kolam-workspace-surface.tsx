@@ -41,6 +41,7 @@ import { isKolamFinanceSummaryRoute } from '../domain/kolam-finance-summary';
 import { isKolamFinanceTaxRoute } from '../domain/kolam-finance-tax';
 import { isKolamPayrollRoute } from '../domain/kolam-payroll';
 import { isKolamPayableRoute } from '../domain/kolam-payable';
+import { isKolamPortalRoute } from '../domain/kolam-portal';
 import { isKolamReceivableRoute } from '../domain/kolam-receivable';
 import { isKolamWalletRoute } from '../domain/kolam-wallet';
 import { isKolamCampaignRoute } from '../domain/kolam-campaign';
@@ -108,6 +109,7 @@ import { KolamFinanceSummarySurface } from './kolam-finance-summary-surface';
 import { KolamFinanceTaxSurface } from './kolam-finance-tax-surface';
 import { KolamPayrollSurface } from './kolam-payroll-surface';
 import { KolamPayableSurface } from './kolam-payable-surface';
+import { KolamPortalSurface } from './kolam-portal-surface';
 import { KolamReceivableSurface } from './kolam-receivable-surface';
 import { KolamWalletSurface } from './kolam-wallet-surface';
 import { KolamSalesOpsSurface } from './kolam-sales-ops-surface';
@@ -306,6 +308,15 @@ export function KolamWorkspaceSurfaceComponent({
       <KolamKpiSurface
         onRouteChange={onDashboardRoute}
         route={activeNavigationItem?.route ?? '/list-of-users/kpi'}
+      />
+    );
+  }
+
+  if (activeRoutePath && isKolamPortalRoute(activeRoutePath)) {
+    return (
+      <KolamPortalSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/portal'}
       />
     );
   }
