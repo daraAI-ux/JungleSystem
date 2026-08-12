@@ -6630,8 +6630,9 @@ function AmUsersPage() {
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {canCreateUser && !isCreateUserFormOpen && !editingUserId ? (
-                <KolamDaftarButton
+                <KolamButton
                   accessibilityLabel="AM User Create"
+                  label="Buat User"
                   size="sm"
                   onPress={() => {
                     resetUserForm();
