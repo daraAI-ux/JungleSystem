@@ -291,13 +291,15 @@ export function KolamPosFullWindowSurface({
             <View style={styles.catalogPane}>
             <View style={[kolamTableToolbarStyles.shell, styles.categoryBar]}>
               <View style={kolamTableToolbarStyles.row}>
-                <View style={kolamTableToolbarStyles.filters}>
+                <View style={kolamTableToolbarStyles.filters} />
+                <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
                   {isCatalogView ? (
+                    <>
                     <ScrollView
                       horizontal
                       contentContainerStyle={styles.categoryPillList}
                       showsHorizontalScrollIndicator={false}
-                      style={styles.categoryScroll}>
+                      style={[styles.categoryScroll, styles.categoryActionScroll]}>
                       {catalogCategories.map(category => (
                         <PosCategoryPill
                           key={category}
@@ -307,11 +309,6 @@ export function KolamPosFullWindowSurface({
                         />
                       ))}
                     </ScrollView>
-                  ) : null}
-                </View>
-                <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
-                  {isCatalogView ? (
-                    <>
                     {catalogSearch || activeCategory ? (
                       <KolamButton
                         label="Hapus Filter"
@@ -2271,6 +2268,10 @@ const styles = StyleSheet.create({
     height: 34,
     maxHeight: 34,
     minWidth: 0,
+  },
+  categoryActionScroll: {
+    flexGrow: 0,
+    maxWidth: 360,
   },
   categoryPillList: {
     alignItems: 'center',
