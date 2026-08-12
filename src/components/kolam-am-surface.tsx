@@ -1,6 +1,8 @@
 import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import type {DimensionValue} from 'react-native';
+import {SvgXml} from 'react-native-svg';
+import {KOLAM_SALDO_TOTAL_ICON_SVG} from '../assets/icons/saldo-total-icon-svg';
 import {appConfig} from '../config/app';
 import {
   AM_ROUTES,
@@ -524,6 +526,7 @@ function AmDashboardPage({
       <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
         <AmDashboardWalletCard
+          artwork="saldo-total"
           label="Saldo Total"
           meta={`${data.summary.totalAccounts} akun`}
           tone={data.summary.totalBalance < 0 ? 'danger' : 'primary'}
@@ -6442,18 +6445,26 @@ type AmDashboardWalletCardTone =
   | 'info';
 
 function AmDashboardWalletCard({
+  artwork,
   label,
   meta,
   tone,
   value,
 }: {
+  artwork?: 'saldo-total';
   label: string;
   meta: string;
   tone: AmDashboardWalletCardTone;
   value: string;
 }) {
+  const hasSaldoTotalArtwork = artwork === 'saldo-total';
+
   return (
-    <KolamCardFrame style={styles.dashboardWalletCard}>
+    <KolamCardFrame
+      style={[
+        styles.dashboardWalletCard,
+        hasSaldoTotalArtwork && styles.dashboardWalletCardWithArtwork,
+      ]}>
       <View
         style={[
           styles.dashboardWalletAccent,
@@ -6463,11 +6474,17 @@ function AmDashboardWalletCard({
           tone === 'info' && styles.dashboardWalletAccentInfo,
         ]}
       />
-      <View style={styles.dashboardWalletBody}>
+      <View
+        style={[
+          styles.dashboardWalletBody,
+          hasSaldoTotalArtwork && styles.dashboardWalletBodyWithArtwork,
+        ]}>
         <View style={styles.dashboardWalletHeader}>
-          <View style={styles.dashboardWalletIcon}>
-            <KolamModuleIcon kind="wallet" size="menu" />
-          </View>
+          {hasSaldoTotalArtwork ? null : (
+            <View style={styles.dashboardWalletIcon}>
+              <KolamModuleIcon kind="wallet" size="menu" />
+            </View>
+          )}
           <View style={styles.dashboardWalletCopy}>
             <Text numberOfLines={1} style={styles.dashboardWalletLabel}>
               {label}
@@ -6487,6 +6504,15 @@ function AmDashboardWalletCard({
           {meta}
         </Text>
       </View>
+      {hasSaldoTotalArtwork ? (
+        <View pointerEvents="none" style={styles.dashboardWalletArtwork}>
+          <SvgXml
+            height="100%"
+            width="100%"
+            xml={KOLAM_SALDO_TOTAL_ICON_SVG}
+          />
+        </View>
+      ) : null}
     </KolamCardFrame>
   );
 }
@@ -7199,6 +7225,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: 0,
   },
+  dashboardWalletCardWithArtwork: {
+    position: 'relative',
+  },
   dashboardWalletAccent: {
     backgroundColor: V.colors.primary,
     borderBottomLeftRadius: 10,
@@ -7227,6 +7256,9 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingVertical: 12,
   },
+  dashboardWalletBodyWithArtwork: {
+    paddingRight: 110,
+  },
   dashboardWalletHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -7241,6 +7273,15 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
+  },
+  dashboardWalletArtwork: {
+    bottom: 0,
+    justifyContent: 'center',
+    opacity: 0.96,
+    position: 'absolute',
+    right: -6,
+    top: 0,
+    width: 104,
   },
   dashboardWalletCopy: {
     flex: 1,
