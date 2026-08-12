@@ -1348,7 +1348,7 @@ function PosSubview({
                   {customer.photoUri ? (
                     <KolamRemoteImage
                       accessibilityLabel={`Foto ${customer.name}`}
-                      resizeMode="cover"
+                      resizeMode="contain"
                       revision={customer.photoRevision ?? customer.photoUri}
                       scope="pos-customer"
                       sourceUri={customer.photoUri}
@@ -2662,11 +2662,11 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   customerAvatar: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: 8,
     backgroundColor: V.colors.muted,
     overflow: 'hidden',
   },
