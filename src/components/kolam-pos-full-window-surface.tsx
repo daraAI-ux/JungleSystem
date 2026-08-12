@@ -444,124 +444,131 @@ export function KolamPosFullWindowSurface({
           </View>
         </View>
 
-        <View style={orderPaneStyle}>
-        <View style={styles.orderHeader}>
-          <Text style={styles.orderTitle}>Pesanan</Text>
-          <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
-        </View>
-        <PosCustomerSelectorInline
-          customers={customers}
-          searchValue={customerSelectorSearch}
-          selectedCustomer={selectedCustomer}
-          onOpenCustomerView={draftName => {
-            setActiveView('customers');
-            if (draftName.trim()) {
-              onCustomerFormChange({
-                ...customerForm,
-                name: draftName.trim(),
-              });
-            }
-            setCustomerSelectorSearch('');
-          }}
-          onSearchChange={setCustomerSelectorSearch}
-          onSelectCustomer={onSelectCustomer}
-        />
-        {checkout.cart.length ? (
-          <ScrollView style={styles.orderList}>
-            {checkout.cart.map(line => (
-              <PosOrderRow
-                key={line.itemId}
-                catalog={catalog}
-                line={line}
-                onDiscountAmountChange={onDiscountAmountChange}
-                onDiscountTypeChange={onDiscountTypeChange}
-                onQuantityChange={onQuantityChange}
-                onVoucherCodeChange={onVoucherCodeChange}
-              />
-            ))}
-          </ScrollView>
+        {shellChrome?.rightRail ? (
+          <View style={styles.posChatRailSlot}>{shellChrome.rightRail}</View>
         ) : (
-          <View style={styles.orderEmpty}>
-            <View style={styles.orderEmptyIcon}>
-              <Text style={styles.orderEmptyIconText}>Bag</Text>
+          <View style={orderPaneStyle}>
+            <View style={styles.orderHeader}>
+              <Text style={styles.orderTitle}>Pesanan</Text>
+              <Text style={styles.orderBadge}>{checkout.cart.length} barang</Text>
             </View>
-            <Text style={styles.orderEmptyTitle}>Keranjang Kosong</Text>
-            <Text style={styles.orderEmptyText}>
-              Pilih produk dari katalog untuk memulai pesanan
-            </Text>
+            <PosCustomerSelectorInline
+              customers={customers}
+              searchValue={customerSelectorSearch}
+              selectedCustomer={selectedCustomer}
+              onOpenCustomerView={draftName => {
+                setActiveView('customers');
+                if (draftName.trim()) {
+                  onCustomerFormChange({
+                    ...customerForm,
+                    name: draftName.trim(),
+                  });
+                }
+                setCustomerSelectorSearch('');
+              }}
+              onSearchChange={setCustomerSelectorSearch}
+              onSelectCustomer={onSelectCustomer}
+            />
+            {checkout.cart.length ? (
+              <ScrollView style={styles.orderList}>
+                {checkout.cart.map(line => (
+                  <PosOrderRow
+                    key={line.itemId}
+                    catalog={catalog}
+                    line={line}
+                    onDiscountAmountChange={onDiscountAmountChange}
+                    onDiscountTypeChange={onDiscountTypeChange}
+                    onQuantityChange={onQuantityChange}
+                    onVoucherCodeChange={onVoucherCodeChange}
+                  />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.orderEmpty}>
+                <View style={styles.orderEmptyIcon}>
+                  <Text style={styles.orderEmptyIconText}>Bag</Text>
+                </View>
+                <Text style={styles.orderEmptyTitle}>Keranjang Kosong</Text>
+                <Text style={styles.orderEmptyText}>
+                  Pilih produk dari katalog untuk memulai pesanan
+                </Text>
+              </View>
+            )}
+
+            {checkout.cart.length ? (
+              <View style={styles.orderFooter}>
+                <View style={styles.adjustmentRow}>
+                  <Text style={styles.adjustmentLabel}>Ongkir</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    onChangeText={onShippingCostChange}
+                    placeholder="0"
+                    style={[styles.adjustmentInput, styles.shippingInput]}
+                    value={checkout.shippingCost ? String(checkout.shippingCost) : ''}
+                  />
+                </View>
+                <SummaryLine label="Subtotal" value={formatRupiah(subtotal)} />
+                {subtotal - afterDiscount > 0 ? (
+                  <SummaryLine
+                    danger
+                    label="Diskon"
+                    value={`-${formatRupiah(subtotal - afterDiscount)}`}
+                  />
+                ) : null}
+                {checkout.shippingCost > 0 ? (
+                  <SummaryLine
+                    label="Ongkir"
+                    value={formatRupiah(checkout.shippingCost)}
+                  />
+                ) : null}
+                <PosCheckoutValidationMessages workflowSteps={workflowSteps} />
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total</Text>
+                  <Text style={styles.totalValue}>{formatRupiah(finalTotal)}</Text>
+                </View>
+                <KolamButton
+                  label={
+                    isCreatingSale
+                      ? 'Memproses...'
+                      : `Bayar ${canOpenPayment ? formatRupiah(finalTotal) : ''}`
+                  }
+                  intent="primary"
+                  size="md"
+                  disabled={!canOpenPayment || isCreatingSale}
+                  onPress={() => {
+                    onSelectPaymentMethod('');
+                    setIsPaymentModalOpen(true);
+                  }}
+                  style={styles.payButton}
+                />
+                <View style={styles.savedOrderActions}>
+                  <KolamSaveButton
+                    intent="outline"
+                    size="sm"
+                    disabled={!checkout.cart.length}
+                    onPress={handleSaveOrder}
+                    style={styles.savedOrderActionButton}
+                  />
+                  <KolamButton
+                    label={`Tersimpan (${savedOrders.length})`}
+                    intent="outline"
+                    size="sm"
+                    disabled={!savedOrders.length}
+                    onPress={() => setIsSavedOrdersOpen(true)}
+                    style={styles.savedOrderActionButton}
+                  />
+                  <KolamButton
+                    label={`Kosongkan (${cartCount})`}
+                    intent="plain"
+                    size="sm"
+                    onPress={onClearCart}
+                    style={styles.savedOrderActionButton}
+                  />
+                </View>
+              </View>
+            ) : null}
           </View>
         )}
-
-        {checkout.cart.length ? (
-          <View style={styles.orderFooter}>
-            <View style={styles.adjustmentRow}>
-              <Text style={styles.adjustmentLabel}>Ongkir</Text>
-              <TextInput
-                keyboardType="numeric"
-                onChangeText={onShippingCostChange}
-                placeholder="0"
-                style={[styles.adjustmentInput, styles.shippingInput]}
-                value={checkout.shippingCost ? String(checkout.shippingCost) : ''}
-              />
-            </View>
-            <SummaryLine label="Subtotal" value={formatRupiah(subtotal)} />
-            {subtotal - afterDiscount > 0 ? (
-              <SummaryLine
-                danger
-                label="Diskon"
-                value={`-${formatRupiah(subtotal - afterDiscount)}`}
-              />
-            ) : null}
-            {checkout.shippingCost > 0 ? (
-              <SummaryLine label="Ongkir" value={formatRupiah(checkout.shippingCost)} />
-            ) : null}
-            <PosCheckoutValidationMessages workflowSteps={workflowSteps} />
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>{formatRupiah(finalTotal)}</Text>
-            </View>
-            <KolamButton
-              label={
-                isCreatingSale
-                  ? 'Memproses...'
-                  : `Bayar ${canOpenPayment ? formatRupiah(finalTotal) : ''}`
-              }
-              intent="primary"
-              size="md"
-              disabled={!canOpenPayment || isCreatingSale}
-              onPress={() => {
-                onSelectPaymentMethod('');
-                setIsPaymentModalOpen(true);
-              }}
-              style={styles.payButton}
-            />
-            <View style={styles.savedOrderActions}>
-              <KolamSaveButton
-                intent="outline"
-                size="sm"
-                disabled={!checkout.cart.length}
-                onPress={handleSaveOrder}
-                style={styles.savedOrderActionButton}
-              />
-              <KolamButton
-                label={`Tersimpan (${savedOrders.length})`}
-                intent="outline"
-                size="sm"
-                disabled={!savedOrders.length}
-                onPress={() => setIsSavedOrdersOpen(true)}
-                style={styles.savedOrderActionButton}
-              />
-              <KolamButton
-                label={`Kosongkan (${cartCount})`}
-                intent="plain"
-                size="sm"
-                onPress={onClearCart}
-                style={styles.savedOrderActionButton}
-              />
-            </View>
-          </View>
-        ) : null}
-        </View>
       </View>
       {isSavedOrdersOpen ? (
         <PosSavedOrdersPanel
@@ -2952,6 +2959,10 @@ const styles = StyleSheet.create({
   },
   orderPaneCompact: {
     width: 300,
+  },
+  posChatRailSlot: {
+    alignSelf: 'stretch',
+    height: '100%',
   },
   orderHeader: {
     padding: 12,
