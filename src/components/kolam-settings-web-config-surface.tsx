@@ -1288,6 +1288,8 @@ export function KolamSettingsWebConfigSurface({
     React.useState(false);
   const [marketplaceCategoryEditorOpen, setMarketplaceCategoryEditorOpen] =
     React.useState(false);
+  const [marketplaceCategoryEditorImageUri, setMarketplaceCategoryEditorImageUri] =
+    React.useState('');
   const openMarketplaceHeroCreate = React.useCallback(() => {
     onClearMarketplaceHeroDraft();
     setMarketplaceHeroEditorOpen(true);
@@ -1305,17 +1307,22 @@ export function KolamSettingsWebConfigSurface({
   }, [onClearMarketplaceHeroDraft]);
   const openMarketplaceCategoryCreate = React.useCallback(() => {
     onClearMarketplaceCategoryDraft();
+    setMarketplaceCategoryEditorImageUri('');
     setMarketplaceCategoryEditorOpen(true);
   }, [onClearMarketplaceCategoryDraft]);
   const openMarketplaceCategoryEdit = React.useCallback(
     (banner: KolamCategoryBanner) => {
       onEditMarketplaceCategoryBanner(banner);
+      setMarketplaceCategoryEditorImageUri(
+        resolveMarketplaceLandingImageUri(banner.image),
+      );
       setMarketplaceCategoryEditorOpen(true);
     },
     [onEditMarketplaceCategoryBanner],
   );
   const closeMarketplaceCategoryEditor = React.useCallback(() => {
     onClearMarketplaceCategoryDraft();
+    setMarketplaceCategoryEditorImageUri('');
     setMarketplaceCategoryEditorOpen(false);
   }, [onClearMarketplaceCategoryDraft]);
   React.useEffect(() => {
@@ -5866,6 +5873,7 @@ export function KolamSettingsWebConfigSurface({
                 <MarketplaceCategoryBannerEditorModal
                   categoryDraft={marketplaceLandingCategoryDraft}
                   disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+                  existingImageUri={marketplaceCategoryEditorImageUri}
                   message={marketplaceLandingMessage}
                   onClose={closeMarketplaceCategoryEditor}
                   onPickCategoryImage={onPickMarketplaceLandingCategoryImage}
@@ -7235,21 +7243,6 @@ function MarketplaceLandingOverviewPanel({
             />
           </View>
         ) : null}
-        {activeTabId === 'category' ? (
-          <MarketplaceAssetRows
-            disabled={disabled}
-            emptyText="Belum ada banner kategori untuk penggantian gambar."
-            getId={item => `category:${item._id}`}
-            getLabel={item => item.categorySlug || item._id}
-            items={overview.categoryBanners}
-            onDelete={onDeleteCategoryBanner}
-            onEdit={onEditCategoryBanner}
-            onMove={onMoveCategoryBanner}
-            onUpload={onUploadCategoryBannerImage}
-            status={assetStatus}
-            title="Gambar banner kategori"
-          />
-        ) : null}
         {activeTabId === 'announcement' ? (
           <MarketplaceAssetRows
             disabled={disabled}
@@ -7497,6 +7490,176 @@ function MarketplaceHeroSlidesPanel({
           slides={previewSlides}
         />
       ) : null}
+    </View>
+  );
+}
+
+function MarketplaceCategoryBannersPanel({
+  disabled,
+  items,
+  onAdd,
+  onDelete,
+  onEdit,
+  onMove,
+  status,
+}: {
+  disabled: boolean;
+  items: KolamCategoryBanner[];
+  onAdd: () => void;
+  onDelete: (banner: KolamCategoryBanner) => void;
+  onEdit: (banner: KolamCategoryBanner) => void;
+  onMove: (banner: KolamCategoryBanner, direction: -1 | 1) => void;
+  status: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
+}) {
+  const activeCount = items.filter(item => item.isActive !== false).length;
+
+  return (
+    <View style={styles.marketplaceCategoryPanel}>
+      <View style={styles.marketplaceCategoryToolbar}>
+        <View style={styles.marketplaceHeroActiveCopy}>
+          <Text style={styles.marketplaceOverviewMeta}>Aktif:</Text>
+          <Text style={styles.marketplaceHeroActiveBadge}>
+            {String(activeCount)}
+          </Text>
+        </View>
+        <KolamActionControlButton
+          disabled={disabled}
+          icon={<KolamActionGlyph variant="plus" />}
+          intent="primary"
+          label="Tambah banner"
+          onPress={onAdd}
+        />
+      </View>
+
+      {items.length === 0 ? (
+        <View style={styles.marketplaceCategoryEmpty}>
+          <SvgXml
+            height={34}
+            width={34}
+            xml={getMarketplaceLandingTabIconXml('category', true)}
+          />
+          <Text style={styles.marketplaceOverviewTitle}>
+            Buat banner pertama
+          </Text>
+          <Text style={styles.marketplaceOverviewMeta}>
+            Banner kategori tampil di bagian Meet our Pets.
+          </Text>
+          <Text style={styles.marketplaceFeaturedBadge}>
+            Rekomendasi: 325 x 220px
+          </Text>
+          <KolamActionControlButton
+            disabled={disabled}
+            icon={<KolamActionGlyph variant="plus" />}
+            intent="primary"
+            label="Tambah banner"
+            onPress={onAdd}
+          />
+        </View>
+      ) : (
+        <View style={styles.marketplaceCategoryGrid}>
+          {items.map((banner, index) => {
+            const id = `category:${banner._id}`;
+            const imageUri = resolveMarketplaceLandingImageUri(banner.image);
+            return (
+              <View key={banner._id} style={styles.marketplaceCategoryCard}>
+                <View style={styles.marketplaceCategoryImageWrap}>
+                  {imageUri ? (
+                    <Image
+                      resizeMode="cover"
+                      source={{uri: imageUri}}
+                      style={styles.marketplaceCategoryImage}
+                    />
+                  ) : (
+                    <View style={styles.marketplaceCategoryImageFallback}>
+                      <Text style={styles.marketplaceOverviewMeta}>
+                        Belum ada gambar
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={styles.marketplaceHeroSlideIndex}>
+                    {String(index + 1)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.marketplaceHeroSlideStatus,
+                      styles.marketplaceCategoryStatus,
+                      banner.isActive === false
+                        ? styles.marketplaceHeroSlideStatusDraft
+                        : null,
+                    ]}
+                  >
+                    {banner.isActive === false ? 'Draf' : 'Aktif'}
+                  </Text>
+                </View>
+                <View style={styles.marketplaceCategoryFooter}>
+                  <Text
+                    numberOfLines={1}
+                    style={styles.marketplaceCategorySlug}
+                  >
+                    {banner.categorySlug || '-'}
+                  </Text>
+                  <View style={styles.marketplaceFeaturedCardActions}>
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Naik"
+                      disabled={disabled || index === 0}
+                      icon={
+                        <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                          ↑
+                        </Text>
+                      }
+                      id={id}
+                      label=""
+                      onPress={() => onMove(banner, -1)}
+                      style={styles.marketplaceFeaturedIconButton}
+                      status={status}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Turun"
+                      disabled={disabled || index === items.length - 1}
+                      icon={
+                        <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                          ↓
+                        </Text>
+                      }
+                      id={id}
+                      label=""
+                      onPress={() => onMove(banner, 1)}
+                      style={styles.marketplaceFeaturedIconButton}
+                      status={status}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Rubah banner"
+                      disabled={disabled}
+                      icon={<KolamActionGlyph variant="edit" />}
+                      id={id}
+                      label=""
+                      onPress={() => onEdit(banner)}
+                      style={styles.marketplaceFeaturedIconButton}
+                      status={status}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Hapus banner"
+                      disabled={disabled}
+                      icon={<KolamActionGlyph tone="danger" variant="delete" />}
+                      id={id}
+                      intent="danger"
+                      label=""
+                      onPress={() => onDelete(banner)}
+                      style={[
+                        styles.marketplaceFeaturedIconButton,
+                        styles.marketplaceHeroSlideActionButtonDanger,
+                      ]}
+                      status={status}
+                    />
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -8291,6 +8454,173 @@ function MarketplaceAssetButton({
       onPress={onPress}
       style={style}
     />
+  );
+}
+
+function MarketplaceCategoryBannerEditorModal({
+  categoryDraft,
+  disabled,
+  existingImageUri,
+  message,
+  onClose,
+  onPickCategoryImage,
+  onSaveCategory,
+  saveStatus,
+  setCategoryDraftField,
+}: {
+  categoryDraft: MarketplaceLandingCategoryDraft;
+  disabled: boolean;
+  existingImageUri: string;
+  message: string;
+  onClose: () => void;
+  onPickCategoryImage: () => void;
+  onSaveCategory: () => void;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setCategoryDraftField: <Key extends keyof MarketplaceLandingCategoryDraft>(
+    key: Key,
+    value: MarketplaceLandingCategoryDraft[Key],
+  ) => void;
+}) {
+  const canSave =
+    !!categoryDraft.categorySlug.trim() &&
+    (!!categoryDraft.id || !!categoryDraft.imageLocalUri);
+  const previewUri = categoryDraft.imageLocalUri || existingImageUri;
+
+  return (
+    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+      <View style={styles.marketplaceHeroEditorModalOverlay}>
+        <KolamModalBackdrop onPress={onClose} />
+        <View style={styles.marketplaceHeroEditorModalDialog}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: categoryDraft.id ? 'Rubah banner' : 'Banner baru',
+                style: styles.marketplaceHeroEditorModalTitle,
+              },
+              {
+                id: 'description',
+                text: 'Rekomendasi: 325 x 220px',
+                style: styles.marketplaceHeroEditorModalDescription,
+              },
+            ]}
+          />
+          <ScrollView
+            contentContainerStyle={styles.marketplaceHeroEditorModalContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.marketplaceHeroEditorModalScroll}
+          >
+            <Pressable
+              accessibilityRole="button"
+              disabled={disabled}
+              onPress={onPickCategoryImage}
+              style={styles.marketplaceCategoryUploadBox}
+            >
+              {previewUri ? (
+                <Image
+                  resizeMode="cover"
+                  source={{uri: previewUri}}
+                  style={styles.marketplaceCategoryUploadImage}
+                />
+              ) : (
+                <View style={styles.marketplaceCategoryUploadEmpty}>
+                  <SvgXml
+                    height={32}
+                    width={32}
+                    xml={getMarketplaceLandingTabIconXml('category', true)}
+                  />
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    Pilih gambar untuk banner kategori.
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <KolamTextFieldRow
+              variant="settingsForm"
+              label="Slug kategori"
+              description="Tautan ke /collections?category=nilai-ini"
+              value={categoryDraft.categorySlug}
+              onChangeText={value =>
+                setCategoryDraftField('categorySlug', value)
+              }
+              placeholder="poison-dart-frogs"
+            />
+            <Pressable
+              accessibilityRole="checkbox"
+              disabled={disabled}
+              onPress={() =>
+                setCategoryDraftField('isActive', !categoryDraft.isActive)
+              }
+              style={styles.marketplaceCategoryToggleCard}
+            >
+              <View
+                style={[
+                  styles.poStaffCheckbox,
+                  categoryDraft.isActive ? styles.poStaffCheckboxActive : null,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.poStaffCheckboxMarkText,
+                    categoryDraft.isActive
+                      ? styles.poStaffCheckboxMarkActive
+                      : null,
+                  ]}
+                >
+                  {categoryDraft.isActive ? '✓' : ''}
+                </Text>
+              </View>
+              <KolamCopyStack
+                items={[
+                  {
+                    id: 'active-title',
+                    text: 'Aktif',
+                    style: styles.marketplaceOverviewLabel,
+                  },
+                  {
+                    id: 'active-detail',
+                    text: 'Tampilkan banner di bagian Meet our Pets.',
+                    style: styles.marketplaceOverviewMeta,
+                  },
+                ]}
+              />
+            </Pressable>
+            {message ? (
+              <Text
+                style={
+                  saveStatus === 'error'
+                    ? styles.marketplaceOverviewError
+                    : styles.marketplaceOverviewMeta
+                }
+              >
+                {message}
+              </Text>
+            ) : null}
+          </ScrollView>
+          <View style={styles.marketplaceHeroEditorModalFooter}>
+            <KolamActionControlButton
+              disabled={disabled}
+              label="Pilih gambar"
+              onPress={onPickCategoryImage}
+            />
+            <KolamActionControlButton
+              disabled={disabled || !canSave}
+              intent="primary"
+              label={categoryDraft.id ? 'Simpan perubahan' : 'Buat banner'}
+              loading={saveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSaveCategory}
+            />
+            <KolamActionControlButton
+              disabled={disabled}
+              label="Batal"
+              tone="positive"
+              onPress={onClose}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -10847,6 +11177,112 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     overflow: 'hidden',
+    width: '100%',
+  },
+  marketplaceCategoryCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexBasis: 300,
+    flexGrow: 1,
+    maxWidth: 360,
+    overflow: 'hidden',
+  },
+  marketplaceCategoryEmpty: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    gap: 8,
+    justifyContent: 'center',
+    minHeight: 180,
+    padding: 18,
+  },
+  marketplaceCategoryFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  marketplaceCategoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  marketplaceCategoryImage: {
+    height: '100%',
+    width: '100%',
+  },
+  marketplaceCategoryImageFallback: {
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    height: '100%',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  marketplaceCategoryImageWrap: {
+    aspectRatio: 325 / 220,
+    backgroundColor: '#f3f4f6',
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
+  },
+  marketplaceCategoryPanel: {
+    gap: 12,
+  },
+  marketplaceCategorySlug: {
+    color: V.colors.fg,
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    minWidth: 0,
+  },
+  marketplaceCategoryStatus: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+  },
+  marketplaceCategoryToggleCard: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    padding: 12,
+  },
+  marketplaceCategoryToolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  marketplaceCategoryUploadBox: {
+    alignItems: 'center',
+    aspectRatio: 325 / 220,
+    backgroundColor: '#f3f4f6',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '100%',
+  },
+  marketplaceCategoryUploadEmpty: {
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  marketplaceCategoryUploadImage: {
+    height: '100%',
     width: '100%',
   },
   marketplaceFeaturedBadge: {
