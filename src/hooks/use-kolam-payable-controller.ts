@@ -379,7 +379,7 @@ export function useKolamPayableController(
             ? err.message
             : err instanceof Error
             ? err.message
-            : 'Gagal upload bukti',
+            : 'Gagal unggah bukti',
         );
       } finally {
         setUploadingProof(false);
@@ -514,7 +514,7 @@ export function useKolamPayableController(
             ? err.message
             : err instanceof Error
             ? err.message
-            : 'Gagal upload bukti',
+            : 'Gagal unggah bukti',
         );
       } finally {
         setUploadingInstallmentProofId(null);

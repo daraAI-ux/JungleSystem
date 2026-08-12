@@ -342,7 +342,7 @@ export function useKolamCommissionListController(
             ? err.message
             : err instanceof Error
             ? err.message
-            : 'Gagal upload bukti',
+            : 'Gagal unggah bukti',
         );
       } finally {
         setUploadingProofId(null);

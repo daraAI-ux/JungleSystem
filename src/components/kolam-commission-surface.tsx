@@ -356,7 +356,7 @@ function CommissionListBody({
                     label={
                       controller.uploadingProofId === item.id
                         ? 'Mengunggah...'
-                        : 'Upload bukti'
+                        : 'Unggah bukti'
                     }
                     onPress={() => {
                       void controller.onUploadTransferProof(item);

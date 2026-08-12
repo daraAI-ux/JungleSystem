@@ -2995,7 +2995,7 @@ function AmTokopediaSessionPanel({
         ) : null}
       </View>
       <View style={styles.uploadPanel}>
-        <Text style={styles.formLabel}>Upload cookies manual</Text>
+        <Text style={styles.formLabel}>Unggah cookies manual</Text>
         <Text style={styles.rowMeta}>
           Paste JSON export Cookie-Editor dari seller-id.tokopedia.com. Format bisa array cookies atau object {'{cookies: [...]}'}
         </Text>
@@ -3028,7 +3028,7 @@ function AmTokopediaSessionPanel({
           />
         </View>
         <Text style={cookiesPreview.error ? styles.cookieErrorText : styles.rowMeta}>
-          {cookiesPreview.error ?? (cookiesPreview.count ? `Siap upload: ${cookiesPreview.count} cookies` : 'Belum ada cookies JSON.')}
+          {cookiesPreview.error ?? (cookiesPreview.count ? `Siap unggah: ${cookiesPreview.count} cookies` : 'Belum ada cookies JSON.')}
         </Text>
       </View>
       <View style={styles.inlineActions}>

@@ -161,7 +161,7 @@ export function useKolamHrOvertimeController(options: {
             ? err.message
             : err instanceof Error
               ? err.message
-              : 'Gagal upload bukti',
+              : 'Gagal unggah bukti',
         );
       } finally {
         setMutating(false);

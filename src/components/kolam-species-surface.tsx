@@ -5417,7 +5417,7 @@ function SpeciesVoiceUploadPanel({
             style={styles.voiceUploadEmptyRow}
           >
             <Text style={styles.voiceUploadEmptyText}>
-              Drag & drop MP3 here, or use Upload.
+              Tarik MP3 ke sini, atau gunakan Unggah.
             </Text>
             <Text style={styles.voiceUploadLimit}>Max 50 MB</Text>
           </KolamInteractionFrame>

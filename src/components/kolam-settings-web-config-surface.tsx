@@ -1286,6 +1286,8 @@ export function KolamSettingsWebConfigSurface({
   const showKpiSettings = activeTabId === 'kpi';
   const [marketplaceHeroEditorOpen, setMarketplaceHeroEditorOpen] =
     React.useState(false);
+  const [marketplaceCategoryEditorOpen, setMarketplaceCategoryEditorOpen] =
+    React.useState(false);
   const openMarketplaceHeroCreate = React.useCallback(() => {
     onClearMarketplaceHeroDraft();
     setMarketplaceHeroEditorOpen(true);
@@ -1301,9 +1303,27 @@ export function KolamSettingsWebConfigSurface({
     onClearMarketplaceHeroDraft();
     setMarketplaceHeroEditorOpen(false);
   }, [onClearMarketplaceHeroDraft]);
+  const openMarketplaceCategoryCreate = React.useCallback(() => {
+    onClearMarketplaceCategoryDraft();
+    setMarketplaceCategoryEditorOpen(true);
+  }, [onClearMarketplaceCategoryDraft]);
+  const openMarketplaceCategoryEdit = React.useCallback(
+    (banner: KolamCategoryBanner) => {
+      onEditMarketplaceCategoryBanner(banner);
+      setMarketplaceCategoryEditorOpen(true);
+    },
+    [onEditMarketplaceCategoryBanner],
+  );
+  const closeMarketplaceCategoryEditor = React.useCallback(() => {
+    onClearMarketplaceCategoryDraft();
+    setMarketplaceCategoryEditorOpen(false);
+  }, [onClearMarketplaceCategoryDraft]);
   React.useEffect(() => {
     if (marketplaceLandingTabId !== 'hero') {
       setMarketplaceHeroEditorOpen(false);
+    }
+    if (marketplaceLandingTabId !== 'category') {
+      setMarketplaceCategoryEditorOpen(false);
     }
   }, [marketplaceLandingTabId]);
   const provinceDropdownOptions = React.useMemo(
@@ -3560,7 +3580,7 @@ export function KolamSettingsWebConfigSurface({
               <KolamTextFieldRowCopy
                 description={
                   roomOptions.length
-                    ? 'Upload bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
+                    ? 'Unggah bukti PO otomatis diposting ke room ini. Room AI tidak ditampilkan.'
                     : 'Room Team Chat belum tersedia.'
                 }
                 label="Room pembelian"
@@ -5765,12 +5785,13 @@ export function KolamSettingsWebConfigSurface({
                 }
                 onDeleteHeroSlide={onDeleteMarketplaceHeroSlide}
                 onEditAnnouncementBanner={onEditMarketplaceAnnouncementBanner}
-                onEditCategoryBanner={onEditMarketplaceCategoryBanner}
+                onEditCategoryBanner={openMarketplaceCategoryEdit}
                 onEditHeroSlide={openMarketplaceHeroEdit}
                 onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
                 onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
                 onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
                 onMoveHeroSlide={onMoveMarketplaceHeroSlide}
+                onAddCategoryBanner={openMarketplaceCategoryCreate}
                 onAddHeroSlide={openMarketplaceHeroCreate}
                 onAddFeaturedCollection={onAddMarketplaceFeaturedCollection}
                 onUpdateFeaturedCollection={
@@ -5799,7 +5820,8 @@ export function KolamSettingsWebConfigSurface({
                 categories={marketplaceCategories}
               />
               {(marketplaceLandingTabId !== 'hero' &&
-                marketplaceLandingTabId !== 'featured') ||
+                marketplaceLandingTabId !== 'featured' &&
+                marketplaceLandingTabId !== 'category') ||
               marketplaceHeroEditorOpen ? (
                 <MarketplaceLandingControlsPanel
                 activeTabId={marketplaceLandingTabId}
@@ -5839,6 +5861,20 @@ export function KolamSettingsWebConfigSurface({
                 setYoutubeDraftField={setMarketplaceLandingYoutubeDraftField}
                 youtubeDraft={marketplaceLandingYoutubeDraft}
               />
+              ) : null}
+              {marketplaceCategoryEditorOpen ? (
+                <MarketplaceCategoryBannerEditorModal
+                  categoryDraft={marketplaceLandingCategoryDraft}
+                  disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+                  message={marketplaceLandingMessage}
+                  onClose={closeMarketplaceCategoryEditor}
+                  onPickCategoryImage={onPickMarketplaceLandingCategoryImage}
+                  onSaveCategory={onSaveMarketplaceCategoryBanner}
+                  saveStatus={marketplaceLandingSaveStatus}
+                  setCategoryDraftField={
+                    setMarketplaceLandingCategoryDraftField
+                  }
+                />
               ) : null}
             </>
           ) : (
@@ -6903,6 +6939,7 @@ function MarketplaceLandingOverviewPanel({
   onMoveCategoryBanner,
   onMoveFeaturedCollection,
   onMoveHeroSlide,
+  onAddCategoryBanner,
   onAddHeroSlide,
   onAddFeaturedCollection,
   onUpdateFeaturedCollection,
@@ -6949,6 +6986,7 @@ function MarketplaceLandingOverviewPanel({
   ) => void;
   onMoveFeaturedCollection: (index: number, direction: -1 | 1) => void;
   onMoveHeroSlide: (slide: KolamHeroSlide, direction: -1 | 1) => void;
+  onAddCategoryBanner: () => void;
   onAddHeroSlide: () => void;
   onAddFeaturedCollection: () => void;
   onUpdateFeaturedCollection: (
@@ -7060,6 +7098,7 @@ function MarketplaceLandingOverviewPanel({
   const showAssetSection =
     activeTabId !== 'notices' &&
     activeTabId !== 'hero' &&
+    activeTabId !== 'category' &&
     activeTabId !== 'featured';
 
   return (
@@ -7092,6 +7131,16 @@ function MarketplaceLandingOverviewPanel({
           onUploadBioactiveStepImage={onUploadBioactiveStepImage}
           onUploadFeaturedCollectionImage={onUploadFeaturedCollectionImage}
           saveStatus={saveStatus}
+        />
+      ) : activeTabId === 'category' ? (
+        <MarketplaceCategoryBannersPanel
+          disabled={disabled}
+          items={overview.categoryBanners}
+          onAdd={onAddCategoryBanner}
+          onDelete={onDeleteCategoryBanner}
+          onEdit={onEditCategoryBanner}
+          onMove={onMoveCategoryBanner}
+          status={assetStatus}
         />
       ) : (
         <>
@@ -7687,7 +7736,7 @@ function MarketplaceFeaturedPanel({
                   <MarketplaceAssetButton
                     disabled={disabled}
                     id={`featured:${index}`}
-                    label="Upload gambar"
+                    label="Unggah gambar"
                     onPress={() => onUploadFeaturedCollectionImage(index)}
                     status={assetStatus}
                   />
@@ -7804,7 +7853,7 @@ function MarketplaceFeaturedPanel({
                 <MarketplaceAssetButton
                   disabled={disabled}
                   id={`bioactive:${index}`}
-                  label="Upload"
+                  label="Unggah"
                   onPress={() => onUploadBioactiveStepImage(index)}
                   status={assetStatus}
                 />
@@ -9180,7 +9229,7 @@ function FinancialSettingsPanel({
                     />
                     <KolamActionControlButton
                       disabled={disabled || busy}
-                      label={method.paymentIcon ? 'Ganti foto' : 'Upload foto'}
+                      label={method.paymentIcon ? 'Ganti foto' : 'Unggah foto'}
                       onPress={() => onUploadPaymentMethodPhoto(method.id)}
                     />
                     {method.paymentIcon ? (

@@ -937,7 +937,7 @@ function PayableDetail({
                     ? 'Mengunggah...'
                     : payment?.proofs.length
                     ? 'Tambah Bukti'
-                    : 'Upload Bukti'
+                    : 'Unggah Bukti'
                 }
                 onPress={() => {
                   void controller.onUploadPayableProof(item);
@@ -1129,7 +1129,7 @@ function InstallmentDetailCard({
                 ? 'Mengunggah...'
                 : installment.proofs.length
                 ? 'Tambah Bukti'
-                : 'Upload Bukti'
+                : 'Unggah Bukti'
             }
             onPress={() => {
               void onUploadProof(item, installment);

@@ -2343,7 +2343,7 @@ describe('KolamAmSurface', () => {
         cookies: [{name: 'sid', value: 'cookie-value'}],
       }));
     });
-    expect(renderText(renderer!).join(' ')).toContain('Siap upload: 1 cookies');
+    expect(renderText(renderer!).join(' ')).toContain('Siap unggah: 1 cookies');
     const serviceAccountLoadCountBeforeUpload = jest.mocked(getAmServiceAccounts).mock.calls.length;
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Save Cookies service-tokopedia'}).props.onPress();

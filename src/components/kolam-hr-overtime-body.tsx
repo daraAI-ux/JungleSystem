@@ -200,7 +200,7 @@ export function KolamHrOvertimeBody({
                 <KolamButton
                   disabled={controller.mutating}
                   intent="outline"
-                  label="Upload bukti"
+                  label="Unggah bukti"
                   onPress={() => {
                     void controller.onUploadProof(row.id);
                   }}

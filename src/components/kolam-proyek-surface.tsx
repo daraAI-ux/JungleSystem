@@ -1148,7 +1148,7 @@ function KolamProyekDetailRead({
                                           label={
                                             controller.acting
                                               ? 'Mengunggah…'
-                                              : 'Upload bukti'
+                                              : 'Unggah bukti'
                                           }
                                           onPress={() => {
                                             void (async () => {

@@ -3125,7 +3125,7 @@ export function useKolamSettingsPanelController(
         ...current,
         heroSlides: replaceById(current.heroSlides, updated),
       }));
-      setMarketplaceLandingMessage('Hero slide image berhasil diupload.');
+      setMarketplaceLandingMessage('Hero slide image berhasil diunggah.');
     });
   const uploadMarketplaceCategoryBannerImage = (banner: KolamCategoryBanner) =>
     uploadMarketplaceAsset(`category:${banner._id}`, async localUri => {
@@ -3139,7 +3139,7 @@ export function useKolamSettingsPanelController(
         ...current,
         categoryBanners: replaceById(current.categoryBanners, updated),
       }));
-      setMarketplaceLandingMessage('Category banner image berhasil diupload.');
+      setMarketplaceLandingMessage('Category banner image berhasil diunggah.');
     });
   const uploadMarketplaceAnnouncementImage = (
     banner: KolamAnnouncementBanner,
@@ -3156,7 +3156,7 @@ export function useKolamSettingsPanelController(
         announcementBanners: replaceById(current.announcementBanners, updated),
       }));
       setMarketplaceLandingMessage(
-        'Announcement banner image berhasil diupload.',
+        'Announcement banner image berhasil diunggah.',
       );
     });
   const uploadMarketplaceCtaBackground = () =>
@@ -3173,7 +3173,7 @@ export function useKolamSettingsPanelController(
         createMarketplaceLandingCtaDraft(ctaSection),
       );
       setMarketplaceLandingOverview(current => ({ ...current, ctaSection }));
-      setMarketplaceLandingMessage('CTA background berhasil diupload.');
+      setMarketplaceLandingMessage('CTA background berhasil diunggah.');
     });
   const uploadMarketplaceYoutubeBackground = () =>
     uploadMarketplaceAsset('youtube-background', async localUri => {
@@ -3191,7 +3191,7 @@ export function useKolamSettingsPanelController(
         ...current,
         youtubeSection,
       }));
-      setMarketplaceLandingMessage('YouTube background berhasil diupload.');
+      setMarketplaceLandingMessage('YouTube background berhasil diunggah.');
     });
   const uploadMarketplaceFeaturedCollectionImage = (index: number) =>
     uploadMarketplaceAsset(`featured:${index}`, async localUri => {
@@ -3210,7 +3210,7 @@ export function useKolamSettingsPanelController(
         marketplaceContent,
       }));
       setMarketplaceLandingMessage(
-        'Featured collection image berhasil diupload.',
+        'Featured collection image berhasil diunggah.',
       );
     });
   const uploadMarketplaceBioactiveStepImage = (index: number) =>
@@ -3233,14 +3233,14 @@ export function useKolamSettingsPanelController(
         marketplaceContent,
       }));
       setMarketplaceLandingMessage(
-        'Bioactive ecosystem image berhasil diupload.',
+        'Bioactive ecosystem image berhasil diunggah.',
       );
     });
   const uploadMarketplaceLogo = () =>
     uploadMarketplaceAsset('websetting-logo', async localUri => {
       const setting = await uploadKolamWebSettingLogo(localUri);
       setWebSetting(setting);
-      setMarketplaceLandingMessage('Websetting logo berhasil diupload.');
+      setMarketplaceLandingMessage('Websetting logo berhasil diunggah.');
     });
   const uploadMarketplaceDaraAvatar = () =>
     uploadMarketplaceAsset('dara-avatar', async localUri => {
@@ -3255,8 +3255,8 @@ export function useKolamSettingsPanelController(
             : current,
         );
       }
-      setMarketplaceLandingMessage('DARA avatar berhasil diupload.');
-      setWebSettingMessage('Avatar DARA berhasil diupload.');
+      setMarketplaceLandingMessage('DARA avatar berhasil diunggah.');
+      setWebSettingMessage('Avatar DARA berhasil diunggah.');
     });
   const uploadMarketplaceAsset = async (
     key: string,
@@ -3337,7 +3337,7 @@ export function useKolamSettingsPanelController(
         );
       }
       setWebSettingSaveStatus('saved');
-      setWebSettingMessage('Foto Katak Terbang berhasil diupload.');
+      setWebSettingMessage('Foto Katak Terbang berhasil diunggah.');
     } catch (error) {
       setWebSettingSaveStatus('error');
       setWebSettingMessage(getWebSettingSaveErrorMessage(error));
@@ -3409,7 +3409,7 @@ export function useKolamSettingsPanelController(
           ? ({ ...current, [field]: nextPath } as KolamWebSetting)
           : current,
       );
-      setWebSettingMessage('Notification sound berhasil diupload.');
+      setWebSettingMessage('Notification sound berhasil diunggah.');
     } catch (error) {
       setWebSettingMessage(getNotificationSoundErrorMessage(error));
     } finally {

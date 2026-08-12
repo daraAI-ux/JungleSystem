@@ -105,7 +105,7 @@ export async function uploadKolamAppDownloadVersion(
     sourceHeader: appConfig.kolamSourceHeader,
   });
 
-  return requireKolamSupportingApp(response, 'Upload gagal.');
+  return requireKolamSupportingApp(response, 'Unggah gagal.');
 }
 
 export async function deleteKolamAppDownloadVersion(

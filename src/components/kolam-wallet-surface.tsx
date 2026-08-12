@@ -1865,7 +1865,7 @@ function WalletProofPicker({
         <KolamButton
           disabled={proofs.length >= 3}
           intent="secondary"
-          label="Upload Bukti"
+          label="Unggah Bukti"
           onPress={() => {
             void pickProof();
           }}

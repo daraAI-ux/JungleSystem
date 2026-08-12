@@ -643,7 +643,7 @@ function UploadVersionForm({
 
   return (
     <View style={styles.uploadBox}>
-      <Text style={styles.sectionLabel}>Upload versi baru</Text>
+      <Text style={styles.sectionLabel}>Unggah versi baru</Text>
       <View style={styles.formGrid}>
         <Field label="Versi" required>
           <KolamFormTextField

@@ -1240,7 +1240,7 @@ async function syncProductVariantPhotosIfNeeded(
     const variantId = resolveSavedProductVariantId(current, variant, index);
     if (!variantId) {
       throw new Error(
-        `Varian ${[variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') || index + 1} belum memiliki ID backend untuk upload foto.`,
+        `Varian ${[variant.tier1Value, variant.tier2Value].filter(Boolean).join(' / ') || index + 1} belum memiliki ID backend untuk unggah foto.`,
       );
     }
 
@@ -1491,7 +1491,6 @@ function getErrorMessage(error: unknown) {
 
   return 'Terjadi kendala saat membaca data produk.';
 }
-
 
 
 
