@@ -5550,7 +5550,8 @@ function AmMutasiPage({
   };
   const mutasiTableColumns = React.useMemo<Array<KolamListTableColumn<AmMutasi>>>(() => [
     {
-      flex: 0.75,
+      align: 'center',
+      flex: 0.62,
       id: 'type',
       label: 'Tipe',
       render: item => (
@@ -5561,11 +5562,11 @@ function AmMutasiPage({
       ),
     },
     {
-      flex: 1.35,
+      flex: 1.02,
       id: 'account',
       label: 'Akun',
       render: item => (
-        <View>
+        <View style={styles.mutasiAccountCell}>
           <Text style={styles.cellText} numberOfLines={1}>{formatAccountLabel(item.accountId)}</Text>
           <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
         </View>
@@ -5573,13 +5574,13 @@ function AmMutasiPage({
     },
     {
       align: 'right',
-      flex: 0.95,
+      flex: 0.88,
       id: 'amount',
       label: 'Nominal',
       render: item => <Text style={styles.cellText}>{formatMutasiSignedAmount(item)}</Text>,
     },
     {
-      flex: 1.4,
+      flex: 1.5,
       id: 'description',
       label: 'Deskripsi',
       render: item => <Text style={styles.cellText} numberOfLines={1}>{item.description || '-'}</Text>,
@@ -8667,6 +8668,11 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  mutasiAccountCell: {
+    justifyContent: 'center',
+    minWidth: 0,
+    width: '100%',
   },
   rowActions: {
     flexShrink: 0,
