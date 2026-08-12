@@ -1,5 +1,10 @@
 import {appConfig} from '../config/app';
 import {
+  kolamBantuanLocalDocsByPath,
+  kolamBantuanLocalManifest,
+  kolamBantuanLocalSearchIndex,
+} from '../data/kolam-bantuan-local-data';
+import {
   type KolamBantuanManifest,
   type KolamBantuanSearchEntry,
 } from '../domain/kolam-bantuan';
@@ -12,9 +17,20 @@ type BantuanDocResponse = {
 };
 
 export async function fetchKolamBantuanManifest() {
-  const payload = await fetchJson<KolamBantuanManifest>(
-    `${getBantuanStaticBaseUrl()}/manifest.json`,
-  );
+  let payload: KolamBantuanManifest;
+
+  try {
+    payload = await fetchJson<KolamBantuanManifest>(
+      `${getBantuanStaticBaseUrl()}/manifest.json`,
+    );
+  } catch {
+    return kolamBantuanLocalManifest;
+  }
+
+  if (!Array.isArray(payload.modules) || payload.modules.length === 0) {
+    return kolamBantuanLocalManifest;
+  }
+
   return {
     version: String(payload.version ?? ''),
     generatedAt: String(payload.generatedAt ?? ''),
@@ -24,9 +40,20 @@ export async function fetchKolamBantuanManifest() {
 }
 
 export async function fetchKolamBantuanSearchIndex() {
-  const payload = await fetchJson<{entries?: KolamBantuanSearchEntry[]}>(
-    `${getBantuanStaticBaseUrl()}/search-index.json`,
-  );
+  let payload: {entries?: KolamBantuanSearchEntry[]};
+
+  try {
+    payload = await fetchJson<{entries?: KolamBantuanSearchEntry[]}>(
+      `${getBantuanStaticBaseUrl()}/search-index.json`,
+    );
+  } catch {
+    return kolamBantuanLocalSearchIndex;
+  }
+
+  if (!Array.isArray(payload.entries) || payload.entries.length === 0) {
+    return kolamBantuanLocalSearchIndex;
+  }
+
   return Array.isArray(payload.entries) ? payload.entries : [];
 }
 
@@ -55,19 +82,28 @@ export async function fetchKolamBantuanDocBySlug(
     throw new Error(`Dokumen tidak ditemukan: ${slug}`);
   }
 
-  const staticUrl = `${getBantuanStaticBaseUrl()}/content/${docPath.replace(
-    /^\/+/,
-    '',
-  )}`;
-  const response = await fetch(staticUrl, {
-    headers: {Accept: 'text/markdown,text/plain,*/*'},
-  });
+  const normalizedDocPath = docPath.replace(/^\/+/, '');
+  const staticUrl = `${getBantuanStaticBaseUrl()}/content/${normalizedDocPath}`;
 
-  if (!response.ok) {
-    throw new Error(`Dokumen tidak ditemukan: ${slug}`);
+  try {
+    const response = await fetch(staticUrl, {
+      headers: {Accept: 'text/markdown,text/plain,*/*'},
+    });
+
+    if (response.ok) {
+      return response.text();
+    }
+  } catch {
+    // Static plugin content may be unavailable outside the web host.
   }
 
-  return response.text();
+  const localDoc = kolamBantuanLocalDocsByPath[normalizedDocPath];
+
+  if (typeof localDoc === 'string') {
+    return localDoc;
+  }
+
+  throw new Error(`Dokumen tidak ditemukan: ${slug}`);
 }
 
 function getBantuanStaticBaseUrl() {

@@ -12,6 +12,7 @@ import {
   type KolamBantuanSearchHit,
 } from '../domain/kolam-bantuan';
 import {kolamBantuanMarkdownToHtml} from '../domain/kolam-bantuan-markdown';
+import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {
   fetchKolamBantuanDocBySlug,
@@ -28,6 +29,8 @@ import {KolamMappedList} from './kolam-mapped-list';
 import {KolamPanelFrame} from './kolam-panel-frame';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSurfacePanelCopy} from './kolam-surface-panel-copy';
+
+const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
 
 export function KolamBantuanSurface({
   onRouteChange,
@@ -138,7 +141,10 @@ export function KolamBantuanSurface({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.surface}>
-      <KolamPanelFrame accessibilityLabel="Bantuan" variant="module">
+      <KolamPanelFrame
+        accessibilityLabel="Bantuan"
+        style={styles.panel}
+        variant="module">
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
             <KolamSurfacePanelCopy
@@ -388,6 +394,11 @@ function getErrorMessage(error: unknown) {
 const styles = StyleSheet.create({
   surface: {
     paddingBottom: 24,
+  },
+  panel: {
+    alignSelf: 'center',
+    maxWidth: DASHBOARD_LAYOUT_VISUAL.page.maxWidthPx,
+    width: '100%',
   },
   headerCopy: {
     flex: 1,
