@@ -1176,7 +1176,7 @@ const styles = StyleSheet.create({
   },
   mainColumnWide: {
     flexBasis: 0,
-    flexGrow: 2,
+    flexGrow: 3,
     minWidth: 0,
     width: undefined,
   },
@@ -1188,7 +1188,7 @@ const styles = StyleSheet.create({
     flexBasis: 0,
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 320,
+    minWidth: 0,
     width: undefined,
   },
   twelveGrid: {
