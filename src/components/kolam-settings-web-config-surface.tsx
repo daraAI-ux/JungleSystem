@@ -7767,11 +7767,22 @@ function MarketplaceFeaturedPanel({
                       isActive: step.isActive === false,
                     })
                   }
-                  style={styles.marketplaceFeaturedBadge}
+                  style={[
+                    styles.poStaffCheckbox,
+                    step.isActive !== false && styles.poStaffCheckboxActive,
+                    disabled && styles.poStaffCheckboxDisabled,
+                  ]}
                 >
-                  <Text style={styles.marketplaceOverviewMeta}>
-                    {step.isActive === false ? 'Nonaktif' : 'Aktif'}
-                  </Text>
+                  <View
+                    style={[
+                      styles.poStaffCheckboxMark,
+                      step.isActive !== false && styles.poStaffCheckboxMarkActive,
+                    ]}
+                  >
+                    {step.isActive !== false ? (
+                      <Text style={styles.poStaffCheckboxMarkText}>x</Text>
+                    ) : null}
+                  </View>
                 </Pressable>
               </View>
               <View style={styles.marketplaceBioactiveImageBox}>
