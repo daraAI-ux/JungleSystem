@@ -2769,7 +2769,11 @@ function AmServiceDetailPanel({
               onSelect={value => onLogSourceChange(value as 'realtime' | 'history')}
             />
           </View>
-          <View style={styles.logPanel}>
+          <ScrollView
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+            style={[styles.logPanel, styles.serviceLogPanel]}
+            contentContainerStyle={styles.serviceLogContent}>
             {!logs.length ? <Text selectable style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
             {displayedLogs.map((log, index) => (
               <View key={`${log.ts}-${index}`} style={styles.logRow}>
@@ -2779,7 +2783,7 @@ function AmServiceDetailPanel({
                 </Text>
               </View>
             ))}
-          </View>
+          </ScrollView>
           {logSource === 'history' && logTotal > logLimit ? (
             <AmServiceHistoryPagination
               currentPage={logPage}
@@ -8130,6 +8134,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     backgroundColor: '#030712',
+  },
+  serviceLogPanel: {
+    maxHeight: 288,
+  },
+  serviceLogContent: {
+    gap: 6,
   },
   logRow: {
     width: '100%',
