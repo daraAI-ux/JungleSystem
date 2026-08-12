@@ -1996,6 +1996,7 @@ function AmHardwarePage({
   const [editingHardwareId, setEditingHardwareId] = React.useState<string | null>(null);
   const [isRackModalOpen, setIsRackModalOpen] = React.useState(false);
   const [isBoxModalOpen, setIsBoxModalOpen] = React.useState(false);
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = React.useState(false);
   const [formLocation, setFormLocation] = React.useState('');
   const [formDescription, setFormDescription] = React.useState('');
   const [formServerIp, setFormServerIp] = React.useState('');
@@ -2247,6 +2248,7 @@ function AmHardwarePage({
   const editDevice = React.useCallback((device: AmDevice) => {
     setHardwareForm('device');
     setEditingHardwareId(device._id);
+    setIsDeviceModalOpen(true);
     setFormBoxId(resolveBoxId(device.boxId));
     setFormConnectionType(device.connectionType === 'tcp' || device.connectionType === 'browser' ? device.connectionType : 'usb');
     setFormUdid(device.udid ?? '');
@@ -2356,6 +2358,9 @@ function AmHardwarePage({
       if (hardwareForm === 'box') {
         setIsBoxModalOpen(false);
       }
+      if (hardwareForm === 'device') {
+        setIsDeviceModalOpen(false);
+      }
       await fetchHardware();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan hardware AM.');
@@ -2446,6 +2451,24 @@ function AmHardwarePage({
           />
         </View>
       ) : null}
+      {selectedBox && !selectedDevice ? (
+        <View style={styles.amHardwareHeader}>
+          <View style={styles.amHardwareHeaderCopy}>
+            <Text style={styles.panelTitle}>{selectedBox.name}</Text>
+            <Text style={styles.panelText}>Kelola device di box ini. Setiap device mewakili perangkat automation.</Text>
+          </View>
+          <KolamButton
+            accessibilityLabel="AM Hardware Add Device"
+            label="Add Device"
+            size="sm"
+            onPress={() => {
+              resetHardwareForm('device');
+              setFormBoxId(selectedBox._id);
+              setIsDeviceModalOpen(true);
+            }}
+          />
+        </View>
+      ) : null}
       {error ? (
         <View style={styles.errorPanel}>
           <Text style={styles.errorTitle}>Hardware AM belum bisa dibaca</Text>
@@ -2472,123 +2495,6 @@ function AmHardwarePage({
           onCancel={() => setDeletingHardware(null)}
           onConfirm={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
         />
-      ) : null}
-      {selectedBox ? (
-      <View style={styles.tablePanel}>
-        <View style={styles.formGrid}>
-          <AmSegmentGroup
-            active={hardwareForm}
-            items={['rack', 'box', 'device']}
-            labels={{rack: 'Rack', box: 'Box', device: 'Device'}}
-            onSelect={value => resetHardwareForm(value as 'rack' | 'box' | 'device')}
-          />
-          {hardwareForm === 'rack' ? (
-            <>
-              <AmTextInput label="Lokasi" placeholder="contoh Server Room A" value={formLocation} onChangeText={setFormLocation} />
-              <AmTextInput label="Deskripsi" placeholder="Catatan rack" value={formDescription} onChangeText={setFormDescription} />
-              <AmTextInput label="Server IP" placeholder="192.168.1.10" value={formServerIp} onChangeText={setFormServerIp} />
-            </>
-          ) : null}
-          {hardwareForm === 'box' ? (
-            <>
-              <View style={styles.formField}>
-                <Text style={styles.formLabel}>Rack</Text>
-                <View style={styles.eventGrid}>
-                  {racks.map(rack => (
-                    <KolamInteractionFrame
-                      key={rack._id}
-                      accessibilityLabel={`AM Hardware Form Rack ${rack.name}`}
-                      onPress={() => setFormRackId(rack._id)}
-                      style={[styles.eventChip, formRackId === rack._id && styles.eventChipSelected]}>
-                      <Text style={[styles.eventChipText, formRackId === rack._id && styles.eventChipTextSelected]}>{rack.name}</Text>
-                    </KolamInteractionFrame>
-                  ))}
-                </View>
-              </View>
-              <AmTextInput label="Deskripsi" placeholder="Catatan box" value={formDescription} onChangeText={setFormDescription} />
-            </>
-          ) : null}
-          {hardwareForm === 'device' ? (
-            <>
-              <View style={styles.formField}>
-                <Text style={styles.formLabel}>Box</Text>
-                <View style={styles.eventGrid}>
-                  {boxes.map(box => (
-                    <KolamInteractionFrame
-                      key={box._id}
-                      accessibilityLabel={`AM Hardware Form Box ${box.name}`}
-                      onPress={() => setFormBoxId(box._id)}
-                      style={[styles.eventChip, formBoxId === box._id && styles.eventChipSelected]}>
-                      <Text style={[styles.eventChipText, formBoxId === box._id && styles.eventChipTextSelected]}>{box.name}</Text>
-                    </KolamInteractionFrame>
-                  ))}
-                </View>
-              </View>
-              {editingHardwareId ? (
-                <View accessibilityLabel="AM Hardware Connection Type Read Only" style={styles.detailListRow}>
-                  <Text style={[styles.tableHeaderText, styles.accountCol]}>Koneksi</Text>
-                  <Text style={[styles.cellText, styles.recipientCol]}>
-                    {{usb: 'USB', tcp: 'TCP', browser: 'Browser'}[formConnectionType]}
-                  </Text>
-                </View>
-              ) : (
-                <AmSegmentGroup
-                  active={formConnectionType}
-                  items={['usb', 'tcp', 'browser']}
-                  labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
-                  onSelect={handleHardwareConnectionTypeChange}
-                />
-              )}
-              {formConnectionType === 'usb' ? (
-                <AmTextInput label="UDID" placeholder="UDID device USB" value={formUdid} onChangeText={setFormUdid} />
-              ) : null}
-              {formConnectionType === 'tcp' ? (
-                <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
-              ) : null}
-              {formConnectionType !== 'browser' ? (
-                <>
-                  <AmTextInput label="Merek" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
-                  <AmTextInput label="Model" placeholder="A52 / Playwright" value={formModel} onChangeText={setFormModel} />
-                </>
-              ) : null}
-              <AmTextInput label="Tag" placeholder="whatsapp, marketplace, banking" value={formTags} onChangeText={setFormTags} />
-              {formConnectionType !== 'browser' ? (
-                <AmTextInput label="Port ADB" placeholder="opsional" value={formAdbPort} onChangeText={setFormAdbPort} />
-              ) : null}
-              {editingHardwareId && formConnectionType !== 'browser' ? (
-                <AmTextInput label="Port Appium" placeholder="opsional" value={formAppiumPort} onChangeText={setFormAppiumPort} />
-              ) : null}
-            </>
-          ) : null}
-          {editingHardwareId && hardwareForm !== 'device' ? (
-            <AmSegmentGroup
-              active={formStatus}
-              items={['active', 'inactive']}
-              labels={{active: 'Aktif', inactive: 'Nonaktif'}}
-              onSelect={value => setFormStatus(value as 'active' | 'inactive')}
-            />
-          ) : null}
-          <View style={styles.inlineActions}>
-            <KolamSaveButton
-              accessibilityLabel="AM Hardware Save"
-              disabled={isSubmitting}
-              label={isSubmitting ? 'Menyimpan' : (editingHardwareId ? 'Simpan' : 'Buat')}
-              muted={isSubmitting}
-              size="sm"
-              onPress={saveHardware}
-            />
-            {editingHardwareId ? (
-              <KolamButton
-                accessibilityLabel="AM Hardware Cancel Edit"
-                label="Batal"
-                intent="outline"
-                size="sm"
-                onPress={() => resetHardwareForm(hardwareForm)}
-              />
-            ) : null}
-          </View>
-        </View>
-      </View>
       ) : null}
       {selectedDevice ? (
         <AmDeviceDetailPanel device={selectedDevice} />
@@ -2707,6 +2613,75 @@ function AmHardwarePage({
             onChangeText={setFormDescription}
           />
         </View>
+      </KolamModalDialog>
+      <KolamModalDialog
+        accessibilityLabel={editingHardwareId ? 'AM Hardware Edit Device Modal' : 'AM Hardware Add Device Modal'}
+        maxHeight="86%"
+        maxWidth="86%"
+        onClose={() => {
+          setIsDeviceModalOpen(false);
+          resetHardwareForm('device');
+        }}
+        title={editingHardwareId ? 'Edit Device' : 'Add Device'}
+        visible={isDeviceModalOpen && hardwareForm === 'device'}
+        width={520}
+        footer={
+          <>
+            <KolamCancelButton
+              label="Cancel"
+              onPress={() => {
+                setIsDeviceModalOpen(false);
+                resetHardwareForm('device');
+              }}
+            />
+            <KolamSaveButton
+              accessibilityLabel="AM Hardware Save"
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Save' : 'Create'}
+              muted={isSubmitting}
+              onPress={saveHardware}
+            />
+          </>
+        }>
+        <ScrollView
+          nestedScrollEnabled
+          style={styles.hardwareModalScroll}
+          contentContainerStyle={styles.formGrid}>
+          {editingHardwareId ? (
+            <View accessibilityLabel="AM Hardware Connection Type Read Only" style={styles.detailListRow}>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Koneksi</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>
+                {{usb: 'USB', tcp: 'TCP', browser: 'Browser'}[formConnectionType]}
+              </Text>
+            </View>
+          ) : (
+            <AmSegmentGroup
+              active={formConnectionType}
+              items={['usb', 'tcp', 'browser']}
+              labels={{usb: 'USB', tcp: 'TCP', browser: 'Browser'}}
+              onSelect={handleHardwareConnectionTypeChange}
+            />
+          )}
+          {formConnectionType === 'usb' ? (
+            <AmTextInput label="UDID" placeholder="UDID device USB" value={formUdid} onChangeText={setFormUdid} />
+          ) : null}
+          {formConnectionType === 'tcp' ? (
+            <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
+          ) : null}
+          {formConnectionType !== 'browser' ? (
+            <>
+              <AmTextInput label="Merek" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
+              <AmTextInput label="Model" placeholder="A52 / Playwright" value={formModel} onChangeText={setFormModel} />
+            </>
+          ) : null}
+          <AmTextInput label="Tag" placeholder="whatsapp, marketplace, banking" value={formTags} onChangeText={setFormTags} />
+          {formConnectionType !== 'browser' ? (
+            <AmTextInput label="Port ADB" placeholder="opsional" value={formAdbPort} onChangeText={setFormAdbPort} />
+          ) : null}
+          {editingHardwareId && formConnectionType !== 'browser' ? (
+            <AmTextInput label="Port Appium" placeholder="opsional" value={formAppiumPort} onChangeText={setFormAppiumPort} />
+          ) : null}
+        </ScrollView>
       </KolamModalDialog>
     </View>
   );
@@ -3702,23 +3677,19 @@ function AmHardwareDeviceList({
             <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
           </View>
           <View style={styles.actionCol}>
-            <View style={styles.inlineActions}>
-              <KolamEditButton
-                accessibilityLabel={`AM Hardware Edit Device ${device._id}`}
-                intent="outline"
-                size="sm"
-                onPress={() => onEditDevice(device)}
-              />
-              <KolamButton
-                accessibilityLabel={`AM Hardware Delete Device ${device._id}`}
-                disabled={actingHardwareId === device._id}
-                label={actingHardwareId === device._id ? '...' : 'Hapus'}
-                intent="danger"
-                muted={actingHardwareId === device._id}
-                size="sm"
-                onPress={() => onDeleteDevice(device)}
-              />
-            </View>
+            <KolamTableRowActionMenu
+              accessibilityLabel={`AM Hardware Device Actions ${device._id}`}
+              actions={[
+                {label: 'View Detail', onPress: () => onSelectDevice(device)},
+                {label: 'Edit', onPress: () => onEditDevice(device)},
+                {
+                  disabled: actingHardwareId === device._id,
+                  label: actingHardwareId === device._id ? '...' : 'Delete',
+                  onPress: () => onDeleteDevice(device),
+                  tone: 'danger',
+                },
+              ]}
+            />
           </View>
         </KolamInteractionFrame>
       ))}
@@ -8842,6 +8813,9 @@ const styles = StyleSheet.create({
   hardwareCardFooterCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  hardwareModalScroll: {
+    maxHeight: 420,
   },
   hardwareStats: {
     flexDirection: 'row',

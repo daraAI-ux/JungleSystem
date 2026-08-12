@@ -3930,7 +3930,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 1'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Device'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Device'}).props.onPress();
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
@@ -3959,6 +3959,9 @@ describe('KolamAmSurface', () => {
       tags: ['whatsapp', 'banking'],
     });
 
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Device'}).props.onPress();
+    });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment USB'}).props.onPress();
     });
@@ -3990,6 +3993,9 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Device'}).props.onPress();
+    });
+    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Browser'}).props.onPress();
     });
     await act(async () => {
@@ -4001,8 +4007,13 @@ describe('KolamAmSurface', () => {
       connectionType: 'browser',
     });
 
+    const deviceActionMenu = renderer!.root
+      .findAllByType(KolamTableRowActionMenu)
+      .find(menu => menu.props.accessibilityLabel === 'AM Hardware Device Actions device-1');
+    expect(deviceActionMenu).toBeTruthy();
+
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Edit Device device-1'}).props.onPress();
+      deviceActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
     });
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Connection Type Read Only'}).length,
@@ -4031,7 +4042,7 @@ describe('KolamAmSurface', () => {
     }));
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Device device-1'}).props.onPress();
+      deviceActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Delete')!.onPress();
     });
     expect(deleteAmDevices).not.toHaveBeenCalled();
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
