@@ -30,6 +30,7 @@ import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
   cancelAmTask,
+  clearAmWebhookLogs,
   clearAmServiceAccountSession,
   createAmBox,
   createAmDevice,
@@ -5647,6 +5648,7 @@ function AmWebhooksPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTestingPing, setIsTestingPing] = React.useState(false);
+  const [isClearingWebhookLogs, setIsClearingWebhookLogs] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeWebhookFilterPanel, setActiveWebhookFilterPanel] = React.useState<'direction' | null>(null);
   const [webhookFilterPanelAnchor, setWebhookFilterPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
@@ -5824,6 +5826,22 @@ function AmWebhooksPage() {
     }
   }, [fetchWebhooks]);
 
+  const clearWebhookLogs = React.useCallback(async () => {
+    try {
+      setIsClearingWebhookLogs(true);
+      setActionMessage(null);
+      const result = await clearAmWebhookLogs();
+      setSelectedWebhookLog(null);
+      setLogPage(1);
+      setActionMessage(result.message || `${result.deletedCount ?? logTotal} log webhook dibersihkan.`);
+      await fetchWebhooks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal clear log webhook.');
+    } finally {
+      setIsClearingWebhookLogs(false);
+    }
+  }, [fetchWebhooks, logTotal]);
+
   const anchorWebhookFilterPanel = React.useCallback(() => {
     const toolbar = webhookToolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
     const trigger = webhookDirectionTriggerRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
@@ -5916,7 +5934,7 @@ function AmWebhooksPage() {
       ),
     },
   ], []);
-  const isWebhookActionLocked = isSubmitting || isTestingPing || actingConfigId !== null;
+  const isWebhookActionLocked = isSubmitting || isTestingPing || isClearingWebhookLogs || actingConfigId !== null;
 
   return (
     <View style={styles.pageStack}>
@@ -5945,6 +5963,15 @@ function AmWebhooksPage() {
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               <KolamButton accessibilityLabel="Test Ping" disabled={isWebhookActionLocked} label={isTestingPing ? 'Menguji...' : 'Uji Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
+              <KolamButton
+                accessibilityLabel="AM Webhook Clear Logs"
+                disabled={isWebhookActionLocked}
+                intent="outline"
+                label={isClearingWebhookLogs ? 'Clear...' : 'Clear Log'}
+                muted={isWebhookActionLocked}
+                size="sm"
+                onPress={clearWebhookLogs}
+              />
               <KolamDaftarButton
                 accessibilityLabel="AM Webhook Register"
                 disabled={isWebhookActionLocked}
