@@ -7400,11 +7400,17 @@ const styles = StyleSheet.create({
   },
   overviewChartPanel: {
     flexGrow: 2,
+    flexShrink: 1,
     flexBasis: 520,
+    minWidth: 0,
+    maxWidth: '100%',
   },
   overviewTransferPanel: {
     flexGrow: 1,
-    flexBasis: 260,
+    flexShrink: 1,
+    flexBasis: 240,
+    minWidth: 0,
+    maxWidth: '100%',
   },
   panelHeaderRow: {
     width: '100%',
