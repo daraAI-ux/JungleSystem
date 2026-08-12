@@ -513,10 +513,6 @@ function AmDashboardPage({
   if (!data) {
     return (
       <View style={styles.emptyPanel}>
-        <View style={styles.actionRow}>
-          <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-          <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" size="sm" onPress={fetchDashboard} />
-        </View>
         <Text style={styles.panelTitle}>{isLoading ? 'Memuat dashboard AM' : 'Menunggu data AM'}</Text>
         <AmInlineError error={error} title="AM dashboard belum bisa dibaca" />
       </View>
@@ -525,17 +521,6 @@ function AmDashboardPage({
 
   return (
     <View style={[styles.pageStack, styles.dashboardPageStack]}>
-      <View style={styles.actionRow}>
-        <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-        <KolamRefreshButton
-          accessibilityLabel="Refresh"
-          disabled={isLoading}
-
-          intent="outline"
-          size="sm"
-          onPress={fetchDashboard}
-        />
-      </View>
       <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
         <AmDashboardWalletCard

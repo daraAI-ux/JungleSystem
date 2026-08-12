@@ -406,7 +406,7 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
 
-    expect(text).toContain('Kembali');
+    expect(text).not.toContain('Kembali');
     expect(joinedText).not.toContain('Welcome back');
     expect(text).toContain("Masuk Hari Ini");
     expect(text).toContain("Keluar Hari Ini");
@@ -508,15 +508,6 @@ describe('KolamAmSurface', () => {
           style?.alignItems === 'stretch';
       });
     expect(dashboardPanelStack).toBeTruthy();
-    const dashboardActionRow = renderer!.root
-      .findAllByType(View)
-      .find(view => {
-        const style = StyleSheet.flatten(view.props.style);
-        return style?.width === '100%' &&
-          style?.alignSelf === 'stretch' &&
-          style?.justifyContent === 'flex-end';
-      });
-    expect(dashboardActionRow).toBeTruthy();
     const recentMetaColumns = renderer!.root
       .findAllByType(View)
       .filter(view => {
@@ -648,7 +639,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).not.toContain('Semua device dengan akun aktif dan lokasinya.');
   });
 
-  it('keeps the POS-style back button wired to return to Kolam', async () => {
+  it('does not render the local back button on the dashboard', async () => {
     const onBackToCenter = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -662,15 +653,10 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    const backButton = renderer!.root.findByProps({
+    expect(renderer!.root.findAllByProps({
       accessibilityLabel: 'Kembali',
-    });
-
-    act(() => {
-      backButton.props.onPress();
-    });
-
-    expect(onBackToCenter).toHaveBeenCalledTimes(1);
+    })).toHaveLength(0);
+    expect(onBackToCenter).not.toHaveBeenCalled();
   });
 
   it('keeps the Kolam back button available on non-dashboard AM routes', async () => {
@@ -886,7 +872,7 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Login'}),
     ).toHaveLength(0);
-    expect(renderer!.root.findByProps({accessibilityLabel: 'Kembali'})).toBeTruthy();
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'Kembali'})).toHaveLength(0);
   });
 
   it('does not expose the legacy AM login route inside JungleSystem', async () => {
