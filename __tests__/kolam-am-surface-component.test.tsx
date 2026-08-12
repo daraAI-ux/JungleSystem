@@ -2218,7 +2218,8 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Service QR Image service-stopped-qr'}),
     ).toHaveLength(0);
-    expect(renderText(renderer!)).toContain('Runtime');
+    expect(renderText(renderer!)).toContain('Process stopped');
+    expect(renderText(renderer!)).not.toContain('Runtime');
   });
 
   it('runs service start and clear session actions from Services', async () => {

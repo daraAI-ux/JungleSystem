@@ -2696,76 +2696,66 @@ function AmServiceDetailPanel({
       ) : null}
       {!isLoading && activeTab === 'logs' ? (
         <>
-          <View style={styles.runtimePanel}>
-            <View style={styles.detailHeader}>
-              <View>
-                <Text style={styles.panelTitle}>Runtime</Text>
-                <Text style={styles.rowMeta}>
-                  {runtime ? `${titleCase(runtime.taskStatus)} / ${titleCase(runtime.serviceStatus)}` : 'Status service belum tersedia'}
-                </Text>
+          {qrSignal && processRunning ? (
+            <View style={styles.qrPanel}>
+              <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
+              <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR tersedia.'}</Text>
+              {qrSignal.qrcodeBase64 ? (
+                <>
+                  <Image
+                    accessibilityLabel={`AM Service QR Image ${account._id}`}
+                    resizeMode="contain"
+                    source={{uri: normalizeAmQrImageUri(qrSignal.qrcodeBase64)}}
+                    style={styles.qrImage}
+                  />
+                  <Text style={styles.monoText} numberOfLines={1}>{qrSignal.qrcodeBase64}</Text>
+                </>
+              ) : qrUrl ? (
+                <>
+                  <Image
+                    accessibilityLabel={`AM Service QR Image ${account._id}`}
+                    resizeMode="contain"
+                    source={getAmProtectedImageSource(qrUrl)}
+                    style={styles.qrImage}
+                  />
+                  <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
+                </>
+              ) : (
+                <Text style={styles.rowMeta}>Gambar QR belum tersedia untuk platform ini.</Text>
+              )}
+              <View style={styles.qrInstructionList}>
+                {getQrLoginInstructions(account.platform).map((instruction, index) => (
+                  <Text key={`${account.platform}-qr-${index}`} style={styles.qrInstructionText}>
+                    {index + 1}. {instruction}
+                  </Text>
+                ))}
               </View>
             </View>
-            {qrSignal && processRunning ? (
-              <View style={styles.qrPanel}>
-                <Text style={styles.formLabel}>QR Login {AM_PLATFORM_LABELS[account.platform] ?? titleCase(account.platform)}</Text>
-                <Text style={styles.rowMeta}>{qrSignal.status ? `Status ${qrSignal.status}` : 'Scan QR tersedia.'}</Text>
-                {qrSignal.qrcodeBase64 ? (
-                  <>
-                    <Image
-                      accessibilityLabel={`AM Service QR Image ${account._id}`}
-                      resizeMode="contain"
-                      source={{uri: normalizeAmQrImageUri(qrSignal.qrcodeBase64)}}
-                      style={styles.qrImage}
-                    />
-                    <Text style={styles.monoText} numberOfLines={1}>{qrSignal.qrcodeBase64}</Text>
-                  </>
-                ) : qrUrl ? (
-                  <>
-                    <Image
-                      accessibilityLabel={`AM Service QR Image ${account._id}`}
-                      resizeMode="contain"
-                      source={getAmProtectedImageSource(qrUrl)}
-                      style={styles.qrImage}
-                    />
-                    <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
-                  </>
-                ) : (
-                  <Text style={styles.rowMeta}>Gambar QR belum tersedia untuk platform ini.</Text>
-                )}
-                <View style={styles.qrInstructionList}>
-                  {getQrLoginInstructions(account.platform).map((instruction, index) => (
-                    <Text key={`${account.platform}-qr-${index}`} style={styles.qrInstructionText}>
-                      {index + 1}. {instruction}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            ) : null}
-            {!qrSignal && loginStatus === 'success' ? (
-              <View style={styles.successPanel}>
-                <Text style={styles.successText}>Login berhasil - cookies tersimpan. Service siap dipakai.</Text>
-              </View>
-            ) : null}
-            {needsInput ? (
-              <View style={styles.formGrid}>
-                <AmTextInput
-                  label={needsPassword ? 'Password' : 'OTP'}
-                  placeholder={needsPassword ? 'Masukkan password service' : 'Masukkan OTP service'}
-                  value={serviceInputValue}
-                  onChangeText={onChangeServiceInput}
-                />
-                <KolamButton
-                  accessibilityLabel={`AM Service Submit Input ${account._id}`}
-                  disabled={serviceInputSending}
-                  label={serviceInputSending ? 'Mengirim' : 'Kirim Input'}
-                  muted={serviceInputSending}
-                  size="sm"
-                  style={styles.serviceActionButton}
-                  onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
-                />
-              </View>
-            ) : null}
-          </View>
+          ) : null}
+          {!qrSignal && loginStatus === 'success' ? (
+            <View style={styles.successPanel}>
+              <Text style={styles.successText}>Login berhasil - cookies tersimpan. Service siap dipakai.</Text>
+            </View>
+          ) : null}
+          {needsInput ? (
+            <View style={styles.formGrid}>
+              <AmTextInput
+                label={needsPassword ? 'Password' : 'OTP'}
+                placeholder={needsPassword ? 'Masukkan password service' : 'Masukkan OTP service'}
+                value={serviceInputValue}
+                onChangeText={onChangeServiceInput}
+              />
+              <KolamButton
+                accessibilityLabel={`AM Service Submit Input ${account._id}`}
+                disabled={serviceInputSending}
+                label={serviceInputSending ? 'Mengirim' : 'Kirim Input'}
+                muted={serviceInputSending}
+                size="sm"
+                style={styles.serviceActionButton}
+                onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
+              />
+            </View>
+          ) : null}
           <View style={styles.serviceConsolePanel}>
             <View style={styles.serviceConsoleHeader}>
               <View style={styles.serviceConsoleStatus}>
