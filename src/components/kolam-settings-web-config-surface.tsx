@@ -9550,6 +9550,30 @@ function MarketplaceLandingControlsPanel({
     !!noticeDraft.key.trim() &&
     !!noticeDraft.title.trim() &&
     !!noticeDraft.message.trim();
+  const [noticeEditorOpen, setNoticeEditorOpen] = React.useState(false);
+  const [noticeEditorMode, setNoticeEditorMode] = React.useState<'create' | 'edit'>('create');
+  const openNoticeCreate = React.useCallback(() => {
+    onClearNoticeDraft();
+    setNoticeEditorMode('create');
+    setNoticeEditorOpen(true);
+  }, [onClearNoticeDraft]);
+  const openNoticeEdit = React.useCallback(
+    (notice: KolamCustomerTextNotice) => {
+      onEditNotice(notice);
+      setNoticeEditorMode('edit');
+      setNoticeEditorOpen(true);
+    },
+    [onEditNotice],
+  );
+  const closeNoticeEditor = React.useCallback(() => {
+    setNoticeEditorOpen(false);
+  }, []);
+  React.useEffect(() => {
+    if (activeTabId !== 'notices') {
+      setNoticeEditorOpen(false);
+      setNoticeEditorMode('create');
+    }
+  }, [activeTabId]);
 
   return (
     <View style={styles.marketplaceControls}>
@@ -9953,44 +9977,95 @@ function MarketplaceLandingControlsPanel({
       ) : null}
       {activeTabId === 'notices' ? (
         <View style={styles.marketplaceControlCard}>
-          <KolamCopyStack
-            items={[
-              {
-                id: 'notice-title',
-                text: 'Pengumuman pelanggan',
-                style: styles.marketplaceOverviewLabel,
-              },
-            ]}
-          />
+          <View style={styles.marketplaceNoticeHeader}>
+            <KolamCopyStack
+              containerStyle={styles.marketplaceOverviewCopy}
+              items={[
+                {
+                  id: 'notice-title',
+                  text: 'Pengumuman Teks Berjalan',
+                  style: styles.marketplaceOverviewTitle,
+                },
+                {
+                  id: 'notice-detail',
+                  text: 'Tampil di landing page dan dashboard customer.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <KolamActionControlButton
+              disabled={disabled}
+              icon={<KolamActionGlyph variant="plus" />}
+              intent="primary"
+              label="Tambah"
+              onPress={openNoticeCreate}
+            />
+          </View>
           <View style={styles.marketplaceNoticeList}>
             {notices.length ? (
               notices.map(notice => (
-                <View key={notice.key} style={styles.marketplaceNoticeRow}>
-                  <KolamCopyStack
-                    containerStyle={styles.marketplaceOverviewCopy}
-                    items={[
-                      {
-                        id: `${notice.key}-title`,
-                        text: notice.title || notice.key,
-                        style: styles.marketplaceOverviewLabel,
-                      },
-                      {
-                        id: `${notice.key}-message`,
-                        text: notice.message || '-',
-                        style: styles.marketplaceOverviewDetail,
-                      },
-                    ]}
-                  />
-                  <View style={styles.notificationSoundActions}>
+                <View key={notice.key} style={styles.marketplaceNoticeCard}>
+                  <View style={styles.marketplaceNoticeCopy}>
+                    <View style={styles.marketplaceNoticeTitleRow}>
+                      <Text style={styles.marketplaceOverviewLabel}>
+                        {notice.title || notice.key}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.marketplaceHeroSlideStatus,
+                          notice.isActive === false
+                            ? styles.marketplaceHeroSlideStatusDraft
+                            : null,
+                        ]}
+                      >
+                        {notice.isActive === false ? 'Nonaktif' : 'Aktif'}
+                      </Text>
+                      <Text style={styles.marketplaceNoticeKey}>
+                        {notice.key}
+                      </Text>
+                    </View>
+                    <Text
+                      numberOfLines={2}
+                      style={styles.marketplaceOverviewDetail}
+                    >
+                      {notice.message || '-'}
+                    </Text>
+                    <View style={styles.marketplaceNoticeMetaRow}>
+                      {notice.showOnHome !== false ? (
+                        <Text style={styles.marketplaceNoticeOutlineBadge}>
+                          Homepage
+                        </Text>
+                      ) : null}
+                      {notice.showOnDashboard !== false ? (
+                        <Text style={styles.marketplaceNoticeOutlineBadge}>
+                          Dashboard
+                        </Text>
+                      ) : null}
+                      {notice.ctaUrl ? (
+                        <Text
+                          numberOfLines={1}
+                          style={styles.marketplaceOverviewMeta}
+                        >
+                          CTA: {notice.ctaLabel || 'Link'} → {notice.ctaUrl}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <View style={styles.marketplaceFeaturedCardActions}>
                     <KolamEditButton
                       disabled={disabled}
-                      onPress={() => onEditNotice(notice)}
+                      onPress={() => openNoticeEdit(notice)}
                     />
                     <KolamActionControlButton
                       disabled={disabled}
+                      icon={<KolamActionGlyph tone="danger" variant="delete" />}
                       intent="danger"
-                      label="Hapus"
+                      label=""
                       onPress={() => onDeleteNotice(notice.key)}
+                      style={[
+                        styles.marketplaceFeaturedIconButton,
+                        styles.marketplaceHeroSlideActionButtonDanger,
+                      ]}
                     />
                   </View>
                 </View>
@@ -10007,94 +10082,177 @@ function MarketplaceLandingControlsPanel({
               />
             )}
           </View>
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Kode pengumuman"
-            description=""
-            value={noticeDraft.key}
-            onChangeText={value => setNoticeDraftField('key', value)}
-            placeholder="enclonura-migration-2026"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Judul pengumuman"
-            description=""
-            value={noticeDraft.title}
-            onChangeText={value => setNoticeDraftField('title', value)}
-            placeholder="Enclonura pindah ke Dunia Anura"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Pesan pengumuman"
-            description=""
-            value={noticeDraft.message}
-            onChangeText={value => setNoticeDraftField('message', value)}
-            placeholder="Kelola kandang, Freyr, dan layanan..."
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="URL CTA pengumuman"
-            description=""
-            value={noticeDraft.ctaUrl}
-            onChangeText={value => setNoticeDraftField('ctaUrl', value)}
-            placeholder="/dashboard"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Label CTA pengumuman"
-            description=""
-            value={noticeDraft.ctaLabel}
-            onChangeText={value => setNoticeDraftField('ctaLabel', value)}
-            placeholder="Buka dashboard"
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Pengumuman aktif"
-            description=""
-            active={noticeDraft.isActive}
-            onPress={() =>
-              !disabled &&
-              setNoticeDraftField('isActive', !noticeDraft.isActive)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Tampilkan di beranda"
-            description=""
-            active={noticeDraft.showOnHome}
-            onPress={() =>
-              !disabled &&
-              setNoticeDraftField('showOnHome', !noticeDraft.showOnHome)
-            }
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Tampilkan di dasbor"
-            description=""
-            active={noticeDraft.showOnDashboard}
-            onPress={() =>
-              !disabled &&
-              setNoticeDraftField(
-                'showOnDashboard',
-                !noticeDraft.showOnDashboard,
-              )
-            }
-          />
-          <View style={styles.notificationSoundActions}>
-            <KolamSaveButton
-              disabled={disabled || !noticeCanSave}
-              label="Simpan pengumuman"
-              loading={saveStatus === 'saving'}
-              loadingLabel="Menyimpan..."
-              intent="primary"
-              onPress={onSaveNotice}
-            />
-            <KolamActionControlButton
-              disabled={disabled}
-              label="Pengumuman baru"
-              onPress={onClearNoticeDraft}
-            />
-          </View>
+          {noticeEditorOpen ? (
+            <Modal
+              animationType="fade"
+              onRequestClose={closeNoticeEditor}
+              transparent
+              visible
+            >
+              <View style={styles.marketplaceHeroEditorModalOverlay}>
+                <KolamModalBackdrop onPress={closeNoticeEditor} />
+                <View style={styles.marketplaceHeroEditorModalDialog}>
+                  <KolamCopyStack
+                    items={[
+                      {
+                        id: 'title',
+                        text: noticeEditorMode === 'edit'
+                          ? 'Rubah pengumuman'
+                          : 'Tambah pengumuman',
+                        style: styles.marketplaceHeroEditorModalTitle,
+                      },
+                      {
+                        id: 'description',
+                        text: 'Pengumuman teks customer',
+                        style: styles.marketplaceHeroEditorModalDescription,
+                      },
+                    ]}
+                  />
+                  <ScrollView
+                    contentContainerStyle={styles.marketplaceHeroEditorModalContent}
+                    keyboardShouldPersistTaps="handled"
+                    style={styles.marketplaceHeroEditorModalScroll}
+                  >
+                    <View style={styles.marketplaceCtaInlineField}>
+                      <Text style={styles.marketplaceOverviewLabel}>
+                        Kode
+                      </Text>
+                      <Text style={styles.marketplaceOverviewMeta}>
+                        Kode unik pengumuman.
+                      </Text>
+                      <TextInput
+                        editable={!disabled}
+                        onChangeText={value =>
+                          setNoticeDraftField('key', value)
+                        }
+                        placeholder="enclonura-migration-2026"
+                        style={styles.marketplaceFeaturedInput}
+                        value={noticeDraft.key}
+                      />
+                    </View>
+                    <View style={styles.marketplaceCtaInlineField}>
+                      <Text style={styles.marketplaceOverviewLabel}>
+                        Judul singkat
+                      </Text>
+                      <TextInput
+                        editable={!disabled}
+                        onChangeText={value =>
+                          setNoticeDraftField('title', value)
+                        }
+                        placeholder="Enclonura pindah ke Dunia Anura"
+                        style={styles.marketplaceFeaturedInput}
+                        value={noticeDraft.title}
+                      />
+                    </View>
+                    <View style={styles.marketplaceCtaInlineField}>
+                      <Text style={styles.marketplaceOverviewLabel}>Pesan</Text>
+                      <TextInput
+                        editable={!disabled}
+                        multiline
+                        onChangeText={value =>
+                          setNoticeDraftField('message', value)
+                        }
+                        placeholder="Kelola kandang, Freyr, dan layanan..."
+                        style={[
+                          styles.marketplaceFeaturedInput,
+                          styles.marketplaceCtaDescriptionInput,
+                        ]}
+                        textAlignVertical="top"
+                        value={noticeDraft.message}
+                      />
+                    </View>
+                    <View style={styles.marketplaceCtaGrid}>
+                      <View style={styles.marketplaceCtaInlineField}>
+                        <Text style={styles.marketplaceOverviewLabel}>
+                          URL tombol
+                        </Text>
+                        <TextInput
+                          editable={!disabled}
+                          onChangeText={value =>
+                            setNoticeDraftField('ctaUrl', value)
+                          }
+                          placeholder="/dashboard"
+                          style={styles.marketplaceFeaturedInput}
+                          value={noticeDraft.ctaUrl}
+                        />
+                      </View>
+                      <View style={styles.marketplaceCtaInlineField}>
+                        <Text style={styles.marketplaceOverviewLabel}>
+                          Label tombol
+                        </Text>
+                        <TextInput
+                          editable={!disabled}
+                          onChangeText={value =>
+                            setNoticeDraftField('ctaLabel', value)
+                          }
+                          placeholder="Buka dashboard"
+                          style={styles.marketplaceFeaturedInput}
+                          value={noticeDraft.ctaLabel}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.marketplaceNoticeToggleGrid}>
+                      <KolamToggleRow
+                        active={noticeDraft.isActive}
+                        description=""
+                        disabled={disabled}
+                        label="Aktif"
+                        onPress={() =>
+                          setNoticeDraftField(
+                            'isActive',
+                            !noticeDraft.isActive,
+                          )
+                        }
+                        variant="settingsForm"
+                      />
+                      <KolamToggleRow
+                        active={noticeDraft.showOnHome}
+                        description=""
+                        disabled={disabled}
+                        label="Homepage"
+                        onPress={() =>
+                          setNoticeDraftField(
+                            'showOnHome',
+                            !noticeDraft.showOnHome,
+                          )
+                        }
+                        variant="settingsForm"
+                      />
+                      <KolamToggleRow
+                        active={noticeDraft.showOnDashboard}
+                        description=""
+                        disabled={disabled}
+                        label="Dashboard"
+                        onPress={() =>
+                          setNoticeDraftField(
+                            'showOnDashboard',
+                            !noticeDraft.showOnDashboard,
+                          )
+                        }
+                        variant="settingsForm"
+                      />
+                    </View>
+                  </ScrollView>
+                  <View style={styles.marketplaceHeroEditorModalFooter}>
+                    <KolamSaveButton
+                      disabled={disabled || !noticeCanSave}
+                      intent="primary"
+                      label="Simpan"
+                      loading={saveStatus === 'saving'}
+                      loadingLabel="Menyimpan..."
+                      onPress={onSaveNotice}
+                    />
+                    <KolamActionControlButton
+                      disabled={disabled}
+                      label="Batal"
+                      tone="positive"
+                      onPress={closeNoticeEditor}
+                    />
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          ) : null}
         </View>
       ) : null}
       {message ? (
@@ -13134,7 +13292,58 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   marketplaceNoticeList: {
-    gap: 8,
+    gap: 10,
+  },
+  marketplaceNoticeCard: {
+    alignItems: 'flex-start',
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  marketplaceNoticeCopy: {
+    flex: 1,
+    gap: 6,
+    minWidth: 280,
+  },
+  marketplaceNoticeHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  marketplaceNoticeKey: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 5,
+    color: '#4b5563',
+    fontSize: 11,
+    fontWeight: '800',
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  marketplaceNoticeMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  marketplaceNoticeOutlineBadge: {
+    borderColor: V.colors.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    color: '#4b5563',
+    fontSize: 11,
+    fontWeight: '800',
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
   marketplaceNoticeRow: {
     alignItems: 'center',
@@ -13143,6 +13352,15 @@ const styles = StyleSheet.create({
     gap: 10,
     justifyContent: 'space-between',
     paddingVertical: 10,
+  },
+  marketplaceNoticeTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  marketplaceNoticeToggleGrid: {
+    gap: 8,
   },
   marketplaceOverview: {
     gap: 12,
