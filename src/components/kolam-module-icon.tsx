@@ -4,6 +4,7 @@ import Svg, {Path, SvgXml} from 'react-native-svg';
 import {KOLAM_AI_MODULE_ICON_SVG} from '../assets/icons/ai-module-icon-svg';
 import {KOLAM_LAYANAN_AM_ICON_SVG} from '../assets/icons/layanan-am-icon-svg';
 import {KOLAM_PERANGKAT_AM_ICON_SVG} from '../assets/icons/perangkat-am-icon-svg';
+import {KOLAM_TRANSFER_AM_ICON_SVG} from '../assets/icons/transfer-am-icon-svg';
 import {KOLAM_WEBHOOK_AM_ICON_SVG} from '../assets/icons/webhook-am-icon-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_ASSET_PURCHASE_MODULE_ICON_SVG} from '../assets/icons/asset-purchase-module-icon-svg';
@@ -63,6 +64,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   ai: 'Icon Pusat AI',
   amHardware: 'Icon Perangkat AM',
   amService: 'Icon Layanan AM',
+  amTransfer: 'Icon Transfer AM',
   amWebhook: 'Icon Webhooks AM',
   archive: 'Icon Arsip',
   assetPurchase: 'Icon Pembelian Aset',
@@ -243,6 +245,12 @@ export function KolamModuleIcon({
           height="100%"
           width="100%"
           xml={KOLAM_LAYANAN_AM_ICON_SVG}
+        />
+      ) : kind === 'amTransfer' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_TRANSFER_AM_ICON_SVG}
         />
       ) : kind === 'amWebhook' ? (
         <SvgXml

@@ -15,6 +15,7 @@ export type KolamNavigationModuleIcon =
   | 'ai'
   | 'amHardware'
   | 'amService'
+  | 'amTransfer'
   | 'amWebhook'
   | 'archive'
   | 'assetPurchase'

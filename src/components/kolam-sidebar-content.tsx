@@ -298,6 +298,7 @@ function getAmRouteModuleIcon(
   if (item.id === 'services') return 'amService';
   if (item.id === 'hardware') return 'amHardware';
   if (item.id === 'webhooks') return 'amWebhook';
+  if (item.id === 'transactions') return 'amTransfer';
   return undefined;
 }
 
