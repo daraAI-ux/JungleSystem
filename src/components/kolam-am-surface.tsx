@@ -5852,18 +5852,19 @@ function AmWebhooksPage() {
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Endpoint</Text>
         <AmLoadingOrEmpty isLoading={isLoading} items={configs} loadingText="Memuat config webhook..." emptyText="Webhook belum terdaftar" />
-        <View style={styles.cardGrid}>
+        <View style={styles.webhookEndpointList}>
           {configs.map(config => (
-            <View key={config._id} style={styles.hardwareCard}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{config.description || config.url}</Text>
-              <Text style={styles.rowMeta} numberOfLines={2}>{config.url}</Text>
-              <Text style={styles.rowMeta}>{config.events.length} event - {config.failCount} gagal</Text>
-              <Text style={styles.rowMeta}>Terakhir terkirim: {formatAmDate(config.lastDeliveredAt)}</Text>
-              <Text style={styles.rowMeta}>
-                Secret: {formatWebhookSecretStatus(config)}
-              </Text>
-              <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
-              <View style={styles.inlineActions}>
+            <View key={config._id} style={styles.webhookEndpointRow}>
+              <View style={styles.webhookEndpointCopy}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{config.description || config.url}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{config.url}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>
+                  {config.events.length} event - {config.failCount} gagal - Secret {formatWebhookSecretStatus(config)}
+                </Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>Terakhir terkirim: {formatAmDate(config.lastDeliveredAt)}</Text>
+              </View>
+              <View style={styles.webhookEndpointActions}>
+                <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
                 <KolamEditButton
                   accessibilityLabel={`AM Webhook Edit ${config._id}`}
                   disabled={isWebhookActionLocked}
@@ -9162,6 +9163,32 @@ const styles = StyleSheet.create({
   hardwareCardFooterCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  webhookEndpointList: {
+    width: '100%',
+    gap: 6,
+  },
+  webhookEndpointRow: {
+    width: '100%',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: V.colors.border,
+    paddingVertical: 8,
+  },
+  webhookEndpointCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  webhookEndpointActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    gap: 6,
   },
   hardwareModalScroll: {
     maxHeight: 420,
