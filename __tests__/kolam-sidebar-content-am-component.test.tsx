@@ -154,25 +154,30 @@ describe('KolamSidebarContent AM mode', () => {
     expect(text).toEqual(
       expect.arrayContaining([
         'AM',
-        'Overview',
-        'Dashboard',
-        'Automation',
-        'Services',
-        'Infrastructure',
-        'Hardware',
+        'Ringkasan',
+        'Beranda',
+        'Automasi',
+        'Layanan',
+        'Infrastruktur',
+        'Perangkat',
         'Webhooks',
-        'Banking',
-        'Transfers',
-        'Mutations',
-        'Administration',
-        'Users',
-        'Activity Log',
+        'Perbankan',
+        'Transfer',
+        'Mutasi',
+        'Administrasi',
+        'Pengguna',
+        'Log Aktivitas',
       ]),
     );
     expect(text).not.toContain('Account Settings');
     expect(text).toContain('JungleSystem');
     expect(text).toContain('Beranda');
     expect(text).toContain('Pengaturan');
+    expect(
+      renderer!.root.findAllByProps({
+        accessibilityLabel: 'Icon Automation Management',
+      }).length,
+    ).toBeGreaterThan(0);
     expect(text).not.toContain('POS');
     expect(text).not.toContain('Tasks');
     expect(text).not.toContain('Automation Management');
@@ -226,7 +231,7 @@ describe('KolamSidebarContent AM mode', () => {
 
     expect(
       selectedItems.some(item =>
-        flattenNodeText(item).includes('Hardware'),
+        flattenNodeText(item).includes('Perangkat'),
       ),
     ).toBe(true);
     expect(
@@ -279,14 +284,14 @@ describe('KolamSidebarContent AM mode', () => {
     );
 
     expect(text).toEqual(
-      expect.arrayContaining(['AM', 'Hardware', 'JungleSystem', 'Beranda']),
+      expect.arrayContaining(['AM', 'Perangkat', 'JungleSystem', 'Beranda']),
     );
     expect(text).not.toContain('POS');
     expect(text).not.toContain('Produk');
     expect(text).not.toContain('Species');
     expect(
       selectedItems.some(item =>
-        flattenNodeText(item).includes('Hardware'),
+        flattenNodeText(item).includes('Perangkat'),
       ),
     ).toBe(true);
     expect(
@@ -327,7 +332,7 @@ describe('KolamSidebarContent AM mode', () => {
 
     const servicesRouteButton = renderer!.root
       .findAll(node => typeof node.props.onPress === 'function')
-      .find(node => flattenNodeText(node).includes('Services'));
+      .find(node => flattenNodeText(node).includes('Layanan'));
 
     expect(servicesRouteButton).toBeTruthy();
 
@@ -376,6 +381,7 @@ describe('KolamSidebarContent AM mode', () => {
 
     const homeButton = renderer!.root
       .findAll(node => typeof node.props.onPress === 'function')
+      .reverse()
       .find(node => flattenNodeText(node).includes('Beranda'));
 
     expect(homeButton).toBeTruthy();
@@ -552,8 +558,8 @@ describe('KolamSidebarContent AM mode', () => {
 
     const text = renderText(renderer!);
 
-    expect(text).toContain('Users');
-    expect(text).not.toContain('Activity Log');
+    expect(text).toContain('Pengguna');
+    expect(text).not.toContain('Log Aktivitas');
   });
 
   it('keeps Users hidden for Super Admin role without user read permission', async () => {
@@ -598,8 +604,8 @@ describe('KolamSidebarContent AM mode', () => {
 
     const text = renderText(renderer!);
 
-    expect(text).not.toContain('Users');
-    expect(text).toContain('Activity Log');
+    expect(text).not.toContain('Pengguna');
+    expect(text).toContain('Log Aktivitas');
   });
 
   it('keeps AM admin routes closed when the live AM user cannot be read', async () => {
@@ -635,10 +641,10 @@ describe('KolamSidebarContent AM mode', () => {
     const text = renderText(renderer!);
 
     expect(text).toEqual(
-      expect.arrayContaining(['Dashboard', 'Services', 'Hardware', 'Webhooks']),
+      expect.arrayContaining(['Beranda', 'Layanan', 'Perangkat', 'Webhooks']),
     );
-    expect(text).not.toContain('Users');
-    expect(text).not.toContain('Activity Log');
+    expect(text).not.toContain('Pengguna');
+    expect(text).not.toContain('Log Aktivitas');
   });
 });
 

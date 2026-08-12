@@ -281,6 +281,7 @@ function toAmShellModule(item: AmRouteItem): ShellModule {
     area: 'am',
     label: item.label,
     iconKind: 'automation',
+    moduleIcon: item.id === 'dashboard' ? 'automation' : undefined,
     sourceRepo: 'E:\\Projects\\da-automation-management',
     summary: item.description,
     routes: [item.moduleRoute],
