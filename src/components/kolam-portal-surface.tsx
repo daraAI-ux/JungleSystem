@@ -279,12 +279,18 @@ function KpiPortalCard({
       action={
         <View style={styles.kpiActionRow}>
           {summary.level ? (
-            <StatusBadge label={summary.level.label} value="level" />
+            <StatusBadge
+              label={summary.level.label}
+              style={styles.kpiLevelBadge}
+              value="level"
+            />
           ) : null}
           <KolamButton
             intent="plain"
             label="Detail"
             onPress={() => onRouteChange?.('/portal/kpi')}
+            style={styles.kpiDetailButton}
+            textStyle={styles.kpiDetailButtonText}
           />
         </View>
       }
@@ -837,9 +843,11 @@ function CellText({
 
 function StatusBadge({
   label,
+  style,
   value,
 }: {
   label?: string;
+  style?: object;
   value?: string | null;
 }) {
   return (
@@ -847,6 +855,7 @@ function StatusBadge({
       intent={getStatusIntent(value)}
       label={label ?? formatStatus(value)}
       numberOfLines={1}
+      style={style}
     />
   );
 }
@@ -1160,8 +1169,23 @@ const styles = StyleSheet.create({
   },
   kpiActionRow: {
     alignItems: 'center',
+    alignSelf: 'center',
     flexDirection: 'row',
     gap: 8,
+    minHeight: 30,
+  },
+  kpiLevelBadge: {
+    alignSelf: 'center',
+    minHeight: 30,
+    paddingVertical: 0,
+  },
+  kpiDetailButton: {
+    alignSelf: 'center',
+    minHeight: 30,
+    paddingVertical: 0,
+  },
+  kpiDetailButtonText: {
+    lineHeight: 18,
   },
   kpiLoadingBar: {
     backgroundColor: V.colors.mutedSoft,
