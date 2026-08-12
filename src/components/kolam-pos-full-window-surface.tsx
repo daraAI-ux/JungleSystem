@@ -96,7 +96,6 @@ type PosKeyboardTarget = {
   ) => void;
 };
 const POS_CATALOG_PAGE_SIZES = [12, 24, 48, 96] as const;
-const POS_ACTION_BUTTON_BG = '#374151';
 type PosSavedOrder = {
   id: string;
   name: string;
@@ -116,7 +115,6 @@ export function KolamPosFullWindowSurface({
   afterDiscount,
   canCreateDraft,
   catalog,
-  catalogCategories = [],
   catalogSearch,
   checkout,
   customerForm,
@@ -127,7 +125,6 @@ export function KolamPosFullWindowSurface({
   isCreatingSale,
   onAddToCart,
   onCatalogSearchChange,
-  onCategoryChange,
   onClearCart,
   onCreateCustomer,
   onCreateSaleDraft,
@@ -293,42 +290,6 @@ export function KolamPosFullWindowSurface({
               <View style={kolamTableToolbarStyles.row}>
                 <View style={kolamTableToolbarStyles.filters} />
                 <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
-                  {isCatalogView ? (
-                    <>
-                    <ScrollView
-                      horizontal
-                      contentContainerStyle={styles.categoryPillList}
-                      showsHorizontalScrollIndicator={false}
-                      style={[styles.categoryScroll, styles.categoryActionScroll]}>
-                      {catalogCategories.map(category => (
-                        <PosCategoryPill
-                          key={category}
-                          active={activeCategory === category}
-                          label={category}
-                          onPress={() => onCategoryChange?.(category)}
-                          variant="filter"
-                        />
-                      ))}
-                    </ScrollView>
-                    {catalogSearch || activeCategory ? (
-                      <KolamButton
-                        label="Hapus Filter"
-                        onPress={() => {
-                          onCatalogSearchChange('');
-                          onCategoryChange?.(null);
-                        }}
-                        style={styles.posToolbarActionButton}
-                        textStyle={styles.posToolbarActionButtonText}
-                      />
-                    ) : null}
-                    <PosCategoryPill
-                      active={!activeCategory}
-                      label="Semua"
-                      onPress={() => onCategoryChange?.(null)}
-                      variant="filter"
-                    />
-                    </>
-                  ) : null}
                   <View style={styles.posToolbarNav}>
                     <PosCategoryPill
                       active={isCatalogView && activeType !== 'species'}
@@ -615,26 +576,18 @@ function PosCategoryPill({
   active = false,
   label,
   onPress,
-  variant = 'tab',
 }: {
   active?: boolean;
   label: string;
   onPress: () => void;
-  variant?: 'filter' | 'tab';
 }) {
-  const isFilter = variant === 'filter';
-
   return (
     <KolamButton
-      intent={active && !isFilter ? 'primary' : 'outline'}
+      intent={active ? 'primary' : 'outline'}
       label={label}
       onPress={onPress}
       size="sm"
-      style={[
-        styles.categoryPill,
-        active && isFilter ? styles.categoryFilterPillActive : null,
-      ]}
-      textStyle={active && isFilter ? styles.categoryFilterPillActiveText : null}
+      style={styles.categoryPill}
     />
   );
 }
@@ -2272,44 +2225,11 @@ const styles = StyleSheet.create({
     gap: 6,
     minHeight: 34,
   },
-  categoryScroll: {
-    flexGrow: 1,
-    flexShrink: 1,
-    height: 34,
-    maxHeight: 34,
-    minWidth: 0,
-  },
-  categoryActionScroll: {
-    flexGrow: 0,
-    maxWidth: 360,
-  },
-  categoryPillList: {
-    alignItems: 'center',
-    gap: 8,
-    minHeight: 34,
-    paddingRight: 8,
-  },
   categoryActions: {
     minHeight: 34,
   },
   categoryPill: {
     flexShrink: 0,
-  },
-  categoryFilterPillActive: {
-    backgroundColor: V.colors.successSoft,
-    borderColor: V.colors.success,
-  },
-  categoryFilterPillActiveText: {
-    color: V.colors.success,
-  },
-  posToolbarActionButton: {
-    backgroundColor: POS_ACTION_BUTTON_BG,
-    borderColor: POS_ACTION_BUTTON_BG,
-    flexShrink: 0,
-    minHeight: 32,
-  },
-  posToolbarActionButtonText: {
-    color: V.colors.primaryFg,
   },
   catalogScroll: {
     flex: 1,
