@@ -5855,7 +5855,10 @@ function AmWebhooksPage() {
           {configs.map(config => (
             <View key={config._id} style={styles.webhookEndpointRow}>
               <View style={styles.webhookEndpointCopy}>
-                <Text style={styles.rowTitle} numberOfLines={1}>{config.description || config.url}</Text>
+                <View style={styles.webhookEndpointTitleRow}>
+                  <Text style={[styles.rowTitle, styles.webhookEndpointTitle]} numberOfLines={1}>{config.description || config.url}</Text>
+                  <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
+                </View>
                 <Text style={styles.rowMeta} numberOfLines={1}>{config.url}</Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>
                   {config.events.length} event - {config.failCount} gagal - Secret {formatWebhookSecretStatus(config)}
@@ -5863,7 +5866,6 @@ function AmWebhooksPage() {
                 <Text style={styles.rowMeta} numberOfLines={1}>Terakhir terkirim: {formatAmDate(config.lastDeliveredAt)}</Text>
               </View>
               <View style={styles.webhookEndpointActions}>
-                <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
                 <KolamEditButton
                   accessibilityLabel={`AM Webhook Edit ${config._id}`}
                   disabled={isWebhookActionLocked}
@@ -9182,6 +9184,16 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  webhookEndpointTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    minWidth: 0,
+  },
+  webhookEndpointTitle: {
+    flexShrink: 1,
+    minWidth: 0,
   },
   webhookEndpointActions: {
     flexDirection: 'row',
