@@ -7993,7 +7993,12 @@ function MarketplaceLandingControlsPanel({
   return (
     <View style={styles.marketplaceControls}>
       {activeTabId === 'hero' ? (
-        <View style={styles.marketplaceControlCard}>
+        <View
+          style={[
+            styles.marketplaceControlCard,
+            styles.marketplaceHeroEditorCard,
+          ]}
+        >
           <KolamCopyStack
             items={[
               {
@@ -10233,6 +10238,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+  },
+  marketplaceHeroEditorCard: {
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    marginTop: -4,
   },
   marketplaceHeroEmpty: {
     alignItems: 'center',
