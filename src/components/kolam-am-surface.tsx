@@ -134,6 +134,7 @@ import {KolamResetButton} from './kolam-reset-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
+import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamModalDialog} from './kolam-modal-dialog';
 import {KolamTableRowActionMenu} from './kolam-dropdown-select';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -2567,19 +2568,6 @@ function AmHardwarePage({
           </View>
         </View>
       ) : null}
-      {selectedRack ? (
-        <View style={styles.breadcrumbBar}>
-          <KolamButton
-            label="Rack"
-            intent="plain"
-            size="sm"
-            onPress={resetHardwareRoute}
-          />
-          <Text style={styles.breadcrumbText}>{selectedRack.name}</Text>
-          {selectedBox ? <Text style={styles.breadcrumbText}>/ {selectedBox.name}</Text> : null}
-          {selectedDevice ? <Text style={styles.breadcrumbText}>/ {selectedDevice.name}</Text> : null}
-        </View>
-      ) : null}
       {selectedRack && !selectedBox ? (
         <View style={styles.amHardwareHeader}>
           <View style={styles.amHardwareHeaderCopy}>
@@ -2596,10 +2584,10 @@ function AmHardwarePage({
           </View>
         </View>
       ) : null}
-      {!selectedDevice ? (
-        <View ref={hardwareToolbarRef} collapsable={false} style={styles.amHardwareToolbarWrap}>
-          <View style={kolamTableToolbarStyles.shell}>
-            <View style={kolamTableToolbarStyles.row}>
+      <View ref={hardwareToolbarRef} collapsable={false} style={styles.amHardwareToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            {!selectedDevice ? (
               <View style={kolamTableToolbarStyles.filters}>
                 <KolamSearchField
                   accessibilityLabel="AM Hardware Search"
@@ -2620,44 +2608,53 @@ function AmHardwarePage({
                   />
                 </View>
               </View>
-              <View style={kolamTableToolbarStyles.actions}>
-                {!selectedRack ? (
-                  <KolamButton
-                    accessibilityLabel="AM Hardware Create Rack"
-                    label="Create Rack"
-                    size="sm"
-                    onPress={openCreateRackModal}
-                  />
-                ) : selectedBox ? (
-                  <KolamButton
-                    accessibilityLabel="AM Hardware Add Device"
-                    label="Add Device"
-                    size="sm"
-                    onPress={openAddDeviceModal}
-                  />
-                ) : (
-                  <KolamButton
-                    accessibilityLabel="AM Hardware Add Box"
-                    label="Add Box"
-                    size="sm"
-                    onPress={openAddBoxModal}
-                  />
-                )}
-              </View>
+            ) : (
+              <View style={kolamTableToolbarStyles.filters} />
+            )}
+            <View style={kolamTableToolbarStyles.actions}>
+              {selectedRack ? (
+                <KolamDaftarButton
+                  accessibilityLabel="AM Hardware Daftar"
+                  size="sm"
+                  onPress={resetHardwareRoute}
+                />
+              ) : null}
+              {!selectedRack ? (
+                <KolamButton
+                  accessibilityLabel="AM Hardware Create Rack"
+                  label="Create Rack"
+                  size="sm"
+                  onPress={openCreateRackModal}
+                />
+              ) : selectedDevice ? null : selectedBox ? (
+                <KolamButton
+                  accessibilityLabel="AM Hardware Add Device"
+                  label="Add Device"
+                  size="sm"
+                  onPress={openAddDeviceModal}
+                />
+              ) : (
+                <KolamButton
+                  accessibilityLabel="AM Hardware Add Box"
+                  label="Add Box"
+                  size="sm"
+                  onPress={openAddBoxModal}
+                />
+              )}
             </View>
           </View>
-          {activeHardwareFilterPanel && hardwarePanelAnchor ? (
-            <AmHardwareFilterOverlayPanel
-              activePanel={activeHardwareFilterPanel}
-              anchor={hardwarePanelAnchor}
-              options={hardwareStatusOptions}
-              selectedValue={hardwareStatus}
-              onClose={closeHardwareFilterPanel}
-              onSelect={handleHardwareStatusChange}
-            />
-          ) : null}
         </View>
-      ) : null}
+        {activeHardwareFilterPanel && hardwarePanelAnchor && !selectedDevice ? (
+          <AmHardwareFilterOverlayPanel
+            activePanel={activeHardwareFilterPanel}
+            anchor={hardwarePanelAnchor}
+            options={hardwareStatusOptions}
+            selectedValue={hardwareStatus}
+            onClose={closeHardwareFilterPanel}
+            onSelect={handleHardwareStatusChange}
+          />
+        ) : null}
+      </View>
       {error ? (
         <View style={styles.errorPanel}>
           <Text style={styles.errorTitle}>Hardware AM belum bisa dibaca</Text>
@@ -8328,23 +8325,6 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     marginTop: 6,
     paddingTop: 6,
-  },
-  breadcrumbBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: V.colors.bg,
-  },
-  breadcrumbText: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '800',
   },
   taskSearch: {
     flexBasis: 240,

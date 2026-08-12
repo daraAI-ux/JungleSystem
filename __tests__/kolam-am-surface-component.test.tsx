@@ -2992,8 +2992,8 @@ describe('KolamAmSurface', () => {
 
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
-    expect(joinedText).toContain('Rack Alpha');
-    expect(joinedText).toContain('Box 01');
+    expect(joinedText).toContain('Daftar');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Daftar'}).length).toBeGreaterThan(0);
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
@@ -3767,8 +3767,8 @@ describe('KolamAmSurface', () => {
     });
 
     const text = renderText(renderer!);
-    expect(text).toContain('Rack Live');
-    expect(text).toContain('Box Live');
+    expect(text).toContain('Daftar');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Daftar'}).length).toBeGreaterThan(0);
     expect(text).toContain('Device Live');
     expect(text).toContain('A55');
     expect(getAmRackById).toHaveBeenCalledWith('rack-live');
