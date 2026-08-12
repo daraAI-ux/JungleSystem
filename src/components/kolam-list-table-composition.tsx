@@ -17,6 +17,7 @@ import { KolamListTableRowLayerContext } from './kolam-list-table-row-layer-cont
 export type KolamListTableColumn<TRow> = {
   align?: 'left' | 'center' | 'right';
   flex: number;
+  headerTextStyle?: StyleProp<TextStyle>;
   id: string;
   label: string;
   render: (row: TRow) => React.ReactNode;
@@ -92,6 +93,7 @@ export function KolamListTableComposition<TRow>({
                 style={[
                   styles.headerCellText,
                   getHeaderAlignStyle(column.align),
+                  column.headerTextStyle,
                 ]}
               >
                 {column.label}

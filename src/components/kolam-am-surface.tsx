@@ -5552,6 +5552,7 @@ function AmMutasiPage({
     {
       align: 'center',
       flex: 0.54,
+      headerTextStyle: styles.mutasiTypeHeaderText,
       id: 'type',
       label: 'Tipe',
       render: item => (
@@ -8679,6 +8680,9 @@ const styles = StyleSheet.create({
   },
   mutasiCenteredText: {
     textAlign: 'center',
+  },
+  mutasiTypeHeaderText: {
+    transform: [{translateX: -4}],
   },
   amTableIconActionButton: {
     minWidth: 38,
