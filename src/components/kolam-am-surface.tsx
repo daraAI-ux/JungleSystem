@@ -4012,24 +4012,16 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         </View>
       </View>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Akun Layanan</Text>
+        <Text style={styles.panelTitle}>Service Accounts</Text>
         <View style={styles.inlineActions}>
           {createServicePlatformItems.length ? (
             <KolamButton
               accessibilityLabel={`AM Device Add Service Account ${device._id}`}
-              label="Tambah Layanan"
+              label="Add Service Account"
               size="sm"
               onPress={() => resetDeviceServiceForm(true)}
             />
           ) : null}
-          <KolamRefreshButton
-            accessibilityLabel="Refresh"
-            disabled={isLoading}
-
-            intent="outline"
-            size="sm"
-            onPress={fetchDeviceServices}
-          />
         </View>
       </View>
       <AmInlineError error={error} title="Service account device belum bisa dibaca" />
@@ -4038,9 +4030,30 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           <Text style={styles.successText}>{actionMessage}</Text>
         </View>
       ) : null}
-      {isServiceFormOpen ? (
-        <View style={styles.tablePanel}>
-          <View style={styles.formGrid}>
+      <KolamModalDialog
+        accessibilityLabel={editingDeviceServiceId ? `AM Device Edit Service Account Modal ${device._id}` : `AM Device Add Service Account Modal ${device._id}`}
+        maxHeight="86%"
+        maxWidth="86%"
+        onClose={() => resetDeviceServiceForm(false)}
+        title={editingDeviceServiceId ? 'Edit Service Account' : 'Add Service Account'}
+        visible={isServiceFormOpen}
+        width={520}
+        footer={
+          <>
+            <KolamCancelButton label="Cancel" onPress={() => resetDeviceServiceForm(false)} />
+            <KolamSaveButton
+              accessibilityLabel={`AM Device Save Service Account ${device._id}`}
+              disabled={isSubmittingService || !serviceFormLabel.trim()}
+              label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Save' : 'Create'}
+              muted={isSubmittingService || !serviceFormLabel.trim()}
+              onPress={submitDeviceServiceAccount}
+            />
+          </>
+        }>
+        <ScrollView
+          nestedScrollEnabled
+          style={styles.hardwareModalScroll}
+          contentContainerStyle={styles.formGrid}>
             {editingDeviceServiceId ? (
               <View style={styles.detailListRow}>
                 <Text style={[styles.tableHeaderText, styles.accountCol]}>Platform</Text>
@@ -4097,26 +4110,8 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 </View>
               </View>
             ) : null}
-            <View style={styles.inlineActions}>
-              <KolamSaveButton
-                accessibilityLabel={`AM Device Save Service Account ${device._id}`}
-                disabled={isSubmittingService}
-                label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Update Layanan' : 'Buat Layanan'}
-                muted={isSubmittingService}
-                size="sm"
-                onPress={submitDeviceServiceAccount}
-              />
-              <KolamButton
-                accessibilityLabel={`AM Device Cancel Service Account ${device._id}`}
-                label="Batal"
-                intent="outline"
-                size="sm"
-                onPress={() => resetDeviceServiceForm(false)}
-              />
-            </View>
-          </View>
-        </View>
-      ) : null}
+        </ScrollView>
+      </KolamModalDialog>
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Akun</Text>
@@ -4125,6 +4120,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           <Text style={[styles.tableHeaderText, styles.accountCol]}>No. Akun</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Saldo</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
         <AmLoadingOrEmpty
           isLoading={isLoading}
@@ -4154,26 +4150,25 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 {typeof account.balance === 'number' ? formatRupiah(account.balance) : '-'}
               </Text>
               <View style={styles.statusCol}>
-                <View style={styles.statusActionStack}>
-                  <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
-                  <KolamEditButton
-                    accessibilityLabel={`AM Device Edit Service Account ${account._id}`}
-                    disabled={isSubmittingService || actingDeviceServiceId === account._id}
-                    intent="outline"
-                    muted={isSubmittingService || actingDeviceServiceId === account._id}
-                    size="sm"
-                    onPress={() => editDeviceServiceAccount(account)}
-                  />
-                  <KolamButton
-                    accessibilityLabel={`AM Device Delete Service Account ${account._id}`}
-                    disabled={actingDeviceServiceId === account._id}
-                    intent="danger"
-                    label={actingDeviceServiceId === account._id ? '...' : 'Hapus'}
-                    muted={actingDeviceServiceId === account._id}
-                    size="sm"
-                    onPress={() => deleteDeviceServiceAccount(account)}
-                  />
-                </View>
+                <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
+              </View>
+              <View style={styles.actionCol}>
+                <KolamTableRowActionMenu
+                  accessibilityLabel={`AM Device Service Account Actions ${account._id}`}
+                  actions={[
+                    {
+                      disabled: isSubmittingService || actingDeviceServiceId === account._id,
+                      label: 'Edit',
+                      onPress: () => editDeviceServiceAccount(account),
+                    },
+                    {
+                      disabled: actingDeviceServiceId === account._id,
+                      label: actingDeviceServiceId === account._id ? '...' : 'Delete',
+                      onPress: () => deleteDeviceServiceAccount(account),
+                      tone: 'danger',
+                    },
+                  ]}
+                />
               </View>
             </View>
           );

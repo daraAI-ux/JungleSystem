@@ -2779,7 +2779,7 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Unauthorized');
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
-    expect(text).toContain('Akun Layanan');
+    expect(text).toContain('Service Accounts');
     expect(text).toContain('BCA Device Alpha');
     expect(text).toContain('bcauser');
     expect(text).toContain('1234567890');
@@ -3005,21 +3005,18 @@ describe('KolamAmSurface', () => {
     jest.mocked(deleteAmServiceAccount).mockImplementationOnce(() => new Promise<void>(resolve => {
       resolveDeleteServiceAccount = resolve;
     }));
+    const getServiceAccountMenu = (id: string) => renderer!.root
+      .findAllByType(KolamTableRowActionMenu)
+      .find(menu => menu.props.accessibilityLabel === `AM Device Service Account Actions ${id}`);
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Device Delete Service Account service-1'}).props.onPress();
+      getServiceAccountMenu('service-1')!.props.actions
+        .find((action: {label: string}) => action.label === 'Delete')!.onPress();
     });
 
-    const MenungguDeleteButton = renderer!.root.findByProps({
-      accessibilityLabel: 'AM Device Delete Service Account service-1',
-    });
-    expect(MenungguDeleteButton.props.disabled).toBe(true);
-    expect(MenungguDeleteButton.props.muted).toBe(true);
-    expect(MenungguDeleteButton.props.label).toBe('...');
-    const MenungguDeleteEditButton = renderer!.root.findByProps({
-      accessibilityLabel: 'AM Device Edit Service Account service-1',
-    });
-    expect(MenungguDeleteEditButton.props.disabled).toBe(true);
+    const MenungguDeleteActions = getServiceAccountMenu('service-1')!.props.actions;
+    expect(MenungguDeleteActions.find((action: {label: string}) => action.label === '...')!.disabled).toBe(true);
+    expect(MenungguDeleteActions.find((action: {label: string}) => action.label === 'Edit')!.disabled).toBe(true);
 
     await act(async () => {
       resolveDeleteServiceAccount?.();
@@ -3029,7 +3026,8 @@ describe('KolamAmSurface', () => {
     expect(deleteAmServiceAccount).toHaveBeenCalledWith('service-1');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-1'}).props.onPress();
+      getServiceAccountMenu('service-1')!.props.actions
+        .find((action: {label: string}) => action.label === 'Edit')!.onPress();
     });
     await act(async () => {
       await Promise.resolve();
@@ -3080,7 +3078,8 @@ describe('KolamAmSurface', () => {
     }));
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-1'}).props.onPress();
+      getServiceAccountMenu('service-1')!.props.actions
+        .find((action: {label: string}) => action.label === 'Edit')!.onPress();
     });
     await act(async () => {
       await Promise.resolve();
@@ -3675,7 +3674,10 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Device Edit Service Account service-active'}).props.onPress();
+      renderer!.root
+        .findAllByType(KolamTableRowActionMenu)
+        .find(menu => menu.props.accessibilityLabel === 'AM Device Service Account Actions service-active')!
+        .props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
     });
     await act(async () => {
       await Promise.resolve();
