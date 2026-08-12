@@ -21,12 +21,13 @@ import {
 import {KolamButton} from './kolam-button';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
-import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamHtmlContent} from './kolam-html-content';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamMappedList} from './kolam-mapped-list';
+import {KolamPanelFrame} from './kolam-panel-frame';
 import {KolamSearchField} from './kolam-search-field';
+import {KolamSurfacePanelCopy} from './kolam-surface-panel-copy';
 
 export function KolamBantuanSurface({
   onRouteChange,
@@ -137,80 +138,61 @@ export function KolamBantuanSurface({
 
   return (
     <KolamDetailScrollSurface contentContainerStyle={styles.surface}>
-      <KolamDetailSummaryCard
-        title="Bantuan"
-        description="Dokumentasi operasional Kolam."
-        fieldColumns={4}
-        fields={[
-          {
-            id: 'modules',
-            label: 'Dokumen',
-            value: loading ? 'Memuat' : `${manifest?.modules.length ?? 0}`,
-          },
-          {
-            id: 'version',
-            label: 'Versi',
-            value: manifest?.version || '-',
-          },
-          {
-            id: 'source',
-            label: 'Sumber',
-            value: 'Plugin Bantuan',
-          },
-          {
-            id: 'route',
-            label: 'Route',
-            value: slug ? `/bantuan/${slug}` : '/bantuan',
-          },
-        ]}
-        actions={
-          slug ? (
+      <KolamPanelFrame accessibilityLabel="Bantuan" variant="module">
+        <View style={styles.headerRow}>
+          <View style={styles.headerCopy}>
+            <KolamSurfacePanelCopy
+              title="Bantuan"
+              description="Dokumentasi operasional Kolam."
+            />
+          </View>
+          {slug ? (
             <KolamButton
               intent="outline"
               label="Beranda"
               onPress={() => onRouteChange?.('/bantuan')}
             />
-          ) : null
-        }
-      />
+          ) : null}
+        </View>
 
-      <KolamSearchField
-        containerStyle={styles.search}
-        onChangeText={setSearch}
-        placeholder="Cari bantuan..."
-        trailingLabel={
-          search.trim()
-            ? `${searchHits.length} hasil`
-            : `${visibleModules.length} dokumen`
-        }
-        value={search}
-      />
+        <KolamSearchField
+          containerStyle={styles.search}
+          onChangeText={setSearch}
+          placeholder="Cari bantuan..."
+          trailingLabel={
+            search.trim()
+              ? `${searchHits.length} hasil`
+              : `${visibleModules.length} dokumen`
+          }
+          value={search}
+        />
 
-      {error ? (
-        <KolamEmptyState compact message={error} title="Bantuan belum tersedia" />
-      ) : null}
+        {error ? (
+          <KolamEmptyState compact message={error} title="Bantuan belum tersedia" />
+        ) : null}
 
-      {search.trim() ? (
-        <KolamBantuanSearchResults
-          hits={searchHits}
-          onRouteChange={onRouteChange}
-        />
-      ) : slug ? (
-        <KolamBantuanDoc
-          docBody={docBody}
-          loading={docLoading || loading}
-          module={module}
-          onLinkPress={handleInternalRoute}
-          onRouteChange={onRouteChange}
-          slug={slug}
-        />
-      ) : (
-        <KolamBantuanHub
-          loading={loading}
-          manifest={manifest}
-          onRouteChange={onRouteChange}
-        />
-      )}
+        {search.trim() ? (
+          <KolamBantuanSearchResults
+            hits={searchHits}
+            onRouteChange={onRouteChange}
+          />
+        ) : slug ? (
+          <KolamBantuanDoc
+            docBody={docBody}
+            loading={docLoading || loading}
+            module={module}
+            onLinkPress={handleInternalRoute}
+            onRouteChange={onRouteChange}
+            slug={slug}
+          />
+        ) : (
+          <KolamBantuanHub
+            loading={loading}
+            manifest={manifest}
+            onRouteChange={onRouteChange}
+          />
+        )}
+      </KolamPanelFrame>
     </KolamDetailScrollSurface>
   );
 }
@@ -406,6 +388,18 @@ function getErrorMessage(error: unknown) {
 const styles = StyleSheet.create({
   surface: {
     paddingBottom: 24,
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 260,
+  },
+  headerRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   search: {
     width: '100%',
