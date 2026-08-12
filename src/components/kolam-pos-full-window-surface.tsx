@@ -2796,7 +2796,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   paymentCard: {
-    width: 220,
+    flexBasis: 220,
+    flexGrow: 1,
+    flexShrink: 1,
     minHeight: 92,
     justifyContent: 'center',
     borderRadius: 6,
