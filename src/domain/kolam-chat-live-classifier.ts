@@ -119,6 +119,16 @@ function resolveKolamChatLiveSoundIntent(
     targetId?: string;
   },
 ): KolamChatLiveResolvedSoundIntent {
+  // Backup when message.created is missed/malformed but conversation.updated arrives.
+  if (
+    event.contract.stream === 'inbox' &&
+    event.contract.eventName === 'conversation.updated'
+  ) {
+    return resolveInboxIncomingSoundIntent(event.payload, context, {
+      directionSource: 'lastMessageDirection',
+    });
+  }
+
   if (event.contract.soundIntent === 'none') {
     return 'none';
   }
@@ -127,26 +137,42 @@ function resolveKolamChatLiveSoundIntent(
     return event.contract.soundIntent;
   }
 
+  return resolveInboxIncomingSoundIntent(event.payload, context, {
+    directionSource: 'message',
+  });
+}
+
+function resolveInboxIncomingSoundIntent(
+  payload: unknown,
+  context: {
+    currentUserId?: string | null;
+    selectedItemId?: string | null;
+    targetId?: string;
+  },
+  options: {directionSource: 'message' | 'lastMessageDirection'},
+): KolamChatLiveResolvedSoundIntent {
   if (context.selectedItemId && context.selectedItemId === context.targetId) {
     return 'none';
   }
 
-  const record = getPayloadRecord(event.payload);
-  const message = getPayloadRecord(record?.message);
-  if (message?.direction !== 'in') {
+  const record = getPayloadRecord(payload);
+  const direction =
+    options.directionSource === 'message'
+      ? normalizeChatDirection(getPayloadRecord(record?.message)?.direction)
+      : normalizeChatDirection(record?.lastMessageDirection);
+
+  if (direction !== 'in') {
     return 'none';
   }
 
-  const assignedStaffId =
-    typeof record?.assignedStaffId === 'string'
-      ? record.assignedStaffId
-      : undefined;
+  const assignedStaffId = normalizeAssignedStaffId(record?.assignedStaffId);
+  const currentUserId = normalizeId(context.currentUserId);
 
   if (!assignedStaffId) {
     return 'unassigned';
   }
 
-  if (context.currentUserId && assignedStaffId !== context.currentUserId) {
+  if (currentUserId && assignedStaffId !== currentUserId) {
     return 'none';
   }
 
@@ -157,4 +183,48 @@ function getPayloadRecord(value: unknown) {
   return value && typeof value === 'object'
     ? (value as Record<string, unknown>)
     : undefined;
+}
+
+function normalizeChatDirection(value: unknown): 'in' | 'out' | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'in' || normalized === 'incoming') {
+    return 'in';
+  }
+
+  if (normalized === 'out' || normalized === 'outgoing') {
+    return 'out';
+  }
+
+  return null;
+}
+
+function normalizeAssignedStaffId(value: unknown): string | undefined {
+  if (value == null || value === false) {
+    return undefined;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const id = String(value).trim();
+    return id || undefined;
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return normalizeAssignedStaffId(record._id ?? record.id);
+  }
+
+  return undefined;
+}
+
+function normalizeId(value: unknown): string | undefined {
+  if (value == null) {
+    return undefined;
+  }
+
+  const id = String(value).trim();
+  return id || undefined;
 }

@@ -314,6 +314,9 @@ function getXmlHttpRequestEventSourceFactory():
     createXmlHttpRequestEventSource(url, options, XmlHttpRequest);
 }
 
+/** RNW XHR often skips onprogress while SSE stays open — poll responseText. */
+const KOLAM_CHAT_LIVE_XHR_POLL_MS = 400;
+
 function createXmlHttpRequestEventSource(
   url: string,
   options: Parameters<KolamEventSourceFactory>[1],
@@ -322,8 +325,19 @@ function createXmlHttpRequestEventSource(
   const listeners = new Map<string, Set<KolamEventSourceListener>>();
   const xhr = new XmlHttpRequest();
   let closed = false;
+  let opened = false;
   let processedLength = 0;
   let pendingChunk = '';
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  const stopPoll = () => {
+    if (!pollTimer) {
+      return;
+    }
+
+    clearInterval(pollTimer);
+    pollTimer = null;
+  };
 
   const source: KolamEventSourceLike = {
     addEventListener(eventName, listener) {
@@ -337,6 +351,7 @@ function createXmlHttpRequestEventSource(
       }
 
       closed = true;
+      stopPoll();
       xhr.abort();
     },
     onerror: null,
@@ -350,12 +365,23 @@ function createXmlHttpRequestEventSource(
   });
 
   const readAvailableText = () => {
-    if (closed || !xhr.responseText) {
+    if (closed) {
       return;
     }
 
-    const nextText = xhr.responseText.slice(processedLength);
-    processedLength = xhr.responseText.length;
+    let responseText = '';
+    try {
+      responseText = xhr.responseText ?? '';
+    } catch {
+      return;
+    }
+
+    if (!responseText) {
+      return;
+    }
+
+    const nextText = responseText.slice(processedLength);
+    processedLength = responseText.length;
     if (!nextText) {
       return;
     }
@@ -376,31 +402,78 @@ function createXmlHttpRequestEventSource(
       return;
     }
 
+    stopPoll();
     source.onerror?.();
   };
 
+  const markOpen = () => {
+    if (closed || opened) {
+      return;
+    }
+
+    opened = true;
+    source.onopen?.();
+    source.onactivity?.();
+  };
+
+  const startPoll = () => {
+    if (closed || pollTimer) {
+      return;
+    }
+
+    pollTimer = setInterval(() => {
+      if (closed) {
+        stopPoll();
+        return;
+      }
+
+      if (
+        xhr.readyState === xhr.HEADERS_RECEIVED ||
+        xhr.readyState === xhr.LOADING
+      ) {
+        readAvailableText();
+      }
+    }, KOLAM_CHAT_LIVE_XHR_POLL_MS);
+    (pollTimer as {unref?: () => void}).unref?.();
+  };
+
   xhr.onreadystatechange = () => {
-    if (
-      xhr.readyState === xhr.HEADERS_RECEIVED ||
-      xhr.readyState === xhr.LOADING
-    ) {
+    if (xhr.readyState === xhr.HEADERS_RECEIVED) {
+      const status = Number(xhr.status || 0);
+      if (status > 0 && (status < 200 || status >= 300)) {
+        markError();
+        return;
+      }
+
+      markOpen();
+      startPoll();
+      readAvailableText();
+      return;
+    }
+
+    if (xhr.readyState === xhr.LOADING) {
+      markOpen();
+      startPoll();
       readAvailableText();
       return;
     }
 
     if (xhr.readyState === xhr.DONE) {
       readAvailableText();
+      stopPoll();
       if (!closed) {
         markError();
       }
     }
   };
   xhr.onprogress = () => {
+    markOpen();
     readAvailableText();
   };
   xhr.onerror = markError;
   xhr.ontimeout = markError;
   xhr.send();
+  startPoll();
 
   return source;
 }

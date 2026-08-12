@@ -74,6 +74,44 @@ describe('kolam chat live classifier', () => {
     ).toBe('none');
   });
 
+  it('matches assigned staff ids as strings even when payload uses object ids', () => {
+    const classification = classifyKolamChatLiveEvent(
+      {
+        contract: contract('inbox', 'message.created'),
+        payload: {
+          assignedStaffId: {_id: 'staff-1'},
+          conversationId: 'conv-1',
+          message: {direction: 'IN'},
+        },
+      },
+      {currentUserId: 'staff-1'},
+    );
+
+    expect(classification.soundIntent).toBe('assigned');
+  });
+
+  it('dings inbox conversation.updated for inbound last message as backup', () => {
+    expect(
+      classifyKolamChatLiveEvent({
+        contract: contract('inbox', 'conversation.updated'),
+        payload: {
+          conversationId: 'conv-1',
+          lastMessageDirection: 'in',
+        },
+      }).soundIntent,
+    ).toBe('unassigned');
+
+    expect(
+      classifyKolamChatLiveEvent({
+        contract: contract('inbox', 'conversation.updated'),
+        payload: {
+          conversationId: 'conv-1',
+          lastMessageDirection: 'out',
+        },
+      }).soundIntent,
+    ).toBe('none');
+  });
+
   it('matches active team room detail by room id', () => {
     const classification = classifyKolamChatLiveEvent(
       {

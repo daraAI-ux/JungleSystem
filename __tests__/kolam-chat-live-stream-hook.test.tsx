@@ -247,7 +247,7 @@ describe('useKolamChatLiveStream', () => {
     }
   });
 
-  it('keeps the stream stale on headers only and opens after heartbeat activity', async () => {
+  it('opens on SSE headers and keeps activity on heartbeat', async () => {
     const statuses: string[] = [];
     const globalWithStreams = globalThis as Record<string, unknown>;
     const originalEventSource = globalWithStreams.EventSource;
@@ -269,11 +269,65 @@ describe('useKolamChatLiveStream', () => {
       });
 
       const xhr = FakeStreamingXmlHttpRequest.instances[0];
-      xhr.emitHeaders();
-      expect(statuses).not.toContain('open');
-
-      xhr.emitChunk(': keepalive user-1\n\n');
+      await ReactTestRenderer.act(async () => {
+        xhr.emitHeaders();
+      });
       expect(statuses).toContain('open');
+
+      await ReactTestRenderer.act(async () => {
+        xhr.emitChunk(': keepalive user-1\n\n');
+      });
+      expect(statuses).toContain('open');
+
+      await ReactTestRenderer.act(async () => {
+        renderer!.unmount();
+      });
+    } finally {
+      globalWithStreams.EventSource = originalEventSource;
+      globalWithStreams.XMLHttpRequest = originalXmlHttpRequest;
+    }
+  });
+
+  it('delivers SSE events via responseText poll when onprogress is silent', async () => {
+    const events: KolamChatLiveEvent[] = [];
+    const globalWithStreams = globalThis as Record<string, unknown>;
+    const originalEventSource = globalWithStreams.EventSource;
+    const originalXmlHttpRequest = globalWithStreams.XMLHttpRequest;
+    FakeStreamingXmlHttpRequest.instances = [];
+
+    delete globalWithStreams.EventSource;
+    globalWithStreams.XMLHttpRequest = FakeStreamingXmlHttpRequest;
+
+    try {
+      let renderer: ReactTestRenderer.ReactTestRenderer;
+      await ReactTestRenderer.act(async () => {
+        renderer = ReactTestRenderer.create(
+          <LiveStreamProbe
+            onEvent={event => events.push(event)}
+            onStatusChange={jest.fn()}
+          />,
+        );
+      });
+
+      const xhr = FakeStreamingXmlHttpRequest.instances[0];
+      await ReactTestRenderer.act(async () => {
+        xhr.emitHeaders();
+      });
+
+      xhr.responseText +=
+        'id: chat:42\nevent: message.created\ndata: {"conversationId":"conv-poll","message":{"direction":"in"}}\n\n';
+      xhr.readyState = xhr.LOADING;
+
+      await ReactTestRenderer.act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      });
+
+      expect(events).toEqual([
+        expect.objectContaining({
+          eventId: 'chat:42',
+          payload: expect.objectContaining({conversationId: 'conv-poll'}),
+        }),
+      ]);
 
       await ReactTestRenderer.act(async () => {
         renderer!.unmount();

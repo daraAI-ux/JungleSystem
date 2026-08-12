@@ -100,6 +100,32 @@ describe('kolam notification sound service', () => {
     expect(adapter.play).not.toHaveBeenCalled();
   });
 
+  it('uses local fallback immediately when preferInstantLocal and uri is remote', async () => {
+    const adapter: KolamNotificationSoundAdapter = {
+      play: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = createKolamNotificationSoundService({
+      adapter,
+      fallbackUri: 'fallback.wav',
+    });
+
+    await expect(
+      service.play({
+        intent: 'assigned',
+        preferInstantLocal: true,
+        webSetting: {notificationSound: 'media/audios/assigned.wav'},
+      }),
+    ).resolves.toEqual({
+      intent: 'assigned',
+      played: true,
+      uri: 'fallback.wav',
+    });
+    expect(adapter.play).toHaveBeenCalledWith('fallback.wav', {
+      intent: 'assigned',
+      volume: 0.5,
+    });
+  });
+
   it('exports the default beep as a data audio URI for native fallback', () => {
     expect(KOLAM_DEFAULT_NOTIFICATION_BEEP_URI).toMatch(/^data:audio\/wav/);
   });

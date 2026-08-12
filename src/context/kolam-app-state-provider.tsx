@@ -426,7 +426,10 @@ export function KolamAppStateProvider({
     [handleNavigationDashboardRouteContext],
   );
   const {unreadCounts: chatUnreadCounts} = useKolamChatNotificationHost({
-    currentUserId: authUser?.id,
+    currentUserId:
+      authUser?.id != null && String(authUser.id).trim()
+        ? String(authUser.id)
+        : null,
     enabled: Boolean(authUser),
     visibleRailMode: activeChatRail,
   });

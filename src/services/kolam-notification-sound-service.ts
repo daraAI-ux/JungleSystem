@@ -25,6 +25,11 @@ export type KolamNotificationSoundServiceOptions = {
 
 export type KolamNotificationSoundRequest = {
   intent: KolamNotificationSoundIntent;
+  /**
+   * Chat ding should not wait on a remote custom file download.
+   * Settings preview keeps remote playback when this is false/omitted.
+   */
+  preferInstantLocal?: boolean;
   webSetting?: Pick<
     KolamWebSetting,
     | 'notificationSound'
@@ -79,11 +84,15 @@ export function createKolamNotificationSoundService({
         return {played: false, reason: 'cooldown'};
       }
 
-      const uri = resolveKolamNotificationSoundUri({
+      let uri = resolveKolamNotificationSoundUri({
         fallbackUri,
         intent: request.intent,
         webSetting: request.webSetting,
       });
+
+      if (request.preferInstantLocal && isRemoteNotificationSoundUri(uri)) {
+        uri = fallbackUri;
+      }
 
       lastPlayedAt = now;
       await adapter.play(uri, {intent: request.intent, volume});
@@ -114,4 +123,8 @@ export function resolveKolamNotificationSoundUri({
   }
 
   return getKolamFileUrl(value) ?? fallbackUri;
+}
+
+function isRemoteNotificationSoundUri(uri: string) {
+  return /^https?:\/\//i.test(uri.trim());
 }

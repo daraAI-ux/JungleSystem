@@ -19,18 +19,33 @@ export type KolamChatUnreadCounts = {
   team: number;
 };
 
-const CHAT_NOTIFICATION_REFRESH_MS = 30_000;
+const CHAT_NOTIFICATION_REFRESH_MS = 10_000;
+/** Skip unread-rise ding if live path already played recently. */
+const CHAT_NOTIFICATION_UNREAD_SOUND_GUARD_MS = 2_500;
 
 export function resolveKolamChatUnreadRiseSoundIntents({
+  lastSoundAtMs,
   next,
+  nowMs,
   previous,
   visibleRailMode,
 }: {
+  lastSoundAtMs?: number | null;
   next: KolamChatUnreadCounts;
+  nowMs?: number;
   previous: KolamChatUnreadCounts | null;
   visibleRailMode?: KolamChatLiveStreamKind | null;
 }): KolamNotificationSoundType[] {
   if (!previous) {
+    return [];
+  }
+
+  const now = nowMs ?? Date.now();
+  if (
+    typeof lastSoundAtMs === 'number' &&
+    lastSoundAtMs > 0 &&
+    now - lastSoundAtMs < CHAT_NOTIFICATION_UNREAD_SOUND_GUARD_MS
+  ) {
     return [];
   }
 
@@ -63,7 +78,9 @@ export function useKolamChatNotificationHost({
   const unreadCountsRef = useRef(unreadCounts);
   const previousUnreadRef = useRef<KolamChatUnreadCounts | null>(null);
   const visibleRailModeRef = useRef(visibleRailMode);
+  const lastSoundAtRef = useRef(0);
   const soundSettings = useKolamNotificationSoundSettings({enabled});
+  const webSettingRef = useRef(soundSettings.webSetting);
   const notificationSoundService = useMemo(
     () =>
       createKolamNotificationSoundService({
@@ -74,17 +91,24 @@ export function useKolamChatNotificationHost({
 
   unreadCountsRef.current = unreadCounts;
   visibleRailModeRef.current = visibleRailMode;
+  webSettingRef.current = soundSettings.webSetting;
 
   const playSoundIntent = useCallback(
     (intent: KolamNotificationSoundType | 'none') => {
+      if (intent === 'none') {
+        return;
+      }
+
+      lastSoundAtRef.current = Date.now();
+      // Same path as Settings test (custom file / default) — do not force local beep.
       Promise.resolve(
         notificationSoundService.play({
           intent,
-          webSetting: soundSettings.webSetting,
+          webSetting: webSettingRef.current,
         }),
       ).catch(() => undefined);
     },
-    [notificationSoundService, soundSettings.webSetting],
+    [notificationSoundService],
   );
 
   const refreshUnreadCounts = useCallback(async () => {
@@ -113,13 +137,17 @@ export function useKolamChatNotificationHost({
     };
 
     const intents = resolveKolamChatUnreadRiseSoundIntents({
+      lastSoundAtMs: lastSoundAtRef.current || null,
       next,
       previous: previousUnreadRef.current,
       visibleRailMode: visibleRailModeRef.current,
     });
     previousUnreadRef.current = next;
     unreadCountsRef.current = next;
-    setUnreadCounts(next);
+
+    if (next.inbox !== current.inbox || next.team !== current.team) {
+      setUnreadCounts(next);
+    }
 
     intents.forEach(intent => {
       playSoundIntent(intent);
@@ -150,12 +178,12 @@ export function useKolamChatNotificationHost({
         selectedItemId: null,
       });
 
-      if (classification.refreshTargets.includes('unread-badge')) {
-        Promise.resolve(refreshUnreadCounts()).catch(() => undefined);
-      }
-
       if (visibleRailMode !== event.contract.stream) {
         playSoundIntent(classification.soundIntent);
+      }
+
+      if (classification.refreshTargets.includes('unread-badge')) {
+        Promise.resolve(refreshUnreadCounts()).catch(() => undefined);
       }
     },
     [currentUserId, playSoundIntent, refreshUnreadCounts, visibleRailMode],

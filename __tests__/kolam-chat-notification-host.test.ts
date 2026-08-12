@@ -21,6 +21,30 @@ describe('resolveKolamChatUnreadRiseSoundIntents', () => {
     ).toEqual(['assigned', 'assigned']);
   });
 
+  it('skips unread ding when live path already played recently', () => {
+    expect(
+      resolveKolamChatUnreadRiseSoundIntents({
+        previous: {inbox: 1, team: 0},
+        next: {inbox: 4, team: 2},
+        visibleRailMode: null,
+        lastSoundAtMs: 10_000,
+        nowMs: 11_000,
+      }),
+    ).toEqual([]);
+  });
+
+  it('dings again after the live-sound guard window', () => {
+    expect(
+      resolveKolamChatUnreadRiseSoundIntents({
+        previous: {inbox: 1, team: 0},
+        next: {inbox: 4, team: 0},
+        visibleRailMode: null,
+        lastSoundAtMs: 10_000,
+        nowMs: 13_000,
+      }),
+    ).toEqual(['assigned']);
+  });
+
   it('skips the open rail stream and still dings the other', () => {
     expect(
       resolveKolamChatUnreadRiseSoundIntents({
