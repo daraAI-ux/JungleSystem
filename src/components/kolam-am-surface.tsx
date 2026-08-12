@@ -114,10 +114,12 @@ import {
   type AmWebhookLog,
 } from '../services/am-api';
 import type {UnifiedDataset} from '../services/unified-data';
+import {KolamCardFrame} from './kolam-card-frame';
 import {KolamButton} from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamEditButton} from './kolam-edit-button';
+import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
@@ -530,10 +532,30 @@ function AmDashboardPage({
       </View>
       <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
-        <AmMetricCard label="Total Balance" value={formatRupiah(data.summary.totalBalance)} meta={`${data.summary.totalAccounts} accounts`} />
-        <AmMetricCard label="Today's Incoming" value={formatRupiah(data.summary.todayIncoming.total)} meta={`${data.summary.todayIncoming.count} transactions`} />
-        <AmMetricCard label="Today's Outgoing" value={formatRupiah(data.summary.todayOutgoing.total)} meta={`${data.summary.todayOutgoing.count} transactions`} />
-        <AmMetricCard label="Active Devices" value={String(data.summary.activeDevices)} meta="with active accounts" />
+        <AmDashboardWalletCard
+          label="Total Balance"
+          meta={`${data.summary.totalAccounts} accounts`}
+          tone={data.summary.totalBalance < 0 ? 'danger' : 'primary'}
+          value={formatRupiah(data.summary.totalBalance)}
+        />
+        <AmDashboardWalletCard
+          label="Today's Incoming"
+          meta={`${data.summary.todayIncoming.count} transactions`}
+          tone="success"
+          value={formatRupiah(data.summary.todayIncoming.total)}
+        />
+        <AmDashboardWalletCard
+          label="Today's Outgoing"
+          meta={`${data.summary.todayOutgoing.count} transactions`}
+          tone="warning"
+          value={formatRupiah(data.summary.todayOutgoing.total)}
+        />
+        <AmDashboardWalletCard
+          label="Active Devices"
+          meta="with active accounts"
+          tone="info"
+          value={String(data.summary.activeDevices)}
+        />
       </View>
       <View style={styles.overviewGrid}>
         <View style={[styles.panel, styles.overviewChartPanel]}>
@@ -6409,6 +6431,63 @@ function AmMetricCard({label, meta, value}: {label: string; meta: string; value:
   );
 }
 
+type AmDashboardWalletCardTone =
+  | 'primary'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info';
+
+function AmDashboardWalletCard({
+  label,
+  meta,
+  tone,
+  value,
+}: {
+  label: string;
+  meta: string;
+  tone: AmDashboardWalletCardTone;
+  value: string;
+}) {
+  return (
+    <KolamCardFrame style={styles.dashboardWalletCard}>
+      <View
+        style={[
+          styles.dashboardWalletAccent,
+          tone === 'success' && styles.dashboardWalletAccentSuccess,
+          tone === 'warning' && styles.dashboardWalletAccentWarning,
+          tone === 'danger' && styles.dashboardWalletAccentDanger,
+          tone === 'info' && styles.dashboardWalletAccentInfo,
+        ]}
+      />
+      <View style={styles.dashboardWalletBody}>
+        <View style={styles.dashboardWalletHeader}>
+          <View style={styles.dashboardWalletIcon}>
+            <KolamModuleIcon kind="wallet" size="menu" />
+          </View>
+          <View style={styles.dashboardWalletCopy}>
+            <Text numberOfLines={1} style={styles.dashboardWalletLabel}>
+              {label}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.dashboardWalletValue,
+                tone === 'danger' && styles.dashboardWalletValueDanger,
+              ]}
+            >
+              {value}
+            </Text>
+          </View>
+        </View>
+        <Text numberOfLines={1} style={styles.dashboardWalletHint}>
+          {meta}
+        </Text>
+      </View>
+    </KolamCardFrame>
+  );
+}
+
 function AmStatusPill({danger = false, label, value}: {danger?: boolean; label: string; value: number}) {
   return (
     <View style={[styles.statusPill, danger && styles.statusPillDanger]}>
@@ -7073,6 +7152,86 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     backgroundColor: V.colors.bg,
+  },
+  dashboardWalletCard: {
+    flexBasis: 190,
+    minWidth: 190,
+    flexGrow: 1,
+    flexShrink: 1,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  dashboardWalletAccent: {
+    backgroundColor: V.colors.primary,
+    borderBottomLeftRadius: 10,
+    borderTopLeftRadius: 10,
+    bottom: 10,
+    left: 0,
+    position: 'absolute',
+    top: 10,
+    width: 3,
+  },
+  dashboardWalletAccentSuccess: {
+    backgroundColor: V.colors.success,
+  },
+  dashboardWalletAccentWarning: {
+    backgroundColor: V.colors.warning,
+  },
+  dashboardWalletAccentDanger: {
+    backgroundColor: V.colors.danger,
+  },
+  dashboardWalletAccentInfo: {
+    backgroundColor: V.colors.info,
+  },
+  dashboardWalletBody: {
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingLeft: 16,
+    paddingVertical: 12,
+  },
+  dashboardWalletHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    minWidth: 0,
+  },
+  dashboardWalletIcon: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  dashboardWalletCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  dashboardWalletLabel: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  dashboardWalletValue: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  dashboardWalletValueDanger: {
+    color: V.colors.danger,
+  },
+  dashboardWalletHint: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    marginTop: 2,
   },
   metricLabel: {
     color: V.colors.mutedFg,
