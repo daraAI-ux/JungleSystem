@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
@@ -156,7 +156,7 @@ jest.mock('../src/services/am-api', () => ({
   startAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
   startAmTokopediaQrLogin: jest.fn(() => Promise.resolve({started: true})),
   stopAmDeviceService: jest.fn(() => Promise.resolve({success: true})),
-  testAmWebhookPing: jest.fn(() => Promise.resolve({success: true, message: 'Test ping dispatched to 1 active config(s)'})),
+  testAmWebhookPing: jest.fn(() => Promise.resolve({success: true, message: 'Test ping dikirim ke 1 config aktif'})),
   uploadAmTokopediaSession: jest.fn(() => Promise.resolve({cookieCount: 1, updatedAt: '2026-01-01T00:00:00.000Z'})),
   updateAmTokopediaCaptchaSettings: jest.fn(() => Promise.resolve({
     captchaAutoSolve: true,
@@ -183,11 +183,11 @@ const mockDashboardData = {
     activeDevices: 2,
   },
   transfers: {
-    pending: 1,
-    processing: 2,
+    Menunggu: 1,
+    Diproses: 2,
     success: 3,
-    failed: 1,
-    totalAmount: 900000,
+    Gagal: 1,
+    totalNominal: 900000,
   },
   recentTransfers: [
     {
@@ -408,32 +408,32 @@ describe('KolamAmSurface', () => {
 
     expect(text).toContain('Kembali');
     expect(joinedText).not.toContain('Welcome back');
-    expect(text).toContain("Today's Incoming");
-    expect(text).toContain("Today's Outgoing");
-    expect(text).toContain("Today's Transfers");
-    expect(text).toContain('Mutations (7 days)');
-    expect(joinedText).toContain('Incoming vs outgoing transaction volume over the last 7 days.');
-    expect(joinedText).toContain('Transfer breakdown by status.');
-    expect(text.indexOf('Mutations (7 days)')).toBeLessThan(text.indexOf("Today's Transfers"));
-    expect(text.indexOf("Today's Transfers")).toBeLessThan(text.indexOf('Recent Transfers'));
-    expect(text.indexOf('Recent Transfers')).toBeLessThan(text.indexOf('Device Overview'));
+    expect(text).toContain("Masuk Hari Ini");
+    expect(text).toContain("Keluar Hari Ini");
+    expect(text).toContain("Transfer Hari Ini");
+    expect(text).toContain('Mutasi (7 hari)');
+    expect(joinedText).toContain('Volume transaksi masuk dan keluar selama 7 hari terakhir.');
+    expect(joinedText).toContain('Ringkasan transfer berdasarkan status.');
+    expect(text.indexOf('Mutasi (7 hari)')).toBeLessThan(text.indexOf("Transfer Hari Ini"));
+    expect(text.indexOf("Transfer Hari Ini")).toBeLessThan(text.indexOf('Transfer Terbaru'));
+    expect(text.indexOf('Transfer Terbaru')).toBeLessThan(text.indexOf('Ringkasan Device'));
     expect(text).not.toContain('Transfer Status');
-    expect(joinedText).toContain('3 accounts');
+    expect(joinedText).toContain('3 akun');
     expect(joinedText).toContain('999 - Vendor Dashboard');
     expect(joinedText).toContain('994 - Vendor Dashboard Sixth');
     expect(joinedText).toContain('Legacy BCA - 321');
-    expect(text).toContain('Recent Mutations');
+    expect(text).toContain('Mutasi Terbaru');
     expect(joinedText).toContain('Legacy BRI - 654');
-    expect(text).toContain('Device Overview');
-    expect(joinedText).toContain('with active accounts');
-    expect(joinedText).toContain('All devices with active accounts and their locations.');
-    expect(text).toContain('Location');
-    expect(text).toContain('Accounts');
-    expect(text).toContain('Types');
+    expect(text).toContain('Ringkasan Device');
+    expect(joinedText).toContain('dengan akun aktif');
+    expect(joinedText).toContain('Semua device dengan akun aktif dan lokasinya.');
+    expect(text).toContain('Lokasi');
+    expect(text).toContain('Akun');
+    expect(text).toContain('Tipe');
     expect(text).toContain('Dashboard Phone');
     expect(text).toContain('Dashboard Phone Ninth');
-    expect(text).toContain('In');
-    expect(text).toContain('Rp450rb');
+    expect(text).toContain('Masuk');
+    expect(text).toContain('Rp 450.000,00');
     expect(joinedText).toMatch(/Box 01\s+\/\s+Rack Alpha/);
     expect(joinedText).toMatch(/1\s+\/\s+2/);
     expect(joinedText).toContain('bca');
@@ -441,7 +441,7 @@ describe('KolamAmSurface', () => {
     expect(text).not.toContain('Ringkasan akun, device, transfer, dan mutasi AM.');
     expect(text).not.toEqual(
       expect.arrayContaining([
-        'Overview',
+        'Ringkasan',
         'Automation',
         'Infrastructure',
         'Banking',
@@ -532,18 +532,18 @@ describe('KolamAmSurface', () => {
         style?.flexShrink === 1 &&
         style?.overflow === 'hidden';
     })).toBe(true);
-    const recentAmountTexts = renderer!.root
+    const recentNominalTexts = renderer!.root
       .findAllByType(Text)
       .filter(node => {
         const style = StyleSheet.flatten(node.props.style);
         return flattenText(node.props.children).join('').includes('Rp') &&
           style?.textAlign === 'right';
       });
-    expect(recentAmountTexts.some(node => {
+    expect(recentNominalTexts.some(node => {
       const style = StyleSheet.flatten(node.props.style);
       return style?.maxWidth === 124;
     })).toBe(false);
-    expect(recentAmountTexts.every(node => {
+    expect(recentNominalTexts.every(node => {
       const style = StyleSheet.flatten(node.props.style);
       return style?.maxWidth === '100%' &&
         style?.flexShrink === 1 &&
@@ -643,9 +643,9 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
 
-    expect(joinedText).toContain('with active accounts');
-    expect(text).not.toContain('Device Overview');
-    expect(joinedText).not.toContain('All devices with active accounts and their locations.');
+    expect(joinedText).toContain('dengan akun aktif');
+    expect(text).not.toContain('Ringkasan Device');
+    expect(joinedText).not.toContain('Semua device dengan akun aktif dan lokasinya.');
   });
 
   it('keeps the POS-style back button wired to return to Kolam', async () => {
@@ -858,9 +858,9 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
 
     expect(text).toContain('404');
-    expect(text).toContain('Page not found');
-    expect(text).toContain("The page you are looking for doesn't exist or has been moved.");
-    expect(text).toContain('Back to Dashboard');
+    expect(text).toContain('Halaman tidak ditemukan');
+    expect(text).toContain("Halaman yang dicari tidak ada atau sudah dipindahkan.");
+    expect(text).toContain('Kembali ke Beranda');
     expect(text).not.toContain('sudah masuk menu AM');
 
     await act(async () => {
@@ -910,8 +910,8 @@ describe('KolamAmSurface', () => {
     expect(recordAmPageView).not.toHaveBeenCalledWith('/login');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Login Submit'})).toHaveLength(0);
     const joinedText = renderText(renderer!).join(' ');
-    expect(joinedText).toContain("Today's Incoming");
-    expect(joinedText).not.toContain('Page not found');
+    expect(joinedText).toContain("Masuk Hari Ini");
+    expect(joinedText).not.toContain('Halaman tidak ditemukan');
     expect(joinedText).not.toContain('Gunakan akun Kolam yang sama.');
   });
 
@@ -977,8 +977,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'services');
 
     let text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(text).toContain('Showing 1 to 20 of 45 items');
-    expect(text).toContain('All Platforms');
+    expect(text).toContain('Menampilkan 1 - 20 dari 45 item');
+    expect(text).toContain('Semua platform');
     expect(text).toContain('Box Browser / Rack Green');
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
       page: 1,
@@ -1013,7 +1013,7 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Active'})[0].props.onPress();
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Aktif'})[0].props.onPress();
     });
 
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
@@ -1112,10 +1112,10 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'tasks');
     const taskListText = renderText(renderer!);
     const joinedTaskListText = taskListText.join(' ');
-    expect(taskListText).toContain('queued');
+    expect(taskListText).toContain('Antre');
     expect(joinedTaskListText).toContain('Tokopedia Main tokopedia');
-    expect(taskListText).toEqual(expect.arrayContaining(['Type', 'Status', 'Device', 'Account', 'Error', 'Created']));
-    expect(taskListText).not.toContain('Action');
+    expect(taskListText).toEqual(expect.arrayContaining(['Tipe', 'Status', 'Device', 'Akun', 'Error', 'Dibuat']));
+    expect(taskListText).not.toContain('Aksi');
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Queued'}),
     ).toHaveLength(0);
@@ -1143,7 +1143,7 @@ describe('KolamAmSurface', () => {
     expect(getAmTasks).toHaveBeenCalledTimes(3);
   });
 
-  it('disables task action buttons while the task request is pending', async () => {
+  it('disables task action buttons while the task request is Menunggu', async () => {
     jest.mocked(getAmTasks).mockResolvedValue({
       data: [
         {
@@ -1243,8 +1243,8 @@ describe('KolamAmSurface', () => {
       type: undefined,
     });
     const joinedPageText = renderText(renderer!).join(' ');
-    expect(joinedPageText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
-    expect(joinedPageText).toContain('Page 1/3');
+    expect(joinedPageText).toMatch(/Menampilkan\s+1\s+-\s+20\s+dari\s+45\s+item/);
+    expect(joinedPageText).toContain('Halaman 1/3');
     expect(joinedPageText).toContain('Device offline');
 
     await act(async () => {
@@ -1322,8 +1322,8 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment BCA Main - 123'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Phone 1'})).toHaveLength(0);
     const filterText = renderText(renderer!).join(' ');
-    expect(filterText).toContain('All Types');
-    expect(filterText).toContain('All Status');
+    expect(filterText).toContain('Semua tipe');
+    expect(filterText).toContain('Semua status');
     expect(getAmServiceAccounts).not.toHaveBeenCalled();
     expect(getAmDevices).not.toHaveBeenCalled();
   });
@@ -1374,16 +1374,16 @@ describe('KolamAmSurface', () => {
     expect(cancelAmTask).toHaveBeenCalledWith('task-detail');
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
-    expect(text).toContain('Task Detail');
-    expect(text).toContain('Overview');
-    expect(text).toContain('Assignment');
-    expect(text).toContain('Timeline');
-    expect(joinedText).toContain('Created By task-admin');
+    expect(text).toContain('Detail Task');
+    expect(text).toContain('Ringkasan');
+    expect(text).toContain('Penugasan');
+    expect(text).toContain('Linimasa');
+    expect(joinedText).toContain('Dibuat oleh task-admin');
     expect(text).toContain('Payload');
     expect(text).toContain('Result');
     expect(joinedText).toContain('"sku": "SKU-1"');
     expect(joinedText).toContain('"synced": true');
-    expect(joinedText).toMatch(/Logs \(\s*2\s+lines\)/);
+    expect(joinedText).toMatch(/Log \(\s*2\s+baris\)/);
     expect(text).toContain('created');
     expect(text).toContain('waiting');
   });
@@ -1426,8 +1426,8 @@ describe('KolamAmSurface', () => {
     expect(getAmTaskById).toHaveBeenCalledWith('task-detail');
     expect(recordAmPageView).toHaveBeenCalledWith('/tasks/task-detail');
     const text = renderText(renderer!);
-    expect(text).toContain('Task Detail');
-    expect(text).toContain('Bank Transfer');
+    expect(text).toContain('Detail Task');
+    expect(text).toContain('Transfer bank');
     expect(text).toContain('started');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Task Back'}).props.onPress();
@@ -1480,7 +1480,7 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
 
     expect(text).toContain('Tokopedia Old');
-    expect(text).toContain('Stopped');
+    expect(text).toContain('Berhenti');
     expect(text).not.toContain('Create Service Account');
     expect(text).not.toContain('Edit Service Account');
     expect(text).not.toContain('Secret kosong saat edit tidak menghapus nilai tersimpan.');
@@ -1561,8 +1561,8 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'services');
     const serviceListText = renderText(renderer!).join(' ');
-    expect(serviceListText).toContain('Running');
-    expect(serviceListText).not.toContain('Ready');
+    expect(serviceListText).toContain('Berjalan');
+    expect(serviceListText).not.toContain('Siap');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Main'}).props.onPress();
@@ -1582,7 +1582,7 @@ describe('KolamAmSurface', () => {
       page: 1,
       serviceAccountId: 'service-1',
     });
-    expect(renderText(renderer!).join(' ')).toContain('Page 1/3');
+    expect(renderText(renderer!).join(' ')).toContain('Halaman 1/3');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Task History Next Page'}).props.onPress();
@@ -1598,7 +1598,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Main Logs'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment History'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Riwayat'}).props.onPress();
     });
 
     expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-1', {
@@ -1606,7 +1606,7 @@ describe('KolamAmSurface', () => {
       page: 1,
       source: 'history',
     });
-    expect(renderText(renderer!).join(' ')).toMatch(/Showing\s+1\s+to\s+100\s+of\s+140\s+items/);
+    expect(renderText(renderer!).join(' ')).toMatch(/Menampilkan\s+1\s+-\s+100\s+dari\s+140\s+item/);
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Logs History Next Page'}).props.onPress();
@@ -1658,7 +1658,7 @@ describe('KolamAmSurface', () => {
     const serviceRow = renderer!.root.findByProps({accessibilityLabel: 'AM Service BCA Main'});
 
     expect(serviceRow.props.onPress).toBeUndefined();
-    expect(renderText(renderer!).join(' ')).toContain('Ready');
+    expect(renderText(renderer!).join(' ')).toContain('Siap');
     expect(renderText(renderer!).join(' ')).not.toContain('Transfer History');
     expect(getAmTransfers).not.toHaveBeenCalled();
   });
@@ -1812,12 +1812,12 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Submit Input service-otp'}).props.onPress();
     });
 
-    const pendingSubmitButton = renderer!.root.findByProps({
+    const MenungguSubmitButton = renderer!.root.findByProps({
       accessibilityLabel: 'AM Service Submit Input service-otp',
     });
-    expect(pendingSubmitButton.props.disabled).toBe(true);
-    expect(pendingSubmitButton.props.muted).toBe(true);
-    expect(pendingSubmitButton.props.label).toBe('Mengirim');
+    expect(MenungguSubmitButton.props.disabled).toBe(true);
+    expect(MenungguSubmitButton.props.muted).toBe(true);
+    expect(MenungguSubmitButton.props.label).toBe('Mengirim');
 
     await act(async () => {
       resolveServiceInput?.({success: true});
@@ -1951,7 +1951,7 @@ describe('KolamAmSurface', () => {
     expect(sendAmDeviceServiceInput).toHaveBeenCalledWith('device-password', 'password', 'SecretPass1!');
   });
 
-  it('hides service input after runtime logs report login success', async () => {
+  it('hides service input after runtime logs report login Berhasil', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -2145,13 +2145,13 @@ describe('KolamAmSurface', () => {
     });
     expect(clearAmServiceAccountSession).not.toHaveBeenCalled();
     let serviceText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(serviceText).toContain('Clear session Tokopedia Session ?');
+    expect(serviceText).toContain('Bersihkan session Tokopedia Session ?');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Cancel Clear Session'}).props.onPress();
     });
     serviceText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(serviceText).not.toContain('Clear session Tokopedia Session ?');
+    expect(serviceText).not.toContain('Bersihkan session Tokopedia Session ?');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-2'}).props.onPress();
@@ -2165,15 +2165,15 @@ describe('KolamAmSurface', () => {
     expect(clearAmServiceAccountSession).toHaveBeenCalledWith('service-2');
   });
 
-  it('disables service clear session confirmation while the request is pending', async () => {
+  it('disables service clear session confirmation while the request is Menunggu', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
-          _id: 'service-clear-pending',
+          _id: 'service-clear-Menunggu',
           platform: 'tokopedia',
           label: 'Tokopedia Pending Clear',
           deviceId: {
-            _id: 'device-clear-pending',
+            _id: 'device-clear-Menunggu',
             name: 'Browser Pending',
             connectionType: 'browser',
             tcpAddress: null,
@@ -2210,21 +2210,21 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Service Tokopedia Pending Clear'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-clear-pending'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Session service-clear-Menunggu'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Confirm Clear Session service-clear-pending'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Confirm Clear Session service-clear-Menunggu'}).props.onPress();
       await Promise.resolve();
     });
 
     const confirmButton = renderer!.root.findAllByType(KolamButton).find(
-      button => button.props.accessibilityLabel === 'AM Service Confirm Clear Session service-clear-pending',
+      button => button.props.accessibilityLabel === 'AM Service Confirm Clear Session service-clear-Menunggu',
     );
     const cancelButton = renderer!.root.findAllByType(KolamButton).find(
       button => button.props.accessibilityLabel === 'AM Service Cancel Clear Session',
     );
     expect(confirmButton?.props.disabled).toBe(true);
-    expect(confirmButton?.props.label).toBe('Clearing...');
+    expect(confirmButton?.props.label).toBe('Membersihkan...');
     expect(cancelButton?.props.disabled).toBe(true);
 
     await act(async () => {
@@ -2599,7 +2599,7 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'hardware');
     let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Added By Hardware Admin');
+    expect(hardwareText).toContain('Ditambahkan oleh Hardware Admin');
     expect(hardwareText).not.toContain('Phone Rack');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
@@ -2623,12 +2623,12 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Unauthorized');
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
-    expect(text).toContain('Service Accounts');
+    expect(text).toContain('Akun Layanan');
     expect(text).toContain('BCA Device Alpha');
     expect(text).toContain('bcauser');
     expect(text).toContain('1234567890');
     expect(detailText).toContain('Rp 250.000');
-    expect(text).toContain('Running');
+    expect(text).toContain('Berjalan');
   });
 
   it('opens hardware device detail directly from a concrete AM shell route', async () => {
@@ -2855,16 +2855,16 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Delete Service Account service-1'}).props.onPress();
     });
 
-    const pendingDeleteButton = renderer!.root.findByProps({
+    const MenungguDeleteButton = renderer!.root.findByProps({
       accessibilityLabel: 'AM Device Delete Service Account service-1',
     });
-    expect(pendingDeleteButton.props.disabled).toBe(true);
-    expect(pendingDeleteButton.props.muted).toBe(true);
-    expect(pendingDeleteButton.props.label).toBe('...');
-    const pendingDeleteEditButton = renderer!.root.findByProps({
+    expect(MenungguDeleteButton.props.disabled).toBe(true);
+    expect(MenungguDeleteButton.props.muted).toBe(true);
+    expect(MenungguDeleteButton.props.label).toBe('...');
+    const MenungguDeleteEditButton = renderer!.root.findByProps({
       accessibilityLabel: 'AM Device Edit Service Account service-1',
     });
-    expect(pendingDeleteEditButton.props.disabled).toBe(true);
+    expect(MenungguDeleteEditButton.props.disabled).toBe(true);
 
     await act(async () => {
       resolveDeleteServiceAccount?.();
@@ -2882,9 +2882,9 @@ describe('KolamAmSurface', () => {
 
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
     await act(async () => {
-      findInput('Service label')!.props.onChangeText('BCA Detail Updated');
-      findInput('myBCA username')!.props.onChangeText('bca-updated');
-      findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
+      findInput('Label layanan')!.props.onChangeText('BCA Detail Updated');
+      findInput('Username myBCA')!.props.onChangeText('bca-updated');
+      findInput('contoh 1234567890')!.props.onChangeText('9876543210');
     });
     let resolveUpdateServiceAccount:
       | ((value: Awaited<ReturnType<typeof updateAmServiceAccount>>) => void)
@@ -2896,12 +2896,12 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
     });
 
-    const pendingSaveButton = renderer!.root.findByProps({
+    const MenungguSaveButton = renderer!.root.findByProps({
       accessibilityLabel: 'AM Device Save Service Account device-1',
     });
-    expect(pendingSaveButton.props.disabled).toBe(true);
-    expect(pendingSaveButton.props.muted).toBe(true);
-    expect(pendingSaveButton.props.label).toBe('Menyimpan');
+    expect(MenungguSaveButton.props.disabled).toBe(true);
+    expect(MenungguSaveButton.props.muted).toBe(true);
+    expect(MenungguSaveButton.props.label).toBe('Menyimpan');
 
     await act(async () => {
       resolveUpdateServiceAccount?.(
@@ -2931,9 +2931,9 @@ describe('KolamAmSurface', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      findInput('Service label')!.props.onChangeText('BCA Detail Updated');
-      findInput('myBCA username')!.props.onChangeText('bca-updated');
-      findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
+      findInput('Label layanan')!.props.onChangeText('BCA Detail Updated');
+      findInput('Username myBCA')!.props.onChangeText('bca-updated');
+      findInput('contoh 1234567890')!.props.onChangeText('9876543210');
     });
     const updateCallsBeforeMove = jest.mocked(updateAmServiceAccount).mock.calls.length;
     await act(async () => {
@@ -2944,9 +2944,9 @@ describe('KolamAmSurface', () => {
     });
 
     expect(updateAmServiceAccount).toHaveBeenCalledTimes(updateCallsBeforeMove);
-    expect(renderText(renderer!).join(' ')).toContain('Move Service Account?');
+    expect(renderText(renderer!).join(' ')).toContain('Pindahkan Service Account?');
     await act(async () => {
-      renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Move')!.props.onPress();
+      renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Pindahkan')!.props.onPress();
     });
 
     expect(updateAmServiceAccount).toHaveBeenLastCalledWith('service-1', expect.objectContaining({
@@ -2968,11 +2968,11 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      findInput('Service label')!.props.onChangeText('BCA Detail New');
-      findInput('myBCA username')!.props.onChangeText('bca-detail');
-      findInput('myBCA password')!.props.onChangeText('secret');
-      findInput('Account PIN')!.props.onChangeText('123456');
-      findInput('e.g. 1234567890')!.props.onChangeText('9876543210');
+      findInput('Label layanan')!.props.onChangeText('BCA Detail New');
+      findInput('Username myBCA')!.props.onChangeText('bca-detail');
+      findInput('Password myBCA')!.props.onChangeText('secret');
+      findInput('PIN akun')!.props.onChangeText('123456');
+      findInput('contoh 1234567890')!.props.onChangeText('9876543210');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
@@ -2998,13 +2998,13 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment DANA'}).props.onPress();
     });
-    expect(findInput('myBCA username')).toBeUndefined();
+    expect(findInput('Username myBCA')).toBeUndefined();
     expect(findInput('Store password')).toBeUndefined();
-    expect(findInput('e.g. 1234567890')).toBeUndefined();
+    expect(findInput('contoh 1234567890')).toBeUndefined();
     await act(async () => {
-      findInput('Service label')!.props.onChangeText('DANA Detail');
+      findInput('Label layanan')!.props.onChangeText('DANA Detail');
       findInput('PIN DANA')!.props.onChangeText('654321');
-      findInput('e.g. 081234567890')!.props.onChangeText('081234567890');
+      findInput('contoh 081234567890')!.props.onChangeText('081234567890');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-1'}).props.onPress();
@@ -3246,11 +3246,11 @@ describe('KolamAmSurface', () => {
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
     expect(findInput('Store login email')).toBeUndefined();
     expect(findInput('Store password')).toBeUndefined();
-    expect(findInput('Account PIN')).toBeUndefined();
-    expect(findInput('e.g. 1234567890')).toBeUndefined();
+    expect(findInput('PIN akun')).toBeUndefined();
+    expect(findInput('contoh 1234567890')).toBeUndefined();
     await act(async () => {
-      findInput('Service label')!.props.onChangeText('WA Browser');
-      findInput('e.g. 08123456789')!.props.onChangeText('08123456789');
+      findInput('Label layanan')!.props.onChangeText('WA Browser');
+      findInput('contoh 08123456789')!.props.onChangeText('08123456789');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Device Save Service Account device-browser'}).props.onPress();
@@ -3734,13 +3734,13 @@ describe('KolamAmSurface', () => {
     });
     expect(deleteAmRacks).not.toHaveBeenCalled();
     let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Delete Rack Rack 1 ?');
+    expect(hardwareText).toContain('Hapus Rack Rack 1 ?');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Cancel Delete'}).props.onPress();
     });
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).not.toContain('Delete Rack Rack 1 ?');
+    expect(hardwareText).not.toContain('Hapus Rack Rack 1 ?');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Rack rack-1'}).props.onPress();
@@ -3880,7 +3880,7 @@ describe('KolamAmSurface', () => {
     });
     expect(deleteAmDevices).not.toHaveBeenCalled();
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Delete Device Device 1 ?');
+    expect(hardwareText).toContain('Hapus Device Device 1 ?');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Confirm Delete Device device-1'}).props.onPress();
@@ -3889,7 +3889,7 @@ describe('KolamAmSurface', () => {
     expect(deleteAmDevices).toHaveBeenCalledWith(['device-1']);
   });
 
-  it('disables hardware save while the create request is pending', async () => {
+  it('disables hardware save while the create request is Menunggu', async () => {
     jest.mocked(getAmRacks).mockResolvedValue({
       data: [],
       meta: {total: 0, limit: 20},
@@ -3939,9 +3939,9 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       resolveCreateRack({
-        _id: 'rack-pending',
+        _id: 'rack-Menunggu',
         name: 'Rack Pending',
-        slug: 'rack-pending',
+        slug: 'rack-Menunggu',
         location: 'Pending Room',
         description: 'Pending rack',
         status: 'active',
@@ -3973,8 +3973,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'mutasi');
     await updateAmRoute(renderer!, 'webhooks');
     const webhooksText = renderText(renderer!).join(' ');
-    expect(webhooksText).toContain('No webhooks registered');
-    expect(webhooksText).toContain('No webhook logs yet');
+    expect(webhooksText).toContain('Webhook belum terdaftar');
+    expect(webhooksText).toContain('Log webhook belum ada');
     expect(webhooksText).not.toContain('No webhook logs found');
     await updateAmRoute(renderer!, 'admin/users');
     await updateAmRoute(renderer!, 'admin/activity-log');
@@ -4055,7 +4055,7 @@ describe('KolamAmSurface', () => {
       since: '2025-12-25T00:00:00.000Z',
       days: 7,
       byType: [{_id: 'api', count: 12}, {_id: 'page', count: 3}],
-      byStatus: [{_id: 'success', count: 10}, {_id: 'failed', count: 2}],
+      byStatus: [{_id: 'Berhasil', count: 10}, {_id: 'Gagal', count: 2}],
       topUsers: [{_id: 'alice', count: 8}],
       topPaths: [{_id: '/activity-log', count: 6}],
     });
@@ -4074,15 +4074,15 @@ describe('KolamAmSurface', () => {
     let joinedText = text.join(' ');
     expect(text).toEqual(
       expect.arrayContaining([
-        'API / Page',
+        'API / Halaman',
         '12 / 3',
-        'Success',
-        '2 failed',
-        'Top Users',
+        'Berhasil',
+        '0 gagal',
+        'User Teratas',
         'alice',
-        'Top Paths',
+        'Path Teratas',
         '/activity-log',
-        'Activity Log',
+        'Log Aktivitas',
       ]),
     );
     expect(joinedText).not.toContain('Super Admin audit log');
@@ -4090,12 +4090,12 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Super Admin bisa hapus manual per baris terpilih atau sesuai filter.');
     expect(joinedText).toContain('Semua tipe');
     expect(joinedText).toContain('Semua status');
-    expect(joinedText).toContain('Semua method');
+    expect(joinedText).toContain('Semua metode');
     expect(text).toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Durasi', 'Aksi']));
-    expect(text).not.toEqual(expect.arrayContaining(['Time', 'Type', 'Duration', 'Action']));
-    expect(text).toEqual(expect.arrayContaining(['API', 'Page', 'GET']));
+    expect(text).not.toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Duration', 'Aksi']));
+    expect(text).toEqual(expect.arrayContaining(['API', 'Halaman', 'GET']));
     expect(joinedText).toContain('/dashboard');
-    expect(joinedText.replace(/\s+/g, ' ')).toContain('Showing 1 to 50 of 75 items');
+    expect(joinedText.replace(/\s+/g, ' ')).toContain('Menampilkan 1 - 50 dari 75 item');
     expect(joinedText).toContain('Hapus sesuai filter (75)');
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,
@@ -4140,10 +4140,10 @@ describe('KolamAmSurface', () => {
 
     text = renderText(renderer!);
     joinedText = text.join(' ');
-    expect(text).toContain('Activity Detail');
-    expect(text).toEqual(expect.arrayContaining(['Timestamp', 'Type', 'Status', 'User Agent']));
+    expect(text).toContain('Detail Aktivitas');
+    expect(text).toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Status', 'User Agent']));
     expect(joinedText).toContain('API');
-    expect(joinedText).toContain('200 (success)');
+    expect(joinedText).toContain('200 (Berhasil)');
     expect(joinedText).toContain('REQ-1');
     expect(joinedText).toContain('Jest');
     expect(joinedText).toContain('Hapus log ini');
@@ -4231,7 +4231,7 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('blocks Activity Log for non-Super Admin users like AM FE', async () => {
+  it('blocks Log Aktivitas for non-Super Admin users like AM FE', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',
       fullName: 'Current AM User',
@@ -4254,7 +4254,7 @@ describe('KolamAmSurface', () => {
     expect(getAmActivityLogStats).not.toHaveBeenCalled();
   });
 
-  it('allows Super Admin users without user read permission to open Activity Log like AM BE', async () => {
+  it('allows Super Admin users without user read permission to open Log Aktivitas like AM BE', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',
       fullName: 'Audit Super Admin',
@@ -4295,7 +4295,7 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/activity-log');
 
     const joinedText = renderText(renderer!).join(' ');
-    expect(joinedText).toContain('Activity Log');
+    expect(joinedText).toContain('Log Aktivitas');
     expect(joinedText).not.toContain('Super Admin audit log');
     expect(joinedText).toContain('/activity-log');
     expect(getAmActivityLogs).toHaveBeenCalledWith({
@@ -4456,29 +4456,29 @@ describe('KolamAmSurface', () => {
 
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
-    expect(joinedText).toContain('Total Incoming');
-    expect(joinedText).toContain('Total Outgoing');
-    expect(joinedText).toContain('Net Balance');
-    expect(joinedText).toContain('Total Transactions');
-    expect(joinedText).toContain('All types');
-    expect(joinedText).toContain('All accounts');
-    expect(joinedText).toContain('All devices');
+    expect(joinedText).toContain('Total Masuk');
+    expect(joinedText).toContain('Total Keluar');
+    expect(joinedText).toContain('Saldo Bersih');
+    expect(joinedText).toContain('Total Transaksi');
+    expect(joinedText).toContain('Semua tipe');
+    expect(joinedText).toContain('Semua akun');
+    expect(joinedText).toContain('Semua device');
     expect(joinedText).not.toContain('All Accounts');
     expect(joinedText).not.toContain('All Devices');
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Incoming'}).length).toBeGreaterThan(0);
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Outgoing'}).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Masuk'}).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Keluar'}).length).toBeGreaterThan(0);
     expect(text).toContain('BCA Main');
     expect(joinedText).toContain('Phone 1');
     expect(joinedText).toContain('Box Green / Rack Mutasi');
-    expect(joinedText).toContain('Incoming');
-    expect(joinedText).toContain('Outgoing');
+    expect(joinedText).toContain('Masuk');
+    expect(joinedText).toContain('Keluar');
     expect(joinedText).toMatch(/\+Rp\s*125\.000/);
     expect(joinedText).toMatch(/-Rp\s*50\.000/);
-    expect(text).toEqual(expect.arrayContaining(['Type', 'Account', 'Amount', 'Description', 'Device', 'Time']));
-    expect(joinedText).toContain('Time');
-    expect(joinedText).not.toContain('Action');
-    expect(joinedText).toMatch(/Showing\s+1\s+to\s+100\s+of\s+120\s+items/);
-    expect(joinedText).toContain('Page 1/2');
+    expect(text).toEqual(expect.arrayContaining(['Tipe', 'Akun', 'Nominal', 'Deskripsi', 'Device', 'Waktu']));
+    expect(joinedText).toContain('Waktu');
+    expect(joinedText).not.toContain('Aksi');
+    expect(joinedText).toMatch(/Menampilkan\s+1\s+-\s+100\s+dari\s+120\s+item/);
+    expect(joinedText).toContain('Halaman 1/2');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Detail mutasi-1'}).props.onPress();
@@ -4486,7 +4486,7 @@ describe('KolamAmSurface', () => {
 
     const detailText = renderText(renderer!).join(' ');
     expect(getAmMutasiById).toHaveBeenCalledWith('mutasi-1');
-    expect(detailText).toContain('Mutation Detail');
+    expect(detailText).toContain('Detail Mutasi');
     expect(detailText).toContain('hash-mutasi-1');
     expect(detailText).toContain('Vendor Mutasi');
     expect(detailText).toContain('/mutasi/mutasi-1/receipt');
@@ -4573,7 +4573,7 @@ describe('KolamAmSurface', () => {
     expect(recordAmPageView).toHaveBeenCalledWith('/mutasi/mutasi-detail');
     expect(getAmMutasiById).toHaveBeenCalledWith('mutasi-detail');
     const text = renderText(renderer!).join(' ');
-    expect(text).toContain('Mutation Detail');
+    expect(text).toContain('Detail Mutasi');
     expect(text).toContain('hash-direct-mutasi');
     expect(text).toContain('/mutasi/mutasi-detail/receipt');
     await act(async () => {
@@ -4608,8 +4608,8 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
     expect(recordAmPageView).not.toHaveBeenCalledWith('/settings/account');
-    expect(text).toContain("Today's Incoming");
-    expect(text).not.toContain('Page not found');
+    expect(text).toContain("Masuk Hari Ini");
+    expect(text).not.toContain('Halaman tidak ditemukan');
     expect(text).not.toContain('Profile information');
     expect(text).not.toContain('Change password');
     expect(text).not.toContain('Account Settings');
@@ -4662,9 +4662,9 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Role Super Admin'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM User Save'})).toHaveLength(0);
     expect(
-      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search by name or username...'),
+      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Cari nama atau username...'),
     ).toBe(true);
-    expect(renderText(renderer!)).toContain('Full Name');
+    expect(renderText(renderer!)).toContain('Nama Lengkap');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
@@ -4732,7 +4732,7 @@ describe('KolamAmSurface', () => {
     expect(deleteAmUser).toHaveBeenCalledWith('user-1');
   });
 
-  it('disables user save while the create request is pending', async () => {
+  it('disables user save while the create request is Menunggu', async () => {
     jest.mocked(getAmCurrentUser).mockResolvedValue({
       _id: 'user-current',
       fullName: 'Current AM Admin',
@@ -4776,7 +4776,7 @@ describe('KolamAmSurface', () => {
     const inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
       inputs[1].props.onChangeText('Pending User');
-      inputs[2].props.onChangeText('pending');
+      inputs[2].props.onChangeText('Menunggu');
       inputs[3].props.onChangeText('StrongPass1!');
     });
     await act(async () => {
@@ -4869,7 +4869,7 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     const text = renderText(renderer!).join(' ');
-    expect(text).toContain('Users tidak tersedia');
+    expect(text).toContain('Pengguna tidak tersedia');
     expect(getAmUsers).not.toHaveBeenCalled();
     expect(getAmRoles).not.toHaveBeenCalled();
   });
@@ -4906,15 +4906,15 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     let text = renderText(renderer!).join(' ');
-    expect(text).toContain('No users found');
-    expect(text).toContain('Create a user to get started.');
+    expect(text).toContain('User tidak ditemukan');
+    expect(text).toContain('Buat user untuk mulai.');
 
     await act(async () => {
       renderer!.root.findAllByType(TextInput)[0].props.onChangeText('missing');
     });
 
     text = renderText(renderer!).join(' ');
-    expect(text).toContain('Try a different search term.');
+    expect(text).toContain('Coba kata pencarian lain.');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
@@ -4960,8 +4960,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     const text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(text).toContain('Showing 1 to 100 of 145 items');
-    expect(text).toContain('Page 1/2');
+    expect(text).toContain('Menampilkan 1 - 100 dari 145 item');
+    expect(text).toContain('Halaman 1/2');
     expect(text).toContain('Super Admin');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Admin'})).toHaveLength(0);
 
@@ -5141,7 +5141,7 @@ describe('KolamAmSurface', () => {
     jest.mocked(getAmTransfers).mockResolvedValue({
       data: [
         {
-          _id: 'transfer-pending',
+          _id: 'transfer-Menunggu',
           accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
           amount: 100000,
           completedAt: null,
@@ -5167,7 +5167,7 @@ describe('KolamAmSurface', () => {
           updatedAt: '',
         },
         {
-          _id: 'transfer-success',
+          _id: 'transfer-Berhasil',
           accountId: { _id: 'account-1', label: 'BCA Main', platform: 'bca', accountNumber: '123' },
           amount: 250000,
           completedAt: null,
@@ -5225,29 +5225,29 @@ describe('KolamAmSurface', () => {
 
     const joinedText = renderText(renderer!).join(' ');
     expect(
-      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search recipient...'),
+      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Cari penerima...'),
     ).toBe(true);
     expect(
-      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Search transfer...'),
+      renderer!.root.findAllByType(TextInput).some(input => input.props.placeholder === 'Cari transfer...'),
     ).toBe(false);
-    expect(joinedText).toContain('All statuses');
-    expect(joinedText).toContain('Total Transfers');
-    expect(joinedText).toContain('Total Amount');
+    expect(joinedText).toContain('Semua status');
+    expect(joinedText).toContain('Total Transfer');
+    expect(joinedText).toContain('Total Nominal');
     expect(joinedText).toContain('Pending');
-    expect(joinedText).toContain('Account');
-    expect(joinedText).toContain('Recipient');
+    expect(joinedText).toContain('Akun');
+    expect(joinedText).toContain('Penerima');
     expect(joinedText).toContain('Bank');
-    expect(joinedText).toContain('Amount');
+    expect(joinedText).toContain('Nominal');
     expect(joinedText).toContain('Status');
     expect(joinedText).toContain('Device');
-    expect(joinedText).toContain('Created');
-    expect(joinedText).not.toContain('Action');
+    expect(joinedText).toContain('Dibuat');
+    expect(joinedText).not.toContain('Aksi');
     expect(joinedText).toContain('999 Vendor Pending BCA');
     expect(joinedText).toContain('888 Vendor Success BRI');
     expect(joinedText).toContain('Box A / Rack Blue');
     expect(joinedText).toMatch(/Fee\s+Rp\s*2\.500/);
-    expect(joinedText).toMatch(/Showing\s+1\s+to\s+20\s+of\s+45\s+items/);
-    expect(joinedText).toContain('Page 1/3');
+    expect(joinedText).toMatch(/Menampilkan\s+1\s+-\s+20\s+dari\s+45\s+item/);
+    expect(joinedText).toContain('Halaman 1/3');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfers Next Page'}).props.onPress();
@@ -5314,7 +5314,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment BI FAST'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Purchase'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Pembelian'}).props.onPress();
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
@@ -5332,13 +5332,13 @@ describe('KolamAmSurface', () => {
       amount: 250000,
     });
     expect(getAmTransfers).toHaveBeenCalledTimes(2);
-    expect(renderText(renderer!).join(' ')).toContain('Transfer created');
+    expect(renderText(renderer!).join(' ')).toContain('Transfer dibuat');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM New Transfer'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Virtual Account'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Transfer Virtual Account'}).props.onPress();
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
@@ -5403,7 +5403,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
     });
-    expect(renderText(renderer!).join(' ')).toContain('Recipient account is required');
+    expect(renderText(renderer!).join(' ')).toContain('Nomor akun penerima wajib diisi');
     expect(createAmTransfer).not.toHaveBeenCalled();
 
     let inputs = renderer!.root.findAllByType(TextInput);
@@ -5417,7 +5417,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
     });
-    expect(renderText(renderer!).join(' ')).toContain('Minimal amount Rp 10.000');
+    expect(renderText(renderer!).join(' ')).toContain('Nominal minimal Rp');
     expect(createAmTransfer).not.toHaveBeenCalled();
 
     inputs = renderer!.root.findAllByType(TextInput);
@@ -5427,7 +5427,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
     });
-    expect(renderText(renderer!).join(' ')).toContain('Transfer method is required for inter-bank transfers');
+    expect(renderText(renderer!).join(' ')).toContain('Metode transfer wajib diisi untuk transfer antarbank');
     expect(createAmTransfer).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -5436,11 +5436,11 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
     });
-    expect(renderText(renderer!).join(' ')).toContain('Transaction purpose is required');
+    expect(renderText(renderer!).join(' ')).toContain('Tujuan transaksi wajib diisi');
     expect(createAmTransfer).not.toHaveBeenCalled();
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Purchase'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Pembelian'}).props.onPress();
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Create'}).props.onPress();
@@ -5547,28 +5547,28 @@ describe('KolamAmSurface', () => {
     });
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
-    expect(text).toContain('Transfer Detail');
+    expect(text).toContain('Detail Transfer');
     expect(text).toContain('Vendor Detail');
-    expect(text).toContain('Transfer Info');
+    expect(text).toContain('Info Transfer');
     expect(joinedText).toMatch(/Total\s+Rp\s*252\.500/);
-    expect(joinedText).toContain('Transfer Method BI FAST');
-    expect(joinedText).toContain('Transaction Purpose Payment');
-    expect(joinedText).toContain('Created At');
-    expect(joinedText).toContain('Created By Admin User');
-    expect(joinedText).toContain('Source & Device');
-    expect(joinedText).toContain('Account Type bca');
-    expect(joinedText).toContain('Account Number 123');
+    expect(joinedText).toContain('Metode Transfer BI FAST');
+    expect(joinedText).toContain('Tujuan Transaksi Payment');
+    expect(joinedText).toContain('Dibuat');
+    expect(joinedText).toContain('Dibuat oleh Admin User');
+    expect(joinedText).toContain('Sumber & Device');
+    expect(joinedText).toContain('Tipe Akun bca');
+    expect(joinedText).toContain('Nomor Akun 123');
     expect(joinedText).toContain('Box / Rack Box A / Rack Blue');
     expect(joinedText).toContain('Server IP 10.10.10.5');
-    expect(joinedText).toContain('Webhook Delivery Logs');
+    expect(joinedText).toContain('Log Pengiriman Webhook');
     expect(joinedText).toContain('Inventory hook');
     expect(joinedText).not.toContain('Other hook');
-    expect(joinedText).toMatch(/Screenshot base64 tersedia \(\s*6\s+chars\)/);
-    expect(text).toContain('Transaction Proof');
-    expect(text).toContain('Automation Logs');
-    expect(joinedText).toMatch(/35\s+line\(s\)/);
+    expect(joinedText).toMatch(/Screenshot base64 tersedia \(\s*6\s+karakter\)/);
+    expect(text).toContain('Bukti Transaksi');
+    expect(text).toContain('Log Automasi');
+    expect(joinedText).toMatch(/35\s+baris/);
     expect(
-      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Transaction Proof'}).props.source,
+      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Bukti Transaksi'}).props.source,
     ).toEqual({uri: 'data:image/png;base64,abc123'});
     expect(renderer!.root.findAllByType(Image)).toHaveLength(1);
     expect(joinedText).toMatch(/001\s+log-01/);
@@ -5632,7 +5632,7 @@ describe('KolamAmSurface', () => {
     expect(getAmTransferById).toHaveBeenCalledWith('transfer-detail');
     expect(recordAmPageView).toHaveBeenCalledWith('/transactions/transfer-detail');
     const joinedText = renderText(renderer!).join(' ');
-    expect(joinedText).toContain('Transfer Detail');
+    expect(joinedText).toContain('Detail Transfer');
     expect(joinedText).toContain('Vendor Detail');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Cancel transfer-detail'}).props.onPress();
@@ -5726,15 +5726,15 @@ describe('KolamAmSurface', () => {
     expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
     const configText = renderText(renderer!).join(' ');
-    expect(configText).toContain('Endpoints');
+    expect(configText).toContain('Endpoint');
     expect(configText).not.toContain('Webhook Config');
-    expect(configText).toContain('Test ping dispatched to 1 active config(s)');
-    expect(configText).toContain('Last delivered:');
+    expect(configText).toContain('Test ping dikirim ke 1 config aktif');
+    expect(configText).toContain('Terakhir terkirim:');
     expect(configText).toContain('31 Jul 2026');
     expect(configText).toContain('sec...ok');
   });
 
-  it('disables webhook submit while the save request is pending', async () => {
+  it('disables webhook submit while the save request is Menunggu', async () => {
     jest.mocked(getAmWebhookConfigs).mockResolvedValue({
       data: [
         {
@@ -5788,7 +5788,7 @@ describe('KolamAmSurface', () => {
       button => button.props.accessibilityLabel === 'AM Webhook Save',
     );
     expect(saveButton?.props.disabled).toBe(true);
-    expect(saveButton?.props.label).toBe('Saving...');
+    expect(saveButton?.props.label).toBe('Menyimpan...');
     expect(
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Register'}).props.disabled,
     ).toBe(true);
@@ -5796,7 +5796,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({label: 'Test Ping'}).props.disabled,
     ).toBe(true);
     expect(
-      renderer!.root.findByProps({label: 'Cancel'}).props.disabled,
+      renderer!.root.findByProps({label: 'Batal'}).props.disabled,
     ).toBe(true);
     expect(
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Edit webhook-1'}).props.disabled,
@@ -5934,9 +5934,9 @@ describe('KolamAmSurface', () => {
     });
     const webhooksText = renderText(renderer!).join(' ');
     expect(webhooksText).toContain('https://example.test/webhook');
-    expect(webhooksText).toContain('Time');
-    expect(webhooksText).toMatch(/Showing\s+1\s+to\s+50\s+of\s+75\s+items/);
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Incoming'})).toHaveLength(0);
+    expect(webhooksText).toContain('Waktu');
+    expect(webhooksText).toMatch(/Menampilkan\s+1\s+-\s+50\s+dari\s+75\s+item/);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Masuk'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment transfer.success'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Existing hook'})).toHaveLength(0);
 
@@ -5945,15 +5945,15 @@ describe('KolamAmSurface', () => {
     });
 
     const detailText = renderText(renderer!).join(' ');
-    expect(detailText).toContain('Webhook Log Detail');
+    expect(detailText).toContain('Detail Log Webhook');
     expect(detailText).toContain('Existing hook');
-    expect(detailText).toContain('Request Body');
-    expect(detailText).toContain('Response Body');
+    expect(detailText).toContain('Body Request');
+    expect(detailText).toContain('Body Response');
     expect(detailText).toContain('"transferId": "transfer-1"');
     expect(detailText).toContain('"ok": true');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Outgoing'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Keluar'}).props.onPress();
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
@@ -5971,3 +5971,16 @@ describe('KolamAmSurface', () => {
     });
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+

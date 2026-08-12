@@ -128,22 +128,22 @@ import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
 
 const TASK_TYPE_LABELS: Record<string, string> = {
-  all: 'All Types',
-  stock_sync: 'Stock Sync',
-  process_sale: 'Process Sale',
-  send_message: 'Send Message',
-  bank_transfer: 'Bank Transfer',
+  all: 'Semua tipe',
+  stock_sync: 'Sinkron stok',
+  process_sale: 'Proses penjualan',
+  send_message: 'Kirim pesan',
+  bank_transfer: 'Transfer bank',
 };
 const TASK_STATUS_FILTER_LABELS: Record<string, string> = {
-  all: 'All Status',
+  all: 'Semua status',
 };
 const TRANSFER_STATUS_FILTER_LABELS: Record<string, string> = {
-  all: 'All statuses',
+  all: 'Semua status',
 };
 const MUTASI_TYPE_FILTER_LABELS: Record<string, string> = {
-  all: 'All types',
-  masuk: 'Incoming',
-  keluar: 'Outgoing',
+  all: 'Semua tipe',
+  masuk: 'Masuk',
+  keluar: 'Keluar',
 };
 const TASK_FILTER_STATUSES: Array<Exclude<AmTaskStatus, 'queued'> | 'all'> = ['all', 'pending', 'processing', 'success', 'failed', 'cancelled'];
 const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sale', 'send_message', 'bank_transfer'];
@@ -162,15 +162,15 @@ const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 const AM_ACTIVITY_LOG_TYPE_LABELS: Record<string, string> = {
   all: 'Semua tipe',
   api: 'API',
-  page: 'Page',
+  page: 'Halaman',
 };
 const AM_ACTIVITY_LOG_STATUS_LABELS: Record<string, string> = {
   all: 'Semua status',
-  success: 'Success',
-  failed: 'Failed',
+  success: 'Berhasil',
+  failed: 'Gagal',
 };
 const AM_ACTIVITY_LOG_METHOD_LABELS: Record<string, string> = {
-  all: 'Semua method',
+  all: 'Semua metode',
 };
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
@@ -181,8 +181,14 @@ const AM_TRANSFER_METHOD_FEES: Record<string, number> = {
   'Realtime Online': 6500,
 };
 const AM_TRANSACTION_PURPOSES = ['Investment', 'Purchase', 'Others (for various purposes)', 'Transfer of Wealth'];
+const AM_TRANSACTION_PURPOSE_LABELS: Record<string, string> = {
+  Investment: 'Investasi',
+  Purchase: 'Pembelian',
+  'Others (for various purposes)': 'Lainnya',
+  'Transfer of Wealth': 'Transfer dana',
+};
 const AM_PLATFORM_LABELS: Record<string, string> = {
-  all: 'All Platforms',
+  all: 'Semua platform',
   whatsapp: 'WhatsApp',
   tokopedia: 'Tokopedia',
   shopee: 'Shopee',
@@ -199,37 +205,37 @@ const AM_BANKING_SERVICE_PLATFORMS = new Set(['bca', 'brimo', 'dana']);
 type AmServiceFieldKind = 'username' | 'password' | 'pin' | 'accountNumber' | 'phoneNumber';
 const AM_SERVICE_FIELD_META: Record<string, Partial<Record<AmServiceFieldKind, {label: string; placeholder: string}>>> = {
   whatsapp: {
-    phoneNumber: {label: 'Phone Number', placeholder: 'e.g. 08123456789'},
+    phoneNumber: {label: 'Nomor HP', placeholder: 'contoh 08123456789'},
   },
   tokopedia: {
-    phoneNumber: {label: 'Phone Number', placeholder: 'e.g. 08123456789'},
-    password: {label: 'Password (Kata Sandi)', placeholder: 'TikTok Shop password'},
+    phoneNumber: {label: 'Nomor HP', placeholder: 'contoh 08123456789'},
+    password: {label: 'Password', placeholder: 'Password TikTok Shop'},
   },
   shopee: {
-    username: {label: 'Email / Username', placeholder: 'Store login email'},
-    password: {label: 'Password', placeholder: 'Store password'},
+    username: {label: 'Email / Username', placeholder: 'Email login toko'},
+    password: {label: 'Password', placeholder: 'Password toko'},
   },
   tiktok: {
-    username: {label: 'Username', placeholder: 'TikTok Username'},
+    username: {label: 'Username', placeholder: 'Username TikTok'},
   },
   instagram: {
-    username: {label: 'Email / Username', placeholder: 'Instagram email or username'},
-    password: {label: 'Password', placeholder: 'Instagram password'},
+    username: {label: 'Email / Username', placeholder: 'Email atau username Instagram'},
+    password: {label: 'Password', placeholder: 'Password Instagram'},
   },
   bca: {
-    username: {label: 'Username', placeholder: 'myBCA username'},
-    password: {label: 'Password', placeholder: 'myBCA password'},
-    pin: {label: 'PIN', placeholder: 'Account PIN'},
-    accountNumber: {label: 'Account Number', placeholder: 'e.g. 1234567890'},
+    username: {label: 'Username', placeholder: 'Username myBCA'},
+    password: {label: 'Password', placeholder: 'Password myBCA'},
+    pin: {label: 'PIN', placeholder: 'PIN akun'},
+    accountNumber: {label: 'Nomor akun', placeholder: 'contoh 1234567890'},
   },
   brimo: {
-    username: {label: 'Username', placeholder: 'BRImo username'},
-    password: {label: 'Password', placeholder: 'BRImo password'},
-    pin: {label: 'PIN', placeholder: 'Account PIN'},
-    accountNumber: {label: 'Account Number', placeholder: 'e.g. 1234567890'},
+    username: {label: 'Username', placeholder: 'Username BRImo'},
+    password: {label: 'Password', placeholder: 'Password BRImo'},
+    pin: {label: 'PIN', placeholder: 'PIN akun'},
+    accountNumber: {label: 'Nomor akun', placeholder: 'contoh 1234567890'},
   },
   dana: {
-    phoneNumber: {label: 'Nomor HP DANA', placeholder: 'e.g. 081234567890'},
+    phoneNumber: {label: 'Nomor HP DANA', placeholder: 'contoh 081234567890'},
     pin: {label: 'PIN', placeholder: 'PIN DANA'},
   },
 };
@@ -459,7 +465,7 @@ function AmDashboardPage({
       setData(response);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load AM dashboard');
+      setError(err instanceof Error ? err.message : 'Gagal memuat dashboard AM');
     } finally {
       setIsLoading(false);
     }
@@ -480,7 +486,7 @@ function AmDashboardPage({
         setError(null);
       } catch (err) {
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load AM dashboard');
+        setError(err instanceof Error ? err.message : 'Gagal memuat dashboard AM');
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -533,26 +539,26 @@ function AmDashboardPage({
       <AmInlineError error={error} title="AM dashboard refresh gagal" />
       <View style={styles.metricGrid}>
         <AmDashboardWalletCard
-          label="Total Balance"
-          meta={`${data.summary.totalAccounts} accounts`}
+          label="Saldo Total"
+          meta={`${data.summary.totalAccounts} akun`}
           tone={data.summary.totalBalance < 0 ? 'danger' : 'primary'}
           value={formatRupiah(data.summary.totalBalance)}
         />
         <AmDashboardWalletCard
-          label="Today's Incoming"
-          meta={`${data.summary.todayIncoming.count} transactions`}
+          label="Masuk Hari Ini"
+          meta={`${data.summary.todayIncoming.count} transaksi`}
           tone="success"
           value={formatRupiah(data.summary.todayIncoming.total)}
         />
         <AmDashboardWalletCard
-          label="Today's Outgoing"
-          meta={`${data.summary.todayOutgoing.count} transactions`}
+          label="Keluar Hari Ini"
+          meta={`${data.summary.todayOutgoing.count} transaksi`}
           tone="warning"
           value={formatRupiah(data.summary.todayOutgoing.total)}
         />
         <AmDashboardWalletCard
-          label="Active Devices"
-          meta="with active accounts"
+          label="Device Aktif"
+          meta="dengan akun aktif"
           tone="info"
           value={String(data.summary.activeDevices)}
         />
@@ -560,38 +566,38 @@ function AmDashboardPage({
       <View style={styles.overviewGrid}>
         <View style={[styles.panel, styles.overviewChartPanel]}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.panelTitle}>Mutations (7 days)</Text>
+            <Text style={styles.panelTitle}>Mutasi (7 hari)</Text>
             <KolamButton
               accessibilityLabel="AM Dashboard View Mutations"
-              label="View all"
+              label="Lihat semua"
               intent="outline"
               size="sm"
               onPress={() => openAmRoute('mutasi')}
             />
           </View>
-          <Text style={styles.panelText}>Incoming vs outgoing transaction volume over the last 7 days.</Text>
+          <Text style={styles.panelText}>Volume transaksi masuk dan keluar selama 7 hari terakhir.</Text>
           <AmMutationChart chartData={data.chartData} />
         </View>
         <View style={[styles.panel, styles.overviewTransferPanel]}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.panelTitle}>Today's Transfers</Text>
+            <Text style={styles.panelTitle}>Transfer Hari Ini</Text>
             <KolamButton
               accessibilityLabel="AM Dashboard View Transfer Status"
-              label="View all"
+              label="Lihat semua"
               intent="outline"
               size="sm"
               onPress={() => openAmRoute('transactions')}
             />
           </View>
-          <Text style={styles.panelText}>Transfer breakdown by status.</Text>
+          <Text style={styles.panelText}>Ringkasan transfer berdasarkan status.</Text>
           <View style={styles.transferBreakdownStack}>
-            <AmTransferBreakdownRow label="Pending" value={data.transfers.pending} tone="warning" />
-            <AmTransferBreakdownRow label="Processing" value={data.transfers.processing} tone="info" />
-            <AmTransferBreakdownRow label="Success" value={data.transfers.success} tone="success" />
-            <AmTransferBreakdownRow label="Failed" value={data.transfers.failed} tone="danger" />
+            <AmTransferBreakdownRow label="Menunggu" value={data.transfers.pending} tone="warning" />
+            <AmTransferBreakdownRow label="Diproses" value={data.transfers.processing} tone="info" />
+            <AmTransferBreakdownRow label="Berhasil" value={data.transfers.success} tone="success" />
+            <AmTransferBreakdownRow label="Gagal" value={data.transfers.failed} tone="danger" />
           </View>
           <View style={styles.transferTotalRow}>
-            <Text style={styles.panelText}>Total Amount</Text>
+            <Text style={styles.panelText}>Total Nominal</Text>
             <Text style={styles.amountText}>{formatRupiah(data.transfers.totalAmount)}</Text>
           </View>
         </View>
@@ -609,21 +615,21 @@ function AmDashboardPage({
       {data.devices.length > 0 ? (
         <View style={styles.panel}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.panelTitle}>Device Overview</Text>
+            <Text style={styles.panelTitle}>Ringkasan Device</Text>
             <KolamButton
               accessibilityLabel="AM Dashboard View Hardware"
-              label="View all"
+              label="Lihat semua"
               intent="outline"
               size="sm"
               onPress={() => openAmRoute('hardware')}
             />
           </View>
-          <Text style={styles.panelText}>All devices with active accounts and their locations.</Text>
+          <Text style={styles.panelText}>Semua device dengan akun aktif dan lokasinya.</Text>
           <View style={styles.detailListHeader}>
             <Text style={[styles.tableHeaderText, styles.serviceCol]}>Device</Text>
-            <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Location</Text>
-            <Text style={[styles.tableHeaderText, styles.statusCol]}>Accounts</Text>
-            <Text style={[styles.tableHeaderText, styles.accountCol]}>Types</Text>
+            <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Lokasi</Text>
+            <Text style={[styles.tableHeaderText, styles.statusCol]}>Akun</Text>
+            <Text style={[styles.tableHeaderText, styles.accountCol]}>Tipe</Text>
           </View>
           {data.devices.map(device => (
             <View key={device._id} style={styles.deviceRow}>
@@ -658,7 +664,7 @@ function AmMutationChart({chartData}: {chartData: Array<{date: string; incoming:
         isLoading={false}
         items={chartData}
         loadingText="Memuat chart mutasi..."
-        emptyText="No mutation chart data found"
+        emptyText="Data chart mutasi tidak ditemukan"
       />
       {chartData.map(point => {
         const incomingWidth = `${Math.max(4, Math.round((point.incoming / maxAmount) * 100))}%` as DimensionValue;
@@ -675,8 +681,8 @@ function AmMutationChart({chartData}: {chartData: Array<{date: string; incoming:
               </View>
             </View>
             <View style={styles.chartValues}>
-              <Text style={styles.rowMeta}>In {formatCompactRupiah(point.incoming)}</Text>
-              <Text style={styles.rowMeta}>Out {formatCompactRupiah(point.outgoing)}</Text>
+              <Text style={styles.rowMeta}>Masuk {formatCompactRupiah(point.incoming)}</Text>
+              <Text style={styles.rowMeta}>Keluar {formatCompactRupiah(point.outgoing)}</Text>
             </View>
           </View>
         );
@@ -712,16 +718,16 @@ function AmRecentTransfersPanel({
   return (
     <View style={styles.dashboardRecentPanel}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Recent Transfers</Text>
+        <Text style={styles.panelTitle}>Transfer Terbaru</Text>
         <KolamButton
           accessibilityLabel="AM Dashboard View Transfers"
-          label="View all"
+          label="Lihat semua"
           intent="outline"
           size="sm"
           onPress={() => onOpenRoute('transactions')}
         />
       </View>
-      <Text style={styles.panelText}>Latest transfer activity across all devices.</Text>
+      <Text style={styles.panelText}>Aktivitas transfer terbaru di semua device.</Text>
       <View style={styles.recentList}>
         {transfers.map(transfer => (
           <KolamInteractionFrame
@@ -746,8 +752,8 @@ function AmRecentTransfersPanel({
       <AmLoadingOrEmpty
         isLoading={false}
         items={transfers}
-        loadingText="Memuat recent transfers..."
-        emptyText="No recent transfers found"
+        loadingText="Memuat transfer terbaru..."
+        emptyText="Transfer terbaru tidak ditemukan"
       />
     </View>
   );
@@ -763,16 +769,16 @@ function AmRecentMutasiPanel({
   return (
     <View style={styles.dashboardRecentPanel}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Recent Mutations</Text>
+        <Text style={styles.panelTitle}>Mutasi Terbaru</Text>
         <KolamButton
           accessibilityLabel="AM Dashboard View Recent Mutations"
-          label="View all"
+          label="Lihat semua"
           intent="outline"
           size="sm"
           onPress={() => onOpenRoute('mutasi')}
         />
       </View>
-      <Text style={styles.panelText}>Latest incoming and outgoing transactions.</Text>
+      <Text style={styles.panelText}>Transaksi masuk dan keluar terbaru.</Text>
       <View style={styles.recentList}>
         {mutasi.map(item => (
           <KolamInteractionFrame
@@ -786,7 +792,7 @@ function AmRecentMutasiPanel({
             </View>
             <View style={styles.recentListMeta}>
               <AmStatusChip
-                label={item.type === 'masuk' ? 'In' : 'Out'}
+                label={item.type === 'masuk' ? 'Masuk' : 'Keluar'}
                 tone={item.type === 'masuk' ? 'success' : 'danger'}
               />
               <Text
@@ -802,8 +808,8 @@ function AmRecentMutasiPanel({
       <AmLoadingOrEmpty
         isLoading={false}
         items={mutasi}
-        loadingText="Memuat recent mutations..."
-        emptyText="No recent mutations found"
+        loadingText="Memuat mutasi terbaru..."
+        emptyText="Mutasi terbaru tidak ditemukan"
       />
     </View>
   );
@@ -932,7 +938,7 @@ function AmTasksPage({
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Search..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
+        <KolamSearchField value={search} onChangeText={handleSearchChange} placeholder="Cari..." containerStyle={styles.taskSearch} trailingLabel={`${total} task`} />
         <AmSegmentGroup active={type} items={TASK_TYPES} labels={TASK_TYPE_LABELS} onSelect={handleTypeChange} />
         <AmSegmentGroup active={status} items={TASK_FILTER_STATUSES} labels={TASK_STATUS_FILTER_LABELS} onSelect={handleStatusChange} />
         <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" size="sm" muted={isLoading} onPress={fetchTasks} />
@@ -950,16 +956,16 @@ function AmTasksPage({
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Tipe</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.deviceCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Akun</Text>
           <Text style={[styles.tableHeaderText, styles.errorCol]}>Error</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Dibuat</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
-        {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat tasks AM...</Text> : null}
-        {!isLoading && !tasks.length ? <Text style={styles.loadingText}>No tasks found</Text> : null}
+        {isLoading && !tasks.length ? <Text style={styles.loadingText}>Memuat task AM...</Text> : null}
+        {!isLoading && !tasks.length ? <Text style={styles.loadingText}>Task tidak ditemukan</Text> : null}
         {tasks.map(task => (
           <KolamInteractionFrame
             key={task._id}
@@ -968,7 +974,7 @@ function AmTasksPage({
             onPress={() => setSelectedTaskId(task._id)}
             style={styles.tableRow}>
             <Text style={[styles.cellText, styles.typeCol]}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
-            <Text style={[styles.cellText, styles.statusCol]}>{task.status}</Text>
+            <Text style={[styles.cellText, styles.statusCol]}>{formatAmDisplayLabel(task.status)}</Text>
             <Text style={[styles.cellText, styles.deviceCol]} numberOfLines={1}>{task.deviceId?.name ?? '-'}</Text>
             <View style={styles.accountCol}>
               <Text style={styles.cellText} numberOfLines={1}>
@@ -992,13 +998,13 @@ function AmTasksPage({
         {total > limit ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {rangeFrom} to {rangeTo} of {total} items
+              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Tasks Previous Page"
                 disabled={page <= 1 || isLoading}
-                label="Previous"
+                label="Sebelumnya"
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.max(1, current - 1))}
@@ -1006,7 +1012,7 @@ function AmTasksPage({
               <KolamButton
                 accessibilityLabel="AM Tasks Next Page"
                 disabled={page >= totalPages || isLoading}
-                label={`Page ${page}/${totalPages}`}
+                label={`Halaman ${page}/${totalPages}`}
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.min(totalPages, current + 1))}
@@ -1082,7 +1088,7 @@ function AmTaskDetailPage({
     return (
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Task tidak ditemukan</Text>
-        <Text style={styles.panelText}>{error ?? 'Task not found'}</Text>
+        <Text style={styles.panelText}>{error ?? 'Task tidak ditemukan'}</Text>
         <KolamButton
           accessibilityLabel="AM Task Back"
           label="Kembali"
@@ -1098,7 +1104,7 @@ function AmTaskDetailPage({
     <View style={styles.pageStack}>
       <View style={styles.detailHeader}>
         <View>
-          <Text style={styles.panelTitle}>Task Detail</Text>
+          <Text style={styles.panelTitle}>Detail Task</Text>
           <Text style={styles.panelText}>{TASK_TYPE_LABELS[task.type] ?? task.type} - {task._id}</Text>
         </View>
         <View style={styles.inlineActions}>
@@ -1114,27 +1120,27 @@ function AmTaskDetailPage({
       </View>
       <View style={styles.cardGrid}>
         <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Overview</Text>
-          <AmDetailLine label="Type" value={TASK_TYPE_LABELS[task.type] ?? task.type} />
-          <AmDetailLine label="Status" value={task.status} />
-          <AmDetailLine label="Priority" value={String(task.priority)} />
-          <AmDetailLine label="Retry" value={`${task.retryCount} / ${task.maxRetries}`} />
+          <Text style={styles.panelTitle}>Ringkasan</Text>
+          <AmDetailLine label="Tipe" value={TASK_TYPE_LABELS[task.type] ?? task.type} />
+          <AmDetailLine label="Status" value={formatAmDisplayLabel(task.status)} />
+          <AmDetailLine label="Prioritas" value={String(task.priority)} />
+          <AmDetailLine label="Ulang" value={`${task.retryCount} / ${task.maxRetries}`} />
         </View>
         <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Assignment</Text>
+          <Text style={styles.panelTitle}>Penugasan</Text>
           <AmDetailLine label="Device" value={task.deviceId?.name ?? '-'} />
-          <AmDetailLine label="Account" value={task.serviceAccountId?.label ?? '-'} />
+          <AmDetailLine label="Akun" value={task.serviceAccountId?.label ?? '-'} />
           <AmDetailLine label="Platform" value={task.serviceAccountId?.platform ?? '-'} />
         </View>
         <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Timeline</Text>
-          <AmDetailLine label="Created By" value={formatTaskCreatedBy(task.createdBy)} />
-          <AmDetailLine label="Created" value={formatAmDate(task.createdAt)} />
-          <AmDetailLine label="Started" value={formatAmDate(task.startedAt)} />
-          <AmDetailLine label="Completed" value={formatAmDate(task.completedAt)} />
+          <Text style={styles.panelTitle}>Linimasa</Text>
+          <AmDetailLine label="Dibuat oleh" value={formatTaskCreatedBy(task.createdBy)} />
+          <AmDetailLine label="Dibuat" value={formatAmDate(task.createdAt)} />
+          <AmDetailLine label="Dimulai" value={formatAmDate(task.startedAt)} />
+          <AmDetailLine label="Selesai" value={formatAmDate(task.completedAt)} />
         </View>
       </View>
-      {task.error ? <AmInlineError error={task.error} title="Task error" /> : null}
+      {task.error ? <AmInlineError error={task.error} title="Error task" /> : null}
       <AmTaskActions
         disabled={acting}
         task={task}
@@ -1146,7 +1152,7 @@ function AmTaskDetailPage({
       </View>
       {task.logs.length > 0 ? (
         <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Logs ({task.logs.length} lines)</Text>
+          <Text style={styles.panelTitle}>Log ({task.logs.length} baris)</Text>
           <View style={styles.logPanel}>
             {task.logs.map((line, index) => (
               <Text key={`${index}-${line}`} style={styles.logText}>{line}</Text>
@@ -1516,9 +1522,9 @@ function AmServicesPage() {
         <KolamSearchField
           value={search}
           onChangeText={handleSearchChange}
-          placeholder="Search services..."
+          placeholder="Cari layanan..."
           containerStyle={styles.taskSearch}
-          trailingLabel={`${total} service`}
+          trailingLabel={`${total} layanan`}
         />
         <AmSegmentGroup
           active={platform}
@@ -1543,7 +1549,7 @@ function AmServicesPage() {
       </View>
       {error ? (
         <View style={styles.errorPanel}>
-          <Text style={styles.errorTitle}>Services AM belum bisa dibaca</Text>
+          <Text style={styles.errorTitle}>Layanan AM belum bisa dibaca</Text>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
@@ -1554,14 +1560,14 @@ function AmServicesPage() {
       ) : null}
       {sessionToClear ? (
         <View style={styles.warningPanel}>
-          <Text style={styles.warningText}>Clear session {sessionToClear.label}?</Text>
+          <Text style={styles.warningText}>Bersihkan session {sessionToClear.label}?</Text>
           <Text style={styles.panelText}>Service akan dihentikan dan login berikutnya perlu session baru.</Text>
           <View style={styles.inlineActions}>
             <KolamButton
               accessibilityLabel={`AM Service Confirm Clear Session ${sessionToClear._id}`}
               disabled={actingServiceId === sessionToClear._id}
               intent="danger"
-              label={actingServiceId === sessionToClear._id ? 'Clearing...' : 'Clear Session'}
+              label={actingServiceId === sessionToClear._id ? 'Membersihkan...' : 'Bersihkan Session'}
               muted={actingServiceId === sessionToClear._id}
               size="sm"
               onPress={() => clearServiceSession(sessionToClear)}
@@ -1570,7 +1576,7 @@ function AmServicesPage() {
               accessibilityLabel="AM Service Cancel Clear Session"
               disabled={actingServiceId === sessionToClear._id}
               intent="outline"
-              label="Cancel"
+              label="Batal"
               muted={actingServiceId === sessionToClear._id}
               size="sm"
               onPress={() => setSessionToClear(null)}
@@ -1580,14 +1586,14 @@ function AmServicesPage() {
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Service</Text>
+          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Layanan</Text>
           <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Akun</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         </View>
-        {isLoading && !accounts.length ? <Text style={styles.loadingText}>Memuat services AM...</Text> : null}
-        {!isLoading && !accounts.length ? <Text style={styles.loadingText}>No services found</Text> : null}
+        {isLoading && !accounts.length ? <Text style={styles.loadingText}>Memuat layanan AM...</Text> : null}
+        {!isLoading && !accounts.length ? <Text style={styles.loadingText}>Layanan tidak ditemukan</Text> : null}
         {accounts.map(account => {
           const device = getServiceDevice(account);
           const active = account.status === 'active';
@@ -1603,12 +1609,12 @@ function AmServicesPage() {
                 <View style={styles.serviceCol}>
                   <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
                   <Text style={styles.rowMeta}>
-                    {expanded ? 'Expanded' : active ? (banking ? 'Ready' : 'Running') : 'Stopped'}
+                    {expanded ? 'Dibuka' : active ? (banking ? 'Siap' : 'Berjalan') : 'Berhenti'}
                   </Text>
                 </View>
                 <Text style={[styles.cellText, styles.platformCol]}>{AM_PLATFORM_LABELS[account.platform] ?? account.platform}</Text>
                 <View style={styles.deviceWideCol}>
-                  <Text style={styles.cellText} numberOfLines={1}>{device?.name ?? 'Unassigned'}</Text>
+                  <Text style={styles.cellText} numberOfLines={1}>{device?.name ?? 'Belum ditugaskan'}</Text>
                   <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceMeta(device)}</Text>
                   <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceLocation(device)}</Text>
                 </View>
@@ -1618,7 +1624,7 @@ function AmServicesPage() {
               <View style={styles.statusCol}>
                 <View style={styles.statusActionStack}>
                   <AmStatusChip
-                    label={active ? (isTransferBanking(account.platform) ? 'Ready' : 'Running') : account.status}
+                    label={active ? (isTransferBanking(account.platform) ? 'Siap' : 'Berjalan') : account.status}
                     tone={active ? 'success' : 'warning'}
                   />
                   <KolamSwitch
@@ -1669,13 +1675,13 @@ function AmServicesPage() {
         {total > 0 ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {rangeFrom} to {rangeTo} of {total} items
+              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Services Previous Page"
                 disabled={page <= 1 || isLoading}
-                label="Previous"
+                label="Sebelumnya"
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.max(1, current - 1))}
@@ -1683,7 +1689,7 @@ function AmServicesPage() {
               <KolamButton
                 accessibilityLabel="AM Services Next Page"
                 disabled={page >= totalPages || isLoading}
-                label={`Page ${page}/${totalPages}`}
+                label={`Halaman ${page}/${totalPages}`}
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.min(totalPages, current + 1))}
@@ -1712,15 +1718,15 @@ function AmTaskActions({
   }> = [];
 
   if (task.status === 'pending') {
-    actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
+    actions.push({id: 'cancel', label: 'Batal', intent: 'outline'});
   }
 
   if (task.status === 'processing') {
-    actions.push({id: 'force-fail', label: 'Force Fail', intent: 'danger'});
+    actions.push({id: 'force-fail', label: 'Paksa Gagal', intent: 'danger'});
   }
 
   if (task.status === 'failed') {
-    actions.push({id: 'retry', label: 'Retry', intent: 'warning'});
+    actions.push({id: 'retry', label: 'Ulangi', intent: 'warning'});
   }
 
   if (!actions.length) {
@@ -1732,7 +1738,7 @@ function AmTaskActions({
       {actions.map(action => (
         <KolamButton
           key={action.id}
-          accessibilityLabel={`AM Task ${action.label} ${task._id}`}
+          accessibilityLabel={`AM Task ${formatAmTaskActionAccessibilityLabel(action.id)} ${task._id}`}
           disabled={disabled}
           intent={action.intent}
           label={disabled ? '...' : action.label}
@@ -2215,8 +2221,8 @@ function AmHardwarePage({
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
         <AmMetricCard label="Rack" value={String(racks.length)} meta={`${boxes.length} box`} />
-        <AmMetricCard label="Device" value={String(devices.length)} meta={`${connectedDevices} connected`} />
-        <AmMetricCard label="ADB Attention" value={String(unauthorizedDevices)} meta="unauthorized device" />
+        <AmMetricCard label="Device" value={String(devices.length)} meta={`${connectedDevices} tersambung`} />
+        <AmMetricCard label="Perhatian ADB" value={String(unauthorizedDevices)} meta="device unauthorized" />
         <KolamRefreshButton
           accessibilityLabel="Refresh"
           disabled={isLoading}
@@ -2241,7 +2247,7 @@ function AmHardwarePage({
           {selectedBox || selectedDevice ? (
             <KolamButton
               accessibilityLabel="AM Hardware Back"
-              label="Back"
+              label="Kembali"
               intent="outline"
               size="sm"
               onPress={goBackHardwareRoute}
@@ -2268,7 +2274,7 @@ function AmHardwarePage({
       {deletingHardware ? (
         <View style={styles.warningPanel}>
           <Text style={styles.warningText}>
-            Delete {titleCase(deletingHardware.kind)} {deletingHardware.label}?
+            Hapus {titleCase(deletingHardware.kind)} {deletingHardware.label}?
           </Text>
           <Text style={styles.panelText}>Aksi ini tidak bisa dibatalkan.</Text>
           <View style={styles.inlineActions}>
@@ -2276,7 +2282,7 @@ function AmHardwarePage({
               accessibilityLabel={`AM Hardware Confirm Delete ${titleCase(deletingHardware.kind)} ${deletingHardware.id}`}
               disabled={actingHardwareId === deletingHardware.id}
               intent="danger"
-              label={actingHardwareId === deletingHardware.id ? '...' : 'Delete'}
+              label={actingHardwareId === deletingHardware.id ? '...' : 'Hapus'}
               muted={actingHardwareId === deletingHardware.id}
               size="sm"
               onPress={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
@@ -2285,7 +2291,7 @@ function AmHardwarePage({
               accessibilityLabel="AM Hardware Cancel Delete"
               disabled={actingHardwareId === deletingHardware.id}
               intent="outline"
-              label="Cancel"
+              label="Batal"
               muted={actingHardwareId === deletingHardware.id}
               size="sm"
               onPress={() => setDeletingHardware(null)}
@@ -2303,8 +2309,8 @@ function AmHardwarePage({
           />
           {hardwareForm === 'rack' ? (
             <>
-              <AmTextInput label="Location" placeholder="e.g. Server Room A" value={formLocation} onChangeText={setFormLocation} />
-              <AmTextInput label="Description" placeholder="Rack notes" value={formDescription} onChangeText={setFormDescription} />
+              <AmTextInput label="Lokasi" placeholder="contoh Server Room A" value={formLocation} onChangeText={setFormLocation} />
+              <AmTextInput label="Deskripsi" placeholder="Catatan rack" value={formDescription} onChangeText={setFormDescription} />
               <AmTextInput label="Server IP" placeholder="192.168.1.10" value={formServerIp} onChangeText={setFormServerIp} />
             </>
           ) : null}
@@ -2324,7 +2330,7 @@ function AmHardwarePage({
                   ))}
                 </View>
               </View>
-              <AmTextInput label="Description" placeholder="Box notes" value={formDescription} onChangeText={setFormDescription} />
+              <AmTextInput label="Deskripsi" placeholder="Catatan box" value={formDescription} onChangeText={setFormDescription} />
             </>
           ) : null}
           {hardwareForm === 'device' ? (
@@ -2345,7 +2351,7 @@ function AmHardwarePage({
               </View>
               {editingHardwareId ? (
                 <View accessibilityLabel="AM Hardware Connection Type Read Only" style={styles.detailListRow}>
-                  <Text style={[styles.tableHeaderText, styles.accountCol]}>Connection</Text>
+                  <Text style={[styles.tableHeaderText, styles.accountCol]}>Koneksi</Text>
                   <Text style={[styles.cellText, styles.recipientCol]}>
                     {{usb: 'USB', tcp: 'TCP', browser: 'Browser'}[formConnectionType]}
                   </Text>
@@ -2359,23 +2365,23 @@ function AmHardwarePage({
                 />
               )}
               {formConnectionType === 'usb' ? (
-                <AmTextInput label="UDID" placeholder="USB device UDID" value={formUdid} onChangeText={setFormUdid} />
+                <AmTextInput label="UDID" placeholder="UDID device USB" value={formUdid} onChangeText={setFormUdid} />
               ) : null}
               {formConnectionType === 'tcp' ? (
                 <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
               ) : null}
               {formConnectionType !== 'browser' ? (
                 <>
-                  <AmTextInput label="Brand" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
+                  <AmTextInput label="Merek" placeholder="Samsung / Server" value={formBrand} onChangeText={setFormBrand} />
                   <AmTextInput label="Model" placeholder="A52 / Playwright" value={formModel} onChangeText={setFormModel} />
                 </>
               ) : null}
-              <AmTextInput label="Tags" placeholder="whatsapp, marketplace, banking" value={formTags} onChangeText={setFormTags} />
+              <AmTextInput label="Tag" placeholder="whatsapp, marketplace, banking" value={formTags} onChangeText={setFormTags} />
               {formConnectionType !== 'browser' ? (
-                <AmTextInput label="ADB Port" placeholder="optional" value={formAdbPort} onChangeText={setFormAdbPort} />
+                <AmTextInput label="Port ADB" placeholder="opsional" value={formAdbPort} onChangeText={setFormAdbPort} />
               ) : null}
               {editingHardwareId && formConnectionType !== 'browser' ? (
-                <AmTextInput label="Appium Port" placeholder="optional" value={formAppiumPort} onChangeText={setFormAppiumPort} />
+                <AmTextInput label="Port Appium" placeholder="opsional" value={formAppiumPort} onChangeText={setFormAppiumPort} />
               ) : null}
             </>
           ) : null}
@@ -2383,7 +2389,7 @@ function AmHardwarePage({
             <AmSegmentGroup
               active={formStatus}
               items={['active', 'inactive']}
-              labels={{active: 'Active', inactive: 'Inactive'}}
+              labels={{active: 'Aktif', inactive: 'Nonaktif'}}
               onSelect={value => setFormStatus(value as 'active' | 'inactive')}
             />
           ) : null}
@@ -2391,7 +2397,7 @@ function AmHardwarePage({
             <KolamButton
               accessibilityLabel="AM Hardware Save"
               disabled={isSubmitting}
-              label={isSubmitting ? 'Menyimpan' : (editingHardwareId ? 'Save' : 'Create')}
+              label={isSubmitting ? 'Menyimpan' : (editingHardwareId ? 'Simpan' : 'Buat')}
               muted={isSubmitting}
               size="sm"
               onPress={saveHardware}
@@ -2399,7 +2405,7 @@ function AmHardwarePage({
             {editingHardwareId ? (
               <KolamButton
                 accessibilityLabel="AM Hardware Cancel Edit"
-                label="Cancel"
+                label="Batal"
                 intent="outline"
                 size="sm"
                 onPress={() => resetHardwareForm(hardwareForm)}
@@ -2532,7 +2538,7 @@ function AmServiceDetailPanel({
               onPress={() => onSelectTab('logs')}
               style={[styles.detailTab, activeTab === 'logs' && styles.detailTabActive]}>
               <Text style={[styles.segmentText, activeTab === 'logs' && styles.segmentTextActive]}>
-                Logs {processRunning ? 'Live' : ''}
+                Log {processRunning ? 'Live' : ''}
               </Text>
             </KolamInteractionFrame>
           ) : null}
@@ -2541,7 +2547,7 @@ function AmServiceDetailPanel({
             onPress={() => onSelectTab('history')}
             style={[styles.detailTab, activeTab === 'history' && styles.detailTabActive]}>
             <Text style={[styles.segmentText, activeTab === 'history' && styles.segmentTextActive]}>
-              {banking ? 'Transfer History' : 'Task History'}
+              {banking ? 'Riwayat Transfer' : 'Riwayat Task'}
             </Text>
           </KolamInteractionFrame>
           {!banking && account.platform === 'tokopedia' ? (
@@ -2560,7 +2566,7 @@ function AmServiceDetailPanel({
             accessibilityLabel={`AM Service Clear Session ${account._id}`}
             disabled={clearingSession}
             intent="danger"
-            label={clearingSession ? 'Clearing...' : 'Clear Session'}
+            label={clearingSession ? 'Membersihkan...' : 'Bersihkan Session'}
             muted={clearingSession}
             size="sm"
             onPress={onClearSession}
@@ -2568,7 +2574,7 @@ function AmServiceDetailPanel({
         ) : null}
       </View>
       <AmInlineError title="Detail service AM belum bisa dibaca" error={detailError} />
-      {isLoading ? <Text style={styles.loadingText}>Memuat detail service...</Text> : null}
+      {isLoading ? <Text style={styles.loadingText}>Memuat detail layanan...</Text> : null}
       {!isLoading && activeTab === 'session' && account.platform === 'tokopedia' ? (
         <AmTokopediaSessionPanel
           account={account}
@@ -2587,7 +2593,7 @@ function AmServiceDetailPanel({
                 </Text>
               </View>
               <AmStatusChip
-                label={processRunning ? 'process running' : 'process stopped'}
+                label={processRunning ? 'proses berjalan' : 'proses berhenti'}
                 tone={processRunning ? 'success' : 'muted'}
               />
             </View>
@@ -2616,7 +2622,7 @@ function AmServiceDetailPanel({
                     <Text style={styles.monoText} numberOfLines={1}>{qrUrl}</Text>
                   </>
                 ) : (
-                  <Text style={styles.rowMeta}>QR image belum tersedia untuk platform ini.</Text>
+                  <Text style={styles.rowMeta}>Gambar QR belum tersedia untuk platform ini.</Text>
                 )}
               </View>
             ) : null}
@@ -2631,7 +2637,7 @@ function AmServiceDetailPanel({
                 <KolamButton
                   accessibilityLabel={`AM Service Submit Input ${account._id}`}
                   disabled={serviceInputSending}
-                  label={serviceInputSending ? 'Mengirim' : 'Submit Input'}
+                  label={serviceInputSending ? 'Mengirim' : 'Kirim Input'}
                   muted={serviceInputSending}
                   size="sm"
                   onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
@@ -2643,12 +2649,12 @@ function AmServiceDetailPanel({
             <AmSegmentGroup
               active={logSource}
               items={['realtime', 'history']}
-              labels={{realtime: 'Realtime', history: 'History'}}
+              labels={{realtime: 'Realtime', history: 'Riwayat'}}
               onSelect={value => onLogSourceChange(value as 'realtime' | 'history')}
             />
           </View>
           <View style={styles.logPanel}>
-            {!logs.length ? <Text style={styles.logEmptyText}>{logSource === 'history' ? 'No history logs' : 'No realtime logs'}</Text> : null}
+            {!logs.length ? <Text style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
             {displayedLogs.map((log, index) => (
               <Text key={`${log.ts}-${index}`} style={styles.logText} numberOfLines={2}>
                 [{formatAmDate(log.ts)}] {log.level}: {log.message}
@@ -2671,7 +2677,7 @@ function AmServiceDetailPanel({
       ) : null}
       {!isLoading && activeTab === 'history' && banking ? (
         <View style={styles.detailList}>
-          {!transfers.length ? <Text style={styles.loadingText}>No transfer history</Text> : null}
+          {!transfers.length ? <Text style={styles.loadingText}>Riwayat transfer tidak ditemukan</Text> : null}
           {transfers.map(transfer => (
             <View key={transfer._id} style={styles.detailListRow}>
               <View style={styles.recipientCol}>
@@ -2700,14 +2706,14 @@ function AmServiceDetailPanel({
       ) : null}
       {!isLoading && activeTab === 'history' && !banking ? (
         <View style={styles.detailList}>
-          {!tasks.length ? <Text style={styles.loadingText}>No task history</Text> : null}
+          {!tasks.length ? <Text style={styles.loadingText}>Riwayat task tidak ditemukan</Text> : null}
           {tasks.map(task => (
             <View key={task._id} style={styles.detailListRow}>
               <View style={styles.recipientCol}>
                 <Text style={styles.cellText} numberOfLines={1}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
                 <Text style={styles.rowMeta}>{formatAmDate(task.createdAt)}</Text>
               </View>
-              <Text style={[styles.cellText, styles.amountCol]}>Retry {task.retryCount}/{task.maxRetries}</Text>
+              <Text style={[styles.cellText, styles.amountCol]}>Ulang {task.retryCount}/{task.maxRetries}</Text>
               <View style={styles.statusCol}>
                 <AmStatusChip label={task.status} tone={getTransferTone(task.status)} />
               </View>
@@ -2940,7 +2946,7 @@ function AmTokopediaSessionPanel({
               accessibilityLabel={`AM Tokopedia Login Fill Only ${account._id}`}
               disabled={!canRunSessionAction || acting === 'login-method'}
               intent={loginMode === 'fill' ? 'warning' : 'outline'}
-              label="Fill Only"
+              label="Isi Saja"
               muted={!canRunSessionAction || acting === 'login-method'}
               size="sm"
               onPress={() => updateLoginMethod('fill')}
@@ -2964,7 +2970,7 @@ function AmTokopediaSessionPanel({
               accessibilityLabel={`AM Tokopedia Captcha Toggle ${account._id}`}
               disabled={!canRunSessionAction || acting === 'captcha'}
               intent={captchaAutoSolve ? 'warning' : 'outline'}
-              label={captchaAutoSolve ? 'Auto On' : 'Auto Off'}
+              label={captchaAutoSolve ? 'Auto Aktif' : 'Auto Nonaktif'}
               muted={!canRunSessionAction || acting === 'captcha'}
               size="sm"
               onPress={() => setCaptchaAutoSolve(current => !current)}
@@ -3105,7 +3111,7 @@ function AmTokopediaSessionPanel({
       </View>
       {monitorJob ? (
         <Text style={styles.rowMeta}>
-          Browser Monitor: {titleCase(monitorJob.status)} - {monitorJob.message}
+          Monitor Browser: {titleCase(monitorJob.status)} - {monitorJob.message}
           {monitorJob.restarted ? ' Service sudah dinyalakan kembali.' : ''}
         </Text>
       ) : null}
@@ -3125,7 +3131,7 @@ function AmTokopediaSessionPanel({
                   style={styles.qrImage}
                 />
               ) : (
-                <Text style={styles.rowMeta}>QR image belum tersedia.</Text>
+                <Text style={styles.rowMeta}>Gambar QR belum tersedia.</Text>
               )}
             </>
           ) : (
@@ -3193,13 +3199,13 @@ function AmServiceHistoryPagination({
   return (
     <View style={styles.paginationBar}>
       <Text style={styles.paginationText}>
-        Showing {from} to {to} of {total} items
+        Menampilkan {from}-{to} dari {total} item
       </Text>
       <View style={styles.inlineActions}>
         <KolamButton
           accessibilityLabel={`${label} Previous Page`}
           disabled={currentPage <= 1 || disabled}
-          label="Previous"
+          label="Sebelumnya"
           intent="outline"
           size="sm"
           onPress={() => onPageChange(Math.max(1, currentPage - 1))}
@@ -3207,7 +3213,7 @@ function AmServiceHistoryPagination({
         <KolamButton
           accessibilityLabel={`${label} Next Page`}
           disabled={currentPage >= totalPages || disabled}
-          label={`Page ${currentPage}/${totalPages}`}
+          label={`Halaman ${currentPage}/${totalPages}`}
           intent="outline"
           size="sm"
           onPress={() => onPageChange(Math.min(totalPages, currentPage + 1))}
@@ -3240,7 +3246,7 @@ function AmHardwareRackGrid({
     <View style={styles.panel}>
       <Text style={styles.panelTitle}>Rack</Text>
       {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack AM...</Text> : null}
-      {!isLoading && !racks.length ? <Text style={styles.loadingText}>No racks yet</Text> : null}
+      {!isLoading && !racks.length ? <Text style={styles.loadingText}>Rack belum ada</Text> : null}
       <View style={styles.cardGrid}>
         {racks.map(rack => (
           <KolamInteractionFrame
@@ -3250,16 +3256,17 @@ function AmHardwareRackGrid({
             onPress={() => onSelectRack(rack)}
             style={styles.hardwareCard}>
             <Text style={styles.rowTitle}>{rack.name}</Text>
-            <Text style={styles.rowMeta}>{rack.location || 'No location'}</Text>
+            <Text style={styles.rowMeta}>{rack.location || 'Lokasi belum diisi'}</Text>
             <View style={styles.hardwareStats}>
               <Text style={styles.rowMeta}>Box {rack.boxCount ?? countBoxesForRack(boxes, rack)}</Text>
               <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
             </View>
             {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
-            <Text style={styles.rowMeta}>Added By {formatRackAddedBy(rack)}</Text>
+            <Text style={styles.rowMeta}>Ditambahkan oleh {formatRackAddedBy(rack)}</Text>
             <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
             <View style={styles.inlineActions}>
               <KolamEditButton
+                accessibilityLabel={`AM Hardware Edit Rack ${rack._id}`}
                 intent="outline"
                 size="sm"
                 onPress={() => onEditRack(rack)}
@@ -3267,7 +3274,7 @@ function AmHardwareRackGrid({
               <KolamButton
                 accessibilityLabel={`AM Hardware Delete Rack ${rack._id}`}
                 disabled={actingHardwareId === rack._id}
-                label={actingHardwareId === rack._id ? '...' : 'Delete'}
+                label={actingHardwareId === rack._id ? '...' : 'Hapus'}
                 intent="danger"
                 muted={actingHardwareId === rack._id}
                 size="sm"
@@ -3298,9 +3305,9 @@ function AmHardwareBoxGrid({
 }) {
   return (
     <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Boxes</Text>
+      <Text style={styles.panelTitle}>Box</Text>
       {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
-      {!isLoading && !boxes.length ? <Text style={styles.loadingText}>No boxes in this rack</Text> : null}
+      {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rack ini</Text> : null}
       <View style={styles.cardGrid}>
         {boxes.map(box => (
           <KolamInteractionFrame
@@ -3310,11 +3317,12 @@ function AmHardwareBoxGrid({
             onPress={() => onSelectBox(box)}
             style={styles.hardwareCard}>
             <Text style={styles.rowTitle}>{box.name}</Text>
-            <Text style={styles.rowMeta}>{box.description || 'No description'}</Text>
+            <Text style={styles.rowMeta}>{box.description || 'Deskripsi belum diisi'}</Text>
             <Text style={styles.rowMeta}>Device {box.deviceCount ?? 0} / 24</Text>
             <AmStatusChip label={box.status} tone={box.status === 'active' ? 'success' : 'muted'} />
             <View style={styles.inlineActions}>
               <KolamEditButton
+                accessibilityLabel={`AM Hardware Edit Box ${box._id}`}
                 intent="outline"
                 size="sm"
                 onPress={() => onEditBox(box)}
@@ -3322,7 +3330,7 @@ function AmHardwareBoxGrid({
               <KolamButton
                 accessibilityLabel={`AM Hardware Delete Box ${box._id}`}
                 disabled={actingHardwareId === box._id}
-                label={actingHardwareId === box._id ? '...' : 'Delete'}
+                label={actingHardwareId === box._id ? '...' : 'Hapus'}
                 intent="danger"
                 muted={actingHardwareId === box._id}
                 size="sm"
@@ -3355,13 +3363,13 @@ function AmHardwareDeviceList({
     <View style={styles.tablePanel}>
       <View style={styles.tableHeader}>
         <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Device</Text>
-        <Text style={[styles.tableHeaderText, styles.identifierCol]}>Identifier</Text>
-        <Text style={[styles.tableHeaderText, styles.brandCol]}>Brand</Text>
+        <Text style={[styles.tableHeaderText, styles.identifierCol]}>Identitas</Text>
+        <Text style={[styles.tableHeaderText, styles.brandCol]}>Merek</Text>
         <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
-        <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+        <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
       </View>
-      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat devices AM..." emptyText="No devices found" />
+      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat device AM..." emptyText="Device tidak ditemukan" />
       {devices.slice(0, 40).map(device => (
         <KolamInteractionFrame
           key={device._id}
@@ -3374,14 +3382,15 @@ function AmHardwareDeviceList({
             <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceBox(device)}</Text>
           </View>
           <Text style={[styles.cellText, styles.identifierCol]} numberOfLines={1}>{formatDeviceIdentifier(device)}</Text>
-          <Text style={[styles.cellText, styles.brandCol]} numberOfLines={1}>{device.brand || 'Not set'}</Text>
-          <Text style={[styles.cellText, styles.modelCol]} numberOfLines={1}>{device.model || 'Not set'}</Text>
+          <Text style={[styles.cellText, styles.brandCol]} numberOfLines={1}>{device.brand || 'Belum diisi'}</Text>
+          <Text style={[styles.cellText, styles.modelCol]} numberOfLines={1}>{device.model || 'Belum diisi'}</Text>
           <View style={styles.statusCol}>
             <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
           </View>
           <View style={styles.actionCol}>
             <View style={styles.inlineActions}>
               <KolamEditButton
+                accessibilityLabel={`AM Hardware Edit Device ${device._id}`}
                 intent="outline"
                 size="sm"
                 onPress={() => onEditDevice(device)}
@@ -3389,7 +3398,7 @@ function AmHardwareDeviceList({
               <KolamButton
                 accessibilityLabel={`AM Hardware Delete Device ${device._id}`}
                 disabled={actingHardwareId === device._id}
-                label={actingHardwareId === device._id ? '...' : 'Delete'}
+                label={actingHardwareId === device._id ? '...' : 'Hapus'}
                 intent="danger"
                 muted={actingHardwareId === device._id}
                 size="sm"
@@ -3676,10 +3685,10 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
   return (
     <View style={styles.panel}>
       <KolamConfirmDialog
-        cancelLabel="Cancel"
-        confirmLabel="Move"
+        cancelLabel="Batal"
+        confirmLabel="Pindahkan"
         message={`Move ${serviceFormLabel || 'service account'} ke ${deviceOptions.find(nextDevice => nextDevice._id === serviceFormDeviceId)?.name ?? 'device baru'}?`}
-        title="Move Service Account?"
+        title="Pindahkan Service Account?"
         visible={moveConfirmOpen}
         onCancel={() => setMoveConfirmOpen(false)}
         onConfirm={() => {
@@ -3703,12 +3712,12 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         {isBrowserDevice ? null : (
           <>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Brand</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{device.brand || 'Not set'}</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Merek</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{device.brand || 'Belum diisi'}</Text>
             </View>
             <View style={styles.detailListRow}>
               <Text style={[styles.tableHeaderText, styles.accountCol]}>Model</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{device.model || 'Not set'}</Text>
+              <Text style={[styles.cellText, styles.recipientCol]}>{device.model || 'Belum diisi'}</Text>
             </View>
           </>
         )}
@@ -3718,12 +3727,12 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         </View>
       </View>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Service Accounts</Text>
+        <Text style={styles.panelTitle}>Akun Layanan</Text>
         <View style={styles.inlineActions}>
           {createServicePlatformItems.length ? (
             <KolamButton
               accessibilityLabel={`AM Device Add Service Account ${device._id}`}
-              label="Add Service"
+              label="Tambah Layanan"
               size="sm"
               onPress={() => resetDeviceServiceForm(true)}
             />
@@ -3769,7 +3778,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 onSelect={value => setServiceFormStatus(value as 'active' | 'inactive' | 'blocked')}
               />
             ) : null}
-            <AmTextInput label="Label" placeholder="Service label" value={serviceFormLabel} onChangeText={setServiceFormLabel} />
+            <AmTextInput label="Label" placeholder="Label layanan" value={serviceFormLabel} onChangeText={setServiceFormLabel} />
             {showDeviceServiceUsername ? (
               <AmTextInput {...getAmServiceFieldProps(serviceFormPlatform, 'username', Boolean(editingDeviceServiceId))} value={serviceFormUsername} onChangeText={setServiceFormUsername} />
             ) : null}
@@ -3807,14 +3816,14 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               <KolamButton
                 accessibilityLabel={`AM Device Save Service Account ${device._id}`}
                 disabled={isSubmittingService}
-                label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Update Service' : 'Create Service'}
+                label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Update Layanan' : 'Buat Layanan'}
                 muted={isSubmittingService}
                 size="sm"
                 onPress={submitDeviceServiceAccount}
               />
               <KolamButton
                 accessibilityLabel={`AM Device Cancel Service Account ${device._id}`}
-                label="Cancel"
+                label="Batal"
                 intent="outline"
                 size="sm"
                 onPress={() => resetDeviceServiceForm(false)}
@@ -3825,18 +3834,18 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Account</Text>
+          <Text style={[styles.tableHeaderText, styles.serviceCol]}>Akun</Text>
           <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Account No.</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Balance</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>No. Akun</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Saldo</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         </View>
         <AmLoadingOrEmpty
           isLoading={isLoading}
           items={accounts}
-          loadingText="Memuat service accounts device..."
-          emptyText="No service accounts linked to this device"
+          loadingText="Memuat akun layanan device..."
+          emptyText="Belum ada akun layanan di device ini"
         />
         {accounts.map(account => {
           const runtime = services.find(status => status.serviceAccountId === account._id);
@@ -3845,7 +3854,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             <View key={account._id} style={styles.tableRow}>
               <View style={styles.serviceCol}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
-                <Text style={styles.rowMeta} numberOfLines={1}>{runtime?.taskStatus ?? 'No runtime task'}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{runtime?.taskStatus ?? 'Runtime task tidak ada'}</Text>
               </View>
               <Text style={[styles.cellText, styles.platformCol]}>
                 {AM_PLATFORM_LABELS[account.platform] ?? account.platform}
@@ -3863,6 +3872,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                 <View style={styles.statusActionStack}>
                   <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
                   <KolamEditButton
+                    accessibilityLabel={`AM Device Edit Service Account ${account._id}`}
                     disabled={isSubmittingService || actingDeviceServiceId === account._id}
                     intent="outline"
                     muted={isSubmittingService || actingDeviceServiceId === account._id}
@@ -3873,7 +3883,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                     accessibilityLabel={`AM Device Delete Service Account ${account._id}`}
                     disabled={actingDeviceServiceId === account._id}
                     intent="danger"
-                    label={actingDeviceServiceId === account._id ? '...' : 'Delete'}
+                    label={actingDeviceServiceId === account._id ? '...' : 'Hapus'}
                     muted={actingDeviceServiceId === account._id}
                     size="sm"
                     onPress={() => deleteDeviceServiceAccount(account)}
@@ -4062,7 +4072,7 @@ function AmTransfersPage({
   );
   const transferCreateAccountItems = React.useMemo(() => ['auto', ...activeTransferAccounts.map(account => account._id)], [activeTransferAccounts]);
   const transferCreateAccountLabels = React.useMemo<Record<string, string>>(() => ({
-    auto: 'Auto-select',
+    auto: 'Pilih otomatis',
     ...Object.fromEntries(
       activeTransferAccounts.map(account => [account._id, formatBankAccount(account)]),
     ),
@@ -4115,23 +4125,23 @@ function AmTransfersPage({
     const recipientAccount = formRecipientAccount.trim();
     const recipientName = formRecipientName.trim();
     if (!recipientAccount) {
-      setError('Recipient account is required');
+      setError('Nomor akun penerima wajib diisi');
       return;
     }
     if (!isVirtualAccountTransfer && !formRecipientBank) {
-      setError('Recipient bank is required');
+      setError('Bank penerima wajib diisi');
       return;
     }
     if (parsedTransferAmount !== undefined && parsedTransferAmount > 0 && parsedTransferAmount < 10000) {
-      setError(`Minimal amount ${formatRupiah(10000)}`);
+      setError(`Nominal minimal ${formatRupiah(10000)}`);
       return;
     }
     if (isInterBankTransfer && !formTransferMethod) {
-      setError('Transfer method is required for inter-bank transfers');
+      setError('Metode transfer wajib diisi untuk transfer antarbank');
       return;
     }
     if (isInterBankTransfer && formTransferMethod === 'BI FAST' && !formTransactionPurpose) {
-      setError('Transaction purpose is required');
+      setError('Tujuan transaksi wajib diisi');
       return;
     }
 
@@ -4149,12 +4159,12 @@ function AmTransfersPage({
         transactionPurpose: isInterBankTransfer ? formTransactionPurpose : undefined,
         amount: parsedTransferAmount && parsedTransferAmount > 0 ? parsedTransferAmount : undefined,
       });
-      setActionMessage('Transfer created');
+      setActionMessage('Transfer dibuat');
       setShowTransferForm(false);
       resetTransferForm();
       await fetchTransfers();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Create transfer failed');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal membuat transfer');
     } finally {
       setIsSubmittingTransfer(false);
     }
@@ -4204,7 +4214,7 @@ function AmTransfersPage({
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Search recipient..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
+        <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Cari penerima..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
         <AmSegmentGroup
           active={status}
           items={['all', 'pending', 'processing', 'success', 'failed']}
@@ -4213,7 +4223,7 @@ function AmTransfersPage({
         />
         <KolamButton
           accessibilityLabel="AM New Transfer"
-          label="New Transfer"
+          label="Transfer Baru"
           intent={showTransferForm ? 'warning' : 'outline'}
           size="sm"
           onPress={() => setShowTransferForm(current => !current)}
@@ -4228,7 +4238,7 @@ function AmTransfersPage({
           onPress={fetchTransfers}
         />
       </View>
-      <AmInlineError title="Transfers AM belum bisa dibaca" error={error} />
+      <AmInlineError title="Transfer AM belum bisa dibaca" error={error} />
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
@@ -4238,10 +4248,10 @@ function AmTransfersPage({
         <View style={styles.panel}>
           <View style={styles.formGrid}>
             <View style={styles.detailHeader}>
-              <Text style={styles.panelTitle}>New Transfer</Text>
+              <Text style={styles.panelTitle}>Transfer Baru</Text>
               <KolamButton
                 accessibilityLabel="AM Transfer Cancel Create"
-                label="Cancel"
+                label="Batal"
                 intent="outline"
                 size="sm"
                 onPress={() => {
@@ -4251,7 +4261,7 @@ function AmTransfersPage({
               />
             </View>
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Source Account</Text>
+              <Text style={styles.formLabel}>Akun Sumber</Text>
               <AmSegmentGroup
                 active={formAccountId}
                 items={transferCreateAccountItems}
@@ -4260,41 +4270,41 @@ function AmTransfersPage({
               />
             </View>
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Transfer Type</Text>
+              <Text style={styles.formLabel}>Tipe Transfer</Text>
               <AmSegmentGroup
                 active={formTransferType}
                 items={['transfer', 'virtual-account']}
-                labels={{transfer: 'Transfer', 'virtual-account': 'Virtual Account'}}
+                labels={{transfer: 'Transfer', 'virtual-account': 'Transfer Virtual Account'}}
                 onSelect={handleCreateTransferTypeChange}
               />
             </View>
             <View style={styles.formGrid}>
               <AmTextInput
-                label={isVirtualAccountTransfer ? 'VA Number' : 'Recipient Account Number'}
-                placeholder={isVirtualAccountTransfer ? 'VA number' : 'Account number'}
+                label={isVirtualAccountTransfer ? 'Nomor VA' : 'Nomor Akun Penerima'}
+                placeholder={isVirtualAccountTransfer ? 'Nomor VA' : 'Nomor akun'}
                 value={formRecipientAccount}
                 onChangeText={setFormRecipientAccount}
               />
-              <AmTextInput label="Recipient Name" placeholder="Recipient name" value={formRecipientName} onChangeText={setFormRecipientName} />
+              <AmTextInput label="Nama Penerima" placeholder="Nama penerima" value={formRecipientName} onChangeText={setFormRecipientName} />
               {!isVirtualAccountTransfer ? (
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Recipient Bank</Text>
+                  <Text style={styles.formLabel}>Bank Penerima</Text>
                   <AmSegmentGroup active={formRecipientBank} items={AM_RECIPIENT_BANKS} onSelect={handleRecipientBankChange} />
                 </View>
               ) : null}
               {isInterBankTransfer ? (
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Transfer Method</Text>
+                  <Text style={styles.formLabel}>Metode Transfer</Text>
                   <AmSegmentGroup active={formTransferMethod} items={AM_TRANSFER_METHODS} onSelect={handleTransferMethodChange} />
                 </View>
               ) : null}
               {isInterBankTransfer && formTransferMethod === 'BI FAST' ? (
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Transaction Purpose</Text>
-                  <AmSegmentGroup active={formTransactionPurpose} items={AM_TRANSACTION_PURPOSES} onSelect={setFormTransactionPurpose} />
+                  <Text style={styles.formLabel}>Tujuan Transaksi</Text>
+                  <AmSegmentGroup active={formTransactionPurpose} items={AM_TRANSACTION_PURPOSES} labels={AM_TRANSACTION_PURPOSE_LABELS} onSelect={setFormTransactionPurpose} />
                 </View>
               ) : null}
-              <AmTextInput label="Amount (IDR)" placeholder="0" value={formAmount} onChangeText={setFormAmount} />
+              <AmTextInput label="Nominal (IDR)" placeholder="0" value={formAmount} onChangeText={setFormAmount} />
             </View>
             {transferFee > 0 || parsedTransferAmount ? (
               <View style={styles.successPanel}>
@@ -4307,7 +4317,7 @@ function AmTransfersPage({
               <KolamButton
                 accessibilityLabel="AM Transfer Create"
                 disabled={isSubmittingTransfer}
-                label={isSubmittingTransfer ? 'Creating' : 'Create Transfer'}
+                label={isSubmittingTransfer ? 'Membuat' : 'Buat Transfer'}
                 intent="warning"
                 muted={isSubmittingTransfer}
                 size="sm"
@@ -4318,25 +4328,25 @@ function AmTransfersPage({
         </View>
       ) : null}
       <View style={styles.metricGrid}>
-        <AmMetricCard label="Total Transfers" value={String(transferStats.total)} meta="page result" />
-        <AmMetricCard label="Total Amount" value={formatRupiah(transferStats.totalAmount)} meta="page amount" />
-        <AmMetricCard label="Pending" value={String(transferStats.pending)} meta="menunggu eksekusi" />
-        <AmMetricCard label="Processing" value={String(transferStats.processing)} meta="sedang berjalan" />
-        <AmMetricCard label="Success" value={String(transferStats.success)} meta="berhasil" />
-        <AmMetricCard label="Failed" value={String(transferStats.failed)} meta="perlu tindak lanjut" />
+        <AmMetricCard label="Total Transfer" value={String(transferStats.total)} meta="hasil halaman" />
+        <AmMetricCard label="Total Nominal" value={formatRupiah(transferStats.totalAmount)} meta="nominal halaman" />
+        <AmMetricCard label="Menunggu" value={String(transferStats.pending)} meta="menunggu eksekusi" />
+        <AmMetricCard label="Diproses" value={String(transferStats.processing)} meta="sedang berjalan" />
+        <AmMetricCard label="Berhasil" value={String(transferStats.success)} meta="berhasil" />
+        <AmMetricCard label="Gagal" value={String(transferStats.failed)} meta="perlu tindak lanjut" />
       </View>
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Recipient</Text>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Akun</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Penerima</Text>
           <Text style={[styles.tableHeaderText, styles.platformCol]}>Bank</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Nominal</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Dibuat</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfers AM..." emptyText="No transfers found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfer AM..." emptyText="Transfer tidak ditemukan" />
         {transfers.map(transfer => (
           <View key={transfer._id} style={styles.tableRow}>
             <View style={styles.accountWideCol}>
@@ -4367,7 +4377,7 @@ function AmTransfersPage({
               <View style={styles.inlineActions}>
                 <KolamButton
                   accessibilityLabel={`AM Transfer Detail ${transfer._id}`}
-                  label={selectedTransferId === transfer._id ? 'Close' : 'Detail'}
+                  label={selectedTransferId === transfer._id ? 'Tutup' : 'Detail'}
                   intent="outline"
                   size="sm"
                   onPress={() => selectTransfer(transfer)}
@@ -4384,13 +4394,13 @@ function AmTransfersPage({
         {total > limit ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {rangeFrom} to {rangeTo} of {total} items
+              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Transfers Previous Page"
                 disabled={page <= 1 || isLoading}
-                label="Previous"
+                label="Sebelumnya"
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.max(1, current - 1))}
@@ -4398,7 +4408,7 @@ function AmTransfersPage({
               <KolamButton
                 accessibilityLabel="AM Transfers Next Page"
                 disabled={page >= totalPages || isLoading}
-                label={`Page ${page}/${totalPages}`}
+                label={`Halaman ${page}/${totalPages}`}
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.min(totalPages, current + 1))}
@@ -4448,7 +4458,7 @@ function AmTransferDetailPanel({
     <View style={styles.panel}>
       <View style={styles.detailHeader}>
         <View>
-          <Text style={styles.panelTitle}>Transfer Detail</Text>
+          <Text style={styles.panelTitle}>Detail Transfer</Text>
           <Text style={styles.rowMeta}>{transfer?._id ?? 'Memuat detail transfer...'}</Text>
         </View>
         {transfer ? (
@@ -4456,7 +4466,7 @@ function AmTransferDetailPanel({
             <KolamButton
               accessibilityLabel="AM Transfer Back"
               intent="outline"
-              label="Back"
+              label="Kembali"
               size="sm"
               onPress={onBack}
             />
@@ -4475,46 +4485,46 @@ function AmTransferDetailPanel({
         <>
           <View style={styles.metricGrid}>
             <AmMetricCard
-              label="Amount"
+              label="Nominal"
               value={formatRupiah(transfer.amount)}
-              meta={`Fee ${formatRupiah(transfer.fee ?? 0)} / Total ${formatRupiah(transfer.amount + (transfer.fee ?? 0))}`}
+              meta={`Biaya ${formatRupiah(transfer.fee ?? 0)} / Total ${formatRupiah(transfer.amount + (transfer.fee ?? 0))}`}
             />
-            <AmMetricCard label="Type" value={titleCase(transfer.transferType)} meta={transfer.transferMethod ?? 'method not set'} />
-            <AmMetricCard label="Recipient" value={transfer.recipientName || '-'} meta={`${transfer.recipientBank ?? '-'} ${transfer.recipientAccount}`} />
+            <AmMetricCard label="Tipe" value={titleCase(transfer.transferType)} meta={transfer.transferMethod ?? 'metode belum diisi'} />
+            <AmMetricCard label="Penerima" value={transfer.recipientName || '-'} meta={`${transfer.recipientBank ?? '-'} ${transfer.recipientAccount}`} />
           </View>
           <View style={styles.detailList}>
-            <Text style={styles.panelTitle}>Transfer Info</Text>
+            <Text style={styles.panelTitle}>Info Transfer</Text>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created At</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Dibuat</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.createdAt)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Created By</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Dibuat oleh</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferCreatedBy(transfer.createdBy)}</Text>
             </View>
             {transfer.transferMethod ? (
               <View style={styles.detailListRow}>
-                <Text style={[styles.tableHeaderText, styles.accountCol]}>Transfer Method</Text>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Metode Transfer</Text>
                 <Text style={[styles.cellText, styles.recipientCol]}>{transfer.transferMethod}</Text>
               </View>
             ) : null}
             {transfer.transactionPurpose ? (
               <View style={styles.detailListRow}>
-                <Text style={[styles.tableHeaderText, styles.accountCol]}>Transaction Purpose</Text>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Tujuan Transaksi</Text>
                 <Text style={[styles.cellText, styles.recipientCol]}>{transfer.transactionPurpose}</Text>
               </View>
             ) : null}
-            <Text style={styles.panelTitle}>Source & Device</Text>
+            <Text style={styles.panelTitle}>Sumber & Device</Text>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Account</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Akun</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatBankAccount(transfer.accountId)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Account Type</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Tipe Akun</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatAccountType(transfer.accountId)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Account Number</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Nomor Akun</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatAccountNumber(transfer.accountId)}</Text>
             </View>
             <View style={styles.detailListRow}>
@@ -4530,11 +4540,11 @@ function AmTransferDetailPanel({
               <Text style={[styles.cellText, styles.recipientCol]}>{formatTransferServerIp(transfer.deviceId)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Started</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Dimulai</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.startedAt)}</Text>
             </View>
             <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Completed</Text>
+              <Text style={[styles.tableHeaderText, styles.accountCol]}>Selesai</Text>
               <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(transfer.completedAt)}</Text>
             </View>
             {transfer.error ? (
@@ -4545,17 +4555,17 @@ function AmTransferDetailPanel({
             ) : null}
             {transfer.screenshot ? (
               <View style={styles.detailListRow}>
-                <Text style={[styles.tableHeaderText, styles.accountCol]}>Proof</Text>
-                <Text style={[styles.cellText, styles.recipientCol]}>Screenshot base64 tersedia ({transfer.screenshot.length} chars)</Text>
+                <Text style={[styles.tableHeaderText, styles.accountCol]}>Bukti</Text>
+                <Text style={[styles.cellText, styles.recipientCol]}>Screenshot base64 tersedia ({transfer.screenshot.length} karakter)</Text>
               </View>
             ) : null}
           </View>
           {transfer.screenshot ? (
             <View style={styles.proofPanel}>
-              <Text style={styles.panelTitle}>Transaction Proof</Text>
-              <Text style={styles.panelText}>Screenshot taken after transfer.</Text>
+              <Text style={styles.panelTitle}>Bukti Transaksi</Text>
+              <Text style={styles.panelText}>Screenshot setelah transfer.</Text>
               <Image
-                accessibilityLabel="AM Transfer Transaction Proof"
+                accessibilityLabel="AM Transfer Bukti Transaksi"
                 resizeMode="contain"
                 source={{uri: `data:image/png;base64,${transfer.screenshot}`}}
                 style={styles.proofImage}
@@ -4564,14 +4574,14 @@ function AmTransferDetailPanel({
           ) : null}
           <View style={styles.detailHeader}>
             <View>
-              <Text style={styles.panelTitle}>Automation Logs</Text>
+              <Text style={styles.panelTitle}>Log Automasi</Text>
               <Text style={styles.rowMeta}>
-                {transfer.logs.length} line(s){transfer.status === 'processing' ? ' - refreshing every 3s' : ''}
+                {transfer.logs.length} baris{transfer.status === 'processing' ? ' - refresh tiap 3 detik' : ''}
               </Text>
             </View>
           </View>
           <View style={styles.logPanel}>
-            {!transfer.logs.length ? <Text style={styles.logEmptyText}>No logs yet...</Text> : null}
+            {!transfer.logs.length ? <Text style={styles.logEmptyText}>Log belum ada...</Text> : null}
             {transfer.logs.map((line, index) => (
               <Text key={`${index}-${line}`} style={styles.logText} numberOfLines={2}>
                 {String(index + 1).padStart(3, '0')} {line}
@@ -4580,9 +4590,9 @@ function AmTransferDetailPanel({
           </View>
           {transfer.status === 'success' || transfer.status === 'failed' ? (
             <View style={styles.panel}>
-              <Text style={styles.panelTitle}>Webhook Delivery Logs</Text>
+              <Text style={styles.panelTitle}>Log Pengiriman Webhook</Text>
               <Text style={styles.panelText}>
-                {webhookLogs.length ? `${webhookLogs.length} delivery log terkait transfer ini.` : 'No webhook logs for this transfer'}
+                {webhookLogs.length ? `${webhookLogs.length} log pengiriman terkait transfer ini.` : 'Log webhook untuk transfer ini tidak ditemukan'}
               </Text>
               {webhookLogs.map(log => (
                 <View key={log._id} style={styles.detailListRow}>
@@ -4771,14 +4781,14 @@ function AmMutasiPage({
   const totalTransactions = incoming.count + outgoing.count;
   const accountLabels = React.useMemo(
     () => ({
-      all: 'All accounts',
+      all: 'Semua akun',
       ...Object.fromEntries(accounts.map(account => [account._id, formatMutasiAccountOption(account)])),
     }),
     [accounts],
   );
   const deviceLabels = React.useMemo(
     () => ({
-      all: 'All devices',
+      all: 'Semua device',
       ...Object.fromEntries(devices.map(device => [device._id, device.name])),
     }),
     [devices],
@@ -4787,10 +4797,10 @@ function AmMutasiPage({
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <AmMetricCard label="Total Incoming" value={formatRupiah(incoming.total)} meta={`${incoming.count} mutasi`} />
-        <AmMetricCard label="Total Outgoing" value={formatRupiah(outgoing.total)} meta={`${outgoing.count} mutasi`} />
-        <AmMetricCard label="Net Balance" value={formatRupiah(netBalance)} meta="masuk - keluar" />
-        <AmMetricCard label="Total Transactions" value={String(totalTransactions)} meta="summary count" />
+        <AmMetricCard label="Total Masuk" value={formatRupiah(incoming.total)} meta={`${incoming.count} mutasi`} />
+        <AmMetricCard label="Total Keluar" value={formatRupiah(outgoing.total)} meta={`${outgoing.count} mutasi`} />
+        <AmMetricCard label="Saldo Bersih" value={formatRupiah(netBalance)} meta="masuk - keluar" />
+        <AmMetricCard label="Total Transaksi" value={String(totalTransactions)} meta="jumlah ringkasan" />
         <AmSegmentGroup
           active={type}
           items={['all', 'masuk', 'keluar']}
@@ -4814,15 +4824,15 @@ function AmMutasiPage({
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Type</Text>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Account</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Amount</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Description</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Tipe</Text>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Akun</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Nominal</Text>
+          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]} />
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi AM..." emptyText="No mutations found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi AM..." emptyText="Mutasi tidak ditemukan" />
         {mutasi.map(item => (
           <View key={item._id} style={styles.tableRow}>
             <View style={styles.typeCol}>
@@ -4845,7 +4855,7 @@ function AmMutasiPage({
             <View style={styles.actionCol}>
               <KolamButton
                 accessibilityLabel={`AM Mutasi Detail ${item._id}`}
-                label={selectedMutasiId === item._id ? 'Close' : 'Detail'}
+                label={selectedMutasiId === item._id ? 'Tutup' : 'Detail'}
                 intent="outline"
                 size="sm"
                 onPress={() => selectMutasi(item)}
@@ -4856,13 +4866,13 @@ function AmMutasiPage({
         {total > limit ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {rangeFrom} to {rangeTo} of {total} items
+              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Mutasi Previous Page"
                 disabled={page <= 1 || isLoading}
-                label="Previous"
+                label="Sebelumnya"
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.max(1, current - 1))}
@@ -4870,7 +4880,7 @@ function AmMutasiPage({
               <KolamButton
                 accessibilityLabel="AM Mutasi Next Page"
                 disabled={page >= totalPages || isLoading}
-                label={`Page ${page}/${totalPages}`}
+                label={`Halaman ${page}/${totalPages}`}
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.min(totalPages, current + 1))}
@@ -4910,7 +4920,7 @@ function AmMutasiDetailPanel({
     <View style={styles.panel}>
       <View style={styles.detailHeader}>
         <View>
-          <Text style={styles.panelTitle}>Mutation Detail</Text>
+          <Text style={styles.panelTitle}>Detail Mutasi</Text>
           <Text style={styles.rowMeta}>{mutasi?._id ?? 'Memuat detail mutasi...'}</Text>
         </View>
         {mutasi ? (
@@ -4918,7 +4928,7 @@ function AmMutasiDetailPanel({
             <KolamButton
               accessibilityLabel="AM Mutasi Back"
               intent="outline"
-              label="Back"
+              label="Kembali"
               size="sm"
               onPress={onBack}
             />
@@ -4934,15 +4944,15 @@ function AmMutasiDetailPanel({
       {mutasi ? (
         <View style={styles.detailList}>
           <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Account</Text>
+            <Text style={styles.rowMeta}>Akun</Text>
             <Text style={styles.cellText}>{formatBankAccount(mutasi.accountId)} / {formatAccountNumber(mutasi.accountId)}</Text>
           </View>
           <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Amount</Text>
+            <Text style={styles.rowMeta}>Nominal</Text>
             <Text style={styles.cellText}>{formatMutasiSignedAmount(mutasi)}</Text>
           </View>
           <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Description</Text>
+            <Text style={styles.rowMeta}>Deskripsi</Text>
             <Text style={styles.cellText}>{mutasi.description || '-'}</Text>
           </View>
           <View style={styles.detailListRow}>
@@ -4958,16 +4968,16 @@ function AmMutasiDetailPanel({
             <Text style={styles.monoText}>{mutasi.notificationHash || '-'}</Text>
           </View>
           <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Detected</Text>
+            <Text style={styles.rowMeta}>Terdeteksi</Text>
             <Text style={styles.cellText}>{formatAmDate(mutasi.detectedAt)}</Text>
           </View>
           <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Updated</Text>
+            <Text style={styles.rowMeta}>Diupdate</Text>
             <Text style={styles.cellText}>{formatAmDate(mutasi.updatedAt)}</Text>
           </View>
           <View style={styles.detailListRow}>
             <Text style={styles.rowMeta}>Receipt</Text>
-            <Text style={receiptUrl ? styles.monoText : styles.cellText}>{receiptUrl ?? 'Receipt not available'}</Text>
+            <Text style={receiptUrl ? styles.monoText : styles.cellText}>{receiptUrl ?? 'Receipt tidak tersedia'}</Text>
           </View>
         </View>
       ) : null}
@@ -5019,15 +5029,15 @@ function AmTransferActions({
   }> = [];
 
   if (transfer.status === 'pending') {
-    actions.push({id: 'cancel', label: 'Cancel', intent: 'outline'});
+    actions.push({id: 'cancel', label: 'Batal', intent: 'outline'});
   }
 
   if (transfer.status === 'processing') {
-    actions.push({id: 'force-fail', label: 'Force Fail', intent: 'danger'});
+    actions.push({id: 'force-fail', label: 'Paksa Gagal', intent: 'danger'});
   }
 
   if (transfer.status === 'failed') {
-    actions.push({id: 'retry', label: 'Retry', intent: 'warning'});
+    actions.push({id: 'retry', label: 'Ulangi', intent: 'warning'});
   }
 
   if (!actions.length) {
@@ -5039,7 +5049,7 @@ function AmTransferActions({
       {actions.map(action => (
         <KolamButton
           key={action.id}
-          accessibilityLabel={`AM Transfer ${action.label} ${transfer._id}`}
+          accessibilityLabel={`AM Transfer ${formatAmTaskActionAccessibilityLabel(action.id)} ${transfer._id}`}
           disabled={disabled}
           intent={action.intent}
           label={disabled ? '...' : action.label}
@@ -5200,10 +5210,10 @@ function AmWebhooksPage() {
       };
       if (editingConfigId) {
         await updateAmWebhookConfig(editingConfigId, payload);
-        setActionMessage('Webhook updated.');
+        setActionMessage('Webhook diupdate.');
       } else {
         await createAmWebhookConfig(payload);
-        setActionMessage('Webhook registered.');
+        setActionMessage('Webhook didaftarkan.');
       }
       resetWebhookForm();
       await fetchWebhooks();
@@ -5229,7 +5239,7 @@ function AmWebhooksPage() {
       await updateAmWebhookConfig(config._id, {
         status: config.status === 'active' ? 'inactive' : 'active',
       });
-      setActionMessage(config.status === 'active' ? 'Webhook deactivated.' : 'Webhook activated.');
+      setActionMessage(config.status === 'active' ? 'Webhook dinonaktifkan.' : 'Webhook diaktifkan.');
       await fetchWebhooks();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal mengubah status webhook.');
@@ -5243,7 +5253,7 @@ function AmWebhooksPage() {
       setActingConfigId(config._id);
       setActionMessage(null);
       await deleteAmWebhookConfig(config._id);
-      setActionMessage('Webhook deleted.');
+      setActionMessage('Webhook dihapus.');
       if (editingConfigId === config._id) resetWebhookForm();
       await fetchWebhooks();
     } catch (nextError) {
@@ -5258,7 +5268,7 @@ function AmWebhooksPage() {
       setIsTestingPing(true);
       setActionMessage(null);
       const result = await testAmWebhookPing();
-      setActionMessage(result.message || 'Test ping dispatched.');
+      setActionMessage(result.message || 'Test ping dikirim.');
       await fetchWebhooks();
       if (testPingRefreshTimerRef.current) {
         clearTimeout(testPingRefreshTimerRef.current);
@@ -5286,14 +5296,14 @@ function AmWebhooksPage() {
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <AmMetricCard label="Endpoints" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} active`} />
-        <AmMetricCard label="Delivery Logs" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} failed on page`} />
+        <AmMetricCard label="Endpoint" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} aktif`} />
+        <AmMetricCard label="Log Pengiriman" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} gagal di halaman`} />
         <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading || isWebhookActionLocked} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
         <KolamButton disabled={isWebhookActionLocked} label={isTestingPing ? 'Testing...' : 'Test Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
         <KolamButton
           accessibilityLabel="AM Webhook Register"
           disabled={isWebhookActionLocked}
-          label="Register Webhook"
+          label="Daftar Webhook"
           intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
           muted={isWebhookActionLocked}
           size="sm"
@@ -5308,11 +5318,11 @@ function AmWebhooksPage() {
       ) : null}
       {isWebhookFormOpen ? (
         <View style={styles.panel}>
-          <Text style={styles.panelTitle}>{editingConfigId ? 'Edit Webhook' : 'Register Webhook'}</Text>
+          <Text style={styles.panelTitle}>{editingConfigId ? 'Edit Webhook' : 'Daftar Webhook'}</Text>
           <View style={styles.formGrid}>
             <AmTextInput label="URL" placeholder="https://your-server.com/webhook" value={formUrl} onChangeText={setFormUrl} />
             <AmTextInput label="Secret" placeholder={editingConfigId ? 'Kosongkan untuk secret lama' : 'Minimal 16 karakter untuk HMAC'} value={formSecret} onChangeText={setFormSecret} />
-            <AmTextInput label="Description" placeholder="e.g. DA Inventory Backend" value={formDescription} onChangeText={setFormDescription} />
+            <AmTextInput label="Deskripsi" placeholder="contoh DA Inventory Backend" value={formDescription} onChangeText={setFormDescription} />
           </View>
           <View style={styles.eventGrid}>
             {events.map(event => (
@@ -5331,35 +5341,42 @@ function AmWebhooksPage() {
               accessibilityLabel="AM Webhook Save"
               disabled={isWebhookActionLocked}
               intent="warning"
-              label={isSubmitting ? 'Saving...' : editingConfigId ? 'Save Webhook' : 'Register'}
+              label={isSubmitting ? 'Menyimpan...' : editingConfigId ? 'Simpan Webhook' : 'Daftar'}
               muted={isWebhookActionLocked}
               size="sm"
               onPress={saveWebhook}
             />
-            <KolamButton disabled={isWebhookActionLocked} label={editingConfigId ? 'Cancel Edit' : 'Cancel'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={resetWebhookForm} />
+            <KolamButton disabled={isWebhookActionLocked} label={editingConfigId ? 'Batal Edit' : 'Batal'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={resetWebhookForm} />
           </View>
         </View>
       ) : null}
       <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Endpoints</Text>
-        <AmLoadingOrEmpty isLoading={isLoading} items={configs} loadingText="Memuat webhook configs..." emptyText="No webhooks registered" />
+        <Text style={styles.panelTitle}>Endpoint</Text>
+        <AmLoadingOrEmpty isLoading={isLoading} items={configs} loadingText="Memuat config webhook..." emptyText="Webhook belum terdaftar" />
         <View style={styles.cardGrid}>
           {configs.map(config => (
             <View key={config._id} style={styles.hardwareCard}>
               <Text style={styles.rowTitle} numberOfLines={1}>{config.description || config.url}</Text>
               <Text style={styles.rowMeta} numberOfLines={2}>{config.url}</Text>
-              <Text style={styles.rowMeta}>{config.events.length} events - {config.failCount} fail</Text>
-              <Text style={styles.rowMeta}>Last delivered: {formatAmDate(config.lastDeliveredAt)}</Text>
+              <Text style={styles.rowMeta}>{config.events.length} event - {config.failCount} gagal</Text>
+              <Text style={styles.rowMeta}>Terakhir terkirim: {formatAmDate(config.lastDeliveredAt)}</Text>
               <Text style={styles.rowMeta}>
                 Secret: {formatWebhookSecretStatus(config)}
               </Text>
               <AmStatusChip label={config.status} tone={config.status === 'active' ? 'success' : 'muted'} />
               <View style={styles.inlineActions}>
-                <KolamEditButton disabled={isWebhookActionLocked} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={() => editWebhook(config)} />
+                <KolamEditButton
+                  accessibilityLabel={`AM Webhook Edit ${config._id}`}
+                  disabled={isWebhookActionLocked}
+                  intent="outline"
+                  muted={isWebhookActionLocked}
+                  size="sm"
+                  onPress={() => editWebhook(config)}
+                />
                 <KolamButton
                   accessibilityLabel={`AM Webhook Toggle ${config._id}`}
                   disabled={isWebhookActionLocked}
-                  label={actingConfigId === config._id ? '...' : config.status === 'active' ? 'Deactivate' : 'Activate'}
+                  label={actingConfigId === config._id ? '...' : config.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
                   intent="warning"
                   muted={isWebhookActionLocked}
                   size="sm"
@@ -5368,7 +5385,7 @@ function AmWebhooksPage() {
                 <KolamButton
                   accessibilityLabel={`AM Webhook Delete ${config._id}`}
                   disabled={isWebhookActionLocked}
-                  label={actingConfigId === config._id ? '...' : 'Delete'}
+                  label={actingConfigId === config._id ? '...' : 'Hapus'}
                   intent="danger"
                   muted={isWebhookActionLocked}
                   size="sm"
@@ -5391,11 +5408,11 @@ function AmWebhooksPage() {
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Event</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>URL</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Duration</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Time</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.amountCol]}>Durasi</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat webhook logs..." emptyText="No webhook logs yet" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat log webhook..." emptyText="Log webhook belum ada" />
         {logs.map(log => (
           <View key={log._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.event}</Text>
@@ -5409,7 +5426,7 @@ function AmWebhooksPage() {
               <KolamButton
                 accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
                 intent="outline"
-                label={selectedWebhookLog?._id === log._id ? 'Close' : 'Detail'}
+                label={selectedWebhookLog?._id === log._id ? 'Tutup' : 'Detail'}
                 size="sm"
                 onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
               />
@@ -5419,14 +5436,14 @@ function AmWebhooksPage() {
         {logTotal > 0 ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {webhookLogRangeFrom} to {webhookLogRangeTo} of {logTotal} items
+              Menampilkan {webhookLogRangeFrom}-{webhookLogRangeTo} dari {logTotal} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Webhook Logs Previous Page"
                 disabled={logPage <= 1 || isLoading}
                 intent="outline"
-                label="Previous"
+                label="Sebelumnya"
                 muted={logPage <= 1 || isLoading}
                 size="sm"
                 onPress={() => setLogPage(current => Math.max(1, current - 1))}
@@ -5435,7 +5452,7 @@ function AmWebhooksPage() {
                 accessibilityLabel="AM Webhook Logs Next Page"
                 disabled={logPage >= webhookLogTotalPages || isLoading}
                 intent="outline"
-                label={`Page ${logPage}/${webhookLogTotalPages}`}
+                label={`Halaman ${logPage}/${webhookLogTotalPages}`}
                 muted={logPage >= webhookLogTotalPages || isLoading}
                 size="sm"
                 onPress={() => setLogPage(current => Math.min(webhookLogTotalPages, current + 1))}
@@ -5456,7 +5473,7 @@ function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
     <View style={styles.panel}>
       <View style={styles.panelHeaderRow}>
         <View>
-          <Text style={styles.panelTitle}>Webhook Log Detail</Text>
+          <Text style={styles.panelTitle}>Detail Log Webhook</Text>
           <Text style={styles.panelText}>{log.event}</Text>
         </View>
         <AmStatusChip
@@ -5465,15 +5482,15 @@ function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
         />
       </View>
       <View style={styles.detailGrid}>
-        <AmDetailLine label="Direction" value={log.direction} />
+        <AmDetailLine label="Arah" value={log.direction} />
         <AmDetailLine label="Endpoint" value={endpoint} />
         <AmDetailLine label="Config" value={log.configId?.description || log.configId?._id || '-'} />
-        <AmDetailLine label="Duration" value={`${log.duration} ms`} />
-        <AmDetailLine label="Created" value={formatAmDate(log.createdAt)} />
+        <AmDetailLine label="Durasi" value={`${log.duration} ms`} />
+        <AmDetailLine label="Dibuat" value={formatAmDate(log.createdAt)} />
         <AmDetailLine label="Error" value={log.error || '-'} />
       </View>
-      <AmJsonPanel title="Request Body" value={log.requestBody ?? {}} />
-      <AmJsonPanel title="Response Body" value={log.responseBody ?? {}} />
+      <AmJsonPanel title="Body Request" value={log.requestBody ?? {}} />
+      <AmJsonPanel title="Body Response" value={log.responseBody ?? {}} />
     </View>
   );
 }
@@ -5674,7 +5691,7 @@ function AmUsersPage() {
     return (
       <View style={styles.pageStack}>
         <View style={styles.emptyPanel}>
-          <Text style={styles.panelTitle}>Users tidak tersedia</Text>
+          <Text style={styles.panelTitle}>Pengguna tidak tersedia</Text>
         </View>
       </View>
     );
@@ -5686,14 +5703,14 @@ function AmUsersPage() {
         <KolamSearchField
           value={search}
           onChangeText={handleUserSearchChange}
-          placeholder="Search by name or username..."
+          placeholder="Cari nama atau username..."
           containerStyle={styles.taskSearch}
           trailingLabel={`${total} user`}
         />
         {canCreateUser && !isCreateUserFormOpen && !editingUserId ? (
           <KolamButton
             accessibilityLabel="AM User Create"
-            label="Create User"
+          label="Buat User"
             size="sm"
             onPress={() => {
               resetUserForm();
@@ -5703,7 +5720,7 @@ function AmUsersPage() {
         ) : null}
         <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
       </View>
-      <AmInlineError title="Users AM belum bisa dibaca" error={error} />
+      <AmInlineError title="Pengguna AM belum bisa dibaca" error={error} />
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
@@ -5719,7 +5736,7 @@ function AmUsersPage() {
               accessibilityLabel={`AM User Confirm Delete ${deletingUser._id}`}
               disabled={actingUserId === deletingUser._id}
               intent="danger"
-              label={actingUserId === deletingUser._id ? '...' : 'Delete'}
+              label={actingUserId === deletingUser._id ? '...' : 'Hapus'}
               muted={actingUserId === deletingUser._id}
               size="sm"
               onPress={() => removeUser(deletingUser)}
@@ -5728,7 +5745,7 @@ function AmUsersPage() {
               accessibilityLabel="AM User Cancel Delete"
               disabled={actingUserId === deletingUser._id}
               intent="outline"
-              label="Cancel"
+              label="Batal"
               muted={actingUserId === deletingUser._id}
               size="sm"
               onPress={() => setDeletingUser(null)}
@@ -5739,11 +5756,11 @@ function AmUsersPage() {
       {canShowUserForm ? (
         <View style={styles.tablePanel}>
           <View style={styles.formGrid}>
-            <AmTextInput label="Full Name" placeholder="e.g. John Doe" value={formFullName} onChangeText={setFormFullName} />
-            <AmTextInput label="Username" placeholder="e.g. johndoe" value={formUsername} onChangeText={setFormUsername} />
+            <AmTextInput label="Nama Lengkap" placeholder="contoh John Doe" value={formFullName} onChangeText={setFormFullName} />
+            <AmTextInput label="Username" placeholder="contoh johndoe" value={formUsername} onChangeText={setFormUsername} />
             <AmTextInput
               label="Password"
-              placeholder={editingUserId ? 'Kosongkan untuk password lama' : 'Min 8 chars, uppercase, lowercase, digit, special'}
+              placeholder={editingUserId ? 'Kosongkan untuk password lama' : 'Min 8 karakter, huruf besar, huruf kecil, angka, simbol'}
               secureTextEntry
               value={formPassword}
               onChangeText={setFormPassword}
@@ -5772,7 +5789,7 @@ function AmUsersPage() {
               <KolamButton
                 accessibilityLabel="AM User Save"
                 disabled={isSubmitting}
-                label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Save' : 'Create')}
+                label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Simpan' : 'Buat')}
                 muted={isSubmitting}
                 size="sm"
                 onPress={saveUser}
@@ -5780,7 +5797,7 @@ function AmUsersPage() {
               {editingUserId ? (
                 <KolamButton
                   accessibilityLabel="AM User Cancel Edit"
-                  label="Cancel"
+                  label="Batal"
                   intent="outline"
                   size="sm"
                   onPress={resetUserForm}
@@ -5792,16 +5809,16 @@ function AmUsersPage() {
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Full Name</Text>
+          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Nama Lengkap</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Role</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Created</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Action</Text>
+          <Text style={[styles.tableHeaderText, styles.dateCol]}>Dibuat</Text>
+          <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat users AM..." emptyText="No users found" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat user AM..." emptyText="User tidak ditemukan" />
         {!isLoading && !users.length ? (
           <Text style={styles.rowMeta}>
-            {search.trim() ? 'Try a different search term.' : 'Create a user to get started.'}
+            {search.trim() ? 'Coba kata pencarian lain.' : 'Buat user untuk mulai.'}
           </Text>
         ) : null}
         {users.map(user => (
@@ -5810,7 +5827,7 @@ function AmUsersPage() {
             <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>@{user.username}</Text>
             <View style={styles.recipientCol}>
               <AmStatusChip
-                label={user.role?.name ?? 'Unknown'}
+                label={user.role?.name ?? 'Tidak diketahui'}
                 tone={getUserRoleTone(user.role?.name)}
               />
             </View>
@@ -5819,6 +5836,7 @@ function AmUsersPage() {
               <View style={styles.inlineActions}>
                 {canUpdateUser ? (
                   <KolamEditButton
+                    accessibilityLabel={`AM User Edit ${user._id}`}
                     intent="outline"
                     size="sm"
                     onPress={() => editUser(user)}
@@ -5828,7 +5846,7 @@ function AmUsersPage() {
                   <KolamButton
                     accessibilityLabel={`AM User Delete ${user._id}`}
                     disabled={actingUserId === user._id}
-                    label={actingUserId === user._id ? '...' : 'Delete'}
+                    label={actingUserId === user._id ? '...' : 'Hapus'}
                     intent="danger"
                     muted={actingUserId === user._id}
                     size="sm"
@@ -5842,14 +5860,14 @@ function AmUsersPage() {
         {total ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {rangeFrom} to {rangeTo} of {total} items
+              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Users Previous Page"
                 disabled={page <= 1 || isLoading}
                 intent="outline"
-                label="Prev"
+                label="Sebelumnya"
                 muted={page <= 1 || isLoading}
                 size="sm"
                 onPress={() => setPage(current => Math.max(1, current - 1))}
@@ -5858,7 +5876,7 @@ function AmUsersPage() {
                 accessibilityLabel="AM Users Next Page"
                 disabled={page >= totalPages || isLoading}
                 intent="outline"
-                label={`Page ${page}/${totalPages}`}
+                label={`Halaman ${page}/${totalPages}`}
                 muted={page >= totalPages || isLoading}
                 size="sm"
                 onPress={() => setPage(current => Math.min(totalPages, current + 1))}
@@ -6058,7 +6076,7 @@ function AmActivityLogPage() {
   if (!accessLoaded) {
     return (
       <View style={styles.pageStack}>
-        <Text style={styles.loadingText}>Memuat activity log...</Text>
+        <Text style={styles.loadingText}>Memuat log aktivitas...</Text>
       </View>
     );
   }
@@ -6076,12 +6094,12 @@ function AmActivityLogPage() {
   return (
     <View style={styles.pageStack}>
       <View style={styles.filterBar}>
-        <AmMetricCard label="Window" value={`${stats?.days ?? 7}d`} meta={stats?.since ? formatAmDate(stats.since) : 'stats'} />
-        <AmMetricCard label="API / Page" value={`${apiCount} / ${pageCount}`} meta="7d type count" />
-        <AmMetricCard label="Success" value={String(successCount)} meta={`${failedCount} failed`} />
+        <AmMetricCard label="Periode" value={`${stats?.days ?? 7} hari`} meta={stats?.since ? formatAmDate(stats.since) : 'statistik'} />
+        <AmMetricCard label="API / Halaman" value={`${apiCount} / ${pageCount}`} meta="jumlah tipe 7 hari" />
+        <AmMetricCard label="Berhasil" value={String(successCount)} meta={`${failedCount} gagal`} />
       </View>
       <View style={styles.emptyPanel}>
-        <Text style={styles.panelTitle}>Activity Log</Text>
+        <Text style={styles.panelTitle}>Log Aktivitas</Text>
         <Text style={styles.panelText}>
           Catatan page/API request AM. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.
         </Text>
@@ -6154,11 +6172,11 @@ function AmActivityLogPage() {
           </View>
         </View>
       ) : null}
-      <AmInlineError title="Activity Log AM belum bisa dibaca" error={error} />
+      <AmInlineError title="Log Aktivitas AM belum bisa dibaca" error={error} />
       {stats && (stats.topUsers.length || stats.topPaths.length) ? (
         <View style={styles.panelGrid}>
-          <AmStatsListPanel emptyText="Belum ada user" items={stats.topUsers} title="Top Users" />
-          <AmStatsListPanel emptyText="Belum ada path" items={stats.topPaths} title="Top Paths" />
+          <AmStatsListPanel emptyText="Belum ada user" items={stats.topUsers} title="User Teratas" />
+          <AmStatsListPanel emptyText="Belum ada path" items={stats.topPaths} title="Path Teratas" />
         </View>
       ) : null}
       <View style={styles.tablePanel}>
@@ -6166,19 +6184,19 @@ function AmActivityLogPage() {
           <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>User</Text>
           <Text style={[styles.tableHeaderText, styles.typeCol]}>Tipe</Text>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Method</Text>
+          <Text style={[styles.tableHeaderText, styles.typeCol]}>Metode</Text>
           <Text style={[styles.tableHeaderText, styles.recipientCol]}>Path</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>IP</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Durasi</Text>
           <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
         </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat activity logs..." emptyText="Tidak ada log" />
+        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat log aktivitas..." emptyText="Tidak ada log" />
         {logs.map(log => (
           <View key={log._id} style={styles.tableRow}>
             <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.timestamp)}</Text>
             <View style={styles.accountCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{log.username ?? log.userId?.username ?? 'anonymous'}</Text>
+              <Text style={styles.cellText} numberOfLines={1}>{log.username ?? log.userId?.username ?? 'anonim'}</Text>
               <Text style={styles.rowMeta} numberOfLines={1}>{log.userId?.fullName ?? '-'}</Text>
             </View>
             <View style={styles.typeCol}>
@@ -6229,13 +6247,13 @@ function AmActivityLogPage() {
         {total > 0 ? (
           <View style={styles.paginationBar}>
             <Text style={styles.paginationText}>
-              Showing {rangeFrom} to {rangeTo} of {total} items
+              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
             </Text>
             <View style={styles.inlineActions}>
               <KolamButton
                 accessibilityLabel="AM Activity Logs Previous Page"
                 disabled={page <= 1 || isLoading}
-                label="Previous"
+                label="Sebelumnya"
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.max(1, current - 1))}
@@ -6243,7 +6261,7 @@ function AmActivityLogPage() {
               <KolamButton
                 accessibilityLabel="AM Activity Logs Next Page"
                 disabled={page >= totalPages || isLoading}
-                label={`Page ${page}/${totalPages}`}
+                label={`Halaman ${page}/${totalPages}`}
                 intent="outline"
                 size="sm"
                 onPress={() => setPage(current => Math.min(totalPages, current + 1))}
@@ -6328,7 +6346,7 @@ function AmActivityLogDetailPanel({
     <View style={styles.panel}>
       <View style={styles.detailHeader}>
         <View>
-          <Text style={styles.panelTitle}>Activity Detail</Text>
+          <Text style={styles.panelTitle}>Detail Aktivitas</Text>
           <Text style={styles.rowMeta}>{formatAmDate(log.timestamp)}</Text>
         </View>
         <View style={styles.inlineActions}>
@@ -6345,15 +6363,15 @@ function AmActivityLogDetailPanel({
       </View>
       <View style={styles.detailList}>
         <View style={styles.detailListRow}>
-          <Text style={styles.tableHeaderText}>Timestamp</Text>
+          <Text style={styles.tableHeaderText}>Waktu</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDate(log.timestamp)}</Text>
         </View>
         <View style={styles.detailListRow}>
           <Text style={styles.tableHeaderText}>User</Text>
-          <Text style={[styles.cellText, styles.recipientCol]}>{log.username ?? log.userId?.fullName ?? 'anonymous'}</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.username ?? log.userId?.fullName ?? 'anonim'}</Text>
         </View>
         <View style={styles.detailListRow}>
-          <Text style={styles.tableHeaderText}>Type</Text>
+          <Text style={styles.tableHeaderText}>Tipe</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{formatActivityLogTypeLabel(log.type)}</Text>
         </View>
         <View style={styles.detailListRow}>
@@ -6362,10 +6380,10 @@ function AmActivityLogDetailPanel({
         </View>
         <View style={styles.detailListRow}>
           <Text style={styles.tableHeaderText}>Status</Text>
-          <Text style={[styles.cellText, styles.recipientCol]}>{log.statusCode ? `${log.statusCode} (${log.status})` : log.status}</Text>
+          <Text style={[styles.cellText, styles.recipientCol]}>{log.statusCode ? `${log.statusCode} (${formatAmDisplayLabel(log.status)})` : formatAmDisplayLabel(log.status)}</Text>
         </View>
         <View style={styles.detailListRow}>
-          <Text style={styles.tableHeaderText}>Action</Text>
+          <Text style={styles.tableHeaderText}>Aksi</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{log.action || '-'}</Text>
         </View>
         <View style={styles.detailListRow}>
@@ -6373,7 +6391,7 @@ function AmActivityLogDetailPanel({
           <Text style={[styles.cellText, styles.recipientCol]}>{log.ip || '-'}</Text>
         </View>
         <View style={styles.detailListRow}>
-          <Text style={styles.tableHeaderText}>Duration</Text>
+          <Text style={styles.tableHeaderText}>Durasi</Text>
           <Text style={[styles.cellText, styles.recipientCol]}>{formatAmDuration(log.duration)}</Text>
         </View>
         <View style={styles.detailListRow}>
@@ -6407,13 +6425,13 @@ function AmNotFoundPage({
   return (
     <View style={styles.emptyPanel}>
       <Text style={styles.panelTitle}>404</Text>
-      <Text style={styles.panelTitle}>Page not found</Text>
+      <Text style={styles.panelTitle}>Halaman tidak ditemukan</Text>
       <Text style={styles.panelText}>
-        The page you are looking for doesn't exist or has been moved.
+        Halaman yang dicari tidak ada atau sudah dipindahkan.
       </Text>
       <KolamButton
         accessibilityLabel="AM Back to Dashboard"
-        label="Back to Dashboard"
+        label="Kembali ke Beranda"
         size="sm"
         onPress={openDashboard}
       />
@@ -6513,7 +6531,7 @@ function AmStatusChip({
         tone === 'info' && styles.statusChipInfo,
         tone === 'danger' && styles.statusChipDanger,
       ]}>
-      <Text style={styles.statusChipText} numberOfLines={1}>{titleCase(label)}</Text>
+      <Text style={styles.statusChipText} numberOfLines={1}>{formatAmDisplayLabel(label)}</Text>
     </View>
   );
 }
@@ -6567,28 +6585,63 @@ function AmSegmentGroup({
       {items.map(item => (
         <KolamInteractionFrame
           key={item}
-          accessibilityLabel={`AM Segment ${labels[item] ?? titleCase(item)}`}
+          accessibilityLabel={`AM Segment ${formatAmDisplayLabel(labels[item] ?? item)}`}
           onPress={() => onSelect(item)}
           style={[styles.segment, active === item && styles.segmentActive]}>
-          <Text style={[styles.segmentText, active === item && styles.segmentTextActive]}>{labels[item] ?? titleCase(item)}</Text>
+          <Text style={[styles.segmentText, active === item && styles.segmentTextActive]}>{formatAmDisplayLabel(labels[item] ?? item)}</Text>
         </KolamInteractionFrame>
       ))}
     </ScrollView>
   );
 }
 
+function formatAmDisplayLabel(label: string) {
+  const normalized = label.trim().toLowerCase();
+  const labels: Record<string, string> = {
+    active: 'Aktif',
+    inactive: 'Nonaktif',
+    blocked: 'Diblokir',
+    cancelled: 'Dibatalkan',
+    connected: 'Tersambung',
+    disconnected: 'Terputus',
+    failed: 'Gagal',
+    failure: 'Gagal',
+    pending: 'Menunggu',
+    processing: 'Diproses',
+    queued: 'Antre',
+    ready: 'Siap',
+    running: 'Berjalan',
+    stopped: 'Berhenti',
+    success: 'Berhasil',
+    unauthorized: 'Tidak diotorisasi',
+    warning: 'Peringatan',
+    page: 'Halaman',
+    api: 'API',
+    outgoing: 'Keluar',
+    incoming: 'Masuk',
+  };
+
+  return labels[normalized] ?? label;
+}
+
+function formatAmTaskActionAccessibilityLabel(action: 'cancel' | 'retry' | 'force-fail') {
+  if (action === 'cancel') return 'Cancel';
+  if (action === 'retry') return 'Retry';
+  return 'Force Fail';
+}
+
 function formatServiceDeviceMeta(device: AmServiceAccountDeviceRef | null) {
-  if (!device || typeof device !== 'object') return 'No device assigned';
-  if (device.connectionType === 'tcp') return device.tcpAddress ?? 'TCP device';
-  if (device.connectionType === 'usb') return device.udid ?? 'USB device';
+  if (!device || typeof device !== 'object') return 'Device belum ditugaskan';
+  if (device.connectionType === 'tcp') return device.tcpAddress ?? 'Device TCP';
+  if (device.connectionType === 'usb') return device.udid ?? 'Device USB';
   if (device.connectionType === 'browser') return 'Playwright';
-  return device.udid ?? device.tcpAddress ?? device.connectionType ?? 'Device linked';
+  return device.udid ?? device.tcpAddress ?? device.connectionType ?? 'Device terhubung';
 }
 
 function formatServiceDeviceLocation(device: AmServiceAccountDeviceRef | null) {
-  if (!device || typeof device !== 'object') return 'No location assigned';
+  if (!device || typeof device !== 'object') return 'Lokasi belum ditugaskan';
   const box = device.boxId;
-  if (!box || typeof box === 'string') return 'No location assigned';
+  if (!box || typeof box === 'string') return 'Lokasi belum ditugaskan';
   const rack = box.rackId;
   const rackName = rack && typeof rack === 'object' ? rack.name : null;
   return rackName ? `${box.name} / ${rackName}` : box.name;
@@ -6656,15 +6709,15 @@ function getAmServiceFieldProps(
     username: {label: 'Username', placeholder: 'username/email'},
     password: {label: 'Password', placeholder: 'password'},
     pin: {label: 'PIN', placeholder: 'PIN'},
-    accountNumber: {label: 'Account Number', placeholder: 'account number'},
-    phoneNumber: {label: 'Phone Number', placeholder: 'phone number'},
+    accountNumber: {label: 'Nomor akun', placeholder: 'nomor akun'},
+    phoneNumber: {label: 'Nomor HP', placeholder: 'nomor HP'},
   };
   const meta = AM_SERVICE_FIELD_META[platform]?.[field] ?? fallback[field];
   const isSecret = field === 'password' || field === 'pin';
 
   return {
     label: meta.label,
-    placeholder: editing && isSecret ? 'Leave empty to keep current password' : meta.placeholder,
+    placeholder: editing && isSecret ? 'Kosongkan untuk mempertahankan password lama' : meta.placeholder,
   };
 }
 
@@ -6696,7 +6749,7 @@ function buildWebServiceCredentials({
 
 function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
   if (!account || typeof account === 'string') return '-';
-  const label = account.label || account.name || account.platform || account.type || 'Account';
+  const label = account.label || account.name || account.platform || account.type || 'Akun';
   const accountNumber = account.accountNumber || account.account_number;
   const suffix = accountNumber ? ` - ${accountNumber}` : '';
   return `${label}${suffix}`;
@@ -6704,7 +6757,7 @@ function formatBankAccount(account: AmTransfer['accountId'] | AmMutasi['accountI
 
 function formatAccountLabel(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
   if (!account || typeof account === 'string') return '-';
-  return account.label || account.name || account.accountNumber || account.account_number || account.platform || account.type || 'Account';
+  return account.label || account.name || account.accountNumber || account.account_number || account.platform || account.type || 'Akun';
 }
 
 function formatAccountNumber(account: AmTransfer['accountId'] | AmMutasi['accountId']) {
@@ -6718,13 +6771,13 @@ function formatAccountType(account: AmTransfer['accountId'] | AmMutasi['accountI
 }
 
 function formatMutasiAccountOption(account: AmServiceAccount) {
-  const prefix = account.label || account.platform || 'Account';
+  const prefix = account.label || account.platform || 'Akun';
   return account.accountNumber ? `${prefix} - ${account.accountNumber}` : prefix;
 }
 
 function formatMutasiTypeLabel(type: AmMutasi['type']) {
-  if (type === 'masuk') return 'Incoming';
-  if (type === 'keluar') return 'Outgoing';
+  if (type === 'masuk') return 'Masuk';
+  if (type === 'keluar') return 'Keluar';
   return titleCase(type);
 }
 
@@ -6744,7 +6797,7 @@ function webhookLogMatchesTransfer(log: AmWebhookLog, transferId: string) {
 
 function formatWebhookSecretStatus(config: AmWebhookConfig) {
   if (config.secretMasked) return config.secretMasked;
-  return config.hasSecret ? 'configured' : 'not configured';
+  return config.hasSecret ? 'terkonfigurasi' : 'belum dikonfigurasi';
 }
 
 function formatDeviceRef(device: AmTransfer['deviceId'] | AmMutasi['deviceId']) {
@@ -7006,7 +7059,7 @@ function isDeviceInBox(device: AmDevice, box: AmBox) {
 }
 
 function formatDeviceBox(device: AmDevice) {
-  if (!device.boxId || typeof device.boxId === 'string') return 'No box';
+  if (!device.boxId || typeof device.boxId === 'string') return 'Box belum diisi';
   const rackName = device.boxId.rackId?.name;
   return rackName ? `${device.boxId.name} - ${rackName}` : device.boxId.name;
 }
