@@ -8126,9 +8126,12 @@ function formatRelativeTime(iso?: string | null) {
 
 const styles = StyleSheet.create({
   rail: {
+    alignSelf: 'stretch',
     width: 360,
     minWidth: 360,
     maxWidth: 360,
+    height: '100%',
+    minHeight: 0,
     backgroundColor: V.colors.bg,
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
