@@ -7257,7 +7257,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   dashboardWalletBodyWithArtwork: {
-    paddingRight: 110,
+    paddingRight: 78,
   },
   dashboardWalletHeader: {
     alignItems: 'flex-start',
@@ -7275,13 +7275,13 @@ const styles = StyleSheet.create({
     width: 40,
   },
   dashboardWalletArtwork: {
-    bottom: 0,
+    bottom: 14,
     justifyContent: 'center',
     opacity: 0.96,
     position: 'absolute',
-    right: -6,
-    top: 0,
-    width: 104,
+    right: 14,
+    top: 14,
+    width: 52,
   },
   dashboardWalletCopy: {
     flex: 1,
