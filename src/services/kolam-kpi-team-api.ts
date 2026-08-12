@@ -2,16 +2,37 @@ import {appConfig} from '../config/app';
 import {
   normalizeKolamKpiCharts,
   normalizeKolamKpiChatReviewPage,
+  normalizeKolamKpiLeaderboard,
+  normalizeKolamKpiMeSummary,
   normalizeKolamKpiTeamLeaderboard,
   normalizeKolamKpiTeamSummary,
   type KolamKpiChartsData,
   type KolamKpiChartGranularity,
   type KolamKpiChatReviewPage,
+  type KolamKpiLeaderboard,
+  type KolamKpiMeSummary,
   type KolamKpiTeamLeaderboard,
   type KolamKpiTeamQueryParams,
   type KolamKpiTeamSummary,
 } from '../domain/kolam-kpi';
 import {apiRequest} from '../lib/api-client';
+
+export async function fetchKolamKpiMeSummary(): Promise<KolamKpiMeSummary | null> {
+  const payload = await kolamRequest<unknown>('/kpi/me/summary');
+  return normalizeKolamKpiMeSummary(payload);
+}
+
+export async function fetchKolamKpiLeaderboard(
+  params: {period?: 'week' | 'month'; limit?: number} = {},
+): Promise<KolamKpiLeaderboard> {
+  const payload = await kolamRequest<unknown>('/kpi/leaderboard', {
+    query: {
+      period: params.period,
+      limit: params.limit ?? 3,
+    },
+  });
+  return normalizeKolamKpiLeaderboard(payload);
+}
 
 export async function fetchKolamKpiTeamSummary(
   params: KolamKpiTeamQueryParams = {},

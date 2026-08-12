@@ -9,6 +9,12 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
+import {
+  formatKolamKpiPoints,
+  kolamKpiLeaderboardRowLabel,
+  type KolamKpiLeaderboard,
+  type KolamKpiMeSummary,
+} from '../domain/kolam-kpi';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
   loadKolamPortalDataset,
@@ -18,6 +24,10 @@ import {
   type KolamPortalPayrollCommissionPeriod,
   type KolamPortalTaskRow,
 } from '../services/kolam-employee-portal-api';
+import {
+  fetchKolamKpiLeaderboard,
+  fetchKolamKpiMeSummary,
+} from '../services/kolam-kpi-team-api';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import {
@@ -209,14 +219,145 @@ function KpiPortalCard({
 }: {
   onRouteChange?: (route: string) => void;
 }) {
+  const [summary, setSummary] = React.useState<KolamKpiMeSummary | null>(null);
+  const [leaderboard, setLeaderboard] =
+    React.useState<KolamKpiLeaderboard | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [failed, setFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setFailed(false);
+    Promise.all([
+      fetchKolamKpiMeSummary(),
+      fetchKolamKpiLeaderboard({period: 'week', limit: 3}),
+    ])
+      .then(([nextSummary, nextLeaderboard]) => {
+        if (!alive) {
+          return;
+        }
+        setSummary(nextSummary);
+        setLeaderboard(nextLeaderboard);
+        setFailed(!nextSummary);
+      })
+      .catch(() => {
+        if (alive) {
+          setSummary(null);
+          setLeaderboard(null);
+          setFailed(true);
+        }
+      })
+      .finally(() => {
+        if (alive) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <PortalCard style={styles.col5} subtitle="Memuat..." title="KPI kinerja">
+        <View style={styles.kpiLoadingBar} />
+      </PortalCard>
+    );
+  }
+
+  if (failed || !summary) {
+    return (
+      <PortalCard style={styles.col5} title="KPI kinerja">
+        <EmptyLine text="Ringkasan KPI tidak tersedia." />
+      </PortalCard>
+    );
+  }
+
   return (
-    <PortalCard style={styles.col5} title="KPI">
-      <View style={styles.kpiBody}>
-        <Text style={styles.kpiValue}>KPI Tim</Text>
-        <Text style={styles.mutedText}>Ringkasan performa staf.</Text>
-        <KolamButton label="Buka KPI" onPress={() => onRouteChange?.('/portal/kpi')} />
+    <PortalCard
+      action={
+        <View style={styles.kpiActionRow}>
+          {summary.level ? (
+            <StatusBadge label={summary.level.label} value="level" />
+          ) : null}
+          <KolamButton
+            intent="plain"
+            label="Detail"
+            onPress={() => onRouteChange?.('/portal/kpi')}
+          />
+        </View>
+      }
+      style={styles.col5}
+      subtitle={summary.scoringEnabled ? summary.period.week : undefined}
+      title="KPI kinerja"
+    >
+      <View style={styles.kpiMetricRow}>
+        <View>
+          <Text style={styles.kpiMetricLabel}>Minggu ini</Text>
+          <Text style={styles.kpiWeekValue}>
+            {formatKolamKpiPoints(summary.weekPoints)}
+          </Text>
+          <DeltaLine delta={summary.weekDelta} />
+        </View>
+        <View>
+          <Text style={styles.kpiMetricLabel}>Bulan ini</Text>
+          <Text style={styles.kpiMonthValue}>
+            {formatKolamKpiPoints(summary.monthPoints)}
+          </Text>
+          {summary.rewardAmountRp ? (
+            <Text style={styles.smallMuted}>
+              Bonus level: Rp {formatNumber(summary.rewardAmountRp)}
+            </Text>
+          ) : null}
+        </View>
       </View>
+      {leaderboard?.rows.length ? (
+        <View style={styles.kpiLeaderboardBlock}>
+          <Text style={styles.kpiMetricLabel}>
+            Top 3 minggu ini
+            {leaderboard.me ? ` · Anda #${leaderboard.me.rank}` : ''}
+          </Text>
+          <View style={styles.kpiLeaderboardList}>
+            {leaderboard.rows.map(row => {
+              const isMe = leaderboard.me?.userId === row.userId;
+              return (
+                <View key={row.userId} style={styles.kpiLeaderboardRow}>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.kpiLeaderboardName,
+                      isMe ? styles.kpiLeaderboardMe : null,
+                    ]}
+                  >
+                    {row.rank}. {kolamKpiLeaderboardRowLabel(row)}
+                  </Text>
+                  <Text style={styles.kpiLeaderboardPoints}>
+                    {formatKolamKpiPoints(row.points)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+      {summary.message ? (
+        <Text style={styles.mutedText}>{summary.message}</Text>
+      ) : null}
     </PortalCard>
+  );
+}
+
+function DeltaLine({delta}: {delta: number}) {
+  if (delta === 0) {
+    return <Text style={styles.kpiDeltaMuted}>Sama dengan minggu lalu</Text>;
+  }
+  const sign = delta > 0 ? '+' : '';
+  return (
+    <Text style={[styles.kpiDelta, delta > 0 ? styles.kpiDeltaUp : styles.kpiDeltaDown]}>
+      {sign}
+      {delta} vs minggu lalu
+    </Text>
   );
 }
 
@@ -1017,14 +1158,90 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  kpiBody: {
-    alignItems: 'flex-start',
+  kpiActionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 8,
   },
-  kpiValue: {
+  kpiLoadingBar: {
+    backgroundColor: V.colors.mutedSoft,
+    borderRadius: 6,
+    height: 40,
+    width: '100%',
+  },
+  kpiMetricRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 24,
+  },
+  kpiMetricLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    lineHeight: 14,
+    textTransform: 'uppercase',
+  },
+  kpiWeekValue: {
     color: V.colors.fg,
-    fontSize: 18,
+    fontSize: 26,
     fontWeight: '800',
+    lineHeight: 30,
+  },
+  kpiMonthValue: {
+    color: V.colors.fg,
+    fontSize: 19,
+    fontWeight: '800',
+    lineHeight: 24,
+  },
+  kpiDelta: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  kpiDeltaMuted: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  kpiDeltaUp: {
+    color: V.colors.success,
+  },
+  kpiDeltaDown: {
+    color: V.colors.danger,
+  },
+  kpiLeaderboardBlock: {
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    gap: 4,
+    marginTop: 12,
+    paddingTop: 8,
+  },
+  kpiLeaderboardList: {
+    gap: 3,
+  },
+  kpiLeaderboardRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  kpiLeaderboardName: {
+    color: V.colors.fg,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    minWidth: 0,
+  },
+  kpiLeaderboardMe: {
+    color: V.colors.primary,
+    fontWeight: '700',
+  },
+  kpiLeaderboardPoints: {
+    color: V.colors.fg,
+    flexShrink: 0,
+    fontSize: 12,
+    lineHeight: 17,
   },
   attendanceBlock: {
     gap: 12,

@@ -282,6 +282,28 @@ export type KolamKpiTeamLeaderboard = {
   rows: KolamKpiLeaderboardRow[];
 };
 
+export type KolamKpiMeSummary = {
+  userId: string;
+  period: {day: string; week: string; month: string; year: string};
+  weekPoints: number;
+  monthPoints: number;
+  prevWeekPoints: number;
+  weekDelta: number;
+  level: {id: string; label: string; min: number; max: number | null} | null;
+  rewardAmountRp?: number;
+  scoringEnabled: boolean;
+  message?: string;
+  eventCount: number;
+};
+
+export type KolamKpiLeaderboard = KolamKpiTeamLeaderboard & {
+  me: {
+    userId: string;
+    points: number;
+    rank: number;
+  } | null;
+};
+
 export type KolamKpiChartsData = {
   granularity: KolamKpiChartGranularity | string;
   count: number;
@@ -391,6 +413,66 @@ export function normalizeKolamKpiTeamLeaderboard(
     rows: rowsRaw
       .map(normalizeLeaderboardRow)
       .filter((row): row is KolamKpiLeaderboardRow => row != null),
+  };
+}
+
+export function normalizeKolamKpiMeSummary(
+  payload: unknown,
+): KolamKpiMeSummary | null {
+  const data = asRecord(unwrapData(payload));
+  if (!data) {
+    return null;
+  }
+  const period = asRecord(data.period);
+  const level = asRecord(data.level);
+  return {
+    userId: getString(data, 'userId'),
+    period: {
+      day: getString(period, 'day'),
+      week: getString(period, 'week'),
+      month: getString(period, 'month'),
+      year: getString(period, 'year'),
+    },
+    weekPoints: coerceKolamKpiPoints(data.weekPoints),
+    monthPoints: coerceKolamKpiPoints(data.monthPoints),
+    prevWeekPoints: coerceKolamKpiPoints(data.prevWeekPoints),
+    weekDelta: coerceKolamKpiPoints(data.weekDelta),
+    level: level
+      ? {
+          id: getString(level, 'id'),
+          label: getString(level, 'label'),
+          min: coerceKolamKpiPoints(level.min),
+          max:
+            level.max == null
+              ? null
+              : coerceKolamKpiPoints(level.max),
+        }
+      : null,
+    rewardAmountRp:
+      data.rewardAmountRp == null
+        ? undefined
+        : coerceKolamKpiPoints(data.rewardAmountRp),
+    scoringEnabled: data.scoringEnabled !== false,
+    message: getString(data, 'message') || undefined,
+    eventCount: coerceKolamKpiPoints(data.eventCount),
+  };
+}
+
+export function normalizeKolamKpiLeaderboard(
+  payload: unknown,
+): KolamKpiLeaderboard {
+  const data = asRecord(unwrapData(payload));
+  const base = normalizeKolamKpiTeamLeaderboard(payload);
+  const me = asRecord(data?.me);
+  return {
+    ...base,
+    me: me
+      ? {
+          userId: getString(me, 'userId'),
+          points: coerceKolamKpiPoints(me.points),
+          rank: coerceKolamKpiPoints(me.rank),
+        }
+      : null,
   };
 }
 
