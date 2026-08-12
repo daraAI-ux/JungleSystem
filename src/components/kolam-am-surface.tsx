@@ -3777,7 +3777,7 @@ function AmHardwareBoxGrid({
         <Text style={[styles.tableHeaderText, styles.amountCol]}>Device</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
-        <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
+        <Text style={[styles.tableHeaderText, styles.hardwareActionCol]} />
       </View>
       {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
       {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rack ini</Text> : null}
@@ -3798,7 +3798,7 @@ function AmHardwareBoxGrid({
           <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>
             {box.description || 'No description'}
           </Text>
-          <View style={styles.actionCol}>
+          <View style={styles.hardwareActionCol}>
             <KolamTableRowActionMenu
               accessibilityLabel={`AM Hardware Box Actions ${box._id}`}
               actions={[
@@ -3842,7 +3842,7 @@ function AmHardwareDeviceList({
         <Text style={[styles.tableHeaderText, styles.brandCol]}>Merek</Text>
         <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
-        <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
+        <Text style={[styles.tableHeaderText, styles.hardwareActionCol]} />
       </View>
       <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat device AM..." emptyText="Device tidak ditemukan" />
       {devices.slice(0, 40).map(device => (
@@ -3862,7 +3862,7 @@ function AmHardwareDeviceList({
           <View style={styles.statusCol}>
             <AmStatusChip label={device.adbStatus ?? 'disconnected'} tone={getAdbTone(device.adbStatus)} />
           </View>
-          <View style={styles.actionCol}>
+          <View style={styles.hardwareActionCol}>
             <KolamTableRowActionMenu
               accessibilityLabel={`AM Hardware Device Actions ${device._id}`}
               actions={[
@@ -8813,6 +8813,13 @@ const styles = StyleSheet.create({
   actionCol: {
     flex: 1.2,
     minWidth: 0,
+  },
+  hardwareActionCol: {
+    alignItems: 'flex-end',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 44,
+    width: 44,
   },
   deviceCol: {
     flex: 1.2,
