@@ -20,11 +20,18 @@ import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 
 const KOLAM_BUTTON_VISUAL = getKolamButtonVisualContract();
-const KOLAM_NEW_BUTTON_LABEL = 'Baru';
 const KOLAM_NEW_BUTTON_ICON_XML = KOLAM_NEW_BUTTON_ICON_SVG.replace(
   /#000000/g,
   V.colors.success,
 );
+const KOLAM_ADD_BUTTON_LABEL_PREFIXES = [
+  'add',
+  'baru',
+  'buat',
+  'create',
+  'new',
+  'tambah',
+] as const;
 const KOLAM_COMPACT_BUTTON_VISUAL: Record<
   KolamButtonSize,
   {
@@ -87,7 +94,7 @@ export function KolamButton({
   const visualMetrics = getButtonVisualMetrics(size, density);
   const resolvedIcon =
     icon ??
-    (label === KOLAM_NEW_BUTTON_LABEL ? (
+    (isKolamAddButtonLabel(label) ? (
       <SvgXml height="100%" width="100%" xml={KOLAM_NEW_BUTTON_ICON_XML} />
     ) : null);
 
@@ -139,6 +146,14 @@ export function KolamButton({
         ]}
       />
     </KolamInteractionFrame>
+  );
+}
+
+function isKolamAddButtonLabel(label: string) {
+  const normalized = label.trim().toLowerCase();
+
+  return KOLAM_ADD_BUTTON_LABEL_PREFIXES.some(
+    prefix => normalized === prefix || normalized.startsWith(`${prefix} `),
   );
 }
 
