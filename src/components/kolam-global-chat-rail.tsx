@@ -4309,7 +4309,8 @@ function KolamChatRailDetailPanel({
                           ) : null}
                         </>
                       )}
-                      {mode === 'team-chat' ? null : (
+                      {mode === 'team-chat' ||
+                      isInboxDetailAiMessage(message) ? null : (
                         <Text style={styles.messageMeta}>
                           {[
                             formatRelativeTime(message.sentAt),
