@@ -376,7 +376,7 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
     ).toBe(false);
   });
 
-  it('shows Kirim pesan ke customer for Shopee and Tokopedia sales', async () => {
+  it('shows Hubungi kustomer for Shopee and Tokopedia sales', async () => {
     const shopeeController = createController({
       _id: 'sale-sh-chat',
       invoiceCode: 'INV-SH-C',
@@ -447,19 +447,18 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
 
     const shopeeButton = shopeeRenderer!.root
       .findAllByType(KolamButton)
-      .find(node => node.props.label === 'Kirim pesan ke customer');
+      .find(node => node.props.label === 'Hubungi kustomer');
     const tokopediaButton = tokopediaRenderer!.root
       .findAllByType(KolamButton)
-      .find(node => node.props.label === 'Kirim pesan ke customer');
+      .find(node => node.props.label === 'Hubungi kustomer');
     const nestedButton = nestedRenderer!.root
       .findAllByType(KolamButton)
-      .find(node => node.props.label === 'Kirim pesan ke customer');
+      .find(node => node.props.label === 'Hubungi kustomer');
     expect(shopeeButton).toBeTruthy();
+    expect(shopeeButton!.props.icon).toBeTruthy();
     expect(tokopediaButton).toBeTruthy();
     expect(nestedButton).toBeTruthy();
-    expect(renderText(offlineRenderer!)).not.toContain(
-      'Kirim pesan ke customer',
-    );
+    expect(renderText(offlineRenderer!)).not.toContain('Hubungi kustomer');
 
     await act(async () => {
       shopeeButton!.props.onPress();

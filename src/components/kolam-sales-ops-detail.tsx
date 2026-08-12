@@ -96,6 +96,7 @@ import type { KolamSalesController } from '../hooks/use-kolam-sales-controller';
 import { getKolamSaleSpeciesEnclosureAllocation } from '../services/kolam-sales-api';
 import { KolamButton } from './kolam-button';
 import {KolamCancelButton} from './kolam-cancel-button';
+import {KolamChatKeKustomerIcon} from './kolam-chat-ke-kustomer-icon';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamDateField} from './kolam-date-field';
@@ -516,14 +517,20 @@ export function KolamSalesOpsDetail({
               ) : null}
               {showCustomerChat ? (
                 <KolamButton
-                  accessibilityLabel="Kirim pesan ke customer"
+                  accessibilityLabel="Hubungi kustomer"
                   disabled={
                     controller.openingCustomerChat || controller.mutating
+                  }
+                  icon={
+                    <KolamChatKeKustomerIcon
+                      color={V.colors.primaryFg}
+                      size={16}
+                    />
                   }
                   label={
                     controller.openingCustomerChat
                       ? 'Membuka…'
-                      : 'Kirim pesan ke customer'
+                      : 'Hubungi kustomer'
                   }
                   onPress={() => {
                     void controller.onOpenCustomerChat();
@@ -2683,15 +2690,15 @@ const styles = StyleSheet.create({
   },
   detailToolbarFilters: {
     alignSelf: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   detailToolbarTitleRow: {
     alignItems: 'center',
-    alignSelf: 'center',
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     minHeight: 34,
     minWidth: 0,
   },
