@@ -306,6 +306,7 @@ export function KolamPosFullWindowSurface({
                           active={activeCategory === category}
                           label={category}
                           onPress={() => onCategoryChange?.(category)}
+                          variant="filter"
                         />
                       ))}
                     </ScrollView>
@@ -324,6 +325,7 @@ export function KolamPosFullWindowSurface({
                       active={!activeCategory}
                       label="Semua"
                       onPress={() => onCategoryChange?.(null)}
+                      variant="filter"
                     />
                     </>
                   ) : null}
@@ -613,18 +615,26 @@ function PosCategoryPill({
   active = false,
   label,
   onPress,
+  variant = 'tab',
 }: {
   active?: boolean;
   label: string;
   onPress: () => void;
+  variant?: 'filter' | 'tab';
 }) {
+  const isFilter = variant === 'filter';
+
   return (
     <KolamButton
-      intent={active ? 'primary' : 'outline'}
+      intent={active && !isFilter ? 'primary' : 'outline'}
       label={label}
       onPress={onPress}
       size="sm"
-      style={styles.categoryPill}
+      style={[
+        styles.categoryPill,
+        active && isFilter ? styles.categoryFilterPillActive : null,
+      ]}
+      textStyle={active && isFilter ? styles.categoryFilterPillActiveText : null}
     />
   );
 }
@@ -2284,6 +2294,13 @@ const styles = StyleSheet.create({
   },
   categoryPill: {
     flexShrink: 0,
+  },
+  categoryFilterPillActive: {
+    backgroundColor: V.colors.successSoft,
+    borderColor: V.colors.success,
+  },
+  categoryFilterPillActiveText: {
+    color: V.colors.success,
   },
   posToolbarActionButton: {
     backgroundColor: POS_ACTION_BUTTON_BG,
