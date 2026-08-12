@@ -5748,20 +5748,34 @@ function AmWebhooksPage() {
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
-        <AmMetricCard label="Endpoint" value={String(configs.length)} meta={`${configs.filter(item => item.status === 'active').length} aktif`} />
-        <AmMetricCard label="Log Pengiriman" value={String(logTotal || logs.length)} meta={`${logs.filter(log => !log.success).length} gagal di halaman`} />
-        <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading || isWebhookActionLocked} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
-        <KolamButton disabled={isWebhookActionLocked} label={isTestingPing ? 'Testing...' : 'Test Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
-        <KolamButton
-          accessibilityLabel="AM Webhook Register"
-          disabled={isWebhookActionLocked}
-          label="Daftar Webhook"
-          intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
-          muted={isWebhookActionLocked}
-          size="sm"
-          onPress={isWebhookFormOpen && !editingConfigId ? resetWebhookForm : openCreateWebhookForm}
-        />
+      <View style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <View style={styles.amWebhookToolbarMetric}>
+                <Text style={styles.metricLabel}>Endpoint</Text>
+                <Text style={styles.cellText}>{configs.length} total, {configs.filter(item => item.status === 'active').length} aktif</Text>
+              </View>
+              <View style={styles.amWebhookToolbarMetric}>
+                <Text style={styles.metricLabel}>Log Pengiriman</Text>
+                <Text style={styles.cellText}>{logTotal || logs.length} total, {logs.filter(log => !log.success).length} gagal</Text>
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading || isWebhookActionLocked} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
+              <KolamButton accessibilityLabel="Test Ping" disabled={isWebhookActionLocked} label={isTestingPing ? 'Menguji...' : 'Uji Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
+              <KolamButton
+                accessibilityLabel="AM Webhook Register"
+                disabled={isWebhookActionLocked}
+                label="Daftar Webhook"
+                intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
+                muted={isWebhookActionLocked}
+                size="sm"
+                onPress={isWebhookFormOpen && !editingConfigId ? resetWebhookForm : openCreateWebhookForm}
+              />
+            </View>
+          </View>
+        </View>
       </View>
       <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
       {actionMessage ? (
@@ -8313,6 +8327,11 @@ const styles = StyleSheet.create({
     zIndex: 90000,
     elevation: 900,
     overflow: 'visible',
+  },
+  amWebhookToolbarMetric: {
+    minWidth: 160,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   amServicesFilterTrigger: {
     overflow: 'visible',

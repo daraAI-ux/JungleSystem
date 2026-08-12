@@ -5963,7 +5963,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Register'}).props.disabled,
     ).toBe(true);
     expect(
-      renderer!.root.findByProps({label: 'Test Ping'}).props.disabled,
+      renderer!.root.findByProps({label: 'Uji Ping'}).props.disabled,
     ).toBe(true);
     expect(
       renderer!.root.findByProps({label: 'Batal'}).props.disabled,
