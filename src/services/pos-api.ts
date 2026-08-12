@@ -7,6 +7,10 @@ import type {
   PaymentMethod,
   SaleSummary,
 } from '../domain/pos';
+import {
+  normalizeKolamCustomerListResult,
+  type KolamCustomer,
+} from '../domain/kolam-customer';
 import {appConfig} from '../config/app';
 import {apiRequest, type RequestOptions} from '../lib/api-client';
 import {formatCashflowSessionDisplayName} from '../lib/cashflow';
@@ -160,12 +164,13 @@ export async function getSellableCatalog(): Promise<CatalogItem[]> {
 }
 
 export async function getCustomers(): Promise<Customer[]> {
-  const response = await posApiGet<ListResponse<BackendCustomer>>('/customer', {
+  const response = await posApiGet<unknown>('/customer', {
     page: 1,
     limit: 25,
   });
+  const result = normalizeKolamCustomerListResult(response, {page: 1, limit: 25});
 
-  return response.data.map(mapCustomer);
+  return result.items.map(mapKolamCustomerToPosCustomer);
 }
 
 export interface CreateCustomerBody {
@@ -331,6 +336,20 @@ function mapCustomer(customer: BackendCustomer): Customer {
     phone: customer.phone ?? '-',
     email: customer.email ?? '-',
     address: customer.address ?? '-',
+    photoRevision: photo ?? undefined,
+    photoUri: getKolamFileUrl(photo),
+  };
+}
+
+function mapKolamCustomerToPosCustomer(customer: KolamCustomer): Customer {
+  const photo = customer.photos.find(Boolean) ?? null;
+
+  return {
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone || '-',
+    email: customer.email || '-',
+    address: customer.address || '-',
     photoRevision: photo ?? undefined,
     photoUri: getKolamFileUrl(photo),
   };

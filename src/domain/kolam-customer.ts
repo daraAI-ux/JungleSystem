@@ -174,11 +174,7 @@ export function normalizeKolamCustomerListResult(
   fallback: Required<Pick<KolamCustomerListQuery, 'limit' | 'page'>>,
 ): KolamCustomerListResult {
   const record = asRecord(payload);
-  const rows = Array.isArray(record.data)
-    ? record.data
-    : Array.isArray(payload)
-      ? payload
-      : [];
+  const rows = extractKolamCustomerRows(payload);
 
   const items = rows
     .map(normalizeKolamCustomer)

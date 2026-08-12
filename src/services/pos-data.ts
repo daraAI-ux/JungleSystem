@@ -28,7 +28,7 @@ export interface PosDataset {
   paymentMethods: PaymentMethod[];
   activeSession: CashflowSession | null;
   recentSales: SaleSummary[];
-  source: 'seed' | 'live';
+  source: 'seed' | 'live' | 'fallback';
   errorMessage?: string;
 }
 
@@ -50,29 +50,37 @@ export async function loadPosDataset(
     return seedDataset;
   }
 
-  try {
-    const [catalog, customerList, methods, activeSession, sales] =
-      await Promise.all([
-        getSellableCatalog(),
-        getCustomers(),
-        getPaymentMethods(),
-        getActiveCashflowSession(),
-        getRecentSales(),
-      ]);
+  const [catalog, customerList, methods, activeSession, sales] =
+    await Promise.allSettled([
+      getSellableCatalog(),
+      getCustomers(),
+      getPaymentMethods(),
+      getActiveCashflowSession(),
+      getRecentSales(),
+    ]);
+  const errors = [catalog, customerList, methods, activeSession, sales]
+    .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+    .map(result => getErrorMessage(result.reason))
+    .filter(Boolean);
 
-    return {
-      catalog,
-      customers: customerList,
-      paymentMethods: methods.filter(method => method.active),
-      activeSession,
-      recentSales: sales,
-      source: 'live',
-    };
-  } catch (error) {
-    return {
-      ...seedDataset,
-      errorMessage: getErrorMessage(error),
-    };
-  }
+  return {
+    catalog:
+      catalog.status === 'fulfilled' ? catalog.value : seedDataset.catalog,
+    customers:
+      customerList.status === 'fulfilled'
+        ? customerList.value
+        : seedDataset.customers,
+    paymentMethods:
+      methods.status === 'fulfilled'
+        ? methods.value.filter(method => method.active)
+        : seedDataset.paymentMethods,
+    activeSession:
+      activeSession.status === 'fulfilled'
+        ? activeSession.value
+        : seedDataset.activeSession,
+    recentSales:
+      sales.status === 'fulfilled' ? sales.value : seedDataset.recentSales,
+    source: errors.length ? 'fallback' : 'live',
+    errorMessage: errors[0],
+  };
 }
-
