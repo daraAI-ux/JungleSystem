@@ -180,7 +180,7 @@ export function KolamPosFullWindowSurface({
     catalogPageStartIndex,
     catalogPageStartIndex + itemsPerPage,
   );
-  const catalogRows = chunkCatalog(pagedCatalog, columnCount);
+  const catalogRows = chunkItems(pagedCatalog, columnCount);
   const cashflowStep = workflowSteps.find(step =>
     step.label.toLowerCase().includes('cashflow'),
   );
@@ -1254,6 +1254,17 @@ function PosSubview({
   onSelectCustomer: (customerId: string) => void;
   onSelectPaymentMethod: (methodId: string) => void;
 }) {
+  const {width} = useWindowDimensions();
+  const paymentColumnCount = getPaymentMethodColumnCount(width);
+  const activePaymentMethods = React.useMemo(
+    () => paymentMethods.filter(method => method.active),
+    [paymentMethods],
+  );
+  const paymentRows = React.useMemo(
+    () => chunkItems(activePaymentMethods, paymentColumnCount),
+    [activePaymentMethods, paymentColumnCount],
+  );
+
   if (activeView === 'customers') {
     return (
       <ScrollView
@@ -1457,30 +1468,41 @@ function PosSubview({
         </Text>
       </View>
       <View style={styles.paymentGrid}>
-        {paymentMethods.filter(method => method.active).map(method => {
-          const active = selectedPaymentId === method.id;
+        {paymentRows.map((row, rowIndex) => (
+          <View key={`payment-row-${rowIndex}`} style={styles.paymentRow}>
+            {row.map(method => {
+              const active = selectedPaymentId === method.id;
 
-          return (
-            <KolamInteractionFrame
-              key={method.id}
-              onPress={() => onSelectPaymentMethod(method.id)}
-              style={[styles.paymentCard, active && styles.paymentCardActive]}>
-              <Text numberOfLines={1} style={styles.paymentName}>
-                {method.name}
-              </Text>
-              <Text numberOfLines={1} style={styles.paymentMeta}>
-                Wallet: {method.wallet || '-'}
-              </Text>
-              <Text
-                style={[
-                  styles.paymentStatus,
-                  method.active ? styles.paymentStatusActive : styles.paymentStatusMuted,
-                ]}>
-                {method.active ? 'Aktif' : 'Nonaktif'}
-              </Text>
-            </KolamInteractionFrame>
-          );
-        })}
+              return (
+                <KolamInteractionFrame
+                  key={method.id}
+                  onPress={() => onSelectPaymentMethod(method.id)}
+                  style={[styles.paymentCard, active && styles.paymentCardActive]}>
+                  <Text numberOfLines={1} style={styles.paymentName}>
+                    {method.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.paymentMeta}>
+                    Wallet: {method.wallet || '-'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.paymentStatus,
+                      method.active
+                        ? styles.paymentStatusActive
+                        : styles.paymentStatusMuted,
+                    ]}>
+                    {method.active ? 'Aktif' : 'Nonaktif'}
+                  </Text>
+                </KolamInteractionFrame>
+              );
+            })}
+            {Array.from({length: paymentColumnCount - row.length}).map(
+              (_, index) => (
+                <View key={`payment-empty-${index}`} style={styles.paymentCardSlot} />
+              ),
+            )}
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -2172,8 +2194,21 @@ function getCatalogColumnCount(width: number) {
   return 4;
 }
 
-function chunkCatalog(items: CatalogItem[], columnCount: number) {
-  const rows: CatalogItem[][] = [];
+function getPaymentMethodColumnCount(width: number) {
+  if (width >= 1680) {
+    return 7;
+  }
+  if (width >= 1380) {
+    return 6;
+  }
+  if (width >= 1120) {
+    return 5;
+  }
+  return 4;
+}
+
+function chunkItems<T>(items: T[], columnCount: number) {
+  const rows: T[][] = [];
 
   for (let index = 0; index < items.length; index += columnCount) {
     rows.push(items.slice(index, index + columnCount));
@@ -2791,13 +2826,20 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.mutedSoft,
   },
   paymentGrid: {
-    alignContent: 'flex-start',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
+  paymentRow: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  paymentCardSlot: {
+    flex: 1,
+    minWidth: 0,
+  },
   paymentCard: {
-    width: 220,
+    flex: 1,
+    minWidth: 0,
     minHeight: 92,
     justifyContent: 'center',
     borderRadius: 6,
