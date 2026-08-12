@@ -52,6 +52,7 @@ import type {
   KolamBlog,
   KolamBlogTopic,
   KolamCategoryBanner,
+  KolamCtaSection,
   KolamCustomerTextNotice,
   KolamFeaturedCollection,
   KolamHeroSlide,
@@ -5782,6 +5783,7 @@ export function KolamSettingsWebConfigSurface({
               <MarketplaceLandingOverviewPanel
                 activeTabId={marketplaceLandingTabId}
                 assetStatus={marketplaceLandingAssetStatus}
+                ctaDraft={marketplaceLandingCtaDraft}
                 disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
                 onDeleteAnnouncementBanner={
                   onDeleteMarketplaceAnnouncementBanner
@@ -5809,6 +5811,7 @@ export function KolamSettingsWebConfigSurface({
                   onSaveMarketplaceFeaturedCollections
                 }
                 onSaveBioactiveEcosystem={onSaveMarketplaceBioactiveEcosystem}
+                onSaveCta={onSaveMarketplaceLandingCta}
                 onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
                 onUploadBioactiveStepImage={
                   onUploadMarketplaceBioactiveStepImage
@@ -5824,11 +5827,13 @@ export function KolamSettingsWebConfigSurface({
                 onUploadYoutubeBackground={onUploadMarketplaceYoutubeBackground}
                 overview={marketplaceLandingOverview}
                 saveStatus={marketplaceLandingSaveStatus}
+                setCtaDraftField={setMarketplaceLandingCtaDraftField}
                 categories={marketplaceCategories}
               />
               {(marketplaceLandingTabId !== 'hero' &&
                 marketplaceLandingTabId !== 'featured' &&
-                marketplaceLandingTabId !== 'category') ||
+                marketplaceLandingTabId !== 'category' &&
+                marketplaceLandingTabId !== 'cta') ||
               marketplaceHeroEditorOpen ? (
                 <MarketplaceLandingControlsPanel
                 activeTabId={marketplaceLandingTabId}
@@ -6935,6 +6940,7 @@ function MarketplaceLandingOverviewPanel({
   activeTabId,
   assetStatus,
   categories,
+  ctaDraft,
   disabled,
   onDeleteAnnouncementBanner,
   onDeleteCategoryBanner,
@@ -6954,6 +6960,7 @@ function MarketplaceLandingOverviewPanel({
   onUpdateBioactiveStep,
   onSaveFeaturedCollections,
   onSaveBioactiveEcosystem,
+  onSaveCta,
   onUploadAnnouncementImage,
   onUploadBioactiveStepImage,
   onUploadCategoryBannerImage,
@@ -6963,6 +6970,7 @@ function MarketplaceLandingOverviewPanel({
   onUploadYoutubeBackground,
   overview,
   saveStatus,
+  setCtaDraftField,
 }: {
   activeTabId:
     | 'hero'
@@ -6976,6 +6984,7 @@ function MarketplaceLandingOverviewPanel({
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
   categories: KolamCategory[];
+  ctaDraft: MarketplaceLandingCtaDraft;
   disabled: boolean;
   onDeleteAnnouncementBanner: (banner: KolamAnnouncementBanner) => void;
   onDeleteCategoryBanner: (banner: KolamCategoryBanner) => void;
@@ -7007,6 +7016,7 @@ function MarketplaceLandingOverviewPanel({
   ) => void;
   onSaveFeaturedCollections: () => void;
   onSaveBioactiveEcosystem: () => void;
+  onSaveCta: () => void;
   onUploadAnnouncementImage: (banner: KolamAnnouncementBanner) => void;
   onUploadBioactiveStepImage: (index: number) => void;
   onUploadCategoryBannerImage: (banner: KolamCategoryBanner) => void;
@@ -7016,6 +7026,10 @@ function MarketplaceLandingOverviewPanel({
   onUploadYoutubeBackground: () => void;
   overview: MarketplaceLandingOverview;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setCtaDraftField: <Key extends keyof MarketplaceLandingCtaDraft>(
+    key: Key,
+    value: MarketplaceLandingCtaDraft[Key],
+  ) => void;
 }) {
   const featuredCollections =
     overview.marketplaceContent.featuredCollections ?? [];
@@ -7107,6 +7121,7 @@ function MarketplaceLandingOverviewPanel({
     activeTabId !== 'notices' &&
     activeTabId !== 'hero' &&
     activeTabId !== 'category' &&
+    activeTabId !== 'cta' &&
     activeTabId !== 'featured';
 
   return (
@@ -7149,6 +7164,18 @@ function MarketplaceLandingOverviewPanel({
           onEdit={onEditCategoryBanner}
           onMove={onMoveCategoryBanner}
           status={assetStatus}
+        />
+      ) : activeTabId === 'cta' ? (
+        <MarketplaceCtaSectionPanel
+          assetStatus={assetStatus}
+          ctaDraft={ctaDraft}
+          ctaSection={overview.ctaSection}
+          disabled={disabled}
+          message={overview.message}
+          onSave={onSaveCta}
+          onUploadBackground={onUploadCtaBackground}
+          saveStatus={saveStatus}
+          setCtaDraftField={setCtaDraftField}
         />
       ) : (
         <>
@@ -7221,17 +7248,6 @@ function MarketplaceLandingOverviewPanel({
             },
           ]}
         />
-        {activeTabId === 'cta' ? (
-          <View style={styles.marketplaceAssetActions}>
-            <MarketplaceAssetButton
-              disabled={disabled}
-              id="cta-background"
-              label="Unggah latar CTA"
-              onPress={onUploadCtaBackground}
-              status={assetStatus}
-            />
-          </View>
-        ) : null}
         {activeTabId === 'youtube' ? (
           <View style={styles.marketplaceAssetActions}>
             <MarketplaceAssetButton
@@ -7490,6 +7506,206 @@ function MarketplaceHeroSlidesPanel({
           slides={previewSlides}
         />
       ) : null}
+    </View>
+  );
+}
+
+function MarketplaceCtaSectionPanel({
+  assetStatus,
+  ctaDraft,
+  ctaSection,
+  disabled,
+  message,
+  onSave,
+  onUploadBackground,
+  saveStatus,
+  setCtaDraftField,
+}: {
+  assetStatus: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
+  ctaDraft: MarketplaceLandingCtaDraft;
+  ctaSection: KolamCtaSection | null;
+  disabled: boolean;
+  message: string;
+  onSave: () => void;
+  onUploadBackground: () => void;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setCtaDraftField: <Key extends keyof MarketplaceLandingCtaDraft>(
+    key: Key,
+    value: MarketplaceLandingCtaDraft[Key],
+  ) => void;
+}) {
+  const backgroundUri = resolveMarketplaceLandingImageUri(
+    ctaSection?.backgroundImage,
+  );
+
+  return (
+    <View style={styles.marketplaceCtaPanel}>
+      <View style={styles.marketplaceCtaCard}>
+        <View style={styles.marketplaceCtaHeader}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: 'Pengaturan CTA',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'detail',
+                text: 'Atur ajakan utama di halaman landing.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <Text
+            style={[
+              styles.marketplaceHeroSlideStatus,
+              ctaDraft.isActive ? null : styles.marketplaceHeroSlideStatusDraft,
+            ]}
+          >
+            {ctaDraft.isActive ? 'Aktif' : 'Tersembunyi'}
+          </Text>
+        </View>
+
+        <View style={styles.marketplaceCtaStack}>
+          <View style={styles.marketplaceCtaFieldGroup}>
+            <View style={styles.marketplaceCtaFieldHeader}>
+              <Text style={styles.marketplaceOverviewLabel}>
+                Gambar latar
+              </Text>
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id="cta-background"
+                label={backgroundUri ? 'Ganti gambar' : 'Pilih gambar'}
+                onPress={onUploadBackground}
+                status={assetStatus}
+              />
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              disabled={disabled}
+              onPress={onUploadBackground}
+              style={styles.marketplaceCtaImageBox}
+            >
+              {backgroundUri ? (
+                <Image
+                  resizeMode="cover"
+                  source={{uri: backgroundUri}}
+                  style={styles.marketplaceCtaImage}
+                />
+              ) : (
+                <View style={styles.marketplaceCtaImageEmpty}>
+                  <SvgXml
+                    height={38}
+                    width={38}
+                    xml={getMarketplaceLandingTabIconXml('cta', true)}
+                  />
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    Pilih gambar latar CTA.
+                  </Text>
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    Rekomendasi: 1024 x 494px
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Judul"
+            description=""
+            value={ctaDraft.title}
+            onChangeText={value => setCtaDraftField('title', value)}
+            placeholder="Jelajahi Dunia Species"
+          />
+          <KolamTextFieldRow
+            variant="settingsForm"
+            label="Deskripsi"
+            description=""
+            value={ctaDraft.description}
+            onChangeText={value => setCtaDraftField('description', value)}
+            placeholder="Tulis deskripsi CTA"
+          />
+          <View style={styles.marketplaceCtaGrid}>
+            <KolamTextFieldRow
+              variant="settingsForm"
+              label="Teks tombol"
+              description=""
+              value={ctaDraft.buttonText}
+              onChangeText={value => setCtaDraftField('buttonText', value)}
+              placeholder="Lihat semua spesies"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              label="Tautan tombol"
+              description=""
+              value={ctaDraft.buttonLink}
+              onChangeText={value => setCtaDraftField('buttonLink', value)}
+              placeholder="/species"
+            />
+          </View>
+          <Pressable
+            accessibilityRole="checkbox"
+            disabled={disabled}
+            onPress={() => setCtaDraftField('isActive', !ctaDraft.isActive)}
+            style={styles.marketplaceCtaToggleCard}
+          >
+            <KolamCopyStack
+              containerStyle={styles.marketplaceOverviewCopy}
+              items={[
+                {
+                  id: 'toggle-title',
+                  text: 'Tampilkan di landing page',
+                  style: styles.marketplaceOverviewLabel,
+                },
+                {
+                  id: 'toggle-detail',
+                  text: 'Tampilkan bagian CTA untuk pengunjung.',
+                  style: styles.marketplaceOverviewMeta,
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.poStaffCheckbox,
+                ctaDraft.isActive ? styles.poStaffCheckboxActive : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.poStaffCheckboxMarkText,
+                  ctaDraft.isActive ? styles.poStaffCheckboxMarkActive : null,
+                ]}
+              >
+                {ctaDraft.isActive ? '✓' : ''}
+              </Text>
+            </View>
+          </Pressable>
+          {message ? (
+            <Text
+              style={
+                saveStatus === 'error'
+                  ? styles.marketplaceOverviewError
+                  : styles.marketplaceOverviewMeta
+              }
+            >
+              {message}
+            </Text>
+          ) : null}
+          <View style={styles.marketplaceCtaFooter}>
+            <KolamActionControlButton
+              disabled={disabled}
+              intent="primary"
+              label="Simpan perubahan"
+              loading={saveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSave}
+            />
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -11178,6 +11394,86 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     width: '100%',
+  },
+  marketplaceCtaCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 18,
+    padding: 16,
+    shadowColor: '#111827',
+    shadowOffset: {height: 1, width: 0},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+  },
+  marketplaceCtaFieldGroup: {
+    gap: 8,
+  },
+  marketplaceCtaFieldHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  marketplaceCtaFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  marketplaceCtaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  marketplaceCtaHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  marketplaceCtaImage: {
+    height: '100%',
+    width: '100%',
+  },
+  marketplaceCtaImageBox: {
+    alignItems: 'center',
+    aspectRatio: 21 / 9,
+    backgroundColor: '#f3f4f6',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '100%',
+  },
+  marketplaceCtaImageEmpty: {
+    alignItems: 'center',
+    gap: 7,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  marketplaceCtaPanel: {
+    alignSelf: 'center',
+    gap: 12,
+    maxWidth: 720,
+    width: '100%',
+  },
+  marketplaceCtaStack: {
+    gap: 14,
+  },
+  marketplaceCtaToggleCard: {
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    padding: 12,
   },
   marketplaceCategoryCard: {
     backgroundColor: '#ffffff',
