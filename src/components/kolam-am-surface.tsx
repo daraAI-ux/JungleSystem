@@ -5741,44 +5741,21 @@ function AmMutasiDetailPanel({
       <AmInlineError title="Detail mutasi AM belum bisa dibaca" error={error} />
       {isLoading ? <Text style={styles.loadingText}>Memuat detail mutasi...</Text> : null}
       {mutasi ? (
-        <View style={styles.detailList}>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Akun</Text>
-            <Text style={styles.cellText}>{formatBankAccount(mutasi.accountId)} / {formatAccountNumber(mutasi.accountId)}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Nominal</Text>
-            <Text style={styles.cellText}>{formatMutasiSignedAmount(mutasi)}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Deskripsi</Text>
-            <Text style={styles.cellText}>{mutasi.description || '-'}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Device</Text>
-            <Text style={styles.cellText}>{formatDeviceRef(mutasi.deviceId)} / {formatDeviceLocation(mutasi.deviceId)}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Transfer</Text>
-            <Text style={styles.cellText}>{formatMutasiTransferRef(mutasi.transferId)}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Notification Hash</Text>
-            <Text style={styles.monoText}>{mutasi.notificationHash || '-'}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Terdeteksi</Text>
-            <Text style={styles.cellText}>{formatAmDate(mutasi.detectedAt)}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Diupdate</Text>
-            <Text style={styles.cellText}>{formatAmDate(mutasi.updatedAt)}</Text>
-          </View>
-          <View style={styles.detailListRow}>
-            <Text style={styles.rowMeta}>Receipt</Text>
-            <Text style={receiptUrl ? styles.monoText : styles.cellText}>{receiptUrl ?? 'Receipt tidak tersedia'}</Text>
-          </View>
-        </View>
+        <KolamDetailSummaryCard
+          fieldColumns={3}
+          fields={[
+            {id: 'account', label: 'Akun', value: `${formatBankAccount(mutasi.accountId)} / ${formatAccountNumber(mutasi.accountId)}`},
+            {id: 'amount', label: 'Nominal', value: formatMutasiSignedAmount(mutasi)},
+            {id: 'device', label: 'Device', value: `${formatDeviceRef(mutasi.deviceId)} / ${formatDeviceLocation(mutasi.deviceId)}`},
+            {id: 'transfer', label: 'Transfer', value: formatMutasiTransferRef(mutasi.transferId)},
+            {id: 'detected', label: 'Terdeteksi', value: formatAmDate(mutasi.detectedAt)},
+            {id: 'updated', label: 'Diupdate', value: formatAmDate(mutasi.updatedAt)},
+            {id: 'receipt', label: 'Receipt', value: receiptUrl ?? 'Receipt tidak tersedia'},
+            {id: 'hash', label: 'Notification Hash', value: mutasi.notificationHash || '-'},
+            {id: 'description', label: 'Deskripsi', value: mutasi.description || '-'},
+          ]}
+          title="Detail Mutasi"
+        />
       ) : null}
       {receiptUrl ? (
         <View style={styles.proofPanel}>
