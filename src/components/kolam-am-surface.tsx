@@ -30,6 +30,7 @@ import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
   cancelAmTask,
+  clearAmWebhookLogs,
   clearAmServiceAccountSession,
   createAmBox,
   createAmDevice,
@@ -5647,6 +5648,8 @@ function AmWebhooksPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTestingPing, setIsTestingPing] = React.useState(false);
+  const [isClearingWebhookLogs, setIsClearingWebhookLogs] = React.useState(false);
+  const [confirmClearWebhookLogs, setConfirmClearWebhookLogs] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeWebhookFilterPanel, setActiveWebhookFilterPanel] = React.useState<'direction' | null>(null);
   const [webhookFilterPanelAnchor, setWebhookFilterPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
@@ -5824,6 +5827,29 @@ function AmWebhooksPage() {
     }
   }, [fetchWebhooks]);
 
+  const clearWebhookLogs = React.useCallback(async () => {
+    if (isClearingWebhookLogs) return;
+
+    try {
+      setIsClearingWebhookLogs(true);
+      setActionMessage(null);
+      const result = await clearAmWebhookLogs();
+      setConfirmClearWebhookLogs(false);
+      setSelectedWebhookLog(null);
+      setLogPage(1);
+      setActionMessage(
+        result.deletedCount > 0
+          ? `${result.deletedCount} log webhook dibersihkan.`
+          : 'Tidak ada log webhook untuk dibersihkan.',
+      );
+      await fetchWebhooks();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Gagal membersihkan log webhook.');
+    } finally {
+      setIsClearingWebhookLogs(false);
+    }
+  }, [fetchWebhooks, isClearingWebhookLogs]);
+
   const anchorWebhookFilterPanel = React.useCallback(() => {
     const toolbar = webhookToolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
     const trigger = webhookDirectionTriggerRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
@@ -5916,7 +5942,7 @@ function AmWebhooksPage() {
       ),
     },
   ], []);
-  const isWebhookActionLocked = isSubmitting || isTestingPing || actingConfigId !== null;
+  const isWebhookActionLocked = isSubmitting || isTestingPing || isClearingWebhookLogs || actingConfigId !== null;
 
   return (
     <View style={styles.pageStack}>
@@ -5945,6 +5971,15 @@ function AmWebhooksPage() {
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               <KolamButton accessibilityLabel="Test Ping" disabled={isWebhookActionLocked} label={isTestingPing ? 'Menguji...' : 'Uji Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
+              <KolamButton
+                accessibilityLabel="AM Webhook Bersihkan Log"
+                disabled={isWebhookActionLocked || logs.length === 0}
+                intent="danger"
+                label={isClearingWebhookLogs ? 'Membersihkan...' : 'Bersihkan Log'}
+                muted={isWebhookActionLocked || logs.length === 0}
+                size="sm"
+                onPress={() => setConfirmClearWebhookLogs(true)}
+              />
               <KolamDaftarButton
                 accessibilityLabel="AM Webhook Register"
                 disabled={isWebhookActionLocked}
@@ -5966,6 +6001,18 @@ function AmWebhooksPage() {
         ) : null}
       </View>
       <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
+      <KolamConfirmDialog
+        cancelLabel="Batal"
+        confirmLabel={isClearingWebhookLogs ? 'Membersihkan...' : 'Bersihkan Log'}
+        destructive
+        message="Hapus semua log pengiriman webhook (outgoing). Endpoint webhook tidak ikut terhapus."
+        title="Bersihkan log webhook"
+        visible={confirmClearWebhookLogs}
+        onCancel={() => {
+          if (!isClearingWebhookLogs) setConfirmClearWebhookLogs(false);
+        }}
+        onConfirm={clearWebhookLogs}
+      />
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>

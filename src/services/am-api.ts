@@ -511,6 +511,11 @@ export interface AmWebhookTestPingResult {
   message: string;
 }
 
+export interface AmWebhookClearLogsResult {
+  deletedCount: number;
+  configId: string | null;
+}
+
 export interface AmChatContact {
   _id: string;
   platform: AmChatPlatform | string;
@@ -1325,6 +1330,13 @@ export async function deleteAmWebhookConfig(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<unknown> {
   return amDelete(`/webhook/config/${id}`, baseUrl);
+}
+
+export async function clearAmWebhookLogs(
+  payload: {configId?: string} = {},
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmWebhookClearLogsResult> {
+  return amPost<AmWebhookClearLogsResult>('/webhook/logs/clear', payload, baseUrl);
 }
 
 export async function testAmWebhookPing(
