@@ -12,7 +12,6 @@ import {
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
-  clearAmWebhookLogs,
   createAmBox,
   createAmDevice,
   createAmRack,
@@ -79,7 +78,6 @@ jest.mock('../src/services/am-api', () => ({
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   cancelAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
-  clearAmWebhookLogs: jest.fn(() => Promise.resolve({success: true, deletedCount: 2, message: 'Log webhook dibersihkan'})),
   createAmBox: jest.fn(() => Promise.resolve({_id: 'box-new'})),
   createAmDevice: jest.fn(() => Promise.resolve({_id: 'device-new'})),
   createAmRack: jest.fn(() => Promise.resolve({_id: 'rack-new'})),
@@ -5889,10 +5887,6 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'Test Ping'}).props.onPress();
     });
-    expect(renderText(renderer!).join(' ')).toContain('Test ping dikirim ke 1 config aktif');
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Bersihkan Log'}).props.onPress();
-    });
 
     expect(createAmWebhookConfig).toHaveBeenCalledWith({
       url: 'https://new.example.test/webhook',
@@ -5904,12 +5898,11 @@ describe('KolamAmSurface', () => {
       status: 'inactive',
     });
     expect(deleteAmWebhookConfig).toHaveBeenCalledWith('webhook-1');
-    expect(clearAmWebhookLogs).toHaveBeenCalledTimes(1);
     expect(testAmWebhookPing).toHaveBeenCalledTimes(1);
     const configText = renderText(renderer!).join(' ');
     expect(configText).toContain('Endpoint');
     expect(configText).not.toContain('Webhook Config');
-    expect(configText).toContain('Log webhook dibersihkan');
+    expect(configText).toContain('Test ping dikirim ke 1 config aktif');
     expect(configText).toContain('Terakhir terkirim:');
     expect(configText).toContain('31 Jul 2026');
     expect(configText).not.toContain('sec...ok');
