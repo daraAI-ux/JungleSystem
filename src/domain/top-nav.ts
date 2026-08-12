@@ -218,7 +218,7 @@ export function getTopNavChromeContract(): TopNavChromeContract {
     leftGap: 10,
     triggerSize: 28,
     separatorHeight: 18,
-    rightGap: 5,
+    rightGap: 7,
     menuMinWidth: 240,
     menuPlacement: 'bottom',
   };
