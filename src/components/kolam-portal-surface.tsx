@@ -30,6 +30,7 @@ import {
 } from '../services/kolam-kpi-team-api';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -373,33 +374,28 @@ function PortalSummaryCards({
 }) {
   const summary = data?.summary;
   const items = [
-    { label: 'Slip', value: summary?.finalizedSlips },
-    { label: 'Potongan', value: summary?.deductions },
-    { label: 'Kasbon', value: summary?.activeKasbon },
-    { label: 'Komisi tunggu', value: summary?.commissionAccrued },
-    { label: 'Komisi cair', value: summary?.commissionReleased },
-    { label: 'Lembur tunggu', value: summary?.overtimeApproved },
-    { label: 'Lembur cair', value: summary?.overtimePaid },
-    { label: 'Tugas', value: summary?.openTasks },
-    { label: 'Bonus', value: summary?.bonusRecords },
+    { id: 'slip', label: 'Slip', value: summary?.finalizedSlips },
+    { id: 'potongan', label: 'Potongan', value: summary?.deductions },
+    { id: 'kasbon', label: 'Kasbon', value: summary?.activeKasbon },
+    { id: 'komisi-tunggu', label: 'Komisi tunggu', value: summary?.commissionAccrued },
+    { id: 'komisi-cair', label: 'Komisi cair', value: summary?.commissionReleased },
+    { id: 'lembur-tunggu', label: 'Lembur tunggu', value: summary?.overtimeApproved },
+    { id: 'lembur-cair', label: 'Lembur cair', value: summary?.overtimePaid },
+    { id: 'tugas', label: 'Tugas', value: summary?.openTasks },
+    { id: 'bonus', label: 'Bonus', value: summary?.bonusRecords },
   ];
 
   return (
-    <View style={[styles.summaryWrap, styles.col7]}>
-      {items.map((item, index) => (
-        <View key={item.label} style={styles.summaryChip}>
-          {loading && !summary ? (
-            <ActivityIndicator color={V.colors.primary} size="small" />
-          ) : (
-            <>
-              <Text style={styles.summaryLabel}>{item.label}</Text>
-              <Text style={styles.summaryValue}>{formatNumber(item.value)}</Text>
-            </>
-          )}
-        </View>
-      ))}
-      {loading && !summary && indexPlaceholder(items.length)}
-    </View>
+    <KolamDetailSummaryCard
+      fieldColumns={3}
+      fields={items.map(item => ({
+        id: item.id,
+        label: item.label,
+        value: loading && !summary ? 'Memuat...' : formatNumber(item.value),
+      }))}
+      style={[styles.col7, styles.summaryCard]}
+      title="Ringkasan"
+    />
   );
 }
 
@@ -928,10 +924,6 @@ function getPayrollPeriods(
   }));
 }
 
-function indexPlaceholder(_count: number) {
-  return null;
-}
-
 function paginate<TRow>(rows: TRow[], page: number, pageSize: number): TRow[] {
   const safePage = Math.max(1, page);
   return rows.slice((safePage - 1) * pageSize, safePage * pageSize);
@@ -1171,33 +1163,8 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
   },
-  summaryWrap: {
-    alignContent: 'flex-start',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  summaryChip: {
-    alignItems: 'center',
-    backgroundColor: V.colors.mutedSoft,
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    minHeight: 36,
-    minWidth: 88,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-  summaryLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-  },
-  summaryValue: {
-    color: V.colors.fg,
-    fontSize: 14,
-    fontWeight: '700',
+  summaryCard: {
+    minWidth: 340,
   },
   kpiActionRow: {
     alignItems: 'center',
