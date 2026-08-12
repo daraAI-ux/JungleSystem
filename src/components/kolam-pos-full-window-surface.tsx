@@ -2201,7 +2201,7 @@ function getPaymentMethodColumnCount(width: number) {
 
   return Math.max(
     3,
-    Math.min(6, Math.floor((contentWidth + gap) / (minCardWidth + gap))),
+    Math.min(5, Math.floor((contentWidth + gap) / (minCardWidth + gap))),
   );
 }
 
