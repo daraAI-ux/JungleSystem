@@ -1646,6 +1646,7 @@ function AmServicesPage() {
       ) : null}
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.expandCol]} />
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Layanan</Text>
           <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
           <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
@@ -1659,6 +1660,9 @@ function AmServicesPage() {
           const active = account.status === 'active';
           const banking = isTransferBanking(account.platform);
           const expanded = !banking && expandedId === account._id;
+          const waitingForInput = expanded &&
+            getServiceInputRequirement(detailLogs) !== null &&
+            getServiceInputRequirementKey(detailLogs) !== submittedInputRequirementKey;
           return (
             <View key={account._id}>
               <KolamInteractionFrame
@@ -1666,8 +1670,22 @@ function AmServicesPage() {
                 accessibilityRole="button"
                 onPress={banking ? undefined : () => toggleService(account)}
                 style={[styles.tableRow, expanded && styles.tableRowExpanded]}>
+                <View style={styles.expandCol}>
+                  {!banking ? (
+                    <Text style={[styles.expandIndicator, expanded && styles.expandIndicatorOpen]}>{'>'}</Text>
+                  ) : null}
+                </View>
                 <View style={styles.serviceCol}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
+                  <View style={styles.serviceTitleRow}>
+                    <View style={[styles.serviceStatusDot, active ? styles.serviceStatusDotActive : styles.serviceStatusDotInactive]} />
+                    <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
+                    {waitingForInput ? (
+                      <View
+                        accessibilityLabel={`AM Service Waiting Input ${account._id}`}
+                        style={styles.serviceInputDot}
+                      />
+                    ) : null}
+                  </View>
                   <Text style={styles.rowMeta}>
                     {expanded ? 'Dibuka' : active ? (banking ? 'Siap' : 'Berjalan') : 'Berhenti'}
                   </Text>
@@ -2575,6 +2593,7 @@ function AmServiceDetailPanel({
   const device = getServiceDevice(account);
   const runtime = serviceStatuses.find(status => status.serviceAccountId === account._id);
   const qrSignal = getQrLoginSignal(logs);
+  const loginStatus = getServiceLoginStatus(logs);
   const inputRequirement = getServiceInputRequirement(logs);
   const inputRequirementKey = getServiceInputRequirementKey(logs);
   const needsPassword = inputRequirement === 'password';
@@ -2684,6 +2703,18 @@ function AmServiceDetailPanel({
                 ) : (
                   <Text style={styles.rowMeta}>Gambar QR belum tersedia untuk platform ini.</Text>
                 )}
+                <View style={styles.qrInstructionList}>
+                  {getQrLoginInstructions(account.platform).map((instruction, index) => (
+                    <Text key={`${account.platform}-qr-${index}`} style={styles.qrInstructionText}>
+                      {index + 1}. {instruction}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+            {!qrSignal && loginStatus === 'success' ? (
+              <View style={styles.successPanel}>
+                <Text style={styles.successText}>Login berhasil - cookies tersimpan. Service siap dipakai.</Text>
               </View>
             ) : null}
             {needsInput ? (
@@ -2767,16 +2798,26 @@ function AmServiceDetailPanel({
       {!isLoading && activeTab === 'history' && !banking ? (
         <View style={styles.detailList}>
           {!tasks.length ? <Text style={styles.loadingText}>Riwayat task tidak ditemukan</Text> : null}
+          {tasks.length ? (
+            <View style={styles.detailListHeader}>
+              <Text style={[styles.tableHeaderText, styles.recipientCol]}>Tipe</Text>
+              <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+              <Text style={[styles.tableHeaderText, styles.errorCol]}>Error</Text>
+              <Text style={[styles.tableHeaderText, styles.dateCol]}>Mulai</Text>
+              <Text style={[styles.tableHeaderText, styles.dateCol]}>Selesai</Text>
+            </View>
+          ) : null}
           {tasks.map(task => (
             <View key={task._id} style={styles.detailListRow}>
               <View style={styles.recipientCol}>
                 <Text style={styles.cellText} numberOfLines={1}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
-                <Text style={styles.rowMeta}>{formatAmDate(task.createdAt)}</Text>
               </View>
-              <Text style={[styles.cellText, styles.amountCol]}>Ulang {task.retryCount}/{task.maxRetries}</Text>
               <View style={styles.statusCol}>
                 <AmStatusChip label={task.status} tone={getTransferTone(task.status)} />
               </View>
+              <Text style={[styles.cellText, styles.errorCol]} numberOfLines={1}>{task.error || '-'}</Text>
+              <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(task.startedAt)}</Text>
+              <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(task.completedAt)}</Text>
             </View>
           ))}
           {historyTotal > historyLimit ? (
@@ -7025,6 +7066,58 @@ function getQrLoginSignal(logs: AmDeviceServiceLog[]) {
   return null;
 }
 
+function getServiceLoginStatus(logs: AmDeviceServiceLog[]): 'success' | 'waiting' | string | null {
+  for (const log of logs.slice().reverse()) {
+    const message = log.message;
+    if (
+      message.includes('login_success') ||
+      message.includes('Login success') ||
+      message.includes('Already logged in') ||
+      message.includes('OTP accepted') ||
+      message.includes('"event":"ready"') ||
+      message.includes('"event":"login_success"') ||
+      message.includes('"event":"otp_fulfilled"')
+    ) {
+      return 'success';
+    }
+    if (message.includes('"event":"qr_status"')) {
+      const jsonStart = message.indexOf('{');
+      if (jsonStart >= 0) {
+        try {
+          const parsed = JSON.parse(message.slice(jsonStart)) as {data?: {status?: string}};
+          return parsed.data?.status ?? null;
+        } catch {
+          return null;
+        }
+      }
+    }
+    if (message.includes('"event":"login_waiting"')) return 'waiting';
+  }
+  return null;
+}
+
+function getQrLoginInstructions(platform: string): string[] {
+  if (platform === 'whatsapp') {
+    return [
+      'Buka WhatsApp di HP',
+      'Masuk ke Perangkat Tertaut',
+      'Tautkan perangkat dan scan QR ini',
+    ];
+  }
+  if (platform === 'shopee') {
+    return [
+      'Buka Shopee di HP',
+      'Masuk menu Saya lalu ikon QR',
+      'Scan QR ini dan konfirmasi login',
+    ];
+  }
+  return [
+    'Buka TikTok di HP',
+    'Masuk profil lalu ikon QR',
+    'Scan QR ini dan konfirmasi login',
+  ];
+}
+
 function getServiceInputRequirement(logs: AmDeviceServiceLog[]): 'otp' | 'password' | null {
   let lastInputIndex = -1;
   let lastInputType: 'otp' | 'password' | null = null;
@@ -7920,6 +8013,47 @@ const styles = StyleSheet.create({
   tableRowExpanded: {
     backgroundColor: V.colors.primarySoft,
   },
+  expandCol: {
+    width: 24,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expandIndicator: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 20,
+    fontWeight: '800',
+    transform: [{rotate: '0deg'}],
+  },
+  expandIndicatorOpen: {
+    transform: [{rotate: '90deg'}],
+  },
+  serviceTitleRow: {
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  serviceStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    flexShrink: 0,
+  },
+  serviceStatusDotActive: {
+    backgroundColor: V.colors.success,
+  },
+  serviceStatusDotInactive: {
+    backgroundColor: V.colors.border,
+  },
+  serviceInputDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    flexShrink: 0,
+    backgroundColor: V.colors.warning,
+  },
   serviceDetailPanel: {
     gap: 10,
     borderTopWidth: 1,
@@ -8045,6 +8179,16 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     backgroundColor: V.colors.bg,
+  },
+  qrInstructionList: {
+    gap: 3,
+    marginTop: 4,
+  },
+  qrInstructionText: {
+    color: V.colors.warning,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    lineHeight: 16,
   },
   cellText: {
     minWidth: 0,

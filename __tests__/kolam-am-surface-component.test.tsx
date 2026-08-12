@@ -1734,6 +1734,64 @@ describe('KolamAmSurface', () => {
     expect(getAmTransfers).not.toHaveBeenCalled();
   });
 
+  it('keeps DANA expandable as a runtime service like AM FE', async () => {
+    jest.mocked(getAmServiceAccounts).mockResolvedValueOnce({
+      data: [
+        {
+          _id: 'service-dana',
+          platform: 'dana',
+          label: 'DANA Main',
+          deviceId: {
+            _id: 'device-dana',
+            name: 'DANA Device',
+            connectionType: 'tcp',
+            tcpAddress: '10.0.0.4:5555',
+            udid: null,
+          },
+          status: 'active',
+          username: '',
+          accountNumber: '555',
+          credentials: {phoneNumber: '0812'},
+          meta: {},
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+      meta: {total: 1, limit: 20},
+    });
+    jest.mocked(getAmDeviceServiceLogs).mockResolvedValueOnce({
+      logs: [{ts: '2026-01-01T00:00:00.000Z', level: 'info', message: 'DANA ready'}],
+      processRunning: true,
+      total: 1,
+      page: 1,
+      limit: 100,
+    });
+    jest.mocked(getAmTransfers).mockClear();
+    jest.mocked(getAmTasks).mockClear();
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await updateAmRoute(renderer!, 'services');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service DANA Main'}).props.onPress();
+    });
+
+    expect(getAmDeviceServiceLogs).toHaveBeenCalledWith('device-dana', {
+      limit: 100,
+      page: 1,
+      source: 'realtime',
+    });
+    expect(getAmTransfers).not.toHaveBeenCalled();
+    expect(getAmTasks).not.toHaveBeenCalled();
+    expect(renderText(renderer!).join(' ')).toContain('DANA ready');
+  });
+
   it('polls realtime service logs while a service is expanded', async () => {
     jest.useFakeTimers();
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
