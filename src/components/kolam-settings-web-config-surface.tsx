@@ -11396,16 +11396,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   marketplaceCtaCard: {
-    backgroundColor: '#ffffff',
-    borderColor: V.colors.border,
-    borderRadius: 10,
-    borderWidth: 1,
     gap: 18,
-    padding: 16,
-    shadowColor: '#111827',
-    shadowOffset: {height: 1, width: 0},
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
   },
   marketplaceCtaFieldGroup: {
     gap: 8,
@@ -11456,9 +11447,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   marketplaceCtaPanel: {
-    alignSelf: 'center',
     gap: 12,
-    maxWidth: 720,
     width: '100%',
   },
   marketplaceCtaStack: {
