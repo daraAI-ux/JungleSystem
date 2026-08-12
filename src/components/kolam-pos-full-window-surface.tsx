@@ -322,7 +322,7 @@ export function KolamPosFullWindowSurface({
                     ))}
                   </ScrollView>
                 </View>
-                <View style={kolamTableToolbarStyles.actions}>
+                <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
                   {catalogSearch || activeCategory ? (
                     <KolamButton
                       label="Hapus Filter"
@@ -2301,12 +2301,18 @@ const styles = StyleSheet.create({
   categoryScroll: {
     flexGrow: 1,
     flexShrink: 1,
+    height: 34,
+    maxHeight: 34,
     minWidth: 0,
   },
   categoryPillList: {
     alignItems: 'center',
     gap: 8,
+    minHeight: 34,
     paddingRight: 8,
+  },
+  categoryActions: {
+    minHeight: 34,
   },
   categoryPill: {
     flexShrink: 0,
