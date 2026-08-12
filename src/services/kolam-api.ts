@@ -2224,30 +2224,55 @@ export interface KolamSaleConversationResolve {
 export async function resolveKolamSaleConversation(
   saleId: string,
 ): Promise<KolamSaleConversationResolve> {
-  const response = await kolamGet<
-    | DataResponse<{
-        conversationId?: string;
-        conversationPending?: boolean;
-        created?: boolean;
-      }>
-    | {
-        conversationId?: string;
-        conversationPending?: boolean;
-        created?: boolean;
-      }
-  >(`/chat/sales/${encodeURIComponent(saleId)}/conversation`);
+  // BE may poll AM up to ~60s (Shopee/Tokopedia open-chat). Keep a client cap
+  // so the sales CTA cannot stay on "Membuka…" forever.
+  const timeoutMs = 70_000;
+  const resolvePromise = (async (): Promise<KolamSaleConversationResolve> => {
+    const response = await kolamGet<
+      | DataResponse<{
+          conversationId?: string;
+          conversationPending?: boolean;
+          created?: boolean;
+        }>
+      | {
+          conversationId?: string;
+          conversationPending?: boolean;
+          created?: boolean;
+        }
+    >(`/chat/sales/${encodeURIComponent(saleId)}/conversation`);
 
-  const data = unwrapData(response);
-  const conversationId = String(data?.conversationId || '').trim();
-  if (!conversationId) {
-    throw new Error('Gagal membuka chat customer');
+    const data = unwrapData(response);
+    const conversationId = String(data?.conversationId || '').trim();
+    if (!conversationId) {
+      throw new Error('Gagal membuka chat customer');
+    }
+
+    return {
+      conversationId,
+      created: data?.created === true,
+      conversationPending: data?.conversationPending === true,
+    };
+  })();
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      resolvePromise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(
+            new Error(
+              'Timeout membuka chat customer. Coba lagi.',
+            ),
+          );
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
-
-  return {
-    conversationId,
-    created: data?.created === true,
-    conversationPending: data?.conversationPending === true,
-  };
 }
 
 export async function getKolamChatUnreadTotal(): Promise<number> {

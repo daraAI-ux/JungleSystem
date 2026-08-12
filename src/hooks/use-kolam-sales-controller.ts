@@ -259,6 +259,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mutating, setMutating] = useState(false);
   const [openingCustomerChat, setOpeningCustomerChat] = useState(false);
+  const openingCustomerChatRef = useRef(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1136,19 +1137,22 @@ export function useKolamSalesController(route: string): KolamSalesController {
 
   const onOpenCustomerChat = useCallback(async () => {
     const sale = selectedSale;
-    if (!sale || openingCustomerChat) {
+    if (!sale || openingCustomerChatRef.current) {
       return false;
     }
 
+    openingCustomerChatRef.current = true;
     setOpeningCustomerChat(true);
     setError(null);
-    setStatusMessage(null);
+    // FE SaleInboxRedirect: open inbox first, then resolve conversation via AM.
+    openInboxChatRail();
+    setStatusMessage('Membuka chat customer…');
     try {
       const resolved = await resolveKolamSaleConversation(sale.id);
       openInboxChatRail(resolved.conversationId);
       setStatusMessage(
         resolved.conversationPending
-          ? 'Membuka chat customer…'
+          ? 'Chat customer dibuka (sedang disiapkan).'
           : 'Chat customer dibuka.',
       );
       return true;
@@ -1156,11 +1160,13 @@ export function useKolamSalesController(route: string): KolamSalesController {
       setError(
         getErrorMessage(chatError, 'Gagal membuka chat customer'),
       );
+      setStatusMessage(null);
       return false;
     } finally {
+      openingCustomerChatRef.current = false;
       setOpeningCustomerChat(false);
     }
-  }, [openInboxChatRail, openingCustomerChat, selectedSale]);
+  }, [openInboxChatRail, selectedSale]);
 
   const onDownloadResi = useCallback(async () => {
     const sale = selectedSale;

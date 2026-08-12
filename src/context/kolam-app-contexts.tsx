@@ -73,7 +73,7 @@ export type KolamNavigationContextValue = {
   handleModuleSelect: (module: AppModule) => void;
   handlePluginRouteSelect: (route: PluginRouteEntry) => void;
   /** Open inbox chat rail and select conversation (sale → customer chat). */
-  openInboxChatRail: (conversationId: string) => void;
+  openInboxChatRail: (conversationId?: string) => void;
   setActiveSettingsTab: React.Dispatch<
     React.SetStateAction<SettingsTabItem | null>
   >;

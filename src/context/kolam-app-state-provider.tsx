@@ -406,13 +406,9 @@ export function KolamAppStateProvider({
     setChatRailInitialSelectedId(null);
     setActiveChatRail(null);
   }, []);
-  const openInboxChatRail = React.useCallback((conversationId: string) => {
+  const openInboxChatRail = React.useCallback((conversationId?: string) => {
     const id = String(conversationId || '').trim();
-    if (!id) {
-      return;
-    }
-
-    setChatRailInitialSelectedId(id);
+    setChatRailInitialSelectedId(id || null);
     setActiveChatRail('inbox');
   }, []);
   const handleDashboardRouteContext = React.useCallback(
