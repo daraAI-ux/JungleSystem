@@ -7253,7 +7253,7 @@ function MarketplaceHeroSlidesPanel({
     <View style={styles.marketplaceHeroSlides}>
       <View style={styles.marketplaceHeroSlidesToolbar}>
         <View style={styles.marketplaceHeroActiveCopy}>
-          <Text style={styles.marketplaceOverviewMeta}>Active:</Text>
+          <Text style={styles.marketplaceOverviewMeta}>Aktif:</Text>
           <Text style={styles.marketplaceHeroActiveBadge}>
             {String(activeCount)}
           </Text>
@@ -7261,13 +7261,13 @@ function MarketplaceHeroSlidesPanel({
         <View style={styles.marketplaceAssetActions}>
           <KolamActionControlButton
             disabled={previewDisabled}
-            label="Preview"
+            label="Pratinjau"
             onPress={() => openPreview(0)}
           />
           <KolamActionControlButton
             disabled={disabled}
             intent="primary"
-            label="Add Slide"
+            label="Tambah Slide"
             onPress={onAdd}
           />
         </View>
@@ -7412,15 +7412,15 @@ function MarketplaceHeroSlidesPanel({
             xml={getMarketplaceLandingTabIconXml('hero', true)}
           />
           <Text style={styles.marketplaceHeroEmptyTitle}>
-            Create Your First Slide
+            Buat slide pertama
           </Text>
           <Text style={styles.marketplaceOverviewMeta}>
-            Hero slides are displayed on your landing page carousel.
+            Hero slide tampil di carousel landing marketplace.
           </Text>
           <KolamActionControlButton
             disabled={disabled}
             intent="primary"
-            label="Add First Slide"
+            label="Tambah Slide"
             onPress={onAdd}
           />
           <Text style={styles.marketplaceOverviewMeta}>
@@ -10256,6 +10256,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     flexShrink: 0,
     gap: 5,
+    height: 98,
     justifyContent: 'center',
     paddingHorizontal: 7,
     paddingVertical: 6,
@@ -10290,7 +10291,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
-    minHeight: 96,
+    height: 98,
+    maxHeight: 98,
+    minHeight: 98,
     overflow: 'hidden',
   },
   marketplaceHeroSlideCopy: {
@@ -10308,14 +10311,16 @@ const styles = StyleSheet.create({
   marketplaceHeroSlideImageFallback: {
     alignItems: 'center',
     backgroundColor: '#f3f4f6',
-    height: '100%',
+    height: 98,
     justifyContent: 'center',
     width: '100%',
   },
   marketplaceHeroSlideImageWrap: {
     backgroundColor: '#f3f4f6',
     flexShrink: 0,
-    minHeight: 96,
+    height: 98,
+    maxHeight: 98,
+    minHeight: 98,
     overflow: 'hidden',
     position: 'relative',
     width: 224,
