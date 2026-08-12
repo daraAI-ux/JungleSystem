@@ -5891,7 +5891,7 @@ describe('KolamAmSurface', () => {
     });
     expect(renderText(renderer!).join(' ')).toContain('Test ping dikirim ke 1 config aktif');
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Clear Logs'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Bersihkan Log'}).props.onPress();
     });
 
     expect(createAmWebhookConfig).toHaveBeenCalledWith({

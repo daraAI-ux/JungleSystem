@@ -5836,7 +5836,7 @@ function AmWebhooksPage() {
       setActionMessage(result.message || `${result.deletedCount ?? logTotal} log webhook dibersihkan.`);
       await fetchWebhooks();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal clear log webhook.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal membersihkan log webhook.');
     } finally {
       setIsClearingWebhookLogs(false);
     }
@@ -5964,10 +5964,10 @@ function AmWebhooksPage() {
             <View style={kolamTableToolbarStyles.actions}>
               <KolamButton accessibilityLabel="Test Ping" disabled={isWebhookActionLocked} label={isTestingPing ? 'Menguji...' : 'Uji Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
               <KolamButton
-                accessibilityLabel="AM Webhook Clear Logs"
+                accessibilityLabel="AM Webhook Bersihkan Log"
                 disabled={isWebhookActionLocked}
                 intent="outline"
-                label={isClearingWebhookLogs ? 'Clear...' : 'Clear Log'}
+                label={isClearingWebhookLogs ? 'Membersihkan...' : 'Bersihkan Log'}
                 muted={isWebhookActionLocked}
                 size="sm"
                 onPress={clearWebhookLogs}
