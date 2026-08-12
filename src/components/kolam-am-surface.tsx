@@ -6771,29 +6771,26 @@ function AmUsersPage() {
           pageSize: limit,
           total,
         } : undefined}
-        renderActions={user => (
-          <View style={styles.inlineActions}>
-            {canUpdateUser ? (
-              <KolamEditButton
-                accessibilityLabel={`AM User Edit ${user._id}`}
-                intent="outline"
-                size="sm"
-                onPress={() => editUser(user)}
-              />
-            ) : null}
-            {canDeleteUser ? (
-              <KolamButton
-                accessibilityLabel={`AM User Delete ${user._id}`}
-                disabled={actingUserId === user._id}
-                label={actingUserId === user._id ? '...' : 'Hapus'}
-                intent="danger"
-                muted={actingUserId === user._id}
-                size="sm"
-                onPress={() => requestDeleteUser(user)}
-              />
-            ) : null}
-          </View>
-        )}
+        renderActions={user => {
+          const actions = [
+            ...(canUpdateUser ? [{
+              label: 'Rubah',
+              onPress: () => editUser(user),
+            }] : []),
+            ...(canDeleteUser ? [{
+              disabled: actingUserId === user._id,
+              label: actingUserId === user._id ? '...' : 'Hapus',
+              onPress: () => requestDeleteUser(user),
+              tone: 'danger' as const,
+            }] : []),
+          ];
+          return actions.length ? (
+            <KolamTableRowActionMenu
+              accessibilityLabel={`AM User Actions ${user._id}`}
+              actions={actions}
+            />
+          ) : null;
+        }}
         rows={users}
         showFooter={total > 0}
       />

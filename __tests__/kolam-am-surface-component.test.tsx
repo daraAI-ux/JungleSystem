@@ -4885,9 +4885,13 @@ describe('KolamAmSurface', () => {
       password: 'StrongPass1!',
       role: 'role-admin',
     });
+    const getUserActionMenu = () => renderer!.root
+      .findAllByType(KolamTableRowActionMenu)
+      .find(menu => menu.props.accessibilityLabel === 'AM User Actions user-1');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM User Edit user-1'}).props.onPress();
+      getUserActionMenu()!.props.actions
+        .find((action: {label: string}) => action.label === 'Rubah')!.onPress();
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
@@ -4904,7 +4908,8 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM User Delete user-1'}).props.onPress();
+      getUserActionMenu()!.props.actions
+        .find((action: {label: string}) => action.label === 'Hapus')!.onPress();
     });
     expect(deleteAmUser).not.toHaveBeenCalled();
 
@@ -4918,7 +4923,8 @@ describe('KolamAmSurface', () => {
     expect(text).not.toContain('Hapus Existing User (@ existing )?');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM User Delete user-1'}).props.onPress();
+      getUserActionMenu()!.props.actions
+        .find((action: {label: string}) => action.label === 'Hapus')!.onPress();
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Confirm Delete user-1'}).props.onPress();
