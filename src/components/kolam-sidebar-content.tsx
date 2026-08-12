@@ -299,6 +299,8 @@ function getAmRouteModuleIcon(
   if (item.id === 'hardware') return 'amHardware';
   if (item.id === 'webhooks') return 'amWebhook';
   if (item.id === 'transactions') return 'amTransfer';
+  if (item.id === 'mutasi') return 'amTransfer';
+  if (item.id === 'users') return 'staff';
   return undefined;
 }
 
