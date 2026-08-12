@@ -2791,14 +2791,13 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.mutedSoft,
   },
   paymentGrid: {
+    alignContent: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
   paymentCard: {
-    flexBasis: 220,
-    flexGrow: 1,
-    flexShrink: 1,
+    width: 220,
     minHeight: 92,
     justifyContent: 'center',
     borderRadius: 6,
