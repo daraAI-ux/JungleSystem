@@ -143,15 +143,12 @@ export function KolamPortalSurface({
                 <PortalSummaryCards data={dataset} loading={loading} />
               </View>
 
-              <View style={styles.twelveGrid}>
-                <PortalAttendanceToday data={dataset} loading={loading} />
-                <PortalAttendanceHistory
-                  data={dataset}
-                  loading={loading}
-                  page={attendancePage}
-                  setPage={setAttendancePage}
-                />
-              </View>
+              <PortalAttendanceSection
+                data={dataset}
+                loading={loading}
+                page={attendancePage}
+                setPage={setAttendancePage}
+              />
 
               <View style={styles.threeGrid}>
                 <PortalPayrollSlipsSection data={dataset} loading={loading} />
@@ -406,60 +403,7 @@ function PortalSummaryCards({
   );
 }
 
-function PortalAttendanceToday({
-  data,
-  loading,
-}: {
-  data: KolamPortalDataset | null;
-  loading: boolean;
-}) {
-  const today = data?.todayAttendance;
-  const day = today?.day;
-  const hasCheckIn = Boolean(day?.checkInAt);
-  const hasCheckOut = Boolean(day?.checkOutAt);
-  return (
-    <PortalCard style={styles.col5} title="Absensi hari ini">
-      {loading && !today ? (
-        <EmptyLine text="Memuat absensi..." />
-      ) : (
-        <View style={styles.attendanceBlock}>
-          <View style={styles.innerBox}>
-            <Text style={styles.mutedText}>Tanggal: {today?.dateKey ?? '-'}</Text>
-            {today?.holiday ? <StatusBadge value="holiday" label="Hari libur toko" /> : null}
-            <StatusBadge value={day?.status ?? 'pending'} label={formatAttendanceStatus(day?.status)} />
-            <Text style={styles.bodyText}>
-              Jam kerja: <Text style={styles.strongText}>{today?.settings?.workStartTime ?? '-'}</Text>
-            </Text>
-            {day?.checkInAt ? (
-              <Text style={styles.bodyText}>Check-in: {formatDateTime(day.checkInAt)}</Text>
-            ) : null}
-            {day?.checkOutAt ? (
-              <Text style={styles.bodyText}>Check-out: {formatDateTime(day.checkOutAt)}</Text>
-            ) : null}
-            {today?.settings?.requireFace && !today.faceEnrolled ? (
-              <Text style={styles.warningText}>
-                Wajah belum terdaftar - hubungi admin untuk pendaftaran wajah.
-              </Text>
-            ) : null}
-          </View>
-          {!today?.holiday ? (
-            <View style={styles.innerBox}>
-              {!hasCheckIn ? (
-                <KolamButton disabled label="Check-in" />
-              ) : hasCheckIn && !hasCheckOut ? (
-                <KolamButton disabled label="Check-out" />
-              ) : (
-                <Text style={styles.mutedText}>Absensi hari ini selesai.</Text>
-              )}
-            </View>
-          ) : null}
-        </View>
-      )}
-    </PortalCard>
-  );
-}
-
-function PortalAttendanceHistory({
+function PortalAttendanceSection({
   data,
   loading,
   page,
@@ -470,27 +414,115 @@ function PortalAttendanceHistory({
   page: number;
   setPage: (page: number) => void;
 }) {
+  const today = data?.todayAttendance;
+  const day = today?.day;
+  const hasCheckIn = Boolean(day?.checkInAt);
+  const hasCheckOut = Boolean(day?.checkOutAt);
   const attendance = data?.attendance;
   const days = attendance?.days ?? [];
   const subtitle = getAttendanceRange(attendance ?? null);
   const pageSize = 10;
   const rows = paginate(days, page, pageSize);
   const columns: Array<KolamListTableColumn<KolamPortalAttendanceDay>> = [
-    { id: 'date', label: 'Tgl', flex: 0.9, render: row => <CellText>{row.dateKey ?? '-'}</CellText> },
-    { id: 'status', label: 'Status', flex: 1, render: row => <StatusBadge value={row.status} label={formatAttendanceStatus(row.status)} /> },
-    { id: 'in', label: 'Masuk', flex: 1, render: row => <CellText>{formatDateTime(row.checkInAt)}</CellText> },
-    { id: 'out', label: 'Keluar', flex: 1, render: row => <CellText>{formatDateTime(row.checkOutAt)}</CellText> },
+    {
+      id: 'date',
+      label: 'Tgl',
+      flex: 0.9,
+      render: row => <CellText>{row.dateKey ?? '-'}</CellText>,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      flex: 1,
+      render: row => (
+        <StatusBadge
+          label={formatAttendanceStatus(row.status)}
+          value={row.status}
+        />
+      ),
+    },
+    {
+      id: 'in',
+      label: 'Masuk',
+      flex: 1,
+      render: row => <CellText>{formatDateTime(row.checkInAt)}</CellText>,
+    },
+    {
+      id: 'out',
+      label: 'Keluar',
+      flex: 1,
+      render: row => <CellText>{formatDateTime(row.checkOutAt)}</CellText>,
+    },
   ];
 
   return (
-    <PortalCard style={styles.col7} subtitle={loading ? 'Memuat...' : subtitle} title="Riwayat absensi">
-      <KolamListTableComposition
-        columns={columns}
-        emptyTitle={loading ? 'Memuat...' : 'Belum ada data periode ini.'}
-        getRowKey={(row, index) => row.dateKey ?? `attendance-${index}`}
-        pagination={{ onPageChange: setPage, page, pageSize, total: days.length }}
-        rows={rows}
-      />
+    <PortalCard subtitle={subtitle} title="Absensi">
+      <View style={styles.attendanceUnified}>
+        <View style={styles.attendanceTodayRow}>
+          {loading && !today ? (
+            <EmptyLine text="Memuat absensi..." />
+          ) : (
+            <>
+              <View style={styles.attendanceTodayInfo}>
+                <Text style={styles.mutedText}>
+                  Tanggal: {today?.dateKey ?? '-'}
+                </Text>
+                <View style={styles.attendanceBadgeRow}>
+                  {today?.holiday ? (
+                    <StatusBadge label="Hari libur toko" value="holiday" />
+                  ) : null}
+                  <StatusBadge
+                    label={formatAttendanceStatus(day?.status)}
+                    value={day?.status ?? 'pending'}
+                  />
+                </View>
+                <Text style={styles.bodyText}>
+                  Jam kerja:{' '}
+                  <Text style={styles.strongText}>
+                    {today?.settings?.workStartTime ?? '-'}
+                  </Text>
+                </Text>
+                {day?.checkInAt ? (
+                  <Text style={styles.bodyText}>
+                    Check-in: {formatDateTime(day.checkInAt)}
+                  </Text>
+                ) : null}
+                {day?.checkOutAt ? (
+                  <Text style={styles.bodyText}>
+                    Check-out: {formatDateTime(day.checkOutAt)}
+                  </Text>
+                ) : null}
+                {today?.settings?.requireFace && !today.faceEnrolled ? (
+                  <Text style={styles.warningText}>
+                    Wajah belum terdaftar - hubungi admin untuk pendaftaran wajah.
+                  </Text>
+                ) : null}
+              </View>
+              {!today?.holiday ? (
+                <View style={styles.attendanceTodayAction}>
+                  {!hasCheckIn ? (
+                    <KolamButton disabled label="Check-in" />
+                  ) : hasCheckIn && !hasCheckOut ? (
+                    <KolamButton disabled label="Check-out" />
+                  ) : (
+                    <Text style={styles.mutedText}>Absensi hari ini selesai.</Text>
+                  )}
+                </View>
+              ) : null}
+            </>
+          )}
+        </View>
+        <View style={styles.attendanceHistoryBlock}>
+          <Text style={styles.attendanceHistoryTitle}>Riwayat</Text>
+          <KolamListTableComposition
+            columns={columns}
+            emptyTitle={loading ? 'Memuat...' : 'Belum ada data periode ini.'}
+            getRowKey={(row, index) => row.dateKey ?? `attendance-${index}`}
+            pagination={{ onPageChange: setPage, page, pageSize, total: days.length }}
+            rows={rows}
+          />
+        </View>
+      </View>
     </PortalCard>
   );
 }
@@ -1267,15 +1299,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
-  attendanceBlock: {
+  attendanceUnified: {
     gap: 12,
   },
-  innerBox: {
+  attendanceTodayRow: {
+    alignItems: 'stretch',
     borderColor: V.colors.border,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     padding: 12,
+  },
+  attendanceTodayInfo: {
+    flex: 1,
+    gap: 8,
+    minWidth: 280,
+  },
+  attendanceTodayAction: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    minWidth: 140,
+  },
+  attendanceBadgeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  attendanceHistoryBlock: {
+    gap: 8,
+  },
+  attendanceHistoryTitle: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
   },
   compactList: {
     borderColor: V.colors.border,
