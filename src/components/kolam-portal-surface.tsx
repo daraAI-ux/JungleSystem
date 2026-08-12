@@ -1495,8 +1495,8 @@ const styles = StyleSheet.create({
     minWidth: 280,
   },
   attendanceTodayAction: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
     minWidth: 140,
   },
   attendanceBadgeRow: {
