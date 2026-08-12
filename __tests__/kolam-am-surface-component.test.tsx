@@ -3848,11 +3848,11 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Create Rack'}).props.onPress();
     });
-    let inputs = renderer!.root.findAllByType(TextInput);
+    const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
     await act(async () => {
-      inputs[0].props.onChangeText('10.0.0.10');
-      inputs[1].props.onChangeText('Server Room A');
-      inputs[2].props.onChangeText('Main AM rack');
+      findInput('contoh 100.91.91.95:2700')!.props.onChangeText('10.0.0.10');
+      findInput('contoh Lantai 2, Ruang A')!.props.onChangeText('Server Room A');
+      findInput('Opsional')!.props.onChangeText('Main AM rack');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -3870,9 +3870,8 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
     });
-    inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[1].props.onChangeText('Server Room B');
+      findInput('contoh Lantai 2, Ruang A')!.props.onChangeText('Server Room B');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -3914,9 +3913,8 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Box'}).props.onPress();
     });
-    inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('New box notes');
+      findInput('Opsional')!.props.onChangeText('New box notes');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -3933,7 +3931,6 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Device'}).props.onPress();
     });
-    inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
     });
@@ -3941,10 +3938,10 @@ describe('KolamAmSurface', () => {
     expect(renderText(renderer!).join(' ')).toContain('TCP Address wajib diisi untuk TCP device.');
 
     await act(async () => {
-      inputs[0].props.onChangeText('10.0.0.9:5555');
-      inputs[1].props.onChangeText('Samsung');
-      inputs[2].props.onChangeText('A54');
-      inputs[3].props.onChangeText('whatsapp, banking');
+      findInput('192.168.101.231:5555')!.props.onChangeText('10.0.0.9:5555');
+      findInput('Samsung / Server')!.props.onChangeText('Samsung');
+      findInput('A52 / Playwright')!.props.onChangeText('A54');
+      findInput('whatsapp, marketplace, banking')!.props.onChangeText('whatsapp, banking');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -3972,12 +3969,11 @@ describe('KolamAmSurface', () => {
     expect(createAmDevice).toHaveBeenCalledTimes(1);
     expect(renderText(renderer!).join(' ')).toContain('UDID wajib diisi untuk USB device.');
 
-    inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('USBNEW1');
-      inputs[1].props.onChangeText('Samsung');
-      inputs[2].props.onChangeText('A54');
-      inputs[3].props.onChangeText('whatsapp, banking');
+      findInput('UDID device USB')!.props.onChangeText('USBNEW1');
+      findInput('Samsung / Server')!.props.onChangeText('Samsung');
+      findInput('A52 / Playwright')!.props.onChangeText('A54');
+      findInput('whatsapp, marketplace, banking')!.props.onChangeText('whatsapp, banking');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -4022,11 +4018,10 @@ describe('KolamAmSurface', () => {
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment TCP'}),
     ).toHaveLength(0);
-    inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('USB9999');
-      inputs[1].props.onChangeText('Samsung');
-      inputs[2].props.onChangeText('A55');
+      findInput('UDID device USB')!.props.onChangeText('USB9999');
+      findInput('Samsung / Server')!.props.onChangeText('Samsung');
+      findInput('A52 / Playwright')!.props.onChangeText('A55');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();

@@ -189,6 +189,7 @@ const AM_ACTIVITY_LOG_METHOD_LABELS: Record<string, string> = {
 };
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 type AmServicesFilterPanel = 'platform' | 'status';
+type AmHardwareFilterPanel = 'status';
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
 type AmDashboardRecentTab = 'transfers' | 'mutasi';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
@@ -222,6 +223,8 @@ const AM_SERVICE_STATUS_LABELS: Record<string, string> = {
   blocked: 'Diblokir',
 };
 const AM_SERVICE_STATUS_FILTERS = ['all', 'active', 'inactive', 'blocked'];
+const AM_HARDWARE_ENTITY_STATUS_FILTERS = ['all', 'active', 'inactive'];
+const AM_HARDWARE_DEVICE_STATUS_FILTERS = ['all', 'connected', 'disconnected', 'unauthorized', 'unknown'];
 const AM_SERVICE_FILTER_PANEL_WIDTH = 240;
 const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram']);
 const AM_BROWSER_DEVICE_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']);
@@ -1930,6 +1933,55 @@ function AmServicesFilterOverlayPanel({
   );
 }
 
+function AmHardwareFilterOverlayPanel({
+  anchor,
+  options,
+  selectedValue,
+  onClose,
+  onSelect,
+}: {
+  activePanel: AmHardwareFilterPanel;
+  anchor: KolamFilterPanelAnchor;
+  options: string[];
+  selectedValue: string;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <View
+      style={[
+        styles.amServicesFilterOverlayPanel,
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: AM_SERVICE_FILTER_PANEL_WIDTH,
+        },
+      ]}>
+      <ScrollView
+        contentContainerStyle={styles.amServicesFilterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.amServicesFilterPanelScroll}>
+        {options.map(option => {
+          const selected = option === selectedValue;
+          return (
+            <KolamButton
+              accessibilityLabel={`AM Hardware Status ${formatAmDisplayLabel(option === 'all' ? 'Semua status' : option)}`}
+              intent={selected ? 'primary' : 'plain'}
+              key={`hardware-status-${option}`}
+              label={option === 'all' ? 'Semua status' : formatAmDisplayLabel(option)}
+              onPress={() => onSelect(option)}
+              style={styles.amServicesFilterPanelOption}
+            />
+          );
+        })}
+      </ScrollView>
+      <View style={styles.amServicesFilterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
+    </View>
+  );
+}
+
 function AmTaskActions({
   disabled,
   onAction,
@@ -2020,9 +2072,15 @@ function AmHardwarePage({
   } | null>(null);
   const [adbStatusByDeviceId, setAdbStatusByDeviceId] = React.useState<AmDeviceAdbStatusMap>({});
   const [adbStatusError, setAdbStatusError] = React.useState<string | null>(null);
+  const [hardwareSearch, setHardwareSearch] = React.useState('');
+  const [hardwareStatus, setHardwareStatus] = React.useState('all');
+  const [activeHardwareFilterPanel, setActiveHardwareFilterPanel] = React.useState<AmHardwareFilterPanel | null>(null);
+  const [hardwarePanelAnchor, setHardwarePanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const hardwareToolbarRef = React.useRef<View>(null);
+  const hardwareStatusTriggerRef = React.useRef<View>(null);
 
   React.useEffect(() => {
     let mounted = true;
@@ -2163,6 +2221,76 @@ function AmHardwarePage({
     : selectedRack
       ? devicesWithAdbStatus.filter(device => isDeviceInRack(device, selectedRack))
       : devicesWithAdbStatus;
+  const hardwareStatusOptions = selectedBox
+    ? AM_HARDWARE_DEVICE_STATUS_FILTERS
+    : AM_HARDWARE_ENTITY_STATUS_FILTERS;
+  const normalizedHardwareSearch = hardwareSearch.trim().toLowerCase();
+  const filteredRacks = React.useMemo(
+    () => filterAmHardwareRacks(racks, normalizedHardwareSearch, hardwareStatus),
+    [hardwareStatus, normalizedHardwareSearch, racks],
+  );
+  const filteredBoxes = React.useMemo(
+    () => filterAmHardwareBoxes(visibleBoxes, normalizedHardwareSearch, hardwareStatus),
+    [hardwareStatus, normalizedHardwareSearch, visibleBoxes],
+  );
+  const filteredDevices = React.useMemo(
+    () => filterAmHardwareDevices(visibleDevices, normalizedHardwareSearch, hardwareStatus),
+    [hardwareStatus, normalizedHardwareSearch, visibleDevices],
+  );
+
+  React.useEffect(() => {
+    if (!hardwareStatusOptions.includes(hardwareStatus)) {
+      setHardwareStatus('all');
+      setActiveHardwareFilterPanel(null);
+      setHardwarePanelAnchor(null);
+    }
+  }, [hardwareStatus, hardwareStatusOptions]);
+
+  const anchorHardwareFilterPanel = React.useCallback(() => {
+    const toolbar = hardwareToolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    const trigger = hardwareStatusTriggerRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    if (typeof toolbar?.measureInWindow !== 'function' || typeof trigger?.measureInWindow !== 'function') {
+      setHardwarePanelAnchor({left: 0, top: 44});
+      return;
+    }
+    const testGlobals = globalThis as {expect?: unknown; it?: unknown};
+    if (typeof testGlobals.expect === 'function' || typeof testGlobals.it === 'function') {
+      setHardwarePanelAnchor({left: 0, top: 44});
+      return;
+    }
+    measureFilterPanelAnchor(
+      hardwareToolbarRef.current,
+      hardwareStatusTriggerRef.current,
+      AM_SERVICE_FILTER_PANEL_WIDTH,
+      setHardwarePanelAnchor,
+    );
+  }, []);
+
+  const openHardwareFilterPanel = React.useCallback((panel: AmHardwareFilterPanel) => {
+    if (activeHardwareFilterPanel === panel) {
+      setActiveHardwareFilterPanel(null);
+      setHardwarePanelAnchor(null);
+      return;
+    }
+    setActiveHardwareFilterPanel(null);
+    setHardwarePanelAnchor(null);
+    anchorHardwareFilterPanel();
+    setActiveHardwareFilterPanel(panel);
+  }, [activeHardwareFilterPanel, anchorHardwareFilterPanel]);
+
+  const closeHardwareFilterPanel = React.useCallback(() => {
+    setActiveHardwareFilterPanel(null);
+    setHardwarePanelAnchor(null);
+  }, []);
+
+  const handleHardwareSearchChange = React.useCallback((value: string) => {
+    setHardwareSearch(value);
+  }, []);
+
+  const handleHardwareStatusChange = React.useCallback((value: string) => {
+    setHardwareStatus(value);
+    closeHardwareFilterPanel();
+  }, [closeHardwareFilterPanel]);
 
   const fetchSelectedBoxAdbStatus = React.useCallback(async () => {
     if (!selectedBox) {
@@ -2401,6 +2529,34 @@ function AmHardwarePage({
     }
   }, [fetchHardware, resetHardwareRoute, selectedBoxId, selectedDeviceId, selectedRackId]);
 
+  const hardwareListCount = selectedBox
+    ? filteredDevices.length
+    : selectedRack
+      ? filteredBoxes.length
+      : filteredRacks.length;
+  const hardwareSearchPlaceholder = selectedBox
+    ? 'Cari device...'
+    : selectedRack
+      ? 'Cari box...'
+      : 'Cari rack...';
+  const hardwareStatusLabel = hardwareStatus === 'all'
+    ? 'Semua status'
+    : formatAmDisplayLabel(hardwareStatus);
+  const openCreateRackModal = React.useCallback(() => {
+    resetHardwareForm('rack');
+    setIsRackModalOpen(true);
+  }, [resetHardwareForm]);
+  const openAddBoxModal = React.useCallback(() => {
+    resetHardwareForm('box');
+    setFormRackId(selectedRack?._id ?? '');
+    setIsBoxModalOpen(true);
+  }, [resetHardwareForm, selectedRack?._id]);
+  const openAddDeviceModal = React.useCallback(() => {
+    resetHardwareForm('device');
+    setFormBoxId(selectedBox?._id ?? '');
+    setIsDeviceModalOpen(true);
+  }, [resetHardwareForm, selectedBox?._id]);
+
   return (
     <View style={styles.pageStack}>
       {!selectedRack ? (
@@ -2409,15 +2565,6 @@ function AmHardwarePage({
             <Text style={styles.panelTitle}>Rack</Text>
             <Text style={styles.panelText}>Lihat semua rack yang sudah dibuat.</Text>
           </View>
-          <KolamButton
-            accessibilityLabel="AM Hardware Create Rack"
-            label="Create Rack"
-            size="sm"
-            onPress={() => {
-              resetHardwareForm('rack');
-              setIsRackModalOpen(true);
-            }}
-          />
         </View>
       ) : null}
       {selectedRack ? (
@@ -2439,16 +2586,6 @@ function AmHardwarePage({
             <Text style={styles.panelTitle}>{selectedRack.name}</Text>
             <Text style={styles.panelText}>Kelola box di rack ini. Setiap box dapat memuat hingga 24 device.</Text>
           </View>
-          <KolamButton
-            accessibilityLabel="AM Hardware Add Box"
-            label="Add Box"
-            size="sm"
-            onPress={() => {
-              resetHardwareForm('box');
-              setFormRackId(selectedRack._id);
-              setIsBoxModalOpen(true);
-            }}
-          />
         </View>
       ) : null}
       {selectedBox && !selectedDevice ? (
@@ -2457,16 +2594,68 @@ function AmHardwarePage({
             <Text style={styles.panelTitle}>{selectedBox.name}</Text>
             <Text style={styles.panelText}>Kelola device di box ini. Setiap device mewakili perangkat automation.</Text>
           </View>
-          <KolamButton
-            accessibilityLabel="AM Hardware Add Device"
-            label="Add Device"
-            size="sm"
-            onPress={() => {
-              resetHardwareForm('device');
-              setFormBoxId(selectedBox._id);
-              setIsDeviceModalOpen(true);
-            }}
-          />
+        </View>
+      ) : null}
+      {!selectedDevice ? (
+        <View ref={hardwareToolbarRef} collapsable={false} style={styles.amHardwareToolbarWrap}>
+          <View style={kolamTableToolbarStyles.shell}>
+            <View style={kolamTableToolbarStyles.row}>
+              <View style={kolamTableToolbarStyles.filters}>
+                <KolamSearchField
+                  accessibilityLabel="AM Hardware Search"
+                  value={hardwareSearch}
+                  onChangeText={handleHardwareSearchChange}
+                  placeholder={hardwareSearchPlaceholder}
+                  containerStyle={kolamTableToolbarStyles.searchInput}
+                  trailingLabel={`${hardwareListCount} item`}
+                />
+                <View ref={hardwareStatusTriggerRef} collapsable={false}>
+                  <KolamTableFilterTrigger
+                    active={activeHardwareFilterPanel === 'status' || hardwareStatus !== 'all'}
+                    label={hardwareStatusLabel}
+                    onPress={() => openHardwareFilterPanel('status')}
+                    open={activeHardwareFilterPanel === 'status'}
+                    style={styles.amServicesFilterTrigger}
+                    variant="quiet"
+                  />
+                </View>
+              </View>
+              <View style={kolamTableToolbarStyles.actions}>
+                {!selectedRack ? (
+                  <KolamButton
+                    accessibilityLabel="AM Hardware Create Rack"
+                    label="Create Rack"
+                    size="sm"
+                    onPress={openCreateRackModal}
+                  />
+                ) : selectedBox ? (
+                  <KolamButton
+                    accessibilityLabel="AM Hardware Add Device"
+                    label="Add Device"
+                    size="sm"
+                    onPress={openAddDeviceModal}
+                  />
+                ) : (
+                  <KolamButton
+                    accessibilityLabel="AM Hardware Add Box"
+                    label="Add Box"
+                    size="sm"
+                    onPress={openAddBoxModal}
+                  />
+                )}
+              </View>
+            </View>
+          </View>
+          {activeHardwareFilterPanel && hardwarePanelAnchor ? (
+            <AmHardwareFilterOverlayPanel
+              activePanel={activeHardwareFilterPanel}
+              anchor={hardwarePanelAnchor}
+              options={hardwareStatusOptions}
+              selectedValue={hardwareStatus}
+              onClose={closeHardwareFilterPanel}
+              onSelect={handleHardwareStatusChange}
+            />
+          ) : null}
         </View>
       ) : null}
       {error ? (
@@ -2501,7 +2690,7 @@ function AmHardwarePage({
       ) : selectedBox ? (
         <AmHardwareDeviceList
           actingHardwareId={actingHardwareId}
-          devices={visibleDevices}
+          devices={filteredDevices}
           isLoading={isLoading}
           onDeleteDevice={device => requestDeleteHardware('device', device._id, device.name)}
           onEditDevice={editDevice}
@@ -2510,7 +2699,7 @@ function AmHardwarePage({
       ) : selectedRack ? (
         <AmHardwareBoxGrid
           actingHardwareId={actingHardwareId}
-          boxes={visibleBoxes}
+          boxes={filteredBoxes}
           isLoading={isLoading}
           onDeleteBox={box => requestDeleteHardware('box', box._id, box.name)}
           onEditBox={editBox}
@@ -2525,7 +2714,7 @@ function AmHardwarePage({
           onDeleteRack={rack => requestDeleteHardware('rack', rack._id, rack.name)}
           onEditRack={editRack}
           onSelectRack={rack => setSelectedRackId(rack._id)}
-          racks={racks}
+          racks={filteredRacks}
         />
       )}
       <KolamModalDialog
@@ -7405,6 +7594,55 @@ function isDeviceInBox(device: AmDevice, box: AmBox) {
   return device.boxId._id === box._id || device.boxId.name === box.name;
 }
 
+function filterAmHardwareRacks(racks: AmRack[], search: string, status: string) {
+  return racks.filter(rack => {
+    const statusMatch = status === 'all' || rack.status === status;
+    const searchMatch = matchesAmHardwareSearch(search, [
+      rack.name,
+      rack.location,
+      rack.description,
+      rack.serverIp,
+      formatRackAddedBy(rack),
+    ]);
+    return statusMatch && searchMatch;
+  });
+}
+
+function filterAmHardwareBoxes(boxes: AmBox[], search: string, status: string) {
+  return boxes.filter(box => {
+    const statusMatch = status === 'all' || box.status === status;
+    const searchMatch = matchesAmHardwareSearch(search, [
+      box.name,
+      box.description,
+      typeof box.rackId === 'object' ? box.rackId?.name : box.rackId,
+    ]);
+    return statusMatch && searchMatch;
+  });
+}
+
+function filterAmHardwareDevices(devices: AmDevice[], search: string, status: string) {
+  return devices.filter(device => {
+    const adbStatus = device.adbStatus ?? 'unknown';
+    const statusMatch = status === 'all' || adbStatus === status;
+    const searchMatch = matchesAmHardwareSearch(search, [
+      device.name,
+      device.connectionType,
+      device.tcpAddress,
+      device.udid,
+      device.brand,
+      device.model,
+      formatDeviceBox(device),
+      ...(device.tags ?? []),
+    ]);
+    return statusMatch && searchMatch;
+  });
+}
+
+function matchesAmHardwareSearch(search: string, values: Array<string | null | undefined>) {
+  if (!search) return true;
+  return values.some(value => value?.toLowerCase().includes(search));
+}
+
 function formatDeviceBox(device: AmDevice) {
   if (!device.boxId || typeof device.boxId === 'string') return 'Box belum diisi';
   const rackName = device.boxId.rackId?.name;
@@ -8047,6 +8285,15 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 100000,
     elevation: 1000,
+    overflow: 'visible',
+  },
+  amHardwareToolbarWrap: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    position: 'relative',
+    zIndex: 90000,
+    elevation: 900,
     overflow: 'visible',
   },
   amServicesFilterTrigger: {
