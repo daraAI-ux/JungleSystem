@@ -1675,16 +1675,6 @@ function AmServicesPage() {
                 />
               </View>
             </View>
-            <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton
-                accessibilityLabel="Refresh"
-                disabled={isLoading}
-                intent="outline"
-                muted={isLoading}
-                size="sm"
-                onPress={fetchAccounts}
-              />
-            </View>
           </View>
         </View>
         {activeFilterPanel && panelAnchor ? (
@@ -1848,31 +1838,6 @@ function AmServicesPage() {
             </View>
           );
         })}
-        {total > 0 ? (
-          <View style={styles.paginationBar}>
-            <Text style={styles.paginationText}>
-              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
-            </Text>
-            <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel="AM Services Previous Page"
-                disabled={page <= 1 || isLoading}
-                label="Sebelumnya"
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.max(1, current - 1))}
-              />
-              <KolamButton
-                accessibilityLabel="AM Services Next Page"
-                disabled={page >= totalPages || isLoading}
-                label={`Halaman ${page}/${totalPages}`}
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
-              />
-            </View>
-          </View>
-        ) : null}
       </View>
     </View>
   );

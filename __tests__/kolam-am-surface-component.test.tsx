@@ -1021,7 +1021,7 @@ describe('KolamAmSurface', () => {
     });
   });
 
-  it('keeps Services search, platform filter, and pagination in sync with AM live metadata', async () => {
+  it('keeps Services search and platform filters in sync with AM live metadata', async () => {
     jest.mocked(getAmServiceAccounts).mockResolvedValue({
       data: [
         {
@@ -1061,7 +1061,7 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'services');
 
     let text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(text).toContain('Menampilkan 1 - 20 dari 45 item');
+    expect(text).not.toContain('Menampilkan 1 - 20 dari 45 item');
     expect(text).toContain('Semua platform');
     expect(text).toContain('Box Browser / Rack Green');
     expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
@@ -1115,18 +1115,7 @@ describe('KolamAmSurface', () => {
       platform: 'shopee',
       status: 'active',
     });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Services Next Page'}).props.onPress();
-    });
-
-    expect(getAmServiceAccounts).toHaveBeenLastCalledWith({
-      page: 2,
-      limit: 20,
-      search: 'Shopee',
-      platform: 'shopee',
-      status: 'active',
-    });
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Services Next Page'})).toHaveLength(0);
   });
 
   it('keeps task action guards aligned with AM FE status rules', async () => {
