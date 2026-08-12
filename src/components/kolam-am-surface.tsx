@@ -5605,16 +5605,6 @@ function AmMutasiPage({
 
   return (
     <View style={styles.pageStack}>
-      <KolamDetailSummaryCard
-        fieldColumns={4}
-        fields={[
-          {id: 'incoming', label: 'Total Masuk', value: formatRupiah(incoming.total)},
-          {id: 'outgoing', label: 'Total Keluar', value: formatRupiah(outgoing.total)},
-          {id: 'balance', label: 'Saldo Bersih', value: formatRupiah(netBalance)},
-          {id: 'transactions', label: 'Total Transaksi', value: String(totalTransactions)},
-        ]}
-        title="Ringkasan Mutasi"
-      />
       <View ref={mutasiToolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
@@ -5666,6 +5656,16 @@ function AmMutasiPage({
           />
         ) : null}
       </View>
+      <KolamDetailSummaryCard
+        fieldColumns={4}
+        fields={[
+          {id: 'incoming', label: 'Total Masuk', value: formatRupiah(incoming.total)},
+          {id: 'outgoing', label: 'Total Keluar', value: formatRupiah(outgoing.total)},
+          {id: 'balance', label: 'Saldo Bersih', value: formatRupiah(netBalance)},
+          {id: 'transactions', label: 'Total Transaksi', value: String(totalTransactions)},
+        ]}
+        title="Ringkasan Mutasi"
+      />
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
       <KolamListTableComposition
         columns={mutasiTableColumns}
