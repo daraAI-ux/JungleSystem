@@ -3,6 +3,7 @@ import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {KolamButton} from '../src/components/kolam-button';
+import {KolamTableRowActionMenu} from '../src/components/kolam-dropdown-select';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
 import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 import {setAccessToken} from '../src/lib/api-client';
@@ -2754,7 +2755,7 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'hardware');
     let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Ditambahkan oleh Hardware Admin');
+    expect(hardwareText).toContain('Added By Hardware Admin');
     expect(hardwareText).not.toContain('Phone Rack');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
@@ -3843,11 +3844,14 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'hardware');
 
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Create Rack'}).props.onPress();
+    });
     let inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('Server Room A');
-      inputs[1].props.onChangeText('Main AM rack');
-      inputs[2].props.onChangeText('10.0.0.10');
+      inputs[0].props.onChangeText('10.0.0.10');
+      inputs[1].props.onChangeText('Server Room A');
+      inputs[2].props.onChangeText('Main AM rack');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -3859,12 +3863,15 @@ describe('KolamAmSurface', () => {
       serverIp: '10.0.0.10',
     });
 
+    const rackActionMenu = renderer!.root
+      .findAllByType(KolamTableRowActionMenu)
+      .find(menu => menu.props.accessibilityLabel === 'AM Hardware Rack Actions rack-1');
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Edit Rack rack-1'}).props.onPress();
+      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('Server Room B');
+      inputs[1].props.onChangeText('Server Room B');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
@@ -3878,27 +3885,31 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Rack rack-1'}).props.onPress();
+      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Delete')!.onPress();
     });
     expect(deleteAmRacks).not.toHaveBeenCalled();
     let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Hapus Rack Rack 1 ?');
+    expect(hardwareText).toContain('Hapus Rack?');
+    expect(hardwareText).toContain('Hapus Rack 1?');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Cancel Delete'}).props.onPress();
+      renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Batal')!.props.onPress();
     });
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).not.toContain('Hapus Rack Rack 1 ?');
+    expect(hardwareText).not.toContain('Hapus Rack?');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Delete Rack rack-1'}).props.onPress();
+      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Delete')!.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Confirm Delete Rack rack-1'}).props.onPress();
+      renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Hapus')!.props.onPress();
     });
 
     expect(deleteAmRacks).toHaveBeenCalledWith(['rack-1']);
 
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack 1'}).props.onPress();
+    });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Box'}).props.onPress();
     });
@@ -3988,9 +3999,6 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack 1'}).props.onPress();
-    });
-    await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 1'}).props.onPress();
     });
 
@@ -4028,10 +4036,14 @@ describe('KolamAmSurface', () => {
     });
     expect(deleteAmDevices).not.toHaveBeenCalled();
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Hapus Device Device 1 ?');
+    expect(hardwareText).toContain('Hapus Device?');
+    expect(hardwareText).toContain('Hapus Device 1?');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Confirm Delete Device device-1'}).props.onPress();
+      const deleteButtons = renderer!.root
+        .findAllByType(KolamButton)
+        .filter(button => button.props.label === 'Hapus');
+      deleteButtons[0].props.onPress();
     });
 
     expect(deleteAmDevices).toHaveBeenCalledWith(['device-1']);
@@ -4068,11 +4080,14 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'hardware');
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Create Rack'}).props.onPress();
+    });
     const inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
-      inputs[0].props.onChangeText('Pending Room');
-      inputs[1].props.onChangeText('Pending rack');
-      inputs[2].props.onChangeText('10.0.0.99');
+      inputs[0].props.onChangeText('10.0.0.99');
+      inputs[1].props.onChangeText('Pending Room');
+      inputs[2].props.onChangeText('Pending rack');
     });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();

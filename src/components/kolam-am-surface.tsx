@@ -134,6 +134,8 @@ import {KolamResetButton} from './kolam-reset-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
+import {KolamModalDialog} from './kolam-modal-dialog';
+import {KolamTableRowActionMenu} from './kolam-dropdown-select';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
@@ -1992,6 +1994,7 @@ function AmHardwarePage({
   const [selectedDeviceId, setSelectedDeviceId] = React.useState<string | null>(null);
   const [hardwareForm, setHardwareForm] = React.useState<'rack' | 'box' | 'device'>('rack');
   const [editingHardwareId, setEditingHardwareId] = React.useState<string | null>(null);
+  const [isRackModalOpen, setIsRackModalOpen] = React.useState(false);
   const [formLocation, setFormLocation] = React.useState('');
   const [formDescription, setFormDescription] = React.useState('');
   const [formServerIp, setFormServerIp] = React.useState('');
@@ -2149,8 +2152,6 @@ function AmHardwarePage({
     () => mergeAmDeviceAdbStatus(devices, adbStatusByDeviceId),
     [adbStatusByDeviceId, devices],
   );
-  const connectedDevices = devicesWithAdbStatus.filter(device => device.adbStatus === 'connected').length;
-  const unauthorizedDevices = devicesWithAdbStatus.filter(device => device.adbStatus === 'unauthorized').length;
   const selectedDevice = devicesWithAdbStatus.find(device => device._id === selectedDeviceId) ?? null;
   const visibleBoxes = selectedRack
     ? boxes.filter(box => isBoxInRack(box, selectedRack))
@@ -2224,6 +2225,7 @@ function AmHardwarePage({
   const editRack = React.useCallback((rack: AmRack) => {
     setHardwareForm('rack');
     setEditingHardwareId(rack._id);
+    setIsRackModalOpen(true);
     setFormLocation(rack.location ?? '');
     setFormDescription(rack.description ?? '');
     setFormServerIp(rack.serverIp ?? '');
@@ -2346,6 +2348,9 @@ function AmHardwarePage({
         }
       }
       resetHardwareForm(hardwareForm);
+      if (hardwareForm === 'rack') {
+        setIsRackModalOpen(false);
+      }
       await fetchHardware();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan hardware AM.');
@@ -2388,20 +2393,23 @@ function AmHardwarePage({
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
-        <AmMetricCard label="Rack" value={String(racks.length)} meta={`${boxes.length} box`} />
-        <AmMetricCard label="Device" value={String(devices.length)} meta={`${connectedDevices} tersambung`} />
-        <AmMetricCard label="Perhatian ADB" value={String(unauthorizedDevices)} meta="device unauthorized" />
-        <KolamRefreshButton
-          accessibilityLabel="Refresh"
-          disabled={isLoading}
-
-          intent="outline"
-          muted={isLoading}
-          size="sm"
-          onPress={fetchHardware}
-        />
-      </View>
+      {!selectedRack ? (
+        <View style={styles.amHardwareHeader}>
+          <View style={styles.amHardwareHeaderCopy}>
+            <Text style={styles.panelTitle}>Rack</Text>
+            <Text style={styles.panelText}>Lihat semua rack yang sudah dibuat.</Text>
+          </View>
+          <KolamButton
+            accessibilityLabel="AM Hardware Create Rack"
+            label="Create Rack"
+            size="sm"
+            onPress={() => {
+              resetHardwareForm('rack');
+              setIsRackModalOpen(true);
+            }}
+          />
+        </View>
+      ) : null}
       {selectedRack ? (
         <View style={styles.breadcrumbBar}>
           <KolamButton
@@ -2432,33 +2440,17 @@ function AmHardwarePage({
         </View>
       ) : null}
       {deletingHardware ? (
-        <View style={styles.warningPanel}>
-          <Text style={styles.warningText}>
-            Hapus {titleCase(deletingHardware.kind)} {deletingHardware.label}?
-          </Text>
-          <Text style={styles.panelText}>Aksi ini tidak bisa dibatalkan.</Text>
-          <View style={styles.inlineActions}>
-            <KolamButton
-              accessibilityLabel={`AM Hardware Confirm Delete ${titleCase(deletingHardware.kind)} ${deletingHardware.id}`}
-              disabled={actingHardwareId === deletingHardware.id}
-              intent="danger"
-              label={actingHardwareId === deletingHardware.id ? '...' : 'Hapus'}
-              muted={actingHardwareId === deletingHardware.id}
-              size="sm"
-              onPress={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
-            />
-            <KolamButton
-              accessibilityLabel="AM Hardware Cancel Delete"
-              disabled={actingHardwareId === deletingHardware.id}
-              intent="outline"
-              label="Batal"
-              muted={actingHardwareId === deletingHardware.id}
-              size="sm"
-              onPress={() => setDeletingHardware(null)}
-            />
-          </View>
-        </View>
+        <KolamConfirmDialog
+          destructive
+          confirmLabel={actingHardwareId === deletingHardware.id ? '...' : 'Hapus'}
+          message={`Hapus ${deletingHardware.label}? Aksi ini tidak bisa dibatalkan.`}
+          title={`Hapus ${titleCase(deletingHardware.kind)}?`}
+          visible={Boolean(deletingHardware)}
+          onCancel={() => setDeletingHardware(null)}
+          onConfirm={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
+        />
       ) : null}
+      {selectedRack ? (
       <View style={styles.tablePanel}>
         <View style={styles.formGrid}>
           <AmSegmentGroup
@@ -2574,6 +2566,7 @@ function AmHardwarePage({
           </View>
         </View>
       </View>
+      ) : null}
       {selectedDevice ? (
         <AmDeviceDetailPanel device={selectedDevice} />
       ) : selectedBox ? (
@@ -2606,6 +2599,55 @@ function AmHardwarePage({
           racks={racks}
         />
       )}
+      <KolamModalDialog
+        accessibilityLabel={editingHardwareId ? 'AM Hardware Edit Rack Modal' : 'AM Hardware Create Rack Modal'}
+        maxWidth="86%"
+        onClose={() => {
+          setIsRackModalOpen(false);
+          resetHardwareForm('rack');
+        }}
+        title={editingHardwareId ? 'Edit Rack' : 'Create Rack'}
+        visible={isRackModalOpen && hardwareForm === 'rack'}
+        width={420}
+        footer={
+          <>
+            <KolamCancelButton
+              label="Cancel"
+              onPress={() => {
+                setIsRackModalOpen(false);
+                resetHardwareForm('rack');
+              }}
+            />
+            <KolamSaveButton
+              accessibilityLabel="AM Hardware Save"
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Save' : 'Create'}
+              muted={isSubmitting}
+              onPress={saveHardware}
+            />
+          </>
+        }>
+        <View style={styles.formGrid}>
+          <AmTextInput
+            label="Server IP"
+            placeholder="contoh 100.91.91.95:2700"
+            value={formServerIp}
+            onChangeText={setFormServerIp}
+          />
+          <AmTextInput
+            label="Lokasi"
+            placeholder="contoh Lantai 2, Ruang A"
+            value={formLocation}
+            onChangeText={setFormLocation}
+          />
+          <AmTextInput
+            label="Deskripsi"
+            placeholder="Opsional"
+            value={formDescription}
+            onChangeText={setFormDescription}
+          />
+        </View>
+      </KolamModalDialog>
     </View>
   );
 }
@@ -3445,8 +3487,7 @@ function AmHardwareRackGrid({
   racks: AmRack[];
 }) {
   return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Rack</Text>
+    <View style={styles.hardwareGridSection}>
       {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack AM...</Text> : null}
       {!isLoading && !racks.length ? <Text style={styles.loadingText}>Rack belum ada</Text> : null}
       <View style={styles.cardGrid}>
@@ -3464,23 +3505,26 @@ function AmHardwareRackGrid({
               <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
             </View>
             {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
-            <Text style={styles.rowMeta}>Ditambahkan oleh {formatRackAddedBy(rack)}</Text>
             <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
-            <View style={styles.inlineActions}>
-              <KolamEditButton
-                accessibilityLabel={`AM Hardware Edit Rack ${rack._id}`}
-                intent="outline"
-                size="sm"
-                onPress={() => onEditRack(rack)}
-              />
-              <KolamButton
-                accessibilityLabel={`AM Hardware Delete Rack ${rack._id}`}
-                disabled={actingHardwareId === rack._id}
-                label={actingHardwareId === rack._id ? '...' : 'Hapus'}
-                intent="danger"
-                muted={actingHardwareId === rack._id}
-                size="sm"
-                onPress={() => onDeleteRack(rack)}
+            <View style={styles.hardwareCardFooter}>
+              <View style={styles.hardwareCardFooterCopy}>
+                <Text style={styles.rowMeta}>Added By</Text>
+                <Text style={styles.cellText} numberOfLines={1}>
+                  {formatRackAddedBy(rack)}
+                </Text>
+              </View>
+              <KolamTableRowActionMenu
+                accessibilityLabel={`AM Hardware Rack Actions ${rack._id}`}
+                actions={[
+                  {label: 'View Boxes', onPress: () => onSelectRack(rack)},
+                  {label: 'Edit', onPress: () => onEditRack(rack)},
+                  {
+                    disabled: actingHardwareId === rack._id,
+                    label: actingHardwareId === rack._id ? '...' : 'Delete',
+                    onPress: () => onDeleteRack(rack),
+                    tone: 'danger',
+                  },
+                ]}
               />
             </View>
           </KolamInteractionFrame>
@@ -7930,6 +7974,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  amHardwareHeader: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  amHardwareHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
   amServicesToolbarWrap: {
     width: '100%',
     alignSelf: 'stretch',
@@ -8686,6 +8743,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  hardwareGridSection: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    gap: 12,
+  },
   hardwareCard: {
     flexGrow: 1,
     flexBasis: 220,
@@ -8696,6 +8759,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     backgroundColor: V.colors.bg,
+  },
+  hardwareCardFooter: {
+    width: '100%',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingTop: 10,
+  },
+  hardwareCardFooterCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   hardwareStats: {
     flexDirection: 'row',
