@@ -5551,7 +5551,7 @@ function AmMutasiPage({
   const mutasiTableColumns = React.useMemo<Array<KolamListTableColumn<AmMutasi>>>(() => [
     {
       align: 'center',
-      flex: 0.58,
+      flex: 0.54,
       id: 'type',
       label: 'Tipe',
       render: item => (
@@ -5563,7 +5563,7 @@ function AmMutasiPage({
     },
     {
       align: 'center',
-      flex: 0.95,
+      flex: 0.88,
       id: 'account',
       label: 'Akun',
       render: item => (
@@ -5575,19 +5575,19 @@ function AmMutasiPage({
     },
     {
       align: 'right',
-      flex: 0.88,
+      flex: 0.82,
       id: 'amount',
       label: 'Nominal',
       render: item => <Text style={styles.cellText}>{formatMutasiSignedAmount(item)}</Text>,
     },
     {
-      flex: 1.5,
+      flex: 1.95,
       id: 'description',
       label: 'Deskripsi',
       render: item => <Text style={styles.cellText} numberOfLines={1}>{item.description || '-'}</Text>,
     },
     {
-      flex: 1.35,
+      flex: 1.2,
       id: 'device',
       label: 'Device',
       render: item => (
@@ -5598,7 +5598,7 @@ function AmMutasiPage({
       ),
     },
     {
-      flex: 0.9,
+      flex: 0.86,
       id: 'time',
       label: 'Waktu',
       render: item => <Text style={styles.cellText}>{formatAmDate(item.detectedAt)}</Text>,
@@ -5683,9 +5683,10 @@ function AmMutasiPage({
         renderActions={item => (
           <KolamButton
             accessibilityLabel={`AM Mutasi Detail ${item._id}`}
-            label={selectedMutasiId === item._id ? 'Tutup' : 'Detail'}
+            label="..."
             intent="outline"
             size="sm"
+            style={styles.amTableIconActionButton}
             onPress={() => selectMutasi(item)}
           />
         )}
@@ -8678,6 +8679,10 @@ const styles = StyleSheet.create({
   },
   mutasiCenteredText: {
     textAlign: 'center',
+  },
+  amTableIconActionButton: {
+    minWidth: 38,
+    paddingHorizontal: 8,
   },
   rowActions: {
     flexShrink: 0,
