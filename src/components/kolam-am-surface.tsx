@@ -3,6 +3,7 @@ import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native
 import type {DimensionValue} from 'react-native';
 import {SvgXml} from 'react-native-svg';
 import {KOLAM_SALDO_TOTAL_ICON_SVG} from '../assets/icons/saldo-total-icon-svg';
+import {KOLAM_UANG_KELUAR_ICON_SVG} from '../assets/icons/uang-keluar-icon-svg';
 import {KOLAM_UANG_MASUK_ICON_SVG} from '../assets/icons/uang-masuk-icon-svg';
 import {appConfig} from '../config/app';
 import {
@@ -541,6 +542,7 @@ function AmDashboardPage({
           value={formatRupiah(data.summary.todayIncoming.total)}
         />
         <AmDashboardWalletCard
+          artwork="uang-keluar"
           label="Keluar Hari Ini"
           meta={`${data.summary.todayOutgoing.count} transaksi`}
           tone="warning"
@@ -6453,7 +6455,7 @@ function AmDashboardWalletCard({
   tone,
   value,
 }: {
-  artwork?: 'saldo-total' | 'uang-masuk';
+  artwork?: 'saldo-total' | 'uang-keluar' | 'uang-masuk';
   label: string;
   meta: string;
   tone: AmDashboardWalletCardTone;
@@ -6462,6 +6464,8 @@ function AmDashboardWalletCard({
   const artworkSvg =
     artwork === 'saldo-total'
       ? KOLAM_SALDO_TOTAL_ICON_SVG
+      : artwork === 'uang-keluar'
+        ? KOLAM_UANG_KELUAR_ICON_SVG
       : artwork === 'uang-masuk'
         ? KOLAM_UANG_MASUK_ICON_SVG
         : null;
