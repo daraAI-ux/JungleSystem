@@ -130,7 +130,6 @@ import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
-import {KolamListTablePaginationFooter} from './kolam-list-table-composition';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
 
@@ -181,6 +180,7 @@ const AM_ACTIVITY_LOG_METHOD_LABELS: Record<string, string> = {
 };
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
+type AmDashboardRecentTab = 'transfers' | 'mutasi';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
 const AM_TRANSFER_METHODS = ['BI FAST', 'Realtime Online'];
 const AM_TRANSFER_METHOD_FEES: Record<string, number> = {
@@ -598,16 +598,11 @@ function AmDashboardPage({
           </View>
         </View>
       </View>
-      <View style={styles.panelGrid}>
-        <AmRecentTransfersPanel
-          onOpenRoute={openAmRoute}
-          transfers={data.recentTransfers}
-        />
-        <AmRecentMutasiPanel
-          onOpenRoute={openAmRoute}
-          mutasi={data.recentMutasi}
-        />
-      </View>
+      <AmRecentActivityPanel
+        mutasi={data.recentMutasi}
+        onOpenRoute={openAmRoute}
+        transfers={data.recentTransfers}
+      />
       {data.devices.length > 0 ? (
         <View style={styles.panel}>
           <View style={styles.sectionHeaderRow}>
@@ -704,58 +699,138 @@ function AmTransferBreakdownRow({
   );
 }
 
-function AmRecentTransfersPanel({
+function AmRecentActivityPanel({
+  mutasi,
+  onOpenRoute,
+  transfers,
+}: {
+  mutasi: AmMutasi[];
+  onOpenRoute: (route: string, templateRoute?: string) => void;
+  transfers: AmTransfer[];
+}) {
+  const [activeTab, setActiveTab] = React.useState<AmDashboardRecentTab>('transfers');
+  const isTransferTab = activeTab === 'transfers';
+
+  return (
+    <View style={styles.dashboardRecentPanel}>
+      <View style={styles.sectionHeaderRow}>
+        <View style={styles.detailTabs}>
+          <KolamInteractionFrame
+            accessibilityLabel="AM Dashboard Recent Transfers Tab"
+            onPress={() => setActiveTab('transfers')}
+            selected={isTransferTab}
+            style={[styles.detailTab, isTransferTab && styles.detailTabActive]}>
+            <Text style={[styles.segmentText, isTransferTab && styles.segmentTextActive]}>
+              Transfer Terbaru
+            </Text>
+          </KolamInteractionFrame>
+          <KolamInteractionFrame
+            accessibilityLabel="AM Dashboard Recent Mutations Tab"
+            onPress={() => setActiveTab('mutasi')}
+            selected={!isTransferTab}
+            style={[styles.detailTab, !isTransferTab && styles.detailTabActive]}>
+            <Text style={[styles.segmentText, !isTransferTab && styles.segmentTextActive]}>
+              Mutasi Terbaru
+            </Text>
+          </KolamInteractionFrame>
+        </View>
+        <KolamButton
+          accessibilityLabel={isTransferTab ? 'AM Dashboard View Transfers' : 'AM Dashboard View Recent Mutations'}
+          label="Lihat semua"
+          intent="outline"
+          size="sm"
+          onPress={() => onOpenRoute(isTransferTab ? 'transactions' : 'mutasi')}
+        />
+      </View>
+      {isTransferTab ? (
+        <AmRecentTransfersTable
+          onOpenRoute={onOpenRoute}
+          transfers={transfers}
+        />
+      ) : (
+        <AmRecentMutasiTable
+          mutasi={mutasi}
+          onOpenRoute={onOpenRoute}
+        />
+      )}
+    </View>
+  );
+}
+
+function AmRecentTransfersTable({
   onOpenRoute,
   transfers,
 }: {
   onOpenRoute: (route: string, templateRoute?: string) => void;
   transfers: AmTransfer[];
 }) {
+  const rows = transfers.slice(0, 10);
+
   return (
-    <View style={styles.dashboardRecentPanel}>
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Transfer Terbaru</Text>
-        <KolamButton
-          accessibilityLabel="AM Dashboard View Transfers"
-          label="Lihat semua"
-          intent="outline"
-          size="sm"
-          onPress={() => onOpenRoute('transactions')}
-        />
-      </View>
+    <>
       <Text style={styles.panelText}>Aktivitas transfer terbaru di semua device.</Text>
-      <View style={styles.recentList}>
-        {transfers.map(transfer => (
-          <KolamInteractionFrame
-            key={transfer._id}
-            accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
-            onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
-            style={styles.recentListRow}>
-            <View style={styles.recentListMain}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>
-                {[transfer.recipientAccount, transfer.recipientName].filter(Boolean).join(' - ') || '-'}
+      <KolamCatalogListTableShell footer={null} showFooter={false}>
+        {rows.length > 0 ? (
+          <View style={styles.dashboardRecentTable}>
+            <View style={styles.dashboardRecentTableHeader}>
+              <Text style={[styles.tableHeaderText, styles.dashboardTransferAccountCol]}>Akun</Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardTransferRecipientCol]}>Penerima</Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardTransferAmountCol]}>
+                Nominal
+              </Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardTransferStatusCol]}>Status</Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardTransferDateCol]}>
+                Tanggal
               </Text>
             </View>
-            <View style={styles.recentListMeta}>
-              <Text style={[styles.cellText, styles.amountText]} numberOfLines={1}>{formatRupiah(transfer.amount)}</Text>
-              <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAmDate(transfer.createdAt)}</Text>
-            </View>
-          </KolamInteractionFrame>
-        ))}
-      </View>
+            {rows.map(transfer => (
+              <KolamInteractionFrame
+                key={transfer._id}
+                accessibilityLabel={`AM Dashboard Transfer ${transfer._id}`}
+                onPress={() => onOpenRoute(`transactions/${transfer._id}`, 'transactions/:id')}
+                style={styles.dashboardRecentTableRow}>
+                <View style={styles.dashboardTransferAccountCol}>
+                  <Text style={styles.cellText} numberOfLines={1}>
+                    {formatBankAccount(transfer.accountId)}
+                  </Text>
+                  <Text style={styles.rowMeta} numberOfLines={1}>
+                    {formatAccountType(transfer.accountId)}
+                  </Text>
+                </View>
+                <Text
+                  style={[styles.rowMeta, styles.dashboardTransferRecipientCol]}
+                  numberOfLines={1}>
+                  {[transfer.recipientAccount, transfer.recipientName].filter(Boolean).join(' - ') || '-'}
+                </Text>
+                <Text
+                  style={[styles.cellText, styles.dashboardTransferAmountCol, styles.amountText]}
+                  numberOfLines={1}>
+                  {formatRupiah(transfer.amount)}
+                </Text>
+                <View style={styles.dashboardTransferStatusCol}>
+                  <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
+                </View>
+                <Text
+                  style={[styles.rowMeta, styles.dashboardTransferDateCol]}
+                  numberOfLines={1}>
+                  {formatAmDate(transfer.createdAt)}
+                </Text>
+              </KolamInteractionFrame>
+            ))}
+          </View>
+        ) : null}
+      </KolamCatalogListTableShell>
       <AmLoadingOrEmpty
         isLoading={false}
-        items={transfers}
+        items={rows}
         loadingText="Memuat transfer terbaru..."
         emptyText="Transfer terbaru tidak ditemukan"
       />
-    </View>
+    </>
   );
 }
 
-function AmRecentMutasiPanel({
+function AmRecentMutasiTable({
   mutasi,
   onOpenRoute,
 }: {
@@ -765,32 +840,12 @@ function AmRecentMutasiPanel({
   const rows = mutasi.slice(0, 10);
 
   return (
-    <View style={styles.dashboardRecentPanel}>
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Mutasi Terbaru</Text>
-        <KolamButton
-          accessibilityLabel="AM Dashboard View Recent Mutations"
-          label="Lihat semua"
-          intent="outline"
-          size="sm"
-          onPress={() => onOpenRoute('mutasi')}
-        />
-      </View>
+    <>
       <Text style={styles.panelText}>Transaksi masuk dan keluar terbaru.</Text>
-      <KolamCatalogListTableShell
-        footer={
-          <KolamListTablePaginationFooter
-            onPageChange={() => undefined}
-            page={1}
-            pageSize={10}
-            siblingCount={0}
-            total={rows.length}
-          />
-        }
-        showFooter={rows.length > 0}>
+      <KolamCatalogListTableShell footer={null} showFooter={false}>
         {rows.length > 0 ? (
-          <View style={styles.dashboardMutasiTable}>
-            <View style={styles.dashboardMutasiTableHeader}>
+          <View style={styles.dashboardRecentTable}>
+            <View style={styles.dashboardRecentTableHeader}>
               <Text style={[styles.tableHeaderText, styles.dashboardMutasiAccountCol]}>Akun</Text>
               <Text style={[styles.tableHeaderText, styles.dashboardMutasiTypeCol]}>Tipe</Text>
               <Text style={[styles.tableHeaderText, styles.dashboardMutasiAmountCol]}>
@@ -805,7 +860,7 @@ function AmRecentMutasiPanel({
                 key={item._id}
                 accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
                 onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
-                style={styles.dashboardMutasiTableRow}>
+                style={styles.dashboardRecentTableRow}>
                 <View style={styles.dashboardMutasiAccountCol}>
                   <Text style={styles.cellText} numberOfLines={1}>
                     {formatBankAccount(item.accountId)}
@@ -846,7 +901,7 @@ function AmRecentMutasiPanel({
         loadingText="Memuat mutasi terbaru..."
         emptyText="Mutasi terbaru tidak ditemukan"
       />
-    </View>
+    </>
   );
 }
 
@@ -7415,7 +7470,6 @@ const styles = StyleSheet.create({
   dashboardRecentPanel: {
     width: '100%',
     alignSelf: 'stretch',
-    flexBasis: 360,
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 0,
@@ -7469,12 +7523,12 @@ const styles = StyleSheet.create({
     gap: 4,
     overflow: 'hidden',
   },
-  dashboardMutasiTable: {
+  dashboardRecentTable: {
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
   },
-  dashboardMutasiTableHeader: {
+  dashboardRecentTableHeader: {
     width: '100%',
     minWidth: 0,
     flexDirection: 'row',
@@ -7483,7 +7537,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  dashboardMutasiTableRow: {
+  dashboardRecentTableRow: {
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
@@ -7494,6 +7548,28 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  dashboardTransferAccountCol: {
+    flex: 1.2,
+    minWidth: 0,
+  },
+  dashboardTransferRecipientCol: {
+    flex: 1.4,
+    minWidth: 0,
+  },
+  dashboardTransferAmountCol: {
+    flex: 0.9,
+    minWidth: 0,
+    textAlign: 'right',
+  },
+  dashboardTransferStatusCol: {
+    flex: 0.8,
+    minWidth: 0,
+  },
+  dashboardTransferDateCol: {
+    flex: 1,
+    minWidth: 0,
+    textAlign: 'right',
   },
   dashboardMutasiAccountCol: {
     flex: 1.4,

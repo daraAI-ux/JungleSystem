@@ -423,7 +423,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('994 - Vendor Dashboard Sixth');
     expect(joinedText).toContain('Legacy BCA - 321');
     expect(text).toContain('Mutasi Terbaru');
-    expect(joinedText).toContain('Legacy BRI - 654');
+    expect(joinedText).not.toContain('Legacy BRI - 654');
     expect(text).toContain('Ringkasan Device');
     expect(joinedText).toContain('dengan akun aktif');
     expect(joinedText).toContain('Semua device dengan akun aktif dan lokasinya.');
@@ -432,7 +432,6 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Tipe');
     expect(text).toContain('Dashboard Phone');
     expect(text).toContain('Dashboard Phone Ninth');
-    expect(text).toContain('Masuk');
     expect(text).toContain('Rp 450.000,00');
     expect(joinedText).toMatch(/Box 01\s+\/\s+Rack Alpha/);
     expect(joinedText).toMatch(/1\s+\/\s+2/);
@@ -482,15 +481,15 @@ describe('KolamAmSurface', () => {
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 360 &&
-          style?.borderWidth === 1 &&
+        return style?.borderWidth === 1 &&
           style?.maxWidth === '100%' &&
           style?.overflow === 'hidden';
       });
-    expect(amRecentPanels.length).toBeGreaterThanOrEqual(2);
+    expect(amRecentPanels).toHaveLength(1);
     expect(amRecentPanels.every(view => {
       const style = StyleSheet.flatten(view.props.style);
       return style?.alignSelf === 'stretch' &&
+        style?.width === '100%' &&
         style?.flexGrow === 1 &&
         style?.flexShrink === 1 &&
         style?.minWidth === 0 &&
@@ -508,20 +507,19 @@ describe('KolamAmSurface', () => {
           style?.alignItems === 'stretch';
       });
     expect(dashboardPanelStack).toBeTruthy();
-    const recentMetaColumns = renderer!.root
+    const dashboardRecentRows = renderer!.root
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
-        return style?.flexBasis === 148 &&
-          style?.maxWidth === 148 &&
-          style?.alignItems === 'flex-end';
+        return style?.width === '100%' &&
+          style?.borderTopWidth === 1 &&
+          style?.paddingHorizontal === 12 &&
+          style?.paddingVertical === 10;
       });
-    expect(recentMetaColumns.length).toBeGreaterThan(0);
-    expect(recentMetaColumns.every(view => {
+    expect(dashboardRecentRows.length).toBeGreaterThan(0);
+    expect(dashboardRecentRows.every(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.minWidth === 0 &&
-        style?.flexShrink === 1 &&
-        style?.overflow === 'hidden';
+      return style?.alignItems === 'center' && style?.gap === 10;
     })).toBe(true);
     const recentNominalTexts = renderer!.root
       .findAllByType(Text)
@@ -551,21 +549,6 @@ describe('KolamAmSurface', () => {
         return style?.minHeight === 720 && style?.borderWidth === 1;
       });
     expect(legacyFrame).toBeUndefined();
-    const dashboardRecentRows = renderer!.root
-      .findAllByType(View)
-      .filter(view => {
-        const style = StyleSheet.flatten(view.props.style);
-        return style?.width === '100%' &&
-          style?.justifyContent === 'space-between' &&
-          style?.borderTopWidth === 1 &&
-          style?.overflow === 'hidden' &&
-          style?.paddingVertical === 11;
-      });
-    expect(dashboardRecentRows.length).toBeGreaterThan(0);
-    expect(dashboardRecentRows.every(view => {
-      const style = StyleSheet.flatten(view.props.style);
-      return style?.alignItems === 'flex-start' && style?.gap === 12;
-    })).toBe(true);
     const dashboardTableHeaders = renderer!.root
       .findAllByType(View)
       .filter(view => {
@@ -580,7 +563,7 @@ describe('KolamAmSurface', () => {
     expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
 
-  it('limits the dashboard recent mutation table to 10 rows with the shared footer', async () => {
+  it('limits the dashboard recent mutation table to 10 rows without pagination', async () => {
     const recentMutasi = Array.from({length: 12}, (_, index) => ({
       _id: `mutasi-limit-${index + 1}`,
       accountId: {
@@ -616,15 +599,75 @@ describe('KolamAmSurface', () => {
       await Promise.resolve();
     });
 
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard Recent Mutations Tab'}).props.onPress();
+    });
+
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
 
     expect(text).toContain('Mutasi Terbaru');
     expect(text).toContain('Nominal');
     expect(text).toContain('Tanggal');
-    expect(joinedText).toMatch(/Menampilkan\s+dari\s+hasil\s+1\s+-\s+10\s+10/);
+    expect(joinedText).not.toContain('Menampilkan');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Dashboard Mutation mutasi-limit-10'}).length).toBeGreaterThan(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Dashboard Mutation mutasi-limit-11'})).toHaveLength(0);
+  });
+
+  it('limits the dashboard recent transfer table to 10 rows without pagination', async () => {
+    const recentTransfers = Array.from({length: 12}, (_, index) => ({
+      _id: `transfer-limit-${index + 1}`,
+      accountId: {
+        _id: `account-transfer-limit-${index + 1}`,
+        label: `Transfer Bank ${index + 1}`,
+        platform: 'bca',
+        accountNumber: String(200 + index),
+      },
+      amount: 200000 + index,
+      completedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: null,
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      error: '',
+      fee: 2500,
+      logs: [],
+      recipientAccount: String(900 + index),
+      recipientBank: 'BCA',
+      recipientName: `Penerima ${index + 1}`,
+      screenshot: '',
+      startedAt: null,
+      status: index % 2 === 0 ? 'processing' : 'pending',
+      transactionPurpose: null,
+      transferMethod: 'BI FAST',
+      transferType: 'transfer',
+      updatedAt: '',
+    }));
+    (getAmDashboard as jest.Mock).mockResolvedValueOnce({
+      ...mockDashboardData,
+      recentTransfers,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
+
+    expect(text).toContain('Transfer Terbaru');
+    expect(text).toContain('Penerima');
+    expect(text).toContain('Status');
+    expect(joinedText).not.toContain('Menampilkan');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Dashboard Transfer transfer-limit-10'}).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Dashboard Transfer transfer-limit-11'})).toHaveLength(0);
   });
 
   it('leaves the AM dashboard root open for the shell ScrollView', async () => {
@@ -854,6 +897,10 @@ describe('KolamAmSurface', () => {
     expect(onModuleRouteSelect).toHaveBeenLastCalledWith(
       concreteAmRoute('transactions/transfer-dashboard-1', 'transactions/:id'),
     );
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard Recent Mutations Tab'}).props.onPress();
+    });
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Dashboard View Recent Mutations'}).props.onPress();
