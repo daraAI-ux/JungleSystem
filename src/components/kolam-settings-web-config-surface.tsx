@@ -7671,43 +7671,14 @@ function MarketplaceCtaSectionPanel({
               />
             </View>
           </View>
-          <Pressable
-            accessibilityRole="checkbox"
+          <KolamToggleRow
+            active={ctaDraft.isActive}
+            description="Tampilkan bagian CTA untuk pengunjung."
             disabled={disabled}
+            label="Tampilkan di landing page"
             onPress={() => setCtaDraftField('isActive', !ctaDraft.isActive)}
-            style={styles.marketplaceCtaToggleCard}
-          >
-            <KolamCopyStack
-              containerStyle={styles.marketplaceOverviewCopy}
-              items={[
-                {
-                  id: 'toggle-title',
-                  text: 'Tampilkan di landing page',
-                  style: styles.marketplaceOverviewLabel,
-                },
-                {
-                  id: 'toggle-detail',
-                  text: 'Tampilkan bagian CTA untuk pengunjung.',
-                  style: styles.marketplaceOverviewMeta,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.poStaffCheckbox,
-                ctaDraft.isActive ? styles.poStaffCheckboxActive : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.poStaffCheckboxMarkText,
-                  ctaDraft.isActive ? styles.poStaffCheckboxMarkActive : null,
-                ]}
-              >
-                {ctaDraft.isActive ? '✓' : ''}
-              </Text>
-            </View>
-          </Pressable>
+            variant="settingsForm"
+          />
           {message ? (
             <Text
               style={
@@ -11487,17 +11458,6 @@ const styles = StyleSheet.create({
   },
   marketplaceCtaStack: {
     gap: 14,
-  },
-  marketplaceCtaToggleCard: {
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-    padding: 12,
   },
   marketplaceCategoryCard: {
     backgroundColor: '#ffffff',
