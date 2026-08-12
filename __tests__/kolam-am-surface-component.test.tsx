@@ -1648,10 +1648,14 @@ describe('KolamAmSurface', () => {
       page: 1,
       serviceAccountId: 'service-1',
     });
-    expect(renderText(renderer!).join(' ')).toContain('Halaman 1/3');
+    const taskHistoryFooterText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
+    expect(taskHistoryFooterText).toContain('Menampilkan');
+    expect(taskHistoryFooterText).toContain('1 - 5');
+    expect(taskHistoryFooterText).toContain('12');
+    expect(taskHistoryFooterText).toContain('hasil');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Service Task History Next Page'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
     });
 
     expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenLastCalledWith({

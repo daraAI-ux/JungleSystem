@@ -135,6 +135,10 @@ import {KolamSaveButton} from './kolam-save-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamDaftarButton} from './kolam-daftar-button';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 import {KolamModalDialog} from './kolam-modal-dialog';
 import {KolamTableRowActionMenu} from './kolam-dropdown-select';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -2967,6 +2971,59 @@ function AmServiceDetailPanel({
   const visibleLineCount = logSource === 'history'
     ? logTotal || logs.length
     : logs.length;
+  const taskHistoryColumns = React.useMemo<Array<KolamListTableColumn<AmTask>>>(
+    () => [
+      {
+        flex: 1.4,
+        id: 'type',
+        label: 'Tipe',
+        render: task => (
+          <Text style={styles.cellText} numberOfLines={1}>
+            {TASK_TYPE_LABELS[task.type] ?? task.type}
+          </Text>
+        ),
+      },
+      {
+        flex: 0.9,
+        id: 'status',
+        label: 'Status',
+        render: task => (
+          <AmStatusChip label={task.status} tone={getTransferTone(task.status)} />
+        ),
+      },
+      {
+        flex: 1.2,
+        id: 'error',
+        label: 'Error',
+        render: task => (
+          <Text style={styles.cellText} numberOfLines={1}>
+            {task.error || '-'}
+          </Text>
+        ),
+      },
+      {
+        flex: 1,
+        id: 'startedAt',
+        label: 'Mulai',
+        render: task => (
+          <Text style={styles.cellText} numberOfLines={1}>
+            {formatAmDate(task.startedAt)}
+          </Text>
+        ),
+      },
+      {
+        flex: 1,
+        id: 'completedAt',
+        label: 'Selesai',
+        render: task => (
+          <Text style={styles.cellText} numberOfLines={1}>
+            {formatAmDate(task.completedAt)}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <View style={styles.serviceDetailPanel}>
@@ -3162,43 +3219,19 @@ function AmServiceDetailPanel({
         </View>
       ) : null}
       {!isLoading && activeTab === 'history' && !banking ? (
-        <View style={styles.detailList}>
-          {!tasks.length ? <Text style={styles.loadingText}>Riwayat task tidak ditemukan</Text> : null}
-          {tasks.length ? (
-            <View style={styles.detailListHeader}>
-              <Text style={[styles.tableHeaderText, styles.recipientCol]}>Tipe</Text>
-              <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-              <Text style={[styles.tableHeaderText, styles.errorCol]}>Error</Text>
-              <Text style={[styles.tableHeaderText, styles.dateCol]}>Mulai</Text>
-              <Text style={[styles.tableHeaderText, styles.dateCol]}>Selesai</Text>
-            </View>
-          ) : null}
-          {tasks.map(task => (
-            <View key={task._id} style={styles.detailListRow}>
-              <View style={styles.recipientCol}>
-                <Text style={styles.cellText} numberOfLines={1}>{TASK_TYPE_LABELS[task.type] ?? task.type}</Text>
-              </View>
-              <View style={styles.statusCol}>
-                <AmStatusChip label={task.status} tone={getTransferTone(task.status)} />
-              </View>
-              <Text style={[styles.cellText, styles.errorCol]} numberOfLines={1}>{task.error || '-'}</Text>
-              <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(task.startedAt)}</Text>
-              <Text style={[styles.cellText, styles.dateCol]} numberOfLines={1}>{formatAmDate(task.completedAt)}</Text>
-            </View>
-          ))}
-          {historyTotal > historyLimit ? (
-            <AmServiceHistoryPagination
-              currentPage={historyPage}
-              disabled={isLoading}
-              from={historyFrom}
-              label="AM Service Task History"
-              to={historyTo}
-              total={historyTotal}
-              totalPages={historyTotalPages}
-              onPageChange={onHistoryPageChange}
-            />
-          ) : null}
-        </View>
+        <KolamListTableComposition
+          columns={taskHistoryColumns}
+          emptyTitle="Riwayat task tidak ditemukan"
+          getRowKey={task => task._id}
+          pagination={historyTotal > historyLimit ? {
+            onPageChange: onHistoryPageChange,
+            page: historyPage,
+            pageSize: historyLimit,
+            total: historyTotal,
+          } : undefined}
+          rows={tasks}
+          showFooter={historyTotal > historyLimit}
+        />
       ) : null}
     </View>
   );
