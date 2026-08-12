@@ -34,6 +34,10 @@ import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSidebar} from './kolam-sidebar-widgets';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamTopNavigation} from './kolam-top-navigation';
+import {
+  KolamListTableComposition,
+  type KolamListTableColumn,
+} from './kolam-list-table-composition';
 
 export interface KolamPosFullWindowSurfaceProps {
   activeSession?: CashflowSession | null;
@@ -96,6 +100,7 @@ type PosKeyboardTarget = {
   ) => void;
 };
 const POS_CATALOG_PAGE_SIZES = [12, 24, 48, 96] as const;
+const POS_SALES_PAGE_SIZE = 15;
 type PosSavedOrder = {
   id: string;
   name: string;
@@ -1226,6 +1231,84 @@ function PosSubview({
     () => chunkItems(activePaymentMethods, paymentColumnCount),
     [activePaymentMethods, paymentColumnCount],
   );
+  const [salesPage, setSalesPage] = React.useState(1);
+  const salesPageCount = Math.max(
+    1,
+    Math.ceil(recentSales.length / POS_SALES_PAGE_SIZE),
+  );
+  const safeSalesPage = Math.min(Math.max(1, salesPage), salesPageCount);
+  const visibleSales = React.useMemo(() => {
+    const start = (safeSalesPage - 1) * POS_SALES_PAGE_SIZE;
+
+    return recentSales.slice(start, start + POS_SALES_PAGE_SIZE);
+  }, [recentSales, safeSalesPage]);
+  const salesColumns = React.useMemo<Array<KolamListTableColumn<SaleSummary>>>(
+    () => [
+      {
+        id: 'invoice',
+        label: 'Faktur',
+        flex: 1.2,
+        render: sale => (
+          <Text numberOfLines={1} style={styles.saleTablePrimary}>
+            {sale.invoiceCode}
+          </Text>
+        ),
+      },
+      {
+        id: 'customer',
+        label: 'Pelanggan',
+        flex: 1.2,
+        render: sale => (
+          <Text numberOfLines={1} style={styles.saleTableText}>
+            {sale.customerName || '-'}
+          </Text>
+        ),
+      },
+      {
+        id: 'createdAt',
+        label: 'Dibuat',
+        flex: 1,
+        render: sale => (
+          <Text numberOfLines={1} style={styles.saleTableMuted}>
+            {formatPosDate(sale.createdAt)}
+          </Text>
+        ),
+      },
+      {
+        align: 'right',
+        id: 'total',
+        label: 'Total',
+        flex: 1,
+        render: sale => (
+          <Text numberOfLines={1} style={styles.saleTableAmount}>
+            {formatRupiah(sale.total)}
+          </Text>
+        ),
+      },
+      {
+        align: 'center',
+        id: 'status',
+        label: 'Status',
+        flex: 0.8,
+        render: sale => (
+          <Text numberOfLines={1} style={styles.saleTableStatus}>
+            {sale.status}
+          </Text>
+        ),
+      },
+    ],
+    [],
+  );
+
+  React.useEffect(() => {
+    setSalesPage(1);
+  }, [recentSales.length]);
+
+  React.useEffect(() => {
+    if (salesPage !== safeSalesPage) {
+      setSalesPage(safeSalesPage);
+    }
+  }, [safeSalesPage, salesPage]);
 
   if (activeView === 'customers') {
     return (
@@ -1339,31 +1422,18 @@ function PosSubview({
             Ringkasan transaksi terbaru POS.
           </Text>
         </View>
-        {recentSales.length ? (
-          <View style={styles.saleList}>
-            {recentSales.map(sale => (
-              <View key={sale.id} style={styles.saleRow}>
-                <View style={styles.saleCopy}>
-                  <Text style={styles.saleInvoice}>{sale.invoiceCode}</Text>
-                  <Text numberOfLines={1} style={styles.saleMeta}>
-                    {sale.customerName} | {formatPosDate(sale.createdAt)}
-                  </Text>
-                </View>
-                <View style={styles.saleAmountBox}>
-                  <Text style={styles.saleAmount}>{formatRupiah(sale.total)}</Text>
-                  <Text style={styles.saleStatus}>{sale.status}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.catalogEmpty}>
-            <Text style={styles.emptyTitle}>Belum ada penjualan.</Text>
-            <Text style={styles.emptyText}>
-              Transaksi yang dibuat dari POS akan muncul di sini.
-            </Text>
-          </View>
-        )}
+        <KolamListTableComposition
+          columns={salesColumns}
+          emptyTitle="Belum ada penjualan."
+          getRowKey={sale => sale.id}
+          pagination={{
+            onPageChange: setSalesPage,
+            page: safeSalesPage,
+            pageSize: POS_SALES_PAGE_SIZE,
+            total: recentSales.length,
+          }}
+          rows={visibleSales}
+        />
       </ScrollView>
     );
   }
@@ -2628,49 +2698,27 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '900',
   },
-  saleList: {
-    overflow: 'hidden',
-    borderRadius: 6,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-  },
-  saleRow: {
-    minHeight: 58,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    backgroundColor: V.colors.bg,
-  },
-  saleCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  saleInvoice: {
+  saleTablePrimary: {
     color: V.colors.fg,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
-  saleMeta: {
-    marginTop: 2,
+  saleTableText: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  saleTableMuted: {
     color: V.colors.mutedFg,
     fontSize: 11,
+    fontWeight: '700',
   },
-  saleAmountBox: {
-    alignItems: 'flex-end',
-    flexShrink: 0,
-  },
-  saleAmount: {
+  saleTableAmount: {
     color: V.colors.primary,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
-  saleStatus: {
-    marginTop: 2,
+  saleTableStatus: {
     overflow: 'hidden',
     borderRadius: 4,
     paddingHorizontal: 6,
