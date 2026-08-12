@@ -5551,7 +5551,7 @@ function AmMutasiPage({
   const mutasiTableColumns = React.useMemo<Array<KolamListTableColumn<AmMutasi>>>(() => [
     {
       align: 'center',
-      flex: 0.62,
+      flex: 0.58,
       id: 'type',
       label: 'Tipe',
       render: item => (
@@ -5563,13 +5563,13 @@ function AmMutasiPage({
     },
     {
       align: 'center',
-      flex: 1.02,
+      flex: 0.95,
       id: 'account',
       label: 'Akun',
       render: item => (
         <View style={styles.mutasiAccountCell}>
-          <Text style={styles.cellText} numberOfLines={1}>{formatAccountLabel(item.accountId)}</Text>
-          <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
+          <Text style={[styles.cellText, styles.mutasiCenteredText]} numberOfLines={1}>{formatAccountLabel(item.accountId)}</Text>
+          <Text style={[styles.rowMeta, styles.mutasiCenteredText]} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
         </View>
       ),
     },
@@ -8671,9 +8671,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   mutasiAccountCell: {
+    alignItems: 'center',
     justifyContent: 'center',
+    maxWidth: '100%',
     minWidth: 0,
-    width: '100%',
+  },
+  mutasiCenteredText: {
+    textAlign: 'center',
   },
   rowActions: {
     flexShrink: 0,
