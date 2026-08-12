@@ -1115,8 +1115,10 @@ export function isKolamSaleMarketplaceManaged(sale: {
 /** FE sales-invoice chat CTA — Shopee/Tokopedia marketplace sales. */
 export function canOpenKolamSaleCustomerChat(sale: {
   marketplaceSource?: string | null;
+  marketplaceOrderId?: string | null;
   marketplaceLogistics?: {platform?: string | null} | null;
   marketplaceFulfillment?: {platform?: string | null} | null;
+  sourceRef?: {name?: string | null} | null;
 }): boolean {
   if (isKolamSaleMarketplaceManaged(sale)) {
     return true;
@@ -1127,7 +1129,23 @@ export function canOpenKolamSaleCustomerChat(sale: {
       sale.marketplaceFulfillment?.platform ||
       '',
   ).toLowerCase();
-  return platform === 'shopee' || platform === 'tokopedia';
+  if (platform === 'shopee' || platform === 'tokopedia') {
+    return true;
+  }
+
+  // Manual / incomplete imports often only carry Source master name.
+  const sourceName = String(sale.sourceRef?.name || '')
+    .trim()
+    .toLowerCase();
+  if (
+    sourceName.includes('shopee') ||
+    sourceName.includes('tokopedia') ||
+    sourceName.includes('tokped')
+  ) {
+    return true;
+  }
+
+  return Boolean(String(sale.marketplaceOrderId || '').trim());
 }
 
 export function isKolamSaleShippingAutomationActive(sale: {

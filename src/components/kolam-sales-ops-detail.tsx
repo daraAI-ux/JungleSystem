@@ -222,7 +222,8 @@ export function KolamSalesOpsDetail({
     marketplaceFulfillment?.dropOffPointUrl?.trim() || '';
   const showMarketplaceFulfillmentActions =
     showTokopediaPickupRequest || showTokopediaDropOffBadge;
-  const showCustomerChat = canOpenKolamSaleCustomerChat(sale);
+  const showCustomerChat =
+    marketplaceManaged || canOpenKolamSaleCustomerChat(sale);
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
   const outstanding = getKolamSaleOutstandingAmount(sale);
   const profitSummary = computeKolamSaleProfitSummary(sale);
@@ -354,27 +355,6 @@ export function KolamSalesOpsDetail({
               />
             ) : null}
             <View style={styles.toolbarDownloadCluster}>
-              {showCustomerChat ? (
-                <KolamButton
-                  accessibilityLabel="Kirim pesan ke customer"
-                  disabled={
-                    controller.openingCustomerChat || controller.mutating
-                  }
-                  label={
-                    controller.openingCustomerChat
-                      ? 'Membuka…'
-                      : 'Kirim pesan ke customer'
-                  }
-                  onPress={() => {
-                    void controller.onOpenCustomerChat();
-                  }}
-                  style={[
-                    styles.toolbarButton,
-                    styles.toolbarDaftarToneButton,
-                  ]}
-                  textStyle={styles.toolbarDaftarToneButtonText}
-                />
-              ) : null}
               <KolamPdfDownloadButton
                 disabled={controller.downloadingInvoice || controller.mutating}
                 intent="primary"
@@ -398,6 +378,27 @@ export function KolamSalesOpsDetail({
                     void controller.onDownloadResi();
                   }}
                   style={styles.toolbarButton}
+                />
+              ) : null}
+              {showCustomerChat ? (
+                <KolamButton
+                  accessibilityLabel="Kirim pesan ke customer"
+                  disabled={
+                    controller.openingCustomerChat || controller.mutating
+                  }
+                  label={
+                    controller.openingCustomerChat
+                      ? 'Membuka…'
+                      : 'Kirim pesan ke customer'
+                  }
+                  onPress={() => {
+                    void controller.onOpenCustomerChat();
+                  }}
+                  style={[
+                    styles.toolbarButton,
+                    styles.toolbarDaftarToneButton,
+                  ]}
+                  textStyle={styles.toolbarDaftarToneButtonText}
                 />
               ) : null}
             </View>
@@ -898,6 +899,27 @@ export function KolamSalesOpsDetail({
                 </>
               ) : marketplaceManaged ? (
                 <View style={styles.marketplaceFulfillmentActions}>
+                  {showCustomerChat ? (
+                    <KolamButton
+                      accessibilityLabel="Kirim pesan ke customer"
+                      disabled={
+                        controller.openingCustomerChat || controller.mutating
+                      }
+                      label={
+                        controller.openingCustomerChat
+                          ? 'Membuka…'
+                          : 'Kirim pesan ke customer'
+                      }
+                      onPress={() => {
+                        void controller.onOpenCustomerChat();
+                      }}
+                      style={[
+                        styles.toolbarButton,
+                        styles.toolbarDaftarToneButton,
+                      ]}
+                      textStyle={styles.toolbarDaftarToneButtonText}
+                    />
+                  ) : null}
                   {showTokopediaDropOffBadge ? (
                     <View style={styles.tokopediaDropOffRow}>
                       <KolamStatusBadge

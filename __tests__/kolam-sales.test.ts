@@ -253,6 +253,16 @@ describe('kolam sales domain', () => {
       type: 'offline',
     });
     expect(canOpenKolamSaleCustomerChat(offline)).toBe(false);
+
+    const bySourceName = normalizeKolamSale({
+      _id: 'sale-by-name',
+      invoiceCode: 'INV-NAME',
+      status: 'paid',
+      items: [],
+      sourceRef: {_id: 'src-sh', name: 'Pengiriman Shopee', type: 'online'},
+    });
+    expect(bySourceName.marketplaceSource).toBe('');
+    expect(canOpenKolamSaleCustomerChat(bySourceName)).toBe(true);
   });
 
   it('normalizes detail Batch A fields and shipping skip helpers', () => {
