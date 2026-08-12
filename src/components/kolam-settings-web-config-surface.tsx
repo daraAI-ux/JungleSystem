@@ -1293,6 +1293,12 @@ export function KolamSettingsWebConfigSurface({
     React.useState(false);
   const [marketplaceCategoryEditorImageUri, setMarketplaceCategoryEditorImageUri] =
     React.useState('');
+  const [marketplaceAnnouncementEditorOpen, setMarketplaceAnnouncementEditorOpen] =
+    React.useState(false);
+  const [
+    marketplaceAnnouncementEditorImageUri,
+    setMarketplaceAnnouncementEditorImageUri,
+  ] = React.useState('');
   const openMarketplaceHeroCreate = React.useCallback(() => {
     onClearMarketplaceHeroDraft();
     setMarketplaceHeroEditorOpen(true);
@@ -1328,12 +1334,35 @@ export function KolamSettingsWebConfigSurface({
     setMarketplaceCategoryEditorImageUri('');
     setMarketplaceCategoryEditorOpen(false);
   }, [onClearMarketplaceCategoryDraft]);
+  const openMarketplaceAnnouncementCreate = React.useCallback(() => {
+    onClearMarketplaceAnnouncementDraft();
+    setMarketplaceAnnouncementEditorImageUri('');
+    setMarketplaceAnnouncementEditorOpen(true);
+  }, [onClearMarketplaceAnnouncementDraft]);
+  const openMarketplaceAnnouncementEdit = React.useCallback(
+    (banner: KolamAnnouncementBanner) => {
+      onEditMarketplaceAnnouncementBanner(banner);
+      setMarketplaceAnnouncementEditorImageUri(
+        resolveMarketplaceLandingImageUri(banner.image),
+      );
+      setMarketplaceAnnouncementEditorOpen(true);
+    },
+    [onEditMarketplaceAnnouncementBanner],
+  );
+  const closeMarketplaceAnnouncementEditor = React.useCallback(() => {
+    onClearMarketplaceAnnouncementDraft();
+    setMarketplaceAnnouncementEditorImageUri('');
+    setMarketplaceAnnouncementEditorOpen(false);
+  }, [onClearMarketplaceAnnouncementDraft]);
   React.useEffect(() => {
     if (marketplaceLandingTabId !== 'hero') {
       setMarketplaceHeroEditorOpen(false);
     }
     if (marketplaceLandingTabId !== 'category') {
       setMarketplaceCategoryEditorOpen(false);
+    }
+    if (marketplaceLandingTabId !== 'announcement') {
+      setMarketplaceAnnouncementEditorOpen(false);
     }
   }, [marketplaceLandingTabId]);
   const provinceDropdownOptions = React.useMemo(
@@ -5795,13 +5824,14 @@ export function KolamSettingsWebConfigSurface({
                   onDeleteMarketplaceFeaturedCollection
                 }
                 onDeleteHeroSlide={onDeleteMarketplaceHeroSlide}
-                onEditAnnouncementBanner={onEditMarketplaceAnnouncementBanner}
+                onEditAnnouncementBanner={openMarketplaceAnnouncementEdit}
                 onEditCategoryBanner={openMarketplaceCategoryEdit}
                 onEditHeroSlide={openMarketplaceHeroEdit}
                 onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
                 onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
                 onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
                 onMoveHeroSlide={onMoveMarketplaceHeroSlide}
+                onAddAnnouncementBanner={openMarketplaceAnnouncementCreate}
                 onAddCategoryBanner={openMarketplaceCategoryCreate}
                 onAddHeroSlide={openMarketplaceHeroCreate}
                 onAddFeaturedCollection={onAddMarketplaceFeaturedCollection}
@@ -5839,7 +5869,8 @@ export function KolamSettingsWebConfigSurface({
                 marketplaceLandingTabId !== 'featured' &&
                 marketplaceLandingTabId !== 'category' &&
                 marketplaceLandingTabId !== 'cta' &&
-                marketplaceLandingTabId !== 'youtube') ||
+                marketplaceLandingTabId !== 'youtube' &&
+                marketplaceLandingTabId !== 'announcement') ||
               marketplaceHeroEditorOpen ? (
                 <MarketplaceLandingControlsPanel
                 activeTabId={marketplaceLandingTabId}
@@ -5892,6 +5923,23 @@ export function KolamSettingsWebConfigSurface({
                   saveStatus={marketplaceLandingSaveStatus}
                   setCategoryDraftField={
                     setMarketplaceLandingCategoryDraftField
+                  }
+                />
+              ) : null}
+              {marketplaceAnnouncementEditorOpen ? (
+                <MarketplaceAnnouncementBannerEditorModal
+                  announcementDraft={marketplaceLandingAnnouncementDraft}
+                  disabled={disabled || marketplaceLandingSaveStatus === 'saving'}
+                  existingImageUri={marketplaceAnnouncementEditorImageUri}
+                  message={marketplaceLandingMessage}
+                  onClose={closeMarketplaceAnnouncementEditor}
+                  onPickAnnouncementImage={
+                    onPickMarketplaceLandingAnnouncementImage
+                  }
+                  onSaveAnnouncement={onSaveMarketplaceAnnouncementBanner}
+                  saveStatus={marketplaceLandingSaveStatus}
+                  setAnnouncementDraftField={
+                    setMarketplaceLandingAnnouncementDraftField
                   }
                 />
               ) : null}
@@ -6959,6 +7007,7 @@ function MarketplaceLandingOverviewPanel({
   onMoveCategoryBanner,
   onMoveFeaturedCollection,
   onMoveHeroSlide,
+  onAddAnnouncementBanner,
   onAddCategoryBanner,
   onAddHeroSlide,
   onAddFeaturedCollection,
@@ -7013,6 +7062,7 @@ function MarketplaceLandingOverviewPanel({
   ) => void;
   onMoveFeaturedCollection: (index: number, direction: -1 | 1) => void;
   onMoveHeroSlide: (slide: KolamHeroSlide, direction: -1 | 1) => void;
+  onAddAnnouncementBanner: () => void;
   onAddCategoryBanner: () => void;
   onAddHeroSlide: () => void;
   onAddFeaturedCollection: () => void;
@@ -7138,6 +7188,7 @@ function MarketplaceLandingOverviewPanel({
     activeTabId !== 'category' &&
     activeTabId !== 'cta' &&
     activeTabId !== 'youtube' &&
+    activeTabId !== 'announcement' &&
     activeTabId !== 'featured';
 
   return (
@@ -7204,6 +7255,16 @@ function MarketplaceLandingOverviewPanel({
           setYoutubeDraftField={setYoutubeDraftField}
           youtubeDraft={youtubeDraft}
           youtubeSection={overview.youtubeSection}
+        />
+      ) : activeTabId === 'announcement' ? (
+        <MarketplaceAnnouncementBannersPanel
+          disabled={disabled}
+          items={overview.announcementBanners}
+          onAdd={onAddAnnouncementBanner}
+          onDelete={onDeleteAnnouncementBanner}
+          onEdit={onEditAnnouncementBanner}
+          onMove={onMoveAnnouncementBanner}
+          status={assetStatus}
         />
       ) : (
         <>
@@ -7276,21 +7337,6 @@ function MarketplaceLandingOverviewPanel({
             },
           ]}
         />
-        {activeTabId === 'announcement' ? (
-          <MarketplaceAssetRows
-            disabled={disabled}
-            emptyText="Belum ada banner pengumuman untuk penggantian gambar."
-            getId={item => `announcement:${item._id}`}
-            getLabel={item => item.link || item._id}
-            items={overview.announcementBanners}
-            onDelete={onDeleteAnnouncementBanner}
-            onEdit={onEditAnnouncementBanner}
-            onMove={onMoveAnnouncementBanner}
-            onUpload={onUploadAnnouncementImage}
-            status={assetStatus}
-            title="Gambar banner pengumuman"
-          />
-        ) : null}
       </View>
       ) : null}
     </View>
@@ -8045,6 +8091,177 @@ function MarketplaceCategoryBannersPanel({
                       style={styles.marketplaceFeaturedIconButton}
                       status={status}
                     />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Rubah banner"
+                      disabled={disabled}
+                      icon={<KolamActionGlyph variant="edit" />}
+                      id={id}
+                      label=""
+                      onPress={() => onEdit(banner)}
+                      style={styles.marketplaceFeaturedIconButton}
+                      status={status}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Hapus banner"
+                      disabled={disabled}
+                      icon={<KolamActionGlyph tone="danger" variant="delete" />}
+                      id={id}
+                      intent="danger"
+                      label=""
+                      onPress={() => onDelete(banner)}
+                      style={[
+                        styles.marketplaceFeaturedIconButton,
+                        styles.marketplaceHeroSlideActionButtonDanger,
+                      ]}
+                      status={status}
+                    />
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function MarketplaceAnnouncementBannersPanel({
+  disabled,
+  items,
+  onAdd,
+  onDelete,
+  onEdit,
+  onMove,
+  status,
+}: {
+  disabled: boolean;
+  items: KolamAnnouncementBanner[];
+  onAdd: () => void;
+  onDelete: (banner: KolamAnnouncementBanner) => void;
+  onEdit: (banner: KolamAnnouncementBanner) => void;
+  onMove: (banner: KolamAnnouncementBanner, direction: -1 | 1) => void;
+  status: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
+}) {
+  const activeCount = items.filter(item => item.isActive !== false).length;
+
+  return (
+    <View style={styles.marketplaceAnnouncementPanel}>
+      <View style={styles.marketplaceCategoryToolbar}>
+        <View style={styles.marketplaceHeroActiveCopy}>
+          <Text style={styles.marketplaceOverviewMeta}>Aktif:</Text>
+          <Text style={styles.marketplaceHeroActiveBadge}>
+            {String(activeCount)}
+          </Text>
+        </View>
+        <KolamActionControlButton
+          disabled={disabled}
+          icon={<KolamActionGlyph variant="plus" />}
+          intent="primary"
+          label="Tambah banner"
+          onPress={onAdd}
+        />
+      </View>
+
+      {items.length === 0 ? (
+        <View style={styles.marketplaceCategoryEmpty}>
+          <SvgXml
+            height={34}
+            width={34}
+            xml={getMarketplaceLandingTabIconXml('announcement', true)}
+          />
+          <Text style={styles.marketplaceOverviewTitle}>
+            Buat banner pengumuman pertama
+          </Text>
+          <Text style={styles.marketplaceOverviewMeta}>
+            Banner pengumuman tampil antar bagian landing page.
+          </Text>
+          <Text style={styles.marketplaceFeaturedBadge}>
+            Rekomendasi: 1200 x 200px
+          </Text>
+          <KolamActionControlButton
+            disabled={disabled}
+            icon={<KolamActionGlyph variant="plus" />}
+            intent="primary"
+            label="Tambah banner"
+            onPress={onAdd}
+          />
+        </View>
+      ) : (
+        <View style={styles.marketplaceAnnouncementList}>
+          {items.map((banner, index) => {
+            const id = `announcement:${banner._id}`;
+            const imageUri = resolveMarketplaceLandingImageUri(banner.image);
+            return (
+              <View key={banner._id} style={styles.marketplaceAnnouncementCard}>
+                <View style={styles.marketplaceAnnouncementImageWrap}>
+                  {imageUri ? (
+                    <Image
+                      resizeMode="cover"
+                      source={{uri: imageUri}}
+                      style={styles.marketplaceCategoryImage}
+                    />
+                  ) : (
+                    <View style={styles.marketplaceCategoryImageFallback}>
+                      <Text style={styles.marketplaceOverviewMeta}>
+                        Belum ada gambar
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={styles.marketplaceHeroSlideIndex}>
+                    {String(index + 1)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.marketplaceHeroSlideStatus,
+                      styles.marketplaceCategoryStatus,
+                      banner.isActive === false
+                        ? styles.marketplaceHeroSlideStatusDraft
+                        : null,
+                    ]}
+                  >
+                    {banner.isActive === false ? 'Draf' : 'Aktif'}
+                  </Text>
+                </View>
+                <View style={styles.marketplaceAnnouncementFooter}>
+                  <Text
+                    numberOfLines={1}
+                    style={styles.marketplaceAnnouncementLink}
+                  >
+                    {banner.link || '-'}
+                  </Text>
+                  <View style={styles.marketplaceFeaturedCardActions}>
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Naik"
+                      disabled={disabled || index === 0}
+                      icon={
+                        <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                          ↑
+                        </Text>
+                      }
+                      id={id}
+                      label=""
+                      onPress={() => onMove(banner, -1)}
+                      style={styles.marketplaceFeaturedIconButton}
+                      status={status}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Turun"
+                      disabled={disabled || index === items.length - 1}
+                      icon={
+                        <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                          ↓
+                        </Text>
+                      }
+                      id={id}
+                      label=""
+                      onPress={() => onMove(banner, 1)}
+                      style={styles.marketplaceFeaturedIconButton}
+                      status={status}
+                    />
+                    <View style={styles.marketplaceHeroSlideActionSeparator} />
                     <MarketplaceAssetButton
                       accessibilityLabel="Rubah banner"
                       disabled={disabled}
@@ -9046,6 +9263,158 @@ function MarketplaceCategoryBannerEditorModal({
               loading={saveStatus === 'saving'}
               loadingLabel="Menyimpan..."
               onPress={onSaveCategory}
+            />
+            <KolamActionControlButton
+              disabled={disabled}
+              label="Batal"
+              tone="positive"
+              onPress={onClose}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function MarketplaceAnnouncementBannerEditorModal({
+  announcementDraft,
+  disabled,
+  existingImageUri,
+  message,
+  onClose,
+  onPickAnnouncementImage,
+  onSaveAnnouncement,
+  saveStatus,
+  setAnnouncementDraftField,
+}: {
+  announcementDraft: MarketplaceLandingAnnouncementDraft;
+  disabled: boolean;
+  existingImageUri: string;
+  message: string;
+  onClose: () => void;
+  onPickAnnouncementImage: () => void;
+  onSaveAnnouncement: () => void;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setAnnouncementDraftField: <
+    Key extends keyof MarketplaceLandingAnnouncementDraft,
+  >(
+    key: Key,
+    value: MarketplaceLandingAnnouncementDraft[Key],
+  ) => void;
+}) {
+  const canSave = !!announcementDraft.id || !!announcementDraft.imageLocalUri;
+  const previewUri = announcementDraft.imageLocalUri || existingImageUri;
+
+  return (
+    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+      <View style={styles.marketplaceHeroEditorModalOverlay}>
+        <KolamModalBackdrop onPress={onClose} />
+        <View style={styles.marketplaceHeroEditorModalDialog}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: announcementDraft.id
+                  ? 'Rubah banner pengumuman'
+                  : 'Banner pengumuman baru',
+                style: styles.marketplaceHeroEditorModalTitle,
+              },
+              {
+                id: 'description',
+                text: 'Rekomendasi: 1200 x 200px',
+                style: styles.marketplaceHeroEditorModalDescription,
+              },
+            ]}
+          />
+          <ScrollView
+            contentContainerStyle={styles.marketplaceHeroEditorModalContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.marketplaceHeroEditorModalScroll}
+          >
+            <Pressable
+              accessibilityRole="button"
+              disabled={disabled}
+              onPress={onPickAnnouncementImage}
+              style={[
+                styles.marketplaceCategoryUploadBox,
+                styles.marketplaceAnnouncementUploadBox,
+              ]}
+            >
+              {previewUri ? (
+                <Image
+                  resizeMode="cover"
+                  source={{uri: previewUri}}
+                  style={styles.marketplaceCategoryUploadImage}
+                />
+              ) : (
+                <View style={styles.marketplaceCategoryUploadEmpty}>
+                  <SvgXml
+                    height={32}
+                    width={32}
+                    xml={getMarketplaceLandingTabIconXml('announcement', true)}
+                  />
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    Pilih gambar untuk banner pengumuman.
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <View style={styles.marketplaceCtaInlineField}>
+              <Text style={styles.marketplaceOverviewLabel}>Tautan</Text>
+              <Text style={styles.marketplaceOverviewMeta}>
+                Halaman yang dibuka saat banner diklik.
+              </Text>
+              <TextInput
+                editable={!disabled}
+                onChangeText={value =>
+                  setAnnouncementDraftField('link', value)
+                }
+                placeholder="/products"
+                style={styles.marketplaceFeaturedInput}
+                value={announcementDraft.link}
+              />
+            </View>
+            <KolamToggleRow
+              active={announcementDraft.isActive}
+              description="Tampilkan banner pengumuman di landing page."
+              disabled={disabled}
+              label="Aktif"
+              onPress={() =>
+                setAnnouncementDraftField(
+                  'isActive',
+                  !announcementDraft.isActive,
+                )
+              }
+              variant="settingsForm"
+            />
+            {message ? (
+              <Text
+                style={
+                  saveStatus === 'error'
+                    ? styles.marketplaceOverviewError
+                    : styles.marketplaceOverviewMeta
+                }
+              >
+                {message}
+              </Text>
+            ) : null}
+          </ScrollView>
+          <View style={styles.marketplaceHeroEditorModalFooter}>
+            <KolamUploadButton
+              disabled={disabled}
+              label="Pilih gambar"
+              onPress={onPickAnnouncementImage}
+            />
+            <KolamActionControlButton
+              disabled={disabled || !canSave}
+              intent="primary"
+              label={
+                announcementDraft.id ? 'Simpan perubahan' : 'Buat banner'
+              }
+              loading={saveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSaveAnnouncement}
             />
             <KolamActionControlButton
               disabled={disabled}
@@ -11614,6 +11983,47 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     width: '100%',
+  },
+  marketplaceAnnouncementCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  marketplaceAnnouncementFooter: {
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  marketplaceAnnouncementImageWrap: {
+    backgroundColor: '#f3f4f6',
+    height: 200,
+    overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
+  },
+  marketplaceAnnouncementLink: {
+    color: '#6b7280',
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    minWidth: 0,
+  },
+  marketplaceAnnouncementList: {
+    gap: 12,
+  },
+  marketplaceAnnouncementPanel: {
+    gap: 12,
+  },
+  marketplaceAnnouncementUploadBox: {
+    aspectRatio: 1200 / 200,
   },
   marketplaceCtaCard: {
     gap: 18,
