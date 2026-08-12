@@ -5796,10 +5796,9 @@ function AmWebhooksPage() {
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               <KolamButton accessibilityLabel="Test Ping" disabled={isWebhookActionLocked} label={isTestingPing ? 'Menguji...' : 'Uji Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
-              <KolamButton
+              <KolamDaftarButton
                 accessibilityLabel="AM Webhook Register"
                 disabled={isWebhookActionLocked}
-                label="Daftar Webhook"
                 intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
                 muted={isWebhookActionLocked}
                 size="sm"
