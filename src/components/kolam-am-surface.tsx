@@ -3777,7 +3777,7 @@ function AmHardwareBoxGrid({
         <Text style={[styles.tableHeaderText, styles.amountCol]}>Device</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
-        <Text style={[styles.tableHeaderText, styles.boxActionCol]} />
+        <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
       </View>
       {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
       {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rack ini</Text> : null}
@@ -3798,7 +3798,7 @@ function AmHardwareBoxGrid({
           <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>
             {box.description || 'No description'}
           </Text>
-          <View style={styles.boxActionCol}>
+          <View style={styles.actionCol}>
             <KolamTableRowActionMenu
               accessibilityLabel={`AM Hardware Box Actions ${box._id}`}
               actions={[
@@ -8813,12 +8813,6 @@ const styles = StyleSheet.create({
   actionCol: {
     flex: 1.2,
     minWidth: 0,
-  },
-  boxActionCol: {
-    alignItems: 'flex-end',
-    flexGrow: 0,
-    flexShrink: 0,
-    width: 48,
   },
   deviceCol: {
     flex: 1.2,
