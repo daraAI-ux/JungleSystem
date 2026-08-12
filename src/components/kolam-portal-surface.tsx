@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -24,6 +25,7 @@ import {
   type KolamPortalPayrollCommissionPeriod,
   type KolamPortalTaskRow,
 } from '../services/kolam-employee-portal-api';
+import { updateCurrentUserProfile } from '../services/auth-api';
 import {
   fetchKolamKpiLeaderboard,
   fetchKolamKpiMeSummary,
@@ -774,12 +776,72 @@ function PortalAccountSettings({
   onRefresh: () => void;
 }) {
   const { authUser, displayName } = useKolamAuthContext();
-  const name = displayName || [authUser?.firstName, authUser?.lastName].filter(Boolean).join(' ').trim() || '-';
-  const initials = getInitials(name || authUser?.username || authUser?.email);
+  const [savedUser, setSavedUser] = React.useState(authUser);
+  const effectiveUser = savedUser ?? authUser;
+  const name = displayName || [effectiveUser?.firstName, effectiveUser?.lastName].filter(Boolean).join(' ').trim() || '-';
+  const initials = getInitials(name || effectiveUser?.username || effectiveUser?.email);
+  const [form, setForm] = React.useState({
+    firstName: effectiveUser?.firstName ?? '',
+    lastName: effectiveUser?.lastName ?? '',
+    email: effectiveUser?.email ?? '',
+    phoneNumber: effectiveUser?.phoneNumber ?? '',
+  });
+  const [saving, setSaving] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+
+  React.useEffect(() => {
+    setSavedUser(authUser);
+    setForm({
+      firstName: authUser?.firstName ?? '',
+      lastName: authUser?.lastName ?? '',
+      email: authUser?.email ?? '',
+      phoneNumber: authUser?.phoneNumber ?? '',
+    });
+  }, [authUser]);
+
+  const updateForm = React.useCallback(
+    (field: keyof typeof form) => (value: string) => {
+      setForm(current => ({ ...current, [field]: value }));
+      setMessage('');
+    },
+    [],
+  );
+
+  const handleSave = React.useCallback(async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const nextUser = await updateCurrentUserProfile({
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim(),
+        email: form.email.trim(),
+        phone_number: form.phoneNumber.trim(),
+      });
+      setSavedUser(nextUser);
+      setForm({
+        firstName: nextUser.firstName ?? '',
+        lastName: nextUser.lastName ?? '',
+        email: nextUser.email ?? '',
+        phoneNumber: nextUser.phoneNumber ?? '',
+      });
+      setMessage('Tersimpan');
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Gagal menyimpan');
+    } finally {
+      setSaving(false);
+    }
+  }, [form.email, form.firstName, form.lastName, form.phoneNumber, onRefresh]);
 
   return (
     <PortalCard
-      action={<KolamButton disabled={loading} label={loading ? 'Memuat' : 'Refresh'} onPress={onRefresh} />}
+      action={
+        <KolamButton
+          disabled={loading || saving}
+          label={saving ? 'Menyimpan' : 'Simpan'}
+          onPress={handleSave}
+        />
+      }
       subtitle="Profil & keamanan"
       title="Pengaturan Akun"
     >
@@ -793,26 +855,42 @@ function PortalAccountSettings({
         </View>
         <View style={styles.profileRow}>
           <View style={styles.avatarWrap}>
-            {authUser?.profilePhotoUrl ? (
-              <Image source={{ uri: authUser.profilePhotoUrl }} style={styles.avatarImage} />
+            {effectiveUser?.profilePhotoUrl ? (
+              <Image source={{ uri: effectiveUser.profilePhotoUrl }} style={styles.avatarImage} />
             ) : (
               <Text style={styles.avatarText}>{initials}</Text>
             )}
           </View>
           <View style={styles.profileText}>
             <Text numberOfLines={1} style={styles.compactPrimary}>{name}</Text>
-            {authUser?.username ? (
-              <Text numberOfLines={1} style={styles.compactMuted}>@{authUser.username}</Text>
+            {effectiveUser?.username ? (
+              <Text numberOfLines={1} style={styles.compactMuted}>@{effectiveUser.username}</Text>
             ) : null}
           </View>
         </View>
       </View>
       <View style={styles.accountCompactGrid}>
-        <AccountCompactField label="Nama depan" value={authUser?.firstName} />
-        <AccountCompactField label="Nama belakang" value={authUser?.lastName} />
-        <AccountCompactField label="Username" value={authUser?.username} />
-        <AccountCompactField label="Email" value={authUser?.email} />
-        <AccountCompactField label="Telepon" value="-" />
+        <AccountCompactField
+          label="Nama depan"
+          onChangeText={updateForm('firstName')}
+          value={form.firstName}
+        />
+        <AccountCompactField
+          label="Nama belakang"
+          onChangeText={updateForm('lastName')}
+          value={form.lastName}
+        />
+        <AccountCompactField label="Username" readOnly value={effectiveUser?.username ?? ''} />
+        <AccountCompactField
+          label="Email"
+          onChangeText={updateForm('email')}
+          value={form.email}
+        />
+        <AccountCompactField
+          label="Telepon"
+          onChangeText={updateForm('phoneNumber')}
+          value={form.phoneNumber}
+        />
         <View style={styles.accountCompactItem}>
           <View style={styles.accountCompactHeader}>
             <Text style={styles.accountCompactLabel}>Kata sandi</Text>
@@ -823,17 +901,33 @@ function PortalAccountSettings({
           </Text>
         </View>
       </View>
+      {message ? <Text style={styles.accountMessage}>{message}</Text> : null}
     </PortalCard>
   );
 }
 
-function AccountCompactField({ label, value }: { label: string; value?: string | null }) {
+function AccountCompactField({
+  label,
+  onChangeText,
+  readOnly = false,
+  value,
+}: {
+  label: string;
+  onChangeText?: (value: string) => void;
+  readOnly?: boolean;
+  value?: string | null;
+}) {
   return (
     <View style={styles.accountCompactItem}>
       <Text style={styles.accountCompactLabel}>{label}</Text>
-      <Text numberOfLines={1} style={styles.accountCompactValue}>
-        {value || '-'}
-      </Text>
+      <TextInput
+        editable={!readOnly}
+        onChangeText={onChangeText}
+        placeholder="-"
+        placeholderTextColor={V.colors.mutedFg}
+        style={[styles.accountCompactInput, readOnly ? styles.accountCompactInputReadOnly : null]}
+        value={value ?? ''}
+      />
     </View>
   );
 }
@@ -1500,8 +1594,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 17,
   },
+  accountCompactInput: {
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
+    minHeight: 22,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  accountCompactInputReadOnly: {
+    color: V.colors.mutedFg,
+  },
   accountMiniButton: {
     minHeight: 24,
     paddingHorizontal: 7,
+  },
+  accountMessage: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 8,
   },
 });

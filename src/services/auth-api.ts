@@ -30,6 +30,7 @@ export interface SignedInUser {
   username?: string;
   firstName?: string;
   lastName?: string;
+  phoneNumber?: string;
   profilePhotoUrl?: string | null;
   timezone?: string;
   roleKey?: string;
@@ -54,6 +55,7 @@ interface SignInResponse {
   username?: string;
   first_name?: string;
   last_name?: string;
+  phone_number?: string;
   profile_picture?: string | null;
   timezone?: string;
   access_pos?: boolean;
@@ -69,6 +71,7 @@ interface SignInResponse {
     username?: string;
     first_name?: string;
     last_name?: string;
+    phone_number?: string;
     profile_picture?: string | null;
     timezone?: string;
     access_pos?: boolean;
@@ -96,6 +99,7 @@ interface BackendUserPayload {
   username?: string;
   first_name?: string;
   last_name?: string;
+  phone_number?: string;
   profile_picture?: string | null;
   timezone?: string;
   access_pos?: boolean;
@@ -241,6 +245,7 @@ function mapSignedInUser(
     username: payload.username,
     firstName: payload.first_name,
     lastName: payload.last_name,
+    phoneNumber: payload.phone_number,
     profilePhotoUrl: resolveProfilePhotoUrl(payload.profile_picture),
     timezone: payload.timezone,
     roleKey,
@@ -253,6 +258,29 @@ function mapSignedInUser(
     resignedAt: payload.resignedAt,
     permissions: payload.role?.permissions,
   };
+}
+
+export async function updateCurrentUserProfile(body: {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone_number?: string;
+}): Promise<SignedInUser> {
+  const response = await apiRequest<BackendUserPayload | {data?: BackendUserPayload}>({
+    method: 'POST',
+    path: '/auth/update-profile',
+    body,
+    baseUrl:
+      activeAuthSource === 'kolam'
+        ? appConfig.kolamApiBaseUrl
+        : undefined,
+    sourceHeader: getAuthSource(activeAuthSource).headerSource,
+  });
+  const payload =
+    response && typeof response === 'object' && 'data' in response
+      ? response.data ?? {}
+      : response;
+  return mapSignedInUser(payload as BackendUserPayload);
 }
 
 export function resolveProfilePhotoUrl(
