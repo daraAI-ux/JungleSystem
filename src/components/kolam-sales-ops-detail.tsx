@@ -1028,27 +1028,6 @@ export function KolamSalesOpsDetail({
                 </>
               ) : marketplaceManaged ? (
                 <View style={styles.marketplaceFulfillmentActions}>
-                  {showCustomerChat ? (
-                    <KolamButton
-                      accessibilityLabel="Kirim pesan ke customer"
-                      disabled={
-                        controller.openingCustomerChat || controller.mutating
-                      }
-                      label={
-                        controller.openingCustomerChat
-                          ? 'Membuka…'
-                          : 'Kirim pesan ke customer'
-                      }
-                      onPress={() => {
-                        void controller.onOpenCustomerChat();
-                      }}
-                      style={[
-                        styles.toolbarButton,
-                        styles.toolbarDaftarToneButton,
-                      ]}
-                      textStyle={styles.toolbarDaftarToneButtonText}
-                    />
-                  ) : null}
                   {showShopeePickupArrangedBadge ? (
                     <KolamStatusBadge
                       intent="success"
