@@ -842,6 +842,7 @@ function PortalAccountSettings({
           onPress={handleSave}
         />
       }
+      style={styles.sidebarCard}
       subtitle="Profil & keamanan"
       title="Pengaturan Akun"
     >
@@ -869,34 +870,34 @@ function PortalAccountSettings({
           </View>
         </View>
       </View>
-      <View style={styles.accountCompactGrid}>
-        <AccountCompactField
+      <View style={styles.accountFieldsStack}>
+        <AccountEditableField
           label="Nama depan"
           onChangeText={updateForm('firstName')}
           value={form.firstName}
         />
-        <AccountCompactField
+        <AccountEditableField
           label="Nama belakang"
           onChangeText={updateForm('lastName')}
           value={form.lastName}
         />
-        <AccountCompactField label="Username" readOnly value={effectiveUser?.username ?? ''} />
-        <AccountCompactField
+        <AccountEditableField label="Username" readOnly value={effectiveUser?.username ?? ''} />
+        <AccountEditableField
           label="Email"
           onChangeText={updateForm('email')}
           value={form.email}
         />
-        <AccountCompactField
+        <AccountEditableField
           label="Telepon"
           onChangeText={updateForm('phoneNumber')}
           value={form.phoneNumber}
         />
-        <View style={styles.accountCompactItem}>
-          <View style={styles.accountCompactHeader}>
-            <Text style={styles.accountCompactLabel}>Kata sandi</Text>
-            <KolamButton disabled label="Ubah" size="sm" style={styles.accountMiniButton} />
+        <View style={styles.accountField}>
+          <View style={styles.accountFieldHeader}>
+            <Text style={styles.accountLabel}>Kata sandi</Text>
+            <KolamButton disabled label="Ubah" size="sm" />
           </View>
-          <Text numberOfLines={1} style={styles.accountCompactValue}>
+          <Text numberOfLines={1} style={styles.bodyText}>
             ********
           </Text>
         </View>
@@ -906,7 +907,7 @@ function PortalAccountSettings({
   );
 }
 
-function AccountCompactField({
+function AccountEditableField({
   label,
   onChangeText,
   readOnly = false,
@@ -918,14 +919,14 @@ function AccountCompactField({
   value?: string | null;
 }) {
   return (
-    <View style={styles.accountCompactItem}>
-      <Text style={styles.accountCompactLabel}>{label}</Text>
+    <View style={styles.accountField}>
+      <Text style={styles.accountLabel}>{label}</Text>
       <TextInput
         editable={!readOnly}
         onChangeText={onChangeText}
-        placeholder="-"
+        placeholder={label}
         placeholderTextColor={V.colors.mutedFg}
-        style={[styles.accountCompactInput, readOnly ? styles.accountCompactInputReadOnly : null]}
+        style={[styles.accountInput, readOnly ? styles.accountInputReadOnly : null]}
         value={value ?? ''}
       />
     </View>
@@ -1255,7 +1256,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   portalCardBody: {
-    flex: 1,
+    minWidth: 0,
     padding: 12,
   },
   summaryCard: {
@@ -1556,60 +1557,24 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  accountCompactGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  accountFieldsStack: {
+    minWidth: 0,
   },
-  accountCompactItem: {
-    backgroundColor: V.colors.mutedSoft,
+  accountInput: {
     borderColor: V.colors.border,
-    borderRadius: 7,
+    borderRadius: 8,
     borderWidth: 1,
-    flexBasis: '47%',
-    flexGrow: 1,
-    gap: 4,
-    minHeight: 58,
-    minWidth: 124,
-    paddingHorizontal: 9,
-    paddingVertical: 8,
-  },
-  accountCompactHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'space-between',
-  },
-  accountCompactLabel: {
-    color: V.colors.mutedFg,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.45,
-    lineHeight: 14,
-    textTransform: 'uppercase',
-  },
-  accountCompactValue: {
-    color: V.colors.fg,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 17,
-  },
-  accountCompactInput: {
     color: V.colors.fg,
     fontFamily: V.fontFamily,
     fontSize: 12,
     fontWeight: '700',
-    lineHeight: 17,
-    minHeight: 22,
-    paddingHorizontal: 0,
+    minHeight: 36,
+    paddingHorizontal: 10,
     paddingVertical: 0,
   },
-  accountCompactInputReadOnly: {
+  accountInputReadOnly: {
+    backgroundColor: V.colors.mutedSoft,
     color: V.colors.mutedFg,
-  },
-  accountMiniButton: {
-    minHeight: 24,
-    paddingHorizontal: 7,
   },
   accountMessage: {
     color: V.colors.mutedFg,
