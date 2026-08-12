@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import type {KolamChatLiveStreamKind} from '../domain/kolam-chat-live-contract';
 import {
@@ -9,6 +9,7 @@ import {useKolamNotificationSoundSettings} from './use-kolam-notification-sound-
 import {
   getKolamChatUnreadTotal,
   getKolamTeamChatUnreadTotal,
+  type KolamNotificationSoundType,
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
@@ -19,6 +20,32 @@ export type KolamChatUnreadCounts = {
 };
 
 const CHAT_NOTIFICATION_REFRESH_MS = 30_000;
+
+export function resolveKolamChatUnreadRiseSoundIntents({
+  next,
+  previous,
+  visibleRailMode,
+}: {
+  next: KolamChatUnreadCounts;
+  previous: KolamChatUnreadCounts | null;
+  visibleRailMode?: KolamChatLiveStreamKind | null;
+}): KolamNotificationSoundType[] {
+  if (!previous) {
+    return [];
+  }
+
+  const intents: KolamNotificationSoundType[] = [];
+
+  if (next.inbox > previous.inbox && visibleRailMode !== 'inbox') {
+    intents.push('assigned');
+  }
+
+  if (next.team > previous.team && visibleRailMode !== 'team-chat') {
+    intents.push('assigned');
+  }
+
+  return intents;
+}
 
 export function useKolamChatNotificationHost({
   currentUserId,
@@ -33,6 +60,9 @@ export function useKolamChatNotificationHost({
     inbox: 0,
     team: 0,
   });
+  const unreadCountsRef = useRef(unreadCounts);
+  const previousUnreadRef = useRef<KolamChatUnreadCounts | null>(null);
+  const visibleRailModeRef = useRef(visibleRailMode);
   const soundSettings = useKolamNotificationSoundSettings({enabled});
   const notificationSoundService = useMemo(
     () =>
@@ -42,8 +72,25 @@ export function useKolamChatNotificationHost({
     [],
   );
 
+  unreadCountsRef.current = unreadCounts;
+  visibleRailModeRef.current = visibleRailMode;
+
+  const playSoundIntent = useCallback(
+    (intent: KolamNotificationSoundType | 'none') => {
+      Promise.resolve(
+        notificationSoundService.play({
+          intent,
+          webSetting: soundSettings.webSetting,
+        }),
+      ).catch(() => undefined);
+    },
+    [notificationSoundService, soundSettings.webSetting],
+  );
+
   const refreshUnreadCounts = useCallback(async () => {
     if (!enabled) {
+      previousUnreadRef.current = null;
+      unreadCountsRef.current = {inbox: 0, team: 0};
       setUnreadCounts({inbox: 0, team: 0});
       return;
     }
@@ -53,7 +100,8 @@ export function useKolamChatNotificationHost({
       getKolamTeamChatUnreadTotal(),
     ]);
 
-    setUnreadCounts(current => ({
+    const current = unreadCountsRef.current;
+    const next: KolamChatUnreadCounts = {
       inbox:
         inboxResult.status === 'fulfilled'
           ? Math.max(0, inboxResult.value)
@@ -62,11 +110,26 @@ export function useKolamChatNotificationHost({
         teamResult.status === 'fulfilled'
           ? Math.max(0, teamResult.value)
           : current.team,
-    }));
-  }, [enabled]);
+    };
+
+    const intents = resolveKolamChatUnreadRiseSoundIntents({
+      next,
+      previous: previousUnreadRef.current,
+      visibleRailMode: visibleRailModeRef.current,
+    });
+    previousUnreadRef.current = next;
+    unreadCountsRef.current = next;
+    setUnreadCounts(next);
+
+    intents.forEach(intent => {
+      playSoundIntent(intent);
+    });
+  }, [enabled, playSoundIntent]);
 
   useEffect(() => {
     if (!enabled) {
+      previousUnreadRef.current = null;
+      unreadCountsRef.current = {inbox: 0, team: 0};
       setUnreadCounts({inbox: 0, team: 0});
       return undefined;
     }
@@ -92,21 +155,10 @@ export function useKolamChatNotificationHost({
       }
 
       if (visibleRailMode !== event.contract.stream) {
-        Promise.resolve(
-          notificationSoundService.play({
-            intent: classification.soundIntent,
-            webSetting: soundSettings.webSetting,
-          }),
-        ).catch(() => undefined);
+        playSoundIntent(classification.soundIntent);
       }
     },
-    [
-      currentUserId,
-      notificationSoundService,
-      refreshUnreadCounts,
-      soundSettings.webSetting,
-      visibleRailMode,
-    ],
+    [currentUserId, playSoundIntent, refreshUnreadCounts, visibleRailMode],
   );
 
   useKolamChatLiveStream({

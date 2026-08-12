@@ -8,6 +8,9 @@
 #include <mutex>
 #include <string>
 #include <utility>
+#include <vector>
+
+#include <mmsystem.h>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Media.Core.h>
@@ -15,11 +18,15 @@
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Storage.Streams.h>
 
+#pragma comment(lib, "winmm.lib")
+
 namespace KolamWindows {
 namespace {
 
 std::mutex g_playerMutex;
+std::mutex g_wavMutex;
 winrt::Windows::Media::Playback::MediaPlayer g_player{nullptr};
+std::vector<BYTE> g_wavPlayBuffer;
 
 // Same short WAV payload as JS KOLAM_DEFAULT_NOTIFICATION_BEEP_URI (base64 body only).
 constexpr wchar_t kDefaultBeepWavBase64[] =
@@ -51,6 +58,20 @@ struct PlaybackAttempt {
 
 bool StartsWith(std::string const &value, char const *prefix) {
   return value.rfind(prefix, 0) == 0;
+}
+
+bool EqualsIgnoreCaseAscii(std::wstring const &value, wchar_t const *expected) {
+  auto left = value;
+  auto right = std::wstring(expected);
+  std::transform(left.begin(), left.end(), left.begin(), ::towlower);
+  std::transform(right.begin(), right.end(), right.begin(), ::towlower);
+  return left == right;
+}
+
+bool IsWavContentType(std::wstring const &contentType) {
+  return EqualsIgnoreCaseAscii(contentType, L"audio/wav") ||
+      EqualsIgnoreCaseAscii(contentType, L"audio/wave") ||
+      EqualsIgnoreCaseAscii(contentType, L"audio/x-wav");
 }
 
 double ClampVolume(double value) {
@@ -115,8 +136,34 @@ void PlaySystemBeep(::React::ReactPromise<::React::JSValueObject> &&result) noex
   }
 }
 
+std::vector<BYTE> DecodeBase64ToBytes(winrt::hstring const &base64) {
+  auto buffer =
+      winrt::Windows::Security::Cryptography::CryptographicBuffer::DecodeFromBase64String(
+          base64);
+  std::vector<BYTE> bytes(static_cast<size_t>(buffer.Length()));
+  if (!bytes.empty()) {
+    auto reader = winrt::Windows::Storage::Streams::DataReader::FromBuffer(buffer);
+    reader.ReadBytes(bytes);
+  }
+  return bytes;
+}
+
+bool PlayWavBytes(std::vector<BYTE> bytes) {
+  if (bytes.empty()) {
+    return false;
+  }
+
+  std::scoped_lock lock(g_wavMutex);
+  ::PlaySoundW(nullptr, nullptr, SND_PURGE);
+  g_wavPlayBuffer = std::move(bytes);
+  return ::PlaySoundW(
+             reinterpret_cast<LPCWSTR>(g_wavPlayBuffer.data()),
+             nullptr,
+             SND_ASYNC | SND_MEMORY | SND_NODEFAULT) != FALSE;
+}
+
 void PlayDefaultBeep(
-    double volume,
+    double /*volume*/,
     ::React::ReactPromise<::React::JSValueObject> &&result,
     bool allowSystemBeepFallback) noexcept;
 
@@ -166,10 +213,19 @@ void PlayMediaSource(
     std::scoped_lock lock(g_playerMutex);
     g_player = winrt::Windows::Media::Playback::MediaPlayer();
     g_player.AutoPlay(false);
+    g_player.AudioCategory(
+        winrt::Windows::Media::Playback::MediaPlayerAudioCategory::SoundEffects);
     g_player.Volume(volume);
     attempt->openedRevoker = g_player.MediaOpened(
         winrt::auto_revoke,
         [attempt, path, uri](auto const &, auto const &) noexcept {
+          try {
+            std::scoped_lock lock(g_playerMutex);
+            if (g_player) {
+              g_player.Play();
+            }
+          } catch (...) {
+          }
           ResolveOnce(attempt, PlayedResult(path, "opened", uri));
         });
     attempt->failedRevoker = g_player.MediaFailed(
@@ -184,7 +240,6 @@ void PlayMediaSource(
           HandlePlaybackFailure(attempt, message);
         });
     g_player.Source(source);
-    g_player.Play();
   } catch (winrt::hresult_error const &error) {
     HandlePlaybackFailure(attempt, winrt::to_string(error.message()));
   } catch (...) {
@@ -192,15 +247,13 @@ void PlayMediaSource(
   }
 }
 
-winrt::Windows::Storage::Streams::InMemoryRandomAccessStream CreateStreamFromBase64(
-    winrt::hstring const &base64) {
-  auto buffer =
-      winrt::Windows::Security::Cryptography::CryptographicBuffer::DecodeFromBase64String(
-          base64);
+winrt::Windows::Storage::Streams::InMemoryRandomAccessStream CreateStreamFromBytes(
+    std::vector<BYTE> const &bytes) {
   auto stream = winrt::Windows::Storage::Streams::InMemoryRandomAccessStream();
   auto writer = winrt::Windows::Storage::Streams::DataWriter(stream);
-  writer.WriteBuffer(buffer);
+  writer.WriteBytes(bytes);
   writer.StoreAsync().get();
+  writer.FlushAsync().get();
   writer.DetachStream();
   stream.Seek(0);
   return stream;
@@ -255,7 +308,16 @@ void PlayDataAudioUri(
       return;
     }
 
-    auto stream = CreateStreamFromBase64(base64Payload);
+    auto bytes = DecodeBase64ToBytes(base64Payload);
+    if (IsWavContentType(contentType)) {
+      auto wavBytes = bytes;
+      if (PlayWavBytes(std::move(wavBytes))) {
+        result.Resolve(PlayedResult("winmm-wav", "played", uri));
+        return;
+      }
+    }
+
+    auto stream = CreateStreamFromBytes(bytes);
     auto source = winrt::Windows::Media::Core::MediaSource::CreateFromStream(
         stream, winrt::hstring(contentType));
     PlayMediaSource(
@@ -289,20 +351,21 @@ void PlayDataAudioUri(
 }
 
 void PlayDefaultBeep(
-    double volume,
+    double /*volume*/,
     ::React::ReactPromise<::React::JSValueObject> &&result,
     bool allowSystemBeepFallback) noexcept {
   try {
-    auto stream = CreateStreamFromBase64(winrt::hstring(kDefaultBeepWavBase64));
-    auto source = winrt::Windows::Media::Core::MediaSource::CreateFromStream(
-        stream, L"audio/wav");
-    PlayMediaSource(
-        source,
-        volume,
-        "default-beep",
-        "embedded:default-beep.wav",
-        std::move(result),
-        allowSystemBeepFallback ? FallbackKind::SystemBeep : FallbackKind::None);
+    auto bytes = DecodeBase64ToBytes(winrt::hstring(kDefaultBeepWavBase64));
+    if (PlayWavBytes(std::move(bytes))) {
+      result.Resolve(PlayedResult("winmm-default-beep", "played", "embedded:default-beep.wav"));
+      return;
+    }
+
+    if (allowSystemBeepFallback) {
+      PlaySystemBeep(std::move(result));
+      return;
+    }
+    result.Reject("Suara notifikasi default tidak bisa diputar.");
   } catch (...) {
     if (allowSystemBeepFallback) {
       PlaySystemBeep(std::move(result));
@@ -371,18 +434,29 @@ void PlayNotificationSound(
 
 } // namespace
 
+void KolamWindowsNotificationSound::Initialize(
+    winrt::Microsoft::ReactNative::ReactContext const &reactContext) noexcept {
+  m_context = reactContext;
+}
+
 void KolamWindowsNotificationSound::playNotificationSound(
     std::string uri,
     ::React::JSValueObject options,
     ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
-  PlayNotificationSound(std::move(uri), std::move(options), std::move(result));
+  m_context.UIDispatcher().Post([
+    uri = std::move(uri),
+    options = std::move(options),
+    result = std::move(result)
+  ]() mutable {
+    PlayNotificationSound(std::move(uri), std::move(options), std::move(result));
+  });
 }
 
 void KolamWindowsNotificationSound::playSound(
     std::string uri,
     ::React::JSValueObject options,
     ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
-  PlayNotificationSound(std::move(uri), std::move(options), std::move(result));
+  playNotificationSound(std::move(uri), std::move(options), std::move(result));
 }
 
 } // namespace KolamWindows
