@@ -28,6 +28,7 @@ import {
 } from './kolam-filter-panel-anchor';
 import {
   bulkDeleteAmActivityLogs,
+  bulkDeleteAmDoneTasks,
   cancelAmTransfer,
   cancelAmTask,
   clearAmWebhookLogs,
@@ -1256,6 +1257,7 @@ function AmServicesPage() {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<AmServiceDetailTab>('logs');
   const [sessionToClear, setSessionToClear] = React.useState<AmServiceAccount | null>(null);
+  const [historyToClear, setHistoryToClear] = React.useState<AmServiceAccount | null>(null);
   const [detailLogSource, setDetailLogSource] = React.useState<'realtime' | 'history' | null>('realtime');
   const [detailLogPage, setDetailLogPage] = React.useState(1);
   const [detailLogTotal, setDetailLogTotal] = React.useState(0);
@@ -1271,6 +1273,7 @@ function AmServicesPage() {
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const [actingServiceId, setActingServiceId] = React.useState<string | null>(null);
+  const [clearingHistoryId, setClearingHistoryId] = React.useState<string | null>(null);
   const [serviceInputValue, setServiceInputValue] = React.useState('');
   const [submittedInputRequirementKey, setSubmittedInputRequirementKey] = React.useState<string | null>(null);
   const [serviceInputSending, setServiceInputSending] = React.useState(false);
@@ -1474,6 +1477,7 @@ function AmServicesPage() {
       setDetailError(null);
       setServiceInputValue('');
       setSubmittedInputRequirementKey(null);
+      setHistoryToClear(null);
       return;
     }
 
@@ -1492,6 +1496,7 @@ function AmServicesPage() {
     setDetailLogLimit(AM_SERVICE_LOG_PAGE_LIMIT);
     setServiceInputValue('');
     setSubmittedInputRequirementKey(null);
+    setHistoryToClear(null);
     if (isTransferBanking(account.platform)) {
       await loadServiceHistory(account, 1);
     } else {
@@ -1504,6 +1509,7 @@ function AmServicesPage() {
     tab: AmServiceDetailTab,
   ) => {
     setExpandedTab(tab);
+    setHistoryToClear(null);
     if (tab === 'history') {
       await loadServiceHistory(account, 1);
     } else if (tab === 'logs') {
@@ -1584,6 +1590,23 @@ function AmServicesPage() {
       setActingServiceId(null);
     }
   }, [fetchAccounts]);
+
+  const clearFinishedServiceTasks = React.useCallback(async (account: AmServiceAccount) => {
+    try {
+      setClearingHistoryId(account._id);
+      setActionMessage(null);
+      const result = await bulkDeleteAmDoneTasks(account._id);
+      const deleted = result.deletedCount ?? 0;
+      setActionMessage(deleted > 0 ? `${deleted} task selesai dihapus.` : 'Tidak ada task selesai untuk dihapus.');
+      setHistoryToClear(null);
+      setDetailHistoryPage(1);
+      await loadServiceHistory(account, 1);
+    } catch (nextError) {
+      setDetailError(nextError instanceof Error ? nextError.message : 'Gagal menghapus riwayat task.');
+    } finally {
+      setClearingHistoryId(null);
+    }
+  }, [loadServiceHistory]);
 
   const submitServiceInput = React.useCallback(async (account: AmServiceAccount, inputType: 'otp' | 'password') => {
     const device = getServiceDevice(account);
@@ -1720,6 +1743,17 @@ function AmServicesPage() {
                     </Text>
                   </KolamInteractionFrame>
                 ) : null}
+                {!expandedServiceBanking && expandedTab === 'history' ? (
+                  <KolamDeleteButton
+                    accessibilityLabel={`AM Service Clear Task History ${expandedServiceAccount._id}`}
+                    disabled={clearingHistoryId === expandedServiceAccount._id || detailLoading}
+                    intent="danger"
+                    label={clearingHistoryId === expandedServiceAccount._id ? 'Menghapus...' : 'Hapus selesai'}
+                    muted={clearingHistoryId === expandedServiceAccount._id || detailLoading}
+                    size="sm"
+                    onPress={() => setHistoryToClear(expandedServiceAccount)}
+                  />
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -1771,6 +1805,34 @@ function AmServicesPage() {
               size="sm"
               style={styles.serviceActionButton}
               onPress={() => setSessionToClear(null)}
+            />
+          </View>
+        </View>
+      ) : null}
+      {historyToClear ? (
+        <View style={styles.warningPanel}>
+          <Text style={styles.warningText}>Hapus riwayat task selesai {historyToClear.label}?</Text>
+          <Text style={styles.panelText}>Task pending, queued, dan processing tidak dihapus.</Text>
+          <View style={styles.inlineActions}>
+            <KolamDeleteButton
+              accessibilityLabel={`AM Service Confirm Clear Task History ${historyToClear._id}`}
+              disabled={clearingHistoryId === historyToClear._id}
+              intent="danger"
+              label={clearingHistoryId === historyToClear._id ? 'Menghapus...' : 'Hapus selesai'}
+              muted={clearingHistoryId === historyToClear._id}
+              size="sm"
+              style={styles.serviceActionButton}
+              onPress={() => clearFinishedServiceTasks(historyToClear)}
+            />
+            <KolamCancelButton
+              accessibilityLabel="AM Service Cancel Clear Task History"
+              disabled={clearingHistoryId === historyToClear._id}
+              intent="outline"
+              label="Batal"
+              muted={clearingHistoryId === historyToClear._id}
+              size="sm"
+              style={styles.serviceActionButton}
+              onPress={() => setHistoryToClear(null)}
             />
           </View>
         </View>

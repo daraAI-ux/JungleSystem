@@ -101,6 +101,12 @@ export interface AmTaskPayload {
   priority?: number;
 }
 
+export interface AmTaskBulkDeleteResult {
+  deletedCount: number;
+  serviceAccountId: string;
+  statuses: string[];
+}
+
 export interface AmListMeta {
   total: number;
   page?: number;
@@ -763,6 +769,17 @@ export async function forceFailAmTask(
   baseUrl = appConfig.amApiBaseUrl,
 ): Promise<AmTask> {
   return amPost<AmTask>(`/task/${id}/force-fail`, undefined, baseUrl);
+}
+
+export async function bulkDeleteAmDoneTasks(
+  serviceAccountId: string,
+  baseUrl = appConfig.amApiBaseUrl,
+): Promise<AmTaskBulkDeleteResult> {
+  return amPost<AmTaskBulkDeleteResult>(
+    '/task/bulk-delete',
+    {serviceAccountId},
+    baseUrl,
+  );
 }
 
 export async function getAmServiceAccounts(

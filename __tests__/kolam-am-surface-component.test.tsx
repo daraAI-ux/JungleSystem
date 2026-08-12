@@ -9,6 +9,7 @@ import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 import {setAccessToken} from '../src/lib/api-client';
 import {
   bulkDeleteAmActivityLogs,
+  bulkDeleteAmDoneTasks,
   cancelAmTransfer,
   cancelAmTask,
   clearAmServiceAccountSession,
@@ -76,6 +77,7 @@ import {seedUnifiedDataset} from '../src/services/unified-data';
 
 jest.mock('../src/services/am-api', () => ({
   bulkDeleteAmActivityLogs: jest.fn(() => Promise.resolve({deletedCount: 75})),
+  bulkDeleteAmDoneTasks: jest.fn(() => Promise.resolve({deletedCount: 3, serviceAccountId: 'service-1', statuses: ['success', 'failed', 'cancelled']})),
   cancelAmTransfer: jest.fn(() => Promise.resolve({_id: 'transfer-1'})),
   cancelAmTask: jest.fn(() => Promise.resolve({_id: 'task-1'})),
   clearAmServiceAccountSession: jest.fn(() => Promise.resolve({stopped: true, deleted: ['session.json'], missing: []})),
@@ -1655,6 +1657,24 @@ describe('KolamAmSurface', () => {
     expect(taskHistoryFooterText).toContain('1 - 5');
     expect(taskHistoryFooterText).toContain('12');
     expect(taskHistoryFooterText).toContain('hasil');
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Task History service-1'})).toBeTruthy();
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Clear Task History service-1'}).props.onPress();
+    });
+    expect(renderText(renderer!).join(' ')).toContain('Task pending, queued, dan processing tidak dihapus.');
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Service Confirm Clear Task History service-1'}).props.onPress();
+    });
+
+    expect(bulkDeleteAmDoneTasks).toHaveBeenCalledWith('service-1');
+    expect(renderText(renderer!).join(' ')).toContain('3 task selesai dihapus.');
+    expect(jest.requireMock('../src/services/am-api').getAmTasks).toHaveBeenLastCalledWith({
+      limit: 5,
+      page: 1,
+      serviceAccountId: 'service-1',
+    });
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
