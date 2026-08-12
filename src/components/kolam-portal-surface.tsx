@@ -403,7 +403,7 @@ function PortalSummaryCards({
         label: item.label,
         value: loading && !summary ? 'Memuat...' : formatNumber(item.value),
       }))}
-      style={[styles.col7, styles.summaryCard]}
+      style={styles.summaryCard}
       title="Ringkasan"
     />
   );
@@ -1157,23 +1157,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 260,
     width: undefined,
-  },
-  twelveGrid: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    width: '100%',
-  },
-  col5: {
-    flexBasis: 300,
-    flexGrow: 5,
-    minWidth: 280,
-  },
-  col7: {
-    flexBasis: 420,
-    flexGrow: 7,
-    minWidth: 340,
   },
   portalCard: {
     flexBasis: 280,
