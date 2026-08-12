@@ -841,7 +841,6 @@ function PosCatalogCard({
   const isInCart = !!cartLine;
   const minimumPriceToSales = item.minimumPriceToSales ?? 0;
   const minimumOrderQty = item.minimumOrderQty ?? 1;
-  const hasMinimumMeta = minimumPriceToSales > 0 || minimumOrderQty > 1;
 
   return (
     <View style={styles.cardSlot}>
@@ -893,20 +892,16 @@ function PosCatalogCard({
             {item.name}
           </Text>
           <Text style={styles.productPrice}>{formatRupiah(item.price)}</Text>
-          {hasMinimumMeta ? (
-            <View style={styles.productMetaList}>
-              {minimumPriceToSales > 0 ? (
-                <Text style={styles.productMinimumPrice}>
-                  Min. {formatRupiah(minimumPriceToSales)}
-                </Text>
-              ) : null}
-              {minimumOrderQty > 1 ? (
-                <Text style={styles.productMinimumOrder}>
-                  Min. order {minimumOrderQty}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
+          <View style={styles.productMetaList}>
+            <Text style={styles.productMinimumPrice}>
+              {minimumPriceToSales > 0
+                ? `Min. ${formatRupiah(minimumPriceToSales)}`
+                : ' '}
+            </Text>
+            <Text style={styles.productMinimumOrder}>
+              {minimumOrderQty > 1 ? `Min. order ${minimumOrderQty}` : ' '}
+            </Text>
+          </View>
           <KolamInteractionFrame
             onPress={() => onOpenQuickView(item)}
             style={styles.quickViewButton}>
@@ -2479,6 +2474,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   catalogRow: {
+    alignItems: 'stretch',
     flexDirection: 'row',
     gap: 8,
   },
@@ -2488,6 +2484,7 @@ const styles = StyleSheet.create({
   },
   productCard: {
     minHeight: 214,
+    flex: 1,
     overflow: 'hidden',
     borderRadius: 6,
     borderColor: V.colors.border,
@@ -2554,6 +2551,7 @@ const styles = StyleSheet.create({
   },
   productCopy: {
     flex: 1,
+    minHeight: 0,
     padding: 8,
   },
   productInfoHeader: {
@@ -2595,6 +2593,7 @@ const styles = StyleSheet.create({
   },
   productMetaList: {
     gap: 1,
+    minHeight: 24,
     marginTop: 2,
   },
   productMinimumPrice: {
