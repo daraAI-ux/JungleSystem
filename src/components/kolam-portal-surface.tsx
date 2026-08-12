@@ -1179,7 +1179,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mainColumnWide: {
-    flexBasis: '66%',
+    flexBasis: 0,
     flexGrow: 1,
     minWidth: 0,
     width: undefined,
@@ -1189,8 +1189,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sideColumnWide: {
-    flexBasis: '32%',
+    flexBasis: 360,
     flexGrow: 0,
+    flexShrink: 0,
+    maxWidth: 360,
     minWidth: 320,
     width: undefined,
   },
@@ -1264,6 +1266,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sidebarCard: {
+    flexBasis: undefined,
+    flexGrow: 0,
     width: '100%',
   },
   kpiActionRow: {
