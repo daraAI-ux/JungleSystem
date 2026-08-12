@@ -28,7 +28,7 @@ export function getKolamWorkspaceScrollPolicy({
     isCentered,
     layout: isCentered ? 'centered' : 'default',
     routePath,
-    scrollOwner: isKolamWorkspaceOwnedScrollRoutePath(routePath)
+    scrollOwner: isKolamWorkspaceOwnedScrollRoutePath(routePath, activeModule)
       ? 'workspace'
       : 'shell',
   };
@@ -48,7 +48,14 @@ export function isKolamCenteredRoute(route?: string | null) {
   return isKolamCenteredRoutePath(normalizeKolamWorkspaceRoute(route));
 }
 
-function isKolamWorkspaceOwnedScrollRoutePath(routePath: string) {
+function isKolamWorkspaceOwnedScrollRoutePath(
+  routePath: string,
+  activeModule?: string | null,
+) {
+  if (activeModule === 'am' && routePath === '/') {
+    return false;
+  }
+
   return (
     routePath === '/' ||
     routePath === '/app-downloads' ||

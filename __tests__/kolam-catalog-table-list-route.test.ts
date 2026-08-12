@@ -1,9 +1,28 @@
-import { isCatalogTableListRoute } from '../src/domain/kolam-workspace-scroll';
+import {
+  getKolamWorkspaceScrollPolicy,
+  isCatalogTableListRoute,
+} from '../src/domain/kolam-workspace-scroll';
 
 describe('isCatalogTableListRoute', () => {
   it('matches overview root because Beranda owns its page scroll', () => {
     expect(isCatalogTableListRoute('/')).toBe(true);
     expect(isCatalogTableListRoute('')).toBe(true);
+  });
+
+  it('keeps AM dashboard on the shell ScrollView', () => {
+    expect(
+      getKolamWorkspaceScrollPolicy({activeModule: 'am', route: '/'}),
+    ).toEqual(
+      expect.objectContaining({
+        layout: 'centered',
+        routePath: '/',
+        scrollOwner: 'shell',
+      }),
+    );
+    expect(
+      getKolamWorkspaceScrollPolicy({activeModule: 'kolam', route: '/'})
+        .scrollOwner,
+    ).toBe('workspace');
   });
 
   it('matches app downloads because the page owns its detail scroll', () => {

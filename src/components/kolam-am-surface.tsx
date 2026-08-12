@@ -7028,12 +7028,10 @@ function titleCase(value: string) {
 
 const styles = StyleSheet.create({
   pageContent: {
-    flex: 1,
     flexGrow: 1,
     width: '100%',
     alignSelf: 'stretch',
     minWidth: 0,
-    overflow: 'hidden',
   },
   pageStack: {
     flexGrow: 1,
@@ -7041,7 +7039,6 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     minWidth: 0,
     maxWidth: '100%',
-    overflow: 'hidden',
     gap: 16,
   },
   dashboardPageStack: {

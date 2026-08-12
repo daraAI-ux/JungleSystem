@@ -467,6 +467,8 @@ describe('KolamAmSurface', () => {
     expect(amRootStyle?.paddingHorizontal).toBeUndefined();
     expect(amRootStyle?.paddingTop).toBeUndefined();
     expect(amRootStyle?.minWidth).toBe(0);
+    expect(amRootStyle?.flex).toBeUndefined();
+    expect(amRootStyle?.overflow).toBeUndefined();
     const amStretchStacks = renderer!.root
       .findAllByType(View)
       .filter(view => {
@@ -585,6 +587,39 @@ describe('KolamAmSurface', () => {
     expect(dashboardTableHeaders).toHaveLength(0);
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
     expect(recordAmPageView).toHaveBeenCalledWith('/');
+  });
+
+  it('leaves the AM dashboard root open for the shell ScrollView', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const amRoot = renderer!.root
+      .findAllByType(View)
+      .find(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.width === '100%' && style?.alignSelf === 'stretch';
+      });
+    const amRootStyle = StyleSheet.flatten(amRoot?.props.style);
+    expect(amRootStyle).toEqual(
+      expect.objectContaining({
+        flexGrow: 1,
+        minWidth: 0,
+        width: '100%',
+        alignSelf: 'stretch',
+      }),
+    );
+    expect(amRootStyle?.flex).toBeUndefined();
+    expect(amRootStyle?.overflow).toBeUndefined();
   });
 
   it('hides the AM dashboard device overview when dashboard devices are empty', async () => {

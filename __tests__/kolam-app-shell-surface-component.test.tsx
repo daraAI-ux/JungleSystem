@@ -450,6 +450,7 @@ describe('KolamAppShellSurface', () => {
         paddingBottom: visual.page.paddingBottom,
       }),
     );
+    expect(countMainShellScrollViews(renderer!)).toBe(1);
   });
 
   it('keeps AM route paths inside the centered app wrapper', async () => {
