@@ -9,6 +9,7 @@ import {KOLAM_TRANSFER_AM_ICON_SVG} from '../assets/icons/transfer-am-icon-svg';
 import {KOLAM_WEBHOOK_AM_ICON_SVG} from '../assets/icons/webhook-am-icon-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_ASSET_PURCHASE_MODULE_ICON_SVG} from '../assets/icons/asset-purchase-module-icon-svg';
+import {KOLAM_BANTUAN_MODULE_ICON_SVG} from '../assets/icons/bantuan-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
 import {KOLAM_CAMPAIGN_MODULE_ICON_SVG} from '../assets/icons/campaign-module-icon-svg';
 import {KOLAM_CASHFLOW_SESSION_MODULE_ICON_SVG} from '../assets/icons/cashflow-session-module-icon-svg';
@@ -71,6 +72,7 @@ const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   archive: 'Icon Arsip',
   assetPurchase: 'Icon Pembelian Aset',
   automation: 'Icon Automation Management',
+  bantuan: 'Icon Bantuan',
   brand: 'Icon Merek',
   campaign: 'Icon Kampanye',
   cashflowSession: 'Icon Sesi Tunai',
@@ -307,6 +309,12 @@ export function KolamModuleIcon({
             />
           </Svg>
         )
+      ) : kind === 'bantuan' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_BANTUAN_MODULE_ICON_SVG}
+        />
       ) : kind === 'brand' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {BRAND_ICON_PATHS.map(path => (

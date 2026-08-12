@@ -298,6 +298,7 @@ export const shellModules: ShellModule[] = [
     area: 'kolam',
     label: 'Bantuan',
     iconKind: 'plugin',
+    moduleIcon: 'bantuan',
     sourceRepo: 'E:\\Projects\\DA-Bantuan-Plugin',
     summary: 'Dokumentasi operasional, modul, plugin, AM, dan DARA.',
     routes: ['bantuan', 'bantuan/:slug'],

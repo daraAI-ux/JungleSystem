@@ -1,9 +1,5 @@
 import {appConfig} from '../config/app';
-import {
-  kolamBantuanLocalDocsByPath,
-  kolamBantuanLocalManifest,
-  kolamBantuanLocalSearchIndex,
-} from '../data/kolam-bantuan-local-data';
+import {kolamBantuanLocalManifest} from '../data/kolam-bantuan-local-manifest';
 import {
   type KolamBantuanManifest,
   type KolamBantuanSearchEntry,
@@ -16,51 +12,66 @@ type BantuanDocResponse = {
   };
 };
 
-export async function fetchKolamBantuanManifest() {
-  let payload: KolamBantuanManifest;
+/** Sync local first — remote refresh is optional and must never block hub mount. */
+export function getKolamBantuanLocalManifest() {
+  return kolamBantuanLocalManifest;
+}
 
+export async function fetchKolamBantuanManifest() {
   try {
-    payload = await fetchJson<KolamBantuanManifest>(
+    const payload = await fetchJson<KolamBantuanManifest>(
       `${getBantuanStaticBaseUrl()}/manifest.json`,
     );
+
+    if (Array.isArray(payload.modules) && payload.modules.length > 0) {
+      return {
+        version: String(payload.version ?? ''),
+        generatedAt: String(payload.generatedAt ?? ''),
+        aliases: payload.aliases ?? {},
+        modules: payload.modules,
+      };
+    }
   } catch {
-    return kolamBantuanLocalManifest;
+    // Prefer local fallback for native stability.
   }
 
-  if (!Array.isArray(payload.modules) || payload.modules.length === 0) {
-    return kolamBantuanLocalManifest;
-  }
-
-  return {
-    version: String(payload.version ?? ''),
-    generatedAt: String(payload.generatedAt ?? ''),
-    aliases: payload.aliases ?? {},
-    modules: Array.isArray(payload.modules) ? payload.modules : [],
-  };
+  return kolamBantuanLocalManifest;
 }
 
 export async function fetchKolamBantuanSearchIndex() {
-  let payload: {entries?: KolamBantuanSearchEntry[]};
-
   try {
-    payload = await fetchJson<{entries?: KolamBantuanSearchEntry[]}>(
+    const payload = await fetchJson<{entries?: KolamBantuanSearchEntry[]}>(
       `${getBantuanStaticBaseUrl()}/search-index.json`,
     );
+
+    if (Array.isArray(payload.entries) && payload.entries.length > 0) {
+      return payload.entries;
+    }
   } catch {
-    return kolamBantuanLocalSearchIndex;
+    // Fall through to local lazy module.
   }
 
-  if (!Array.isArray(payload.entries) || payload.entries.length === 0) {
-    return kolamBantuanLocalSearchIndex;
-  }
-
-  return Array.isArray(payload.entries) ? payload.entries : [];
+  return loadLocalSearchIndex();
 }
 
 export async function fetchKolamBantuanDocBySlug(
   slug: string,
   docPath?: string,
 ) {
+  const normalizedDocPath = docPath?.replace(/^\/+/, '');
+
+  // Prefer per-doc local lazy load — avoids mega-module abort on RN Windows.
+  if (normalizedDocPath) {
+    try {
+      const localDoc = await loadKolamBantuanLocalDoc(normalizedDocPath);
+      if (typeof localDoc === 'string' && localDoc.length > 0) {
+        return localDoc;
+      }
+    } catch {
+      // Fall through to remote.
+    }
+  }
+
   try {
     const response = await apiRequest<BantuanDocResponse>({
       baseUrl: `${appConfig.kolamWebUrl.replace(/\/$/, '')}/api`,
@@ -78,11 +89,10 @@ export async function fetchKolamBantuanDocBySlug(
     // Native does not always share browser cookies with Next API routes.
   }
 
-  if (!docPath) {
+  if (!normalizedDocPath) {
     throw new Error(`Dokumen tidak ditemukan: ${slug}`);
   }
 
-  const normalizedDocPath = docPath.replace(/^\/+/, '');
   const staticUrl = `${getBantuanStaticBaseUrl()}/content/${normalizedDocPath}`;
 
   try {
@@ -95,12 +105,6 @@ export async function fetchKolamBantuanDocBySlug(
     }
   } catch {
     // Static plugin content may be unavailable outside the web host.
-  }
-
-  const localDoc = kolamBantuanLocalDocsByPath[normalizedDocPath];
-
-  if (typeof localDoc === 'string') {
-    return localDoc;
   }
 
   throw new Error(`Dokumen tidak ditemukan: ${slug}`);
@@ -120,4 +124,16 @@ async function fetchJson<T>(url: string): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+async function loadLocalSearchIndex() {
+  const mod = await import('../data/kolam-bantuan-local-search-index');
+  return mod.kolamBantuanLocalSearchIndex;
+}
+
+async function loadKolamBantuanLocalDoc(docPath: string) {
+  const {loadKolamBantuanLocalDoc: loadOne} = await import(
+    '../data/kolam-bantuan-local-doc-loader'
+  );
+  return loadOne(docPath);
 }

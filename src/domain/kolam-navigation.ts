@@ -21,6 +21,7 @@ export type KolamNavigationModuleIcon =
   | 'archive'
   | 'assetPurchase'
   | 'automation'
+  | 'bantuan'
   | 'brand'
   | 'campaign'
   | 'cashflowSession'
@@ -183,6 +184,7 @@ export const kolamNavigationSections: KolamNavigationSection[] = [
         route: '/bantuan',
         description: 'Pusat bantuan dan dokumentasi operasional',
         group: 'Dukungan',
+        moduleIcon: 'bantuan',
         requiredAccess: ['kolam'],
       },
       {

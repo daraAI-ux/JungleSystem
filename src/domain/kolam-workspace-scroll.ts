@@ -76,6 +76,7 @@ const KOLAM_CENTERED_EXACT_ROUTES = ['/list-of-users'];
 
 const KOLAM_CENTERED_ROUTE_PREFIXES = [
   '/am',
+  '/bantuan',
   '/pengaturan',
   '/label-dan-field',
   '/merek',
