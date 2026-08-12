@@ -426,14 +426,9 @@ function KolamUserCreateSurface({
         />
       </UserDetailActionToolbar>
 
-      <KolamContentFrame style={styles.detailCard} variant="settingsWebConfig">
-        <View style={styles.detailTitleBlock}>
-          <Text style={styles.detailTitle}>Buat Pengguna Baru</Text>
-          <Text style={styles.detailSubtitle}>
-            Tambahkan pengguna baru ke sistem
-          </Text>
-        </View>
-
+      <KolamContentFrame
+        style={[styles.detailCard, styles.detailCardFlush]}
+        variant="settingsWebConfig">
         {error ? <Text style={styles.formErrorText}>{error}</Text> : null}
         {message ? <Text style={styles.formSuccessText}>{message}</Text> : null}
 
