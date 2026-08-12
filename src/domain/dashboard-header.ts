@@ -235,6 +235,7 @@ export function getDashboardHeaderRouteContext({
     const amRoute = getAmRouteByModuleRoute(activeModuleRoute.route);
 
     return {
+      moduleIcon: getAmDashboardHeaderModuleIcon(amRoute.id),
       route: activeModuleRoute.route,
       title:
         amRoute.moduleRoute === '/'
@@ -353,6 +354,20 @@ export function getDashboardHeaderRouteContext({
   }
 
   return null;
+}
+
+function getAmDashboardHeaderModuleIcon(
+  routeId: ReturnType<typeof getAmRouteByModuleRoute>['id'],
+): KolamNavigationItem['moduleIcon'] {
+  if (routeId === 'dashboard') return 'automation';
+  if (routeId === 'services') return 'amService';
+  if (routeId === 'hardware') return 'amHardware';
+  if (routeId === 'webhooks') return 'amWebhook';
+  if (routeId === 'transactions') return 'amTransfer';
+  if (routeId === 'mutasi') return 'amTransfer';
+  if (routeId === 'users') return 'staff';
+  if (routeId === 'activity-log') return 'amActivityLog';
+  return undefined;
 }
 
 function getProductDashboardHeaderCopy(routePath: string): {
