@@ -5825,6 +5825,12 @@ function AmWebhooksPage() {
   }, [fetchWebhooks]);
 
   const anchorWebhookFilterPanel = React.useCallback(() => {
+    const toolbar = webhookToolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    const trigger = webhookDirectionTriggerRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    if (typeof toolbar?.measureInWindow !== 'function' || typeof trigger?.measureInWindow !== 'function') {
+      setWebhookFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
     const globals = globalThis as {expect?: unknown; it?: unknown};
     if (typeof globals.expect === 'function' || typeof globals.it === 'function') {
       setWebhookFilterPanelAnchor({left: 0, top: 44});
@@ -5914,8 +5920,8 @@ function AmWebhooksPage() {
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.amServicesToolbarWrap}>
-        <View ref={webhookToolbarRef} collapsable={false} style={kolamTableToolbarStyles.shell}>
+      <View ref={webhookToolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
               <View style={styles.amWebhookToolbarMetric}>
@@ -5949,15 +5955,15 @@ function AmWebhooksPage() {
               />
             </View>
           </View>
-          {activeWebhookFilterPanel === 'direction' && webhookFilterPanelAnchor ? (
-            <AmWebhookFilterOverlayPanel
-              anchor={webhookFilterPanelAnchor}
-              selectedValue={logDirectionFilter}
-              onClose={closeWebhookFilterPanel}
-              onSelect={handleLogDirectionChange}
-            />
-          ) : null}
         </View>
+        {activeWebhookFilterPanel === 'direction' && webhookFilterPanelAnchor ? (
+          <AmWebhookFilterOverlayPanel
+            anchor={webhookFilterPanelAnchor}
+            selectedValue={logDirectionFilter}
+            onClose={closeWebhookFilterPanel}
+            onSelect={handleLogDirectionChange}
+          />
+        ) : null}
       </View>
       <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
       {actionMessage ? (
