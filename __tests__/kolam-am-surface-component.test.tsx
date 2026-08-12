@@ -6109,7 +6109,7 @@ describe('KolamAmSurface', () => {
     const webhooksText = renderText(renderer!).join(' ');
     expect(webhooksText).toContain('https://example.test/webhook');
     expect(webhooksText).toContain('Waktu');
-    expect(webhooksText).toMatch(/Menampilkan\s+1\s+-\s+50\s+dari\s+75\s+item/);
+    expect(webhooksText).toMatch(/Menampilkan\s+dari\s+hasil\s+1\s+-\s+50\s+75/);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Masuk'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment transfer.success'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Existing hook'})).toHaveLength(0);
@@ -6127,7 +6127,10 @@ describe('KolamAmSurface', () => {
     expect(detailText).toContain('"ok": true');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Keluar'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Semua arah'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Direction Keluar'}).props.onPress();
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
@@ -6136,7 +6139,7 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Logs Next Page'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 2,

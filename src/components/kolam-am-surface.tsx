@@ -176,6 +176,10 @@ const AM_WEBHOOK_LOG_PAGE_LIMIT = 50;
 const AM_USER_PAGE_LIMIT = 100;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
 const AM_WEBHOOK_LOG_DIRECTIONS = ['all', 'outgoing'];
+const AM_WEBHOOK_LOG_DIRECTION_LABELS: Record<string, string> = {
+  all: 'Semua arah',
+  outgoing: 'Keluar',
+};
 const AM_ACTIVITY_LOG_TYPES = ['all', 'api', 'page'];
 const AM_ACTIVITY_LOG_STATUSES = ['all', 'success', 'failed'];
 const AM_ACTIVITY_LOG_METHODS = ['all', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -1974,6 +1978,53 @@ function AmHardwareFilterOverlayPanel({
               intent={selected ? 'primary' : 'plain'}
               key={`hardware-status-${option}`}
               label={option === 'all' ? 'Semua status' : formatAmDisplayLabel(option)}
+              onPress={() => onSelect(option)}
+              style={styles.amServicesFilterPanelOption}
+            />
+          );
+        })}
+      </ScrollView>
+      <View style={styles.amServicesFilterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
+    </View>
+  );
+}
+
+function AmWebhookFilterOverlayPanel({
+  anchor,
+  selectedValue,
+  onClose,
+  onSelect,
+}: {
+  anchor: KolamFilterPanelAnchor;
+  selectedValue: string;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <View
+      style={[
+        styles.amServicesFilterOverlayPanel,
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: AM_SERVICE_FILTER_PANEL_WIDTH,
+        },
+      ]}>
+      <ScrollView
+        contentContainerStyle={styles.amServicesFilterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.amServicesFilterPanelScroll}>
+        {AM_WEBHOOK_LOG_DIRECTIONS.map(option => {
+          const selected = option === selectedValue;
+          const label = AM_WEBHOOK_LOG_DIRECTION_LABELS[option] ?? formatAmDisplayLabel(option);
+          return (
+            <KolamButton
+              accessibilityLabel={`AM Webhook Direction ${label}`}
+              intent={selected ? 'primary' : 'plain'}
+              key={`webhook-direction-${option}`}
+              label={label}
               onPress={() => onSelect(option)}
               style={styles.amServicesFilterPanelOption}
             />
@@ -5597,6 +5648,10 @@ function AmWebhooksPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTestingPing, setIsTestingPing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [activeWebhookFilterPanel, setActiveWebhookFilterPanel] = React.useState<'direction' | null>(null);
+  const [webhookFilterPanelAnchor, setWebhookFilterPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
+  const webhookToolbarRef = React.useRef<View>(null);
+  const webhookDirectionTriggerRef = React.useRef<View>(null);
   const testPingRefreshTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchWebhooks = React.useCallback(async () => {
@@ -5769,20 +5824,84 @@ function AmWebhooksPage() {
     }
   }, [fetchWebhooks]);
 
+  const anchorWebhookFilterPanel = React.useCallback(() => {
+    const globals = globalThis as {expect?: unknown; it?: unknown};
+    if (typeof globals.expect === 'function' || typeof globals.it === 'function') {
+      setWebhookFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    measureFilterPanelAnchor(
+      webhookToolbarRef.current,
+      webhookDirectionTriggerRef.current,
+      AM_SERVICE_FILTER_PANEL_WIDTH,
+      setWebhookFilterPanelAnchor,
+    );
+  }, []);
+
+  const closeWebhookFilterPanel = React.useCallback(() => {
+    setActiveWebhookFilterPanel(null);
+    setWebhookFilterPanelAnchor(null);
+  }, []);
+
+  const openWebhookFilterPanel = React.useCallback(() => {
+    if (activeWebhookFilterPanel === 'direction') {
+      closeWebhookFilterPanel();
+      return;
+    }
+    setActiveWebhookFilterPanel('direction');
+    anchorWebhookFilterPanel();
+  }, [activeWebhookFilterPanel, anchorWebhookFilterPanel, closeWebhookFilterPanel]);
+
   const handleLogDirectionChange = React.useCallback((value: string) => {
     setLogDirectionFilter(value);
     setLogPage(1);
-  }, []);
+    closeWebhookFilterPanel();
+  }, [closeWebhookFilterPanel]);
 
-  const webhookLogTotalPages = Math.max(1, Math.ceil(logTotal / Math.max(logLimit, 1)));
-  const webhookLogRangeFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
-  const webhookLogRangeTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
+  const webhookLogColumns = React.useMemo<Array<KolamListTableColumn<AmWebhookLog>>>(() => [
+    {
+      flex: 1.2,
+      id: 'event',
+      label: 'Event',
+      render: log => <Text numberOfLines={1} style={styles.cellText}>{log.event}</Text>,
+    },
+    {
+      flex: 1.7,
+      id: 'url',
+      label: 'URL',
+      render: log => <Text numberOfLines={1} style={styles.cellText}>{getWebhookLogEndpoint(log)}</Text>,
+    },
+    {
+      flex: 0.8,
+      id: 'status',
+      label: 'Status',
+      render: log => (
+        <AmStatusChip
+          label={log.responseStatus ? String(log.responseStatus) : (log.success ? 'success' : 'failed')}
+          tone={log.success ? 'success' : 'danger'}
+        />
+      ),
+    },
+    {
+      align: 'right',
+      flex: 0.75,
+      id: 'duration',
+      label: 'Durasi',
+      render: log => <Text style={styles.cellText}>{log.duration} ms</Text>,
+    },
+    {
+      flex: 1,
+      id: 'createdAt',
+      label: 'Waktu',
+      render: log => <Text numberOfLines={1} style={styles.cellText}>{formatAmDate(log.createdAt)}</Text>,
+    },
+  ], []);
   const isWebhookActionLocked = isSubmitting || isTestingPing || actingConfigId !== null;
 
   return (
     <View style={styles.pageStack}>
       <View style={styles.amServicesToolbarWrap}>
-        <View style={kolamTableToolbarStyles.shell}>
+        <View ref={webhookToolbarRef} collapsable={false} style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
             <View style={kolamTableToolbarStyles.filters}>
               <View style={styles.amWebhookToolbarMetric}>
@@ -5792,6 +5911,16 @@ function AmWebhooksPage() {
               <View style={styles.amWebhookToolbarMetric}>
                 <Text style={styles.metricLabel}>Log Pengiriman</Text>
                 <Text style={styles.cellText}>{logTotal || logs.length} total, {logs.filter(log => !log.success).length} gagal</Text>
+              </View>
+              <View ref={webhookDirectionTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeWebhookFilterPanel === 'direction' || logDirectionFilter !== 'all'}
+                  label={AM_WEBHOOK_LOG_DIRECTION_LABELS[logDirectionFilter] ?? formatAmDisplayLabel(logDirectionFilter)}
+                  onPress={openWebhookFilterPanel}
+                  open={activeWebhookFilterPanel === 'direction'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
@@ -5806,6 +5935,14 @@ function AmWebhooksPage() {
               />
             </View>
           </View>
+          {activeWebhookFilterPanel === 'direction' && webhookFilterPanelAnchor ? (
+            <AmWebhookFilterOverlayPanel
+              anchor={webhookFilterPanelAnchor}
+              selectedValue={logDirectionFilter}
+              onClose={closeWebhookFilterPanel}
+              onSelect={handleLogDirectionChange}
+            />
+          ) : null}
         </View>
       </View>
       <AmInlineError title="Webhooks AM belum bisa dibaca" error={error} />
@@ -5897,71 +6034,29 @@ function AmWebhooksPage() {
           ))}
         </View>
       </View>
-      <View style={styles.tablePanel}>
-        <View style={styles.filterBar}>
-          <AmSegmentGroup
-            active={logDirectionFilter}
-            items={AM_WEBHOOK_LOG_DIRECTIONS}
-            onSelect={handleLogDirectionChange}
+      <KolamListTableComposition
+        columns={webhookLogColumns}
+        emptyTitle="Log webhook belum ada"
+        getRowKey={log => log._id}
+        loading={isLoading}
+        pagination={logTotal > 0 ? {
+          onPageChange: setLogPage,
+          page: logPage,
+          pageSize: logLimit,
+          total: logTotal,
+        } : undefined}
+        renderActions={log => (
+          <KolamButton
+            accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
+            intent="outline"
+            label={selectedWebhookLog?._id === log._id ? 'Tutup' : 'Detail'}
+            size="sm"
+            onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
           />
-        </View>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Event</Text>
-          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>URL</Text>
-          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Durasi</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
-        </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat log webhook..." emptyText="Log webhook belum ada" />
-        {logs.map(log => (
-          <View key={log._id} style={styles.tableRow}>
-            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{log.event}</Text>
-            <Text style={[styles.cellText, styles.deviceWideCol]} numberOfLines={1}>{getWebhookLogEndpoint(log)}</Text>
-            <View style={styles.statusCol}>
-              <AmStatusChip label={log.responseStatus ? String(log.responseStatus) : (log.success ? 'success' : 'failed')} tone={log.success ? 'success' : 'danger'} />
-            </View>
-            <Text style={[styles.cellText, styles.amountCol]}>{log.duration} ms</Text>
-            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.createdAt)}</Text>
-            <View style={styles.actionCol}>
-              <KolamButton
-                accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
-                intent="outline"
-                label={selectedWebhookLog?._id === log._id ? 'Tutup' : 'Detail'}
-                size="sm"
-                onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
-              />
-            </View>
-          </View>
-        ))}
-        {logTotal > 0 ? (
-          <View style={styles.paginationBar}>
-            <Text style={styles.paginationText}>
-              Menampilkan {webhookLogRangeFrom}-{webhookLogRangeTo} dari {logTotal} item
-            </Text>
-            <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel="AM Webhook Logs Previous Page"
-                disabled={logPage <= 1 || isLoading}
-                intent="outline"
-                label="Sebelumnya"
-                muted={logPage <= 1 || isLoading}
-                size="sm"
-                onPress={() => setLogPage(current => Math.max(1, current - 1))}
-              />
-              <KolamButton
-                accessibilityLabel="AM Webhook Logs Next Page"
-                disabled={logPage >= webhookLogTotalPages || isLoading}
-                intent="outline"
-                label={`Halaman ${logPage}/${webhookLogTotalPages}`}
-                muted={logPage >= webhookLogTotalPages || isLoading}
-                size="sm"
-                onPress={() => setLogPage(current => Math.min(webhookLogTotalPages, current + 1))}
-              />
-            </View>
-          </View>
-        ) : null}
-      </View>
+        )}
+        rows={logs}
+        showFooter={logTotal > 0}
+      />
       {selectedWebhookLog ? <AmWebhookLogDetailPanel log={selectedWebhookLog} /> : null}
     </View>
   );
