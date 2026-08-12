@@ -162,6 +162,7 @@ export function buildSaleDraftPayload(
     customer: checkout.customerId,
     paymentMethod: checkout.paymentMethodId,
     channel: 'pos',
+    sourceRef: 'POS',
     shippingCost: checkout.shippingCost,
     // BE rejects order-level discount > 0; use items[].discount / voucherCode.
     discount: 0,

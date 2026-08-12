@@ -125,6 +125,7 @@ interface BackendSale {
   invoiceCode: string;
   customer?: string | {name?: string} | null;
   buyerInfo?: {name?: string} | null;
+  channel?: string;
   status: string;
   finalTotal?: number;
   total?: number;
@@ -132,6 +133,7 @@ interface BackendSale {
   paid?: number;
   createdAt: string;
   items?: BackendSaleItem[];
+  sourceRef?: string | {name?: string; type?: string} | null;
 }
 
 interface BackendSaleItem {
@@ -229,10 +231,11 @@ export async function getActiveCashflowSession(): Promise<CashflowSession | null
 export async function getRecentSales(): Promise<SaleSummary[]> {
   const response = await posApiGet<ListResponse<BackendSale>>('/sales', {
     page: 1,
-    limit: 10,
+    limit: 100,
+    sourceRef: 'POS',
   });
 
-  return response.data.map(mapSale);
+  return response.data.filter(isPosSourceSale).map(mapSale);
 }
 
 export async function getCashflowSalesPreview(
@@ -433,6 +436,19 @@ function getCustomerName(sale: BackendSale): string {
   }
 
   return sale.buyerInfo?.name ?? 'Customer';
+}
+
+function isPosSourceSale(sale: BackendSale): boolean {
+  if (sale.channel?.toLowerCase() === 'pos') {
+    return true;
+  }
+
+  const sourceRef = sale.sourceRef;
+  if (typeof sourceRef === 'string') {
+    return sourceRef.trim().toLowerCase() === 'pos';
+  }
+
+  return sourceRef?.name?.trim().toLowerCase() === 'pos';
 }
 
 function mapSale(sale: BackendSale): SaleSummary {
