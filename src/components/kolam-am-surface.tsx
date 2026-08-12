@@ -136,7 +136,7 @@ import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamDaftarButton} from './kolam-daftar-button';
 import {KolamModalDialog} from './kolam-modal-dialog';
-import {KolamTableRowActionMenu} from './kolam-dropdown-select';
+import {KolamOverflowMenuButton, KolamTableRowActionMenu} from './kolam-dropdown-select';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
@@ -3777,7 +3777,7 @@ function AmHardwareBoxGrid({
         <Text style={[styles.tableHeaderText, styles.amountCol]}>Device</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
-        <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
+        <Text style={[styles.tableHeaderText, styles.actionCol]} />
       </View>
       {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
       {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rack ini</Text> : null}
@@ -3799,7 +3799,7 @@ function AmHardwareBoxGrid({
             {box.description || 'No description'}
           </Text>
           <View style={styles.actionCol}>
-            <KolamTableRowActionMenu
+            <KolamOverflowMenuButton
               accessibilityLabel={`AM Hardware Box Actions ${box._id}`}
               actions={[
                 {label: 'View Devices', onPress: () => onSelectBox(box)},
@@ -3811,6 +3811,10 @@ function AmHardwareBoxGrid({
                   tone: 'danger',
                 },
               ]}
+              floating
+              label="..."
+              style={styles.amPlainOverflowButton}
+              textStyle={styles.amPlainOverflowText}
             />
           </View>
         </KolamInteractionFrame>
@@ -8325,6 +8329,20 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     marginTop: 6,
     paddingTop: 6,
+  },
+  amPlainOverflowButton: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    minHeight: 28,
+    minWidth: 28,
+    paddingHorizontal: 4,
+    paddingVertical: 0,
+  },
+  amPlainOverflowText: {
+    color: V.colors.mutedFg,
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   taskSearch: {
     flexBasis: 240,
