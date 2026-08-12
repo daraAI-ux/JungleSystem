@@ -73,7 +73,6 @@ import {
   getAmWebhookLogs,
   retryAmTransfer,
   retryAmTask,
-  recordAmPageView,
   restartAmTokopediaSession,
   runAmTokopediaApiMonitor,
   sendAmDeviceServiceInput,
@@ -272,15 +271,6 @@ export function KolamAmSurface({
   const activeRoute = routeSelection
     ? routeSelection.routeId
     : getRouteIdFromSurface(activeSurface);
-  const activeRouteItem = AM_ROUTES.find(item => item.id === activeRoute);
-  const pageViewPath = getAmPageViewPath(
-    activeModuleRoute?.route,
-    activeRouteItem?.path ?? '/:catchAll',
-  );
-
-  React.useEffect(() => {
-    recordAmPageView(pageViewPath).catch(() => undefined);
-  }, [pageViewPath]);
 
   return (
     <View style={styles.pageContent}>
@@ -419,33 +409,13 @@ function getConcreteAmRouteEntry(
   };
 }
 
-function getAmPageViewPath(
-  moduleRoute: string | null | undefined,
-  fallbackPath: string,
-) {
-  const normalizedRoute = normalizeModuleRoutePath(moduleRoute);
-  if (!moduleRoute || normalizedRoute === '/') {
-    return fallbackPath;
-  }
-
-  if (isLegacyAmSsoRoute(normalizedRoute)) {
-    return '/';
-  }
-
-  if (!getKnownAmRouteByModuleRoute(normalizedRoute)) {
-    return fallbackPath;
-  }
-
-  return `/${normalizedRoute}`;
+function normalizeModuleRoutePath(route?: string | null) {
+  if (!route || route === '/') return '/';
+  return route.split('?')[0].replace(/^\/+/, '').replace(/\/+$/, '') || '/';
 }
 
 function isLegacyAmSsoRoute(route: string) {
   return route === 'login' || route === 'settings/account';
-}
-
-function normalizeModuleRoutePath(route?: string | null) {
-  if (!route || route === '/') return '/';
-  return route.split('?')[0].replace(/^\/+/, '').replace(/\/+$/, '') || '/';
 }
 
 function isConcreteRouteSegment(segment?: string) {

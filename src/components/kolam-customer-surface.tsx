@@ -21,6 +21,7 @@ import {
   type KolamCustomerStorageResult,
 } from '../domain/kolam-customer';
 import {
+  hasKolamEnclosurePermission,
   type KolamEnclosure,
   type KolamEnclosureListResult,
 } from '../domain/kolam-enclosure';
@@ -540,6 +541,13 @@ function KolamCustomerDetailSurface({
   );
   const [customerEnclosuresLoading, setCustomerEnclosuresLoading] =
     React.useState(false);
+  const [customerEnclosuresError, setCustomerEnclosuresError] =
+    React.useState(false);
+  const canViewEnclosures = hasKolamEnclosurePermission(
+    authUser?.permissions,
+    'view',
+    authUser?.roleKey,
+  );
   const [customerActivity, setCustomerActivity] = React.useState(
     INITIAL_CUSTOMER_ACTIVITY,
   );
@@ -753,14 +761,17 @@ function KolamCustomerDetailSurface({
   React.useEffect(() => {
     let active = true;
 
-    if (!customerId) {
+    if (!customerId || !canViewEnclosures) {
       setCustomerEnclosures(INITIAL_CUSTOMER_ENCLOSURES);
+      setCustomerEnclosuresError(false);
+      setCustomerEnclosuresLoading(false);
       return () => {
         active = false;
       };
     }
 
     setCustomerEnclosuresLoading(true);
+    setCustomerEnclosuresError(false);
     void getKolamEnclosures({
       customer: customerId,
       enclosureType: 'all',
@@ -773,11 +784,13 @@ function KolamCustomerDetailSurface({
       .then(result => {
         if (active) {
           setCustomerEnclosures(result);
+          setCustomerEnclosuresError(false);
         }
       })
       .catch(() => {
         if (active) {
           setCustomerEnclosures(INITIAL_CUSTOMER_ENCLOSURES);
+          setCustomerEnclosuresError(true);
         }
       })
       .finally(() => {
@@ -789,7 +802,7 @@ function KolamCustomerDetailSurface({
     return () => {
       active = false;
     };
-  }, [customerId]);
+  }, [canViewEnclosures, customerId]);
 
   React.useEffect(() => {
     let active = true;
@@ -1271,11 +1284,14 @@ function KolamCustomerDetailSurface({
         unattached={unattachedFreyerDevices}
       />
 
-      <CustomerEnclosuresCard
-        loading={customerEnclosuresLoading}
-        onRouteChange={onRouteChange}
-        result={customerEnclosures}
-      />
+      {canViewEnclosures ? (
+        <CustomerEnclosuresCard
+          error={customerEnclosuresError}
+          loading={customerEnclosuresLoading}
+          onRouteChange={onRouteChange}
+          result={customerEnclosures}
+        />
+      ) : null}
 
       <CustomerStorageCard
         loading={customerStorageLoading}
@@ -1990,10 +2006,12 @@ function CustomerFreyerDevicesCard({
 }
 
 function CustomerEnclosuresCard({
+  error,
   loading,
   onRouteChange,
   result,
 }: {
+  error?: boolean;
   loading: boolean;
   onRouteChange?: (route: string) => void;
   result: KolamEnclosureListResult;
@@ -2007,22 +2025,22 @@ function CustomerEnclosuresCard({
       variant="settingsWebConfig">
       <View style={styles.customerCardHeaderRow}>
         <SectionTitle
-          description="Kandang tertaut ke pelanggan"
+          description="Enclosure tertaut customer (scope client) — dikelola di webstore / staff Enclosure."
           title="Kandang pelanggan"
         />
         <View style={styles.customerHeaderActions}>
-          <KolamStatusBadge
-            intent={rows.length ? 'success' : 'secondary'}
-            label={`${total} kandang`}
-          />
           <KolamButton
-            label="Semua kandang"
+            label="Semua kandang customer"
             onPress={() => onRouteChange?.('/enclosures?scope=client_linked')}
           />
         </View>
       </View>
       {loading ? (
-        <KolamEmptyState compact message="Memuat kandang." title="Memuat" />
+        <KolamEmptyState compact message="Memuat kandang…" title="Memuat" />
+      ) : error ? (
+        <Text style={styles.customerErrorText}>
+          Gagal memuat kandang pelanggan.
+        </Text>
       ) : rows.length ? (
         <View style={styles.customerEnclosureList}>
           {total > rows.length ? (
@@ -2041,7 +2059,7 @@ function CustomerEnclosuresCard({
       ) : (
         <View style={styles.customerEmptyPanel}>
           <Text style={styles.customerSubText}>
-            Belum ada kandang pelanggan.
+            Belum ada enclosure tertaut ke pelanggan ini.
           </Text>
         </View>
       )}
@@ -2059,20 +2077,20 @@ function CustomerEnclosureRow({
   return (
     <View style={styles.customerEnclosureRow}>
       <View style={styles.customerEnclosureCopy}>
-        <Text numberOfLines={1} style={styles.customerMetaText}>
+        <Text
+          numberOfLines={1}
+          onPress={() => onRouteChange?.(`/enclosures/${enclosure.id}`)}
+          style={styles.customerEnclosureLink}
+        >
           {enclosure.name || enclosure.code || 'Kandang'}
         </Text>
         <Text numberOfLines={1} style={styles.customerSubText}>
-          {enclosure.code || '-'} | {getCustomerEnclosureLocationLabel(enclosure)}
+          {enclosure.code || '—'} · {getCustomerEnclosureLocationLabel(enclosure)}
         </Text>
       </View>
       <KolamStatusBadge
         intent={getCustomerEnclosureStatusIntent(enclosure.status)}
         label={enclosure.status || '-'}
-      />
-      <KolamButton
-        label="Lihat"
-        onPress={() => onRouteChange?.(`/enclosures/${enclosure.id}`)}
       />
     </View>
   );
@@ -2962,9 +2980,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 20,
   },
+  customerEnclosureLink: {
+    color: V.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 20,
+    textDecorationLine: 'underline',
+  },
   customerSubText: {
     color: V.colors.mutedFg,
     fontSize: 12,
+    lineHeight: 18,
+  },
+  customerErrorText: {
+    color: V.colors.danger,
+    fontSize: 13,
     lineHeight: 18,
   },
   customerTextCenter: {

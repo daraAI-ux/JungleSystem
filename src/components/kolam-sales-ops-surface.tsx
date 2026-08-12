@@ -610,7 +610,8 @@ const KOLAM_SALES_LIST_DELIVERY_ROBOT_ICON_XML = `
 function KolamSalesListDeliveryRobotIcon() {
   return (
     <View
-      accessibilityLabel="Automasi : On"
+      accessibilityHint="Automasi pengiriman aktif (sudah diproses)"
+      accessibilityLabel="Automasi pengiriman aktif"
       accessibilityRole="image"
       style={styles.deliveryRobotIcon}
     >

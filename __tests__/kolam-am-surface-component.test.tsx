@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
@@ -560,7 +560,6 @@ describe('KolamAmSurface', () => {
       });
     expect(dashboardTableHeaders).toHaveLength(0);
     expect(getAmDashboard).toHaveBeenCalledTimes(1);
-    expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
 
   it('limits the dashboard recent mutation table to 10 rows without pagination', async () => {
@@ -773,7 +772,6 @@ describe('KolamAmSurface', () => {
     });
 
     expect(onBackToCenter).toHaveBeenCalledTimes(1);
-    expect(recordAmPageView).toHaveBeenCalledWith('/services');
   });
 
   it('keeps non-dashboard AM route bodies flush with the shell wrapper', async () => {
@@ -868,8 +866,6 @@ describe('KolamAmSurface', () => {
       });
 
     expect(mutasiBodyStacks.length).toBeGreaterThanOrEqual(5);
-    expect(recordAmPageView).toHaveBeenCalledWith('/services');
-    expect(recordAmPageView).toHaveBeenCalledWith('/mutasi');
   });
 
   it('opens AM dashboard parity routes from recent panels', async () => {
@@ -985,9 +981,6 @@ describe('KolamAmSurface', () => {
       );
     });
     renderers.push(renderer!);
-
-    expect(recordAmPageView).toHaveBeenCalledWith('/');
-    expect(recordAmPageView).not.toHaveBeenCalledWith('/login');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Login Submit'})).toHaveLength(0);
     const joinedText = renderText(renderer!).join(' ');
     expect(joinedText).toContain("Masuk Hari Ini");
@@ -1006,7 +999,6 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     await updateAmRoute(renderer!, 'services');
-    expect(recordAmPageView).toHaveBeenCalledWith('/services');
 
     expect(getAmServiceAccounts).toHaveBeenCalledWith({
       page: 1,
@@ -1504,7 +1496,6 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     expect(getAmTaskById).toHaveBeenCalledWith('task-detail');
-    expect(recordAmPageView).toHaveBeenCalledWith('/tasks/task-detail');
     const text = renderText(renderer!);
     expect(text).toContain('Detail Task');
     expect(text).toContain('Transfer bank');
@@ -2916,7 +2907,6 @@ describe('KolamAmSurface', () => {
 
     const text = renderText(renderer!);
     const joinedText = text.join(' ');
-    expect(recordAmPageView).toHaveBeenCalledWith('/hardware/rack-1/box-1/device-1');
     expect(joinedText).toContain('Rack Alpha');
     expect(joinedText).toContain('Box 01');
     expect(text).toContain('Phone Rack');
@@ -4649,8 +4639,6 @@ describe('KolamAmSurface', () => {
       );
     });
     renderers.push(renderer!);
-
-    expect(recordAmPageView).toHaveBeenCalledWith('/mutasi/mutasi-detail');
     expect(getAmMutasiById).toHaveBeenCalledWith('mutasi-detail');
     const text = renderText(renderer!).join(' ');
     expect(text).toContain('Detail Mutasi');
@@ -4686,8 +4674,6 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     const text = renderText(renderer!);
-    expect(recordAmPageView).toHaveBeenCalledWith('/');
-    expect(recordAmPageView).not.toHaveBeenCalledWith('/settings/account');
     expect(text).toContain("Masuk Hari Ini");
     expect(text).not.toContain('Halaman tidak ditemukan');
     expect(text).not.toContain('Profile information');
@@ -5710,7 +5696,6 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     expect(getAmTransferById).toHaveBeenCalledWith('transfer-detail');
-    expect(recordAmPageView).toHaveBeenCalledWith('/transactions/transfer-detail');
     const joinedText = renderText(renderer!).join(' ');
     expect(joinedText).toContain('Detail Transfer');
     expect(joinedText).toContain('Vendor Detail');

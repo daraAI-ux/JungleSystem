@@ -45,6 +45,8 @@ import {
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
   canOpenKolamSaleCustomerChat,
+  isKolamSaleHandledByDara,
+  isKolamSaleShippingAutomationActive,
   isKolamTokopediaDropOffOnly,
   isKolamShopeeDropOffOnly,
   isKolamShopeeDropOffArrangedOnSale,
@@ -624,6 +626,55 @@ describe('kolam sales domain', () => {
     expect(needsKolamShopeePickupRequest(shopeeDropoff)).toBe(false);
     expect(shouldShowKolamShopeeDropOffBadge(shopeeDropoff)).toBe(true);
     expect(needsKolamPlatformPickupReschedule(shopeeDropoff)).toBe(false);
+  });
+
+  it('shows robot automation only after real progress, not queued import', () => {
+    const queuedOnly = normalizeKolamSale({
+      _id: 'sale-auto-queued',
+      invoiceCode: 'INV-AQ',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      autoOlshopFulfillment: {active: true, phase: 'queued'},
+      items: [],
+    });
+    expect(isKolamSaleShippingAutomationActive(queuedOnly)).toBe(false);
+    expect(queuedOnly.handledByDara).toBe(false);
+
+    const dispatched = normalizeKolamSale({
+      _id: 'sale-auto-dispatched',
+      invoiceCode: 'INV-AD',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      autoOlshopFulfillment: {active: true, phase: 'dispatched'},
+      items: [],
+    });
+    expect(isKolamSaleShippingAutomationActive(dispatched)).toBe(true);
+
+    const timestampOnly = normalizeKolamSale({
+      _id: 'sale-auto-started',
+      invoiceCode: 'INV-AS',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      autoOlshopFulfillment: {
+        active: true,
+        phase: 'queued',
+        startedAt: '2026-08-01T00:00:00.000Z',
+      },
+      items: [],
+    });
+    expect(isKolamSaleShippingAutomationActive(timestampOnly)).toBe(true);
+
+    const daraHandled = normalizeKolamSale({
+      _id: 'sale-dara',
+      invoiceCode: 'INV-DARA',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      handledByDara: true,
+      autoOlshopFulfillment: {active: true, phase: 'queued'},
+      items: [],
+    });
+    expect(isKolamSaleHandledByDara(daraHandled)).toBe(true);
+    expect(isKolamSaleShippingAutomationActive(daraHandled)).toBe(false);
   });
 
   it('normalizes marketplace pickup options and prefers non-isNow default slot', () => {

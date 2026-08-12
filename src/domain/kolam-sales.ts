@@ -349,7 +349,13 @@ export type KolamSale = {
   shippingService: KolamSaleShippingService | null;
   marketplaceLogistics: KolamSaleMarketplaceLogistics | null;
   marketplaceFulfillment: KolamSaleMarketplaceFulfillment | null;
+  /**
+   * FE `isSaleShippingAutomationActive` — robot biru hanya jika automasi sudah progres
+   * (bukan `queued` + active saat import).
+   */
   shippingAutomationActive: boolean;
+  /** FE `isSaleHandledByDara` — avatar DARA terpisah dari robot. */
+  handledByDara: boolean;
   walletTransactions: KolamSaleWalletTransactionRef[];
   stockTransactions: KolamSaleStockTransactionRef[];
   /** Linked complaints from sale detail/list payload (FE `complaints` / `hasComplaints`). */
@@ -1203,6 +1209,48 @@ export function isKolamSaleShippingAutomationActive(sale: {
 }): boolean {
   return sale.shippingAutomationActive === true;
 }
+
+/** FE `isSaleHandledByDara` — DARA CS path, bukan robot auto-olshop. */
+export function isKolamSaleHandledByDara(sale: {
+  handledByDara?: boolean | null;
+}): boolean {
+  return sale.handledByDara === true;
+}
+
+/**
+ * FE `isSaleShippingAutomationActive` — phase progress / timestamps, not bare queued.
+ */
+export function isKolamOlshopAutomationProgressActive(auto: {
+  active?: boolean | null;
+  phase?: string | null;
+  startedAt?: unknown;
+  dispatchedAt?: unknown;
+  completedAt?: unknown;
+  failedAt?: unknown;
+} | null | undefined): boolean {
+  if (!auto || auto.active !== true) {
+    return false;
+  }
+  const phase = String(auto.phase || '').toLowerCase();
+  if (KOLAM_AUTO_OLSHOP_PROGRESS_PHASES.has(phase)) {
+    return true;
+  }
+  return Boolean(
+    auto.startedAt ||
+      auto.dispatchedAt ||
+      auto.completedAt ||
+      auto.failedAt,
+  );
+}
+
+const KOLAM_AUTO_OLSHOP_PROGRESS_PHASES = new Set([
+  'pending',
+  'deferred',
+  'stock_pending_sync',
+  'dispatched',
+  'completed',
+  'failed',
+]);
 
 /** Minimal sale shape for FE `fulfillment-display` helpers. */
 export type KolamSaleFulfillmentContext = {
@@ -3402,9 +3450,26 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
   );
   const autoOlshopFulfillment = asRecord(record.autoOlshopFulfillment);
   const daraOlshopFulfillment = asRecord(record.daraOlshopFulfillment);
+  const daraFulfillment = asRecord(record.daraFulfillment);
   const shippingAutomationActive =
-    autoOlshopFulfillment.active === true ||
-    daraOlshopFulfillment.active === true;
+    isKolamOlshopAutomationProgressActive({
+      active: autoOlshopFulfillment.active === true,
+      phase: getString(autoOlshopFulfillment, 'phase'),
+      startedAt: autoOlshopFulfillment.startedAt,
+      dispatchedAt: autoOlshopFulfillment.dispatchedAt,
+      completedAt: autoOlshopFulfillment.completedAt,
+      failedAt: autoOlshopFulfillment.failedAt,
+    }) ||
+    isKolamOlshopAutomationProgressActive({
+      active: daraOlshopFulfillment.active === true,
+      phase: getString(daraOlshopFulfillment, 'phase'),
+      startedAt: daraOlshopFulfillment.startedAt,
+      dispatchedAt: daraOlshopFulfillment.dispatchedAt,
+      completedAt: daraOlshopFulfillment.completedAt,
+      failedAt: daraOlshopFulfillment.failedAt,
+    });
+  const handledByDara =
+    record.handledByDara === true || daraFulfillment.active === true;
 
   return {
     id: getMongoId(record, '_id') || getMongoId(record, 'id'),
@@ -3446,6 +3511,7 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
       shippingService,
     ),
     shippingAutomationActive,
+    handledByDara,
     walletTransactions: normalizeSaleWalletTransactions(
       record.walletTransactions,
     ),

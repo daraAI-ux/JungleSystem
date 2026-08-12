@@ -2000,7 +2000,8 @@ const KOLAM_SALE_DELIVERY_ROBOT_ICON_XML = `
 function KolamSaleDeliveryRobotIcon() {
   return (
     <View
-      accessibilityLabel="Automasi : On"
+      accessibilityHint="Automasi pengiriman aktif (sudah diproses)"
+      accessibilityLabel="Automasi pengiriman aktif"
       accessibilityRole="image"
       style={styles.deliveryRobotIcon}
     >
@@ -2086,24 +2087,29 @@ function KolamBiteshipWaybillItem({
         </Text>
       ) : null}
       {needsBooking ? (
-        <>
-          {booking?.state === 'pending' ? (
-            <Text style={styles.biteshipPendingText}>
-              Booking Biteship sedang diproses...
+        <View style={styles.biteshipWaybillBlocked}>
+          <Text style={styles.biteshipFailedText}>
+            {booking?.state === 'failed'
+              ? 'Booking Biteship belum ada / gagal. Jangan isi resi manual — pakai tombol Book ulang / Request jemput di panel pengiriman.'
+              : 'Menunggu order Biteship. Jangan isi resi manual — pakai Request jemput / Book ulang.'}
+          </Text>
+          {item.biteshipWaybillId?.trim() ? (
+            <Text style={[styles.metaText, styles.trackingMono]}>
+              Resi tersimpan (bukan order Biteship):{' '}
+              {item.biteshipWaybillId.trim()}
             </Text>
           ) : null}
-          <Text style={styles.biteshipFailedText}>Book ulang Biteship</Text>
-        </>
+        </View>
       ) : (
         <>
           {booking?.state === 'pending' ? (
             <Text style={styles.biteshipPendingText}>
-              Booking Biteship sedang diproses...
+              Booking Biteship sedang diproses…
             </Text>
           ) : null}
           {booking?.state === 'failed' ? (
             <Text style={styles.biteshipFailedText}>
-              Booking Biteship gagal
+              Booking Biteship gagal — masukkan resi manual di bawah.
               {booking.message ? ` (${booking.message})` : ''}
             </Text>
           ) : null}
@@ -3221,6 +3227,9 @@ const styles = StyleSheet.create({
   biteshipWaybillTitleBlock: {
     flex: 1,
     minWidth: 0,
+  },
+  biteshipWaybillBlocked: {
+    gap: 6,
   },
   biteshipPendingText: {
     color: V.colors.warning,

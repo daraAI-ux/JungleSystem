@@ -1,6 +1,44 @@
 export const KOLAM_ENCLOSURE_ROOT = '/enclosures';
 export const KOLAM_ENCLOSURE_CUSTOMER_ROOT = '/dashboard/enclosures';
 
+export type KolamEnclosurePermissionAction = 'view' | 'create' | 'update' | 'delete';
+
+export type KolamEnclosurePermissionEntry = {
+  resource?: string;
+  actions?: string[];
+};
+
+/** Mirror FE `CanView resource="enclosure"`. */
+export function hasKolamEnclosurePermission(
+  permissions: KolamEnclosurePermissionEntry[] | null | undefined,
+  action: KolamEnclosurePermissionAction,
+  roleKey?: string | null,
+): boolean {
+  const role = String(roleKey || '').toLowerCase();
+  if (
+    role === 'super_administrator' ||
+    role === 'super_admin' ||
+    role === 'super-admin'
+  ) {
+    return true;
+  }
+  if (permissions == null) {
+    return true;
+  }
+  const wanted = action.toLowerCase();
+  return permissions.some(permission => {
+    const resource = String(permission.resource ?? '')
+      .trim()
+      .toLowerCase();
+    const actions = (permission.actions ?? []).map(item =>
+      String(item).trim().toLowerCase(),
+    );
+    const resourceMatch = resource === 'enclosure' || resource === '*';
+    const actionMatch = actions.includes(wanted) || actions.includes('*');
+    return resourceMatch && actionMatch;
+  });
+}
+
 export const KOLAM_ENCLOSURE_TYPES = [
   'Terrarium',
   'Paludarium',
