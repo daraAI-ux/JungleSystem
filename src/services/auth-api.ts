@@ -283,6 +283,48 @@ export async function updateCurrentUserProfile(body: {
   return mapSignedInUser(payload as BackendUserPayload);
 }
 
+export async function uploadCurrentUserProfilePhoto(
+  localUri: string,
+): Promise<SignedInUser> {
+  const body = new FormData();
+  body.append(
+    'photos',
+    createReactNativeImageFilePart(localUri, 'profile-photo.jpg') as unknown as Blob,
+  );
+
+  const response = await apiRequest<BackendUserPayload | {data?: BackendUserPayload}>({
+    method: 'POST',
+    path: '/auth/upload-profile-photo',
+    body,
+    baseUrl:
+      activeAuthSource === 'kolam'
+        ? appConfig.kolamApiBaseUrl
+        : undefined,
+    sourceHeader: getAuthSource(activeAuthSource).headerSource,
+  });
+  const payload =
+    response && typeof response === 'object' && 'data' in response
+      ? response.data ?? {}
+      : response;
+  return mapSignedInUser(payload as BackendUserPayload);
+}
+
+export async function changeCurrentUserPassword(body: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  await apiRequest<unknown>({
+    method: 'POST',
+    path: '/auth/change-password',
+    body,
+    baseUrl:
+      activeAuthSource === 'kolam'
+        ? appConfig.kolamApiBaseUrl
+        : undefined,
+    sourceHeader: getAuthSource(activeAuthSource).headerSource,
+  });
+}
+
 export function resolveProfilePhotoUrl(
   profilePicture?: string | null,
 ): string | null {
@@ -317,6 +359,40 @@ function resolveProfileAvatarUrl(mediaUrl: string): string {
   }
 
   return mediaUrl;
+}
+
+function createReactNativeImageFilePart(
+  localUri: string,
+  fallbackName: string,
+) {
+  const normalizedUri = localUri.startsWith('file://')
+    ? localUri
+    : `file:///${localUri.replace(/\\/g, '/')}`;
+  const name = normalizedUri.split('/').pop() || fallbackName;
+
+  return {
+    name,
+    type: inferImageMimeType(name),
+    uri: normalizedUri,
+  };
+}
+
+function inferImageMimeType(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
+  }
 }
 
 export function signOut() {

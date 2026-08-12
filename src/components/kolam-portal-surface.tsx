@@ -24,14 +24,20 @@ import {
   type KolamPortalPayrollCommissionPeriod,
   type KolamPortalTaskRow,
 } from '../services/kolam-employee-portal-api';
-import { updateCurrentUserProfile } from '../services/auth-api';
+import {
+  changeCurrentUserPassword,
+  updateCurrentUserProfile,
+  uploadCurrentUserProfilePhoto,
+} from '../services/auth-api';
 import {
   fetchKolamKpiLeaderboard,
   fetchKolamKpiMeSummary,
 } from '../services/kolam-kpi-team-api';
+import { pickNativeImageFile } from '../services/native-file-picker';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
+import { KolamModalDialog } from './kolam-modal-dialog';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
@@ -773,7 +779,15 @@ function PortalAccountSettings({
     phoneNumber: effectiveUser?.phoneNumber ?? '',
   });
   const [saving, setSaving] = React.useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = React.useState(false);
   const [message, setMessage] = React.useState('');
+  const [passwordModalOpen, setPasswordModalOpen] = React.useState(false);
+  const [passwordSaving, setPasswordSaving] = React.useState(false);
+  const [passwordForm, setPasswordForm] = React.useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   React.useEffect(() => {
     setSavedUser(authUser);
@@ -819,27 +833,101 @@ function PortalAccountSettings({
     }
   }, [form.email, form.firstName, form.lastName, form.phoneNumber, onRefresh]);
 
-  return (
-    <PortalCard
-      action={
-        <KolamButton
-          disabled={loading || saving}
-          label={saving ? 'Menyimpan' : 'Simpan'}
-          onPress={handleSave}
-        />
+  const handleUploadPhoto = React.useCallback(async () => {
+    setUploadingPhoto(true);
+    setMessage('');
+    try {
+      const picked = await pickNativeImageFile();
+      if (picked.cancelled) {
+        return;
       }
-      sidebar
-      style={styles.sidebarCard}
-      subtitle="Profil & keamanan"
-      title="Pengaturan Akun"
-    >
+      const localUri = picked.uri ?? picked.path;
+      if (!localUri) {
+        throw new Error('File tidak terbaca');
+      }
+      const nextUser = await uploadCurrentUserProfilePhoto(localUri);
+      setSavedUser(nextUser);
+      setMessage('Foto tersimpan');
+      onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Gagal mengunggah foto');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }, [onRefresh]);
+
+  const closePasswordModal = React.useCallback(() => {
+    if (passwordSaving) {
+      return;
+    }
+    setPasswordModalOpen(false);
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+  }, [passwordSaving]);
+
+  const handleChangePassword = React.useCallback(async () => {
+    const currentPassword = passwordForm.currentPassword.trim();
+    const newPassword = passwordForm.newPassword.trim();
+    const confirmPassword = passwordForm.confirmPassword.trim();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setMessage('Kata sandi wajib diisi');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage('Konfirmasi kata sandi tidak sama');
+      return;
+    }
+
+    setPasswordSaving(true);
+    setMessage('');
+    try {
+      await changeCurrentUserPassword({
+        currentPassword,
+        newPassword,
+      });
+      setPasswordModalOpen(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setMessage('Kata sandi tersimpan');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Gagal mengubah kata sandi');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }, [passwordForm.confirmPassword, passwordForm.currentPassword, passwordForm.newPassword]);
+
+  return (
+    <>
+      <PortalCard
+        action={
+          <KolamButton
+            disabled={loading || saving || uploadingPhoto || passwordSaving}
+            label={saving ? 'Menyimpan' : 'Simpan'}
+            onPress={handleSave}
+          />
+        }
+        sidebar
+        style={styles.sidebarCard}
+        subtitle="Profil & keamanan"
+        title="Pengaturan Akun"
+      >
       <View style={styles.accountField}>
         <View style={styles.accountFieldHeader}>
           <View>
             <Text style={styles.accountLabel}>Foto profil</Text>
             <Text style={styles.smallMuted}>JPG/PNG maks. 2MB</Text>
           </View>
-          <KolamButton disabled label="Unggah" />
+          <KolamButton
+            disabled={loading || saving || uploadingPhoto}
+            label={uploadingPhoto ? 'Mengunggah' : 'Unggah'}
+            onPress={handleUploadPhoto}
+          />
         </View>
         <View style={styles.profileRow}>
           <View style={styles.avatarWrap}>
@@ -882,7 +970,15 @@ function PortalAccountSettings({
         <View style={styles.accountField}>
           <View style={styles.accountFieldHeader}>
             <Text style={styles.accountLabel}>Kata sandi</Text>
-            <KolamButton disabled label="Ubah" size="sm" />
+            <KolamButton
+              disabled={loading || passwordSaving}
+              label="Ubah"
+              onPress={() => {
+                setMessage('');
+                setPasswordModalOpen(true);
+              }}
+              size="sm"
+            />
           </View>
           <Text numberOfLines={1} style={styles.bodyText}>
             ********
@@ -890,7 +986,65 @@ function PortalAccountSettings({
         </View>
       </View>
       {message ? <Text style={styles.accountMessage}>{message}</Text> : null}
-    </PortalCard>
+      </PortalCard>
+      <KolamModalDialog
+        description="Masukkan kata sandi saat ini."
+        footer={
+          <>
+            <KolamButton
+              disabled={passwordSaving}
+              label="Batal"
+              onPress={closePasswordModal}
+            />
+            <KolamButton
+              disabled={passwordSaving}
+              intent="primary"
+              label={passwordSaving ? 'Menyimpan' : 'Simpan'}
+              onPress={handleChangePassword}
+            />
+          </>
+        }
+        onClose={closePasswordModal}
+        title="Ubah kata sandi"
+        visible={passwordModalOpen}
+        width={420}>
+        <View style={styles.passwordModalBody}>
+          <AccountEditableField
+            label="Kata sandi saat ini"
+            onChangeText={value =>
+              setPasswordForm(current => ({
+                ...current,
+                currentPassword: value,
+              }))
+            }
+            secure
+            value={passwordForm.currentPassword}
+          />
+          <AccountEditableField
+            label="Kata sandi baru"
+            onChangeText={value =>
+              setPasswordForm(current => ({
+                ...current,
+                newPassword: value,
+              }))
+            }
+            secure
+            value={passwordForm.newPassword}
+          />
+          <AccountEditableField
+            label="Konfirmasi kata sandi"
+            onChangeText={value =>
+              setPasswordForm(current => ({
+                ...current,
+                confirmPassword: value,
+              }))
+            }
+            secure
+            value={passwordForm.confirmPassword}
+          />
+        </View>
+      </KolamModalDialog>
+    </>
   );
 }
 
@@ -898,11 +1052,13 @@ function AccountEditableField({
   label,
   onChangeText,
   readOnly = false,
+  secure = false,
   value,
 }: {
   label: string;
   onChangeText?: (value: string) => void;
   readOnly?: boolean;
+  secure?: boolean;
   value?: string | null;
 }) {
   return (
@@ -913,6 +1069,7 @@ function AccountEditableField({
         onChangeText={onChangeText}
         placeholder={label}
         placeholderTextColor={V.colors.mutedFg}
+        secureTextEntry={secure}
         style={[styles.accountInput, readOnly ? styles.accountInputReadOnly : null]}
         value={value ?? ''}
       />
@@ -1489,5 +1646,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     marginTop: 8,
+  },
+  passwordModalBody: {
+    gap: 2,
   },
 });
