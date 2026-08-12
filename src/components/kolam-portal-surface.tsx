@@ -186,18 +186,22 @@ export function KolamPortalSurface({
 function PortalCard({
   action,
   children,
+  sidebar = false,
   style,
   subtitle,
   title,
 }: {
   action?: React.ReactNode;
   children: React.ReactNode;
+  sidebar?: boolean;
   style?: object;
   subtitle?: string;
   title: string;
 }) {
   return (
-    <KolamCardFrame style={[styles.portalCard, style]} variant="compact">
+    <KolamCardFrame
+      style={[sidebar ? styles.portalSidebarCard : styles.portalCard, style]}
+      variant="compact">
       <View style={styles.portalCardHeader}>
         <View style={styles.portalCardTitleWrap}>
           <Text style={styles.portalCardTitle}>{title}</Text>
@@ -260,7 +264,7 @@ function KpiPortalCard({
 
   if (loading) {
     return (
-      <PortalCard style={styles.sidebarCard} subtitle="Memuat..." title="KPI kinerja">
+      <PortalCard sidebar style={styles.sidebarCard} subtitle="Memuat..." title="KPI kinerja">
         <View style={styles.kpiLoadingBar} />
       </PortalCard>
     );
@@ -268,7 +272,7 @@ function KpiPortalCard({
 
   if (failed || !summary) {
     return (
-      <PortalCard style={styles.sidebarCard} title="KPI kinerja">
+      <PortalCard sidebar style={styles.sidebarCard} title="KPI kinerja">
         <EmptyLine text="Ringkasan KPI tidak tersedia." />
       </PortalCard>
     );
@@ -294,6 +298,7 @@ function KpiPortalCard({
           />
         </View>
       }
+      sidebar
       style={styles.sidebarCard}
       subtitle={summary.scoringEnabled ? summary.period.week : undefined}
       title="KPI kinerja"
@@ -842,6 +847,7 @@ function PortalAccountSettings({
           onPress={handleSave}
         />
       }
+      sidebar
       style={styles.sidebarCard}
       subtitle="Profil & keamanan"
       title="Pengaturan Akun"
@@ -1226,6 +1232,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
+  portalSidebarCard: {
+    alignSelf: 'stretch',
+    flexGrow: 0,
+    flexShrink: 0,
+    minWidth: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    width: '100%',
+  },
   portalCardHeader: {
     alignItems: 'center',
     borderBottomColor: V.colors.border,
@@ -1265,10 +1280,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sidebarCard: {
-    alignSelf: 'stretch',
-    flexBasis: 'auto',
-    flexGrow: 0,
-    flexShrink: 0,
     width: '100%',
   },
   kpiActionRow: {
