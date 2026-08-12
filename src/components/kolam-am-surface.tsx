@@ -5907,15 +5907,15 @@ function AmWebhooksPage() {
       label: '',
       render: log => (
         <KolamButton
-          accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
+          accessibilityLabel={`AM Webhook Payload ${log._id}`}
           intent="outline"
-          label={selectedWebhookLog?._id === log._id ? 'Tutup' : 'Detail'}
+          label="Payload"
           size="sm"
-          onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
+          onPress={() => setSelectedWebhookLog(log)}
         />
       ),
     },
-  ], [selectedWebhookLog]);
+  ], []);
   const isWebhookActionLocked = isSubmitting || isTestingPing || actingConfigId !== null;
 
   return (
@@ -6068,42 +6068,68 @@ function AmWebhooksPage() {
         rows={logs}
         showFooter={logTotal > 0}
       />
-      {selectedWebhookLog ? <AmWebhookLogDetailPanel log={selectedWebhookLog} /> : null}
+      <AmWebhookPayloadModal
+        log={selectedWebhookLog}
+        onClose={() => setSelectedWebhookLog(null)}
+      />
     </View>
   );
 }
 
-function AmWebhookLogDetailPanel({log}: {log: AmWebhookLog}) {
+function AmWebhookPayloadModal({
+  log,
+  onClose,
+}: {
+  log: AmWebhookLog | null;
+  onClose: () => void;
+}) {
+  if (!log) return null;
+
   const endpoint = getWebhookLogEndpoint(log);
+  const description = `${log.success ? 'Terkirim' : 'Gagal'} -> ${endpoint} (${log.duration || 0}ms)`;
 
   return (
-    <View style={styles.panel}>
-      <View style={styles.panelHeaderRow}>
-        <View>
-          <Text style={styles.panelTitle}>Detail Log Webhook</Text>
-          <Text style={styles.panelText}>{log.event}</Text>
+    <KolamModalDialog
+      accessibilityLabel={`AM Webhook Payload Modal ${log._id}`}
+      description={description}
+      footer={<KolamButton label="Tutup" onPress={onClose} />}
+      maxHeight="88%"
+      onClose={onClose}
+      title={`Webhook: ${log.event}`}
+      visible
+      width={780}>
+      <ScrollView style={styles.webhookPayloadScroll} contentContainerStyle={styles.webhookPayloadContent}>
+        <View style={styles.logPanel}>
+          <Text selectable style={styles.webhookPayloadLabel}>// Request payload</Text>
+          <Text selectable style={styles.logText}>{JSON.stringify(log.requestBody ?? {}, null, 2)}</Text>
+          {log.responseBody != null ? (
+            <>
+              <Text selectable style={[styles.webhookPayloadLabel, styles.webhookPayloadSectionLabel]}>
+                // Response{log.responseStatus ? ` (${log.responseStatus})` : ''}
+              </Text>
+              <Text selectable style={[styles.logText, styles.webhookPayloadResponseText]}>
+                {formatWebhookPayloadValue(log.responseBody)}
+              </Text>
+            </>
+          ) : null}
+          {log.error ? (
+            <>
+              <Text selectable style={[styles.webhookPayloadLabel, styles.webhookPayloadSectionLabel]}>// Error</Text>
+              <Text selectable style={[styles.logText, styles.logTextDanger]}>{log.error}</Text>
+            </>
+          ) : null}
         </View>
-        <AmStatusChip
-          label={log.responseStatus ? String(log.responseStatus) : (log.success ? 'success' : 'failed')}
-          tone={log.success ? 'success' : 'danger'}
-        />
-      </View>
-      <View style={styles.detailGrid}>
-        <AmDetailLine label="Arah" value={log.direction} />
-        <AmDetailLine label="Endpoint" value={endpoint} />
-        <AmDetailLine label="Config" value={log.configId?.description || log.configId?._id || '-'} />
-        <AmDetailLine label="Durasi" value={`${log.duration} ms`} />
-        <AmDetailLine label="Dibuat" value={formatAmDate(log.createdAt)} />
-        <AmDetailLine label="Error" value={log.error || '-'} />
-      </View>
-      <AmJsonPanel title="Body Request" value={log.requestBody ?? {}} />
-      <AmJsonPanel title="Body Response" value={log.responseBody ?? {}} />
-    </View>
+      </ScrollView>
+    </KolamModalDialog>
   );
 }
 
 function getWebhookLogEndpoint(log: AmWebhookLog) {
   return log.configId?.url || log.url || '-';
+}
+
+function formatWebhookPayloadValue(value: unknown) {
+  return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 }
 
 function AmUsersPage() {
@@ -8508,6 +8534,24 @@ const styles = StyleSheet.create({
     borderTopColor: V.colors.border,
     marginTop: 6,
     paddingTop: 6,
+  },
+  webhookPayloadScroll: {
+    maxHeight: 520,
+  },
+  webhookPayloadContent: {
+    paddingBottom: 4,
+  },
+  webhookPayloadLabel: {
+    color: '#6b7280',
+    fontFamily: 'Consolas',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  webhookPayloadSectionLabel: {
+    marginTop: 12,
+  },
+  webhookPayloadResponseText: {
+    color: '#4ade80',
   },
   taskSearch: {
     flexBasis: 240,

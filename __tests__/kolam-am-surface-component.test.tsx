@@ -6115,14 +6115,14 @@ describe('KolamAmSurface', () => {
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Existing hook'})).toHaveLength(0);
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Log Detail webhook-log-1'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Webhook Payload webhook-log-1'}).props.onPress();
     });
 
     const detailText = renderText(renderer!).join(' ');
-    expect(detailText).toContain('Detail Log Webhook');
+    expect(detailText).toContain('Webhook: transfer.success');
     expect(detailText).toContain('Existing hook');
-    expect(detailText).toContain('Body Request');
-    expect(detailText).toContain('Body Response');
+    expect(detailText).toContain('// Request payload');
+    expect(detailText).toMatch(/\/\/ Response\s+\(200\)/);
     expect(detailText).toContain('"transferId": "transfer-1"');
     expect(detailText).toContain('"ok": true');
 
