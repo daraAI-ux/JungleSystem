@@ -29,6 +29,7 @@ import { KolamDateField } from './kolam-date-field';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamListTableComposition } from './kolam-list-table-composition';
+import {KolamModalDialog} from './kolam-modal-dialog';
 import { KolamRowFrame } from './kolam-row-frame';
 import { KolamSettingsWebFormFields } from './kolam-settings-web-form-fields';
 import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-section-header';
@@ -7478,35 +7479,30 @@ function MarketplaceHeroPreview({
   };
 
   return (
-    <Modal
-      animationType="fade"
-      onRequestClose={onClose}
-      transparent
-      visible>
-      <View style={styles.marketplaceHeroPreviewOverlay}>
-        <Pressable
-          accessibilityLabel="Close preview backdrop"
-          onPress={onClose}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.marketplaceHeroPreviewShell}>
-          <View style={styles.marketplaceHeroPreviewHeader}>
-            <View style={styles.marketplaceHeroPreviewHeaderMeta}>
-              <Text style={styles.marketplaceHeroPreviewBadge}>Preview</Text>
-              <Text style={styles.marketplaceHeroPreviewCount}>
-                {`${selectedIndex + 1} / ${slides.length}`}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityLabel="Close preview"
-              accessibilityRole="button"
-              onPress={onClose}
-              style={styles.marketplaceHeroPreviewClose}>
-              <Text style={styles.marketplaceHeroPreviewCloseLabel}>×</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.marketplaceHeroPreviewStage}>
+    <KolamModalDialog
+      description={`${selectedIndex + 1} / ${slides.length}`}
+      dialogStyle={styles.marketplaceHeroPreviewDialog}
+      footer={
+        <View style={styles.marketplaceHeroPreviewFooter}>
+          <Text style={styles.marketplaceHeroPreviewFooterLabel}>1280 x 180px</Text>
+          <Pressable
+            accessibilityLabel="Tutup pratinjau"
+            accessibilityRole="button"
+            onPress={onClose}
+            style={styles.marketplaceHeroPreviewFooterButton}>
+            <Text style={styles.marketplaceHeroPreviewFooterButtonLabel}>
+              Tutup
+            </Text>
+          </Pressable>
+        </View>
+      }
+      maxHeight="86%"
+      maxWidth={1280}
+      onClose={onClose}
+      title="Pratinjau hero"
+      visible
+      width="92%">
+      <View style={styles.marketplaceHeroPreviewStage}>
             {imageUri ? (
               <Image
                 resizeMode="cover"
@@ -7595,18 +7591,7 @@ function MarketplaceHeroPreview({
               </>
             ) : null}
           </View>
-
-          <View style={styles.marketplaceHeroPreviewFooter}>
-            <Text style={styles.marketplaceHeroPreviewFooterLabel}>
-              1280 × 180px
-            </Text>
-            <Text style={styles.marketplaceHeroPreviewFooterLabel}>
-              ESC to close
-            </Text>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    </KolamModalDialog>
   );
 }
 
@@ -10494,6 +10479,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  marketplaceHeroPreviewDialog: {
+    gap: 14,
+  },
   marketplaceHeroPreviewDot: {
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
     borderRadius: 999,
@@ -10518,11 +10506,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12,
+    width: '100%',
   },
   marketplaceHeroPreviewFooterLabel: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: V.colors.mutedFg,
     fontSize: 12,
+    fontWeight: '700',
+  },
+  marketplaceHeroPreviewFooterButton: {
+    borderRadius: 6,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  marketplaceHeroPreviewFooterButtonLabel: {
+    color: V.colors.fg,
+    fontSize: 12,
+    fontWeight: '900',
   },
   marketplaceHeroPreviewHeader: {
     alignItems: 'center',
