@@ -4178,12 +4178,11 @@ describe('KolamAmSurface', () => {
 
     expect(getAmTransfers).toHaveBeenCalledWith({
       page: 1,
-      limit: 20,
+      limit: 10,
       search: undefined,
       status: undefined,
-      serviceAccountId: undefined,
     });
-    expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 100, type: undefined});
+    expect(getAmMutasi).toHaveBeenCalledWith({page: 1, limit: 10, type: undefined});
     expect(getAmWebhookConfigs).toHaveBeenCalledTimes(1);
     expect(getAmUsers).toHaveBeenCalledWith({
       page: 1,
@@ -4644,7 +4643,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 100,
+      limit: 10,
       type: undefined,
       accountId: undefined,
       deviceId: undefined,
@@ -4678,7 +4677,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Waktu');
     expect(joinedText).not.toContain('Aksi');
     expect(joinedText).toContain('Menampilkan');
-    expect(joinedText).toContain('1 - 100');
+    expect(joinedText).toContain('1 - 10');
     expect(joinedText).toContain('120');
     expect(joinedText).toContain('hasil');
 
@@ -4706,7 +4705,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 2,
-      limit: 100,
+      limit: 10,
       type: undefined,
       accountId: undefined,
       deviceId: undefined,
@@ -4721,7 +4720,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 100,
+      limit: 10,
       type: undefined,
       accountId: 'account-1',
       deviceId: undefined,
@@ -4737,7 +4736,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 100,
+      limit: 10,
       type: undefined,
       accountId: 'account-1',
       deviceId: 'device-1',
@@ -5400,7 +5399,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmTransfers).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 20,
+      limit: 10,
       search: undefined,
       status: undefined,
     });
@@ -5414,7 +5413,7 @@ describe('KolamAmSurface', () => {
     expect(getAmTransfers).toHaveBeenCalledTimes(2);
     expect(getAmTransfers).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 20,
+      limit: 10,
       search: undefined,
       status: undefined,
     });
@@ -5443,7 +5442,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Box A / Rack Blue');
     expect(joinedText).toMatch(/Fee\s+Rp\s*2\.500/);
     expect(joinedText).toContain('Menampilkan');
-    expect(joinedText).toContain('1 - 20');
+    expect(joinedText).toContain('1 - 10');
     expect(joinedText).toContain('45');
     expect(joinedText).toContain('hasil');
 
@@ -5453,7 +5452,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmTransfers).toHaveBeenLastCalledWith({
       page: 2,
-      limit: 20,
+      limit: 10,
       search: undefined,
       status: undefined,
     });

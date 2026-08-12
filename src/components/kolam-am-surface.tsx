@@ -172,8 +172,8 @@ const TASK_TYPES: Array<AmTaskType | 'all'> = ['all', 'stock_sync', 'process_sal
 const AM_TASK_PAGE_LIMIT = 20;
 const AM_SERVICE_PAGE_LIMIT = 20;
 const AM_SERVICE_LOG_PAGE_LIMIT = 100;
-const AM_TRANSFER_PAGE_LIMIT = 20;
-const AM_MUTASI_PAGE_LIMIT = 100;
+const AM_TRANSFER_PAGE_LIMIT = 10;
+const AM_MUTASI_PAGE_LIMIT = 10;
 const AM_WEBHOOK_LOG_PAGE_LIMIT = 10;
 const AM_USER_PAGE_LIMIT = 100;
 const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
@@ -4583,7 +4583,7 @@ function AmTransfersPage({
       });
       setTransfers(response.data);
       setTotal(response.meta.total);
-      setLimit(response.meta.limit || AM_TRANSFER_PAGE_LIMIT);
+      setLimit(AM_TRANSFER_PAGE_LIMIT);
       setError(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal memuat transfers AM.');
@@ -5353,7 +5353,7 @@ function AmMutasiPage({
       ]);
       setMutasi(listResponse.data);
       setTotal(listResponse.meta.total);
-      setLimit(listResponse.meta.limit || AM_MUTASI_PAGE_LIMIT);
+      setLimit(AM_MUTASI_PAGE_LIMIT);
       setSummary(summaryResponse);
       setError(null);
     } catch (nextError) {
