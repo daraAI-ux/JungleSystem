@@ -4147,7 +4147,7 @@ function KolamChatRailDetailPanel({
                                     )
                                   : getInboxAiMessageAvatarUrl(
                                       message,
-                                      katakTerbangAvatarUrl,
+                                      daraAvatarUrl,
                                     )
                               }
                               initials={getTeamChatMessageInitials(
@@ -5034,17 +5034,14 @@ function getTeamChatMessageAvatarUrl(
 
 function getInboxAiMessageAvatarUrl(
   message: KolamChatRailDetailMessage,
-  katakTerbangAvatarUrl: string | null,
+  daraAvatarUrl: string | null,
 ) {
   if (!isInboxDetailAiMessage(message)) {
     return resolveProfilePhotoUrl(message.senderProfilePicture);
   }
 
-  return (
-    resolveProfilePhotoUrl(message.senderProfilePicture) ||
-    katakTerbangAvatarUrl ||
-    resolveDaraAvatarImageUrl()
-  );
+  // FE inbox AI: resolveDaraAvatarUrl(daraAvatarUrl) — never Katak Terbang photo.
+  return daraAvatarUrl || resolveDaraAvatarImageUrl();
 }
 
 function isInboxDetailAiMessage(message: KolamChatRailDetailMessage) {
@@ -5053,6 +5050,7 @@ function isInboxDetailAiMessage(message: KolamChatRailDetailMessage) {
     message.senderIsAi === true ||
     Boolean(message.daraMeta) ||
     author === 'dara' ||
+    author === 'ai assistant' ||
     author.includes('katak terbang')
   );
 }

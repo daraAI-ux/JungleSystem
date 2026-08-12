@@ -56,6 +56,10 @@ import {
   uploadKolamTeamChatMedia,
 } from '../services/kolam-api';
 import type { NativeImagePickerResult } from '../services/native-file-picker';
+import {
+  isKolamInboxAiMessage,
+  resolveKolamInboxMessageAuthor,
+} from '../domain/kolam-inbox-dara-display';
 import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bot-display';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
@@ -1233,30 +1237,11 @@ function groupTeamChatReactions(
 }
 
 function getInboxAuthor(message: KolamChatMessage, buyerDisplayName?: string) {
-  if (message.direction === 'out') {
-    return message.senderName || 'Anda';
-  }
-
-  if (message.senderType === 'ai_agent') {
-    return 'DARA';
-  }
-
-  return message.senderName || buyerDisplayName || 'Buyer';
+  return resolveKolamInboxMessageAuthor(message, buyerDisplayName);
 }
 
 function isInboxAiMessage(message: Partial<KolamChatMessage>) {
-  if (message.senderType === 'ai_agent' || message.daraMeta) {
-    return true;
-  }
-
-  const senderName = String(message.senderName ?? '')
-    .trim()
-    .toLowerCase();
-  return (
-    senderName === 'dara' ||
-    senderName.includes('dara') ||
-    senderName.includes('katak terbang')
-  );
+  return isKolamInboxAiMessage(message);
 }
 
 function getInboxBuyerDisplayName(conversation?: KolamChatConversation | null) {
