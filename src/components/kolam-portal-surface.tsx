@@ -68,8 +68,9 @@ const TASK_STATUS: Record<string, string> = {
   cancelled: 'Batal',
 };
 
-type PortalWorkTab = 'attendance' | 'tasks';
-type PortalCompensationTab =
+type PortalWorkTab =
+  | 'attendance'
+  | 'tasks'
   | 'slips'
   | 'commissions'
   | 'overtime'
@@ -80,9 +81,6 @@ type PortalCompensationTab =
 const PORTAL_WORK_TABS = [
   { id: 'attendance', label: 'Absensi' },
   { id: 'tasks', label: 'Tugas saya' },
-] as const;
-
-const PORTAL_COMPENSATION_TABS = [
   { id: 'slips', label: 'Slip gaji' },
   { id: 'commissions', label: 'Komisi' },
   { id: 'overtime', label: 'Biaya lembur' },
@@ -104,8 +102,6 @@ export function KolamPortalSurface({
   const [attendancePage, setAttendancePage] = React.useState(1);
   const [taskPage, setTaskPage] = React.useState(1);
   const [activeWorkTab, setActiveWorkTab] = React.useState<PortalWorkTab>('attendance');
-  const [activeCompensationTab, setActiveCompensationTab] =
-    React.useState<PortalCompensationTab>('slips');
   const isWide = width >= 1180;
   const isEmployee = authUser?.isEmployee;
   const shouldLoad = isEmployee !== false;
@@ -173,13 +169,6 @@ export function KolamPortalSurface({
                 setAttendancePage={setAttendancePage}
                 setTaskPage={setTaskPage}
                 taskPage={taskPage}
-              />
-
-              <PortalCompensationTabsSection
-                activeTab={activeCompensationTab}
-                data={dataset}
-                loading={loading}
-                onTabChange={setActiveCompensationTab}
               />
 
             </>
@@ -489,12 +478,18 @@ function PortalWorkTabsSection({
   const cardSubtitle =
     activeTab === 'attendance'
       ? subtitle
-      : tasks.length
+      : activeTab === 'tasks' && tasks.length
         ? `${tasks.length} item`
         : undefined;
 
   return (
-    <PortalCard subtitle={cardSubtitle} title="Aktivitas">
+    <PortalCard
+      action={
+        activeTab === 'kasbon' ? <KolamButton disabled label="Ajukan kasbon" /> : undefined
+      }
+      subtitle={cardSubtitle}
+      title="Aktivitas"
+    >
       <View style={styles.portalTableTabs}>
         <KolamSurfacePanelTabs
           onSelectTab={onTabChange}
@@ -569,7 +564,7 @@ function PortalWorkTabsSection({
           />
         </View>
       </View>
-      ) : (
+      ) : activeTab === 'tasks' ? (
         <KolamListTableComposition
           columns={taskColumns}
           emptyTitle={loading && !data ? 'Memuat...' : 'Tidak ada tugas terbuka.'}
@@ -577,36 +572,7 @@ function PortalWorkTabsSection({
           pagination={{ onPageChange: setTaskPage, page: taskPage, pageSize, total: tasks.length }}
           rows={taskRows}
         />
-      )}
-    </PortalCard>
-  );
-}
-
-function PortalCompensationTabsSection({
-  activeTab,
-  data,
-  loading,
-  onTabChange,
-}: {
-  activeTab: PortalCompensationTab;
-  data: KolamPortalDataset | null;
-  loading: boolean;
-  onTabChange: (tab: PortalCompensationTab) => void;
-}) {
-  return (
-    <PortalCard
-      action={
-        activeTab === 'kasbon' ? <KolamButton disabled label="Ajukan kasbon" /> : undefined
-      }
-      title="Gaji & kompensasi"
-    >
-      <View style={styles.portalTableTabs}>
-        <KolamSurfacePanelTabs
-          onSelectTab={onTabChange}
-          selectedTabId={activeTab}
-          tabs={[...PORTAL_COMPENSATION_TABS]}
-        />
-      </View>
+      ) : null}
       {activeTab === 'slips' ? (
         <PortalPayrollSlipsContent data={data} loading={loading} />
       ) : null}
