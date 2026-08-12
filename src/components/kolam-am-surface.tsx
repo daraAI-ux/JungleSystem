@@ -1200,7 +1200,7 @@ function AmTaskDetailPage({
           <Text style={styles.panelTitle}>Log ({task.logs.length} baris)</Text>
           <View style={styles.logPanel}>
             {task.logs.map((line, index) => (
-              <Text key={`${index}-${line}`} style={styles.logText}>{line}</Text>
+              <Text key={`${index}-${line}`} selectable style={styles.logText}>{line}</Text>
             ))}
           </View>
         </View>
@@ -1223,7 +1223,7 @@ function AmJsonPanel({title, value}: {title: string; value: unknown}) {
     <View style={styles.panel}>
       <Text style={styles.panelTitle}>{title}</Text>
       <View style={styles.logPanel}>
-        <Text style={styles.logText}>{JSON.stringify(value, null, 2)}</Text>
+        <Text selectable style={styles.logText}>{JSON.stringify(value, null, 2)}</Text>
       </View>
     </View>
   );
@@ -2770,11 +2770,14 @@ function AmServiceDetailPanel({
             />
           </View>
           <View style={styles.logPanel}>
-            {!logs.length ? <Text style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
+            {!logs.length ? <Text selectable style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
             {displayedLogs.map((log, index) => (
-              <Text key={`${log.ts}-${index}`} style={styles.logText} numberOfLines={2}>
-                [{formatAmDate(log.ts)}] {log.level}: {log.message}
-              </Text>
+              <View key={`${log.ts}-${index}`} style={styles.logRow}>
+                <Text selectable style={styles.logTimestamp}>[{formatAmDate(log.ts)}]</Text>
+                <Text selectable style={[styles.logText, styles.logMessage, getAmLogLevelStyle(log.level)]}>
+                  {log.level}: {log.message}
+                </Text>
+              </View>
             ))}
           </View>
           {logSource === 'history' && logTotal > logLimit ? (
@@ -4696,9 +4699,9 @@ function AmTransferDetailPanel({
             </View>
           </View>
           <View style={styles.logPanel}>
-            {!transfer.logs.length ? <Text style={styles.logEmptyText}>Log belum ada...</Text> : null}
+            {!transfer.logs.length ? <Text selectable style={styles.logEmptyText}>Log belum ada...</Text> : null}
             {transfer.logs.map((line, index) => (
-              <Text key={`${index}-${line}`} style={styles.logText} numberOfLines={2}>
+              <Text key={`${index}-${line}`} selectable style={styles.logText}>
                 {String(index + 1).padStart(3, '0')} {line}
               </Text>
             ))}
@@ -6973,6 +6976,13 @@ function getTransferStats(transfers: AmTransfer[]) {
   };
 }
 
+function getAmLogLevelStyle(level: string | null | undefined) {
+  const normalized = level?.toLowerCase();
+  if (normalized === 'error' || normalized === 'stderr') return styles.logTextDanger;
+  if (normalized === 'info') return styles.logTextInfo;
+  return styles.logTextDefault;
+}
+
 function resolveRackId(rack: AmBox['rackId']) {
   return typeof rack === 'string' ? rack : rack?._id ?? '';
 }
@@ -8114,20 +8124,51 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   logPanel: {
-    gap: 5,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#1f2937',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#111827',
+    backgroundColor: '#030712',
+  },
+  logRow: {
+    width: '100%',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
   },
   logText: {
-    color: '#e5e7eb',
-    fontFamily: V.fontFamily,
-    fontSize: 11,
+    color: '#d1d5db',
+    fontFamily: 'Consolas',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  logMessage: {
+    flex: 1,
+    minWidth: 0,
+  },
+  logTimestamp: {
+    flexShrink: 0,
+    color: '#4b5563',
+    fontFamily: 'Consolas',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  logTextDefault: {
+    color: '#d1d5db',
+  },
+  logTextInfo: {
+    color: '#60a5fa',
+  },
+  logTextDanger: {
+    color: '#f87171',
   },
   logEmptyText: {
-    color: '#9ca3af',
-    fontFamily: V.fontFamily,
+    color: '#6b7280',
+    fontFamily: 'Consolas',
     fontSize: 12,
+    lineHeight: 18,
     textAlign: 'center',
   },
   proofPanel: {

@@ -1662,6 +1662,16 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Tokopedia Main Logs'}).props.onPress();
     });
+
+    const realtimeLogText = renderer!.root
+      .findAllByType(Text)
+      .find(node => flattenText(node.props.children).join('').includes('info: Realtime ready'));
+    expect(realtimeLogText?.props.selectable).toBe(true);
+    expect(StyleSheet.flatten(realtimeLogText?.props.style)).toEqual(expect.objectContaining({
+      color: '#60a5fa',
+      fontFamily: 'Consolas',
+    }));
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Riwayat'}).props.onPress();
     });
