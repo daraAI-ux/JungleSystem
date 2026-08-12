@@ -6088,7 +6088,7 @@ describe('KolamAmSurface', () => {
           createdAt: '2026-07-31T01:00:00.000Z',
         },
       ],
-      meta: {total: 75, limit: 50},
+      meta: {total: 75, limit: 10},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -6103,13 +6103,13 @@ describe('KolamAmSurface', () => {
 
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       direction: undefined,
     });
     const webhooksText = renderText(renderer!).join(' ');
     expect(webhooksText).toContain('https://example.test/webhook');
     expect(webhooksText).toContain('Waktu');
-    expect(webhooksText).toMatch(/Menampilkan\s+dari\s+hasil\s+1\s+-\s+50\s+75/);
+    expect(webhooksText).toMatch(/Menampilkan\s+dari\s+hasil\s+1\s+-\s+10\s+75/);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Masuk'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment transfer.success'})).toHaveLength(0);
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Existing hook'})).toHaveLength(0);
@@ -6134,7 +6134,7 @@ describe('KolamAmSurface', () => {
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       direction: 'outgoing',
     });
 
@@ -6143,7 +6143,7 @@ describe('KolamAmSurface', () => {
     });
     expect(getAmWebhookLogs).toHaveBeenLastCalledWith({
       page: 2,
-      limit: 50,
+      limit: 10,
       direction: 'outgoing',
     });
   });
