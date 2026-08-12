@@ -1345,9 +1345,20 @@ function PosSubview({
                 onPress={() => onSelectCustomer(customer.id)}
                 style={[styles.customerCard, active && styles.customerCardActive]}>
                 <View style={styles.customerAvatar}>
-                  <Text style={styles.customerAvatarText}>
-                    {getInitials(customer.name)}
-                  </Text>
+                  {customer.photoUri ? (
+                    <KolamRemoteImage
+                      accessibilityLabel={`Foto ${customer.name}`}
+                      resizeMode="cover"
+                      revision={customer.photoRevision ?? customer.photoUri}
+                      scope="pos-customer"
+                      sourceUri={customer.photoUri}
+                      style={styles.customerAvatarImage}
+                    />
+                  ) : (
+                    <Text style={styles.customerAvatarText}>
+                      {getInitials(customer.name)}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.customerCardCopy}>
                   <Text numberOfLines={1} style={styles.customerName}>
@@ -2633,7 +2644,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   customerCard: {
-    width: 260,
+    flexBasis: 260,
+    flexGrow: 1,
+    flexShrink: 1,
     minHeight: 94,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2655,6 +2668,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 20,
     backgroundColor: V.colors.muted,
+    overflow: 'hidden',
+  },
+  customerAvatarImage: {
+    height: '100%',
+    width: '100%',
   },
   customerAvatarText: {
     color: V.colors.primary,

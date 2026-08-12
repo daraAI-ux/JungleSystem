@@ -91,6 +91,9 @@ interface BackendCustomer {
   email?: string;
   address?: string;
   notes?: string;
+  photos?: string[];
+  profile_picture?: string | null;
+  photo?: string | null;
 }
 
 interface BackendPaymentMethod {
@@ -320,13 +323,26 @@ function mapProduct(product: BackendProduct): CatalogItem {
 }
 
 function mapCustomer(customer: BackendCustomer): Customer {
+  const photo = pickCustomerPhoto(customer);
+
   return {
     id: customer._id,
     name: customer.name,
     phone: customer.phone ?? '-',
     email: customer.email ?? '-',
     address: customer.address ?? '-',
+    photoRevision: photo ?? undefined,
+    photoUri: getKolamFileUrl(photo),
   };
+}
+
+function pickCustomerPhoto(customer: BackendCustomer) {
+  return (
+    customer.profile_picture ||
+    customer.photo ||
+    customer.photos?.find(Boolean) ||
+    null
+  );
 }
 
 function mapSpecies(species: BackendSpecies): CatalogItem {

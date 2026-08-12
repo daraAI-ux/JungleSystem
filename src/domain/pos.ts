@@ -27,6 +27,8 @@ export interface Customer {
   phone: string;
   email: string;
   address: string;
+  photoRevision?: string;
+  photoUri?: string | null;
 }
 
 export interface PaymentMethod {
