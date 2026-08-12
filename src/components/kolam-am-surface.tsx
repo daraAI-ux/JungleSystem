@@ -5861,7 +5861,7 @@ function AmWebhooksPage() {
                 </View>
                 <Text style={styles.rowMeta} numberOfLines={1}>{config.url}</Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>
-                  {config.events.length} event - {config.failCount} gagal - Secret {formatWebhookSecretStatus(config)}
+                  {config.events.length} event - {config.failCount} gagal
                 </Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>Terakhir terkirim: {formatAmDate(config.lastDeliveredAt)}</Text>
               </View>

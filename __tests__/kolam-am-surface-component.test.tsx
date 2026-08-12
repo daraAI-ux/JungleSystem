@@ -5905,7 +5905,7 @@ describe('KolamAmSurface', () => {
     expect(configText).toContain('Test ping dikirim ke 1 config aktif');
     expect(configText).toContain('Terakhir terkirim:');
     expect(configText).toContain('31 Jul 2026');
-    expect(configText).toContain('sec...ok');
+    expect(configText).not.toContain('sec...ok');
   });
 
   it('disables webhook submit while the save request is Menunggu', async () => {
