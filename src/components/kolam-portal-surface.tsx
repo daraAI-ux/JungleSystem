@@ -807,32 +807,33 @@ function PortalAccountSettings({
           </View>
         </View>
       </View>
-      <AccountReadOnlyField label="Nama depan" value={authUser?.firstName} />
-      <AccountReadOnlyField label="Nama belakang" value={authUser?.lastName} />
-      <AccountReadOnlyField label="Username" value={authUser?.username} />
-      <AccountReadOnlyField label="Email" value={authUser?.email} />
-      <AccountReadOnlyField label="Telepon" value="-" />
-      <View style={styles.accountField}>
-        <View style={styles.accountFieldHeader}>
-          <View>
-            <Text style={styles.accountLabel}>Kata sandi</Text>
-            <Text style={styles.smallMuted}>Gunakan kata sandi yang kuat</Text>
+      <View style={styles.accountCompactGrid}>
+        <AccountCompactField label="Nama depan" value={authUser?.firstName} />
+        <AccountCompactField label="Nama belakang" value={authUser?.lastName} />
+        <AccountCompactField label="Username" value={authUser?.username} />
+        <AccountCompactField label="Email" value={authUser?.email} />
+        <AccountCompactField label="Telepon" value="-" />
+        <View style={styles.accountCompactItem}>
+          <View style={styles.accountCompactHeader}>
+            <Text style={styles.accountCompactLabel}>Kata sandi</Text>
+            <KolamButton disabled label="Ubah" size="sm" style={styles.accountMiniButton} />
           </View>
-          <KolamButton disabled label="Ubah" />
+          <Text numberOfLines={1} style={styles.accountCompactValue}>
+            ********
+          </Text>
         </View>
-        <Text style={styles.bodyText}>********</Text>
       </View>
     </PortalCard>
   );
 }
 
-function AccountReadOnlyField({ label, value }: { label: string; value?: string | null }) {
+function AccountCompactField({ label, value }: { label: string; value?: string | null }) {
   return (
-    <View style={styles.accountField}>
-      <Text style={styles.accountLabel}>{label}</Text>
-      <View style={styles.inputLike}>
-        <Text numberOfLines={1} style={styles.inputLikeText}>{value || '-'}</Text>
-      </View>
+    <View style={styles.accountCompactItem}>
+      <Text style={styles.accountCompactLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.accountCompactValue}>
+        {value || '-'}
+      </Text>
     </View>
   );
 }
@@ -1461,16 +1462,46 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  inputLike: {
-    borderColor: V.colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 36,
-    justifyContent: 'center',
-    paddingHorizontal: 10,
+  accountCompactGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  inputLikeText: {
+  accountCompactItem: {
+    backgroundColor: V.colors.mutedSoft,
+    borderColor: V.colors.border,
+    borderRadius: 7,
+    borderWidth: 1,
+    flexBasis: '47%',
+    flexGrow: 1,
+    gap: 4,
+    minHeight: 58,
+    minWidth: 124,
+    paddingHorizontal: 9,
+    paddingVertical: 8,
+  },
+  accountCompactHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'space-between',
+  },
+  accountCompactLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.45,
+    lineHeight: 14,
+    textTransform: 'uppercase',
+  },
+  accountCompactValue: {
     color: V.colors.fg,
     fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
+  },
+  accountMiniButton: {
+    minHeight: 24,
+    paddingHorizontal: 7,
   },
 });
