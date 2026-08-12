@@ -5911,7 +5911,7 @@ function getWebContentLauncherTitle(
   id: 'marketplace' | 'blog' | 'blog-topics',
 ) {
   if (id === 'marketplace') {
-    return 'Landing marketplace';
+    return 'Halaman marketplace';
   }
   if (id === 'blog') {
     return 'Artikel blog';
@@ -5923,10 +5923,10 @@ function getWebContentLauncherDescription(
   id: 'marketplace' | 'blog' | 'blog-topics',
 ) {
   if (id === 'marketplace') {
-    return 'Hero & promosi toko';
+    return 'Slide & promosi toko';
   }
   if (id === 'blog') {
-    return 'Posting publikasi';
+    return 'Publikasi artikel';
   }
   return 'Kategori artikel';
 }
@@ -6017,21 +6017,21 @@ function getMarketplaceLandingTabLabel(
     return 'Unggulan';
   }
   if (id === 'category') {
-    return 'Category Banners';
+    return 'Banner Kategori';
   }
   if (id === 'cta') {
-    return 'CTA Section';
+    return 'Bagian CTA';
   }
   if (id === 'youtube') {
-    return 'YouTube Section';
+    return 'Bagian YouTube';
   }
   if (id === 'announcement') {
-    return 'Announcement Banner';
+    return 'Banner Pengumuman';
   }
   if (id === 'notices') {
     return 'Pengumuman Teks';
   }
-  return 'Hero Slides';
+  return 'Slide Hero';
 }
 
 function shouldShowMarketplaceLandingTabBadge(
@@ -6940,7 +6940,7 @@ function MarketplaceLandingOverviewPanel({
   const rows = [
     {
       id: 'hero-slides',
-      label: 'Hero slide',
+      label: 'Slide hero',
       value: getCollectionSummary(overview.heroSlides),
       detail: getFirstTitles(
         overview.heroSlides.map(item => item.title || item.image),
@@ -6977,7 +6977,7 @@ function MarketplaceLandingOverviewPanel({
     },
     {
       id: 'customer-notices',
-      label: 'Notice customer',
+      label: 'Pengumuman pelanggan',
       value: getCollectionSummary(overview.customerNotices),
       detail: getFirstTitles(
         overview.customerNotices.map(item => item.title || item.key),
@@ -7118,7 +7118,7 @@ function MarketplaceLandingOverviewPanel({
               <MarketplaceAssetButton
                 disabled={disabled}
                 id="dara-avatar"
-                label="Unggah avatar DARA"
+                label="Unggah foto DARA"
                 onPress={onUploadDaraAvatar}
                 status={assetStatus}
               />
@@ -7130,7 +7130,7 @@ function MarketplaceLandingOverviewPanel({
             <MarketplaceAssetButton
               disabled={disabled}
               id="cta-background"
-              label="Unggah background CTA"
+              label="Unggah latar CTA"
               onPress={onUploadCtaBackground}
               status={assetStatus}
             />
@@ -7141,7 +7141,7 @@ function MarketplaceLandingOverviewPanel({
             <MarketplaceAssetButton
               disabled={disabled}
               id="youtube-background"
-              label="Unggah background YouTube"
+              label="Unggah latar YouTube"
               onPress={onUploadYoutubeBackground}
               status={assetStatus}
             />
@@ -7193,7 +7193,7 @@ function MarketplaceLandingOverviewPanel({
             />
             <MarketplaceIndexedAssetRows
               disabled={disabled}
-              emptyText="Belum ada step bioaktif untuk unggah gambar."
+              emptyText="Belum ada langkah bioaktif untuk unggah gambar."
               getId={index => `bioactive:${index}`}
               getLabel={item => item.key || '-'}
               items={bioactiveSteps}
@@ -7269,7 +7269,7 @@ function MarketplaceHeroSlidesPanel({
           <KolamActionControlButton
             disabled={disabled}
             intent="primary"
-            label="Tambah Slide"
+            label="Tambah slide"
             onPress={onAdd}
           />
         </View>
@@ -7317,7 +7317,7 @@ function MarketplaceHeroSlidesPanel({
                           : null,
                       ]}
                     >
-                      {slide.isActive === false ? 'Draft' : 'Active'}
+                      {slide.isActive === false ? 'Draf' : 'Aktif'}
                     </Text>
                   </View>
                   {slide.subtitle ? (
@@ -7333,14 +7333,14 @@ function MarketplaceHeroSlidesPanel({
                       numberOfLines={1}
                       style={styles.marketplaceHeroSlideLink}
                     >
-                      {`${slide.linkText || 'Link'} -> ${slide.link || '/'}`}
+                      {`${slide.linkText || 'Tautan'} -> ${slide.link || '/'}`}
                     </Text>
                     {slide.secondaryLink || slide.secondaryLinkText ? (
                       <Text
                         numberOfLines={1}
                         style={styles.marketplaceHeroSlideLink}
                       >
-                        {`${slide.secondaryLinkText || 'Secondary'} -> ${
+                        {`${slide.secondaryLinkText || 'Tautan kedua'} -> ${
                           slide.secondaryLink || '/'
                         }`}
                       </Text>
@@ -7417,16 +7417,16 @@ function MarketplaceHeroSlidesPanel({
             Buat slide pertama
           </Text>
           <Text style={styles.marketplaceOverviewMeta}>
-            Hero slide tampil di carousel landing marketplace.
+            Slide hero tampil di karusel halaman marketplace.
           </Text>
           <KolamActionControlButton
             disabled={disabled}
             intent="primary"
-            label="Tambah Slide"
+            label="Tambah slide"
             onPress={onAdd}
           />
           <Text style={styles.marketplaceOverviewMeta}>
-            Recommended: 1280 × 180 px
+            Rekomendasi: 1280 x 180 px
           </Text>
         </View>
       )}
@@ -7534,14 +7534,14 @@ function MarketplaceHeroPreview({
             <View style={styles.marketplaceHeroPreviewCtas}>
               <View style={styles.marketplaceHeroPreviewPrimaryCta}>
                 <Text style={styles.marketplaceHeroPreviewPrimaryCtaLabel}>
-                  {slide.linkText || 'Shop Now'}
+                  {slide.linkText || 'Belanja sekarang'}
                 </Text>
               </View>
               {slide.secondaryLinkText || slide.secondaryLink ? (
                 <Text
                   numberOfLines={1}
                   style={styles.marketplaceHeroPreviewSecondaryCta}>
-                  {`${slide.secondaryLinkText || 'Pelajari Cara Adopsi'} →`}
+                  {`${slide.secondaryLinkText || 'Pelajari cara adopsi'} →`}
                 </Text>
               ) : null}
             </View>
@@ -7573,7 +7573,7 @@ function MarketplaceHeroPreview({
             <View style={styles.marketplaceHeroPreviewDots}>
               {slides.map((item, index) => (
                 <Pressable
-                  accessibilityLabel={`Go to slide ${index + 1}`}
+                  accessibilityLabel={`Ke slide ${index + 1}`}
                   accessibilityRole="button"
                   key={item._id}
                   onPress={() => setSelectedIndex(index)}
@@ -8005,12 +8005,12 @@ function MarketplaceLandingControlsPanel({
                 items={[
                   {
                     id: 'title',
-                    text: heroDraft.id ? 'Edit hero' : 'Hero baru',
+                    text: heroDraft.id ? 'Rubah slide hero' : 'Slide hero baru',
                     style: styles.marketplaceHeroEditorModalTitle,
                   },
                   {
                     id: 'description',
-                    text: 'Hero slide marketplace',
+                    text: 'Slide hero marketplace',
                     style: styles.marketplaceHeroEditorModalDescription,
                   },
                 ]}
@@ -8023,7 +8023,7 @@ function MarketplaceLandingControlsPanel({
                 <KolamTextFieldRow
                   variant="settingsForm"
                   fieldWidth={heroFieldWidth}
-                  label="Eyebrow"
+                  label="Teks atas"
                   description=""
                   value={heroDraft.eyebrow}
                   onChangeText={value => setHeroDraftField('eyebrow', value)}
@@ -8041,11 +8041,11 @@ function MarketplaceLandingControlsPanel({
                 <KolamTextFieldRow
                   variant="settingsForm"
                   fieldWidth={heroFieldWidth}
-                  label="Subtitle"
+                  label="Subjudul"
                   description=""
                   value={heroDraft.subtitle}
                   onChangeText={value => setHeroDraftField('subtitle', value)}
-                  placeholder="Subtitle"
+                  placeholder="Subjudul"
                 />
                 <KolamTextFieldRow
                   variant="settingsForm"
@@ -8061,7 +8061,7 @@ function MarketplaceLandingControlsPanel({
                 <KolamTextFieldRow
                   variant="settingsForm"
                   fieldWidth={heroFieldWidth}
-                  label="Link"
+                  label="Tautan"
                   description=""
                   value={heroDraft.link}
                   onChangeText={value => setHeroDraftField('link', value)}
@@ -8079,7 +8079,7 @@ function MarketplaceLandingControlsPanel({
                 <KolamTextFieldRow
                   variant="settingsForm"
                   fieldWidth={heroFieldWidth}
-                  label="Link kedua"
+                  label="Tautan kedua"
                   description=""
                   value={heroDraft.secondaryLink}
                   onChangeText={value =>
@@ -8128,7 +8128,7 @@ function MarketplaceLandingControlsPanel({
               />
               <KolamActionControlButton
                 disabled={disabled || !heroCanSave}
-                label="Simpan hero"
+                label="Simpan slide"
                 loading={saveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
                 intent="primary"
@@ -8151,7 +8151,7 @@ function MarketplaceLandingControlsPanel({
             items={[
               {
                 id: 'category-title',
-                text: categoryDraft.id ? 'Edit kategori' : 'Kategori baru',
+                text: categoryDraft.id ? 'Rubah kategori' : 'Kategori baru',
                 style: styles.marketplaceOverviewLabel,
               },
             ]}
@@ -8214,15 +8214,15 @@ function MarketplaceLandingControlsPanel({
               {
                 id: 'announcement-title',
                 text: announcementDraft.id
-                  ? 'Edit announcement'
-                  : 'Announcement baru',
+                  ? 'Rubah pengumuman'
+                  : 'Pengumuman baru',
                 style: styles.marketplaceOverviewLabel,
               },
             ]}
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Link"
+            label="Tautan"
             description=""
             value={announcementDraft.link}
             onChangeText={value => setAnnouncementDraftField('link', value)}
@@ -8258,7 +8258,7 @@ function MarketplaceLandingControlsPanel({
             />
             <KolamActionControlButton
               disabled={disabled || !announcementCanSave}
-              label="Simpan announcement"
+              label="Simpan pengumuman"
               loading={saveStatus === 'saving'}
               loadingLabel="Menyimpan..."
               intent="primary"
@@ -8306,11 +8306,11 @@ function MarketplaceLandingControlsPanel({
             description=""
             value={ctaDraft.buttonText}
             onChangeText={value => setCtaDraftField('buttonText', value)}
-            placeholder="View All Species"
+            placeholder="Lihat semua spesies"
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Link tombol CTA"
+            label="Tautan tombol CTA"
             description=""
             value={ctaDraft.buttonLink}
             onChangeText={value => setCtaDraftField('buttonLink', value)}
@@ -8348,7 +8348,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Link YouTube"
+            label="Tautan YouTube"
             description=""
             value={youtubeDraft.link}
             onChangeText={value => setYoutubeDraftField('link', value)}
@@ -8364,7 +8364,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Subtitle YouTube"
+            label="Subjudul YouTube"
             description=""
             value={youtubeDraft.subtitle}
             onChangeText={value => setYoutubeDraftField('subtitle', value)}
@@ -8396,7 +8396,7 @@ function MarketplaceLandingControlsPanel({
             items={[
               {
                 id: 'notice-title',
-                text: 'Notice Customer',
+                text: 'Pengumuman pelanggan',
                 style: styles.marketplaceOverviewLabel,
               },
             ]}
@@ -8439,7 +8439,7 @@ function MarketplaceLandingControlsPanel({
                 items={[
                   {
                     id: 'empty',
-                    text: 'Belum ada notice.',
+                    text: 'Belum ada pengumuman.',
                     style: styles.marketplaceOverviewMeta,
                   },
                 ]}
@@ -8448,7 +8448,7 @@ function MarketplaceLandingControlsPanel({
           </View>
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Key notice"
+            label="Kode pengumuman"
             description=""
             value={noticeDraft.key}
             onChangeText={value => setNoticeDraftField('key', value)}
@@ -8456,7 +8456,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Judul notice"
+            label="Judul pengumuman"
             description=""
             value={noticeDraft.title}
             onChangeText={value => setNoticeDraftField('title', value)}
@@ -8464,7 +8464,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Pesan notice"
+            label="Pesan pengumuman"
             description=""
             value={noticeDraft.message}
             onChangeText={value => setNoticeDraftField('message', value)}
@@ -8472,7 +8472,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="URL CTA notice"
+            label="URL CTA pengumuman"
             description=""
             value={noticeDraft.ctaUrl}
             onChangeText={value => setNoticeDraftField('ctaUrl', value)}
@@ -8480,7 +8480,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
-            label="Label CTA notice"
+            label="Label CTA pengumuman"
             description=""
             value={noticeDraft.ctaLabel}
             onChangeText={value => setNoticeDraftField('ctaLabel', value)}
@@ -8488,7 +8488,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamToggleRow
             variant="settingsForm"
-            label="Notice aktif"
+            label="Pengumuman aktif"
             description=""
             active={noticeDraft.isActive}
             onPress={() =>
@@ -8498,7 +8498,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamToggleRow
             variant="settingsForm"
-            label="Tampilkan di home"
+            label="Tampilkan di beranda"
             description=""
             active={noticeDraft.showOnHome}
             onPress={() =>
@@ -8508,7 +8508,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamToggleRow
             variant="settingsForm"
-            label="Tampilkan di dashboard"
+            label="Tampilkan di dasbor"
             description=""
             active={noticeDraft.showOnDashboard}
             onPress={() =>
@@ -8522,7 +8522,7 @@ function MarketplaceLandingControlsPanel({
           <View style={styles.notificationSoundActions}>
             <KolamActionControlButton
               disabled={disabled || !noticeCanSave}
-              label="Simpan notice"
+              label="Simpan pengumuman"
               loading={saveStatus === 'saving'}
               loadingLabel="Menyimpan..."
               intent="primary"
@@ -8530,7 +8530,7 @@ function MarketplaceLandingControlsPanel({
             />
             <KolamActionControlButton
               disabled={disabled}
-              label="Notice baru"
+              label="Pengumuman baru"
               onPress={onClearNoticeDraft}
             />
           </View>
