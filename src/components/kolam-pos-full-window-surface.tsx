@@ -155,8 +155,6 @@ export function KolamPosFullWindowSurface({
 }: KolamPosFullWindowSurfaceProps) {
   const {width} = useWindowDimensions();
   const shellChrome = React.useContext(KolamShellChromeContext);
-  const categoryScrollRef = React.useRef<ScrollView>(null);
-  const categoryScrollOffsetRef = React.useRef(0);
   const [activeView, setActiveView] = React.useState<PosWindowView>('catalog');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [isSavedOrdersOpen, setIsSavedOrdersOpen] = React.useState(false);
@@ -233,18 +231,6 @@ export function KolamPosFullWindowSurface({
 
   const handleSidebarQuickSearch = React.useCallback(() => {
     setActiveView('catalog');
-  }, []);
-
-  const scrollCategories = React.useCallback((direction: 'left' | 'right') => {
-    const nextOffset =
-      direction === 'left'
-        ? Math.max(0, categoryScrollOffsetRef.current - 220)
-        : categoryScrollOffsetRef.current + 220;
-
-    categoryScrollRef.current?.scrollTo({
-      animated: true,
-      x: nextOffset,
-    });
   }, []);
 
   React.useEffect(() => {
@@ -327,20 +313,9 @@ export function KolamPosFullWindowSurface({
             <View style={[kolamTableToolbarStyles.shell, styles.categoryBar]}>
               <View style={kolamTableToolbarStyles.row}>
                 <View style={kolamTableToolbarStyles.filters}>
-                  <KolamInteractionFrame
-                    onPress={() => scrollCategories('left')}
-                    style={styles.categoryScrollButton}>
-                    <Text style={styles.categoryScrollText}>{'<'}</Text>
-                  </KolamInteractionFrame>
                   <ScrollView
-                    ref={categoryScrollRef}
                     horizontal
                     contentContainerStyle={styles.categoryPillList}
-                    onScroll={event => {
-                      categoryScrollOffsetRef.current =
-                        event.nativeEvent.contentOffset.x;
-                    }}
-                    scrollEventThrottle={16}
                     showsHorizontalScrollIndicator={false}
                     style={styles.categoryScroll}>
                     <PosCategoryPill
@@ -357,11 +332,6 @@ export function KolamPosFullWindowSurface({
                       />
                     ))}
                   </ScrollView>
-                  <KolamInteractionFrame
-                    onPress={() => scrollCategories('right')}
-                    style={styles.categoryScrollButton}>
-                    <Text style={styles.categoryScrollText}>{'>'}</Text>
-                  </KolamInteractionFrame>
                 </View>
                 {catalogSearch || activeCategory ? (
                   <View style={kolamTableToolbarStyles.actions}>
@@ -2351,21 +2321,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingRight: 8,
-  },
-  categoryScrollButton: {
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 6,
-    backgroundColor: POS_ACTION_BUTTON_BG,
-    borderColor: POS_ACTION_BUTTON_BG,
-    borderWidth: 1,
-  },
-  categoryScrollText: {
-    color: V.colors.primaryFg,
-    fontSize: 13,
-    fontWeight: '900',
   },
   categoryPill: {
     flexShrink: 0,
