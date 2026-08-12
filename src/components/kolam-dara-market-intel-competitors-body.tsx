@@ -29,6 +29,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamDaraMarketIntelCompetitorsProductSelect} from './kolam-dara-market-intel-competitors-product-select';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
@@ -411,7 +412,7 @@ function CompetitorsDetailView({
           </View>
         ))}
 
-        <KolamButton
+        <KolamSaveButton
           disabled={
             controller.busy || !hasProduct || !controller.selectedCompetitor
           }

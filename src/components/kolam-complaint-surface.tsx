@@ -85,6 +85,7 @@ import {
 } from './kolam-list-table-composition';
 import {KolamNotesField} from './kolam-notes-field';
 import { KolamRemoteImage } from './kolam-remote-image';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
@@ -1380,7 +1381,7 @@ function KolamComplaintWorkflowPanel({
           placeholder="Catatan penugasan (opsional)"
           value={assignNote}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={busy || !staffId}
           intent="primary"
           label={busy ? 'Menyimpan…' : 'Simpan penugasan'}
@@ -1419,7 +1420,7 @@ function KolamComplaintWorkflowPanel({
           placeholder="Catatan wajib…"
           value={statusNote}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={
             busy ||
             !canUpdateKolamComplaintStatus(complaint) ||
@@ -1470,7 +1471,7 @@ function KolamComplaintWorkflowPanel({
             placeholder="Catatan wajib…"
             value={decisionNote}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={
               busy ||
               !decision ||
@@ -1544,7 +1545,7 @@ function KolamComplaintWorkflowPanel({
               value={returnNote}
             />
           )}
-          <KolamButton
+          <KolamSaveButton
             disabled={
               busy ||
               (returnNextStatus === 'verified'
@@ -1660,7 +1661,7 @@ function KolamComplaintWorkflowPanel({
               value={replacementNote}
             />
           )}
-          <KolamButton
+          <KolamSaveButton
             disabled={
               busy ||
               !replacementReceivedReady ||
@@ -1765,7 +1766,7 @@ function KolamComplaintWorkflowPanel({
               value={replacementReturnNote}
             />
           )}
-          <KolamButton
+          <KolamSaveButton
             disabled={
               busy ||
               !replacementReturnReceivedReady ||
@@ -2047,7 +2048,7 @@ function KolamComplaintVendorClaimCard({
             placeholder="Catatan internal (min. 10 karakter)"
             value={note}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={busy || note.trim().length < 10}
             intent="primary"
             label={busy ? 'Menyimpan…' : 'Simpan klaim vendor'}
@@ -2390,7 +2391,7 @@ function KolamComplaintReworkWorkflow({
           ) : null}
         </>
       ) : null}
-      <KolamButton
+      <KolamSaveButton
         disabled={
           busy ||
           (nextStatus === 'in_progress' && !note.trim()) ||
@@ -2603,7 +2604,7 @@ function KolamComplaintRefundWorkflow({
             placeholder="Catatan transaksi (opsional)"
             value={transactionNote}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={busy || !walletId || complaint.refundAmount <= 0}
             intent="primary"
             label={busy ? 'Menyimpan…' : 'Buat transaksi refund'}

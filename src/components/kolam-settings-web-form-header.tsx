@@ -1,5 +1,5 @@
 import React from 'react';
-import { KolamActionControlButton } from './kolam-action-control-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamHeaderFrame } from './kolam-header-frame';
 import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
@@ -21,7 +21,7 @@ export function KolamSettingsWebFormHeader() {
           },
         ]}
       />
-      <KolamActionControlButton label="Simpan" intent="primary" />
+      <KolamSaveButton label="Simpan" intent="primary" />
     </KolamHeaderFrame>
   );
 }

@@ -26,6 +26,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamListTableComposition } from './kolam-list-table-composition';
 import { KolamPayrollSlipPrintDialog } from './kolam-payroll-slip-print-dialog';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 
@@ -498,7 +499,7 @@ function PayrollDetailBody({
               }
               value={controller.selectedWalletId || ''}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.mutating || !controller.selectedWalletId}
               intent="secondary"
               label="Simpan dompet"

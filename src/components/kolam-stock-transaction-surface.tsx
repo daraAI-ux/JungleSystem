@@ -405,7 +405,7 @@ function KolamStockTransactionOpname({
             <KolamCancelButton
               onPress={() => setWalletModalOpen(false)}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={!form.walletId || controller.mutating}
               intent="primary"
               label={controller.mutating ? 'Menyimpan...' : 'Lanjut simpan'}

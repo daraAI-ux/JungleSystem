@@ -2175,7 +2175,7 @@ function KolamPOFakturPajakSection({
     >
       <View style={styles.itemsHeaderRow}>
         <Text style={styles.sectionTitle}>Faktur Pajak</Text>
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.mutating}
           intent="primary"
           label="Simpan faktur"
@@ -2293,7 +2293,7 @@ function KolamPOReceiveDialog({
       ) : null}
       <View style={styles.headerActions}>
         <KolamCancelButton onPress={onClose} />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.mutating}
           intent="primary"
           label={controller.mutating ? 'Menyimpan…' : 'Konfirmasi diterima'}
@@ -2417,7 +2417,7 @@ function KolamPOCheckDialog({
 
       <View style={styles.headerActions}>
         <KolamCancelButton onPress={onClose} />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.mutating}
           intent="primary"
           label={controller.mutating ? 'Menyimpan…' : 'Konfirmasi pemeriksaan'}
@@ -2525,7 +2525,7 @@ function KolamPOEditCheckItemsDialog({
       ) : null}
       <View style={styles.headerActions}>
         <KolamCancelButton onPress={onClose} />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.mutating || !editReason.trim()}
           intent="primary"
           label={controller.mutating ? 'Menyimpan…' : 'Simpan perubahan'}

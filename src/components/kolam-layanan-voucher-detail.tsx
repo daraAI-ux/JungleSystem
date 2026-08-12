@@ -543,7 +543,7 @@ function VoucherExecutionHistorySection({
                     value={controller.rejectDecision}
                   />
                   <View style={styles.actionRow}>
-                    <KolamButton
+                    <KolamSaveButton
                       disabled={controller.saving}
                       intent="primary"
                       label="Simpan penolakan"
@@ -856,7 +856,7 @@ function VoucherContractDimensionsSection({
       </View>
 
       {controller.canMutateSale && !disabled ? (
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.saving}
           intent="primary"
           label={controller.saving ? 'Menyimpan…' : 'Simpan ukuran kontrak'}
@@ -1577,7 +1577,7 @@ function VoucherTermsSection({
               }
             />
           </View>
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving || !controller.termsAgreed}
             intent="primary"
             label="Simpan persetujuan"
@@ -1634,7 +1634,7 @@ function VoucherMaterialsSection({
             label="Tambah baris"
             onPress={controller.onAddMaterialLine}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
             intent="primary"
             label="Simpan material"

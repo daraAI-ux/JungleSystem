@@ -63,6 +63,7 @@ import {
   trainKolamDaraTrainingVisionYoloProducts,
 } from '../services/kolam-dara-training-vision-api';
 import {KolamButton} from './kolam-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamRefreshButton} from './kolam-refresh-button';
@@ -1845,7 +1846,7 @@ export function KolamDaraTrainingVisionBody({
 
             <View style={styles.modalFooter}>
               {canManage && modalCatalogPhotos.length > 0 ? (
-                <KolamButton
+                <KolamSaveButton
                   disabled={photoSaving || selectedCatalogKeys.length === 0}
                   intent="primary"
                   label={photoSaving ? 'Menyimpan…' : 'Tambah foto'}

@@ -42,6 +42,7 @@ import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
 import {KolamUploadButton} from './kolam-upload-button';
@@ -907,7 +908,7 @@ function PortalAccountSettings({
     <>
       <PortalCard
         action={
-          <KolamButton
+          <KolamSaveButton
             disabled={loading || saving || uploadingPhoto || passwordSaving}
             label={saving ? 'Menyimpan' : 'Simpan'}
             onPress={handleSave}
@@ -999,7 +1000,7 @@ function PortalAccountSettings({
               label="Batal"
               onPress={closePasswordModal}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={passwordSaving}
               intent="primary"
               label={passwordSaving ? 'Menyimpan' : 'Simpan'}

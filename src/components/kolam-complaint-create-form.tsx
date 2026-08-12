@@ -34,6 +34,7 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamDetailScrollSurface } from './kolam-detail-scroll-surface';
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamFormTextField } from './kolam-form-text-field';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 
@@ -513,7 +514,7 @@ export function KolamComplaintCreateForm({
         <KolamCancelButton
           onPress={() => onRouteChange?.(KOLAM_COMPLAINT_ROOT)}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.mutating}
           intent="primary"
           label={controller.mutating ? 'Menyimpan…' : 'Buat keluhan'}

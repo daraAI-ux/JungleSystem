@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { KolamActionControlButton } from './kolam-action-control-button';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamCopyStack } from './kolam-copy-stack';
 import { KolamPanelFrame } from './kolam-panel-frame';
 import type { KolamSettingsPanelController } from './kolam-settings-panel-controller';
@@ -30,7 +30,7 @@ export function KolamSettingsSurfaceFrame({
         </View>
         {showHeaderSaveAction ? (
           <View style={styles.headerAction}>
-            <KolamActionControlButton
+            <KolamSaveButton
               label="Simpan"
               loading={controller.webSettingSaveStatus === 'saving'}
               loadingLabel="Menyimpan..."

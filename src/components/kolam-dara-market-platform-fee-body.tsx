@@ -24,6 +24,7 @@ import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamEmptyState} from './kolam-empty-state';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamNotesField} from './kolam-notes-field';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
@@ -418,7 +419,7 @@ function ProfileFormCard({
         onChangeText={setNotes}
         value={notes}
       />
-      <KolamButton
+      <KolamSaveButton
         disabled={saving}
         label={saving ? 'Menyimpan…' : 'Simpan profil'}
         onPress={() => {

@@ -2501,7 +2501,7 @@ function AmHardwarePage({
             />
           ) : null}
           <View style={styles.inlineActions}>
-            <KolamButton
+            <KolamSaveButton
               accessibilityLabel="AM Hardware Save"
               disabled={isSubmitting}
               label={isSubmitting ? 'Menyimpan' : (editingHardwareId ? 'Simpan' : 'Buat')}
@@ -3994,7 +3994,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               </View>
             ) : null}
             <View style={styles.inlineActions}>
-              <KolamButton
+              <KolamSaveButton
                 accessibilityLabel={`AM Device Save Service Account ${device._id}`}
                 disabled={isSubmittingService}
                 label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Update Layanan' : 'Buat Layanan'}
@@ -5471,7 +5471,7 @@ function AmWebhooksPage() {
             ))}
           </View>
           <View style={styles.inlineActions}>
-            <KolamButton
+            <KolamSaveButton
               accessibilityLabel="AM Webhook Save"
               disabled={isWebhookActionLocked}
               intent="warning"
@@ -5920,7 +5920,7 @@ function AmUsersPage() {
               </View>
             </View>
             <View style={styles.inlineActions}>
-              <KolamButton
+              <KolamSaveButton
                 accessibilityLabel="AM User Save"
                 disabled={isSubmitting}
                 label={isSubmitting ? 'Menyimpan' : (editingUserId ? 'Simpan' : 'Buat')}

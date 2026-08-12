@@ -1444,7 +1444,7 @@ function EnclosureProvisioningOperation({
           style={styles.operationInput}
           value={code}
         />
-        <KolamButton
+        <KolamSaveButton
           disabled={controller.operationLoading || !code.trim()}
           label="Simpan kode"
           onPress={() => void controller.onProvisionCode(code)}

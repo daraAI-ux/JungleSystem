@@ -19,6 +19,7 @@ import type {
 } from '../domain/settings-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamActionGlyph} from './kolam-action-glyph';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
@@ -2953,7 +2954,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 label="Simpan Client ID"
                 loading={saveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
@@ -3010,7 +3011,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 label="Simpan absensi"
                 loading={saveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
@@ -3699,7 +3700,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 label="Simpan periode keluhan"
                 loading={saveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
@@ -3788,7 +3789,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 disabled={disabled}
                 intent="primary"
                 label="Simpan sitemap"
@@ -4915,7 +4916,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 label="Simpan SOP"
                 loading={daraKnowledgeSaveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
@@ -4999,7 +5000,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 label="Simpan asal kirim"
                 loading={saveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
@@ -5149,7 +5150,7 @@ export function KolamSettingsWebConfigSurface({
                   },
                 ]}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 label="Simpan jam operasional"
                 loading={saveStatus === 'saving'}
                 loadingLabel="Menyimpan..."
@@ -5480,7 +5481,7 @@ export function KolamSettingsWebConfigSurface({
                     },
                   ]}
                 />
-                <KolamActionControlButton
+                <KolamSaveButton
                   label="Simpan Firebase"
                   loading={saveStatus === 'saving'}
                   loadingLabel="Menyimpan..."
@@ -5554,7 +5555,7 @@ export function KolamSettingsWebConfigSurface({
                     },
                   ]}
                 />
-                <KolamActionControlButton
+                <KolamSaveButton
                   label="Simpan OTP & SMTP"
                   loading={saveStatus === 'saving'}
                   loadingLabel="Menyimpan..."
@@ -6707,7 +6708,7 @@ function KpiSettingsPanel({
       ) : null}
 
       <View style={styles.kpiSaveRow}>
-        <KolamActionControlButton
+        <KolamSaveButton
           disabled={disabled || busy}
           intent="primary"
           label={status === 'saving' ? 'Menyimpan...' : 'Simpan'}
@@ -7755,7 +7756,7 @@ function MarketplaceCtaSectionPanel({
             </Text>
           ) : null}
           <View style={styles.marketplaceCtaFooter}>
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled}
               intent="primary"
               label="Simpan perubahan"
@@ -7941,7 +7942,7 @@ function MarketplaceYoutubeSectionPanel({
             </Text>
           ) : null}
           <View style={styles.marketplaceCtaFooter}>
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled}
               intent="primary"
               label="Simpan perubahan"
@@ -8410,7 +8411,7 @@ function MarketplaceFeaturedPanel({
               label="Tambah"
               onPress={onAddFeaturedCollection}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled}
               intent="primary"
               label="Simpan"
@@ -8588,7 +8589,7 @@ function MarketplaceFeaturedPanel({
             <Text style={styles.marketplaceFeaturedBadge}>
               {normalizedBioactiveSteps.filter(step => step.image).length}/5 gambar
             </Text>
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled}
               intent="primary"
               label="Simpan Ekosistem"
@@ -9256,7 +9257,7 @@ function MarketplaceCategoryBannerEditorModal({
               label="Pilih gambar"
               onPress={onPickCategoryImage}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || !canSave}
               intent="primary"
               label={categoryDraft.id ? 'Simpan perubahan' : 'Buat banner'}
@@ -9406,7 +9407,7 @@ function MarketplaceAnnouncementBannerEditorModal({
               label="Pilih gambar"
               onPress={onPickAnnouncementImage}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || !canSave}
               intent="primary"
               label={
@@ -9686,7 +9687,7 @@ function MarketplaceLandingControlsPanel({
                 }
                 onPress={onPickHeroImage}
               />
-              <KolamActionControlButton
+              <KolamSaveButton
                 disabled={disabled || !heroCanSave}
                 label="Simpan slide"
                 loading={saveStatus === 'saving'}
@@ -9750,7 +9751,7 @@ function MarketplaceLandingControlsPanel({
               }
               onPress={onPickCategoryImage}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || !categoryCanSave}
               label="Simpan kategori"
               loading={saveStatus === 'saving'}
@@ -9816,7 +9817,7 @@ function MarketplaceLandingControlsPanel({
               }
               onPress={onPickAnnouncementImage}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || !announcementCanSave}
               label="Simpan pengumuman"
               loading={saveStatus === 'saving'}
@@ -9885,7 +9886,7 @@ function MarketplaceLandingControlsPanel({
               !disabled && setCtaDraftField('isActive', !ctaDraft.isActive)
             }
           />
-          <KolamActionControlButton
+          <KolamSaveButton
             disabled={disabled}
             label="Simpan CTA"
             loading={saveStatus === 'saving'}
@@ -9940,7 +9941,7 @@ function MarketplaceLandingControlsPanel({
               setYoutubeDraftField('isActive', !youtubeDraft.isActive)
             }
           />
-          <KolamActionControlButton
+          <KolamSaveButton
             disabled={disabled}
             label="Simpan YouTube"
             loading={saveStatus === 'saving'}
@@ -10080,7 +10081,7 @@ function MarketplaceLandingControlsPanel({
             }
           />
           <View style={styles.notificationSoundActions}>
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || !noticeCanSave}
               label="Simpan pengumuman"
               loading={saveStatus === 'saving'}
@@ -10707,7 +10708,7 @@ function FinancialSettingsPanel({
                         </View>
                       </View>
                       <View style={styles.financialActions}>
-                        <KolamActionControlButton
+                        <KolamSaveButton
                           disabled={disabled || busy || !paymentMethodCanSave}
                           intent="primary"
                           label="Simpan metode"
@@ -10747,7 +10748,7 @@ function FinancialSettingsPanel({
                 },
               ]}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || busy || !financialSectionVisibility.taxEdit}
               intent="primary"
               label="Simpan profil pajak"
@@ -10988,7 +10989,7 @@ function FinancialSettingsPanel({
                 },
               ]}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || busy}
               intent="primary"
               label="Simpan lembur"
@@ -11112,7 +11113,7 @@ function FinancialSettingsPanel({
                 },
               ]}
             />
-            <KolamActionControlButton
+            <KolamSaveButton
               disabled={disabled || busy}
               intent="primary"
               label="Simpan komisi kandang"

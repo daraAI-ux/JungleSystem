@@ -21,6 +21,7 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
 import {KolamNotesField} from './kolam-notes-field';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamStatusBadge} from './kolam-status-badge';
 
 const PAGE_SIZE = 20;
@@ -279,7 +280,7 @@ export function KolamDaraTrainingReviewsBody({
                 onPress={() => setActive(null)}
                 size="sm"
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={saving}
                 label={saving ? 'Menyimpan…' : 'Selesai ulasan'}
                 onPress={() => {

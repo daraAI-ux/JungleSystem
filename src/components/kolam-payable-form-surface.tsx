@@ -16,6 +16,7 @@ import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import {KolamNotesField} from './kolam-notes-field';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -98,7 +99,7 @@ function PayableFormBody({
             intent="secondary"
             onPress={controller.onCancel}
           />
-          <KolamButton
+          <KolamSaveButton
             disabled={!controller.canSubmit}
             intent="primary"
             label={controller.submitting ? 'Menyimpan...' : 'Catat Hutang'}

@@ -1679,7 +1679,7 @@ function KolamProyekDetailRead({
                 label="Tutup"
                 onPress={() => setConfirmDpIndex(null)}
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={controller.acting || confirmDpIndex == null}
                 label={controller.acting ? 'Menyimpan…' : 'Konfirmasi'}
                 onPress={() => {
@@ -2627,7 +2627,7 @@ function ProyekHppMaterialsSection({
           </Text>
         </View>
         {canEdit ? (
-          <KolamButton
+          <KolamSaveButton
             disabled={acting}
             intent="outline"
             label={acting ? 'Menyimpan…' : 'Simpan Produk Toko'}

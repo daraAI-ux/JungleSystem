@@ -1644,7 +1644,7 @@ function ProductEditFormPage({
             <View style={kolamTableToolbarStyles.filters} />
             <View style={kolamTableToolbarStyles.actions}>
               <KolamCancelButton disabled={disabled} onPress={onCancel} />
-              <KolamButton
+              <KolamSaveButton
                 disabled={disabled}
                 intent="primary"
                 label={disabled ? 'Menyimpan...' : saveLabel}

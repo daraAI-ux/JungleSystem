@@ -5,6 +5,7 @@ import type {KolamDaraSeoRankingsController} from '../hooks/use-kolam-dara-seo-r
 import {KolamButton} from './kolam-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -77,7 +78,7 @@ export function KolamDaraSeoRankingsBody({
             </View>
             <View style={kolamTableToolbarStyles.actions}>
               {canDraft ? (
-                <KolamButton
+                <KolamSaveButton
                   disabled={
                     controller.fetchBusy || !controller.keywordInput.trim()
                   }

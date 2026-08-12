@@ -11,6 +11,7 @@ import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamModalBackdrop} from './kolam-modal-backdrop';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
@@ -240,7 +241,7 @@ export function KolamHrLeavesBody({enabled}: {enabled: boolean}) {
                 onPress={() => controller.setCreateOpen(false)}
                 size="sm"
               />
-              <KolamButton
+              <KolamSaveButton
                 disabled={controller.mutating}
                 label={controller.mutating ? 'Menyimpan…' : 'Simpan'}
                 onPress={() => {

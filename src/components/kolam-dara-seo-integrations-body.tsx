@@ -4,6 +4,7 @@ import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import type {KolamDaraSeoIntegrationsController} from '../hooks/use-kolam-dara-seo-integrations-controller';
 import {KolamButton} from './kolam-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
 
@@ -28,7 +29,7 @@ export function KolamDaraSeoIntegrationsBody({
     <KolamDetailScrollSurface contentContainerStyle={styles.content} style={styles.scroll}>
       {canManageSettings ? (
         <View style={styles.topActions}>
-          <KolamButton
+          <KolamSaveButton
             disabled={controller.saving}
             intent="primary"
             label={controller.saving ? 'Menyimpan…' : 'Simpan semua'}

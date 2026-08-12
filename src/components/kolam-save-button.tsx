@@ -2,9 +2,15 @@ import React from 'react';
 import {SvgXml} from 'react-native-svg';
 import {KOLAM_SAVE_BUTTON_ICON_SVG} from '../assets/icons/save-button-icon-svg';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
-import {type KolamButtonProps, KolamButton} from './kolam-button';
+import {
+  type KolamActionControlButtonProps,
+  KolamActionControlButton,
+} from './kolam-action-control-button';
 
-type KolamSaveButtonProps = Omit<KolamButtonProps, 'icon' | 'label'> & {
+type KolamSaveButtonProps = Omit<
+  KolamActionControlButtonProps,
+  'icon' | 'label'
+> & {
   label?: string;
 };
 
@@ -21,7 +27,7 @@ export function KolamSaveButton({
   ...buttonProps
 }: KolamSaveButtonProps) {
   return (
-    <KolamButton
+    <KolamActionControlButton
       {...buttonProps}
       accessibilityLabel={accessibilityLabel ?? label}
       icon={

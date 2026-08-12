@@ -21,6 +21,7 @@ import { KolamEmptyState } from './kolam-empty-state';
 import { KolamFormTextField } from './kolam-form-text-field';
 import {KolamNotesField} from './kolam-notes-field';
 import { KolamRupiahField } from './kolam-rupiah-field';
+import {KolamSaveButton} from './kolam-save-button';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 import { KolamStatusBadge } from './kolam-status-badge';
@@ -86,7 +87,7 @@ export function KolamVoucherForm({
                 onRouteChange?.(controller.onBackToList());
               }}
             />
-            <KolamButton
+            <KolamSaveButton
               disabled={controller.saving || !canSubmit}
               label={
                 controller.saving

@@ -37,6 +37,7 @@ import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamFormTextField} from './kolam-form-text-field';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamNotesDisplay, KolamNotesField} from './kolam-notes-field';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamSettingsWebFieldLabel} from './kolam-settings-web-field-label';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamUploadButton} from './kolam-upload-button';
@@ -419,7 +420,7 @@ function NewAppForm({
         </Field>
       </View>
       <View style={styles.formActions}>
-        <KolamButton
+        <KolamSaveButton
           disabled={acting || !name.trim()}
           intent="primary"
           label={acting ? 'Menyimpan...' : 'Buat aplikasi'}
@@ -533,7 +534,7 @@ function ManageAppCard({
         />
       </View>
       <View style={styles.formActions}>
-        <KolamButton
+        <KolamSaveButton
           disabled={acting || !name.trim()}
           intent="primary"
           label={acting ? 'Menyimpan...' : 'Simpan metadata'}

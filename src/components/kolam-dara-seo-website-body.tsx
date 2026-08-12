@@ -7,6 +7,7 @@ import type {KolamDaraSeoWebsiteController} from '../hooks/use-kolam-dara-seo-we
 import {KolamButton} from './kolam-button';
 import {KolamDetailScrollSurface} from './kolam-detail-scroll-surface';
 import {KolamEmptyState} from './kolam-empty-state';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamSeoAuditButton} from './kolam-seo-audit-button';
 
 const AUDIT_JOB_TYPE = 'seo.audit_website';
@@ -139,7 +140,7 @@ export function KolamDaraSeoWebsiteBody({
 
           <View style={styles.cardActions}>
             {canDraft ? (
-              <KolamButton
+              <KolamSaveButton
                 disabled={controller.saving}
                 label={controller.saving ? 'Menyimpan…' : 'Simpan manual'}
                 onPress={() => {
