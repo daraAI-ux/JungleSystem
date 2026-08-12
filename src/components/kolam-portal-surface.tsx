@@ -1169,15 +1169,15 @@ const styles = StyleSheet.create({
   layoutWide: {
     alignItems: 'flex-start',
     flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   mainColumn: {
     gap: 16,
     width: '100%',
   },
   mainColumnWide: {
-    flexBasis: 0,
-    flexGrow: 3,
-    minWidth: 0,
+    flex: 3,
+    minWidth: 520,
     width: undefined,
   },
   sideColumn: {
@@ -1185,10 +1185,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sideColumnWide: {
-    flexBasis: 0,
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
+    flex: 1,
+    minWidth: 260,
     width: undefined,
   },
   twelveGrid: {
