@@ -4340,7 +4340,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           <Text style={[styles.tableHeaderText, styles.accountCol]}>No. Akun</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Saldo</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]} />
+          <Text style={[styles.tableHeaderText, styles.hardwareActionCol]} />
         </View>
         <AmLoadingOrEmpty
           isLoading={isLoading}
@@ -4372,7 +4372,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
               <View style={styles.statusCol}>
                 <AmStatusChip label={statusLabel} tone={statusLabel === 'running' || statusLabel === 'active' ? 'success' : 'warning'} />
               </View>
-              <View style={styles.actionCol}>
+              <View style={styles.hardwareActionCol}>
                 <KolamTableRowActionMenu
                   accessibilityLabel={`AM Device Service Account Actions ${account._id}`}
                   actions={[
