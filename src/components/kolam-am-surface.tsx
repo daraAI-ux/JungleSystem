@@ -5562,6 +5562,7 @@ function AmMutasiPage({
       ),
     },
     {
+      align: 'center',
       flex: 1.02,
       id: 'account',
       label: 'Akun',
