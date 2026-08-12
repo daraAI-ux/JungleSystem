@@ -35,6 +35,7 @@ import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamQuickSearch} from './kolam-quick-search';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamSidebarBrand} from './kolam-sidebar-brand';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamTopNavigation} from './kolam-top-navigation';
 
 export interface KolamPosFullWindowSurfaceProps {
@@ -98,6 +99,7 @@ type PosKeyboardTarget = {
   ) => void;
 };
 const POS_CATALOG_PAGE_SIZES = [12, 24, 48, 96] as const;
+const POS_ACTION_BUTTON_BG = '#374151';
 type PosSavedOrder = {
   id: string;
   name: string;
@@ -322,50 +324,59 @@ export function KolamPosFullWindowSurface({
             <View style={styles.catalogPane}>
               {isCatalogView ? (
                 <>
-            <View style={styles.categoryBar}>
-              <KolamInteractionFrame
-                onPress={() => scrollCategories('left')}
-                style={styles.categoryScrollButton}>
-                <Text style={styles.categoryScrollText}>{'<'}</Text>
-              </KolamInteractionFrame>
-              <ScrollView
-                ref={categoryScrollRef}
-                horizontal
-                contentContainerStyle={styles.categoryPillList}
-                onScroll={event => {
-                  categoryScrollOffsetRef.current = event.nativeEvent.contentOffset.x;
-                }}
-                scrollEventThrottle={16}
-                showsHorizontalScrollIndicator={false}>
-                <PosCategoryPill
-                  active={!activeCategory}
-                  label="Semua"
-                  onPress={() => onCategoryChange?.(null)}
-                />
-                {catalogCategories.map(category => (
-                  <PosCategoryPill
-                    key={category}
-                    active={activeCategory === category}
-                    label={category}
-                    onPress={() => onCategoryChange?.(category)}
-                  />
-                ))}
-              </ScrollView>
-              <KolamInteractionFrame
-                onPress={() => scrollCategories('right')}
-                style={styles.categoryScrollButton}>
-                <Text style={styles.categoryScrollText}>{'>'}</Text>
-              </KolamInteractionFrame>
-              {catalogSearch || activeCategory ? (
-                <KolamDeleteButton
-                  label="Hapus Filter"
-                  intent="plain"
-                  onPress={() => {
-                    onCatalogSearchChange('');
-                    onCategoryChange?.(null);
-                  }}
-                />
-              ) : null}
+            <View style={[kolamTableToolbarStyles.shell, styles.categoryBar]}>
+              <View style={kolamTableToolbarStyles.row}>
+                <View style={kolamTableToolbarStyles.filters}>
+                  <KolamInteractionFrame
+                    onPress={() => scrollCategories('left')}
+                    style={styles.categoryScrollButton}>
+                    <Text style={styles.categoryScrollText}>{'<'}</Text>
+                  </KolamInteractionFrame>
+                  <ScrollView
+                    ref={categoryScrollRef}
+                    horizontal
+                    contentContainerStyle={styles.categoryPillList}
+                    onScroll={event => {
+                      categoryScrollOffsetRef.current =
+                        event.nativeEvent.contentOffset.x;
+                    }}
+                    scrollEventThrottle={16}
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.categoryScroll}>
+                    <PosCategoryPill
+                      active={!activeCategory}
+                      label="Semua"
+                      onPress={() => onCategoryChange?.(null)}
+                    />
+                    {catalogCategories.map(category => (
+                      <PosCategoryPill
+                        key={category}
+                        active={activeCategory === category}
+                        label={category}
+                        onPress={() => onCategoryChange?.(category)}
+                      />
+                    ))}
+                  </ScrollView>
+                  <KolamInteractionFrame
+                    onPress={() => scrollCategories('right')}
+                    style={styles.categoryScrollButton}>
+                    <Text style={styles.categoryScrollText}>{'>'}</Text>
+                  </KolamInteractionFrame>
+                </View>
+                {catalogSearch || activeCategory ? (
+                  <View style={kolamTableToolbarStyles.actions}>
+                    <KolamButton
+                      label="Hapus Filter"
+                      onPress={() => {
+                        onCatalogSearchChange('');
+                        onCategoryChange?.(null);
+                      }}
+                      style={styles.posToolbarActionButton}
+                      textStyle={styles.posToolbarActionButtonText}
+                    />
+                  </View>
+                ) : null}
+              </View>
             </View>
 
             <ScrollView
@@ -2327,14 +2338,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   categoryBar: {
-    minHeight: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
+    marginBottom: 12,
+    marginHorizontal: 12,
+  },
+  categoryScroll: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   categoryPillList: {
     alignItems: 'center',
@@ -2347,10 +2357,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 6,
-    backgroundColor: V.colors.muted,
+    backgroundColor: POS_ACTION_BUTTON_BG,
+    borderColor: POS_ACTION_BUTTON_BG,
+    borderWidth: 1,
   },
   categoryScrollText: {
-    color: V.colors.mutedFg,
+    color: V.colors.primaryFg,
     fontSize: 13,
     fontWeight: '900',
   },
@@ -2362,7 +2374,7 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.muted,
   },
   categoryPillActive: {
-    backgroundColor: V.colors.primary,
+    backgroundColor: POS_ACTION_BUTTON_BG,
   },
   categoryText: {
     color: V.colors.mutedFg,
@@ -2370,6 +2382,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   categoryTextActive: {
+    color: V.colors.primaryFg,
+  },
+  posToolbarActionButton: {
+    backgroundColor: POS_ACTION_BUTTON_BG,
+    borderColor: POS_ACTION_BUTTON_BG,
+    flexShrink: 0,
+    minHeight: 32,
+  },
+  posToolbarActionButtonText: {
     color: V.colors.primaryFg,
   },
   catalogScroll: {
