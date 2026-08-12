@@ -2776,7 +2776,7 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
-    expect(text).toContain('Unauthorized');
+    expect(text).toContain('ADB Status');
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
     expect(text).toContain('Service Accounts');
@@ -3381,8 +3381,7 @@ describe('KolamAmSurface', () => {
 
     let text = renderText(renderer!);
     expect(text).toContain('Runtime');
-    expect(text).toContain('Playwright');
-    expect(text).toContain('Chromium');
+    expect(text.join(' ')).toContain('Playwright (Chromium)');
     expect(text).not.toContain('Ports');
     expect(text).not.toContain('Brand');
     expect(text).not.toContain('Model');

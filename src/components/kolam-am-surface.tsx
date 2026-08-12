@@ -3982,34 +3982,53 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         }}
       />
       <Text style={styles.panelTitle}>{device.name}</Text>
-      <View style={styles.metricGrid}>
-        <AmMetricCard label="Connection" value={titleCase(device.connectionType ?? 'usb')} meta={formatDeviceIdentifier(device)} />
-        {isBrowserDevice ? (
-          <AmMetricCard label="Runtime" value="Playwright" meta="Chromium" />
-        ) : (
-          <>
-            <AmMetricCard label="ADB" value={titleCase(device.adbStatus ?? 'disconnected')} meta={device.adbCheckedAt ? formatAmDate(device.adbCheckedAt) : 'not checked'} />
-            <AmMetricCard label="Ports" value={String(device.adbPort ?? '-')} meta={`Appium ${device.appiumPort ?? '-'} / System ${device.systemPort ?? '-'}`} />
-          </>
-        )}
-      </View>
-      <View style={styles.detailList}>
-        {isBrowserDevice ? null : (
-          <>
-            <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Merek</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{device.brand || 'Belum diisi'}</Text>
-            </View>
-            <View style={styles.detailListRow}>
-              <Text style={[styles.tableHeaderText, styles.accountCol]}>Model</Text>
-              <Text style={[styles.cellText, styles.recipientCol]}>{device.model || 'Belum diisi'}</Text>
-            </View>
-          </>
-        )}
-        <View style={styles.detailListRow}>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Box</Text>
-          <Text style={[styles.cellText, styles.recipientCol]}>{formatDeviceBox(device)}</Text>
+      <View style={styles.amDeviceInfoGrid}>
+        <View style={styles.amDeviceInfoItem}>
+          <Text style={styles.amDeviceInfoLabel}>Connection</Text>
+          <View style={styles.amDeviceInfoValueWrap}>
+            <AmStatusChip
+              label={isBrowserDevice ? 'Browser' : device.connectionType === 'tcp' ? 'TCP/IP' : 'USB'}
+              tone={isBrowserDevice ? 'success' : device.connectionType === 'tcp' ? 'warning' : 'muted'}
+            />
+          </View>
         </View>
+        {!isBrowserDevice ? (
+          <View style={styles.amDeviceInfoItem}>
+            <Text style={styles.amDeviceInfoLabel}>{device.connectionType === 'tcp' ? 'TCP Address' : 'UDID'}</Text>
+            <Text style={styles.amDeviceInfoValue} numberOfLines={1}>
+              {device.connectionType === 'tcp' ? device.tcpAddress || '-' : device.udid || '-'}
+            </Text>
+          </View>
+        ) : null}
+        {!isBrowserDevice ? (
+          <>
+            <View style={styles.amDeviceInfoItem}>
+              <Text style={styles.amDeviceInfoLabel}>ADB Status</Text>
+              <View style={styles.amDeviceInfoValueWrap}>
+                <AmStatusChip label={device.adbStatus ?? 'unknown'} tone={getAdbTone(device.adbStatus)} />
+              </View>
+            </View>
+            <View style={styles.amDeviceInfoItem}>
+              <Text style={styles.amDeviceInfoLabel}>Brand</Text>
+              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>{device.brand || 'Not set'}</Text>
+            </View>
+            <View style={styles.amDeviceInfoItem}>
+              <Text style={styles.amDeviceInfoLabel}>Model</Text>
+              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>{device.model || 'Not set'}</Text>
+            </View>
+            <View style={styles.amDeviceInfoItem}>
+              <Text style={styles.amDeviceInfoLabel}>Ports</Text>
+              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>
+                App:{device.appiumPort ?? '-'} Sys:{device.systemPort ?? '-'} ADB:{device.adbPort ?? '-'}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.amDeviceInfoItem}>
+            <Text style={styles.amDeviceInfoLabel}>Runtime</Text>
+            <Text style={styles.amDeviceInfoValue} numberOfLines={1}>Playwright (Chromium)</Text>
+          </View>
+        )}
       </View>
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.panelTitle}>Service Accounts</Text>
@@ -8437,6 +8456,35 @@ const styles = StyleSheet.create({
     borderColor: V.colors.border,
     borderRadius: 8,
     backgroundColor: V.colors.muted,
+  },
+  amDeviceInfoGrid: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 24,
+    rowGap: 12,
+  },
+  amDeviceInfoItem: {
+    minWidth: 128,
+    flexGrow: 1,
+    flexBasis: 150,
+    gap: 4,
+  },
+  amDeviceInfoLabel: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  amDeviceInfoValue: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  amDeviceInfoValueWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   detailList: {
     width: '100%',
