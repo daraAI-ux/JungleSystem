@@ -231,8 +231,6 @@ export function KolamModuleIcon({
   const amIconXml = typeof KOLAM_AM_MODULE_ICON_SVG === 'string' && KOLAM_AM_MODULE_ICON_SVG.trim()
     ? KOLAM_AM_MODULE_ICON_SVG
     : null;
-  const useCleanAmHeaderIcon = kind === 'automation' && size === 'header';
-
   return (
     <View
       accessibilityLabel={MODULE_ICON_LABEL[kind]}
@@ -295,7 +293,7 @@ export function KolamModuleIcon({
           ))}
         </Svg>
       ) : kind === 'automation' ? (
-        amIconXml && !useCleanAmHeaderIcon ? (
+        amIconXml ? (
           <SvgXml height="100%" width="100%" xml={amIconXml} />
         ) : (
           <Svg height="100%" viewBox="0 0 24 24" width="100%">
