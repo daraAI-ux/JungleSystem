@@ -187,6 +187,7 @@ export function KolamPosFullWindowSurface({
   );
   const hasCashflowSession = cashflowStep?.done ?? true;
   const hasActiveCatalogFilters = Boolean(catalogSearch || activeCategory);
+  const posDashboardTitle = getPosDashboardTitle(activeView, activeType);
   const cartCount = checkout.cart.reduce(
     (total, line) => total + line.quantity,
     0,
@@ -281,7 +282,11 @@ export function KolamPosFullWindowSurface({
               <KolamTopNavigation {...shellChrome.topNavigation} />
               <KolamOverlaySurface {...shellChrome.overlay} />
               <View style={styles.posDashboardHeader}>
-                <KolamDashboardHeader {...shellChrome.dashboardHeader} />
+                <KolamDashboardHeader
+                  {...shellChrome.dashboardHeader}
+                  subtitle=""
+                  title={posDashboardTitle}
+                />
               </View>
             </>
           ) : null}
@@ -1279,7 +1284,6 @@ function PosSubview({
         style={styles.subviewScroll}
         contentContainerStyle={styles.subviewContent}>
         <View style={styles.subviewHeader}>
-          <Text style={styles.subviewTitle}>Pelanggan</Text>
           <Text style={styles.subviewMeta}>
             Pilih pelanggan untuk pesanan aktif.
           </Text>
@@ -1371,7 +1375,6 @@ function PosSubview({
         style={styles.subviewScroll}
         contentContainerStyle={styles.subviewContent}>
         <View style={styles.subviewHeader}>
-          <Text style={styles.subviewTitle}>Penjualan</Text>
           <Text style={styles.subviewMeta}>
             Ringkasan transaksi terbaru POS.
           </Text>
@@ -1410,7 +1413,6 @@ function PosSubview({
       style={styles.subviewScroll}
       contentContainerStyle={styles.subviewContent}>
       <View style={styles.subviewHeader}>
-        <Text style={styles.subviewTitle}>Kas</Text>
         <Text style={styles.subviewMeta}>
           Ringkasan shift kas dan metode pembayaran POS.
         </Text>
@@ -1754,6 +1756,25 @@ function PosSavedOrdersPanel({
       </View>
     </View>
   );
+}
+
+function getPosDashboardTitle(
+  activeView: PosWindowView,
+  activeType: CatalogItemType | 'all',
+) {
+  if (activeView === 'customers') {
+    return 'POS Pelanggan';
+  }
+
+  if (activeView === 'sales') {
+    return 'POS Penjualan';
+  }
+
+  if (activeView === 'cashflow') {
+    return 'POS Kas';
+  }
+
+  return activeType === 'species' ? 'POS Spesies' : 'POS Produk';
 }
 
 function PosQuickViewModal({
@@ -2561,11 +2582,6 @@ const styles = StyleSheet.create({
   subviewHeaderCompact: {
     gap: 2,
     paddingTop: 4,
-  },
-  subviewTitle: {
-    color: V.colors.fg,
-    fontSize: 18,
-    fontWeight: '900',
   },
   subviewSectionTitle: {
     color: V.colors.fg,
