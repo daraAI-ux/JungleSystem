@@ -301,6 +301,7 @@ function getAmRouteModuleIcon(
   if (item.id === 'transactions') return 'amTransfer';
   if (item.id === 'mutasi') return 'amTransfer';
   if (item.id === 'users') return 'staff';
+  if (item.id === 'activity-log') return 'amActivityLog';
   return undefined;
 }
 

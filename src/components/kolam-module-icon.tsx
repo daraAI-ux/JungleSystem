@@ -62,6 +62,7 @@ const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-ico
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   ai: 'Icon Pusat AI',
+  amActivityLog: 'Icon Log Aktivitas AM',
   amHardware: 'Icon Perangkat AM',
   amService: 'Icon Layanan AM',
   amTransfer: 'Icon Transfer AM',
@@ -234,6 +235,25 @@ export function KolamModuleIcon({
       style={[styles.root, {height: dimension, width: dimension}]}>
       {kind === 'ai' ? (
         <SvgXml height="100%" width="100%" xml={KOLAM_AI_MODULE_ICON_SVG} />
+      ) : kind === 'amActivityLog' ? (
+        <Svg height="100%" viewBox="0 0 24 24" width="100%">
+          <Path
+            d="M12 3.2 5.2 5.8v5.2c0 4.3 2.8 8.2 6.8 9.8 4-1.6 6.8-5.5 6.8-9.8V5.8L12 3.2Z"
+            fill="none"
+            stroke="#1a1a1a"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+          />
+          <Path
+            d="m9.2 12 1.9 1.9 3.9-4.1"
+            fill="none"
+            stroke="#1a1a1a"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+          />
+        </Svg>
       ) : kind === 'amHardware' ? (
         <SvgXml
           height="100%"
