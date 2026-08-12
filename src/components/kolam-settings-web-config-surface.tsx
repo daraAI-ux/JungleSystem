@@ -7605,7 +7605,7 @@ function MarketplaceFeaturedPanel({
                       Urutan {index + 1}
                     </Text>
                   </View>
-                  <View style={styles.marketplaceHeroSlideActions}>
+                  <View style={styles.marketplaceFeaturedCardActions}>
                     <MarketplaceAssetButton
                       accessibilityLabel="Naik"
                       disabled={disabled || index === 0}
@@ -7617,7 +7617,7 @@ function MarketplaceFeaturedPanel({
                       id={`featured:${index}`}
                       label=""
                       onPress={() => onMoveFeaturedCollection(index, -1)}
-                      style={styles.marketplaceHeroSlideActionButton}
+                      style={styles.marketplaceFeaturedIconButton}
                       status={assetStatus}
                     />
                     <MarketplaceAssetButton
@@ -7631,7 +7631,7 @@ function MarketplaceFeaturedPanel({
                       id={`featured:${index}`}
                       label=""
                       onPress={() => onMoveFeaturedCollection(index, 1)}
-                      style={styles.marketplaceHeroSlideActionButton}
+                      style={styles.marketplaceFeaturedIconButton}
                       status={assetStatus}
                     />
                     <MarketplaceAssetButton
@@ -7643,7 +7643,7 @@ function MarketplaceFeaturedPanel({
                       label=""
                       onPress={() => onDeleteFeaturedCollection(index)}
                       style={[
-                        styles.marketplaceHeroSlideActionButton,
+                        styles.marketplaceFeaturedIconButton,
                         styles.marketplaceHeroSlideActionButtonDanger,
                       ]}
                       status={assetStatus}
@@ -7789,13 +7789,15 @@ function MarketplaceFeaturedPanel({
                   />
                 )}
               </View>
-              <MarketplaceAssetButton
-                disabled={disabled}
-                id={`bioactive:${index}`}
-                label="Upload"
-                onPress={() => onUploadBioactiveStepImage(index)}
-                status={assetStatus}
-              />
+              <View style={styles.marketplaceBioactiveActions}>
+                <MarketplaceAssetButton
+                  disabled={disabled}
+                  id={`bioactive:${index}`}
+                  label="Upload"
+                  onPress={() => onUploadBioactiveStepImage(index)}
+                  status={assetStatus}
+                />
+              </View>
             </View>
           ))}
         </View>
@@ -10746,6 +10748,11 @@ const styles = StyleSheet.create({
     minWidth: 150,
     padding: 10,
   },
+  marketplaceBioactiveActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
   marketplaceBioactiveGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -10797,6 +10804,11 @@ const styles = StyleSheet.create({
     gap: 10,
     justifyContent: 'space-between',
   },
+  marketplaceFeaturedCardActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
   marketplaceFeaturedCardMeta: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -10843,6 +10855,13 @@ const styles = StyleSheet.create({
     height: 38,
     paddingHorizontal: 10,
     paddingVertical: 0,
+  },
+  marketplaceFeaturedIconButton: {
+    borderRadius: 5,
+    height: 24,
+    minHeight: 24,
+    paddingHorizontal: 0,
+    width: 24,
   },
   marketplaceFeaturedPanel: {
     backgroundColor: '#ffffff',
