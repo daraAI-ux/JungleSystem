@@ -31,13 +31,13 @@ import {
 } from '../services/kolam-kpi-team-api';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
-import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamListTableComposition,
   type KolamListTableColumn,
 } from './kolam-list-table-composition';
 import { KolamStatusBadge } from './kolam-status-badge';
+import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
 
 const DEDUCTION_STATUS: Record<string, string> = {
   pending: 'Menunggu',
@@ -483,11 +483,10 @@ function PortalWorkTabsSection({
   return (
     <PortalCard subtitle={cardSubtitle} title="Aktivitas">
       <View style={styles.portalTableTabs}>
-        <KolamControlTabList
-          accessibilityLabel="Tab aktivitas portal"
-          items={[...PORTAL_WORK_TABS]}
-          onSelect={itemId => onTabChange(itemId as PortalWorkTab)}
-          selectedId={activeTab}
+        <KolamSurfacePanelTabs
+          onSelectTab={onTabChange}
+          selectedTabId={activeTab}
+          tabs={[...PORTAL_WORK_TABS]}
         />
       </View>
       {activeTab === 'attendance' ? (
