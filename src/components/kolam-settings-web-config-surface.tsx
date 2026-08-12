@@ -7504,94 +7504,92 @@ function MarketplaceHeroPreview({
       visible
       width="92%">
       <View style={styles.marketplaceHeroPreviewStage}>
-            {imageUri ? (
-              <Image
-                resizeMode="cover"
-                source={{uri: imageUri}}
-                style={styles.marketplaceHeroPreviewImage}
-              />
-            ) : (
-              <View style={styles.marketplaceHeroPreviewImageFallback} />
-            )}
-            <View style={styles.marketplaceHeroPreviewContent}>
-              <View style={styles.marketplaceHeroPreviewCopy}>
-                <Text
-                  numberOfLines={2}
-                  style={styles.marketplaceHeroPreviewTitle}>
-                  {slide.title || '-'}
-                </Text>
-                {slide.subtitle ? (
-                  <Text
-                    numberOfLines={2}
-                    style={styles.marketplaceHeroPreviewSubtitle}>
-                    {slide.subtitle}
-                  </Text>
-                ) : null}
-                {slide.description ? (
-                  <Text
-                    numberOfLines={2}
-                    style={styles.marketplaceHeroPreviewDescription}>
-                    {slide.description}
-                  </Text>
-                ) : null}
-                <View style={styles.marketplaceHeroPreviewCtas}>
-                  <View style={styles.marketplaceHeroPreviewPrimaryCta}>
-                    <Text style={styles.marketplaceHeroPreviewPrimaryCtaLabel}>
-                      {slide.linkText || 'Shop Now'}
-                    </Text>
-                  </View>
-                  {slide.secondaryLinkText || slide.secondaryLink ? (
-                    <Text
-                      numberOfLines={1}
-                      style={styles.marketplaceHeroPreviewSecondaryCta}>
-                      {`${slide.secondaryLinkText || 'Pelajari Cara Adopsi'} →`}
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-
-            {canNavigate ? (
-              <>
-                <Pressable
-                  accessibilityLabel="Slide sebelumnya"
-                  accessibilityRole="button"
-                  onPress={scrollPrev}
-                  style={[
-                    styles.marketplaceHeroPreviewArrow,
-                    styles.marketplaceHeroPreviewArrowPrev,
-                  ]}>
-                  <Text style={styles.marketplaceHeroPreviewArrowLabel}>‹</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityLabel="Slide berikutnya"
-                  accessibilityRole="button"
-                  onPress={scrollNext}
-                  style={[
-                    styles.marketplaceHeroPreviewArrow,
-                    styles.marketplaceHeroPreviewArrowNext,
-                  ]}>
-                  <Text style={styles.marketplaceHeroPreviewArrowLabel}>›</Text>
-                </Pressable>
-                <View style={styles.marketplaceHeroPreviewDots}>
-                  {slides.map((item, index) => (
-                    <Pressable
-                      accessibilityLabel={`Go to slide ${index + 1}`}
-                      accessibilityRole="button"
-                      key={item._id}
-                      onPress={() => setSelectedIndex(index)}
-                      style={[
-                        styles.marketplaceHeroPreviewDot,
-                        index === selectedIndex
-                          ? styles.marketplaceHeroPreviewDotActive
-                          : null,
-                      ]}
-                    />
-                  ))}
-                </View>
-              </>
+        {imageUri ? (
+          <Image
+            resizeMode="cover"
+            source={{uri: imageUri}}
+            style={styles.marketplaceHeroPreviewImage}
+          />
+        ) : (
+          <View style={styles.marketplaceHeroPreviewImageFallback} />
+        )}
+        <View style={styles.marketplaceHeroPreviewContent}>
+          <View style={styles.marketplaceHeroPreviewCopy}>
+            <Text numberOfLines={2} style={styles.marketplaceHeroPreviewTitle}>
+              {slide.title || '-'}
+            </Text>
+            {slide.subtitle ? (
+              <Text
+                numberOfLines={2}
+                style={styles.marketplaceHeroPreviewSubtitle}>
+                {slide.subtitle}
+              </Text>
             ) : null}
+            {slide.description ? (
+              <Text
+                numberOfLines={2}
+                style={styles.marketplaceHeroPreviewDescription}>
+                {slide.description}
+              </Text>
+            ) : null}
+            <View style={styles.marketplaceHeroPreviewCtas}>
+              <View style={styles.marketplaceHeroPreviewPrimaryCta}>
+                <Text style={styles.marketplaceHeroPreviewPrimaryCtaLabel}>
+                  {slide.linkText || 'Shop Now'}
+                </Text>
+              </View>
+              {slide.secondaryLinkText || slide.secondaryLink ? (
+                <Text
+                  numberOfLines={1}
+                  style={styles.marketplaceHeroPreviewSecondaryCta}>
+                  {`${slide.secondaryLinkText || 'Pelajari Cara Adopsi'} →`}
+                </Text>
+              ) : null}
+            </View>
           </View>
+        </View>
+
+        {canNavigate ? (
+          <>
+            <Pressable
+              accessibilityLabel="Slide sebelumnya"
+              accessibilityRole="button"
+              onPress={scrollPrev}
+              style={[
+                styles.marketplaceHeroPreviewArrow,
+                styles.marketplaceHeroPreviewArrowPrev,
+              ]}>
+              <Text style={styles.marketplaceHeroPreviewArrowLabel}>‹</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Slide berikutnya"
+              accessibilityRole="button"
+              onPress={scrollNext}
+              style={[
+                styles.marketplaceHeroPreviewArrow,
+                styles.marketplaceHeroPreviewArrowNext,
+              ]}>
+              <Text style={styles.marketplaceHeroPreviewArrowLabel}>›</Text>
+            </Pressable>
+            <View style={styles.marketplaceHeroPreviewDots}>
+              {slides.map((item, index) => (
+                <Pressable
+                  accessibilityLabel={`Go to slide ${index + 1}`}
+                  accessibilityRole="button"
+                  key={item._id}
+                  onPress={() => setSelectedIndex(index)}
+                  style={[
+                    styles.marketplaceHeroPreviewDot,
+                    index === selectedIndex
+                      ? styles.marketplaceHeroPreviewDotActive
+                      : null,
+                  ]}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
+      </View>
     </KolamModalDialog>
   );
 }
@@ -10549,6 +10547,7 @@ const styles = StyleSheet.create({
   },
   marketplaceHeroPreviewDialog: {
     gap: 14,
+    width: 960,
   },
   marketplaceHeroPreviewDot: {
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
@@ -10642,9 +10641,9 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   marketplaceHeroPreviewStage: {
-    aspectRatio: 1280 / 180,
     backgroundColor: '#e5e7eb',
     borderRadius: 12,
+    height: 180,
     overflow: 'hidden',
     position: 'relative',
     width: '100%',
