@@ -226,6 +226,9 @@ export function KolamModuleIcon({
   size?: keyof typeof MODULE_ICON_SIZE;
 }) {
   const dimension = MODULE_ICON_SIZE[size];
+  const amIconXml = typeof KOLAM_AM_MODULE_ICON_SVG === 'string' && KOLAM_AM_MODULE_ICON_SVG.trim()
+    ? KOLAM_AM_MODULE_ICON_SVG
+    : null;
 
   return (
     <View
@@ -289,7 +292,20 @@ export function KolamModuleIcon({
           ))}
         </Svg>
       ) : kind === 'automation' ? (
-        <SvgXml height="100%" width="100%" xml={KOLAM_AM_MODULE_ICON_SVG} />
+        amIconXml ? (
+          <SvgXml height="100%" width="100%" xml={amIconXml} />
+        ) : (
+          <Svg height="100%" viewBox="0 0 24 24" width="100%">
+            <Path
+              d="M12 3.4a8.6 8.6 0 1 0 0 17.2 8.6 8.6 0 0 0 0-17.2Zm0 3.4a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4Z"
+              fill="#1a1a1a"
+            />
+            <Path
+              d="m10.8 13.7-2-2 1.2-1.2.8.8 3.2-3.2 1.2 1.2-4.4 4.4Z"
+              fill="#1a1a1a"
+            />
+          </Svg>
+        )
       ) : kind === 'brand' ? (
         <Svg height="100%" viewBox="0 0 810 809.999993" width="100%">
           {BRAND_ICON_PATHS.map(path => (
