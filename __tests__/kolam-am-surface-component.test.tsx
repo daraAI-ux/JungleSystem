@@ -1672,6 +1672,23 @@ describe('KolamAmSurface', () => {
       fontFamily: 'Consolas',
     }));
 
+    const serviceLogCallCount = jest.mocked(getAmDeviceServiceLogs).mock.calls.length;
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Realtime'}).props.onPress();
+    });
+    expect(renderText(renderer!).join(' ')).not.toContain('info: Realtime ready');
+    expect(getAmDeviceServiceLogs).toHaveBeenCalledTimes(serviceLogCallCount);
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Realtime'}).props.onPress();
+    });
+    expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-1', {
+      limit: 100,
+      page: 1,
+      source: 'realtime',
+    });
+    expect(renderText(renderer!).join(' ')).toMatch(/info\s*:\s*Realtime ready/);
+
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Riwayat'}).props.onPress();
     });

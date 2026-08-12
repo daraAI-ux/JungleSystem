@@ -1237,7 +1237,7 @@ function AmServicesPage() {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [expandedTab, setExpandedTab] = React.useState<AmServiceDetailTab>('logs');
   const [sessionToClear, setSessionToClear] = React.useState<AmServiceAccount | null>(null);
-  const [detailLogSource, setDetailLogSource] = React.useState<'realtime' | 'history'>('realtime');
+  const [detailLogSource, setDetailLogSource] = React.useState<'realtime' | 'history' | null>('realtime');
   const [detailLogPage, setDetailLogPage] = React.useState(1);
   const [detailLogTotal, setDetailLogTotal] = React.useState(0);
   const [detailLogLimit, setDetailLogLimit] = React.useState(AM_SERVICE_LOG_PAGE_LIMIT);
@@ -1496,8 +1496,14 @@ function AmServicesPage() {
     account: AmServiceAccount,
     source: 'realtime' | 'history',
   ) => {
+    if (detailLogSource === source) {
+      setDetailLogSource(null);
+      setDetailLogPage(1);
+      return;
+    }
+
     await loadServiceLogs(account, source, 1);
-  }, [loadServiceLogs]);
+  }, [detailLogSource, loadServiceLogs]);
 
   const changeServiceLogPage = React.useCallback(async (
     account: AmServiceAccount,
@@ -2594,7 +2600,7 @@ function AmServiceDetailPanel({
   logs: AmDeviceServiceLog[];
   logLimit: number;
   logPage: number;
-  logSource: 'realtime' | 'history';
+  logSource: 'realtime' | 'history' | null;
   logTotal: number;
   serviceInputSending: boolean;
   serviceInputValue: string;
@@ -2763,27 +2769,29 @@ function AmServiceDetailPanel({
           </View>
           <View style={styles.filterBar}>
             <AmSegmentGroup
-              active={logSource}
+              active={logSource ?? ''}
               items={['realtime', 'history']}
               labels={{realtime: 'Realtime', history: 'Riwayat'}}
               onSelect={value => onLogSourceChange(value as 'realtime' | 'history')}
             />
           </View>
-          <ScrollView
-            nestedScrollEnabled
-            showsVerticalScrollIndicator
-            style={[styles.logPanel, styles.serviceLogPanel]}
-            contentContainerStyle={styles.serviceLogContent}>
-            {!logs.length ? <Text selectable style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
-            {displayedLogs.map((log, index) => (
-              <View key={`${log.ts}-${index}`} style={styles.logRow}>
-                <Text selectable style={styles.logTimestamp}>[{formatAmDate(log.ts)}]</Text>
-                <Text selectable style={[styles.logText, styles.logMessage, getAmLogLevelStyle(log.level)]}>
-                  {log.level}: {log.message}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
+          {logSource ? (
+            <ScrollView
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+              style={[styles.logPanel, styles.serviceLogPanel]}
+              contentContainerStyle={styles.serviceLogContent}>
+              {!logs.length ? <Text selectable style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
+              {displayedLogs.map((log, index) => (
+                <View key={`${log.ts}-${index}`} style={styles.logRow}>
+                  <Text selectable style={styles.logTimestamp}>[{formatAmDate(log.ts)}]</Text>
+                  <Text selectable style={[styles.logText, styles.logMessage, getAmLogLevelStyle(log.level)]}>
+                    {log.level}: {log.message}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          ) : null}
           {logSource === 'history' && logTotal > logLimit ? (
             <AmServiceHistoryPagination
               currentPage={logPage}
