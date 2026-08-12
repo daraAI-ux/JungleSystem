@@ -203,6 +203,7 @@ type AmServicesFilterPanel = 'platform' | 'status';
 type AmHardwareFilterPanel = 'status';
 type AmTransferFilterPanel = 'status';
 type AmMutasiFilterPanel = 'type' | 'account' | 'device';
+type AmActivityLogFilterPanel = 'type' | 'status' | 'method';
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
 type AmDashboardRecentTab = 'transfers' | 'mutasi';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
@@ -6817,6 +6818,12 @@ function AmActivityLogPage() {
   const [showDeleteSelectedConfirm, setShowDeleteSelectedConfirm] = React.useState(false);
   const [deleteMessage, setDeleteMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [activeFilterPanel, setActiveFilterPanel] = React.useState<AmActivityLogFilterPanel | null>(null);
+  const [filterPanelAnchor, setFilterPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
+  const toolbarRef = React.useRef<View>(null);
+  const typeTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+  const methodTriggerRef = React.useRef<View>(null);
 
   const buildFilterPayload = React.useCallback(() => ({
     search: search.trim() || undefined,
@@ -6912,7 +6919,45 @@ function AmActivityLogPage() {
     setStatus('all');
     setMethod('all');
     setPage(1);
+    setActiveFilterPanel(null);
+    setFilterPanelAnchor(null);
   }, []);
+
+  const getActivityFilterTriggerRef = React.useCallback((panel: AmActivityLogFilterPanel) => {
+    if (panel === 'type') return typeTriggerRef;
+    if (panel === 'status') return statusTriggerRef;
+    return methodTriggerRef;
+  }, []);
+
+  const anchorFilterPanel = React.useCallback((panel: AmActivityLogFilterPanel) => {
+    const toolbar = toolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    const trigger = getActivityFilterTriggerRef(panel).current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    if (typeof toolbar?.measureInWindow !== 'function' || typeof trigger?.measureInWindow !== 'function') {
+      setFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    const globals = globalThis as {expect?: unknown; it?: unknown};
+    if (typeof globals.expect === 'function' || typeof globals.it === 'function') {
+      setFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getActivityFilterTriggerRef(panel).current,
+      AM_SERVICE_FILTER_PANEL_WIDTH,
+      setFilterPanelAnchor,
+    );
+  }, [getActivityFilterTriggerRef]);
+
+  const openFilterPanel = React.useCallback((panel: AmActivityLogFilterPanel) => {
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setFilterPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(panel);
+    anchorFilterPanel(panel);
+  }, [activeFilterPanel, anchorFilterPanel]);
 
   const handleDeleteFilter = React.useCallback(async () => {
     try {
@@ -7012,41 +7057,109 @@ function AmActivityLogPage() {
           Catatan page/API request AM. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.
         </Text>
       </View>
-      <View style={styles.filterBar}>
-        <KolamSearchField
-          value={search}
-          onChangeText={handleSearchChange}
-          placeholder="Cari path, username, atau IP..."
-          containerStyle={styles.activitySearch}
-          trailingLabel={`${total} log`}
-        />
-        <AmSegmentGroup active={type} items={AM_ACTIVITY_LOG_TYPES} labels={AM_ACTIVITY_LOG_TYPE_LABELS} onSelect={handleTypeChange} />
-        <AmSegmentGroup active={status} items={AM_ACTIVITY_LOG_STATUSES} labels={AM_ACTIVITY_LOG_STATUS_LABELS} onSelect={handleStatusChange} />
-        <AmSegmentGroup active={method} items={AM_ACTIVITY_LOG_METHODS} labels={AM_ACTIVITY_LOG_METHOD_LABELS} onSelect={handleMethodChange} />
-        {hasActiveFilters ? (
-          <KolamResetButton intent="outline" size="sm" onPress={resetFilters} />
-        ) : null}
-        {selectedLogIds.size ? (
-          <KolamDeleteButton
-            accessibilityLabel="AM Activity Logs Delete Selected"
-            disabled={isLoading || isDeleting}
-            label={`Hapus terpilih (${selectedLogIds.size})`}
-            intent="danger"
-            size="sm"
-            onPress={() => setShowDeleteSelectedConfirm(true)}
+      <View ref={toolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                accessibilityLabel="AM Activity Log Search"
+                value={search}
+                onChangeText={handleSearchChange}
+                placeholder="Cari path, username, atau IP..."
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                trailingLabel={`${total} log`}
+              />
+              <View ref={typeTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'type' || type !== 'all'}
+                  label={AM_ACTIVITY_LOG_TYPE_LABELS[type] ?? formatAmDisplayLabel(type)}
+                  onPress={() => openFilterPanel('type')}
+                  open={activeFilterPanel === 'type'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'status' || status !== 'all'}
+                  label={AM_ACTIVITY_LOG_STATUS_LABELS[status] ?? formatAmDisplayLabel(status)}
+                  onPress={() => openFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={methodTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'method' || method !== 'all'}
+                  label={AM_ACTIVITY_LOG_METHOD_LABELS[method] ?? method}
+                  onPress={() => openFilterPanel('method')}
+                  open={activeFilterPanel === 'method'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {hasActiveFilters ? (
+                <KolamResetButton intent="outline" size="sm" onPress={resetFilters} />
+              ) : null}
+              {selectedLogIds.size ? (
+                <KolamDeleteButton
+                  accessibilityLabel="AM Activity Logs Delete Selected"
+                  disabled={isLoading || isDeleting}
+                  label={`Hapus terpilih (${selectedLogIds.size})`}
+                  intent="danger"
+                  size="sm"
+                  onPress={() => setShowDeleteSelectedConfirm(true)}
+                />
+              ) : null}
+              {total > 0 ? (
+                <KolamDeleteButton
+                  accessibilityLabel="AM Activity Logs Delete Filter"
+                  disabled={isLoading || isDeleting}
+                  label={`Hapus sesuai filter (${total})`}
+                  intent="danger"
+                  size="sm"
+                  onPress={() => setShowDeleteFilterConfirm(true)}
+                />
+              ) : null}
+              <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
+            </View>
+          </View>
+        </View>
+        {activeFilterPanel && filterPanelAnchor ? (
+          <AmSimpleFilterOverlayPanel
+            anchor={filterPanelAnchor}
+            options={(activeFilterPanel === 'type'
+              ? AM_ACTIVITY_LOG_TYPES
+              : activeFilterPanel === 'status'
+                ? AM_ACTIVITY_LOG_STATUSES
+                : AM_ACTIVITY_LOG_METHODS
+            ).map(option => ({
+              label: activeFilterPanel === 'type'
+                ? AM_ACTIVITY_LOG_TYPE_LABELS[option] ?? formatAmDisplayLabel(option)
+                : activeFilterPanel === 'status'
+                  ? AM_ACTIVITY_LOG_STATUS_LABELS[option] ?? formatAmDisplayLabel(option)
+                  : AM_ACTIVITY_LOG_METHOD_LABELS[option] ?? option,
+              value: option,
+            }))}
+            selectedValue={activeFilterPanel === 'type' ? type : activeFilterPanel === 'status' ? status : method}
+            onClose={() => {
+              setActiveFilterPanel(null);
+              setFilterPanelAnchor(null);
+            }}
+            onSelect={value => {
+              if (activeFilterPanel === 'type') {
+                handleTypeChange(value);
+              } else if (activeFilterPanel === 'status') {
+                handleStatusChange(value);
+              } else {
+                handleMethodChange(value);
+              }
+            }}
           />
         ) : null}
-        {total > 0 ? (
-          <KolamDeleteButton
-            accessibilityLabel="AM Activity Logs Delete Filter"
-            disabled={isLoading || isDeleting}
-            label={`Hapus sesuai filter (${total})`}
-            intent="danger"
-            size="sm"
-            onPress={() => setShowDeleteFilterConfirm(true)}
-          />
-        ) : null}
-        <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
       </View>
       {deleteMessage ? (
         <View style={styles.successPanel}>

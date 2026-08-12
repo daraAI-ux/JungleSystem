@@ -4377,7 +4377,10 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment GET'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Semua metode'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Filter GET'}).props.onPress();
     });
 
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
