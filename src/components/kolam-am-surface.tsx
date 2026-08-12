@@ -5754,7 +5754,7 @@ function AmMutasiDetailPanel({
             {id: 'hash', label: 'Notification Hash', value: mutasi.notificationHash || '-'},
             {id: 'description', label: 'Deskripsi', value: mutasi.description || '-'},
           ]}
-          title="Detail Mutasi"
+          title="Informasi"
         />
       ) : null}
       {receiptUrl ? (
