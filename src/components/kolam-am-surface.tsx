@@ -5575,17 +5575,21 @@ function AmMutasiPage({
       ),
     },
     {
-      align: 'right',
-      flex: 0.82,
+      align: 'center',
+      flex: 0.92,
       id: 'amount',
       label: 'Nominal',
-      render: item => <Text style={styles.cellText}>{formatMutasiSignedAmount(item)}</Text>,
+      render: item => <Text style={[styles.cellText, styles.mutasiCenteredText]}>{formatMutasiSignedAmount(item)}</Text>,
     },
     {
-      flex: 1.95,
+      flex: 1.85,
       id: 'description',
       label: 'Deskripsi',
-      render: item => <Text style={styles.cellText} numberOfLines={1}>{item.description || '-'}</Text>,
+      render: item => (
+        <View style={styles.mutasiDescriptionCell}>
+          <Text style={styles.cellText} numberOfLines={1}>{item.description || '-'}</Text>
+        </View>
+      ),
     },
     {
       flex: 1.2,
@@ -8683,6 +8687,11 @@ const styles = StyleSheet.create({
   },
   mutasiTypeHeaderText: {
     transform: [{translateX: -4}],
+  },
+  mutasiDescriptionCell: {
+    minWidth: 0,
+    paddingLeft: 8,
+    width: '100%',
   },
   amTableIconActionButton: {
     minWidth: 38,
