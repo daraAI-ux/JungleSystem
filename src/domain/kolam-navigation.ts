@@ -13,6 +13,7 @@ export interface KolamNavigationItem {
 
 export type KolamNavigationModuleIcon =
   | 'ai'
+  | 'amService'
   | 'archive'
   | 'assetPurchase'
   | 'automation'

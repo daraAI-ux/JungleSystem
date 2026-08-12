@@ -14,7 +14,10 @@ import {
   type ShellModuleRouteEntry,
 } from '../domain/app-shell';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
-import type { KolamNavigationItem } from '../domain/kolam-navigation';
+import type {
+  KolamNavigationItem,
+  KolamNavigationModuleIcon,
+} from '../domain/kolam-navigation';
 import {
   getAmCurrentUser,
   type AmCurrentUser,
@@ -281,11 +284,19 @@ function toAmShellModule(item: AmRouteItem): ShellModule {
     area: 'am',
     label: item.label,
     iconKind: 'automation',
-    moduleIcon: item.id === 'dashboard' ? 'automation' : undefined,
+    moduleIcon: getAmRouteModuleIcon(item),
     sourceRepo: 'E:\\Projects\\da-automation-management',
     summary: item.description,
     routes: [item.moduleRoute],
   };
+}
+
+function getAmRouteModuleIcon(
+  item: AmRouteItem,
+): KolamNavigationModuleIcon | undefined {
+  if (item.id === 'dashboard') return 'automation';
+  if (item.id === 'services') return 'amService';
+  return undefined;
 }
 
 function isAmRouteActive(item: AmRouteItem, activeRoute?: string | null) {
