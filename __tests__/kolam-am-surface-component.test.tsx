@@ -2755,7 +2755,7 @@ describe('KolamAmSurface', () => {
 
     await updateAmRoute(renderer!, 'hardware');
     let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Added By Hardware Admin');
+    expect(hardwareText).toContain('Ditambahkan oleh Hardware Admin');
     expect(hardwareText).not.toContain('Phone Rack');
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack Alpha'}).props.onPress();
@@ -2776,10 +2776,10 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Phone Rack');
     expect(text).toContain('Samsung');
     expect(text).toContain('A15');
-    expect(text).toContain('ADB Status');
+    expect(text).toContain('Status ADB');
     expect(getAmServiceAccounts).toHaveBeenCalledWith({deviceId: 'device-1', limit: 100});
     expect(getAmDeviceServices).toHaveBeenCalledWith('device-1');
-    expect(text).toContain('Service Accounts');
+    expect(text).toContain('Akun Layanan');
     expect(text).toContain('BCA Device Alpha');
     expect(text).toContain('bcauser');
     expect(text).toContain('1234567890');
@@ -3011,12 +3011,12 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       getServiceAccountMenu('service-1')!.props.actions
-        .find((action: {label: string}) => action.label === 'Delete')!.onPress();
+        .find((action: {label: string}) => action.label === 'Hapus')!.onPress();
     });
 
     const MenungguDeleteActions = getServiceAccountMenu('service-1')!.props.actions;
     expect(MenungguDeleteActions.find((action: {label: string}) => action.label === '...')!.disabled).toBe(true);
-    expect(MenungguDeleteActions.find((action: {label: string}) => action.label === 'Edit')!.disabled).toBe(true);
+    expect(MenungguDeleteActions.find((action: {label: string}) => action.label === 'Ubah')!.disabled).toBe(true);
 
     await act(async () => {
       resolveDeleteServiceAccount?.();
@@ -3027,7 +3027,7 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       getServiceAccountMenu('service-1')!.props.actions
-        .find((action: {label: string}) => action.label === 'Edit')!.onPress();
+        .find((action: {label: string}) => action.label === 'Ubah')!.onPress();
     });
     await act(async () => {
       await Promise.resolve();
@@ -3036,7 +3036,7 @@ describe('KolamAmSurface', () => {
     const findInput = (placeholder: string) => renderer!.root.findAllByType(TextInput).find(input => input.props.placeholder === placeholder);
     await act(async () => {
       findInput('Label layanan')!.props.onChangeText('BCA Detail Updated');
-      findInput('Username myBCA')!.props.onChangeText('bca-updated');
+      findInput('Nama pengguna myBCA')!.props.onChangeText('bca-updated');
       findInput('contoh 1234567890')!.props.onChangeText('9876543210');
     });
     let resolveUpdateServiceAccount:
@@ -3079,14 +3079,14 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       getServiceAccountMenu('service-1')!.props.actions
-        .find((action: {label: string}) => action.label === 'Edit')!.onPress();
+        .find((action: {label: string}) => action.label === 'Ubah')!.onPress();
     });
     await act(async () => {
       await Promise.resolve();
     });
     await act(async () => {
       findInput('Label layanan')!.props.onChangeText('BCA Detail Updated');
-      findInput('Username myBCA')!.props.onChangeText('bca-updated');
+      findInput('Nama pengguna myBCA')!.props.onChangeText('bca-updated');
       findInput('contoh 1234567890')!.props.onChangeText('9876543210');
     });
     const updateCallsBeforeMove = jest.mocked(updateAmServiceAccount).mock.calls.length;
@@ -3098,7 +3098,7 @@ describe('KolamAmSurface', () => {
     });
 
     expect(updateAmServiceAccount).toHaveBeenCalledTimes(updateCallsBeforeMove);
-    expect(renderText(renderer!).join(' ')).toContain('Pindahkan Service Account?');
+    expect(renderText(renderer!).join(' ')).toContain('Pindahkan Akun Layanan?');
     await act(async () => {
       renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Pindahkan')!.props.onPress();
     });
@@ -3123,8 +3123,8 @@ describe('KolamAmSurface', () => {
 
     await act(async () => {
       findInput('Label layanan')!.props.onChangeText('BCA Detail New');
-      findInput('Username myBCA')!.props.onChangeText('bca-detail');
-      findInput('Password myBCA')!.props.onChangeText('secret');
+      findInput('Nama pengguna myBCA')!.props.onChangeText('bca-detail');
+      findInput('Kata sandi myBCA')!.props.onChangeText('secret');
       findInput('PIN akun')!.props.onChangeText('123456');
       findInput('contoh 1234567890')!.props.onChangeText('9876543210');
     });
@@ -3152,7 +3152,7 @@ describe('KolamAmSurface', () => {
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment DANA'}).props.onPress();
     });
-    expect(findInput('Username myBCA')).toBeUndefined();
+    expect(findInput('Nama pengguna myBCA')).toBeUndefined();
     expect(findInput('Store password')).toBeUndefined();
     expect(findInput('contoh 1234567890')).toBeUndefined();
     await act(async () => {
@@ -3306,7 +3306,7 @@ describe('KolamAmSurface', () => {
 
     const boxText = renderText(renderer!).join(' ');
     expect(boxText).toContain('Box 01');
-    expect(boxText).toContain('Kelola device di box ini');
+    expect(boxText).toContain('Kelola perangkat di box ini');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Device Phone Rack'}).length).toBeGreaterThan(0);
     expect(onModuleRouteSelect).not.toHaveBeenCalled();
 
@@ -3316,7 +3316,7 @@ describe('KolamAmSurface', () => {
 
     const rackText = renderText(renderer!).join(' ');
     expect(rackText).toContain('Rack Alpha');
-    expect(rackText).toContain('Kelola box di rack ini');
+    expect(rackText).toContain('Kelola box di rak ini');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Box Box 01'}).length).toBeGreaterThan(0);
     expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
@@ -3398,10 +3398,10 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     let text = renderText(renderer!);
-    expect(text).toContain('Runtime');
+    expect(text).toContain('Lingkungan');
     expect(text.join(' ')).toContain('Playwright (Chromium)');
-    expect(text).not.toContain('Ports');
-    expect(text).not.toContain('Brand');
+    expect(text).not.toContain('Port');
+    expect(text).not.toContain('Merek');
     expect(text).not.toContain('Model');
 
     await act(async () => {
@@ -3694,7 +3694,7 @@ describe('KolamAmSurface', () => {
       renderer!.root
         .findAllByType(KolamTableRowActionMenu)
         .find(menu => menu.props.accessibilityLabel === 'AM Device Service Account Actions service-active')!
-        .props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
+        .props.actions.find((action: {label: string}) => action.label === 'Ubah')!.onPress();
     });
     await act(async () => {
       await Promise.resolve();
@@ -3707,7 +3707,7 @@ describe('KolamAmSurface', () => {
     });
 
     expect(updateAmServiceAccount).toHaveBeenCalledTimes(updateCallsBefore);
-    expect(renderText(renderer!)).toContain('Stop service first before moving to another device');
+    expect(renderText(renderer!)).toContain('Hentikan layanan sebelum dipindahkan ke perangkat lain.');
   });
 
   it('resolves hardware deep links by slug through live get-by-id endpoints', async () => {
@@ -3886,7 +3886,7 @@ describe('KolamAmSurface', () => {
       .findAllByType(KolamTableRowActionMenu)
       .find(menu => menu.props.accessibilityLabel === 'AM Hardware Rack Actions rack-1');
     await act(async () => {
-      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
+      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Ubah')!.onPress();
     });
     await act(async () => {
       findInput('contoh Lantai 2, Ruang A')!.props.onChangeText('Server Room B');
@@ -3903,21 +3903,21 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Delete')!.onPress();
+      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Hapus')!.onPress();
     });
     expect(deleteAmRacks).not.toHaveBeenCalled();
     let hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Hapus Rack?');
+    expect(hardwareText).toContain('Hapus Rak?');
     expect(hardwareText).toContain('Hapus Rack 1?');
 
     await act(async () => {
       renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Batal')!.props.onPress();
     });
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).not.toContain('Hapus Rack?');
+    expect(hardwareText).not.toContain('Hapus Rak?');
 
     await act(async () => {
-      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Delete')!.onPress();
+      rackActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Hapus')!.onPress();
     });
     await act(async () => {
       renderer!.root.findAllByType(KolamButton).find(button => button.props.label === 'Hapus')!.props.onPress();
@@ -3957,7 +3957,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
     });
     expect(createAmDevice).not.toHaveBeenCalled();
-    expect(renderText(renderer!).join(' ')).toContain('TCP Address wajib diisi untuk TCP device.');
+    expect(renderText(renderer!).join(' ')).toContain('Alamat TCP wajib diisi untuk perangkat TCP.');
 
     await act(async () => {
       findInput('192.168.101.231:5555')!.props.onChangeText('10.0.0.9:5555');
@@ -3989,10 +3989,10 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Save'}).props.onPress();
     });
     expect(createAmDevice).toHaveBeenCalledTimes(1);
-    expect(renderText(renderer!).join(' ')).toContain('UDID wajib diisi untuk USB device.');
+    expect(renderText(renderer!).join(' ')).toContain('UDID wajib diisi untuk perangkat USB.');
 
     await act(async () => {
-      findInput('UDID device USB')!.props.onChangeText('USBNEW1');
+      findInput('UDID perangkat USB')!.props.onChangeText('USBNEW1');
       findInput('Samsung / Server')!.props.onChangeText('Samsung');
       findInput('A52 / Playwright')!.props.onChangeText('A54');
       findInput('whatsapp, marketplace, banking')!.props.onChangeText('whatsapp, banking');
@@ -4032,7 +4032,7 @@ describe('KolamAmSurface', () => {
     expect(deviceActionMenu).toBeTruthy();
 
     await act(async () => {
-      deviceActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Edit')!.onPress();
+      deviceActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Ubah')!.onPress();
     });
     expect(
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Connection Type Read Only'}).length,
@@ -4041,7 +4041,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment TCP'}),
     ).toHaveLength(0);
     await act(async () => {
-      findInput('UDID device USB')!.props.onChangeText('USB9999');
+      findInput('UDID perangkat USB')!.props.onChangeText('USB9999');
       findInput('Samsung / Server')!.props.onChangeText('Samsung');
       findInput('A52 / Playwright')!.props.onChangeText('A55');
     });
@@ -4060,11 +4060,11 @@ describe('KolamAmSurface', () => {
     }));
 
     await act(async () => {
-      deviceActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Delete')!.onPress();
+      deviceActionMenu!.props.actions.find((action: {label: string}) => action.label === 'Hapus')!.onPress();
     });
     expect(deleteAmDevices).not.toHaveBeenCalled();
     hardwareText = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(hardwareText).toContain('Hapus Device?');
+    expect(hardwareText).toContain('Hapus Perangkat?');
     expect(hardwareText).toContain('Hapus Device 1?');
 
     await act(async () => {

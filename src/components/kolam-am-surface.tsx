@@ -238,28 +238,28 @@ const AM_SERVICE_FIELD_META: Record<string, Partial<Record<AmServiceFieldKind, {
   },
   tokopedia: {
     phoneNumber: {label: 'Nomor HP', placeholder: 'contoh 08123456789'},
-    password: {label: 'Password', placeholder: 'Password TikTok Shop'},
+    password: {label: 'Kata sandi', placeholder: 'Kata sandi Tokopedia'},
   },
   shopee: {
-    username: {label: 'Email / Username', placeholder: 'Email login toko'},
-    password: {label: 'Password', placeholder: 'Password toko'},
+    username: {label: 'Email / Nama pengguna', placeholder: 'Email login toko'},
+    password: {label: 'Kata sandi', placeholder: 'Kata sandi toko'},
   },
   tiktok: {
-    username: {label: 'Username', placeholder: 'Username TikTok'},
+    username: {label: 'Nama pengguna', placeholder: 'Nama pengguna TikTok'},
   },
   instagram: {
-    username: {label: 'Email / Username', placeholder: 'Email atau username Instagram'},
-    password: {label: 'Password', placeholder: 'Password Instagram'},
+    username: {label: 'Email / Nama pengguna', placeholder: 'Email atau nama pengguna Instagram'},
+    password: {label: 'Kata sandi', placeholder: 'Kata sandi Instagram'},
   },
   bca: {
-    username: {label: 'Username', placeholder: 'Username myBCA'},
-    password: {label: 'Password', placeholder: 'Password myBCA'},
+    username: {label: 'Nama pengguna', placeholder: 'Nama pengguna myBCA'},
+    password: {label: 'Kata sandi', placeholder: 'Kata sandi myBCA'},
     pin: {label: 'PIN', placeholder: 'PIN akun'},
     accountNumber: {label: 'Nomor akun', placeholder: 'contoh 1234567890'},
   },
   brimo: {
-    username: {label: 'Username', placeholder: 'Username BRImo'},
-    password: {label: 'Password', placeholder: 'Password BRImo'},
+    username: {label: 'Nama pengguna', placeholder: 'Nama pengguna BRImo'},
+    password: {label: 'Kata sandi', placeholder: 'Kata sandi BRImo'},
     pin: {label: 'PIN', placeholder: 'PIN akun'},
     accountNumber: {label: 'Nomor akun', placeholder: 'contoh 1234567890'},
   },
@@ -2426,14 +2426,14 @@ function AmHardwarePage({
         };
         if (editingHardwareId) {
           await updateAmRack(editingHardwareId, payload);
-          setActionMessage('Rack AM berhasil diupdate.');
+          setActionMessage('Rak AM berhasil diperbarui.');
         } else {
           await createAmRack(payload);
-          setActionMessage('Rack AM berhasil dibuat.');
+          setActionMessage('Rak AM berhasil dibuat.');
         }
       } else if (hardwareForm === 'box') {
         if (!editingHardwareId && !formRackId) {
-          setError('Rack wajib dipilih sebelum membuat box.');
+          setError('Rak wajib dipilih sebelum membuat box.');
           return;
         }
         if (editingHardwareId) {
@@ -2441,7 +2441,7 @@ function AmHardwarePage({
             description: formDescription.trim(),
             status: formStatus,
           });
-          setActionMessage('Box AM berhasil diupdate.');
+          setActionMessage('Box AM berhasil diperbarui.');
         } else {
           await createAmBox({
             rackId: formRackId,
@@ -2451,15 +2451,15 @@ function AmHardwarePage({
         }
       } else {
         if (!editingHardwareId && !formBoxId) {
-          setError('Box wajib dipilih sebelum membuat device.');
+          setError('Box wajib dipilih sebelum membuat perangkat.');
           return;
         }
         if (formConnectionType === 'usb' && !formUdid.trim()) {
-          setError('UDID wajib diisi untuk USB device.');
+          setError('UDID wajib diisi untuk perangkat USB.');
           return;
         }
         if (formConnectionType === 'tcp' && !formTcpAddress.trim()) {
-          setError('TCP Address wajib diisi untuk TCP device.');
+          setError('Alamat TCP wajib diisi untuk perangkat TCP.');
           return;
         }
         const devicePayload: AmDevicePayload = {
@@ -2486,13 +2486,13 @@ function AmHardwarePage({
         const payload = cleanDevicePayload(devicePayload);
         if (editingHardwareId) {
           await updateAmDevice(editingHardwareId, payload);
-          setActionMessage('Device AM berhasil diupdate.');
+          setActionMessage('Perangkat AM berhasil diperbarui.');
         } else {
           await createAmDevice({
             boxId: formBoxId,
             ...payload,
           });
-          setActionMessage('Device AM berhasil dibuat.');
+          setActionMessage('Perangkat AM berhasil dibuat.');
         }
       }
       resetHardwareForm(hardwareForm);
@@ -2507,7 +2507,7 @@ function AmHardwarePage({
       }
       await fetchHardware();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan hardware AM.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan perangkat AM.');
     } finally {
       setIsSubmitting(false);
     }
@@ -2536,10 +2536,10 @@ function AmHardwarePage({
         if (selectedDeviceId === id) setSelectedDeviceId(null);
       }
       setDeletingHardware(null);
-      setActionMessage(`${titleCase(kind)} AM berhasil dihapus.`);
+      setActionMessage(`${formatHardwareKindLabel(kind)} AM berhasil dihapus.`);
       await fetchHardware();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus hardware AM.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus perangkat AM.');
     } finally {
       setActingHardwareId(null);
     }
@@ -2551,10 +2551,10 @@ function AmHardwarePage({
       ? filteredBoxes.length
       : filteredRacks.length;
   const hardwareSearchPlaceholder = selectedBox
-    ? 'Cari device...'
+    ? 'Cari perangkat...'
     : selectedRack
       ? 'Cari box...'
-      : 'Cari rack...';
+      : 'Cari rak...';
   const hardwareStatusLabel = hardwareStatus === 'all'
     ? 'Semua status'
     : formatAmDisplayLabel(hardwareStatus);
@@ -2578,8 +2578,8 @@ function AmHardwarePage({
       {!selectedRack ? (
         <View style={styles.amHardwareHeader}>
           <View style={styles.amHardwareHeaderCopy}>
-            <Text style={styles.panelTitle}>Rack</Text>
-            <Text style={styles.panelText}>Lihat semua rack yang sudah dibuat.</Text>
+            <Text style={styles.panelTitle}>Rak</Text>
+            <Text style={styles.panelText}>Lihat semua rak yang sudah dibuat.</Text>
           </View>
         </View>
       ) : null}
@@ -2587,7 +2587,7 @@ function AmHardwarePage({
         <View style={styles.amHardwareHeader}>
           <View style={styles.amHardwareHeaderCopy}>
             <Text style={styles.panelTitle}>{selectedRack.name}</Text>
-            <Text style={styles.panelText}>Kelola box di rack ini. Setiap box dapat memuat hingga 24 device.</Text>
+            <Text style={styles.panelText}>Kelola box di rak ini. Setiap box dapat memuat hingga 24 perangkat.</Text>
           </View>
         </View>
       ) : null}
@@ -2595,7 +2595,7 @@ function AmHardwarePage({
         <View style={styles.amHardwareHeader}>
           <View style={styles.amHardwareHeaderCopy}>
             <Text style={styles.panelTitle}>{selectedBox.name}</Text>
-            <Text style={styles.panelText}>Kelola device di box ini. Setiap device mewakili perangkat automation.</Text>
+            <Text style={styles.panelText}>Kelola perangkat di box ini. Setiap perangkat mewakili automation.</Text>
           </View>
         </View>
       ) : null}
@@ -2637,21 +2637,21 @@ function AmHardwarePage({
               {!selectedRack ? (
                 <KolamButton
                   accessibilityLabel="AM Hardware Create Rack"
-                  label="Create Rack"
+                  label="Buat Rak"
                   size="sm"
                   onPress={openCreateRackModal}
                 />
               ) : selectedDevice ? null : selectedBox ? (
                 <KolamButton
                   accessibilityLabel="AM Hardware Add Device"
-                  label="Add Device"
+                  label="Tambah Perangkat"
                   size="sm"
                   onPress={openAddDeviceModal}
                 />
               ) : (
                 <KolamButton
                   accessibilityLabel="AM Hardware Add Box"
-                  label="Add Box"
+                  label="Tambah Box"
                   size="sm"
                   onPress={openAddBoxModal}
                 />
@@ -2672,7 +2672,7 @@ function AmHardwarePage({
       </View>
       {error ? (
         <View style={styles.errorPanel}>
-          <Text style={styles.errorTitle}>Hardware AM belum bisa dibaca</Text>
+          <Text style={styles.errorTitle}>Perangkat AM belum bisa dibaca</Text>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
@@ -2683,7 +2683,7 @@ function AmHardwarePage({
       ) : null}
       {adbStatusError ? (
         <View style={styles.warningPanel}>
-          <Text style={styles.warningText}>ADB status box belum bisa dibaca: {adbStatusError}</Text>
+          <Text style={styles.warningText}>Status ADB box belum bisa dibaca: {adbStatusError}</Text>
         </View>
       ) : null}
       {deletingHardware ? (
@@ -2691,7 +2691,7 @@ function AmHardwarePage({
           destructive
           confirmLabel={actingHardwareId === deletingHardware.id ? '...' : 'Hapus'}
           message={`Hapus ${deletingHardware.label}? Aksi ini tidak bisa dibatalkan.`}
-          title={`Hapus ${titleCase(deletingHardware.kind)}?`}
+          title={`Hapus ${formatHardwareKindLabel(deletingHardware.kind)}?`}
           visible={Boolean(deletingHardware)}
           onCancel={() => setDeletingHardware(null)}
           onConfirm={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
@@ -2736,13 +2736,13 @@ function AmHardwarePage({
           setIsRackModalOpen(false);
           resetHardwareForm('rack');
         }}
-        title={editingHardwareId ? 'Edit Rack' : 'Create Rack'}
+        title={editingHardwareId ? 'Ubah Rak' : 'Buat Rak'}
         visible={isRackModalOpen && hardwareForm === 'rack'}
         width={420}
         footer={
           <>
             <KolamCancelButton
-              label="Cancel"
+              label="Batal"
               onPress={() => {
                 setIsRackModalOpen(false);
                 resetHardwareForm('rack');
@@ -2751,7 +2751,7 @@ function AmHardwarePage({
             <KolamSaveButton
               accessibilityLabel="AM Hardware Save"
               disabled={isSubmitting}
-              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Save' : 'Create'}
+              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Simpan' : 'Buat'}
               muted={isSubmitting}
               onPress={saveHardware}
             />
@@ -2785,13 +2785,13 @@ function AmHardwarePage({
           setIsBoxModalOpen(false);
           resetHardwareForm('box');
         }}
-        title={editingHardwareId ? 'Edit Box' : 'Add Box'}
+        title={editingHardwareId ? 'Ubah Box' : 'Tambah Box'}
         visible={isBoxModalOpen && hardwareForm === 'box'}
         width={420}
         footer={
           <>
             <KolamCancelButton
-              label="Cancel"
+              label="Batal"
               onPress={() => {
                 setIsBoxModalOpen(false);
                 resetHardwareForm('box');
@@ -2800,7 +2800,7 @@ function AmHardwarePage({
             <KolamSaveButton
               accessibilityLabel="AM Hardware Save"
               disabled={isSubmitting}
-              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Save' : 'Create'}
+              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Simpan' : 'Buat'}
               muted={isSubmitting}
               onPress={saveHardware}
             />
@@ -2823,13 +2823,13 @@ function AmHardwarePage({
           setIsDeviceModalOpen(false);
           resetHardwareForm('device');
         }}
-        title={editingHardwareId ? 'Edit Device' : 'Add Device'}
+        title={editingHardwareId ? 'Ubah Perangkat' : 'Tambah Perangkat'}
         visible={isDeviceModalOpen && hardwareForm === 'device'}
         width={520}
         footer={
           <>
             <KolamCancelButton
-              label="Cancel"
+              label="Batal"
               onPress={() => {
                 setIsDeviceModalOpen(false);
                 resetHardwareForm('device');
@@ -2838,7 +2838,7 @@ function AmHardwarePage({
             <KolamSaveButton
               accessibilityLabel="AM Hardware Save"
               disabled={isSubmitting}
-              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Save' : 'Create'}
+              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Simpan' : 'Buat'}
               muted={isSubmitting}
               onPress={saveHardware}
             />
@@ -2864,10 +2864,10 @@ function AmHardwarePage({
             />
           )}
           {formConnectionType === 'usb' ? (
-            <AmTextInput label="UDID" placeholder="UDID device USB" value={formUdid} onChangeText={setFormUdid} />
+            <AmTextInput label="UDID" placeholder="UDID perangkat USB" value={formUdid} onChangeText={setFormUdid} />
           ) : null}
           {formConnectionType === 'tcp' ? (
-            <AmTextInput label="TCP Address" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
+            <AmTextInput label="Alamat TCP" placeholder="192.168.101.231:5555" value={formTcpAddress} onChangeText={setFormTcpAddress} />
           ) : null}
           {formConnectionType !== 'browser' ? (
             <>
@@ -3724,8 +3724,8 @@ function AmHardwareRackGrid({
 }) {
   return (
     <View style={styles.hardwareGridSection}>
-      {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rack AM...</Text> : null}
-      {!isLoading && !racks.length ? <Text style={styles.loadingText}>Rack belum ada</Text> : null}
+      {isLoading && !racks.length ? <Text style={styles.loadingText}>Memuat rak AM...</Text> : null}
+      {!isLoading && !racks.length ? <Text style={styles.loadingText}>Rak belum ada</Text> : null}
       <View style={styles.cardGrid}>
         {racks.map(rack => (
           <KolamInteractionFrame
@@ -3738,13 +3738,13 @@ function AmHardwareRackGrid({
             <Text style={styles.rowMeta}>{rack.location || 'Lokasi belum diisi'}</Text>
             <View style={styles.hardwareStats}>
               <Text style={styles.rowMeta}>Box {rack.boxCount ?? countBoxesForRack(boxes, rack)}</Text>
-              <Text style={styles.rowMeta}>Device {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
+              <Text style={styles.rowMeta}>Perangkat {rack.deviceCount ?? countDevicesForRack(devices, rack)}</Text>
             </View>
             {rack.serverIp ? <Text style={styles.monoText}>{rack.serverIp}</Text> : null}
             <AmStatusChip label={rack.status} tone={rack.status === 'active' ? 'success' : 'muted'} />
             <View style={styles.hardwareCardFooter}>
               <View style={styles.hardwareCardFooterCopy}>
-                <Text style={styles.rowMeta}>Added By</Text>
+                <Text style={styles.rowMeta}>Ditambahkan oleh</Text>
                 <Text style={styles.cellText} numberOfLines={1}>
                   {formatRackAddedBy(rack)}
                 </Text>
@@ -3752,11 +3752,11 @@ function AmHardwareRackGrid({
               <KolamTableRowActionMenu
                 accessibilityLabel={`AM Hardware Rack Actions ${rack._id}`}
                 actions={[
-                  {label: 'View Boxes', onPress: () => onSelectRack(rack)},
-                  {label: 'Edit', onPress: () => onEditRack(rack)},
+                  {label: 'Lihat Box', onPress: () => onSelectRack(rack)},
+                  {label: 'Ubah', onPress: () => onEditRack(rack)},
                   {
                     disabled: actingHardwareId === rack._id,
-                    label: actingHardwareId === rack._id ? '...' : 'Delete',
+                    label: actingHardwareId === rack._id ? '...' : 'Hapus',
                     onPress: () => onDeleteRack(rack),
                     tone: 'danger',
                   },
@@ -3789,13 +3789,13 @@ function AmHardwareBoxGrid({
     <View style={styles.tablePanel}>
       <View style={styles.tableHeader}>
         <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Nama</Text>
-        <Text style={[styles.tableHeaderText, styles.amountCol]}>Device</Text>
+        <Text style={[styles.tableHeaderText, styles.amountCol]}>Perangkat</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
         <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
         <Text style={[styles.tableHeaderText, styles.hardwareActionCol]} />
       </View>
       {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
-      {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rack ini</Text> : null}
+      {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rak ini</Text> : null}
       {boxes.map(box => (
         <KolamInteractionFrame
           key={box._id}
@@ -3811,17 +3811,17 @@ function AmHardwareBoxGrid({
             <AmStatusChip label={box.status} tone={box.status === 'active' ? 'success' : 'muted'} />
           </View>
           <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>
-            {box.description || 'No description'}
+            {box.description || 'Tanpa deskripsi'}
           </Text>
           <View style={styles.hardwareActionCol}>
             <KolamTableRowActionMenu
               accessibilityLabel={`AM Hardware Box Actions ${box._id}`}
               actions={[
-                {label: 'View Devices', onPress: () => onSelectBox(box)},
-                {label: 'Edit', onPress: () => onEditBox(box)},
+                {label: 'Lihat Perangkat', onPress: () => onSelectBox(box)},
+                {label: 'Ubah', onPress: () => onEditBox(box)},
                 {
                   disabled: actingHardwareId === box._id,
-                  label: actingHardwareId === box._id ? '...' : 'Delete',
+                  label: actingHardwareId === box._id ? '...' : 'Hapus',
                   onPress: () => onDeleteBox(box),
                   tone: 'danger',
                 },
@@ -3852,14 +3852,14 @@ function AmHardwareDeviceList({
   return (
     <View style={styles.tablePanel}>
       <View style={styles.tableHeader}>
-        <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Device</Text>
+        <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Perangkat</Text>
         <Text style={[styles.tableHeaderText, styles.identifierCol]}>Identitas</Text>
         <Text style={[styles.tableHeaderText, styles.brandCol]}>Merek</Text>
         <Text style={[styles.tableHeaderText, styles.modelCol]}>Model</Text>
         <Text style={[styles.tableHeaderText, styles.statusCol]}>ADB</Text>
         <Text style={[styles.tableHeaderText, styles.hardwareActionCol]} />
       </View>
-      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat device AM..." emptyText="Device tidak ditemukan" />
+      <AmLoadingOrEmpty isLoading={isLoading} items={devices} loadingText="Memuat perangkat AM..." emptyText="Perangkat tidak ditemukan" />
       {devices.slice(0, 40).map(device => (
         <KolamInteractionFrame
           key={device._id}
@@ -3881,11 +3881,11 @@ function AmHardwareDeviceList({
             <KolamTableRowActionMenu
               accessibilityLabel={`AM Hardware Device Actions ${device._id}`}
               actions={[
-                {label: 'View Detail', onPress: () => onSelectDevice(device)},
-                {label: 'Edit', onPress: () => onEditDevice(device)},
+                {label: 'Lihat Detail', onPress: () => onSelectDevice(device)},
+                {label: 'Ubah', onPress: () => onEditDevice(device)},
                 {
                   disabled: actingHardwareId === device._id,
-                  label: actingHardwareId === device._id ? '...' : 'Delete',
+                  label: actingHardwareId === device._id ? '...' : 'Hapus',
                   onPress: () => onDeleteDevice(device),
                   tone: 'danger',
                 },
@@ -4017,7 +4017,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       setServices(serviceResponse);
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat service account device.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal memuat akun layanan perangkat.');
     } finally {
       setIsLoading(false);
     }
@@ -4053,7 +4053,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
     const deviceChanged = Boolean(editingDeviceServiceId) && targetDeviceId !== currentDeviceId;
 
     if (deviceChanged && editingAccount?.status === 'active') {
-      setError('Stop service first before moving to another device');
+      setError('Hentikan layanan sebelum dipindahkan ke perangkat lain.');
       return;
     }
 
@@ -4128,7 +4128,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         : `${payload.label} ${editingDeviceServiceId ? 'diperbarui' : 'dibuat'}.`);
       await fetchDeviceServices();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan service account device.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan akun layanan perangkat.');
     } finally {
       setIsSubmittingService(false);
     }
@@ -4162,7 +4162,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       setActionMessage(`${account.label} dihapus.`);
       await fetchDeviceServices();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus service account device.');
+      setError(nextError instanceof Error ? nextError.message : 'Gagal menghapus akun layanan perangkat.');
     } finally {
       setActingDeviceServiceId(null);
     }
@@ -4173,8 +4173,8 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       <KolamConfirmDialog
         cancelLabel="Batal"
         confirmLabel="Pindahkan"
-        message={`Move ${serviceFormLabel || 'service account'} ke ${deviceOptions.find(nextDevice => nextDevice._id === serviceFormDeviceId)?.name ?? 'device baru'}?`}
-        title="Pindahkan Service Account?"
+        message={`Pindahkan ${serviceFormLabel || 'akun layanan'} ke ${deviceOptions.find(nextDevice => nextDevice._id === serviceFormDeviceId)?.name ?? 'perangkat baru'}?`}
+        title="Pindahkan Akun Layanan?"
         visible={moveConfirmOpen}
         onCancel={() => setMoveConfirmOpen(false)}
         onConfirm={() => {
@@ -4185,7 +4185,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
       <Text style={styles.panelTitle}>{device.name}</Text>
       <View style={styles.amDeviceInfoGrid}>
         <View style={styles.amDeviceInfoItem}>
-          <Text style={styles.amDeviceInfoLabel}>Connection</Text>
+          <Text style={styles.amDeviceInfoLabel}>Koneksi</Text>
           <View style={styles.amDeviceInfoValueWrap}>
             <AmStatusChip
               label={isBrowserDevice ? 'Browser' : device.connectionType === 'tcp' ? 'TCP/IP' : 'USB'}
@@ -4195,7 +4195,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         </View>
         {!isBrowserDevice ? (
           <View style={styles.amDeviceInfoItem}>
-            <Text style={styles.amDeviceInfoLabel}>{device.connectionType === 'tcp' ? 'TCP Address' : 'UDID'}</Text>
+            <Text style={styles.amDeviceInfoLabel}>{device.connectionType === 'tcp' ? 'Alamat TCP' : 'UDID'}</Text>
             <Text style={styles.amDeviceInfoValue} numberOfLines={1}>
               {device.connectionType === 'tcp' ? device.tcpAddress || '-' : device.udid || '-'}
             </Text>
@@ -4204,21 +4204,21 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         {!isBrowserDevice ? (
           <>
             <View style={styles.amDeviceInfoItem}>
-              <Text style={styles.amDeviceInfoLabel}>ADB Status</Text>
+              <Text style={styles.amDeviceInfoLabel}>Status ADB</Text>
               <View style={styles.amDeviceInfoValueWrap}>
                 <AmStatusChip label={device.adbStatus ?? 'unknown'} tone={getAdbTone(device.adbStatus)} />
               </View>
             </View>
             <View style={styles.amDeviceInfoItem}>
-              <Text style={styles.amDeviceInfoLabel}>Brand</Text>
-              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>{device.brand || 'Not set'}</Text>
+              <Text style={styles.amDeviceInfoLabel}>Merek</Text>
+              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>{device.brand || 'Belum diisi'}</Text>
             </View>
             <View style={styles.amDeviceInfoItem}>
               <Text style={styles.amDeviceInfoLabel}>Model</Text>
-              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>{device.model || 'Not set'}</Text>
+              <Text style={styles.amDeviceInfoValue} numberOfLines={1}>{device.model || 'Belum diisi'}</Text>
             </View>
             <View style={styles.amDeviceInfoItem}>
-              <Text style={styles.amDeviceInfoLabel}>Ports</Text>
+              <Text style={styles.amDeviceInfoLabel}>Port</Text>
               <Text style={styles.amDeviceInfoValue} numberOfLines={1}>
                 App:{device.appiumPort ?? '-'} Sys:{device.systemPort ?? '-'} ADB:{device.adbPort ?? '-'}
               </Text>
@@ -4226,25 +4226,25 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
           </>
         ) : (
           <View style={styles.amDeviceInfoItem}>
-            <Text style={styles.amDeviceInfoLabel}>Runtime</Text>
+            <Text style={styles.amDeviceInfoLabel}>Lingkungan</Text>
             <Text style={styles.amDeviceInfoValue} numberOfLines={1}>Playwright (Chromium)</Text>
           </View>
         )}
       </View>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.panelTitle}>Service Accounts</Text>
+        <Text style={styles.panelTitle}>Akun Layanan</Text>
         <View style={styles.inlineActions}>
           {createServicePlatformItems.length ? (
             <KolamButton
               accessibilityLabel={`AM Device Add Service Account ${device._id}`}
-              label="Add Service Account"
+              label="Tambah Akun Layanan"
               size="sm"
               onPress={() => resetDeviceServiceForm(true)}
             />
           ) : null}
         </View>
       </View>
-      <AmInlineError error={error} title="Service account device belum bisa dibaca" />
+      <AmInlineError error={error} title="Akun layanan perangkat belum bisa dibaca" />
       {actionMessage ? (
         <View style={styles.successPanel}>
           <Text style={styles.successText}>{actionMessage}</Text>
@@ -4255,16 +4255,16 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         maxHeight="86%"
         maxWidth="86%"
         onClose={() => resetDeviceServiceForm(false)}
-        title={editingDeviceServiceId ? 'Edit Service Account' : 'Add Service Account'}
+        title={editingDeviceServiceId ? 'Ubah Akun Layanan' : 'Tambah Akun Layanan'}
         visible={isServiceFormOpen}
         width={520}
         footer={
           <>
-            <KolamCancelButton label="Cancel" onPress={() => resetDeviceServiceForm(false)} />
+            <KolamCancelButton label="Batal" onPress={() => resetDeviceServiceForm(false)} />
             <KolamSaveButton
               accessibilityLabel={`AM Device Save Service Account ${device._id}`}
               disabled={isSubmittingService || !serviceFormLabel.trim()}
-              label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Save' : 'Create'}
+              label={isSubmittingService ? 'Menyimpan' : editingDeviceServiceId ? 'Simpan' : 'Buat'}
               muted={isSubmittingService || !serviceFormLabel.trim()}
               onPress={submitDeviceServiceAccount}
             />
@@ -4314,7 +4314,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             ) : null}
             {editingDeviceServiceId ? (
               <View style={styles.formField}>
-                <Text style={styles.formLabel}>Device</Text>
+                <Text style={styles.formLabel}>Perangkat</Text>
                 <View style={styles.eventGrid}>
                   {deviceOptions.map(nextDevice => (
                     <KolamInteractionFrame
@@ -4336,7 +4336,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.serviceCol]}>Akun</Text>
           <Text style={[styles.tableHeaderText, styles.platformCol]}>Platform</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
+          <Text style={[styles.tableHeaderText, styles.accountCol]}>Nama Pengguna</Text>
           <Text style={[styles.tableHeaderText, styles.accountCol]}>No. Akun</Text>
           <Text style={[styles.tableHeaderText, styles.amountCol]}>Saldo</Text>
           <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
@@ -4345,8 +4345,8 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
         <AmLoadingOrEmpty
           isLoading={isLoading}
           items={accounts}
-          loadingText="Memuat akun layanan device..."
-          emptyText="Belum ada akun layanan di device ini"
+          loadingText="Memuat akun layanan perangkat..."
+          emptyText="Belum ada akun layanan di perangkat ini"
         />
         {accounts.map(account => {
           const runtime = services.find(status => status.serviceAccountId === account._id);
@@ -4355,7 +4355,7 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
             <View key={account._id} style={styles.tableRow}>
               <View style={styles.serviceCol}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{account.label}</Text>
-                <Text style={styles.rowMeta} numberOfLines={1}>{runtime?.taskStatus ?? 'Runtime task tidak ada'}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{runtime?.taskStatus ?? 'Tugas runtime tidak ada'}</Text>
               </View>
               <Text style={[styles.cellText, styles.platformCol]}>
                 {AM_PLATFORM_LABELS[account.platform] ?? account.platform}
@@ -4378,12 +4378,12 @@ function AmDeviceDetailPanel({device}: {device: AmDevice}) {
                   actions={[
                     {
                       disabled: isSubmittingService || actingDeviceServiceId === account._id,
-                      label: 'Edit',
+                      label: 'Ubah',
                       onPress: () => editDeviceServiceAccount(account),
                     },
                     {
                       disabled: actingDeviceServiceId === account._id,
-                      label: actingDeviceServiceId === account._id ? '...' : 'Delete',
+                      label: actingDeviceServiceId === account._id ? '...' : 'Hapus',
                       onPress: () => deleteDeviceServiceAccount(account),
                       tone: 'danger',
                     },
@@ -7583,6 +7583,12 @@ function countBoxesForRack(boxes: AmBox[], rack: AmRack) {
 
 function countDevicesForRack(devices: AmDevice[], rack: AmRack) {
   return devices.filter(device => isDeviceInRack(device, rack)).length;
+}
+
+function formatHardwareKindLabel(kind: 'rack' | 'box' | 'device') {
+  if (kind === 'rack') return 'Rak';
+  if (kind === 'device') return 'Perangkat';
+  return 'Box';
 }
 
 function formatRackAddedBy(rack: AmRack) {
