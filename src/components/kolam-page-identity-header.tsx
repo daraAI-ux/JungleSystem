@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   StyleSheet,
+  TextStyle,
   View,
   type StyleProp,
   type ViewStyle,
@@ -12,24 +13,36 @@ import {KolamModuleIcon} from './kolam-module-icon';
 
 export function KolamPageIdentityHeader({
   containerStyle,
+  copyStyle,
   eyebrow,
   moduleIcon,
   placement = 'shell',
+  subtitleStyle,
+  titleStyle,
   subtitle,
   title,
 }: {
   containerStyle?: StyleProp<ViewStyle>;
+  copyStyle?: StyleProp<ViewStyle>;
   eyebrow?: string;
   moduleIcon?: KolamNavigationModuleIcon;
   placement?: 'shell' | 'workspace';
+  subtitleStyle?: StyleProp<TextStyle>;
+  titleStyle?: StyleProp<TextStyle>;
   subtitle?: string;
   title: string;
 }) {
   const items = [
     ...(eyebrow ? [{id: 'eyebrow', text: eyebrow, style: styles.eyebrow}] : []),
-    {id: 'title', text: title, style: styles.title},
+    {id: 'title', text: title, style: [styles.title, titleStyle]},
     ...(subtitle
-      ? [{id: 'subtitle', text: subtitle, style: styles.headerSubtitle}]
+      ? [
+          {
+            id: 'subtitle',
+            text: subtitle,
+            style: [styles.headerSubtitle, subtitleStyle],
+          },
+        ]
       : []),
   ];
 
@@ -42,7 +55,7 @@ export function KolamPageIdentityHeader({
         containerStyle,
       ]}>
       {moduleIcon ? <KolamModuleIcon kind={moduleIcon} size="header" /> : null}
-      <View style={moduleIcon ? styles.headerCopyText : undefined}>
+      <View style={[moduleIcon ? styles.headerCopyText : undefined, copyStyle]}>
         <KolamCopyStack items={items} />
       </View>
     </View>
