@@ -2635,6 +2635,9 @@ function AmServiceDetailPanel({
   const logFrom = logTotal ? (logPage - 1) * logLimit + 1 : 0;
   const logTo = logTotal ? Math.min(logPage * logLimit, logTotal) : 0;
   const displayedLogs = logSource === 'history' ? logs : logs.slice(-20);
+  const visibleLineCount = logSource === 'history'
+    ? logTotal || logs.length
+    : logs.length;
 
   return (
     <View style={styles.serviceDetailPanel}>
@@ -2701,10 +2704,6 @@ function AmServiceDetailPanel({
                   {runtime ? `${titleCase(runtime.taskStatus)} / ${titleCase(runtime.serviceStatus)}` : 'Status service belum tersedia'}
                 </Text>
               </View>
-              <AmStatusChip
-                label={processRunning ? 'proses berjalan' : 'proses berhenti'}
-                tone={processRunning ? 'success' : 'muted'}
-              />
             </View>
             {qrSignal && processRunning ? (
               <View style={styles.qrPanel}>
@@ -2767,31 +2766,69 @@ function AmServiceDetailPanel({
               </View>
             ) : null}
           </View>
-          <View style={styles.filterBar}>
-            <AmSegmentGroup
-              active={logSource ?? ''}
-              items={['realtime', 'history']}
-              labels={{realtime: 'Realtime', history: 'Riwayat'}}
-              onSelect={value => onLogSourceChange(value as 'realtime' | 'history')}
-            />
-          </View>
-          {logSource ? (
-            <ScrollView
-              nestedScrollEnabled
-              showsVerticalScrollIndicator
-              style={[styles.logPanel, styles.serviceLogPanel]}
-              contentContainerStyle={styles.serviceLogContent}>
-              {!logs.length ? <Text selectable style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
-              {displayedLogs.map((log, index) => (
-                <View key={`${log.ts}-${index}`} style={styles.logRow}>
-                  <Text selectable style={styles.logTimestamp}>[{formatAmDate(log.ts)}]</Text>
-                  <Text selectable style={[styles.logText, styles.logMessage, getAmLogLevelStyle(log.level)]}>
-                    {log.level}: {log.message}
-                  </Text>
+          <View style={styles.serviceConsolePanel}>
+            <View style={styles.serviceConsoleHeader}>
+              <View style={styles.serviceConsoleStatus}>
+                <View style={[
+                  styles.serviceConsoleStatusDot,
+                  processRunning ? styles.serviceConsoleStatusDotRunning : styles.serviceConsoleStatusDotStopped,
+                ]} />
+                <Text style={styles.serviceConsoleStatusText}>
+                  {processRunning ? 'Process running' : 'Process stopped'}
+                </Text>
+              </View>
+              <View style={styles.serviceConsoleActions}>
+                <Text style={styles.serviceConsoleLineCount}>{visibleLineCount} lines</Text>
+                <View style={styles.serviceConsoleTabs}>
+                  <KolamInteractionFrame
+                    accessibilityLabel="AM Segment Live"
+                    onPress={() => onLogSourceChange('realtime')}
+                    style={[
+                      styles.serviceConsoleTab,
+                      logSource === 'realtime' && styles.serviceConsoleTabActive,
+                    ]}>
+                    <Text style={[
+                      styles.serviceConsoleTabText,
+                      logSource === 'realtime' && styles.serviceConsoleTabTextActive,
+                    ]}>
+                      Live
+                    </Text>
+                  </KolamInteractionFrame>
+                  <KolamInteractionFrame
+                    accessibilityLabel="AM Segment History"
+                    onPress={() => onLogSourceChange('history')}
+                    style={[
+                      styles.serviceConsoleTab,
+                      logSource === 'history' && styles.serviceConsoleTabActive,
+                    ]}>
+                    <Text style={[
+                      styles.serviceConsoleTabText,
+                      logSource === 'history' && styles.serviceConsoleTabTextActive,
+                    ]}>
+                      History
+                    </Text>
+                  </KolamInteractionFrame>
                 </View>
-              ))}
-            </ScrollView>
-          ) : null}
+              </View>
+            </View>
+            {logSource ? (
+              <ScrollView
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+                style={styles.serviceLogPanel}
+                contentContainerStyle={styles.serviceLogContent}>
+                {!logs.length ? <Text selectable style={styles.logEmptyText}>{logSource === 'history' ? 'Log riwayat tidak ditemukan' : 'Log realtime tidak ditemukan'}</Text> : null}
+                {displayedLogs.map((log, index) => (
+                  <View key={`${log.ts}-${index}`} style={styles.logRow}>
+                    <Text selectable style={styles.logTimestamp}>[{formatAmDate(log.ts)}]</Text>
+                    <Text selectable style={[styles.logText, styles.logMessage, getAmLogLevelStyle(log.level)]}>
+                      {log.level}: {log.message}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            ) : null}
+          </View>
           {logSource === 'history' && logTotal > logLimit ? (
             <AmServiceHistoryPagination
               currentPage={logPage}
@@ -8143,8 +8180,96 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: '#030712',
   },
+  serviceConsolePanel: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#1f2937',
+    borderRadius: 8,
+    backgroundColor: '#030712',
+  },
+  serviceConsoleHeader: {
+    width: '100%',
+    minWidth: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
+  },
+  serviceConsoleStatus: {
+    minWidth: 0,
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  serviceConsoleStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+  },
+  serviceConsoleStatusDotRunning: {
+    backgroundColor: '#22c55e',
+  },
+  serviceConsoleStatusDotStopped: {
+    backgroundColor: '#4b5563',
+  },
+  serviceConsoleStatusText: {
+    minWidth: 0,
+    color: '#9ca3af',
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  serviceConsoleActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  serviceConsoleLineCount: {
+    color: '#e5e7eb',
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  serviceConsoleTabs: {
+    overflow: 'hidden',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#374151',
+    borderRadius: 6,
+    backgroundColor: '#030712',
+  },
+  serviceConsoleTab: {
+    borderWidth: 0,
+    borderRadius: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: '#030712',
+  },
+  serviceConsoleTabActive: {
+    backgroundColor: '#374151',
+  },
+  serviceConsoleTabText: {
+    color: '#6b7280',
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  serviceConsoleTabTextActive: {
+    color: '#ffffff',
+  },
   serviceLogPanel: {
     maxHeight: 288,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   serviceLogContent: {
     gap: 6,

@@ -1671,16 +1671,20 @@ describe('KolamAmSurface', () => {
       color: '#60a5fa',
       fontFamily: 'Consolas',
     }));
+    expect(renderText(renderer!).join(' ')).toContain('Process running');
+    expect(renderText(renderer!).join(' ')).toMatch(/1\s+lines/);
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Segment Live'})).toBeTruthy();
+    expect(renderer!.root.findByProps({accessibilityLabel: 'AM Segment History'})).toBeTruthy();
 
     const serviceLogCallCount = jest.mocked(getAmDeviceServiceLogs).mock.calls.length;
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Realtime'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Live'}).props.onPress();
     });
     expect(renderText(renderer!).join(' ')).not.toContain('info: Realtime ready');
     expect(getAmDeviceServiceLogs).toHaveBeenCalledTimes(serviceLogCallCount);
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Realtime'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Live'}).props.onPress();
     });
     expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-1', {
       limit: 100,
@@ -1690,7 +1694,7 @@ describe('KolamAmSurface', () => {
     expect(renderText(renderer!).join(' ')).toMatch(/info\s*:\s*Realtime ready/);
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Riwayat'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Segment History'}).props.onPress();
     });
 
     expect(getAmDeviceServiceLogs).toHaveBeenLastCalledWith('device-1', {
