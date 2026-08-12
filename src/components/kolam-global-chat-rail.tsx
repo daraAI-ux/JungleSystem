@@ -4128,64 +4128,57 @@ function KolamChatRailDetailPanel({
                           : styles.messageBubbleOther,
                       ]}
                     >
-                      {mode === 'team-chat' ||
-                      isInboxDetailAiMessage(message) ? (
-                        <View style={styles.teamMessageAuthorRow}>
-                          <View style={styles.teamMessageAvatar}>
-                            <KolamProfileAvatarContent
-                              imageStyle={styles.teamMessageAvatarImage}
-                              imageUrl={
-                                mode === 'team-chat'
-                                  ? getTeamChatMessageAvatarUrl(
-                                      message,
-                                      daraAvatarUrl,
-                                      {
-                                        katakTerbangAvatarUrl,
-                                        rajaAnemonAvatarUrl,
-                                        pangeranIsopodAvatarUrl,
-                                      },
-                                    )
-                                  : getInboxAiMessageAvatarUrl(
-                                      message,
-                                      daraAvatarUrl,
-                                    )
-                              }
-                              initials={getTeamChatMessageInitials(
-                                message.author,
-                              )}
-                              textStyle={styles.teamMessageAvatarText}
-                            />
-                          </View>
-                          <Text
-                            style={[
-                              styles.messageAuthor,
-                              {
-                                color: getTeamChatAuthorDisplayColor(message),
-                              },
-                            ]}
-                          >
-                            {message.author}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.messageMeta,
-                              styles.messageMetaInline,
-                            ]}
-                          >
-                            {[
-                              formatRelativeTime(message.sentAt),
-                              getTeamChatEditedLabel(message),
-                              message.status,
-                            ]
-                              .filter(Boolean)
-                              .join(' | ')}
-                          </Text>
+                      <View style={styles.teamMessageAuthorRow}>
+                        <View style={styles.teamMessageAvatar}>
+                          <KolamProfileAvatarContent
+                            imageStyle={styles.teamMessageAvatarImage}
+                            imageUrl={
+                              mode === 'team-chat'
+                                ? getTeamChatMessageAvatarUrl(
+                                    message,
+                                    daraAvatarUrl,
+                                    {
+                                      katakTerbangAvatarUrl,
+                                      rajaAnemonAvatarUrl,
+                                      pangeranIsopodAvatarUrl,
+                                    },
+                                  )
+                                : getInboxMessageAvatarUrl(
+                                    message,
+                                    daraAvatarUrl,
+                                  )
+                            }
+                            initials={getTeamChatMessageInitials(
+                              message.author,
+                            )}
+                            textStyle={styles.teamMessageAvatarText}
+                          />
                         </View>
-                      ) : (
-                        <Text style={styles.messageAuthor}>
+                        <Text
+                          style={[
+                            styles.messageAuthor,
+                            {
+                              color: getTeamChatAuthorDisplayColor(message),
+                            },
+                          ]}
+                        >
                           {message.author}
                         </Text>
-                      )}
+                        <Text
+                          style={[
+                            styles.messageMeta,
+                            styles.messageMetaInline,
+                          ]}
+                        >
+                          {[
+                            formatRelativeTime(message.sentAt),
+                            getTeamChatEditedLabel(message),
+                            message.status,
+                          ]
+                            .filter(Boolean)
+                            .join(' | ')}
+                        </Text>
+                      </View>
                       {mode === 'team-chat' && message.replyPreview?.body ? (
                         <KolamTeamChatReplyPreviewCard
                           replyPreview={message.replyPreview}
@@ -4308,18 +4301,6 @@ function KolamChatRailDetailPanel({
                             />
                           ) : null}
                         </>
-                      )}
-                      {mode === 'team-chat' ||
-                      isInboxDetailAiMessage(message) ? null : (
-                        <Text style={styles.messageMeta}>
-                          {[
-                            formatRelativeTime(message.sentAt),
-                            getTeamChatEditedLabel(message),
-                            message.status,
-                          ]
-                            .filter(Boolean)
-                            .join(' | ')}
-                        </Text>
                       )}
                     </View>
                   );
@@ -5033,16 +5014,16 @@ function getTeamChatMessageAvatarUrl(
   return resolveProfilePhotoUrl(message.senderProfilePicture);
 }
 
-function getInboxAiMessageAvatarUrl(
+function getInboxMessageAvatarUrl(
   message: KolamChatRailDetailMessage,
   daraAvatarUrl: string | null,
 ) {
-  if (!isInboxDetailAiMessage(message)) {
-    return resolveProfilePhotoUrl(message.senderProfilePicture);
+  if (message.senderIsAi || isInboxDetailAiMessage(message)) {
+    // FE inbox AI: resolveDaraAvatarUrl(daraAvatarUrl) — never Katak Terbang photo.
+    return daraAvatarUrl || resolveDaraAvatarImageUrl();
   }
 
-  // FE inbox AI: resolveDaraAvatarUrl(daraAvatarUrl) — never Katak Terbang photo.
-  return daraAvatarUrl || resolveDaraAvatarImageUrl();
+  return resolveProfilePhotoUrl(message.senderProfilePicture);
 }
 
 function isInboxDetailAiMessage(message: KolamChatRailDetailMessage) {

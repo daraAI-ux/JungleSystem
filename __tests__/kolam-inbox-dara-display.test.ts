@@ -1,5 +1,7 @@
-import {resolveKolamInboxMessageAuthor} from '../src/domain/kolam-inbox-dara-display';
-import type {KolamChatMessage} from '../src/services/kolam-api';
+import {
+  isKolamInboxAiMessage,
+  resolveKolamInboxMessageAuthor,
+} from '../src/domain/kolam-inbox-dara-display';
 
 describe('kolam-inbox-dara-display', () => {
   it('shows DARA for outbound ai_agent even when BE senderName is AI Assistant', () => {
@@ -8,10 +10,7 @@ describe('kolam-inbox-dara-display', () => {
         direction: 'out',
         senderType: 'ai_agent',
         senderName: 'AI Assistant',
-      } as Pick<
-        KolamChatMessage,
-        'direction' | 'senderType' | 'senderName' | 'daraMeta'
-      >),
+      }),
     ).toBe('DARA');
   });
 
@@ -21,10 +20,15 @@ describe('kolam-inbox-dara-display', () => {
         direction: 'out',
         senderType: 'staff',
         senderName: 'Budi',
-      } as Pick<
-        KolamChatMessage,
-        'direction' | 'senderType' | 'senderName' | 'daraMeta'
-      >),
+      }),
     ).toBe('Budi');
+  });
+
+  it('detects AI Assistant senderName as inbox AI', () => {
+    expect(
+      isKolamInboxAiMessage({
+        senderName: 'AI Assistant',
+      }),
+    ).toBe(true);
   });
 });

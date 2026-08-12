@@ -268,10 +268,13 @@ export function useKolamChatRailDetail({
         setConversation(nextConversation);
         setTeamRoomMetadata(EMPTY_TEAM_ROOM_METADATA);
         const buyerDisplayName = getInboxBuyerDisplayName(nextConversation);
+        const buyerAvatarUrl = getInboxBuyerAvatarUrl(nextConversation);
         setMessages(
           [...nextMessages]
             .reverse()
-            .map(message => mapInboxMessage(message, buyerDisplayName)),
+            .map(message =>
+              mapInboxMessage(message, buyerDisplayName, buyerAvatarUrl),
+            ),
         );
       } catch (error) {
         setErrorMessage(
@@ -434,7 +437,11 @@ export function useKolamChatRailDetail({
         });
         setMessages(current => [
           ...current,
-          mapInboxMessage(message, getInboxBuyerDisplayName(conversation)),
+          mapInboxMessage(
+            message,
+            getInboxBuyerDisplayName(conversation),
+            getInboxBuyerAvatarUrl(conversation),
+          ),
         ]);
       } catch (error) {
         setErrorMessage(
@@ -513,7 +520,11 @@ export function useKolamChatRailDetail({
         });
         setMessages(current => [
           ...current,
-          mapInboxMessage(message, getInboxBuyerDisplayName(conversation)),
+          mapInboxMessage(
+            message,
+            getInboxBuyerDisplayName(conversation),
+            getInboxBuyerAvatarUrl(conversation),
+          ),
         ]);
       } catch (error) {
         setErrorMessage(
@@ -549,7 +560,11 @@ export function useKolamChatRailDetail({
         setMessages(current =>
           current.map(existing =>
             existing.id === tempId
-              ? mapInboxMessage(message, getInboxBuyerDisplayName(conversation))
+              ? mapInboxMessage(
+                  message,
+                  getInboxBuyerDisplayName(conversation),
+                  getInboxBuyerAvatarUrl(conversation),
+                )
               : existing,
           ),
         );
@@ -637,6 +652,7 @@ export function useKolamChatRailDetail({
       const nextMessage = mapInboxMessage(
         message,
         getInboxBuyerDisplayName(conversation),
+        getInboxBuyerAvatarUrl(conversation),
       );
       setMessages(current => {
         const existingIndex = current.findIndex(
@@ -651,7 +667,7 @@ export function useKolamChatRailDetail({
         );
       });
     },
-    [mode],
+    [conversation, mode],
   );
 
   const editMessage = useCallback(
@@ -677,6 +693,7 @@ export function useKolamChatRailDetail({
                 ? mapInboxMessage(
                     message,
                     getInboxBuyerDisplayName(conversation),
+                    getInboxBuyerAvatarUrl(conversation),
                   )
                 : item,
             ),
@@ -1022,6 +1039,7 @@ function getCallParticipantUserId(participant: KolamTeamChatCallParticipant) {
 function mapInboxMessage(
   message: KolamChatMessage,
   buyerDisplayName?: string,
+  buyerAvatarUrl?: string | null,
 ): KolamChatRailDetailMessage {
   const senderIsAi = isInboxAiMessage(message);
 
@@ -1040,6 +1058,10 @@ function mapInboxMessage(
     replyPreview: null,
     senderIsAi,
     senderId: getInboxSenderStaffId(message),
+    senderProfilePicture: getInboxSenderProfilePicture(
+      message,
+      buyerAvatarUrl,
+    ),
     sentAt: message.sentAt ?? message.createdAt,
     editedAt: message.editedAt ?? null,
     editedByName: message.editedByName ?? null,
@@ -1159,6 +1181,30 @@ function getInboxSenderStaffId(message: KolamChatMessage) {
   return typeof sender === 'string' ? sender : sender?._id ?? null;
 }
 
+function getInboxSenderProfilePicture(
+  message: KolamChatMessage,
+  buyerAvatarUrl?: string | null,
+) {
+  if (isInboxAiMessage(message)) {
+    return null;
+  }
+
+  const sender = message.senderStaffId;
+  if (sender && typeof sender === 'object') {
+    const staffPicture = String(sender.profile_picture || '').trim();
+    if (staffPicture) {
+      return staffPicture;
+    }
+  }
+
+  if (message.direction === 'in') {
+    const buyerPicture = String(buyerAvatarUrl || '').trim();
+    return buyerPicture || null;
+  }
+
+  return null;
+}
+
 function mapTeamChatMessage(
   message: KolamTeamChatMessage,
   currentUserId?: string,
@@ -1257,6 +1303,16 @@ function getInboxBuyerDisplayName(conversation?: KolamChatConversation | null) {
       : '';
 
   return contact.displayName?.trim() || customerName || '';
+}
+
+function getInboxBuyerAvatarUrl(conversation?: KolamChatConversation | null) {
+  const contact = conversation?.contactId;
+  if (!contact || typeof contact === 'string') {
+    return null;
+  }
+
+  const avatarUrl = String(contact.avatarUrl || '').trim();
+  return avatarUrl || null;
 }
 
 function getInboxMessageBody({ content }: KolamChatMessage) {
