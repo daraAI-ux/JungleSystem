@@ -19,6 +19,7 @@ import type {
 } from '../domain/settings-surface';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamActionControlButton } from './kolam-action-control-button';
+import {KolamActionGlyph} from './kolam-action-glyph';
 import {KolamEditButton} from './kolam-edit-button';
 import { KolamRefreshButton } from './kolam-refresh-button';
 import { KolamResetButton } from './kolam-reset-button';
@@ -7215,7 +7216,6 @@ function MarketplaceHeroSlidesPanel({
   onDelete,
   onEdit,
   onMove,
-  onUpload,
   status,
 }: {
   disabled: boolean;
@@ -7347,36 +7347,56 @@ function MarketplaceHeroSlidesPanel({
                 </View>
                 <View style={styles.marketplaceHeroSlideActions}>
                   <MarketplaceAssetButton
+                    accessibilityLabel="Naik"
                     disabled={disabled || index === 0}
+                    icon={
+                      <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                        ↑
+                      </Text>
+                    }
                     id={id}
-                    label="Naik"
+                    label=""
                     onPress={() => onMove(slide, -1)}
+                    style={styles.marketplaceHeroSlideActionButton}
                     status={status}
                   />
                   <MarketplaceAssetButton
+                    accessibilityLabel="Turun"
                     disabled={disabled || index === items.length - 1}
+                    icon={
+                      <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                        ↓
+                      </Text>
+                    }
                     id={id}
-                    label="Turun"
+                    label=""
                     onPress={() => onMove(slide, 1)}
+                    style={styles.marketplaceHeroSlideActionButton}
                     status={status}
                   />
-                  <KolamEditButton
+                  <View style={styles.marketplaceHeroSlideActionSeparator} />
+                  <MarketplaceAssetButton
+                    accessibilityLabel="Rubah slide"
                     disabled={disabled}
+                    icon={<KolamActionGlyph variant="edit" />}
+                    id={`edit:${slide._id}`}
+                    label=""
                     onPress={() => onEdit(slide)}
-                  />
-                  <MarketplaceAssetButton
-                    disabled={disabled}
-                    id={id}
-                    label="Gambar"
-                    onPress={() => onUpload(slide)}
+                    style={styles.marketplaceHeroSlideActionButton}
                     status={status}
                   />
                   <MarketplaceAssetButton
+                    accessibilityLabel="Hapus slide"
                     disabled={disabled}
+                    icon={<KolamActionGlyph tone="danger" variant="delete" />}
                     id={id}
                     intent="danger"
-                    label="Hapus"
+                    label=""
                     onPress={() => onDelete(slide)}
+                    style={[
+                      styles.marketplaceHeroSlideActionButton,
+                      styles.marketplaceHeroSlideActionButtonDanger,
+                    ]}
                     status={status}
                   />
                 </View>
@@ -7808,21 +7828,27 @@ function MarketplaceIndexedAssetRows<Item>({
 }
 
 function MarketplaceAssetButton({
+  accessibilityLabel,
   disabled,
   id,
+  icon,
   intent,
   label,
   onPress,
   status,
+  style,
 }: {
+  accessibilityLabel?: string;
   disabled: boolean;
   id: string;
+  icon?: React.ReactNode;
   intent?: 'danger' | 'primary';
   label: string;
   onPress: () => void;
   status: Partial<
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
+  style?: React.ComponentProps<typeof KolamActionControlButton>['style'];
 }) {
   const actionStatus = status[id];
   const busy =
@@ -7831,12 +7857,15 @@ function MarketplaceAssetButton({
     actionStatus === 'reordering';
   return (
     <KolamActionControlButton
+      accessibilityLabel={accessibilityLabel}
       disabled={disabled || busy}
+      icon={icon}
       intent={intent}
       label={label}
       loading={busy}
       loadingLabel={getMarketplaceAssetLoadingLabel(actionStatus)}
       onPress={onPress}
+      style={style}
     />
   );
 }
@@ -10221,32 +10250,56 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   marketplaceHeroSlideActions: {
-    alignItems: 'stretch',
+    alignItems: 'center',
     backgroundColor: '#f9fafb',
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
     flexShrink: 0,
-    gap: 6,
+    gap: 5,
     justifyContent: 'center',
-    padding: 8,
-    width: 118,
+    paddingHorizontal: 7,
+    paddingVertical: 6,
+    width: 44,
+  },
+  marketplaceHeroSlideActionButton: {
+    borderRadius: 7,
+    height: 28,
+    minHeight: 28,
+    paddingHorizontal: 0,
+    width: 28,
+  },
+  marketplaceHeroSlideActionButtonDanger: {
+    backgroundColor: '#fee2e2',
+    borderColor: '#fecaca',
+  },
+  marketplaceHeroSlideActionGlyph: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  marketplaceHeroSlideActionSeparator: {
+    backgroundColor: V.colors.border,
+    height: 1,
+    width: 18,
   },
   marketplaceHeroSlideCard: {
     backgroundColor: '#ffffff',
     borderColor: V.colors.border,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
-    minHeight: 148,
+    minHeight: 96,
     overflow: 'hidden',
   },
   marketplaceHeroSlideCopy: {
     flex: 1,
-    gap: 8,
+    gap: 5,
     justifyContent: 'center',
     minWidth: 220,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   marketplaceHeroSlideImage: {
     height: '100%',
@@ -10262,10 +10315,10 @@ const styles = StyleSheet.create({
   marketplaceHeroSlideImageWrap: {
     backgroundColor: '#f3f4f6',
     flexShrink: 0,
-    minHeight: 148,
+    minHeight: 96,
     overflow: 'hidden',
     position: 'relative',
-    width: 260,
+    width: 224,
   },
   marketplaceHeroSlideIndex: {
     backgroundColor: 'rgba(17, 24, 39, 0.72)',
@@ -10284,8 +10337,8 @@ const styles = StyleSheet.create({
   },
   marketplaceHeroSlideLink: {
     color: '#6b7280',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 15,
   },
   marketplaceHeroSlideLinks: {
     gap: 2,
@@ -10301,11 +10354,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: '#166534',
     flexShrink: 0,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     overflow: 'hidden',
-    paddingHorizontal: 7,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
   marketplaceHeroSlideStatusDraft: {
     backgroundColor: '#f3f4f6',
@@ -10314,13 +10367,13 @@ const styles = StyleSheet.create({
   },
   marketplaceHeroSlideSubtitle: {
     color: '#6b7280',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   marketplaceHeroSlideTitle: {
     color: '#111827',
     flexShrink: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     minWidth: 0,
   },
