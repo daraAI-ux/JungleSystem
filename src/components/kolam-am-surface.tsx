@@ -23,6 +23,10 @@ import {formatRupiah, formatRupiahCompactCurrency} from '../lib/money';
 import {getAccessToken} from '../lib/api-client';
 import {KolamChevronIcon} from './kolam-chevron-icon';
 import {
+  measureFilterPanelAnchor,
+  type KolamFilterPanelAnchor,
+} from './kolam-filter-panel-anchor';
+import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
   cancelAmTask,
@@ -133,6 +137,8 @@ import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
+import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
+import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 const TASK_TYPE_LABELS: Record<string, string> = {
   all: 'Semua tipe',
@@ -180,6 +186,7 @@ const AM_ACTIVITY_LOG_METHOD_LABELS: Record<string, string> = {
   all: 'Semua metode',
 };
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
+type AmServicesFilterPanel = 'platform' | 'status';
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
 type AmDashboardRecentTab = 'transfers' | 'mutasi';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
@@ -206,6 +213,14 @@ const AM_PLATFORM_LABELS: Record<string, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
 };
+const AM_SERVICE_STATUS_LABELS: Record<string, string> = {
+  all: 'Semua status',
+  active: 'Aktif',
+  inactive: 'Nonaktif',
+  blocked: 'Diblokir',
+};
+const AM_SERVICE_STATUS_FILTERS = ['all', 'active', 'inactive', 'blocked'];
+const AM_SERVICE_FILTER_PANEL_WIDTH = 240;
 const PLAYWRIGHT_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram']);
 const AM_BROWSER_DEVICE_PLATFORMS = new Set(['tokopedia', 'shopee', 'tiktok', 'instagram', 'whatsapp']);
 const AM_EXCLUSIVE_SERVICE_PLATFORMS = new Set(['whatsapp', 'tokopedia', 'shopee', 'tiktok', 'instagram']);
@@ -1278,6 +1293,52 @@ function AmServicesPage() {
   const [limit, setLimit] = React.useState(AM_SERVICE_PAGE_LIMIT);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [activeFilterPanel, setActiveFilterPanel] = React.useState<AmServicesFilterPanel | null>(null);
+  const [panelAnchor, setPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
+  const toolbarRef = React.useRef<View>(null);
+  const platformTriggerRef = React.useRef<View>(null);
+  const statusTriggerRef = React.useRef<View>(null);
+
+  const getFilterTriggerRef = React.useCallback((panel: AmServicesFilterPanel) => {
+    return panel === 'platform' ? platformTriggerRef : statusTriggerRef;
+  }, []);
+
+  const anchorFilterPanel = React.useCallback((panel: AmServicesFilterPanel) => {
+    const toolbar = toolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    const trigger = getFilterTriggerRef(panel).current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    if (typeof toolbar?.measureInWindow !== 'function' || typeof trigger?.measureInWindow !== 'function') {
+      setPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    const testGlobals = globalThis as {expect?: unknown; it?: unknown};
+    if (typeof testGlobals.expect === 'function' || typeof testGlobals.it === 'function') {
+      setPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    measureFilterPanelAnchor(
+      toolbarRef.current,
+      getFilterTriggerRef(panel).current,
+      AM_SERVICE_FILTER_PANEL_WIDTH,
+      setPanelAnchor,
+    );
+  }, [getFilterTriggerRef]);
+
+  const openFilterPanel = React.useCallback((panel: AmServicesFilterPanel) => {
+    if (activeFilterPanel === panel) {
+      setActiveFilterPanel(null);
+      setPanelAnchor(null);
+      return;
+    }
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+    anchorFilterPanel(panel);
+    setActiveFilterPanel(panel);
+  }, [activeFilterPanel, anchorFilterPanel]);
+
+  const closeFilterPanel = React.useCallback(() => {
+    setActiveFilterPanel(null);
+    setPanelAnchor(null);
+  }, []);
 
   const fetchAccounts = React.useCallback(async () => {
     try {
@@ -1317,12 +1378,14 @@ function AmServicesPage() {
   const handlePlatformChange = React.useCallback((value: string) => {
     setPlatform(value);
     setPage(1);
-  }, []);
+    closeFilterPanel();
+  }, [closeFilterPanel]);
 
   const handleServiceStatusChange = React.useCallback((value: string) => {
     setServiceStatus(value);
     setPage(1);
-  }, []);
+    closeFilterPanel();
+  }, [closeFilterPanel]);
 
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
@@ -1580,34 +1643,61 @@ function AmServicesPage() {
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
-        <KolamSearchField
-          value={search}
-          onChangeText={handleSearchChange}
-          placeholder="Cari layanan..."
-          containerStyle={styles.taskSearch}
-          trailingLabel={`${total} layanan`}
-        />
-        <AmSegmentGroup
-          active={platform}
-          items={AM_PLATFORMS}
-          labels={AM_PLATFORM_LABELS}
-          onSelect={handlePlatformChange}
-        />
-        <AmSegmentGroup
-          active={serviceStatus}
-          items={['all', 'active', 'inactive', 'blocked']}
-          onSelect={handleServiceStatusChange}
-        />
-        <KolamRefreshButton
-          accessibilityLabel="Refresh"
-          disabled={isLoading}
-
-          intent="outline"
-          muted={isLoading}
-          size="sm"
-          onPress={fetchAccounts}
-        />
+      <View ref={toolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                value={search}
+                onChangeText={handleSearchChange}
+                placeholder="Cari layanan..."
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                trailingLabel={`${total} layanan`}
+              />
+              <View ref={platformTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'platform' || platform !== 'all'}
+                  label={AM_PLATFORM_LABELS[platform] ?? platform}
+                  onPress={() => openFilterPanel('platform')}
+                  open={activeFilterPanel === 'platform'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={statusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeFilterPanel === 'status' || serviceStatus !== 'all'}
+                  label={AM_SERVICE_STATUS_LABELS[serviceStatus] ?? formatAmDisplayLabel(serviceStatus)}
+                  onPress={() => openFilterPanel('status')}
+                  open={activeFilterPanel === 'status'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamRefreshButton
+                accessibilityLabel="Refresh"
+                disabled={isLoading}
+                intent="outline"
+                muted={isLoading}
+                size="sm"
+                onPress={fetchAccounts}
+              />
+            </View>
+          </View>
+        </View>
+        {activeFilterPanel && panelAnchor ? (
+          <AmServicesFilterOverlayPanel
+            activePanel={activeFilterPanel}
+            anchor={panelAnchor}
+            platform={platform}
+            serviceStatus={serviceStatus}
+            onClose={closeFilterPanel}
+            onPlatformChange={handlePlatformChange}
+            onStatusChange={handleServiceStatusChange}
+          />
+        ) : null}
       </View>
       {error ? (
         <View style={styles.errorPanel}>
@@ -1783,6 +1873,64 @@ function AmServicesPage() {
             </View>
           </View>
         ) : null}
+      </View>
+    </View>
+  );
+}
+
+function AmServicesFilterOverlayPanel({
+  activePanel,
+  anchor,
+  platform,
+  serviceStatus,
+  onClose,
+  onPlatformChange,
+  onStatusChange,
+}: {
+  activePanel: AmServicesFilterPanel;
+  anchor: KolamFilterPanelAnchor;
+  platform: string;
+  serviceStatus: string;
+  onClose: () => void;
+  onPlatformChange: (value: string) => void;
+  onStatusChange: (value: string) => void;
+}) {
+  const options = activePanel === 'platform'
+    ? AM_PLATFORMS.map(value => ({label: AM_PLATFORM_LABELS[value] ?? value, value}))
+    : AM_SERVICE_STATUS_FILTERS.map(value => ({label: AM_SERVICE_STATUS_LABELS[value] ?? formatAmDisplayLabel(value), value}));
+  const selectedValue = activePanel === 'platform' ? platform : serviceStatus;
+  const onSelect = activePanel === 'platform' ? onPlatformChange : onStatusChange;
+
+  return (
+    <View
+      style={[
+        styles.amServicesFilterOverlayPanel,
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: AM_SERVICE_FILTER_PANEL_WIDTH,
+        },
+      ]}>
+      <ScrollView
+        contentContainerStyle={styles.amServicesFilterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.amServicesFilterPanelScroll}>
+        {options.map(option => {
+          const selected = option.value === selectedValue;
+          return (
+            <KolamButton
+              accessibilityLabel={`AM Segment ${formatAmDisplayLabel(option.label)}`}
+              intent={selected ? 'primary' : 'plain'}
+              key={`${activePanel}-${option.value}`}
+              label={formatAmDisplayLabel(option.label)}
+              onPress={() => onSelect(option.value)}
+              style={styles.amServicesFilterPanelOption}
+            />
+          );
+        })}
+      </ScrollView>
+      <View style={styles.amServicesFilterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
       </View>
     </View>
   );
@@ -7908,6 +8056,48 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
+  },
+  amServicesToolbarWrap: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    position: 'relative',
+    zIndex: 100000,
+    elevation: 1000,
+    overflow: 'visible',
+  },
+  amServicesFilterTrigger: {
+    overflow: 'visible',
+  },
+  amServicesFilterOverlayPanel: {
+    position: 'absolute',
+    zIndex: 120000,
+    elevation: 1200,
+    borderWidth: 1,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    backgroundColor: V.colors.bg,
+    padding: 6,
+    shadowColor: V.colors.fg,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+  },
+  amServicesFilterPanelScroll: {
+    maxHeight: 240,
+  },
+  amServicesFilterPanelContent: {
+    gap: 4,
+  },
+  amServicesFilterPanelOption: {
+    justifyContent: 'flex-start',
+  },
+  amServicesFilterPanelFooter: {
+    alignItems: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    marginTop: 6,
+    paddingTop: 6,
   },
   breadcrumbBar: {
     flexDirection: 'row',

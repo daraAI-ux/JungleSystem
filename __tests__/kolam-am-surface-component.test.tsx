@@ -824,32 +824,44 @@ describe('KolamAmSurface', () => {
         style?.minWidth === 0 &&
         style?.overflow === 'hidden';
     })).toBe(true);
-    const routeFilterBars = renderer!.root
+    const routeToolbarRows = renderer!.root
       .findAllByType(View)
       .filter(view => {
         const style = StyleSheet.flatten(view.props.style);
         return style?.flexWrap === 'wrap' &&
           style?.alignItems === 'center' &&
-          style?.gap === 10;
+          style?.gap === 6 &&
+          style?.justifyContent === 'space-between' &&
+          style?.minHeight === 40 &&
+          style?.overflow === 'visible';
       });
-    expect(routeFilterBars.length).toBeGreaterThan(0);
-    expect(routeFilterBars.every(view => {
+    expect(routeToolbarRows.length).toBeGreaterThan(0);
+
+    const routeToolbarFilters = renderer!.root
+      .findAllByType(View)
+      .filter(view => {
+        const style = StyleSheet.flatten(view.props.style);
+        return style?.flexDirection === 'row' &&
+          style?.flexWrap === 'wrap' &&
+          style?.alignItems === 'center' &&
+          style?.gap === 4 &&
+          style?.minWidth === 0 &&
+          style?.overflow === 'visible';
+      });
+    expect(routeToolbarFilters.length).toBeGreaterThan(0);
+    expect(routeToolbarFilters.some(view => {
       const style = StyleSheet.flatten(view.props.style);
-      return style?.width === '100%' &&
-        style?.alignSelf === 'stretch' &&
-        style?.minWidth === 0 &&
-        style?.maxWidth === '100%' &&
-        style?.overflow === 'hidden';
+      return style?.flexGrow === 1 &&
+        style?.flexShrink === 1;
     })).toBe(true);
     expect(
       renderer!.root
         .findAllByType(View)
         .some(view => {
           const style = StyleSheet.flatten(view.props.style);
-          return style?.flexBasis === 240 &&
-            style?.flexGrow === 1 &&
+          return style?.flexGrow === 1 &&
             style?.flexShrink === 1 &&
-            style?.minWidth === 240 &&
+            style?.minWidth === 140 &&
             style?.width === undefined;
         }),
     ).toBe(true);
@@ -1073,6 +1085,10 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'Semua platform'}).props.onPress();
+    });
+
+    await act(async () => {
       renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Shopee'})[0].props.onPress();
     });
 
@@ -1082,6 +1098,10 @@ describe('KolamAmSurface', () => {
       search: 'Shopee',
       platform: 'shopee',
       status: undefined,
+    });
+
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'Semua status'}).props.onPress();
     });
 
     await act(async () => {
