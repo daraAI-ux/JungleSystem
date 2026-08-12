@@ -4720,15 +4720,78 @@ function AmTransfersPage({
     anchorTransferFilterPanel();
   }, [activeTransferFilterPanel, anchorTransferFilterPanel]);
 
-  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
-  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
-  const rangeTo = total ? Math.min(page * limit, total) : 0;
   const transferStats = getTransferStats(transfers);
   const transferStatusLabel = TRANSFER_STATUS_FILTER_LABELS[status] ?? formatAmDisplayLabel(status);
   const transferStatusOptions = React.useMemo(
     () => ['all', 'pending', 'processing', 'success', 'failed'],
     [],
   );
+  const transferTableColumns = React.useMemo<Array<KolamListTableColumn<AmTransfer>>>(() => [
+    {
+      flex: 1.25,
+      id: 'account',
+      label: 'Akun',
+      render: transfer => <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>,
+    },
+    {
+      flex: 1.3,
+      id: 'recipient',
+      label: 'Penerima',
+      render: transfer => (
+        <View>
+          <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
+        </View>
+      ),
+    },
+    {
+      flex: 0.65,
+      id: 'bank',
+      label: 'Bank',
+      render: transfer => (
+        <Text style={styles.cellText} numberOfLines={1}>
+          {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}
+        </Text>
+      ),
+    },
+    {
+      align: 'right',
+      flex: 0.95,
+      id: 'amount',
+      label: 'Nominal',
+      render: transfer => (
+        <View>
+          <Text style={styles.cellText}>{formatRupiah(transfer.amount)}</Text>
+          {transfer.fee > 0 ? (
+            <Text style={styles.rowMeta}>Fee {formatRupiah(transfer.fee)}</Text>
+          ) : null}
+        </View>
+      ),
+    },
+    {
+      flex: 0.75,
+      id: 'status',
+      label: 'Status',
+      render: transfer => <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />,
+    },
+    {
+      flex: 1.3,
+      id: 'device',
+      label: 'Device',
+      render: transfer => (
+        <View>
+          <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(transfer.deviceId)}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(transfer.deviceId)}</Text>
+        </View>
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'created',
+      label: 'Dibuat',
+      render: transfer => <Text style={styles.cellText}>{formatAmDate(transfer.createdAt)}</Text>,
+    },
+  ], []);
   const activeTransferAccounts = React.useMemo(
     () => accounts.filter(account => account.status === 'active' && isTransferBanking(account.platform)),
     [accounts],
@@ -5027,88 +5090,36 @@ function AmTransfersPage({
         ]}
         title="Ringkasan Transfer"
       />
-      <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Akun</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Penerima</Text>
-          <Text style={[styles.tableHeaderText, styles.platformCol]}>Bank</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Nominal</Text>
-          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Dibuat</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]} />
-        </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={transfers} loadingText="Memuat transfer AM..." emptyText="Transfer tidak ditemukan" />
-        {transfers.map(transfer => (
-          <View key={transfer._id} style={styles.tableRow}>
-            <View style={styles.accountWideCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
-            </View>
-            <View style={styles.recipientCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
-            </View>
-            <Text style={[styles.cellText, styles.platformCol]} numberOfLines={1}>
-              {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}
-            </Text>
-            <View style={styles.amountCol}>
-              <Text style={styles.cellText}>{formatRupiah(transfer.amount)}</Text>
-              {transfer.fee > 0 ? (
-                <Text style={styles.rowMeta}>Fee {formatRupiah(transfer.fee)}</Text>
-              ) : null}
-            </View>
-            <View style={styles.statusCol}>
-              <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
-            </View>
-            <View style={styles.deviceWideCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(transfer.deviceId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(transfer.deviceId)}</Text>
-            </View>
-            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(transfer.createdAt)}</Text>
-            <View style={styles.actionCol}>
-              <View style={styles.inlineActions}>
-                <KolamButton
-                  accessibilityLabel={`AM Transfer Detail ${transfer._id}`}
-                  label={selectedTransferId === transfer._id ? 'Tutup' : 'Detail'}
-                  intent="outline"
-                  size="sm"
-                  onPress={() => selectTransfer(transfer)}
-                />
-                <AmTransferActions
-                  disabled={actingTransferId === transfer._id}
-                  transfer={transfer}
-                  onAction={runTransferAction}
-                />
-              </View>
-            </View>
+      <KolamListTableComposition
+        columns={transferTableColumns}
+        emptyTitle="Transfer tidak ditemukan"
+        getRowKey={transfer => transfer._id}
+        loading={isLoading}
+        pagination={total > 0 ? {
+          onPageChange: setPage,
+          page,
+          pageSize: limit,
+          total,
+        } : undefined}
+        renderActions={transfer => (
+          <View style={styles.inlineActions}>
+            <KolamButton
+              accessibilityLabel={`AM Transfer Detail ${transfer._id}`}
+              label={selectedTransferId === transfer._id ? 'Tutup' : 'Detail'}
+              intent="outline"
+              size="sm"
+              onPress={() => selectTransfer(transfer)}
+            />
+            <AmTransferActions
+              disabled={actingTransferId === transfer._id}
+              transfer={transfer}
+              onAction={runTransferAction}
+            />
           </View>
-        ))}
-        {total > limit ? (
-          <View style={styles.paginationBar}>
-            <Text style={styles.paginationText}>
-              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
-            </Text>
-            <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel="AM Transfers Previous Page"
-                disabled={page <= 1 || isLoading}
-                label="Sebelumnya"
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.max(1, current - 1))}
-              />
-              <KolamButton
-                accessibilityLabel="AM Transfers Next Page"
-                disabled={page >= totalPages || isLoading}
-                label={`Halaman ${page}/${totalPages}`}
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
-              />
-            </View>
-          </View>
-        ) : null}
-      </View>
+        )}
+        rows={transfers}
+        showFooter={total > 0}
+      />
       {selectedTransferId ? (
         <AmTransferDetailPanel
           actingTransferId={actingTransferId}
@@ -5489,9 +5500,6 @@ function AmMutasiPage({
     }
   }, [selectedMutasiId]);
 
-  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
-  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
-  const rangeTo = total ? Math.min(page * limit, total) : 0;
   const incoming = summary?.masuk ?? {total: 0, count: 0};
   const outgoing = summary?.keluar ?? {total: 0, count: 0};
   const netBalance = incoming.total - outgoing.total;
@@ -5540,6 +5548,60 @@ function AmMutasiPage({
     account: handleMutasiAccountChange,
     device: handleMutasiDeviceChange,
   };
+  const mutasiTableColumns = React.useMemo<Array<KolamListTableColumn<AmMutasi>>>(() => [
+    {
+      flex: 0.75,
+      id: 'type',
+      label: 'Tipe',
+      render: item => (
+        <AmStatusChip
+          label={formatMutasiTypeLabel(item.type)}
+          tone={item.type === 'masuk' ? 'success' : 'danger'}
+        />
+      ),
+    },
+    {
+      flex: 1.35,
+      id: 'account',
+      label: 'Akun',
+      render: item => (
+        <View>
+          <Text style={styles.cellText} numberOfLines={1}>{formatAccountLabel(item.accountId)}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
+        </View>
+      ),
+    },
+    {
+      align: 'right',
+      flex: 0.95,
+      id: 'amount',
+      label: 'Nominal',
+      render: item => <Text style={styles.cellText}>{formatMutasiSignedAmount(item)}</Text>,
+    },
+    {
+      flex: 1.4,
+      id: 'description',
+      label: 'Deskripsi',
+      render: item => <Text style={styles.cellText} numberOfLines={1}>{item.description || '-'}</Text>,
+    },
+    {
+      flex: 1.35,
+      id: 'device',
+      label: 'Device',
+      render: item => (
+        <View>
+          <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(item.deviceId)}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(item.deviceId)}</Text>
+        </View>
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'time',
+      label: 'Waktu',
+      render: item => <Text style={styles.cellText}>{formatAmDate(item.detectedAt)}</Text>,
+    },
+  ], []);
 
   return (
     <View style={styles.pageStack}>
@@ -5605,73 +5667,29 @@ function AmMutasiPage({
         ) : null}
       </View>
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
-      <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Tipe</Text>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Akun</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Nominal</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
-          <Text style={[styles.tableHeaderText, styles.deviceWideCol]}>Device</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]} />
-        </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={mutasi} loadingText="Memuat mutasi AM..." emptyText="Mutasi tidak ditemukan" />
-        {mutasi.map(item => (
-          <View key={item._id} style={styles.tableRow}>
-            <View style={styles.typeCol}>
-              <AmStatusChip
-                label={formatMutasiTypeLabel(item.type)}
-                tone={item.type === 'masuk' ? 'success' : 'danger'}
-              />
-            </View>
-            <View style={styles.accountWideCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatAccountLabel(item.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountNumber(item.accountId)}</Text>
-            </View>
-            <Text style={[styles.cellText, styles.amountCol]}>{formatMutasiSignedAmount(item)}</Text>
-            <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>{item.description || '-'}</Text>
-            <View style={styles.deviceWideCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatDeviceRef(item.deviceId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatDeviceLocation(item.deviceId)}</Text>
-            </View>
-            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(item.detectedAt)}</Text>
-            <View style={styles.actionCol}>
-              <KolamButton
-                accessibilityLabel={`AM Mutasi Detail ${item._id}`}
-                label={selectedMutasiId === item._id ? 'Tutup' : 'Detail'}
-                intent="outline"
-                size="sm"
-                onPress={() => selectMutasi(item)}
-              />
-            </View>
-          </View>
-        ))}
-        {total > limit ? (
-          <View style={styles.paginationBar}>
-            <Text style={styles.paginationText}>
-              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
-            </Text>
-            <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel="AM Mutasi Previous Page"
-                disabled={page <= 1 || isLoading}
-                label="Sebelumnya"
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.max(1, current - 1))}
-              />
-              <KolamButton
-                accessibilityLabel="AM Mutasi Next Page"
-                disabled={page >= totalPages || isLoading}
-                label={`Halaman ${page}/${totalPages}`}
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
-              />
-            </View>
-          </View>
-        ) : null}
-      </View>
+      <KolamListTableComposition
+        columns={mutasiTableColumns}
+        emptyTitle="Mutasi tidak ditemukan"
+        getRowKey={item => item._id}
+        loading={isLoading}
+        pagination={total > 0 ? {
+          onPageChange: setPage,
+          page,
+          pageSize: limit,
+          total,
+        } : undefined}
+        renderActions={item => (
+          <KolamButton
+            accessibilityLabel={`AM Mutasi Detail ${item._id}`}
+            label={selectedMutasiId === item._id ? 'Tutup' : 'Detail'}
+            intent="outline"
+            size="sm"
+            onPress={() => selectMutasi(item)}
+          />
+        )}
+        rows={mutasi}
+        showFooter={total > 0}
+      />
       {selectedMutasiId ? (
         <AmMutasiDetailPanel
           error={detailError}

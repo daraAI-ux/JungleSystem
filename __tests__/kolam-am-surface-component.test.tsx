@@ -875,7 +875,7 @@ describe('KolamAmSurface', () => {
           style?.minWidth === 0;
       });
 
-    expect(mutasiBodyStacks.length).toBeGreaterThanOrEqual(5);
+    expect(mutasiBodyStacks.length).toBeGreaterThanOrEqual(4);
   });
 
   it('opens AM dashboard parity routes from recent panels', async () => {
@@ -4677,8 +4677,10 @@ describe('KolamAmSurface', () => {
     expect(text).toEqual(expect.arrayContaining(['Tipe', 'Akun', 'Nominal', 'Deskripsi', 'Device', 'Waktu']));
     expect(joinedText).toContain('Waktu');
     expect(joinedText).not.toContain('Aksi');
-    expect(joinedText).toMatch(/Menampilkan\s+1\s+-\s+100\s+dari\s+120\s+item/);
-    expect(joinedText).toContain('Halaman 1/2');
+    expect(joinedText).toContain('Menampilkan');
+    expect(joinedText).toContain('1 - 100');
+    expect(joinedText).toContain('120');
+    expect(joinedText).toContain('hasil');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Detail mutasi-1'}).props.onPress();
@@ -4699,7 +4701,7 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Next Page'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
     });
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
@@ -5440,11 +5442,13 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('888 Vendor Success BRI');
     expect(joinedText).toContain('Box A / Rack Blue');
     expect(joinedText).toMatch(/Fee\s+Rp\s*2\.500/);
-    expect(joinedText).toMatch(/Menampilkan\s+1\s+-\s+20\s+dari\s+45\s+item/);
-    expect(joinedText).toContain('Halaman 1/3');
+    expect(joinedText).toContain('Menampilkan');
+    expect(joinedText).toContain('1 - 20');
+    expect(joinedText).toContain('45');
+    expect(joinedText).toContain('hasil');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Transfers Next Page'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
     });
 
     expect(getAmTransfers).toHaveBeenLastCalledWith({
