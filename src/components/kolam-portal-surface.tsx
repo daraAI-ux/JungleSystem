@@ -69,10 +69,26 @@ const TASK_STATUS: Record<string, string> = {
 };
 
 type PortalWorkTab = 'attendance' | 'tasks';
+type PortalCompensationTab =
+  | 'slips'
+  | 'commissions'
+  | 'overtime'
+  | 'deductions'
+  | 'bonuses'
+  | 'kasbon';
 
 const PORTAL_WORK_TABS = [
   { id: 'attendance', label: 'Absensi' },
   { id: 'tasks', label: 'Tugas saya' },
+] as const;
+
+const PORTAL_COMPENSATION_TABS = [
+  { id: 'slips', label: 'Slip gaji' },
+  { id: 'commissions', label: 'Komisi' },
+  { id: 'overtime', label: 'Biaya lembur' },
+  { id: 'deductions', label: 'Potongan' },
+  { id: 'bonuses', label: 'Bonus' },
+  { id: 'kasbon', label: 'Kasbon' },
 ] as const;
 
 export function KolamPortalSurface({
@@ -88,6 +104,8 @@ export function KolamPortalSurface({
   const [attendancePage, setAttendancePage] = React.useState(1);
   const [taskPage, setTaskPage] = React.useState(1);
   const [activeWorkTab, setActiveWorkTab] = React.useState<PortalWorkTab>('attendance');
+  const [activeCompensationTab, setActiveCompensationTab] =
+    React.useState<PortalCompensationTab>('slips');
   const isWide = width >= 1180;
   const isEmployee = authUser?.isEmployee;
   const shouldLoad = isEmployee !== false;
@@ -157,17 +175,12 @@ export function KolamPortalSurface({
                 taskPage={taskPage}
               />
 
-              <View style={styles.threeGrid}>
-                <PortalPayrollSlipsSection data={dataset} loading={loading} />
-                <PortalCommissionsSection data={dataset} loading={loading} />
-                <PortalOvertimeSection data={dataset} loading={loading} />
-              </View>
-
-              <View style={styles.threeGrid}>
-                <PortalDeductionsSection data={dataset} loading={loading} />
-                <PortalBonusesSection data={dataset} loading={loading} />
-                <PortalKasbonSection data={dataset} loading={loading} />
-              </View>
+              <PortalCompensationTabsSection
+                activeTab={activeCompensationTab}
+                data={dataset}
+                loading={loading}
+                onTabChange={setActiveCompensationTab}
+              />
 
             </>
           )}
@@ -569,7 +582,68 @@ function PortalWorkTabsSection({
   );
 }
 
-function PortalPayrollSlipsSection({
+function PortalCompensationTabsSection({
+  activeTab,
+  data,
+  loading,
+  onTabChange,
+}: {
+  activeTab: PortalCompensationTab;
+  data: KolamPortalDataset | null;
+  loading: boolean;
+  onTabChange: (tab: PortalCompensationTab) => void;
+}) {
+  return (
+    <PortalCard
+      action={
+        activeTab === 'kasbon' ? <KolamButton disabled label="Ajukan kasbon" /> : undefined
+      }
+      title="Gaji & kompensasi"
+    >
+      <View style={styles.portalTableTabs}>
+        <KolamSurfacePanelTabs
+          onSelectTab={onTabChange}
+          selectedTabId={activeTab}
+          tabs={[...PORTAL_COMPENSATION_TABS]}
+        />
+      </View>
+      {activeTab === 'slips' ? (
+        <PortalPayrollSlipsContent data={data} loading={loading} />
+      ) : null}
+      {activeTab === 'commissions' ? (
+        <PortalCommissionsContent data={data} loading={loading} />
+      ) : null}
+      {activeTab === 'overtime' ? (
+        <PortalOvertimeContent data={data} loading={loading} />
+      ) : null}
+      {activeTab === 'deductions' ? (
+        <MoneyCompactSection
+          empty="Tidak ada"
+          loading={loading && !data}
+          rows={data?.deductions ?? []}
+          statusMap={DEDUCTION_STATUS}
+        />
+      ) : null}
+      {activeTab === 'bonuses' ? (
+        <MoneyCompactSection
+          empty="Belum ada"
+          loading={loading && !data}
+          rows={data?.bonuses ?? []}
+        />
+      ) : null}
+      {activeTab === 'kasbon' ? (
+        <MoneyCompactSection
+          empty="Tidak ada"
+          loading={loading && !data}
+          rows={data?.kasbon ?? []}
+          statusMap={KASBON_STATUS}
+        />
+      ) : null}
+    </PortalCard>
+  );
+}
+
+function PortalPayrollSlipsContent({
   data,
   loading,
 }: {
@@ -579,7 +653,7 @@ function PortalPayrollSlipsSection({
   const periods = getPayrollPeriods(data);
   const slipRows = periods.filter(row => row.slip);
   return (
-    <PortalCard title="Slip gaji" subtitle={slipRows.length ? String(slipRows.length) : undefined}>
+    <>
       {loading && !data ? (
         <EmptyLine text="Memuat..." />
       ) : !slipRows.length ? (
@@ -596,11 +670,11 @@ function PortalPayrollSlipsSection({
           )}
         />
       )}
-    </PortalCard>
+    </>
   );
 }
 
-function PortalCommissionsSection({
+function PortalCommissionsContent({
   data,
   loading,
 }: {
@@ -619,7 +693,8 @@ function PortalCommissionsSection({
       : undefined;
 
   return (
-    <PortalCard title="Komisi" subtitle={subtitle}>
+    <>
+      {subtitle ? <Text style={styles.smallMuted}>{subtitle}</Text> : null}
       {loading && !data ? (
         <EmptyLine text="Memuat..." />
       ) : !commRows.length && !hasTotals ? (
@@ -641,11 +716,11 @@ function PortalCommissionsSection({
           <Text style={styles.smallMuted}>Angka gross. PDF untuk detail.</Text>
         </>
       )}
-    </PortalCard>
+    </>
   );
 }
 
-function PortalOvertimeSection({
+function PortalOvertimeContent({
   data,
   loading,
 }: {
@@ -657,7 +732,8 @@ function PortalOvertimeSection({
     ? `tunggu ${formatCurrency(data.summary.overtimeApprovedAmount)} · cair ${formatCurrency(data.summary.overtimePaidAmount)}`
     : undefined;
   return (
-    <PortalCard title="Biaya lembur" subtitle={subtitle}>
+    <>
+      {subtitle ? <Text style={styles.smallMuted}>{subtitle}</Text> : null}
       {loading && !data ? (
         <EmptyLine text="Memuat..." />
       ) : !rows.length ? (
@@ -674,67 +750,7 @@ function PortalOvertimeSection({
           )}
         />
       )}
-    </PortalCard>
-  );
-}
-
-function PortalDeductionsSection({
-  data,
-  loading,
-}: {
-  data: KolamPortalDataset | null;
-  loading: boolean;
-}) {
-  return (
-    <PortalCard title="Potongan" subtitle={data?.deductions.length ? String(data.deductions.length) : undefined}>
-      <MoneyCompactSection
-        empty="Tidak ada"
-        loading={loading && !data}
-        rows={data?.deductions ?? []}
-        statusMap={DEDUCTION_STATUS}
-      />
-    </PortalCard>
-  );
-}
-
-function PortalBonusesSection({
-  data,
-  loading,
-}: {
-  data: KolamPortalDataset | null;
-  loading: boolean;
-}) {
-  return (
-    <PortalCard title="Bonus" subtitle={data?.bonuses.length ? String(data.bonuses.length) : undefined}>
-      <MoneyCompactSection
-        empty="Belum ada"
-        loading={loading && !data}
-        rows={data?.bonuses ?? []}
-      />
-    </PortalCard>
-  );
-}
-
-function PortalKasbonSection({
-  data,
-  loading,
-}: {
-  data: KolamPortalDataset | null;
-  loading: boolean;
-}) {
-  return (
-    <PortalCard
-      action={<KolamButton disabled label="Ajukan kasbon" />}
-      subtitle={data?.kasbon.length ? String(data.kasbon.length) : undefined}
-      title="Kasbon"
-    >
-      <MoneyCompactSection
-        empty="Tidak ada"
-        loading={loading && !data}
-        rows={data?.kasbon ?? []}
-        statusMap={KASBON_STATUS}
-      />
-    </PortalCard>
+    </>
   );
 }
 
@@ -1202,13 +1218,6 @@ const styles = StyleSheet.create({
     width: undefined,
   },
   twelveGrid: {
-    alignItems: 'stretch',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    width: '100%',
-  },
-  threeGrid: {
     alignItems: 'stretch',
     flexDirection: 'row',
     flexWrap: 'wrap',
