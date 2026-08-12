@@ -2,7 +2,6 @@ import React from 'react';
 import {
   ActivityIndicator,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -118,12 +117,7 @@ export function KolamPortalSurface({
   React.useEffect(() => refresh(), [refresh]);
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator
-      style={styles.root}
-    >
+    <View style={styles.root}>
       <View style={[styles.layout, isWide ? styles.layoutWide : null]}>
         <View style={[styles.mainColumn, isWide ? styles.mainColumnWide : null]}>
           {isEmployee === false ? (
@@ -179,7 +173,7 @@ export function KolamPortalSurface({
           )}
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1166,10 +1160,6 @@ function getInitials(value?: string | null) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    width: '100%',
-  },
-  scrollContent: {
-    paddingBottom: 28,
     width: '100%',
   },
   layout: {
