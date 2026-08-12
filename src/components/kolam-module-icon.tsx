@@ -3,6 +3,7 @@ import {Image, StyleSheet, View} from 'react-native';
 import Svg, {Path, SvgXml} from 'react-native-svg';
 import {KOLAM_AI_MODULE_ICON_SVG} from '../assets/icons/ai-module-icon-svg';
 import {KOLAM_LAYANAN_AM_ICON_SVG} from '../assets/icons/layanan-am-icon-svg';
+import {KOLAM_PERANGKAT_AM_ICON_SVG} from '../assets/icons/perangkat-am-icon-svg';
 import {KOLAM_ARCHIVE_MODULE_ICON_SVG} from '../assets/icons/archive-module-icon-svg';
 import {KOLAM_ASSET_PURCHASE_MODULE_ICON_SVG} from '../assets/icons/asset-purchase-module-icon-svg';
 import {KOLAM_BRAND_MODULE_ICON_SVG} from '../assets/icons/brand-module-icon-svg';
@@ -59,6 +60,7 @@ const TERANURA_MODULE_ICON_SOURCE = require('../assets/icons/teranura-module-ico
 
 const MODULE_ICON_LABEL: Record<KolamNavigationModuleIcon, string> = {
   ai: 'Icon Pusat AI',
+  amHardware: 'Icon Perangkat AM',
   amService: 'Icon Layanan AM',
   archive: 'Icon Arsip',
   assetPurchase: 'Icon Pembelian Aset',
@@ -228,6 +230,12 @@ export function KolamModuleIcon({
       style={[styles.root, {height: dimension, width: dimension}]}>
       {kind === 'ai' ? (
         <SvgXml height="100%" width="100%" xml={KOLAM_AI_MODULE_ICON_SVG} />
+      ) : kind === 'amHardware' ? (
+        <SvgXml
+          height="100%"
+          width="100%"
+          xml={KOLAM_PERANGKAT_AM_ICON_SVG}
+        />
       ) : kind === 'amService' ? (
         <SvgXml
           height="100%"

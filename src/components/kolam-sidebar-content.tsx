@@ -296,6 +296,7 @@ function getAmRouteModuleIcon(
 ): KolamNavigationModuleIcon | undefined {
   if (item.id === 'dashboard') return 'automation';
   if (item.id === 'services') return 'amService';
+  if (item.id === 'hardware') return 'amHardware';
   return undefined;
 }
 
