@@ -426,7 +426,12 @@ export function KolamSalesOpsDetail({
     <View style={styles.detailSurface}>
       <View style={kolamTableToolbarStyles.shell}>
         <View style={kolamTableToolbarStyles.row}>
-          <View style={kolamTableToolbarStyles.filters}>
+          <View
+            style={[
+              kolamTableToolbarStyles.filters,
+              styles.detailToolbarFilters,
+            ]}
+          >
             <View style={styles.detailToolbarTitleRow}>
               <Text numberOfLines={1} style={styles.detailToolbarContext}>
                 {sale.invoiceCode}
@@ -2676,11 +2681,17 @@ const styles = StyleSheet.create({
   detailSurface: {
     gap: 14,
   },
+  detailToolbarFilters: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
   detailToolbarTitleRow: {
     alignItems: 'center',
+    alignSelf: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'center',
     minHeight: 34,
     minWidth: 0,
   },
@@ -2690,9 +2701,11 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 13,
     fontWeight: '700',
+    includeFontPadding: false,
     minWidth: 0,
     paddingHorizontal: 8,
-    paddingVertical: 0,
+    paddingVertical: 8,
+    textAlignVertical: 'center',
   },
   detailToolbarBadge: {
     alignSelf: 'center',
