@@ -2195,16 +2195,14 @@ function getCatalogColumnCount(width: number) {
 }
 
 function getPaymentMethodColumnCount(width: number) {
-  if (width >= 1680) {
-    return 7;
-  }
-  if (width >= 1380) {
-    return 6;
-  }
-  if (width >= 1120) {
-    return 5;
-  }
-  return 4;
+  const contentWidth = Math.max(0, width - V.layout.sidebarWidth - 72);
+  const minCardWidth = 220;
+  const gap = 8;
+
+  return Math.max(
+    3,
+    Math.min(6, Math.floor((contentWidth + gap) / (minCardWidth + gap))),
+  );
 }
 
 function chunkItems<T>(items: T[], columnCount: number) {
