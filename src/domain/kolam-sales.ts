@@ -1112,6 +1112,24 @@ export function isKolamSaleMarketplaceManaged(sale: {
   return source === 'shopee' || source === 'tokopedia';
 }
 
+/** FE sales-invoice chat CTA — Shopee/Tokopedia marketplace sales. */
+export function canOpenKolamSaleCustomerChat(sale: {
+  marketplaceSource?: string | null;
+  marketplaceLogistics?: {platform?: string | null} | null;
+  marketplaceFulfillment?: {platform?: string | null} | null;
+}): boolean {
+  if (isKolamSaleMarketplaceManaged(sale)) {
+    return true;
+  }
+
+  const platform = String(
+    sale.marketplaceLogistics?.platform ||
+      sale.marketplaceFulfillment?.platform ||
+      '',
+  ).toLowerCase();
+  return platform === 'shopee' || platform === 'tokopedia';
+}
+
 export function isKolamSaleShippingAutomationActive(sale: {
   shippingAutomationActive?: boolean | null;
 }): boolean {
@@ -3074,9 +3092,26 @@ export function normalizeKolamSale(payload: unknown): KolamSale {
   const paymentMethod = normalizePaymentMethodRef(record.paymentMethod);
   const externalRef = asRecord(record.externalRef);
   const pointsConfig = asRecord(record.pointsConfig);
-  const marketplaceSource = getString(externalRef, 'source').toLowerCase();
   const shopee = asRecord(externalRef.shopee);
   const tokopedia = asRecord(externalRef.tokopedia);
+  let marketplaceSource = getString(externalRef, 'source').toLowerCase();
+  // Alias / legacy import sources → canonical platform ids used by UI gates.
+  if (marketplaceSource.startsWith('shopee')) {
+    marketplaceSource = 'shopee';
+  } else if (marketplaceSource.startsWith('tokopedia')) {
+    marketplaceSource = 'tokopedia';
+  }
+  // Some rows omit externalRef.source but still carry nested marketplace payloads.
+  if (!marketplaceSource) {
+    if (getString(shopee, 'mainOrderId') || getString(shopee, 'orderId')) {
+      marketplaceSource = 'shopee';
+    } else if (
+      getString(tokopedia, 'mainOrderId') ||
+      getString(tokopedia, 'orderId')
+    ) {
+      marketplaceSource = 'tokopedia';
+    }
+  }
   const marketplaceOrderId =
     marketplaceSource === 'shopee'
       ? getString(shopee, 'mainOrderId') || getString(shopee, 'orderId')

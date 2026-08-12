@@ -300,6 +300,18 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
         tokopedia: {mainOrderId: 'TP-CHAT', fulfillmentMode: 'pickup'},
       },
     });
+    const nestedSourceController = createController({
+      _id: 'sale-nested-chat',
+      invoiceCode: 'INV-NEST-C',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        shopee: {mainOrderId: 'SH-NEST-CHAT'},
+      },
+    });
     const offlineController = createController({
       _id: 'sale-off',
       invoiceCode: 'INV-OFF',
@@ -313,6 +325,7 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
 
     let shopeeRenderer: ReactTestRenderer.ReactTestRenderer;
     let tokopediaRenderer: ReactTestRenderer.ReactTestRenderer;
+    let nestedRenderer: ReactTestRenderer.ReactTestRenderer;
     let offlineRenderer: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
       shopeeRenderer = ReactTestRenderer.create(
@@ -320,6 +333,9 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
       );
       tokopediaRenderer = ReactTestRenderer.create(
         <KolamSalesOpsDetail controller={tokopediaController} />,
+      );
+      nestedRenderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={nestedSourceController} />,
       );
       offlineRenderer = ReactTestRenderer.create(
         <KolamSalesOpsDetail controller={offlineController} />,
@@ -332,8 +348,12 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
     const tokopediaButton = tokopediaRenderer!.root
       .findAllByType(KolamButton)
       .find(node => node.props.label === 'Kirim pesan ke customer');
+    const nestedButton = nestedRenderer!.root
+      .findAllByType(KolamButton)
+      .find(node => node.props.label === 'Kirim pesan ke customer');
     expect(shopeeButton).toBeTruthy();
     expect(tokopediaButton).toBeTruthy();
+    expect(nestedButton).toBeTruthy();
     expect(renderText(offlineRenderer!)).not.toContain(
       'Kirim pesan ke customer',
     );

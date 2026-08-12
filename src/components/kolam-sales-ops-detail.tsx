@@ -41,6 +41,7 @@ import {
   getKolamSaleTrackingNumber,
   getKolamSaleWalletConfirmStatusIntent,
   resolveKolamSaleSourceLogoUri,
+  canOpenKolamSaleCustomerChat,
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   isKolamSaleShippingAutomationActive,
@@ -221,11 +222,7 @@ export function KolamSalesOpsDetail({
     marketplaceFulfillment?.dropOffPointUrl?.trim() || '';
   const showMarketplaceFulfillmentActions =
     showTokopediaPickupRequest || showTokopediaDropOffBadge;
-  const marketplaceChatSource = String(sale.marketplaceSource || '')
-    .trim()
-    .toLowerCase();
-  const showCustomerChat =
-    marketplaceChatSource === 'shopee' || marketplaceChatSource === 'tokopedia';
+  const showCustomerChat = canOpenKolamSaleCustomerChat(sale);
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
   const outstanding = getKolamSaleOutstandingAmount(sale);
   const profitSummary = computeKolamSaleProfitSummary(sale);
@@ -356,45 +353,54 @@ export function KolamSalesOpsDetail({
                 textStyle={styles.paymentProofUploadButtonText}
               />
             ) : null}
-            {showCustomerChat ? (
-              <KolamButton
-                disabled={
-                  controller.openingCustomerChat || controller.mutating
-                }
-                label={
-                  controller.openingCustomerChat
-                    ? 'Membuka…'
-                    : 'Kirim pesan ke customer'
-                }
-                onPress={() => {
-                  void controller.onOpenCustomerChat();
-                }}
-                style={styles.toolbarButton}
-              />
-            ) : null}
-            <KolamPdfDownloadButton
-              disabled={controller.downloadingInvoice || controller.mutating}
-              intent="primary"
-              label="Unduh invoice PDF"
-              loading={controller.downloadingInvoice}
-              loadingLabel="Mengunduh…"
-              onPress={() => {
-                void controller.onDownloadInvoice();
-              }}
-              style={styles.toolbarButton}
-            />
-            {showResi ? (
+            <View style={styles.toolbarDownloadCluster}>
+              {showCustomerChat ? (
+                <KolamButton
+                  accessibilityLabel="Kirim pesan ke customer"
+                  disabled={
+                    controller.openingCustomerChat || controller.mutating
+                  }
+                  label={
+                    controller.openingCustomerChat
+                      ? 'Membuka…'
+                      : 'Kirim pesan ke customer'
+                  }
+                  onPress={() => {
+                    void controller.onOpenCustomerChat();
+                  }}
+                  style={[
+                    styles.toolbarButton,
+                    styles.toolbarDaftarToneButton,
+                  ]}
+                  textStyle={styles.toolbarDaftarToneButtonText}
+                />
+              ) : null}
               <KolamPdfDownloadButton
                 disabled={controller.downloadingInvoice || controller.mutating}
-                label="Unduh resi"
+                intent="primary"
+                label="Unduh invoice PDF"
                 loading={controller.downloadingInvoice}
                 loadingLabel="Mengunduh…"
                 onPress={() => {
-                  void controller.onDownloadResi();
+                  void controller.onDownloadInvoice();
                 }}
                 style={styles.toolbarButton}
               />
-            ) : null}
+              {showResi ? (
+                <KolamPdfDownloadButton
+                  disabled={
+                    controller.downloadingInvoice || controller.mutating
+                  }
+                  label="Unduh resi"
+                  loading={controller.downloadingInvoice}
+                  loadingLabel="Mengunduh…"
+                  onPress={() => {
+                    void controller.onDownloadResi();
+                  }}
+                  style={styles.toolbarButton}
+                />
+              ) : null}
+            </View>
             {mainComplaint ? (
               <KolamButton
                 label="Lihat komplain"
@@ -2332,6 +2338,14 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
+  },
+  /** FE sales-invoice download cluster: chat + invoice + resi together. */
+  toolbarDownloadCluster: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
   },
   toolbarDaftarToneButton: {
     backgroundColor: '#374151',

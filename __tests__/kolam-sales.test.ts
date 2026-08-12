@@ -44,6 +44,7 @@ import {
   formatKolamSaleLogisticsTime,
   hydrateKolamSaleCreateFormFromSale,
   isKolamSaleMarketplaceManaged,
+  canOpenKolamSaleCustomerChat,
   isKolamTokopediaDropOffOnly,
   isKolamShopeeDropOffOnly,
   isKolamShopeeDropOffArrangedOnSale,
@@ -210,10 +211,48 @@ describe('kolam sales domain', () => {
       items: [],
     });
     expect(isKolamSaleMarketplaceManaged(detail)).toBe(true);
+    expect(canOpenKolamSaleCustomerChat(detail)).toBe(true);
     expect(detail.paymentMethod?.name).toBe('Transfer');
     expect(detail.paymentProofs).toHaveLength(1);
     expect(detail.paymentProofs[0].uri).toContain('/proofs/a.jpg');
     expect(detail.marketplaceOrderId).toBe('');
+  });
+
+  it('infers marketplace source from nested payloads and import aliases', () => {
+    const nestedOnly = normalizeKolamSale({
+      _id: 'sale-nested',
+      invoiceCode: 'INV-N',
+      status: 'paid',
+      items: [],
+      externalRef: {
+        shopee: {mainOrderId: 'SH-NEST'},
+      },
+    });
+    expect(nestedOnly.marketplaceSource).toBe('shopee');
+    expect(isKolamSaleMarketplaceManaged(nestedOnly)).toBe(true);
+    expect(canOpenKolamSaleCustomerChat(nestedOnly)).toBe(true);
+
+    const importAlias = normalizeKolamSale({
+      _id: 'sale-import',
+      invoiceCode: 'INV-I',
+      status: 'paid',
+      items: [],
+      externalRef: {
+        source: 'shopee_import',
+        shopee: {mainOrderId: 'SH-IMP'},
+      },
+    });
+    expect(importAlias.marketplaceSource).toBe('shopee');
+    expect(canOpenKolamSaleCustomerChat(importAlias)).toBe(true);
+
+    const offline = normalizeKolamSale({
+      _id: 'sale-off-chat',
+      invoiceCode: 'INV-O',
+      status: 'paid',
+      items: [],
+      type: 'offline',
+    });
+    expect(canOpenKolamSaleCustomerChat(offline)).toBe(false);
   });
 
   it('normalizes detail Batch A fields and shipping skip helpers', () => {
