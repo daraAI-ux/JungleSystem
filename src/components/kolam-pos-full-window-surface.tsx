@@ -869,6 +869,7 @@ function PosCatalogCard({
                 },
               ]}
               revision={item.imageRevision}
+              resizeMode="cover"
               scope="pos-catalog"
               sourceUri={item.imageUri}
               style={styles.productImageFill}
@@ -2502,10 +2503,9 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.primarySoft,
   },
   productImage: {
-    aspectRatio: 1,
+    height: 196,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8,
     backgroundColor: V.colors.secondary,
   },
   productImageFill: {
