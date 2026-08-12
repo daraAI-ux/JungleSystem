@@ -39,6 +39,7 @@ import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
   KolamChatContactOrder,
+  KolamChatConversation,
   KolamChatHandoverNote,
   KolamChatLabel,
   KolamChatConversationListParams,
@@ -68,6 +69,7 @@ import {
   deleteKolamTeamChatRoom,
   getKolamChatAnalytics,
   getKolamChatContactDetails,
+  getKolamChatConversation,
   getKolamChatLabels,
   getKolamChatTemplates,
   getKolamWebSetting,
@@ -456,13 +458,31 @@ export function KolamGlobalChatRail({
       rajaAnemonImageUrl: null,
       pangeranIsopodImageUrl: null,
     }));
+  const [deepLinkConversation, setDeepLinkConversation] =
+    React.useState<KolamChatConversation | null>(null);
+  const normalizedInitialSelectedId = initialSelectedId?.trim() || null;
+  const railData = React.useMemo(() => {
+    if (
+      mode !== 'inbox' ||
+      !deepLinkConversation ||
+      data.conversations.some(
+        conversation => conversation._id === deepLinkConversation._id,
+      )
+    ) {
+      return data;
+    }
+
+    return {
+      ...data,
+      conversations: [deepLinkConversation, ...data.conversations],
+    };
+  }, [data, deepLinkConversation, mode]);
   const items = getChatRailItems(
     mode,
-    data,
+    railData,
     inboxFilter.assignment,
     labelsState.items,
   );
-  const normalizedInitialSelectedId = initialSelectedId?.trim() || null;
   const [templatesState, setTemplatesState] =
     React.useState<KolamChatRailTemplatesState>({
       items: [],
@@ -519,6 +539,7 @@ export function KolamGlobalChatRail({
   const detailOpen = selectedItem !== null;
   const handleBackToList = React.useCallback(() => {
     setSelectedItemId(null);
+    setDeepLinkConversation(null);
     setComposerText('');
     setPendingAttachment(null);
     setReplyTarget(null);
@@ -893,28 +914,56 @@ export function KolamGlobalChatRail({
   }, [mode]);
 
   React.useEffect(() => {
-    if (selectedItemId && !items.some(item => item.id === selectedItemId)) {
+    if (
+      selectedItemId &&
+      !items.some(item => item.id === selectedItemId) &&
+      selectedItemId !== normalizedInitialSelectedId
+    ) {
       setSelectedItemId(null);
       setComposerText('');
       setPendingAttachment(null);
       setReplyTarget(null);
     }
-  }, [items, selectedItemId]);
+  }, [items, normalizedInitialSelectedId, selectedItemId]);
 
   React.useEffect(() => {
     if (
-      mode !== 'team-chat' ||
       !normalizedInitialSelectedId ||
-      selectedItemId === normalizedInitialSelectedId ||
-      !items.some(item => item.id === normalizedInitialSelectedId)
+      selectedItemId === normalizedInitialSelectedId
     ) {
       return;
     }
 
-    setSelectedItemId(normalizedInitialSelectedId);
-    setComposerText('');
-    setPendingAttachment(null);
-    setReplyTarget(null);
+    if (items.some(item => item.id === normalizedInitialSelectedId)) {
+      setSelectedItemId(normalizedInitialSelectedId);
+      setComposerText('');
+      setPendingAttachment(null);
+      setReplyTarget(null);
+      return;
+    }
+
+    if (mode !== 'inbox') {
+      return;
+    }
+
+    let cancelled = false;
+    void getKolamChatConversation(normalizedInitialSelectedId)
+      .then(conversation => {
+        if (cancelled || !conversation?._id) {
+          return;
+        }
+
+        setDeepLinkConversation(conversation);
+        setSelectedItemId(conversation._id);
+        setComposerText('');
+        setPendingAttachment(null);
+        setReplyTarget(null);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, [items, mode, normalizedInitialSelectedId, selectedItemId]);
 
   React.useEffect(() => {

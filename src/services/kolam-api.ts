@@ -2214,6 +2214,42 @@ export async function getKolamChatConversation(
   return unwrapData(response);
 }
 
+/** FE plugin `chatApi.resolveSaleConversation` — open/create inbox thread for marketplace sale. */
+export interface KolamSaleConversationResolve {
+  conversationId: string;
+  conversationPending: boolean;
+  created: boolean;
+}
+
+export async function resolveKolamSaleConversation(
+  saleId: string,
+): Promise<KolamSaleConversationResolve> {
+  const response = await kolamGet<
+    | DataResponse<{
+        conversationId?: string;
+        conversationPending?: boolean;
+        created?: boolean;
+      }>
+    | {
+        conversationId?: string;
+        conversationPending?: boolean;
+        created?: boolean;
+      }
+  >(`/chat/sales/${encodeURIComponent(saleId)}/conversation`);
+
+  const data = unwrapData(response);
+  const conversationId = String(data?.conversationId || '').trim();
+  if (!conversationId) {
+    throw new Error('Gagal membuka chat customer');
+  }
+
+  return {
+    conversationId,
+    created: data?.created === true,
+    conversationPending: data?.conversationPending === true,
+  };
+}
+
 export async function getKolamChatUnreadTotal(): Promise<number> {
   const conversations = await getKolamChatConversations({
     status: 'open',

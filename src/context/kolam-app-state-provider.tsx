@@ -406,6 +406,15 @@ export function KolamAppStateProvider({
     setChatRailInitialSelectedId(null);
     setActiveChatRail(null);
   }, []);
+  const openInboxChatRail = React.useCallback((conversationId: string) => {
+    const id = String(conversationId || '').trim();
+    if (!id) {
+      return;
+    }
+
+    setChatRailInitialSelectedId(id);
+    setActiveChatRail('inbox');
+  }, []);
   const handleDashboardRouteContext = React.useCallback(
     (route: string) => {
       const teamChatRoomId = getTeamChatRoomIdFromRoute(route);
@@ -737,6 +746,7 @@ export function KolamAppStateProvider({
       handleModuleRouteSelect,
       handleModuleSelect,
       handlePluginRouteSelect,
+      openInboxChatRail,
       setActiveSettingsTab,
       setPluginSearch,
     }),
@@ -756,6 +766,7 @@ export function KolamAppStateProvider({
       handleModuleRouteSelect,
       handleModuleSelect,
       handlePluginRouteSelect,
+      openInboxChatRail,
       setPluginSearch,
     ],
   );

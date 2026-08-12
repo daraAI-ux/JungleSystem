@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useKolamAuthContext } from '../context/kolam-app-contexts';
+import {
+  useKolamAuthContext,
+  useKolamNavigationContext,
+} from '../context/kolam-app-contexts';
 import type { KolamCustomer } from '../domain/kolam-customer';
 import type { KolamProduct } from '../domain/kolam-product';
 import type { KolamSpecies } from '../domain/kolam-species';
@@ -96,6 +99,7 @@ import {
   updateKolamSaleStatus,
   uploadKolamSalePaymentProofs,
 } from '../services/kolam-sales-api';
+import { resolveKolamSaleConversation } from '../services/kolam-api';
 
 export type KolamSalesDataSource = 'idle' | 'live' | 'error';
 
@@ -140,6 +144,7 @@ export interface KolamSalesController {
   mode: KolamSaleSurfaceMode;
   mutating: boolean;
   notificationSummary: KolamSaleNotificationSummary;
+  openingCustomerChat: boolean;
   optionsLoading: boolean;
   pagination: KolamSalePagination;
   paymentMethods: KolamPaymentMethod[];
@@ -172,6 +177,7 @@ export interface KolamSalesController {
   onDownloadResi: () => Promise<boolean>;
   onExportList: () => Promise<boolean>;
   onLimitChange: (limit: number) => void;
+  onOpenCustomerChat: () => Promise<boolean>;
   onPageChange: (page: number) => void;
   onPickImage: () => Promise<string | null>;
   onRefresh: () => Promise<void>;
@@ -209,6 +215,7 @@ export interface KolamSalesController {
 
 export function useKolamSalesController(route: string): KolamSalesController {
   const { authUser } = useKolamAuthContext();
+  const { openInboxChatRail } = useKolamNavigationContext();
   const canApproveDiscount = canApproveKolamSaleDiscount(authUser?.roleKey);
   const [mode, setMode] = useState<KolamSaleSurfaceMode>(() =>
     getKolamSaleSurfaceMode(route),
@@ -251,6 +258,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mutating, setMutating] = useState(false);
+  const [openingCustomerChat, setOpeningCustomerChat] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1126,6 +1134,34 @@ export function useKolamSalesController(route: string): KolamSalesController {
     }
   }, [selectedSale]);
 
+  const onOpenCustomerChat = useCallback(async () => {
+    const sale = selectedSale;
+    if (!sale || openingCustomerChat) {
+      return false;
+    }
+
+    setOpeningCustomerChat(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const resolved = await resolveKolamSaleConversation(sale.id);
+      openInboxChatRail(resolved.conversationId);
+      setStatusMessage(
+        resolved.conversationPending
+          ? 'Membuka chat customer…'
+          : 'Chat customer dibuka.',
+      );
+      return true;
+    } catch (chatError) {
+      setError(
+        getErrorMessage(chatError, 'Gagal membuka chat customer'),
+      );
+      return false;
+    } finally {
+      setOpeningCustomerChat(false);
+    }
+  }, [openInboxChatRail, openingCustomerChat, selectedSale]);
+
   const onDownloadResi = useCallback(async () => {
     const sale = selectedSale;
     if (!sale) {
@@ -1337,6 +1373,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     mode,
     mutating,
     notificationSummary,
+    openingCustomerChat,
     optionsLoading,
     pagination,
     paymentMethods,
@@ -1363,6 +1400,7 @@ export function useKolamSalesController(route: string): KolamSalesController {
     onDownloadResi,
     onExportList,
     onLimitChange,
+    onOpenCustomerChat,
     onPageChange,
     onPickImage,
     onRefresh,

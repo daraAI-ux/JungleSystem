@@ -45,6 +45,8 @@ function createController(
     onRequestMarketplacePickup: jest.fn(async () => true),
     onDownloadInvoice: jest.fn(async () => false),
     onDownloadResi: jest.fn(async () => false),
+    onOpenCustomerChat: jest.fn(async () => false),
+    openingCustomerChat: false,
     onUpdateStatus: jest.fn(async () => false),
     onUpdateDelivery: jest.fn(async () => false),
     onUploadPaymentProof: jest.fn(async () => false),
@@ -269,5 +271,76 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
     expect(text).toContain(
       'Pengiriman marketplace dikelola otomatis dari platform.',
     );
+  });
+
+  it('shows Kirim pesan ke customer for Shopee and Tokopedia sales', async () => {
+    const shopeeController = createController({
+      _id: 'sale-sh-chat',
+      invoiceCode: 'INV-SH-C',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'shopee',
+        shopee: {mainOrderId: 'SH-CHAT'},
+      },
+    });
+    const tokopediaController = createController({
+      _id: 'sale-tp-chat',
+      invoiceCode: 'INV-TP-C',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'tokopedia',
+        tokopedia: {mainOrderId: 'TP-CHAT', fulfillmentMode: 'pickup'},
+      },
+    });
+    const offlineController = createController({
+      _id: 'sale-off',
+      invoiceCode: 'INV-OFF',
+      status: 'paid',
+      deliveryStatus: 'none',
+      shippingCost: 0,
+      type: 'offline',
+      items: [],
+      saleHistories: [],
+    });
+
+    let shopeeRenderer: ReactTestRenderer.ReactTestRenderer;
+    let tokopediaRenderer: ReactTestRenderer.ReactTestRenderer;
+    let offlineRenderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      shopeeRenderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={shopeeController} />,
+      );
+      tokopediaRenderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={tokopediaController} />,
+      );
+      offlineRenderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={offlineController} />,
+      );
+    });
+
+    const shopeeButton = shopeeRenderer!.root
+      .findAllByType(KolamButton)
+      .find(node => node.props.label === 'Kirim pesan ke customer');
+    const tokopediaButton = tokopediaRenderer!.root
+      .findAllByType(KolamButton)
+      .find(node => node.props.label === 'Kirim pesan ke customer');
+    expect(shopeeButton).toBeTruthy();
+    expect(tokopediaButton).toBeTruthy();
+    expect(renderText(offlineRenderer!)).not.toContain(
+      'Kirim pesan ke customer',
+    );
+
+    await act(async () => {
+      shopeeButton!.props.onPress();
+    });
+    expect(shopeeController.onOpenCustomerChat).toHaveBeenCalledTimes(1);
   });
 });

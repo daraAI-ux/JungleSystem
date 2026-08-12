@@ -38,6 +38,7 @@ import {
   getKolamChatConversation,
   getKolamChatContactDetails,
   getKolamChatConversations,
+  resolveKolamSaleConversation,
   getKolamChatLabels,
   getKolamChatMessages,
   getKolamChatTemplates,
@@ -1929,6 +1930,30 @@ describe('Kolam Settings API contracts', () => {
         body: JSON.stringify({labelIds: ['label-1', 'label-2']}),
         method: 'PATCH',
       }),
+    );
+  });
+
+  it('resolves marketplace sale conversation for inbox deep-link', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          conversationId: 'conv-sale-1',
+          created: true,
+          conversationPending: false,
+        },
+      }),
+    );
+
+    await expect(resolveKolamSaleConversation('sale-1')).resolves.toEqual({
+      conversationId: 'conv-sale-1',
+      created: true,
+      conversationPending: false,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${appConfig.kolamApiBaseUrl}/chat/sales/sale-1/conversation`,
+      expect.objectContaining({method: 'GET'}),
     );
   });
 

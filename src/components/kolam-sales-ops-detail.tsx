@@ -221,6 +221,11 @@ export function KolamSalesOpsDetail({
     marketplaceFulfillment?.dropOffPointUrl?.trim() || '';
   const showMarketplaceFulfillmentActions =
     showTokopediaPickupRequest || showTokopediaDropOffBadge;
+  const marketplaceChatSource = String(sale.marketplaceSource || '')
+    .trim()
+    .toLowerCase();
+  const showCustomerChat =
+    marketplaceChatSource === 'shopee' || marketplaceChatSource === 'tokopedia';
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
   const outstanding = getKolamSaleOutstandingAmount(sale);
   const profitSummary = computeKolamSaleProfitSummary(sale);
@@ -349,6 +354,22 @@ export function KolamSalesOpsDetail({
                 onPress={handleUploadPaymentProof}
                 style={styles.paymentProofUploadButton}
                 textStyle={styles.paymentProofUploadButtonText}
+              />
+            ) : null}
+            {showCustomerChat ? (
+              <KolamButton
+                disabled={
+                  controller.openingCustomerChat || controller.mutating
+                }
+                label={
+                  controller.openingCustomerChat
+                    ? 'Membuka…'
+                    : 'Kirim pesan ke customer'
+                }
+                onPress={() => {
+                  void controller.onOpenCustomerChat();
+                }}
+                style={styles.toolbarButton}
               />
             ) : null}
             <KolamPdfDownloadButton
