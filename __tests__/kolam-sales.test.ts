@@ -51,10 +51,17 @@ import {
   isKolamMarketplaceShipmentSyncStarted,
   needsKolamPlatformPickupRequest,
   needsKolamTokopediaPickupRequest,
+  needsKolamShopeePickupRequest,
+  needsKolamPlatformPickupReschedule,
   resolveKolamWaitingPickupDisplayLabel,
   resolveKolamSaleComplaintDisplayLabel,
   formatKolamSaleListComplaintLabel,
   shouldShowKolamTokopediaDropOffBadge,
+  shouldShowKolamShopeeDropOffBadge,
+  isKolamShopeePickupArrangedOnSale,
+  formatKolamShopeePickupTimeLabel,
+  normalizeKolamMarketplacePickupOptions,
+  pickKolamMarketplaceDefaultSlotId,
   getKolamSaleMarketplaceFulfillment,
   canOpenKolamSaleComplaintCreate,
   canShowKolamSaleComplaintSuccessPrompt,
@@ -537,7 +544,7 @@ describe('kolam sales domain', () => {
     expect(needsKolamTokopediaPickupRequest(sale)).toBe(false);
   });
 
-  it('scopes JungleSystem pickup request helper to Tokopedia only (no Shopee slots)', () => {
+  it('gates Shopee pickup request, reschedule, and drop-off badge like FE', () => {
     const shopeePickup = normalizeKolamSale({
       _id: 'sale-shopee-pickup',
       invoiceCode: 'INV-SH-P',
@@ -554,7 +561,10 @@ describe('kolam sales domain', () => {
       items: [],
     });
     expect(needsKolamPlatformPickupRequest(shopeePickup)).toBe(true);
+    expect(needsKolamShopeePickupRequest(shopeePickup)).toBe(true);
     expect(needsKolamTokopediaPickupRequest(shopeePickup)).toBe(false);
+    expect(needsKolamPlatformPickupReschedule(shopeePickup)).toBe(false);
+    expect(shouldShowKolamShopeeDropOffBadge(shopeePickup)).toBe(false);
 
     const tokopediaPickup = normalizeKolamSale({
       _id: 'sale-tp-only',
@@ -571,6 +581,89 @@ describe('kolam sales domain', () => {
       items: [],
     });
     expect(needsKolamTokopediaPickupRequest(tokopediaPickup)).toBe(true);
+    expect(needsKolamShopeePickupRequest(tokopediaPickup)).toBe(false);
+
+    const shopeeArranged = normalizeKolamSale({
+      _id: 'sale-shopee-arranged',
+      invoiceCode: 'INV-SH-A',
+      status: 'paid',
+      deliveryStatus: 'waiting_pickup',
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          mainOrderId: 'SH-A',
+          fulfillmentMode: 'pickup',
+          pickupArranged: true,
+          pickupEditable: true,
+          pickupTime: 1_700_000_000,
+          lastStatus: 1,
+        },
+      },
+      items: [],
+    });
+    expect(isKolamShopeePickupArrangedOnSale(shopeeArranged)).toBe(true);
+    expect(needsKolamPlatformPickupRequest(shopeeArranged)).toBe(false);
+    expect(needsKolamPlatformPickupReschedule(shopeeArranged)).toBe(true);
+    expect(formatKolamShopeePickupTimeLabel(1_700_000_000)).toMatch(/\d/);
+
+    const shopeeDropoff = normalizeKolamSale({
+      _id: 'sale-shopee-drop',
+      invoiceCode: 'INV-SH-D',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          mainOrderId: 'SH-D',
+          fulfillmentMode: 'dropoff',
+          lastStatus: 1,
+        },
+      },
+      items: [],
+    });
+    expect(needsKolamShopeePickupRequest(shopeeDropoff)).toBe(false);
+    expect(shouldShowKolamShopeeDropOffBadge(shopeeDropoff)).toBe(true);
+    expect(needsKolamPlatformPickupReschedule(shopeeDropoff)).toBe(false);
+  });
+
+  it('normalizes marketplace pickup options and prefers non-isNow default slot', () => {
+    const options = normalizeKolamMarketplacePickupOptions({
+      data: {
+        platform: 'shopee',
+        carrier: 'SPX',
+        fulfillmentMode: 'pickup',
+        mode: 'arrange',
+        pickupSupported: true,
+        options: [
+          {
+            id: 'now',
+            pickupTime: 100,
+            pickupTimeRangeId: 1,
+            label: 'Sekarang',
+            isNow: true,
+          },
+          {
+            id: 'later',
+            pickupTime: 200,
+            pickupTimeRangeId: 2,
+            label: 'Besok 09:00',
+            isNow: false,
+          },
+        ],
+        defaultOption: {
+          pickup_time: 100,
+          pickup_time_range_id: 1,
+        },
+      },
+    });
+    expect(options.carrier).toBe('SPX');
+    expect(options.options).toHaveLength(2);
+    expect(pickKolamMarketplaceDefaultSlotId(options.options, options.defaultOption)).toBe(
+      'now',
+    );
+    expect(
+      pickKolamMarketplaceDefaultSlotId(options.options, null),
+    ).toBe('later');
   });
 
   it('covers Tokopedia fulfillment edge cases for pickup and drop-off helpers', () => {

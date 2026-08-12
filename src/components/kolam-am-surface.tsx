@@ -3,6 +3,7 @@ import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native
 import type {DimensionValue} from 'react-native';
 import {SvgXml} from 'react-native-svg';
 import {KOLAM_SALDO_TOTAL_ICON_SVG} from '../assets/icons/saldo-total-icon-svg';
+import {KOLAM_UANG_MASUK_ICON_SVG} from '../assets/icons/uang-masuk-icon-svg';
 import {appConfig} from '../config/app';
 import {
   AM_ROUTES,
@@ -533,6 +534,7 @@ function AmDashboardPage({
           value={formatRupiah(data.summary.totalBalance)}
         />
         <AmDashboardWalletCard
+          artwork="uang-masuk"
           label="Masuk Hari Ini"
           meta={`${data.summary.todayIncoming.count} transaksi`}
           tone="success"
@@ -6451,19 +6453,24 @@ function AmDashboardWalletCard({
   tone,
   value,
 }: {
-  artwork?: 'saldo-total';
+  artwork?: 'saldo-total' | 'uang-masuk';
   label: string;
   meta: string;
   tone: AmDashboardWalletCardTone;
   value: string;
 }) {
-  const hasSaldoTotalArtwork = artwork === 'saldo-total';
+  const artworkSvg =
+    artwork === 'saldo-total'
+      ? KOLAM_SALDO_TOTAL_ICON_SVG
+      : artwork === 'uang-masuk'
+        ? KOLAM_UANG_MASUK_ICON_SVG
+        : null;
 
   return (
     <KolamCardFrame
       style={[
         styles.dashboardWalletCard,
-        hasSaldoTotalArtwork && styles.dashboardWalletCardWithArtwork,
+        artworkSvg && styles.dashboardWalletCardWithArtwork,
       ]}>
       <View
         style={[
@@ -6477,10 +6484,10 @@ function AmDashboardWalletCard({
       <View
         style={[
           styles.dashboardWalletBody,
-          hasSaldoTotalArtwork && styles.dashboardWalletBodyWithArtwork,
+          artworkSvg && styles.dashboardWalletBodyWithArtwork,
         ]}>
         <View style={styles.dashboardWalletHeader}>
-          {hasSaldoTotalArtwork ? null : (
+          {artworkSvg ? null : (
             <View style={styles.dashboardWalletIcon}>
               <KolamModuleIcon kind="wallet" size="menu" />
             </View>
@@ -6504,12 +6511,12 @@ function AmDashboardWalletCard({
           {meta}
         </Text>
       </View>
-      {hasSaldoTotalArtwork ? (
+      {artworkSvg ? (
         <View pointerEvents="none" style={styles.dashboardWalletArtwork}>
           <SvgXml
             height="100%"
             width="100%"
-            xml={KOLAM_SALDO_TOTAL_ICON_SVG}
+            xml={artworkSvg}
           />
         </View>
       ) : null}

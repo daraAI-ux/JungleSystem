@@ -34,6 +34,8 @@ import {
   isKolamSalesDetailRoute,
   isKolamSalesDiscountApprovalRoute,
   needsKolamTokopediaPickupRequest,
+  needsKolamShopeePickupRequest,
+  needsKolamPlatformPickupReschedule,
   isKolamSalesEditRoute,
   isKolamSalesListRoute,
   isKolamSalesRoute,
@@ -46,6 +48,9 @@ import {
   validateKolamSaleCreatePayload,
   validateKolamSaleUpdatePayload,
   type KolamSale,
+  type KolamMarketplaceDropoffRequestBody,
+  type KolamMarketplacePickupOptions,
+  type KolamMarketplacePickupRequestBody,
   type KolamSaleAnalyticsOverview,
   type KolamSaleAnalyticsRange,
   type KolamSaleCatalogOption,
@@ -90,7 +95,9 @@ import {
   getKolamSalesServices,
   replaceKolamSalePaymentProof,
   requestKolamSaleBiteshipPickup,
+  requestKolamSaleMarketplaceDropoff,
   requestKolamSaleMarketplacePickup,
+  getKolamSaleMarketplacePickupOptions,
   rescheduleKolamSaleBiteshipPickup,
   resolveKolamSaleLivestockAllocation,
   setKolamSaleBiteshipWaybill,
@@ -197,8 +204,14 @@ export interface KolamSalesController {
     itemId: string,
     waybillId: string,
   ) => Promise<boolean>;
-  /** Tokopedia platform pickup via AM (empty body). Shopee slot UI is out of scope. */
-  onRequestMarketplacePickup: () => Promise<boolean>;
+  /** Marketplace pickup: Tokopedia `{}` or Shopee slot body. */
+  onRequestMarketplacePickup: (
+    body?: KolamMarketplacePickupRequestBody | Record<string, never>,
+  ) => Promise<boolean>;
+  onRequestMarketplaceDropoff: (
+    body?: KolamMarketplaceDropoffRequestBody,
+  ) => Promise<boolean>;
+  onLoadMarketplacePickupOptions: () => Promise<KolamMarketplacePickupOptions | null>;
   onResolveLivestockAllocation: (
     pendingId: string,
     allocations: { enclosureId: string; qty: number }[],
@@ -1297,38 +1310,133 @@ export function useKolamSalesController(route: string): KolamSalesController {
     [refreshDetail, selectedSale],
   );
 
-  const onRequestMarketplacePickup = useCallback(async () => {
-    const sale = selectedSale;
-    if (!sale) {
-      return false;
-    }
-    if (String(sale.marketplaceSource || '').toLowerCase() === 'shopee') {
-      setError(
-        'Request jemput Shopee membutuhkan pemilihan slot — belum tersedia di JungleSystem.',
-      );
-      return false;
-    }
-    if (!needsKolamTokopediaPickupRequest(sale)) {
-      setError(
-        'Penjualan Tokopedia ini belum eligible untuk request jemput kurir.',
-      );
-      return false;
-    }
-    setMutating(true);
-    setError(null);
-    setStatusMessage(null);
-    try {
-      await requestKolamSaleMarketplacePickup(sale.id, {});
-      setStatusMessage('Request jemput kurir Tokopedia dikirim.');
-      await refreshDetail();
-      return true;
-    } catch (mutationError) {
-      setError(formatKolamSaleMutationError(mutationError));
-      return false;
-    } finally {
-      setMutating(false);
-    }
-  }, [refreshDetail, selectedSale]);
+  const onRequestMarketplacePickup = useCallback(
+    async (
+      body: KolamMarketplacePickupRequestBody | Record<string, never> = {},
+    ) => {
+      const sale = selectedSale;
+      if (!sale) {
+        return false;
+      }
+      const source = String(sale.marketplaceSource || '').toLowerCase();
+      if (source === 'tokopedia') {
+        if (!needsKolamTokopediaPickupRequest(sale)) {
+          setError(
+            'Penjualan Tokopedia ini belum eligible untuk request jemput kurir.',
+          );
+          return false;
+        }
+      } else if (source === 'shopee') {
+        const canRequest = needsKolamShopeePickupRequest(sale);
+        const canReschedule = needsKolamPlatformPickupReschedule(sale);
+        if (!canRequest && !canReschedule) {
+          setError(
+            'Penjualan Shopee ini belum eligible untuk request jemput kurir.',
+          );
+          return false;
+        }
+        const slotBody = body as KolamMarketplacePickupRequestBody;
+        if (
+          !Number.isFinite(Number(slotBody.pickupTime)) ||
+          !Number.isFinite(Number(slotBody.pickupTimeRangeId))
+        ) {
+          setError('Pilih slot waktu pickup terlebih dahulu');
+          return false;
+        }
+      } else {
+        setError('Request jemput hanya untuk penjualan Shopee atau Tokopedia.');
+        return false;
+      }
+
+      setMutating(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await requestKolamSaleMarketplacePickup(
+          sale.id,
+          source === 'tokopedia' ? {} : body,
+        );
+        const isReschedule =
+          source === 'shopee' &&
+          (String(sale.deliveryStatus || '').toLowerCase() ===
+            'waiting_pickup' ||
+            sale.marketplaceFulfillment?.pickupArranged === true);
+        const slotLabel =
+          source === 'shopee'
+            ? String(
+                (body as KolamMarketplacePickupRequestBody).slotLabel || '',
+              ).trim()
+            : '';
+        if (source === 'tokopedia') {
+          setStatusMessage('Request jemput kurir Tokopedia dikirim');
+        } else if (isReschedule) {
+          setStatusMessage(
+            slotLabel
+              ? `Reschedule pickup Shopee dikirim (${slotLabel})`
+              : 'Reschedule pickup Shopee dikirim',
+          );
+        } else {
+          setStatusMessage(
+            slotLabel
+              ? `Request jemput kurir Shopee dikirim (${slotLabel})`
+              : 'Request jemput kurir Shopee dikirim',
+          );
+        }
+        await refreshDetail();
+        return true;
+      } catch (mutationError) {
+        setError(formatKolamSaleMutationError(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [refreshDetail, selectedSale],
+  );
+
+  const onRequestMarketplaceDropoff = useCallback(
+    async (body: KolamMarketplaceDropoffRequestBody = {}) => {
+      const sale = selectedSale;
+      if (!sale) {
+        return false;
+      }
+      if (String(sale.marketplaceSource || '').toLowerCase() !== 'shopee') {
+        setError('Arrange drop-off hanya untuk penjualan Shopee.');
+        return false;
+      }
+      setMutating(true);
+      setError(null);
+      setStatusMessage(null);
+      try {
+        await requestKolamSaleMarketplaceDropoff(sale.id, body);
+        setStatusMessage(
+          'Arrange drop-off Shopee dikirim — menunggu resi dari platform',
+        );
+        await refreshDetail();
+        return true;
+      } catch (mutationError) {
+        setError(formatKolamSaleMutationError(mutationError));
+        return false;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [refreshDetail, selectedSale],
+  );
+
+  const onLoadMarketplacePickupOptions =
+    useCallback(async (): Promise<KolamMarketplacePickupOptions | null> => {
+      const sale = selectedSale;
+      if (!sale) {
+        return null;
+      }
+      try {
+        return await getKolamSaleMarketplacePickupOptions(sale.id);
+      } catch (loadError) {
+        setError(formatKolamSaleMutationError(loadError));
+        return null;
+      }
+    }, [selectedSale]);
 
   const onResolveLivestockAllocation = useCallback(
     async (
@@ -1416,6 +1524,8 @@ export function useKolamSalesController(route: string): KolamSalesController {
     onRequestBiteshipPickup,
     onRescheduleBiteshipPickup,
     onRequestMarketplacePickup,
+    onRequestMarketplaceDropoff,
+    onLoadMarketplacePickupOptions,
     onResolveLivestockAllocation,
     onSetBiteshipWaybill,
     onSave,

@@ -234,6 +234,56 @@ export type KolamSaleMarketplaceFulfillment = {
   pickupTime: number | null;
 };
 
+/** FE `PlatformPickupSlotOption` — Shopee Seller Center pickup slots. */
+export type KolamMarketplacePickupSlotOption = {
+  id: string;
+  pickupTime: number;
+  pickupTimeRangeId: number;
+  dateLabel: string;
+  timeLabel: string;
+  label: string;
+  isNow: boolean;
+};
+
+export type KolamMarketplaceDropoffBranch = {
+  branchId: string;
+  name: string;
+  address: string;
+  label: string;
+};
+
+/** FE `PlatformPickupOptionsResponse` after normalize. */
+export type KolamMarketplacePickupOptions = {
+  platform: string;
+  carrier: string;
+  addressWarning: string;
+  fulfillmentMode: 'pickup' | 'dropoff' | 'unknown';
+  pickupSupported: boolean | null;
+  dropoffSupported: boolean | null;
+  uiHint: string;
+  dropoffBranches: KolamMarketplaceDropoffBranch[];
+  options: KolamMarketplacePickupSlotOption[];
+  defaultOption: {
+    pickupTime: number;
+    pickupTimeRangeId: number;
+    slotLabel: string;
+  } | null;
+  pickupArranged: boolean | null;
+  pickupEditable: boolean | null;
+  mode: 'arrange' | 'reschedule' | 'dropoff' | '';
+};
+
+export type KolamMarketplacePickupRequestBody = {
+  pickupTime: number;
+  pickupTimeRangeId: number;
+  slotLabel?: string;
+};
+
+export type KolamMarketplaceDropoffRequestBody = {
+  branchId?: string;
+  branchLabel?: string;
+};
+
 /** Embedded wallet txs on sale detail (FE `walletTransactions`). */
 export type KolamSaleWalletTransactionRef = {
   id: string;
@@ -1249,7 +1299,8 @@ export function resolveKolamWaitingPickupDisplayLabel(
   return 'Menunggu di jemput kurir';
 }
 
-function isKolamShopeePickupArrangedOnSale(
+/** FE `isShopeePickupArrangedOnSale` — pickup already arranged on Shopee. */
+export function isKolamShopeePickupArrangedOnSale(
   sale: KolamSaleFulfillmentContext,
 ): boolean {
   if (getMarketplaceFulfillmentSource(sale) !== 'shopee') {
@@ -1344,8 +1395,71 @@ export function needsKolamPlatformPickupRequest(
 }
 
 /**
- * JungleSystem Batch 1 — Tokopedia jemput kurir only.
- * Shopee slot/modal/reschedule tetap out of scope sampai diminta eksplisit.
+ * FE `needsPlatformPickupReschedule` — Shopee only; slot reschedule via Seller Center.
+ */
+export function needsKolamPlatformPickupReschedule(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (!isKolamSaleMarketplaceManaged(sale) || sale.status !== 'paid') {
+    return false;
+  }
+  if (getMarketplaceFulfillmentSource(sale) !== 'shopee') {
+    return false;
+  }
+  if (isKolamShopeeDropOffOnly(sale)) {
+    return false;
+  }
+  if (sale.marketplaceFulfillment?.pickupEditable === false) {
+    return false;
+  }
+  const ds = String(sale.deliveryStatus || 'none').toLowerCase();
+  if (ds !== 'waiting_pickup' && ds !== 'none' && ds !== 'packing') {
+    return false;
+  }
+  if (isKolamShopeePickupArrangedOnSale(sale)) {
+    return true;
+  }
+  return ds === 'waiting_pickup';
+}
+
+/**
+ * FE `shouldShowShopeeDropOffBadge` — drop-off Shopee belum di-arrange.
+ */
+export function shouldShowKolamShopeeDropOffBadge(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (!isKolamSaleMarketplaceManaged(sale) || sale.status !== 'paid') {
+    return false;
+  }
+  if (!isKolamShopeeDropOffOnly(sale)) {
+    return false;
+  }
+  if (isKolamShopeeDropOffArrangedOnSale(sale)) {
+    return false;
+  }
+  if (hasKolamMarketplaceTrackingSynced(sale)) {
+    return false;
+  }
+  const ds = String(sale.deliveryStatus || 'none').toLowerCase();
+  return ds === 'none' || ds === 'packing' || ds === 'waiting_pickup';
+}
+
+/** FE `formatShopeePickupTimeLabel` — badge Pickup dijadwalkan. */
+export function formatKolamShopeePickupTimeLabel(
+  pickupTime?: number | null,
+): string | null {
+  const sec = Number(pickupTime);
+  if (!Number.isFinite(sec) || sec <= 0) {
+    return null;
+  }
+  return new Date(sec * 1000).toLocaleString('id-ID', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  });
+}
+
+/**
+ * Tokopedia jemput kurir (empty-body POST). Shopee uses slot modal separately.
  */
 export function needsKolamTokopediaPickupRequest(
   sale: KolamSaleFulfillmentContext,
@@ -1354,6 +1468,144 @@ export function needsKolamTokopediaPickupRequest(
     return false;
   }
   return needsKolamPlatformPickupRequest(sale);
+}
+
+/** Shopee jemput kurir eligible — UI still waits for pickup-options before showing. */
+export function needsKolamShopeePickupRequest(
+  sale: KolamSaleFulfillmentContext,
+): boolean {
+  if (getMarketplaceFulfillmentSource(sale) !== 'shopee') {
+    return false;
+  }
+  return needsKolamPlatformPickupRequest(sale);
+}
+
+/** FE pickDefaultSlotId — prefer non-isNow, else defaultOption match, else first. */
+export function pickKolamMarketplaceDefaultSlotId(
+  options: KolamMarketplacePickupSlotOption[],
+  defaultOption: KolamMarketplacePickupOptions['defaultOption'],
+): string | null {
+  if (!options.length) {
+    return null;
+  }
+  if (defaultOption) {
+    const match = options.find(
+      o =>
+        o.pickupTime === defaultOption.pickupTime &&
+        o.pickupTimeRangeId === defaultOption.pickupTimeRangeId,
+    );
+    if (match) {
+      return match.id;
+    }
+  }
+  const scheduled = options.find(o => !o.isNow);
+  return scheduled?.id ?? options[0]?.id ?? null;
+}
+
+export function normalizeKolamMarketplacePickupOptions(
+  payload: unknown,
+): KolamMarketplacePickupOptions {
+  const root = asRecord(payload);
+  const nested = asRecord(root.data);
+  const record =
+    Object.keys(nested).length > 0 && !Array.isArray(root.options)
+      ? nested
+      : root;
+  const optionsRaw = Array.isArray(record.options) ? record.options : [];
+  const branchesRaw = Array.isArray(record.dropoffBranches)
+    ? record.dropoffBranches
+    : [];
+  const defaultRaw = asRecord(record.defaultOption);
+  const fulfillmentModeRaw = getString(record, 'fulfillmentMode').toLowerCase();
+  const fulfillmentMode: KolamMarketplacePickupOptions['fulfillmentMode'] =
+    fulfillmentModeRaw === 'dropoff' || fulfillmentModeRaw === 'pickup'
+      ? fulfillmentModeRaw
+      : 'unknown';
+  const modeRaw = getString(record, 'mode').toLowerCase();
+  const mode: KolamMarketplacePickupOptions['mode'] =
+    modeRaw === 'arrange' ||
+    modeRaw === 'reschedule' ||
+    modeRaw === 'dropoff'
+      ? modeRaw
+      : '';
+
+  const options = optionsRaw.map((row, index) => {
+    const item = asRecord(row);
+    const pickupTime = getNumber(item, 'pickupTime') ?? 0;
+    const pickupTimeRangeId = getNumber(item, 'pickupTimeRangeId') ?? 0;
+    const id =
+      getString(item, 'id') ||
+      `${pickupTime}:${pickupTimeRangeId}:${index}`;
+    return {
+      id,
+      pickupTime,
+      pickupTimeRangeId,
+      dateLabel: getString(item, 'dateLabel'),
+      timeLabel: getString(item, 'timeLabel'),
+      label:
+        getString(item, 'label') ||
+        [getString(item, 'dateLabel'), getString(item, 'timeLabel')]
+          .filter(Boolean)
+          .join(' ') ||
+        id,
+      isNow: item.isNow === true,
+    };
+  });
+
+  const defaultPickupTime = getNumber(defaultRaw, 'pickup_time');
+  const defaultRangeId = getNumber(defaultRaw, 'pickup_time_range_id');
+  const defaultOption =
+    defaultPickupTime != null && defaultRangeId != null
+      ? {
+          pickupTime: defaultPickupTime,
+          pickupTimeRangeId: defaultRangeId,
+          slotLabel: getString(defaultRaw, 'slot_label'),
+        }
+      : null;
+
+  return {
+    platform: getString(record, 'platform'),
+    carrier: getString(record, 'carrier'),
+    addressWarning: getString(record, 'addressWarning'),
+    fulfillmentMode,
+    pickupSupported:
+      typeof record.pickupSupported === 'boolean'
+        ? record.pickupSupported
+        : null,
+    dropoffSupported:
+      typeof record.dropoffSupported === 'boolean'
+        ? record.dropoffSupported
+        : null,
+    uiHint: getString(record, 'uiHint'),
+    dropoffBranches: branchesRaw.map(row => {
+      const item = asRecord(row);
+      const branchId =
+        getString(item, 'branchId') ||
+        (item.branchId != null ? String(item.branchId) : '');
+      const name = getString(item, 'name');
+      const address = getString(item, 'address');
+      return {
+        branchId,
+        name,
+        address,
+        label:
+          getString(item, 'label') ||
+          [name, address].filter(Boolean).join(' — ') ||
+          branchId,
+      };
+    }),
+    options,
+    defaultOption,
+    pickupArranged:
+      typeof record.pickupArranged === 'boolean'
+        ? record.pickupArranged
+        : null,
+    pickupEditable:
+      typeof record.pickupEditable === 'boolean'
+        ? record.pickupEditable
+        : null,
+    mode,
+  };
 }
 
 export function getKolamSaleMarketplaceFulfillment(sale: {

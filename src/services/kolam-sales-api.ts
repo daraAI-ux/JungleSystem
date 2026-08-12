@@ -11,6 +11,9 @@ import type {
   KolamSaleListFilters,
   KolamSaleListResult,
   KolamSaleLivestockAllocationRow,
+  KolamMarketplaceDropoffRequestBody,
+  KolamMarketplacePickupOptions,
+  KolamMarketplacePickupRequestBody,
   KolamSaleNotificationSummary,
   KolamSaleSpeciesEnclosureAllocation,
   KolamSaleSpeciesEnclosurePlacement,
@@ -19,6 +22,7 @@ import type {
   KolamSaleUpdateBody,
 } from '../domain/kolam-sales';
 import {
+  normalizeKolamMarketplacePickupOptions,
   normalizeKolamSale,
   normalizeKolamSaleAnalyticsOverview,
   normalizeKolamSaleList,
@@ -408,19 +412,30 @@ export async function setKolamSaleBiteshipWaybill(
 
 export async function getKolamSaleMarketplacePickupOptions(
   saleId: string,
-): Promise<unknown> {
-  return kolamRequest<unknown>(
+): Promise<KolamMarketplacePickupOptions> {
+  const payload = await kolamRequest<unknown>(
     `/marketplace/sales/${encodeURIComponent(saleId)}/pickup-options`,
   );
+  return normalizeKolamMarketplacePickupOptions(payload);
 }
 
 export async function requestKolamSaleMarketplacePickup(
   saleId: string,
-  body: Record<string, unknown> = {},
+  body: KolamMarketplacePickupRequestBody | Record<string, never> = {},
 ): Promise<unknown> {
   return kolamRequest<unknown>(
     `/marketplace/sales/${encodeURIComponent(saleId)}/request-pickup`,
-    { method: 'POST', body },
+    {method: 'POST', body},
+  );
+}
+
+export async function requestKolamSaleMarketplaceDropoff(
+  saleId: string,
+  body: KolamMarketplaceDropoffRequestBody = {},
+): Promise<unknown> {
+  return kolamRequest<unknown>(
+    `/marketplace/sales/${encodeURIComponent(saleId)}/request-dropoff`,
+    {method: 'POST', body},
   );
 }
 

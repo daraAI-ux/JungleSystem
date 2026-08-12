@@ -43,6 +43,8 @@ function createController(
     onRefresh: jest.fn(async () => undefined),
     onRequestBiteshipPickup: jest.fn(async () => false),
     onRequestMarketplacePickup: jest.fn(async () => true),
+    onRequestMarketplaceDropoff: jest.fn(async () => true),
+    onLoadMarketplacePickupOptions: jest.fn(async () => null),
     onDownloadInvoice: jest.fn(async () => false),
     onDownloadResi: jest.fn(async () => false),
     onOpenCustomerChat: jest.fn(async () => false),
@@ -237,7 +239,7 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
     );
   });
 
-  it('does not show Tokopedia pickup or Shopee slot UI for eligible Shopee sales', async () => {
+  it('shows Shopee request jemput CTA for eligible pickup sales', async () => {
     const controller = createController({
       _id: 'sale-sh-pickup',
       invoiceCode: 'INV-SH-P',
@@ -255,6 +257,33 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
         },
       },
     });
+    (
+      controller.onLoadMarketplacePickupOptions as jest.Mock
+    ).mockResolvedValue({
+      platform: 'shopee',
+      carrier: 'SPX',
+      addressWarning: '',
+      fulfillmentMode: 'pickup',
+      pickupSupported: true,
+      dropoffSupported: false,
+      uiHint: '',
+      dropoffBranches: [],
+      options: [
+        {
+          id: 'slot-1',
+          pickupTime: 200,
+          pickupTimeRangeId: 2,
+          dateLabel: 'Besok',
+          timeLabel: '09:00',
+          label: 'Besok 09:00',
+          isNow: false,
+        },
+      ],
+      defaultOption: null,
+      pickupArranged: null,
+      pickupEditable: true,
+      mode: 'arrange',
+    });
 
     let renderer: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
@@ -262,15 +291,89 @@ describe('KolamSalesOpsDetail marketplace fulfillment', () => {
         <KolamSalesOpsDetail controller={controller} />,
       );
     });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     const text = renderText(renderer!);
     expect(text).not.toContain('Request jemput kurir (Tokopedia)');
-    expect(text).not.toContain('Request jemput kurir (Shopee)');
-    expect(text).not.toContain('Reschedule pickup');
-    expect(text).not.toContain('Waktu pickup');
-    expect(text).toContain(
+    expect(text).toContain('Request jemput kurir (Shopee)');
+    expect(text).not.toContain(
       'Pengiriman marketplace dikelola otomatis dari platform.',
     );
+
+    const button = renderer!.root
+      .findAllByType(KolamButton)
+      .find(node => node.props.label === 'Request jemput kurir (Shopee)');
+    expect(button).toBeTruthy();
+    await act(async () => {
+      button!.props.onPress();
+    });
+    expect(text).not.toContain('Waktu pickup'); // modal content uses dropdown; open after press
+  });
+
+  it('shows Shopee drop-off arrange CTA for dropoff sales', async () => {
+    const controller = createController({
+      _id: 'sale-sh-drop',
+      invoiceCode: 'INV-SH-D',
+      status: 'paid',
+      deliveryStatus: 'packing',
+      shippingCost: 0,
+      items: [],
+      saleHistories: [],
+      externalRef: {
+        source: 'shopee',
+        shopee: {
+          mainOrderId: 'SH-D',
+          fulfillmentMode: 'dropoff',
+          lastStatus: 1,
+        },
+      },
+    });
+    (
+      controller.onLoadMarketplacePickupOptions as jest.Mock
+    ).mockResolvedValue({
+      platform: 'shopee',
+      carrier: 'SPX',
+      addressWarning: '',
+      fulfillmentMode: 'dropoff',
+      pickupSupported: false,
+      dropoffSupported: true,
+      uiHint: '',
+      dropoffBranches: [],
+      options: [],
+      defaultOption: null,
+      pickupArranged: null,
+      pickupEditable: null,
+      mode: 'dropoff',
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamSalesOpsDetail controller={controller} />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const dropBadge = renderer!.root
+      .findAllByType(KolamStatusBadge)
+      .find(node =>
+        String(node.props.label || '').includes('Drop-off (Shopee)'),
+      );
+    const arrangeBtn = renderer!.root
+      .findAllByType(KolamButton)
+      .find(node => node.props.label === 'Antar ke counter (Shopee)');
+    expect(dropBadge).toBeTruthy();
+    expect(arrangeBtn).toBeTruthy();
+    expect(
+      renderer!.root
+        .findAllByType(KolamButton)
+        .some(node => node.props.label === 'Request jemput kurir (Shopee)'),
+    ).toBe(false);
   });
 
   it('shows Kirim pesan ke customer for Shopee and Tokopedia sales', async () => {

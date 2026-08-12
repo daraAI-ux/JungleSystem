@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Image,
   Linking,
@@ -25,6 +25,7 @@ import {
   formatKolamSaleWalletSourceLabel,
   formatKolamSaleWalletTxTypeLabel,
   formatKolamSaleWalletTypeLabel,
+  formatKolamShopeePickupTimeLabel,
   getKolamNoShippingDeliveryLabel,
   getKolamSaleAllowedDeliveryTransitions,
   getKolamSaleAllowedStatusTransitions,
@@ -45,11 +46,19 @@ import {
   isKolamPosSale,
   isKolamSaleMarketplaceManaged,
   isKolamSaleShippingAutomationActive,
+  isKolamShopeeDropOffArrangedOnSale,
+  isKolamShopeeDropOffOnly,
+  isKolamShopeePickupArrangedOnSale,
   kolamSaleSkipsShippingFlow,
+  needsKolamPlatformPickupReschedule,
+  needsKolamShopeePickupRequest,
   needsKolamTokopediaPickupRequest,
+  pickKolamMarketplaceDefaultSlotId,
+  shouldShowKolamShopeeDropOffBadge,
   shouldShowKolamTokopediaDropOffBadge,
   KOLAM_SALES_DISCOUNT_APPROVAL_ROUTE,
   KOLAM_SALES_ROOT,
+  type KolamMarketplacePickupOptions,
   type KolamSale,
   type KolamSalePaymentStatus,
   type KolamSaleDeliveryTransitionTarget,
@@ -141,6 +150,72 @@ export function KolamSalesOpsDetail({
   const [biteshipCollectionMethod, setBiteshipCollectionMethod] = useState<
     'pickup' | 'drop_off'
   >('pickup');
+  const [shopeeModalOpen, setShopeeModalOpen] = useState(false);
+  const [shopeeModalKind, setShopeeModalKind] = useState<
+    'arrange' | 'reschedule' | 'dropoff'
+  >('arrange');
+  const [shopeePickupOptions, setShopeePickupOptions] =
+    useState<KolamMarketplacePickupOptions | null>(null);
+  const [shopeeOptionsLoading, setShopeeOptionsLoading] = useState(false);
+  const [shopeeOptionsError, setShopeeOptionsError] = useState(false);
+  const [selectedShopeeSlotId, setSelectedShopeeSlotId] = useState<string | null>(
+    null,
+  );
+
+  const showShopeePickupRequestBase = sale
+    ? needsKolamShopeePickupRequest(sale)
+    : false;
+  const showShopeeReschedule = sale
+    ? needsKolamPlatformPickupReschedule(sale)
+    : false;
+  const showShopeeDropOffBadge = sale
+    ? shouldShowKolamShopeeDropOffBadge(sale)
+    : false;
+  const shouldLoadShopeeOptions =
+    Boolean(sale) &&
+    (showShopeePickupRequestBase ||
+      showShopeeReschedule ||
+      showShopeeDropOffBadge) &&
+    String(sale?.marketplaceSource || '').toLowerCase() === 'shopee';
+
+  useEffect(() => {
+    if (!shouldLoadShopeeOptions) {
+      setShopeePickupOptions(null);
+      setShopeeOptionsLoading(false);
+      setShopeeOptionsError(false);
+      return;
+    }
+    let cancelled = false;
+    setShopeeOptionsLoading(true);
+    setShopeeOptionsError(false);
+    void controller
+      .onLoadMarketplacePickupOptions()
+      .then(options => {
+        if (cancelled) {
+          return;
+        }
+        setShopeePickupOptions(options);
+        setShopeeOptionsError(!options);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setShopeePickupOptions(null);
+          setShopeeOptionsError(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setShopeeOptionsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    sale?.id,
+    shouldLoadShopeeOptions,
+    controller.onLoadMarketplacePickupOptions,
+  ]);
 
   if (controller.loading && !sale) {
     return (
@@ -218,10 +293,64 @@ export function KolamSalesOpsDetail({
   const marketplaceFulfillment = getKolamSaleMarketplaceFulfillment(sale);
   const showTokopediaPickupRequest = needsKolamTokopediaPickupRequest(sale);
   const showTokopediaDropOffBadge = shouldShowKolamTokopediaDropOffBadge(sale);
+  const showShopeePickupArrangedBadge =
+    String(sale.marketplaceSource || '').toLowerCase() === 'shopee' &&
+    !isKolamShopeeDropOffOnly(sale) &&
+    isKolamShopeePickupArrangedOnSale(sale);
+  const showShopeeDropOffArrangedBadge =
+    isKolamShopeeDropOffArrangedOnSale(sale);
+  const shopeePickupTimeLabel = formatKolamShopeePickupTimeLabel(
+    marketplaceFulfillment?.pickupTime,
+  );
+
+  const isDropoffFromSale = isKolamShopeeDropOffOnly(sale);
+  const fulfillmentModeFromOptions = String(
+    shopeePickupOptions?.fulfillmentMode ||
+      marketplaceFulfillment?.fulfillmentMode ||
+      'pickup',
+  ).toLowerCase();
+  const isDropoffMode =
+    isDropoffFromSale ||
+    fulfillmentModeFromOptions === 'dropoff' ||
+    shopeePickupOptions?.mode === 'dropoff' ||
+    shopeePickupOptions?.pickupSupported === false;
+  const shopeeRequestReady =
+    !shouldLoadShopeeOptions ||
+    !shopeeOptionsLoading ||
+    shopeeOptionsError ||
+    Boolean(shopeePickupOptions);
+  const showShopeePickupRequest =
+    showShopeePickupRequestBase &&
+    shopeeRequestReady &&
+    !isDropoffMode;
   const tokopediaDropOffUrl =
     marketplaceFulfillment?.dropOffPointUrl?.trim() || '';
+  const shopeeDropOffTracking =
+    marketplaceFulfillment?.trackingNumber?.trim() ||
+    sale.shippingService?.trackingNumber?.trim() ||
+    '';
+  const shopeeDropOffCarrier =
+    shopeePickupOptions?.carrier?.trim() ||
+    sale.shippingService?.courierName?.trim() ||
+    '';
   const showMarketplaceFulfillmentActions =
-    showTokopediaPickupRequest || showTokopediaDropOffBadge;
+    showTokopediaPickupRequest ||
+    showTokopediaDropOffBadge ||
+    showShopeePickupRequest ||
+    showShopeeReschedule ||
+    showShopeeDropOffBadge ||
+    showShopeePickupArrangedBadge ||
+    showShopeeDropOffArrangedBadge;
+
+  const openShopeeModal = (kind: 'arrange' | 'reschedule' | 'dropoff') => {
+    setShopeeModalKind(kind);
+    const defaultId = pickKolamMarketplaceDefaultSlotId(
+      shopeePickupOptions?.options ?? [],
+      shopeePickupOptions?.defaultOption ?? null,
+    );
+    setSelectedShopeeSlotId(defaultId);
+    setShopeeModalOpen(true);
+  };
   const showCustomerChat =
     marketplaceManaged || canOpenKolamSaleCustomerChat(sale);
   const showResi = !skipShipping && canDownloadKolamSaleShippingResi(sale);
@@ -920,6 +1049,44 @@ export function KolamSalesOpsDetail({
                       textStyle={styles.toolbarDaftarToneButtonText}
                     />
                   ) : null}
+                  {showShopeePickupArrangedBadge ? (
+                    <KolamStatusBadge
+                      intent="success"
+                      label={
+                        shopeePickupTimeLabel
+                          ? `Pickup dijadwalkan · ${shopeePickupTimeLabel}`
+                          : 'Pickup dijadwalkan'
+                      }
+                    />
+                  ) : null}
+                  {showShopeeDropOffArrangedBadge ? (
+                    <KolamStatusBadge
+                      intent="success"
+                      label={
+                        shopeeDropOffTracking
+                          ? `Drop-off di-arrange (Shopee) · ${shopeeDropOffTracking}`
+                          : 'Drop-off di-arrange (Shopee)'
+                      }
+                    />
+                  ) : null}
+                  {showShopeeDropOffBadge ? (
+                    <View style={styles.tokopediaDropOffRow}>
+                      <KolamStatusBadge
+                        intent="warning"
+                        label={
+                          shopeeDropOffCarrier
+                            ? `Drop-off (Shopee) · ${shopeeDropOffCarrier}`
+                            : 'Drop-off (Shopee)'
+                        }
+                      />
+                      <KolamButton
+                        disabled={controller.mutating || shopeeOptionsLoading}
+                        intent="primary"
+                        label="Antar ke counter (Shopee)"
+                        onPress={() => openShopeeModal('dropoff')}
+                      />
+                    </View>
+                  ) : null}
                   {showTokopediaDropOffBadge ? (
                     <View style={styles.tokopediaDropOffRow}>
                       <KolamStatusBadge
@@ -944,10 +1111,37 @@ export function KolamSalesOpsDetail({
                     <KolamButton
                       disabled={controller.mutating}
                       intent="primary"
-                      label="Request jemput kurir (Tokopedia)"
+                      label={
+                        controller.mutating
+                          ? 'Memproses…'
+                          : 'Request jemput kurir (Tokopedia)'
+                      }
                       onPress={() => {
-                        void controller.onRequestMarketplacePickup();
+                        void controller.onRequestMarketplacePickup({});
                       }}
+                    />
+                  ) : null}
+                  {showShopeePickupRequest ? (
+                    <KolamButton
+                      disabled={controller.mutating || shopeeOptionsLoading}
+                      intent="primary"
+                      label={
+                        shopeeOptionsLoading
+                          ? 'Memuat…'
+                          : 'Request jemput kurir (Shopee)'
+                      }
+                      onPress={() => openShopeeModal('arrange')}
+                    />
+                  ) : null}
+                  {showShopeeReschedule ? (
+                    <KolamButton
+                      disabled={controller.mutating || shopeeOptionsLoading}
+                      label={
+                        shopeeOptionsLoading
+                          ? 'Memuat…'
+                          : 'Reschedule pickup (Shopee)'
+                      }
+                      onPress={() => openShopeeModal('reschedule')}
                     />
                   ) : null}
                   {!showMarketplaceFulfillmentActions ? (
@@ -1418,6 +1612,48 @@ export function KolamSalesOpsDetail({
         onRequest={controller.onRequestBiteshipPickup}
         onReschedule={controller.onRescheduleBiteshipPickup}
         visible={biteshipModalOpen}
+      />
+      <KolamShopeePickupModal
+        kind={shopeeModalKind}
+        mutating={controller.mutating}
+        onClose={() => setShopeeModalOpen(false)}
+        onConfirmDropoff={async () => {
+          const branch = shopeePickupOptions?.dropoffBranches?.[0];
+          const ok = await controller.onRequestMarketplaceDropoff(
+            branch?.branchId
+              ? {
+                  branchId: branch.branchId,
+                  branchLabel: branch.label,
+                }
+              : {},
+          );
+          if (ok) {
+            setShopeeModalOpen(false);
+          }
+          return ok;
+        }}
+        onConfirmPickup={async () => {
+          const slot = (shopeePickupOptions?.options ?? []).find(
+            option => option.id === selectedShopeeSlotId,
+          );
+          if (!slot) {
+            return false;
+          }
+          const ok = await controller.onRequestMarketplacePickup({
+            pickupTime: slot.pickupTime,
+            pickupTimeRangeId: slot.pickupTimeRangeId,
+            slotLabel: slot.label,
+          });
+          if (ok) {
+            setShopeeModalOpen(false);
+          }
+          return ok;
+        }}
+        onSelectSlotId={setSelectedShopeeSlotId}
+        options={shopeePickupOptions}
+        optionsLoading={shopeeOptionsLoading}
+        selectedSlotId={selectedShopeeSlotId}
+        visible={shopeeModalOpen}
       />
     </View>
   );
@@ -1916,6 +2152,151 @@ function KolamBiteshipWaybillItem({
         </>
       )}
     </View>
+  );
+}
+
+function KolamShopeePickupModal({
+  kind,
+  mutating,
+  onClose,
+  onConfirmDropoff,
+  onConfirmPickup,
+  onSelectSlotId,
+  options,
+  optionsLoading,
+  selectedSlotId,
+  visible,
+}: {
+  kind: 'arrange' | 'reschedule' | 'dropoff';
+  mutating: boolean;
+  onClose: () => void;
+  onConfirmDropoff: () => Promise<boolean>;
+  onConfirmPickup: () => Promise<boolean>;
+  onSelectSlotId: (id: string | null) => void;
+  options: KolamMarketplacePickupOptions | null;
+  optionsLoading: boolean;
+  selectedSlotId: string | null;
+  visible: boolean;
+}) {
+  const [localError, setLocalError] = useState<string | null>(null);
+  const slots = options?.options ?? [];
+  const branches = options?.dropoffBranches ?? [];
+
+  useEffect(() => {
+    if (!visible) {
+      setLocalError(null);
+    }
+  }, [visible]);
+
+  const isDropoff = kind === 'dropoff';
+  const title = isDropoff
+    ? 'Antar ke counter Shopee'
+    : kind === 'reschedule'
+      ? 'Reschedule pickup Shopee'
+      : 'Request jemput kurir Shopee';
+  const description = isDropoff
+    ? 'Konfirmasi arrange drop-off — sistem memanggil Shopee (init_order antar ke counter). Setelah resi muncul, antar paket ke counter SPX terdekat.'
+    : kind === 'reschedule'
+      ? 'Pickup sudah diatur di Shopee. Pilih jadwal baru sesuai opsi reschedule di Seller Center.'
+      : 'Pilih jadwal pickup sesuai opsi di Seller Center.';
+  const confirmLabel = mutating
+    ? isDropoff
+      ? 'Memproses…'
+      : kind === 'reschedule'
+        ? 'Menyimpan…'
+        : 'Mengirim…'
+    : isDropoff
+      ? 'Konfirmasi arrange'
+      : kind === 'reschedule'
+        ? 'Simpan jadwal baru'
+        : 'Request pickup';
+
+  const submit = async () => {
+    setLocalError(null);
+    if (!isDropoff && !selectedSlotId) {
+      setLocalError('Pilih slot waktu pickup terlebih dahulu');
+      return;
+    }
+    const ok = isDropoff
+      ? await onConfirmDropoff()
+      : await onConfirmPickup();
+    if (!ok && !isDropoff && !selectedSlotId) {
+      setLocalError('Pilih slot waktu pickup terlebih dahulu');
+    }
+  };
+
+  return (
+    <KolamModalDialog
+      description={description}
+      footer={
+        <>
+          <KolamCancelButton disabled={mutating} onPress={onClose} />
+          <KolamSaveButton
+            disabled={mutating || optionsLoading}
+            label={confirmLabel}
+            onPress={() => {
+              void submit();
+            }}
+          />
+        </>
+      }
+      maxWidth={520}
+      onClose={onClose}
+      title={title}
+      visible={visible}
+      width={520}
+    >
+      <View style={styles.biteshipModalBody}>
+        {options?.carrier ? (
+          <Text style={styles.metaText}>Kurir: {options.carrier}</Text>
+        ) : null}
+        {kind === 'reschedule' && options?.pickupArranged ? (
+          <Text style={styles.metaText}>
+            Pickup sudah di-request di Shopee — pilih slot baru untuk
+            reschedule.
+          </Text>
+        ) : null}
+        {optionsLoading ? (
+          <Text style={styles.metaText}>Memuat metode pengiriman…</Text>
+        ) : null}
+        {isDropoff ? (
+          branches.length === 0 ? (
+            <Text style={styles.metaText}>
+              Counter default Shopee (cabang terdekat) akan dipakai saat
+              konfirmasi — tidak perlu pilih manual jika daftar cabang kosong.
+            </Text>
+          ) : (
+            <View style={styles.biteshipModalOptionGroup}>
+              {branches.map(branch => (
+                <Text
+                  key={branch.branchId || branch.label}
+                  style={styles.metaText}
+                >
+                  {branch.label}
+                </Text>
+              ))}
+            </View>
+          )
+        ) : slots.length === 0 && !optionsLoading ? (
+          <Text style={styles.metaText}>
+            Tidak ada slot pickup tersedia saat ini.
+          </Text>
+        ) : !optionsLoading ? (
+          <KolamDropdownSelect
+            label="Waktu pickup"
+            onChange={value => onSelectSlotId(value || null)}
+            options={slots.map(slot => ({
+              label: slot.label,
+              value: slot.id,
+            }))}
+            value={selectedSlotId || slots[0]?.id || ''}
+          />
+        ) : null}
+        {localError ? (
+          <Text style={styles.biteshipFailedText}>{localError}</Text>
+        ) : null}
+      </View>
+    </KolamModalDialog>
   );
 }
 
