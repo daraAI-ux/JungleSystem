@@ -10255,7 +10255,7 @@ const styles = StyleSheet.create({
     borderLeftColor: V.colors.border,
     borderLeftWidth: 1,
     flexShrink: 0,
-    gap: 2,
+    gap: 1,
     height: 98,
     justifyContent: 'center',
     paddingHorizontal: 7,
@@ -10263,11 +10263,11 @@ const styles = StyleSheet.create({
     width: 44,
   },
   marketplaceHeroSlideActionButton: {
-    borderRadius: 6,
-    height: 22,
-    minHeight: 22,
+    borderRadius: 5,
+    height: 20,
+    minHeight: 20,
     paddingHorizontal: 0,
-    width: 22,
+    width: 20,
   },
   marketplaceHeroSlideActionButtonDanger: {
     backgroundColor: '#fee2e2',
@@ -10283,7 +10283,7 @@ const styles = StyleSheet.create({
   marketplaceHeroSlideActionSeparator: {
     backgroundColor: V.colors.border,
     height: 1,
-    width: 18,
+    width: 14,
   },
   marketplaceHeroSlideCard: {
     backgroundColor: '#ffffff',
