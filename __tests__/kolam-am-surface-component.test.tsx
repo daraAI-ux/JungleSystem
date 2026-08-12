@@ -748,7 +748,7 @@ describe('KolamAmSurface', () => {
     expect(onBackToCenter).not.toHaveBeenCalled();
   });
 
-  it('keeps the Kolam back button available on non-dashboard AM routes', async () => {
+  it('does not render the local back button on non-dashboard AM routes', async () => {
     const onBackToCenter = jest.fn();
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -763,15 +763,10 @@ describe('KolamAmSurface', () => {
     });
     renderers.push(renderer!);
 
-    const backButton = renderer!.root.findByProps({
+    expect(renderer!.root.findAllByProps({
       accessibilityLabel: 'Kembali',
-    });
-
-    act(() => {
-      backButton.props.onPress();
-    });
-
-    expect(onBackToCenter).toHaveBeenCalledTimes(1);
+    })).toHaveLength(0);
+    expect(onBackToCenter).not.toHaveBeenCalled();
   });
 
   it('keeps non-dashboard AM route bodies flush with the shell wrapper', async () => {
@@ -948,14 +943,10 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('404');
     expect(text).toContain('Halaman tidak ditemukan');
     expect(text).toContain("Halaman yang dicari tidak ada atau sudah dipindahkan.");
-    expect(text).toContain('Kembali ke Beranda');
+    expect(text).not.toContain('Kembali ke Beranda');
     expect(text).not.toContain('sudah masuk menu AM');
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Back to Dashboard'}).props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(amRoute('/'));
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Back to Dashboard'})).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
   it('keeps AM account actions out of the surface topbar', async () => {
@@ -1509,16 +1500,8 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Detail Task');
     expect(text).toContain('Transfer bank');
     expect(text).toContain('started');
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Task Back'}).props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(
-      expect.objectContaining({
-        moduleId: 'am',
-        route: 'tasks',
-      }),
-    );
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Task Back'})).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
   it('keeps Services as the AM FE runtime list without service account CRUD controls', async () => {
@@ -3284,14 +3267,8 @@ describe('KolamAmSurface', () => {
     renderers.push(renderer!);
 
     expect(renderText(renderer!)).toContain('Phone Rack');
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Back'}).props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(
-      concreteAmRoute('hardware/rack-1/box-1', 'hardware/:rackId/:boxId'),
-    );
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Back'})).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
   it('defaults browser device service creation to WhatsApp like AM FE', async () => {
@@ -4713,16 +4690,8 @@ describe('KolamAmSurface', () => {
     expect(text).toContain('Detail Mutasi');
     expect(text).toContain('hash-direct-mutasi');
     expect(text).toContain('/mutasi/mutasi-detail/receipt');
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Mutasi Back'}).props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(
-      expect.objectContaining({
-        moduleId: 'am',
-        route: 'mutasi',
-      }),
-    );
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Mutasi Back'})).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
   it('does not expose the legacy AM account settings route inside JungleSystem', async () => {
@@ -5773,16 +5742,8 @@ describe('KolamAmSurface', () => {
     });
 
     expect(cancelAmTransfer).toHaveBeenCalledWith('transfer-detail');
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Transfer Back'}).props.onPress();
-    });
-
-    expect(onModuleRouteSelect).toHaveBeenCalledWith(
-      expect.objectContaining({
-        moduleId: 'am',
-        route: 'transactions',
-      }),
-    );
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Transfer Back'})).toHaveLength(0);
+    expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 
   it('runs webhook register, toggle, delete, and test ping actions', async () => {

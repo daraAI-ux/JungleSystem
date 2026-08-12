@@ -299,9 +299,6 @@ export function KolamAmSurface({
         />
       ) : (
         <View style={styles.pageStack}>
-          <View style={styles.actionRow}>
-            <KolamButton label="Kembali" intent="outline" size="sm" onPress={onBackToCenter} />
-          </View>
           {activeRoute === 'tasks' ? (
             <AmTasksPage
               initialTaskId={routeSelection?.taskId}
@@ -331,7 +328,7 @@ export function KolamAmSurface({
           ) : activeRoute === 'activity-log' ? (
             <AmActivityLogPage />
           ) : (
-            <AmNotFoundPage onModuleRouteSelect={onModuleRouteSelect} />
+            <AmNotFoundPage />
           )}
         </View>
       )}
@@ -990,23 +987,10 @@ function AmTasksPage({
     }
   }, [fetchTasks]);
 
-  const closeTaskDetail = React.useCallback(() => {
-    setSelectedTaskId(null);
-    fetchTasks();
-
-    if (initialTaskId) {
-      const tasksRoute = getShellModuleRouteEntry('am', 'tasks');
-      if (tasksRoute) {
-        onModuleRouteSelect?.(tasksRoute);
-      }
-    }
-  }, [fetchTasks, initialTaskId, onModuleRouteSelect]);
-
   if (selectedTaskId) {
     return (
       <AmTaskDetailPage
         id={selectedTaskId}
-        onBack={closeTaskDetail}
         onTaskAction={runTaskAction}
       />
     );
@@ -1104,11 +1088,9 @@ function AmTasksPage({
 
 function AmTaskDetailPage({
   id,
-  onBack,
   onTaskAction,
 }: {
   id: string;
-  onBack: () => void;
   onTaskAction: (task: AmTask, action: 'cancel' | 'retry' | 'force-fail') => Promise<void>;
 }) {
   const [task, setTask] = React.useState<AmTask | null>(null);
@@ -1166,13 +1148,6 @@ function AmTaskDetailPage({
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Task tidak ditemukan</Text>
         <Text style={styles.panelText}>{error ?? 'Task tidak ditemukan'}</Text>
-        <KolamButton
-          accessibilityLabel="AM Task Back"
-          label="Kembali"
-          intent="outline"
-          size="sm"
-          onPress={onBack}
-        />
       </View>
     );
   }
@@ -1185,13 +1160,6 @@ function AmTaskDetailPage({
           <Text style={styles.panelText}>{TASK_TYPE_LABELS[task.type] ?? task.type} - {task._id}</Text>
         </View>
         <View style={styles.inlineActions}>
-          <KolamButton
-            accessibilityLabel="AM Task Back"
-            label="Kembali"
-            intent="outline"
-            size="sm"
-            onPress={onBack}
-          />
           <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" size="sm" muted={isLoading} onPress={fetchTask} />
         </View>
       </View>
@@ -2174,63 +2142,6 @@ function AmHardwarePage({
     setSelectedDeviceId(null);
   }, [initialRoute?.boxId, initialRoute?.deviceId, initialRoute?.rackId, onModuleRouteSelect]);
 
-  const goBackHardwareRoute = React.useCallback(() => {
-    if (!initialRoute?.rackId && !initialRoute?.boxId && !initialRoute?.deviceId) {
-      if (selectedDevice) {
-        setSelectedDeviceId(null);
-      } else {
-        setSelectedBoxId(null);
-      }
-      return;
-    }
-
-    if (selectedDevice) {
-      const rackRouteId = initialRoute.rackId ?? selectedRack?._id;
-      const boxRouteId = initialRoute.boxId ?? selectedBox?._id;
-      if (rackRouteId && boxRouteId) {
-        const boxRoute = getConcreteAmRouteEntry(
-          `hardware/${rackRouteId}/${boxRouteId}`,
-          'hardware/:rackId/:boxId',
-        );
-        if (boxRoute) {
-          onModuleRouteSelect?.(boxRoute);
-          return;
-        }
-        setSelectedDeviceId(null);
-        return;
-      }
-    }
-
-    if (selectedBox) {
-      const rackRouteId = initialRoute.rackId ?? selectedRack?._id;
-      if (rackRouteId) {
-        const rackRoute = getConcreteAmRouteEntry(
-          `hardware/${rackRouteId}`,
-          'hardware/:rackId',
-        );
-        if (rackRoute) {
-          onModuleRouteSelect?.(rackRoute);
-          return;
-        }
-        setSelectedBoxId(null);
-        return;
-      }
-    }
-
-    const hardwareRoute = getShellModuleRouteEntry('am', 'hardware');
-    if (hardwareRoute) {
-      onModuleRouteSelect?.(hardwareRoute);
-    }
-  }, [
-    initialRoute?.boxId,
-    initialRoute?.deviceId,
-    initialRoute?.rackId,
-    onModuleRouteSelect,
-    selectedBox,
-    selectedDevice,
-    selectedRack,
-  ]);
-
   const resetHardwareForm = React.useCallback((nextForm: 'rack' | 'box' | 'device' = hardwareForm) => {
     setHardwareForm(nextForm);
     setEditingHardwareId(null);
@@ -2443,15 +2354,6 @@ function AmHardwarePage({
           <Text style={styles.breadcrumbText}>{selectedRack.name}</Text>
           {selectedBox ? <Text style={styles.breadcrumbText}>/ {selectedBox.name}</Text> : null}
           {selectedDevice ? <Text style={styles.breadcrumbText}>/ {selectedDevice.name}</Text> : null}
-          {selectedBox || selectedDevice ? (
-            <KolamButton
-              accessibilityLabel="AM Hardware Back"
-              label="Kembali"
-              intent="outline"
-              size="sm"
-              onPress={goBackHardwareRoute}
-            />
-          ) : null}
         </View>
       ) : null}
       {error ? (
@@ -4275,20 +4177,6 @@ function AmTransfersPage({
     await loadTransferDetail(transfer._id);
   }, [loadTransferDetail, selectedTransferId]);
 
-  const closeTransferDetail = React.useCallback(() => {
-    setSelectedTransferId(null);
-    setSelectedTransfer(null);
-    setSelectedTransferWebhookLogs([]);
-    setDetailError(null);
-
-    if (initialTransferId) {
-      const transactionsRoute = getShellModuleRouteEntry('am', 'transactions');
-      if (transactionsRoute) {
-        onModuleRouteSelect?.(transactionsRoute);
-      }
-    }
-  }, [initialTransferId, onModuleRouteSelect]);
-
   const handleTransferSearchChange = React.useCallback((value: string) => {
     setSearch(value);
     setPage(1);
@@ -4660,7 +4548,6 @@ function AmTransfersPage({
           error={detailError}
           isLoading={detailLoading}
           onAction={runTransferAction}
-          onBack={closeTransferDetail}
           transfer={selectedTransfer}
           webhookLogs={selectedTransferWebhookLogs}
         />
@@ -4674,7 +4561,6 @@ function AmTransferDetailPanel({
   error,
   isLoading,
   onAction,
-  onBack,
   transfer,
   webhookLogs,
 }: {
@@ -4685,7 +4571,6 @@ function AmTransferDetailPanel({
     transfer: AmTransfer,
     action: 'cancel' | 'retry' | 'force-fail',
   ) => void;
-  onBack: () => void;
   transfer: AmTransfer | null;
   webhookLogs: AmWebhookLog[];
 }) {
@@ -4700,13 +4585,6 @@ function AmTransferDetailPanel({
         </View>
         {transfer ? (
           <View style={styles.inlineActions}>
-            <KolamButton
-              accessibilityLabel="AM Transfer Back"
-              intent="outline"
-              label="Kembali"
-              size="sm"
-              onPress={onBack}
-            />
             <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />
             <AmTransferActions
               disabled={actingTransferId === transfer._id}
@@ -4996,19 +4874,6 @@ function AmMutasiPage({
     }
   }, [selectedMutasiId]);
 
-  const closeMutasiDetail = React.useCallback(() => {
-    setSelectedMutasiId(null);
-    setSelectedMutasi(null);
-    setDetailError(null);
-
-    if (initialMutasiId) {
-      const mutasiRoute = getShellModuleRouteEntry('am', 'mutasi');
-      if (mutasiRoute) {
-        onModuleRouteSelect?.(mutasiRoute);
-      }
-    }
-  }, [initialMutasiId, onModuleRouteSelect]);
-
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
@@ -5131,7 +4996,6 @@ function AmMutasiPage({
           error={detailError}
           isLoading={detailLoading}
           mutasi={selectedMutasi}
-          onBack={closeMutasiDetail}
         />
       ) : null}
     </View>
@@ -5142,12 +5006,10 @@ function AmMutasiDetailPanel({
   error,
   isLoading,
   mutasi,
-  onBack,
 }: {
   error: string | null;
   isLoading: boolean;
   mutasi: AmMutasi | null;
-  onBack: () => void;
 }) {
   const receiptUrl = mutasi?.receiptFile
     ? getAmMutasiReceiptUrl(mutasi._id)
@@ -5162,13 +5024,6 @@ function AmMutasiDetailPanel({
         </View>
         {mutasi ? (
           <View style={styles.inlineActions}>
-            <KolamButton
-              accessibilityLabel="AM Mutasi Back"
-              intent="outline"
-              label="Kembali"
-              size="sm"
-              onPress={onBack}
-            />
             <AmStatusChip
               label={formatMutasiTypeLabel(mutasi.type)}
               tone={mutasi.type === 'masuk' ? 'success' : 'danger'}
@@ -6647,18 +6502,7 @@ function AmActivityLogDetailPanel({
   );
 }
 
-function AmNotFoundPage({
-  onModuleRouteSelect,
-}: {
-  onModuleRouteSelect?: (route: ShellModuleRouteEntry) => void;
-}) {
-  const openDashboard = React.useCallback(() => {
-    const dashboardRoute = getShellModuleRouteEntry('am', '/');
-    if (dashboardRoute) {
-      onModuleRouteSelect?.(dashboardRoute);
-    }
-  }, [onModuleRouteSelect]);
-
+function AmNotFoundPage() {
   return (
     <View style={styles.emptyPanel}>
       <Text style={styles.panelTitle}>404</Text>
@@ -6666,12 +6510,6 @@ function AmNotFoundPage({
       <Text style={styles.panelText}>
         Halaman yang dicari tidak ada atau sudah dipindahkan.
       </Text>
-      <KolamButton
-        accessibilityLabel="AM Back to Dashboard"
-        label="Kembali ke Beranda"
-        size="sm"
-        onPress={openDashboard}
-      />
     </View>
   );
 }
