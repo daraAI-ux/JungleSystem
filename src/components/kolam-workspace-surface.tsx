@@ -16,6 +16,7 @@ import { isKolamEnclosureNativeRoute } from '../domain/kolam-enclosure';
 import { isKolamIucnStatusRoute } from '../domain/kolam-iucn-status';
 import { isKolamLocationRoute } from '../domain/kolam-location';
 import { isKolamAppDownloadRoute } from '../domain/kolam-app-download';
+import { isKolamBantuanRoute } from '../domain/kolam-bantuan';
 import { isKolamMediaRoute } from '../domain/kolam-media';
 import { isKolamPackingMaterialRoute } from '../domain/kolam-packing-option';
 import { isKolamShippingMethodRoute } from '../domain/kolam-shipping-method';
@@ -86,6 +87,7 @@ import { KolamEnclosureSurface } from './kolam-enclosure-surface';
 import { KolamIucnStatusSurface } from './kolam-iucn-status-surface';
 import { KolamLocationSurface } from './kolam-location-surface';
 import { KolamAppDownloadSurface } from './kolam-app-download-surface';
+import { KolamBantuanSurface } from './kolam-bantuan-surface';
 import { KolamMediaLibrarySurface } from './kolam-media-library-surface';
 import { KolamPackingMaterialSurface } from './kolam-packing-material-surface';
 import { KolamShippingMethodSurface } from './kolam-shipping-method-surface';
@@ -247,6 +249,15 @@ export function KolamWorkspaceSurfaceComponent({
 
   if (activeRoutePath && isKolamAppDownloadRoute(activeRoutePath)) {
     return <KolamAppDownloadSurface />;
+  }
+
+  if (activeRoutePath && isKolamBantuanRoute(activeRoutePath)) {
+    return (
+      <KolamBantuanSurface
+        onRouteChange={onDashboardRoute}
+        route={activeNavigationItem?.route ?? '/bantuan'}
+      />
+    );
   }
 
   if (activeRoutePath && isKolamAdminCashflowSessionRoute(activeRoutePath)) {
@@ -739,6 +750,15 @@ export function KolamWorkspaceSurfaceComponent({
         if (isKolamTaskManagerRoute(activeNavigationItem.route.split('?')[0])) {
           return (
             <KolamTaskManagerSurface
+              onRouteChange={onDashboardRoute}
+              route={activeNavigationItem.route}
+            />
+          );
+        }
+
+        if (isKolamBantuanRoute(activeNavigationItem.route.split('?')[0])) {
+          return (
+            <KolamBantuanSurface
               onRouteChange={onDashboardRoute}
               route={activeNavigationItem.route}
             />

@@ -4,6 +4,7 @@ import {
   getKolamNavigationRouteSurfaceContract,
   type KolamNavigationItem,
 } from '../domain/kolam-navigation';
+import {isKolamBantuanRoute} from '../domain/kolam-bantuan';
 import {isKolamCampaignRoute} from '../domain/kolam-campaign';
 import {isKolamSpeciesRoute} from '../domain/kolam-species';
 import {isKolamSalesRoute} from '../domain/kolam-sales';
@@ -12,6 +13,7 @@ import {isKolamStockTransactionRoute} from '../domain/kolam-stock-transaction';
 import {isKolamTeranuraNativeRoute} from '../domain/kolam-teranura';
 import type {UnifiedDataset} from '../services/unified-data';
 import {KolamCampaignSurface} from './kolam-campaign-surface';
+import {KolamBantuanSurface} from './kolam-bantuan-surface';
 import {KolamDescriptionList} from './kolam-description-list';
 import {KolamModulePanel} from './kolam-module-panel';
 import {KolamNotificationsSurface} from './kolam-notifications-surface';
@@ -46,6 +48,15 @@ export function KolamNavigationRouteSurface({
   if (isKolamCampaignRoute(routePath)) {
     return (
       <KolamCampaignSurface
+        onRouteChange={onRouteChange}
+        route={contract.runtimeRoute}
+      />
+    );
+  }
+
+  if (isKolamBantuanRoute(routePath)) {
+    return (
+      <KolamBantuanSurface
         onRouteChange={onRouteChange}
         route={contract.runtimeRoute}
       />

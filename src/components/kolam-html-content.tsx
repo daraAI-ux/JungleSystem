@@ -151,15 +151,35 @@ const htmlRenderersProps = {
 
 export function KolamHtmlContent({
   html,
+  onLinkPress,
   style,
 }: {
   html: string | null | undefined;
+  onLinkPress?: (href: string) => void;
   style?: StyleProp<ViewStyle>;
 }) {
   const { width } = useWindowDimensions();
   const safeHtml = html?.trim() ?? '';
   const contentWidth = Math.max(1, Math.min(width - 80, 820));
   const source = React.useMemo(() => ({ html: safeHtml }), [safeHtml]);
+  const renderersProps = React.useMemo(
+    () => ({
+      ...htmlRenderersProps,
+      a: {
+        onPress: (_event: unknown, href: string) => {
+          if (href) {
+            if (onLinkPress) {
+              onLinkPress(href);
+              return;
+            }
+
+            void Linking.openURL(href);
+          }
+        },
+      },
+    }),
+    [onLinkPress],
+  );
 
   if (!safeHtml) {
     return null;
@@ -174,7 +194,7 @@ export function KolamHtmlContent({
         enableCSSInlineProcessing={false}
         enableUserAgentStyles={false}
         ignoredDomTags={['script', 'style', 'iframe']}
-        renderersProps={htmlRenderersProps}
+        renderersProps={renderersProps}
         source={source}
         systemFonts={htmlSystemFonts}
         tagsStyles={htmlTagsStyles}
