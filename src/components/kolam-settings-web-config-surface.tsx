@@ -7480,30 +7480,29 @@ function MarketplaceHeroPreview({
   };
 
   return (
-    <KolamModalDialog
-      description={`${selectedIndex + 1} / ${slides.length}`}
-      dialogStyle={styles.marketplaceHeroPreviewDialog}
-      footer={
-        <View style={styles.marketplaceHeroPreviewFooter}>
-          <Text style={styles.marketplaceHeroPreviewFooterLabel}>1280 x 180px</Text>
-          <Pressable
-            accessibilityLabel="Tutup pratinjau"
-            accessibilityRole="button"
-            onPress={onClose}
-            style={styles.marketplaceHeroPreviewFooterButton}>
-            <Text style={styles.marketplaceHeroPreviewFooterButtonLabel}>
-              Tutup
-            </Text>
-          </Pressable>
-        </View>
-      }
-      maxHeight="86%"
-      maxWidth={1280}
-      onClose={onClose}
-      title="Pratinjau hero"
-      visible
-      width="92%">
-      <View style={styles.marketplaceHeroPreviewStage}>
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible>
+      <View style={styles.marketplaceHeroPreviewNativeOverlay}>
+        <KolamModalBackdrop onPress={onClose} />
+        <View style={styles.marketplaceHeroPreviewNativeDialog}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: 'Pratinjau hero',
+                style: styles.marketplaceHeroEditorModalTitle,
+              },
+              {
+                id: 'count',
+                text: `${selectedIndex + 1} / ${slides.length}`,
+                style: styles.marketplaceHeroEditorModalDescription,
+              },
+            ]}
+          />
+          <View style={styles.marketplaceHeroPreviewStage}>
         {imageUri ? (
           <Image
             resizeMode="cover"
@@ -7589,8 +7588,24 @@ function MarketplaceHeroPreview({
             </View>
           </>
         ) : null}
+          </View>
+          <View style={styles.marketplaceHeroPreviewFooter}>
+            <Text style={styles.marketplaceHeroPreviewFooterLabel}>
+              1280 x 180px
+            </Text>
+            <Pressable
+              accessibilityLabel="Tutup pratinjau"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={styles.marketplaceHeroPreviewFooterButton}>
+              <Text style={styles.marketplaceHeroPreviewFooterButtonLabel}>
+                Tutup
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-    </KolamModalDialog>
+    </Modal>
   );
 }
 
@@ -10611,6 +10626,30 @@ const styles = StyleSheet.create({
   marketplaceHeroPreviewImageFallback: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#e5e7eb',
+  },
+  marketplaceHeroPreviewNativeDialog: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 1401,
+    gap: 14,
+    maxHeight: '86%',
+    maxWidth: '92%',
+    padding: 16,
+    shadowColor: V.colors.fg,
+    shadowOffset: {height: 16, width: 0},
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    width: 960,
+    zIndex: 140001,
+  },
+  marketplaceHeroPreviewNativeOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.42)',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
   },
   marketplaceHeroPreviewOverlay: {
     alignItems: 'center',
