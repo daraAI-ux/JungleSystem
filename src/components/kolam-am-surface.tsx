@@ -1632,6 +1632,7 @@ function AmServicesPage() {
               label={actingServiceId === sessionToClear._id ? 'Membersihkan...' : 'Bersihkan Session'}
               muted={actingServiceId === sessionToClear._id}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={() => clearServiceSession(sessionToClear)}
             />
             <KolamCancelButton
@@ -1641,6 +1642,7 @@ function AmServicesPage() {
               label="Batal"
               muted={actingServiceId === sessionToClear._id}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={() => setSessionToClear(null)}
             />
           </View>
@@ -2654,6 +2656,7 @@ function AmServiceDetailPanel({
             label={clearingSession ? 'Membersihkan...' : 'Bersihkan Session'}
             muted={clearingSession}
             size="sm"
+            style={styles.serviceActionButton}
             onPress={onClearSession}
           />
         ) : null}
@@ -2737,6 +2740,7 @@ function AmServiceDetailPanel({
                   label={serviceInputSending ? 'Mengirim' : 'Kirim Input'}
                   muted={serviceInputSending}
                   size="sm"
+                  style={styles.serviceActionButton}
                   onPress={() => onSubmitServiceInput(needsPassword ? 'password' : 'otp')}
                 />
               </View>
@@ -3047,6 +3051,7 @@ function AmTokopediaSessionPanel({
               label="Password"
               muted={!canRunSessionAction || acting === 'login-method'}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={() => updateLoginMethod('password')}
             />
             <KolamButton
@@ -3056,6 +3061,7 @@ function AmTokopediaSessionPanel({
               label="Isi Saja"
               muted={!canRunSessionAction || acting === 'login-method'}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={() => updateLoginMethod('fill')}
             />
             <KolamButton
@@ -3065,6 +3071,7 @@ function AmTokopediaSessionPanel({
               label="QR TikTok"
               muted={!canRunSessionAction || acting === 'login-method'}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={() => updateLoginMethod('qr')}
             />
           </View>
@@ -3080,6 +3087,7 @@ function AmTokopediaSessionPanel({
               label={captchaAutoSolve ? 'Auto Aktif' : 'Auto Nonaktif'}
               muted={!canRunSessionAction || acting === 'captcha'}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={() => setCaptchaAutoSolve(current => !current)}
             />
             <KolamSaveButton
@@ -3088,6 +3096,7 @@ function AmTokopediaSessionPanel({
               label={acting === 'captcha' ? 'Menyimpan' : 'Simpan Captcha'}
               muted={!canRunSessionAction || acting === 'captcha'}
               size="sm"
+              style={styles.serviceActionButton}
               onPress={saveCaptchaSettings}
             />
             {info?.hasAnthropicApiKey ? (
@@ -3098,6 +3107,7 @@ function AmTokopediaSessionPanel({
                 label={acting === 'captcha-clear-key' ? 'Menghapus' : 'Hapus Key'}
                 muted={!canRunSessionAction || acting === 'captcha-clear-key'}
                 size="sm"
+                style={styles.serviceActionButton}
                 onPress={clearCaptchaApiKey}
               />
             ) : null}
@@ -3134,6 +3144,7 @@ function AmTokopediaSessionPanel({
             label={acting === 'upload-cookies' ? 'Menyimpan' : 'Simpan Session'}
             muted={!canRunSessionAction || acting === 'upload-cookies' || !cookiesJson.trim() || Boolean(cookiesPreview.error)}
             size="sm"
+            style={styles.serviceActionButton}
             onPress={uploadManualCookies}
           />
           <KolamCancelButton
@@ -3143,6 +3154,7 @@ function AmTokopediaSessionPanel({
             label="Bersihkan"
             muted={!cookiesJson.trim()}
             size="sm"
+            style={styles.serviceActionButton}
             onPress={() => setCookiesJson('')}
           />
         </View>
@@ -3158,6 +3170,7 @@ function AmTokopediaSessionPanel({
           label={acting === 'verify' ? 'Mengecek' : 'Cek Login'}
           muted={!canRunSessionAction || info?.status === 'missing'}
           size="sm"
+          style={styles.serviceActionButton}
           onPress={() => runAction('verify', async () => {
             const result = await verifyAmTokopediaSession(account._id);
             return result.loggedIn
@@ -3172,6 +3185,7 @@ function AmTokopediaSessionPanel({
           label={acting === 'restart' ? 'Restart...' : 'Restart Tokopedia'}
           muted={!canRunSessionAction || !processRunning}
           size="sm"
+          style={styles.serviceActionButton}
           onPress={() => runAction('restart', async () => {
             const result = await restartAmTokopediaSession(account._id);
             return result.restarted ? 'Tokopedia di-restart.' : 'Service belum berjalan; nyalakan service untuk memakai session baru.';
@@ -3184,6 +3198,7 @@ function AmTokopediaSessionPanel({
           label={acting === 'qr-start' ? 'Memuat QR' : 'Mulai Scan QR'}
           muted={!canRunSessionAction || !processRunning || !info?.qrTiktokLogin}
           size="sm"
+          style={styles.serviceActionButton}
           onPress={() => runAction('qr-start', async () => {
             await startAmTokopediaQrLogin(account._id);
             await loadQrLogs();
@@ -3197,6 +3212,7 @@ function AmTokopediaSessionPanel({
           label={monitorRunning ? 'Monitor berjalan' : 'Perbarui Session'}
           muted={!canRunSessionAction || monitorRunning || info?.status === 'missing' || info?.status === 'empty'}
           size="sm"
+          style={styles.serviceActionButton}
           onPress={() => runAction('api-monitor', async () => {
             const job = await runAmTokopediaApiMonitor(account._id, {
               autoRestart: true,
@@ -3213,6 +3229,7 @@ function AmTokopediaSessionPanel({
 
           muted={isLoading}
           size="sm"
+          style={styles.serviceIconButton}
           onPress={() => loadSession()}
         />
       </View>
@@ -8439,6 +8456,12 @@ const styles = StyleSheet.create({
   statusActionStack: {
     alignItems: 'flex-start',
     gap: 6,
+  },
+  serviceActionButton: {
+    borderRadius: V.radius.sm,
+  },
+  serviceIconButton: {
+    borderRadius: V.radius.sm,
   },
   successPanel: {
     borderWidth: 1,
