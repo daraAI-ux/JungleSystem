@@ -6278,7 +6278,7 @@ function AmWebhooksPage() {
           </View>
         </View>
       ) : null}
-      <View style={styles.panel}>
+      <View style={[styles.panel, styles.webhookEndpointPanel]}>
         <Text style={styles.panelTitle}>Endpoint</Text>
         <AmLoadingOrEmpty isLoading={isLoading} items={configs} loadingText="Memuat config webhook..." emptyText="Webhook belum terdaftar" />
         <View style={styles.webhookEndpointList}>
@@ -9590,6 +9590,10 @@ const styles = StyleSheet.create({
   hardwareCardFooterCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  webhookEndpointPanel: {
+    flexBasis: 'auto',
+    flexGrow: 0,
   },
   webhookEndpointList: {
     width: '100%',
