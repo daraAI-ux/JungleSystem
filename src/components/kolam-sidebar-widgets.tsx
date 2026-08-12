@@ -1,6 +1,7 @@
 ﻿import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
+import { getKolamWebSettingVersion } from '../services/kolam-api';
 import { KolamSidebarBrand } from './kolam-sidebar-brand';
 import {
   KolamSidebarContent,
@@ -25,6 +26,31 @@ export function KolamSidebar({
   onToggleMenuSection,
   sectionOrder,
 }: KolamSidebarProps) {
+  const [version, setVersion] = React.useState('-');
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    getKolamWebSettingVersion('kolam')
+      .then(result => {
+        if (mounted) {
+          const nextVersion = String(result.version ?? '').trim();
+          setVersion(nextVersion || '-');
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setVersion('-');
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const year = new Date().getFullYear();
+
   return (
     <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
       <KolamSidebarBrand collapsed={collapsed} />
@@ -44,6 +70,18 @@ export function KolamSidebar({
         onToggleMenuSection={onToggleMenuSection}
         sectionOrder={sectionOrder}
       />
+      {collapsed ? null : (
+        <View style={styles.sidebarFooter}>
+          <Text style={styles.sidebarFooterText}>
+            <Text>Versi </Text>
+            <Text style={styles.sidebarFooterStrong}>{version}</Text>
+            <Text style={styles.sidebarFooterMuted}> • </Text>
+            <Text style={styles.sidebarFooterStrong}>
+              © {year} Dunia Anura
+            </Text>
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -51,6 +89,7 @@ export function KolamSidebar({
 const styles = StyleSheet.create({
   sidebar: {
     width: V.layout.sidebarWidth,
+    flexShrink: 0,
     paddingHorizontal: 12,
     paddingVertical: 14,
     backgroundColor: V.colors.sidebar,
@@ -60,5 +99,26 @@ const styles = StyleSheet.create({
   sidebarCollapsed: {
     width: V.layout.sidebarDockWidth,
     paddingHorizontal: 6,
+  },
+  sidebarFooter: {
+    flexShrink: 0,
+    borderTopColor: V.colors.border,
+    borderTopWidth: 1,
+    paddingHorizontal: 8,
+    paddingTop: 10,
+  },
+  sidebarFooterText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  sidebarFooterStrong: {
+    color: V.colors.sidebarFg,
+  },
+  sidebarFooterMuted: {
+    color: V.colors.mutedFg,
   },
 });
