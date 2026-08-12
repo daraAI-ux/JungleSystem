@@ -312,11 +312,6 @@ export function KolamPosFullWindowSurface({
                     contentContainerStyle={styles.categoryPillList}
                     showsHorizontalScrollIndicator={false}
                     style={styles.categoryScroll}>
-                    <PosCategoryPill
-                      active={!activeCategory}
-                      label="Semua"
-                      onPress={() => onCategoryChange?.(null)}
-                    />
                     {catalogCategories.map(category => (
                       <PosCategoryPill
                         key={category}
@@ -327,8 +322,8 @@ export function KolamPosFullWindowSurface({
                     ))}
                   </ScrollView>
                 </View>
-                {catalogSearch || activeCategory ? (
-                  <View style={kolamTableToolbarStyles.actions}>
+                <View style={kolamTableToolbarStyles.actions}>
+                  {catalogSearch || activeCategory ? (
                     <KolamButton
                       label="Hapus Filter"
                       onPress={() => {
@@ -338,8 +333,13 @@ export function KolamPosFullWindowSurface({
                       style={styles.posToolbarActionButton}
                       textStyle={styles.posToolbarActionButtonText}
                     />
-                  </View>
-                ) : null}
+                  ) : null}
+                  <PosCategoryPill
+                    active={!activeCategory}
+                    label="Semua"
+                    onPress={() => onCategoryChange?.(null)}
+                  />
+                </View>
               </View>
             </View>
 
