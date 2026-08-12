@@ -4270,10 +4270,6 @@ describe('KolamAmSurface', () => {
     let joinedText = text.join(' ');
     expect(text).toEqual(
       expect.arrayContaining([
-        'API / Halaman',
-        '12 / 3',
-        'Berhasil',
-        '0 gagal',
         'User Teratas',
         'alice',
         'Path Teratas',

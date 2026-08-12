@@ -7018,10 +7018,6 @@ function AmActivityLogPage() {
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
-  const successCount = getAmStatsCount(stats?.byStatus, 'success');
-  const failedCount = getAmStatsCount(stats?.byStatus, 'failed');
-  const apiCount = getAmStatsCount(stats?.byType, 'api');
-  const pageCount = getAmStatsCount(stats?.byType, 'page');
   const hasActiveFilters =
     Boolean(search.trim()) || type !== 'all' || status !== 'all' || method !== 'all';
   const selectedDeleteCount = selectedLogIds.size || (selectedLog ? 1 : 0);
@@ -7046,11 +7042,6 @@ function AmActivityLogPage() {
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
-        <AmMetricCard label="Periode" value={`${stats?.days ?? 7} hari`} meta={stats?.since ? formatAmDate(stats.since) : 'statistik'} />
-        <AmMetricCard label="API / Halaman" value={`${apiCount} / ${pageCount}`} meta="jumlah tipe 7 hari" />
-        <AmMetricCard label="Berhasil" value={String(successCount)} meta={`${failedCount} gagal`} />
-      </View>
       <View style={styles.emptyPanel}>
         <Text style={styles.panelTitle}>Log Aktivitas</Text>
         <Text style={styles.panelText}>
