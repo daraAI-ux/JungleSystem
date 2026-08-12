@@ -7,7 +7,6 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import type {ShellModule} from '../domain/app-shell';
 import type {
   CartLine,
   CashflowSession,
@@ -29,7 +28,6 @@ import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamSaveButton} from './kolam-save-button';
 import {KolamDashboardHeader} from './kolam-dashboard-header';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
-import {KolamNavItem} from './kolam-nav-item';
 import {KolamOverlaySurface} from './kolam-overlay-surface';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamRemoteImage} from './kolam-remote-image';
@@ -274,20 +272,7 @@ export function KolamPosFullWindowSurface({
   return (
     <View style={styles.surface}>
       <PosSidebar
-        activeType={activeType}
-        activeView={activeView}
         onBackToCenter={onBackToCenter}
-        onSelectCashflow={() => setActiveView('cashflow')}
-        onSelectCustomers={() => setActiveView('customers')}
-        onSelectProduct={() => {
-          setActiveView('catalog');
-          onTypeChange('product');
-        }}
-        onSelectSales={() => setActiveView('sales')}
-        onSelectSpecies={() => {
-          setActiveView('catalog');
-          onTypeChange('species');
-        }}
       />
       <View style={styles.posMain}>
         <View style={styles.posContent}>
@@ -302,28 +287,62 @@ export function KolamPosFullWindowSurface({
           ) : null}
           <View style={styles.posWorkspace}>
             <View style={styles.catalogPane}>
-              {isCatalogView ? (
-                <>
             <View style={[kolamTableToolbarStyles.shell, styles.categoryBar]}>
               <View style={kolamTableToolbarStyles.row}>
                 <View style={kolamTableToolbarStyles.filters}>
-                  <ScrollView
-                    horizontal
-                    contentContainerStyle={styles.categoryPillList}
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.categoryScroll}>
-                    {catalogCategories.map(category => (
-                      <PosCategoryPill
-                        key={category}
-                        active={activeCategory === category}
-                        label={category}
-                        onPress={() => onCategoryChange?.(category)}
-                      />
-                    ))}
-                  </ScrollView>
+                  <View style={styles.posToolbarNav}>
+                    <PosCategoryPill
+                      active={isCatalogView && activeType !== 'species'}
+                      label="Produk"
+                      onPress={() => {
+                        setActiveView('catalog');
+                        onTypeChange('product');
+                      }}
+                    />
+                    <PosCategoryPill
+                      active={isCatalogView && activeType === 'species'}
+                      label="Spesies"
+                      onPress={() => {
+                        setActiveView('catalog');
+                        onTypeChange('species');
+                      }}
+                    />
+                    <PosCategoryPill
+                      active={activeView === 'customers'}
+                      label="Pelanggan"
+                      onPress={() => setActiveView('customers')}
+                    />
+                    <PosCategoryPill
+                      active={activeView === 'sales'}
+                      label="Penjualan"
+                      onPress={() => setActiveView('sales')}
+                    />
+                    <PosCategoryPill
+                      active={activeView === 'cashflow'}
+                      label="Kas"
+                      onPress={() => setActiveView('cashflow')}
+                    />
+                  </View>
+                  {isCatalogView ? (
+                    <ScrollView
+                      horizontal
+                      contentContainerStyle={styles.categoryPillList}
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.categoryScroll}>
+                      {catalogCategories.map(category => (
+                        <PosCategoryPill
+                          key={category}
+                          active={activeCategory === category}
+                          label={category}
+                          onPress={() => onCategoryChange?.(category)}
+                        />
+                      ))}
+                    </ScrollView>
+                  ) : null}
                 </View>
-                <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
-                  {catalogSearch || activeCategory ? (
+                {isCatalogView ? (
+                  <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
+                    {catalogSearch || activeCategory ? (
                     <KolamButton
                       label="Hapus Filter"
                       onPress={() => {
@@ -333,16 +352,19 @@ export function KolamPosFullWindowSurface({
                       style={styles.posToolbarActionButton}
                       textStyle={styles.posToolbarActionButtonText}
                     />
-                  ) : null}
-                  <PosCategoryPill
-                    active={!activeCategory}
-                    label="Semua"
-                    onPress={() => onCategoryChange?.(null)}
-                  />
-                </View>
+                    ) : null}
+                    <PosCategoryPill
+                      active={!activeCategory}
+                      label="Semua"
+                      onPress={() => onCategoryChange?.(null)}
+                    />
+                  </View>
+                ) : null}
               </View>
             </View>
 
+              {isCatalogView ? (
+                <>
             <ScrollView
               style={styles.catalogScroll}
               contentContainerStyle={styles.catalogContent}
@@ -586,61 +608,7 @@ export function KolamPosFullWindowSurface({
   );
 }
 
-const POS_PRODUCT_NAV_MODULE: ShellModule = {
-  id: 'catalog',
-  area: 'pos',
-  label: 'Produk',
-  iconKind: 'catalog',
-  sourceRepo: 'E:\\Projects\\da-pos',
-  summary: '',
-  routes: [],
-};
-
-const POS_SPECIES_NAV_MODULE: ShellModule = {
-  ...POS_PRODUCT_NAV_MODULE,
-  label: 'Spesies',
-};
-
-const POS_CUSTOMER_NAV_MODULE: ShellModule = {
-  ...POS_PRODUCT_NAV_MODULE,
-  id: 'customer',
-  label: 'Pelanggan',
-  iconKind: 'people',
-};
-
-const POS_SALES_NAV_MODULE: ShellModule = {
-  ...POS_PRODUCT_NAV_MODULE,
-  id: 'sales',
-  label: 'Penjualan',
-  iconKind: 'sales',
-};
-
-const POS_CASHFLOW_NAV_MODULE: ShellModule = {
-  ...POS_PRODUCT_NAV_MODULE,
-  id: 'cashflow',
-  label: 'Kas',
-  iconKind: 'wallet',
-};
-
-function PosSidebar({
-  activeType,
-  activeView,
-  onBackToCenter,
-  onSelectCashflow,
-  onSelectCustomers,
-  onSelectProduct,
-  onSelectSales,
-  onSelectSpecies,
-}: {
-  activeType: CatalogItemType | 'all';
-  activeView: PosWindowView;
-  onBackToCenter: () => void;
-  onSelectCashflow: () => void;
-  onSelectCustomers: () => void;
-  onSelectProduct: () => void;
-  onSelectSales: () => void;
-  onSelectSpecies: () => void;
-}) {
+function PosSidebar({onBackToCenter}: {onBackToCenter: () => void}) {
   return (
     <View style={styles.posSidebar}>
       <KolamSidebarBrand collapsed={false} />
@@ -649,31 +617,6 @@ function PosSidebar({
         contentContainerStyle={styles.posSidebarContent}
         showsVerticalScrollIndicator={false}>
         <Text style={styles.posSidebarLabel}>POS</Text>
-        <KolamNavItem
-          active={activeView === 'catalog' && activeType !== 'species'}
-          module={POS_PRODUCT_NAV_MODULE}
-          onPress={onSelectProduct}
-        />
-        <KolamNavItem
-          active={activeView === 'catalog' && activeType === 'species'}
-          module={POS_SPECIES_NAV_MODULE}
-          onPress={onSelectSpecies}
-        />
-        <KolamNavItem
-          active={activeView === 'customers'}
-          module={POS_CUSTOMER_NAV_MODULE}
-          onPress={onSelectCustomers}
-        />
-        <KolamNavItem
-          active={activeView === 'sales'}
-          module={POS_SALES_NAV_MODULE}
-          onPress={onSelectSales}
-        />
-        <KolamNavItem
-          active={activeView === 'cashflow'}
-          module={POS_CASHFLOW_NAV_MODULE}
-          onPress={onSelectCashflow}
-        />
         <KolamButton
           label="Kembali"
           intent="outline"
@@ -2297,6 +2240,14 @@ const styles = StyleSheet.create({
   categoryBar: {
     marginBottom: 12,
     marginHorizontal: 12,
+  },
+  posToolbarNav: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    flexWrap: 'wrap',
+    gap: 6,
+    minHeight: 34,
   },
   categoryScroll: {
     flexGrow: 1,
