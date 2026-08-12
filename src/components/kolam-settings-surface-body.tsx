@@ -93,15 +93,13 @@ export function KolamSettingsSurfaceBody({
         onDeleteMarketplaceAnnouncementBanner={banner => {
           void controller.deleteMarketplaceAnnouncementBanner(banner);
         }}
-        onDeleteMarketplaceBioactiveStep={index => {
-          void controller.deleteMarketplaceBioactiveStep(index);
-        }}
         onDeleteMarketplaceCategoryBanner={banner => {
           void controller.deleteMarketplaceCategoryBanner(banner);
         }}
         onDeleteMarketplaceFeaturedCollection={index => {
           void controller.deleteMarketplaceFeaturedCollection(index);
         }}
+        marketplaceCategories={controller.marketplaceCategories}
         onDeleteMarketplaceHeroSlide={slide => {
           void controller.deleteMarketplaceHeroSlide(slide);
         }}
@@ -126,9 +124,6 @@ export function KolamSettingsSurfaceBody({
         onMoveMarketplaceAnnouncementBanner={(banner, direction) => {
           void controller.moveMarketplaceAnnouncementBanner(banner, direction);
         }}
-        onMoveMarketplaceBioactiveStep={(index, direction) => {
-          void controller.moveMarketplaceBioactiveStep(index, direction);
-        }}
         onMoveMarketplaceCategoryBanner={(banner, direction) => {
           void controller.moveMarketplaceCategoryBanner(banner, direction);
         }}
@@ -137,6 +132,21 @@ export function KolamSettingsSurfaceBody({
         }}
         onMoveMarketplaceHeroSlide={(slide, direction) => {
           void controller.moveMarketplaceHeroSlide(slide, direction);
+        }}
+        onAddMarketplaceFeaturedCollection={
+          controller.addMarketplaceFeaturedCollection
+        }
+        onUpdateMarketplaceFeaturedCollection={
+          controller.updateMarketplaceFeaturedCollection
+        }
+        onUpdateMarketplaceBioactiveStep={
+          controller.updateMarketplaceBioactiveStep
+        }
+        onSaveMarketplaceFeaturedCollections={() => {
+          void controller.saveMarketplaceFeaturedCollections();
+        }}
+        onSaveMarketplaceBioactiveEcosystem={() => {
+          void controller.saveMarketplaceBioactiveEcosystem();
         }}
         onPickMarketplaceLandingAnnouncementImage={() => {
           void controller.pickMarketplaceLandingAnnouncementImage();
@@ -202,9 +212,6 @@ export function KolamSettingsSurfaceBody({
         }}
         onUploadMarketplaceCtaBackground={() => {
           void controller.uploadMarketplaceCtaBackground();
-        }}
-        onUploadMarketplaceDaraAvatar={() => {
-          void controller.uploadMarketplaceDaraAvatar();
         }}
         onUploadMarketplaceFeaturedCollectionImage={index => {
           void controller.uploadMarketplaceFeaturedCollectionImage(index);

@@ -44,6 +44,10 @@ import {
 } from '../domain/settings-surface';
 import type { SyncActivityEntry } from '../domain/sync-activity';
 import {
+  flattenAllCategories,
+  type KolamCategory,
+} from '../domain/kolam-category';
+import {
   normalizeKolamComplaintPeriodDays,
   validateKolamComplaintPeriodDaysInput,
 } from '../domain/kolam-complaint';
@@ -111,8 +115,10 @@ import {
   type KolamBlog,
   type KolamBlogTopic,
   type KolamCategoryBanner,
+  type KolamBioactiveEcosystemStep,
   type KolamCtaSection,
   type KolamCustomerTextNotice,
+  type KolamFeaturedCollection,
   type KolamHeroSlide,
   type KolamKpiSettings,
   type KolamKpiWeeklyAnnouncePreview,
@@ -138,6 +144,7 @@ import {
   type KolamWebSettingVersions,
   type KolamYoutubeSection,
 } from '../services/kolam-api';
+import { getKolamCategories } from '../services/kolam-category-api';
 import {
   createKolamPaymentMethod,
   deleteKolamPaymentMethod,
@@ -1090,6 +1097,9 @@ export function useKolamSettingsPanelController(
     useState('');
   const [marketplaceLandingAssetStatus, setMarketplaceLandingAssetStatus] =
     useState<Partial<Record<string, MarketplaceLandingAssetStatus>>>({});
+  const [marketplaceCategories, setMarketplaceCategories] = useState<
+    KolamCategory[]
+  >([]);
   const [webContentPanelId, setWebContentPanelId] =
     useState<WebContentPanelId>('marketplace');
   const [marketplaceLandingTabId, setMarketplaceLandingTabId] =
@@ -1335,6 +1345,7 @@ export function useKolamSettingsPanelController(
       getKolamAnnouncementBannersAdmin(),
       getKolamCustomerNoticesAdmin(),
       getKolamMarketplaceContentAdmin(),
+      getKolamCategories(),
     ])
       .then(
         ([
@@ -1345,6 +1356,7 @@ export function useKolamSettingsPanelController(
           announcementBanners,
           customerNotices,
           marketplaceContent,
+          categoryTree,
         ]) => {
           if (!mounted) {
             return;
@@ -1361,6 +1373,7 @@ export function useKolamSettingsPanelController(
             customerNotices,
             marketplaceContent,
           });
+          setMarketplaceCategories(flattenAllCategories(categoryTree));
           setMarketplaceLandingCtaDraft(
             createMarketplaceLandingCtaDraft(ctaSection),
           );
@@ -2933,6 +2946,74 @@ export function useKolamSettingsPanelController(
       },
     );
   };
+  const addMarketplaceFeaturedCollection = () => {
+    const currentRows =
+      marketplaceLandingOverview.marketplaceContent.featuredCollections ?? [];
+    setMarketplaceLandingOverview(current => ({
+      ...current,
+      marketplaceContent: {
+        ...current.marketplaceContent,
+        featuredCollections: [
+          ...(current.marketplaceContent.featuredCollections ?? []),
+          {
+            title: '',
+            subtitle: '',
+            categoryId: null,
+            image: '',
+            order: currentRows.length,
+            isActive: true,
+          },
+        ],
+      },
+    }));
+  };
+  const updateMarketplaceFeaturedCollection = (
+    index: number,
+    patch: Partial<KolamFeaturedCollection>,
+  ) => {
+    setMarketplaceLandingOverview(current => ({
+      ...current,
+      marketplaceContent: {
+        ...current.marketplaceContent,
+        featuredCollections: normalizeMarketplaceOrder(
+          (current.marketplaceContent.featuredCollections ?? []).map(
+            (row, rowIndex) =>
+              rowIndex === index ? { ...row, ...patch } : row,
+          ),
+        ),
+      },
+    }));
+  };
+  const saveMarketplaceFeaturedCollections = async () => {
+    const rows = normalizeMarketplaceOrder(
+      marketplaceLandingOverview.marketplaceContent.featuredCollections ?? [],
+    );
+    const validRows = rows.filter(row => row.title.trim() && row.categoryId);
+    if (validRows.length !== rows.length) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(
+        'Kategori dan judul wajib diisi untuk setiap kartu unggulan.',
+      );
+      return;
+    }
+
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+    try {
+      const marketplaceContent = await updateKolamFeaturedCollections(
+        validRows,
+      );
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        marketplaceContent,
+      }));
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Konten unggulan tersimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    }
+  };
   const deleteMarketplaceBioactiveStep = (index: number) => {
     const steps = removeOrderedItemAt(
       marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem?.steps ??
@@ -2959,6 +3040,43 @@ export function useKolamSettingsPanelController(
         );
       },
     );
+  };
+  const updateMarketplaceBioactiveStep = (
+    key: string,
+    patch: Partial<KolamBioactiveEcosystemStep>,
+  ) => {
+    setMarketplaceLandingOverview(current => {
+      const steps = normalizeMarketplaceBioactiveSteps(
+        current.marketplaceContent.bioactiveEcosystem?.steps,
+      ).map(step => (step.key === key ? { ...step, ...patch } : step));
+
+      return {
+        ...current,
+        marketplaceContent: {
+          ...current.marketplaceContent,
+          bioactiveEcosystem: { steps },
+        },
+      };
+    });
+  };
+  const saveMarketplaceBioactiveEcosystem = async () => {
+    const steps = normalizeMarketplaceBioactiveSteps(
+      marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem?.steps,
+    );
+    setMarketplaceLandingSaveStatus('saving');
+    setMarketplaceLandingMessage('');
+    try {
+      const marketplaceContent = await updateKolamBioactiveEcosystem({ steps });
+      setMarketplaceLandingOverview(current => ({
+        ...current,
+        marketplaceContent,
+      }));
+      setMarketplaceLandingSaveStatus('saved');
+      setMarketplaceLandingMessage('Gambar ekosistem bioaktif tersimpan.');
+    } catch (error) {
+      setMarketplaceLandingSaveStatus('error');
+      setMarketplaceLandingMessage(getMarketplaceLandingSaveErrorMessage(error));
+    }
   };
   const moveMarketplaceBioactiveStep = (index: number, direction: -1 | 1) => {
     const steps = moveOrderedItemAt(
@@ -3102,8 +3220,10 @@ export function useKolamSettingsPanelController(
         localUri,
       );
       const currentSteps =
-        marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem
-          ?.steps ?? [];
+        normalizeMarketplaceBioactiveSteps(
+          marketplaceLandingOverview.marketplaceContent.bioactiveEcosystem
+            ?.steps,
+        );
       const steps = currentSteps.map((step, stepIndex) =>
         stepIndex === index ? { ...step, image } : step,
       );
@@ -4684,6 +4804,7 @@ export function useKolamSettingsPanelController(
     marketplaceLandingSaveStatus,
     marketplaceLandingMessage,
     marketplaceLandingAssetStatus,
+    marketplaceCategories,
     marketplaceLandingTabId,
     marketplaceLandingTabItems,
     operationalRooms,
@@ -4797,6 +4918,11 @@ export function useKolamSettingsPanelController(
     moveMarketplaceCategoryBanner,
     moveMarketplaceFeaturedCollection,
     moveMarketplaceHeroSlide,
+    addMarketplaceFeaturedCollection,
+    updateMarketplaceFeaturedCollection,
+    updateMarketplaceBioactiveStep,
+    saveMarketplaceFeaturedCollections,
+    saveMarketplaceBioactiveEcosystem,
     saveMarketplaceLandingCta,
     saveMarketplaceHeroSlide,
     saveMarketplaceCategoryBanner,
@@ -6695,6 +6821,29 @@ function normalizeMarketplaceOrder<Item extends { order?: number }>(
   items: Item[],
 ) {
   return items.map((item, index) => ({ ...item, order: index })) as Item[];
+}
+
+const marketplaceBioactiveStepKeys = [
+  'soil',
+  'springtail',
+  'isopod',
+  'plants',
+  'animal',
+] as const;
+
+function normalizeMarketplaceBioactiveSteps(
+  input: KolamBioactiveEcosystemStep[] = [],
+): KolamBioactiveEcosystemStep[] {
+  const byKey = new Map(input.map(item => [item.key, item]));
+  return marketplaceBioactiveStepKeys.map((key, index) => {
+    const saved = byKey.get(key);
+    return {
+      key,
+      image: saved?.image || '',
+      order: index,
+      isActive: saved?.isActive !== false,
+    };
+  });
 }
 
 function getNotificationSoundPathFromResponse(

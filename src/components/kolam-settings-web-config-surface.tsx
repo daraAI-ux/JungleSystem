@@ -48,10 +48,12 @@ import {
 } from '../services/kolam-api';
 import type {
   KolamAnnouncementBanner,
+  KolamBioactiveEcosystemStep,
   KolamBlog,
   KolamBlogTopic,
   KolamCategoryBanner,
   KolamCustomerTextNotice,
+  KolamFeaturedCollection,
   KolamHeroSlide,
   KolamNotificationSoundType,
   KolamPluginConfigKey,
@@ -65,6 +67,7 @@ import type {
   KolamTeamChatRoom,
   KolamUserPickerRow,
 } from '../services/kolam-api';
+import type {KolamCategory} from '../domain/kolam-category';
 import type {
   SettingsFinancialSummaryRow,
   SettingsFinancialSectionVisibility,
@@ -840,6 +843,7 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingSaveStatus,
   marketplaceLandingMessage,
   marketplaceLandingAssetStatus,
+  marketplaceCategories = [],
   marketplaceLandingTabId,
   marketplaceLandingTabItems,
   webContentLauncherItems,
@@ -855,7 +859,6 @@ export function KolamSettingsWebConfigSurface({
   kpiSummaryRows,
   onClearMarketplaceLandingNoticeDraft,
   onDeleteMarketplaceAnnouncementBanner,
-  onDeleteMarketplaceBioactiveStep,
   onDeleteMarketplaceCategoryBanner,
   onDeleteMarketplaceFeaturedCollection,
   onDeleteMarketplaceHeroSlide,
@@ -865,10 +868,14 @@ export function KolamSettingsWebConfigSurface({
   onEditMarketplaceHeroSlide,
   onEditMarketplaceLandingNotice,
   onMoveMarketplaceAnnouncementBanner,
-  onMoveMarketplaceBioactiveStep,
   onMoveMarketplaceCategoryBanner,
   onMoveMarketplaceFeaturedCollection,
   onMoveMarketplaceHeroSlide,
+  onAddMarketplaceFeaturedCollection = noop,
+  onUpdateMarketplaceFeaturedCollection = noop,
+  onUpdateMarketplaceBioactiveStep = noop,
+  onSaveMarketplaceFeaturedCollections = noop,
+  onSaveMarketplaceBioactiveEcosystem = noop,
   onPickMarketplaceLandingAnnouncementImage,
   onPickMarketplaceLandingCategoryImage,
   onPickMarketplaceLandingHeroImage,
@@ -895,7 +902,6 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceBioactiveStepImage,
   onUploadMarketplaceCategoryBannerImage,
   onUploadMarketplaceCtaBackground,
-  onUploadMarketplaceDaraAvatar,
   onUploadMarketplaceFeaturedCollectionImage,
   onUploadMarketplaceHeroImage,
   onUploadMarketplaceLogo,
@@ -1006,6 +1012,7 @@ export function KolamSettingsWebConfigSurface({
   marketplaceLandingAssetStatus: Partial<
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
+  marketplaceCategories?: KolamCategory[];
   marketplaceLandingTabId:
     | 'hero'
     | 'featured'
@@ -1039,7 +1046,7 @@ export function KolamSettingsWebConfigSurface({
   onDeleteMarketplaceAnnouncementBanner: (
     banner: KolamAnnouncementBanner,
   ) => void;
-  onDeleteMarketplaceBioactiveStep: (index: number) => void;
+  onDeleteMarketplaceBioactiveStep?: (index: number) => void;
   onDeleteMarketplaceCategoryBanner: (banner: KolamCategoryBanner) => void;
   onDeleteMarketplaceFeaturedCollection: (index: number) => void;
   onDeleteMarketplaceHeroSlide: (slide: KolamHeroSlide) => void;
@@ -1057,7 +1064,7 @@ export function KolamSettingsWebConfigSurface({
     banner: KolamAnnouncementBanner,
     direction: -1 | 1,
   ) => void;
-  onMoveMarketplaceBioactiveStep: (index: number, direction: -1 | 1) => void;
+  onMoveMarketplaceBioactiveStep?: (index: number, direction: -1 | 1) => void;
   onMoveMarketplaceCategoryBanner: (
     banner: KolamCategoryBanner,
     direction: -1 | 1,
@@ -1070,6 +1077,17 @@ export function KolamSettingsWebConfigSurface({
     slide: KolamHeroSlide,
     direction: -1 | 1,
   ) => void;
+  onAddMarketplaceFeaturedCollection?: () => void;
+  onUpdateMarketplaceFeaturedCollection?: (
+    index: number,
+    patch: Partial<KolamFeaturedCollection>,
+  ) => void;
+  onUpdateMarketplaceBioactiveStep?: (
+    key: string,
+    patch: Partial<KolamBioactiveEcosystemStep>,
+  ) => void;
+  onSaveMarketplaceFeaturedCollections?: () => void;
+  onSaveMarketplaceBioactiveEcosystem?: () => void;
   onPickMarketplaceLandingAnnouncementImage: () => void;
   onPickMarketplaceLandingCategoryImage: () => void;
   onPickMarketplaceLandingHeroImage: () => void;
@@ -1097,7 +1115,7 @@ export function KolamSettingsWebConfigSurface({
   onUploadMarketplaceBioactiveStepImage: (index: number) => void;
   onUploadMarketplaceCategoryBannerImage: (banner: KolamCategoryBanner) => void;
   onUploadMarketplaceCtaBackground: () => void;
-  onUploadMarketplaceDaraAvatar: () => void;
+  onUploadMarketplaceDaraAvatar?: () => void;
   onUploadMarketplaceFeaturedCollectionImage: (index: number) => void;
   onUploadMarketplaceHeroImage: (slide: KolamHeroSlide) => void;
   onUploadMarketplaceLogo: () => void;
@@ -5741,7 +5759,6 @@ export function KolamSettingsWebConfigSurface({
                 onDeleteAnnouncementBanner={
                   onDeleteMarketplaceAnnouncementBanner
                 }
-                onDeleteBioactiveStep={onDeleteMarketplaceBioactiveStep}
                 onDeleteCategoryBanner={onDeleteMarketplaceCategoryBanner}
                 onDeleteFeaturedCollection={
                   onDeleteMarketplaceFeaturedCollection
@@ -5751,11 +5768,19 @@ export function KolamSettingsWebConfigSurface({
                 onEditCategoryBanner={onEditMarketplaceCategoryBanner}
                 onEditHeroSlide={openMarketplaceHeroEdit}
                 onMoveAnnouncementBanner={onMoveMarketplaceAnnouncementBanner}
-                onMoveBioactiveStep={onMoveMarketplaceBioactiveStep}
                 onMoveCategoryBanner={onMoveMarketplaceCategoryBanner}
                 onMoveFeaturedCollection={onMoveMarketplaceFeaturedCollection}
                 onMoveHeroSlide={onMoveMarketplaceHeroSlide}
                 onAddHeroSlide={openMarketplaceHeroCreate}
+                onAddFeaturedCollection={onAddMarketplaceFeaturedCollection}
+                onUpdateFeaturedCollection={
+                  onUpdateMarketplaceFeaturedCollection
+                }
+                onUpdateBioactiveStep={onUpdateMarketplaceBioactiveStep}
+                onSaveFeaturedCollections={
+                  onSaveMarketplaceFeaturedCollections
+                }
+                onSaveBioactiveEcosystem={onSaveMarketplaceBioactiveEcosystem}
                 onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
                 onUploadBioactiveStepImage={
                   onUploadMarketplaceBioactiveStepImage
@@ -5764,16 +5789,17 @@ export function KolamSettingsWebConfigSurface({
                   onUploadMarketplaceCategoryBannerImage
                 }
                 onUploadCtaBackground={onUploadMarketplaceCtaBackground}
-                onUploadDaraAvatar={onUploadMarketplaceDaraAvatar}
                 onUploadFeaturedCollectionImage={
                   onUploadMarketplaceFeaturedCollectionImage
                 }
                 onUploadHeroImage={onUploadMarketplaceHeroImage}
-                onUploadLogo={onUploadMarketplaceLogo}
                 onUploadYoutubeBackground={onUploadMarketplaceYoutubeBackground}
                 overview={marketplaceLandingOverview}
+                saveStatus={marketplaceLandingSaveStatus}
+                categories={marketplaceCategories}
               />
-              {marketplaceLandingTabId !== 'hero' ||
+              {(marketplaceLandingTabId !== 'hero' &&
+                marketplaceLandingTabId !== 'featured') ||
               marketplaceHeroEditorOpen ? (
                 <MarketplaceLandingControlsPanel
                 activeTabId={marketplaceLandingTabId}
@@ -6864,9 +6890,9 @@ function serializeKpiRewardEditorRows(rows: KpiRewardEditorRow[]) {
 function MarketplaceLandingOverviewPanel({
   activeTabId,
   assetStatus,
+  categories,
   disabled,
   onDeleteAnnouncementBanner,
-  onDeleteBioactiveStep,
   onDeleteCategoryBanner,
   onDeleteFeaturedCollection,
   onDeleteHeroSlide,
@@ -6874,21 +6900,24 @@ function MarketplaceLandingOverviewPanel({
   onEditCategoryBanner,
   onEditHeroSlide,
   onMoveAnnouncementBanner,
-  onMoveBioactiveStep,
   onMoveCategoryBanner,
   onMoveFeaturedCollection,
   onMoveHeroSlide,
   onAddHeroSlide,
+  onAddFeaturedCollection,
+  onUpdateFeaturedCollection,
+  onUpdateBioactiveStep,
+  onSaveFeaturedCollections,
+  onSaveBioactiveEcosystem,
   onUploadAnnouncementImage,
   onUploadBioactiveStepImage,
   onUploadCategoryBannerImage,
   onUploadCtaBackground,
-  onUploadDaraAvatar,
   onUploadFeaturedCollectionImage,
   onUploadHeroImage,
-  onUploadLogo,
   onUploadYoutubeBackground,
   overview,
+  saveStatus,
 }: {
   activeTabId:
     | 'hero'
@@ -6901,9 +6930,9 @@ function MarketplaceLandingOverviewPanel({
   assetStatus: Partial<
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
+  categories: KolamCategory[];
   disabled: boolean;
   onDeleteAnnouncementBanner: (banner: KolamAnnouncementBanner) => void;
-  onDeleteBioactiveStep: (index: number) => void;
   onDeleteCategoryBanner: (banner: KolamCategoryBanner) => void;
   onDeleteFeaturedCollection: (index: number) => void;
   onDeleteHeroSlide: (slide: KolamHeroSlide) => void;
@@ -6914,7 +6943,6 @@ function MarketplaceLandingOverviewPanel({
     banner: KolamAnnouncementBanner,
     direction: -1 | 1,
   ) => void;
-  onMoveBioactiveStep: (index: number, direction: -1 | 1) => void;
   onMoveCategoryBanner: (
     banner: KolamCategoryBanner,
     direction: -1 | 1,
@@ -6922,16 +6950,26 @@ function MarketplaceLandingOverviewPanel({
   onMoveFeaturedCollection: (index: number, direction: -1 | 1) => void;
   onMoveHeroSlide: (slide: KolamHeroSlide, direction: -1 | 1) => void;
   onAddHeroSlide: () => void;
+  onAddFeaturedCollection: () => void;
+  onUpdateFeaturedCollection: (
+    index: number,
+    patch: Partial<KolamFeaturedCollection>,
+  ) => void;
+  onUpdateBioactiveStep: (
+    key: string,
+    patch: Partial<KolamBioactiveEcosystemStep>,
+  ) => void;
+  onSaveFeaturedCollections: () => void;
+  onSaveBioactiveEcosystem: () => void;
   onUploadAnnouncementImage: (banner: KolamAnnouncementBanner) => void;
   onUploadBioactiveStepImage: (index: number) => void;
   onUploadCategoryBannerImage: (banner: KolamCategoryBanner) => void;
   onUploadCtaBackground: () => void;
-  onUploadDaraAvatar: () => void;
   onUploadFeaturedCollectionImage: (index: number) => void;
   onUploadHeroImage: (slide: KolamHeroSlide) => void;
-  onUploadLogo: () => void;
   onUploadYoutubeBackground: () => void;
   overview: MarketplaceLandingOverview;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
 }) {
   const featuredCollections =
     overview.marketplaceContent.featuredCollections ?? [];
@@ -7019,7 +7057,10 @@ function MarketplaceLandingOverviewPanel({
       row.id === 'featured-collections' || row.id === 'bioactive-ecosystem'
     );
   });
-  const showAssetSection = activeTabId !== 'notices' && activeTabId !== 'hero';
+  const showAssetSection =
+    activeTabId !== 'notices' &&
+    activeTabId !== 'hero' &&
+    activeTabId !== 'featured';
 
   return (
     <View style={styles.marketplaceOverview}>
@@ -7033,6 +7074,24 @@ function MarketplaceLandingOverviewPanel({
           onMove={onMoveHeroSlide}
           onUpload={onUploadHeroImage}
           status={assetStatus}
+        />
+      ) : activeTabId === 'featured' ? (
+        <MarketplaceFeaturedPanel
+          assetStatus={assetStatus}
+          bioactiveSteps={bioactiveSteps}
+          categories={categories}
+          disabled={disabled}
+          featuredCollections={featuredCollections}
+          onAddFeaturedCollection={onAddFeaturedCollection}
+          onDeleteFeaturedCollection={onDeleteFeaturedCollection}
+          onMoveFeaturedCollection={onMoveFeaturedCollection}
+          onSaveBioactiveEcosystem={onSaveBioactiveEcosystem}
+          onSaveFeaturedCollections={onSaveFeaturedCollections}
+          onUpdateBioactiveStep={onUpdateBioactiveStep}
+          onUpdateFeaturedCollection={onUpdateFeaturedCollection}
+          onUploadBioactiveStepImage={onUploadBioactiveStepImage}
+          onUploadFeaturedCollectionImage={onUploadFeaturedCollectionImage}
+          saveStatus={saveStatus}
         />
       ) : (
         <>
@@ -7105,26 +7164,6 @@ function MarketplaceLandingOverviewPanel({
             },
           ]}
         />
-        {activeTabId === 'featured' ? (
-          <View style={styles.marketplaceAssetActions}>
-            <>
-              <MarketplaceAssetButton
-                disabled={disabled}
-                id="websetting-logo"
-                label="Unggah logo"
-                onPress={onUploadLogo}
-                status={assetStatus}
-              />
-              <MarketplaceAssetButton
-                disabled={disabled}
-                id="dara-avatar"
-                label="Unggah foto DARA"
-                onPress={onUploadDaraAvatar}
-                status={assetStatus}
-              />
-            </>
-          </View>
-        ) : null}
         {activeTabId === 'cta' ? (
           <View style={styles.marketplaceAssetActions}>
             <MarketplaceAssetButton
@@ -7176,34 +7215,6 @@ function MarketplaceLandingOverviewPanel({
             status={assetStatus}
             title="Gambar banner pengumuman"
           />
-        ) : null}
-        {activeTabId === 'featured' ? (
-          <>
-            <MarketplaceIndexedAssetRows
-              disabled={disabled}
-              emptyText="Belum ada koleksi unggulan untuk unggah gambar."
-              getId={index => `featured:${index}`}
-              getLabel={item => item.title || '-'}
-              items={featuredCollections}
-              onDelete={onDeleteFeaturedCollection}
-              onMove={onMoveFeaturedCollection}
-              onUpload={onUploadFeaturedCollectionImage}
-              status={assetStatus}
-              title="Gambar koleksi unggulan"
-            />
-            <MarketplaceIndexedAssetRows
-              disabled={disabled}
-              emptyText="Belum ada langkah bioaktif untuk unggah gambar."
-              getId={index => `bioactive:${index}`}
-              getLabel={item => item.key || '-'}
-              items={bioactiveSteps}
-              onDelete={onDeleteBioactiveStep}
-              onMove={onMoveBioactiveStep}
-              onUpload={onUploadBioactiveStepImage}
-              status={assetStatus}
-              title="Gambar ekosistem bioaktif"
-            />
-          </>
         ) : null}
       </View>
       ) : null}
@@ -7437,6 +7448,358 @@ function MarketplaceHeroSlidesPanel({
           slides={previewSlides}
         />
       ) : null}
+    </View>
+  );
+}
+
+const marketplaceBioactiveStepLabels: Record<string, string> = {
+  soil: 'Soil',
+  springtail: 'Springtail',
+  isopod: 'Isopod',
+  plants: 'Plants',
+  animal: 'Your Animal',
+};
+
+const marketplaceBioactiveStepKeys = [
+  'soil',
+  'springtail',
+  'isopod',
+  'plants',
+  'animal',
+] as const;
+
+function normalizeMarketplaceBioactiveStepsForView(
+  steps: KolamBioactiveEcosystemStep[],
+) {
+  const byKey = new Map(steps.map(step => [step.key, step]));
+  return marketplaceBioactiveStepKeys.map((key, index) => {
+    const saved = byKey.get(key);
+    return {
+      key,
+      image: saved?.image || '',
+      order: index,
+      isActive: saved?.isActive !== false,
+    };
+  });
+}
+
+function MarketplaceFeaturedPanel({
+  assetStatus,
+  bioactiveSteps,
+  categories,
+  disabled,
+  featuredCollections,
+  onAddFeaturedCollection,
+  onDeleteFeaturedCollection,
+  onMoveFeaturedCollection,
+  onSaveBioactiveEcosystem,
+  onSaveFeaturedCollections,
+  onUpdateBioactiveStep,
+  onUpdateFeaturedCollection,
+  onUploadBioactiveStepImage,
+  onUploadFeaturedCollectionImage,
+  saveStatus,
+}: {
+  assetStatus: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
+  bioactiveSteps: KolamBioactiveEcosystemStep[];
+  categories: KolamCategory[];
+  disabled: boolean;
+  featuredCollections: KolamFeaturedCollection[];
+  onAddFeaturedCollection: () => void;
+  onDeleteFeaturedCollection: (index: number) => void;
+  onMoveFeaturedCollection: (index: number, direction: -1 | 1) => void;
+  onSaveBioactiveEcosystem: () => void;
+  onSaveFeaturedCollections: () => void;
+  onUpdateBioactiveStep: (
+    key: string,
+    patch: Partial<KolamBioactiveEcosystemStep>,
+  ) => void;
+  onUpdateFeaturedCollection: (
+    index: number,
+    patch: Partial<KolamFeaturedCollection>,
+  ) => void;
+  onUploadBioactiveStepImage: (index: number) => void;
+  onUploadFeaturedCollectionImage: (index: number) => void;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+}) {
+  const categoryOptions = React.useMemo(
+    () => [
+      {value: '', label: 'Pilih kategori'},
+      ...categories.map(category => ({
+        value: category.id,
+        label: category.name,
+      })),
+    ],
+    [categories],
+  );
+  const normalizedBioactiveSteps =
+    normalizeMarketplaceBioactiveStepsForView(bioactiveSteps);
+
+  return (
+    <View style={styles.marketplaceFeaturedStack}>
+      <View style={styles.marketplaceFeaturedPanel}>
+        <View style={styles.marketplaceFeaturedHeader}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: 'Unggulan Homepage',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'detail',
+                text: 'Pilih kategori, unggah gambar, dan jumlah species dihitung otomatis.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <View style={styles.marketplaceAssetActions}>
+            <Text style={styles.marketplaceFeaturedBadge}>
+              {featuredCollections.length} kartu
+            </Text>
+            <KolamActionControlButton
+              disabled={disabled}
+              icon={<KolamActionGlyph variant="plus" />}
+              label="Tambah"
+              onPress={onAddFeaturedCollection}
+            />
+            <KolamActionControlButton
+              disabled={disabled}
+              intent="primary"
+              label="Simpan"
+              loading={saveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSaveFeaturedCollections}
+            />
+          </View>
+        </View>
+
+        {featuredCollections.length === 0 ? (
+          <View style={styles.marketplaceFeaturedEmpty}>
+            <Text style={styles.marketplaceOverviewMeta}>
+              Belum ada kartu unggulan. Tambahkan kartu unggulan dari kategori.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.marketplaceFeaturedRows}>
+            {featuredCollections.map((row, index) => (
+              <View
+                key={row._id || `featured-${index}`}
+                style={styles.marketplaceFeaturedCard}
+              >
+                <View style={styles.marketplaceFeaturedCardHeader}>
+                  <View style={styles.marketplaceFeaturedCardMeta}>
+                    <Text
+                      style={[
+                        styles.marketplaceHeroSlideStatus,
+                        row.isActive === false
+                          ? styles.marketplaceHeroSlideStatusDraft
+                          : null,
+                      ]}
+                    >
+                      {row.isActive === false ? 'Nonaktif' : 'Aktif'}
+                    </Text>
+                    <Text style={styles.marketplaceOverviewMeta}>
+                      Urutan {index + 1}
+                    </Text>
+                  </View>
+                  <View style={styles.marketplaceHeroSlideActions}>
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Naik"
+                      disabled={disabled || index === 0}
+                      icon={
+                        <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                          ↑
+                        </Text>
+                      }
+                      id={`featured:${index}`}
+                      label=""
+                      onPress={() => onMoveFeaturedCollection(index, -1)}
+                      style={styles.marketplaceHeroSlideActionButton}
+                      status={assetStatus}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Turun"
+                      disabled={disabled || index === featuredCollections.length - 1}
+                      icon={
+                        <Text style={styles.marketplaceHeroSlideActionGlyph}>
+                          ↓
+                        </Text>
+                      }
+                      id={`featured:${index}`}
+                      label=""
+                      onPress={() => onMoveFeaturedCollection(index, 1)}
+                      style={styles.marketplaceHeroSlideActionButton}
+                      status={assetStatus}
+                    />
+                    <MarketplaceAssetButton
+                      accessibilityLabel="Hapus unggulan"
+                      disabled={disabled}
+                      icon={<KolamActionGlyph tone="danger" variant="delete" />}
+                      id={`featured:${index}`}
+                      intent="danger"
+                      label=""
+                      onPress={() => onDeleteFeaturedCollection(index)}
+                      style={[
+                        styles.marketplaceHeroSlideActionButton,
+                        styles.marketplaceHeroSlideActionButtonDanger,
+                      ]}
+                      status={assetStatus}
+                    />
+                  </View>
+                </View>
+                <View style={styles.marketplaceFeaturedGrid}>
+                  <View style={styles.marketplaceFeaturedField}>
+                    <Text style={styles.marketplaceOverviewLabel}>Judul</Text>
+                    <TextInput
+                      editable={!disabled}
+                      onChangeText={value =>
+                        onUpdateFeaturedCollection(index, {title: value})
+                      }
+                      placeholder="Amphibians"
+                      style={styles.marketplaceFeaturedInput}
+                      value={row.title}
+                    />
+                  </View>
+                  <View style={styles.marketplaceFeaturedField}>
+                    <Text style={styles.marketplaceOverviewLabel}>Kategori</Text>
+                    <KolamDropdownSelect
+                      label="Kategori"
+                      onChange={value => {
+                        const category = categories.find(
+                          item => item.id === value,
+                        );
+                        onUpdateFeaturedCollection(index, {
+                          categoryId: value || null,
+                          title: category?.name || row.title,
+                        });
+                      }}
+                      options={categoryOptions}
+                      searchable
+                      showLabelInTrigger={false}
+                      value={row.categoryId || ''}
+                    />
+                  </View>
+                </View>
+                <View style={styles.marketplaceFeaturedUploadRow}>
+                  <MarketplaceAssetButton
+                    disabled={disabled}
+                    id={`featured:${index}`}
+                    label="Upload gambar"
+                    onPress={() => onUploadFeaturedCollectionImage(index)}
+                    status={assetStatus}
+                  />
+                  {row.image ? (
+                    <Image
+                      resizeMode="cover"
+                      source={{uri: resolveMarketplaceLandingImageUri(row.image)}}
+                      style={styles.marketplaceFeaturedThumb}
+                    />
+                  ) : null}
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={disabled}
+                    onPress={() =>
+                      onUpdateFeaturedCollection(index, {
+                        isActive: row.isActive === false,
+                      })
+                    }
+                    style={styles.marketplaceFeaturedToggle}
+                  >
+                    <Text style={styles.marketplaceOverviewMeta}>
+                      Tampilkan di homepage
+                    </Text>
+                    <Text style={styles.marketplaceFeaturedBadge}>
+                      {row.isActive === false ? 'Tidak' : 'Ya'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.marketplaceFeaturedPanel}>
+        <View style={styles.marketplaceFeaturedHeader}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: 'Ekosistem Bioaktif',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'detail',
+                text: 'Unggah gambar untuk alur Soil, Springtail, Isopod, Plants, dan Your Animal.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <View style={styles.marketplaceAssetActions}>
+            <Text style={styles.marketplaceFeaturedBadge}>
+              {normalizedBioactiveSteps.filter(step => step.image).length}/5 gambar
+            </Text>
+            <KolamActionControlButton
+              disabled={disabled}
+              intent="primary"
+              label="Simpan Ekosistem"
+              loading={saveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSaveBioactiveEcosystem}
+            />
+          </View>
+        </View>
+        <View style={styles.marketplaceBioactiveGrid}>
+          {normalizedBioactiveSteps.map((step, index) => (
+            <View key={step.key} style={styles.marketplaceBioactiveCard}>
+              <View style={styles.marketplaceBioactiveHeader}>
+                <Text style={styles.marketplaceOverviewLabel}>
+                  {marketplaceBioactiveStepLabels[step.key] || step.key}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={disabled}
+                  onPress={() =>
+                    onUpdateBioactiveStep(step.key, {
+                      isActive: step.isActive === false,
+                    })
+                  }
+                  style={styles.marketplaceFeaturedBadge}
+                >
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    {step.isActive === false ? 'Nonaktif' : 'Aktif'}
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={styles.marketplaceBioactiveImageBox}>
+                {step.image ? (
+                  <Image
+                    resizeMode="cover"
+                    source={{uri: resolveMarketplaceLandingImageUri(step.image)}}
+                    style={styles.marketplaceBioactiveImage}
+                  />
+                ) : (
+                  <SvgXml
+                    height={32}
+                    width={32}
+                    xml={getMarketplaceLandingTabIconXml('featured', true)}
+                  />
+                )}
+              </View>
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id={`bioactive:${index}`}
+                label="Upload"
+                onPress={() => onUploadBioactiveStepImage(index)}
+                status={assetStatus}
+              />
+            </View>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -10371,6 +10734,153 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.border,
     height: 1,
     width: 14,
+  },
+  marketplaceBioactiveCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexBasis: 160,
+    flexGrow: 1,
+    gap: 10,
+    minWidth: 150,
+    padding: 10,
+  },
+  marketplaceBioactiveGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  marketplaceBioactiveHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  marketplaceBioactiveImage: {
+    height: '100%',
+    width: '100%',
+  },
+  marketplaceBioactiveImageBox: {
+    alignItems: 'center',
+    aspectRatio: 1,
+    backgroundColor: '#f3f4f6',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '100%',
+  },
+  marketplaceFeaturedBadge: {
+    backgroundColor: '#eef2f7',
+    borderRadius: 6,
+    color: '#475569',
+    fontSize: 11,
+    fontWeight: '800',
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  marketplaceFeaturedCard: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
+  marketplaceFeaturedCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  marketplaceFeaturedCardMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  marketplaceFeaturedEmpty: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 96,
+    padding: 16,
+  },
+  marketplaceFeaturedField: {
+    flexBasis: 280,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 220,
+  },
+  marketplaceFeaturedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  marketplaceFeaturedHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  marketplaceFeaturedInput: {
+    backgroundColor: V.colors.bg,
+    borderColor: V.colors.input,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: V.colors.fg,
+    fontFamily: V.fontFamily,
+    fontSize: 13,
+    fontWeight: '700',
+    height: 38,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
+  },
+  marketplaceFeaturedPanel: {
+    backgroundColor: '#ffffff',
+    borderColor: V.colors.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 14,
+    padding: 14,
+  },
+  marketplaceFeaturedRows: {
+    gap: 12,
+  },
+  marketplaceFeaturedStack: {
+    gap: 14,
+  },
+  marketplaceFeaturedThumb: {
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 48,
+    width: 80,
+  },
+  marketplaceFeaturedToggle: {
+    alignItems: 'center',
+    borderColor: V.colors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    marginLeft: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  marketplaceFeaturedUploadRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   marketplaceHeroSlideCard: {
     backgroundColor: '#ffffff',
