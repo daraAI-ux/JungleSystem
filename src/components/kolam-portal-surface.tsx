@@ -618,25 +618,24 @@ function PortalPayrollSlipsContent({
 }) {
   const periods = getPayrollPeriods(data);
   const slipRows = periods.filter(row => row.slip);
+  const columns: Array<KolamListTableColumn<KolamPortalPayrollCommissionPeriod>> = [
+    { id: 'period', label: 'Periode', flex: 1, render: row => <CellText strong>{row.periodKey}</CellText> },
+    { id: 'code', label: 'Kode slip', flex: 1.2, render: row => <CellText>{row.slip?.slipCode ?? '-'}</CellText> },
+    { id: 'amount', label: 'Diterima', flex: 1, render: row => <CellText strong>{formatCurrency(row.slip?.takeHomePay)}</CellText> },
+  ];
   return (
-    <>
-      {loading && !data ? (
-        <EmptyLine text="Memuat..." />
-      ) : !slipRows.length ? (
-        <EmptyLine text={data?.errorMessage ? 'Slip gaji belum dapat dimuat.' : 'Belum ada slip finalized.'} />
-      ) : (
-        <CompactList
-          rows={slipRows}
-          renderRow={row => (
-            <View style={styles.compactRowLine}>
-              <Text style={[styles.compactPrimary, styles.compactPeriod]}>{row.periodKey}</Text>
-              <Text numberOfLines={1} style={styles.compactMuted}>{row.slip?.slipCode ?? '-'}</Text>
-              <Text style={styles.compactAmount}>{formatCurrency(row.slip?.takeHomePay)}</Text>
-            </View>
-          )}
-        />
-      )}
-    </>
+    <KolamListTableComposition
+      columns={columns}
+      emptyTitle={
+        loading && !data
+          ? 'Memuat...'
+          : data?.errorMessage
+            ? 'Slip gaji belum dapat dimuat.'
+            : 'Belum ada slip finalized.'
+      }
+      getRowKey={(row, index) => row.periodKey ?? `slip-${index}`}
+      rows={loading && !data ? [] : slipRows}
+    />
   );
 }
 
@@ -658,30 +657,22 @@ function PortalCommissionsContent({
       ? `tunggu ${formatCurrency(totals?.commissionPendingNet ?? data?.summary?.commissionAccruedNet)} · cair ${formatCurrency(totals?.commissionReleasedNet ?? data?.summary?.commissionReleasedNet)}`
       : undefined;
 
+  const columns: Array<KolamListTableColumn<KolamPortalPayrollCommissionPeriod>> = [
+    { id: 'period', label: 'Periode', flex: 1, render: row => <CellText strong>{row.periodKey}</CellText> },
+    { id: 'pending', label: 'Tunggu', flex: 1, render: row => <CellText>{formatCurrency(row.commission?.pendingNet)}</CellText> },
+    { id: 'released', label: 'Cair', flex: 1, render: row => <CellText>{formatCurrency(row.commission?.releasedNet)}</CellText> },
+  ];
+
   return (
     <>
       {subtitle ? <Text style={styles.smallMuted}>{subtitle}</Text> : null}
-      {loading && !data ? (
-        <EmptyLine text="Memuat..." />
-      ) : !commRows.length && !hasTotals ? (
-        <EmptyLine text="Belum ada komisi." />
-      ) : (
-        <>
-          <CompactList
-            rows={commRows}
-            renderRow={row => (
-              <View style={styles.compactWrapLine}>
-                <Text style={[styles.compactPrimary, styles.compactPeriod]}>{row.periodKey}</Text>
-                <Text style={styles.compactMuted}>tunggu</Text>
-                <Text style={styles.compactPrimary}>{formatCurrency(row.commission?.pendingNet)}</Text>
-                <Text style={styles.compactMuted}>· cair</Text>
-                <Text style={styles.compactPrimary}>{formatCurrency(row.commission?.releasedNet)}</Text>
-              </View>
-            )}
-          />
-          <Text style={styles.smallMuted}>Angka gross. PDF untuk detail.</Text>
-        </>
-      )}
+      <KolamListTableComposition
+        columns={columns}
+        emptyTitle={loading && !data ? 'Memuat...' : 'Belum ada komisi.'}
+        getRowKey={(row, index) => row.periodKey ?? `commission-${index}`}
+        rows={loading && !data ? [] : commRows}
+      />
+      {hasTotals ? <Text style={styles.smallMuted}>Angka gross. PDF untuk detail.</Text> : null}
     </>
   );
 }
@@ -695,31 +686,26 @@ function PortalOvertimeContent({
 }) {
   const rows = data?.overtime ?? [];
   const subtitle = data?.summary
-    ? `tunggu ${formatCurrency(data.summary.overtimeApprovedAmount)} · cair ${formatCurrency(data.summary.overtimePaidAmount)}`
+    ? `tunggu ${formatCurrency(data.summary.overtimeApprovedAmount)} - cair ${formatCurrency(data.summary.overtimePaidAmount)}`
     : undefined;
+  const columns: Array<KolamListTableColumn<KolamPortalMoneyRow>> = [
+    { id: 'title', label: 'Keterangan', flex: 1.8, render: row => <CellText strong>{row.title ?? row.reason ?? row.type ?? '-'}</CellText> },
+    { id: 'status', label: 'Status', flex: 0.9, render: row => <StatusBadge value={row.status} label={OVERTIME_STATUS[row.status ?? ''] ?? formatStatus(row.status)} /> },
+    { id: 'amount', label: 'Jumlah', flex: 1, render: row => <CellText>{formatCurrency(row.amount)}</CellText> },
+  ];
+
   return (
     <>
       {subtitle ? <Text style={styles.smallMuted}>{subtitle}</Text> : null}
-      {loading && !data ? (
-        <EmptyLine text="Memuat..." />
-      ) : !rows.length ? (
-        <EmptyLine text="Belum ada pengajuan lembur." />
-      ) : (
-        <CompactList
-          rows={rows.slice(0, 12)}
-          renderRow={row => (
-            <View style={styles.compactRowLine}>
-              <Text numberOfLines={1} style={styles.compactPrimary}>{row.title ?? row.reason ?? row.type ?? '-'}</Text>
-              <StatusBadge value={row.status} label={OVERTIME_STATUS[row.status ?? ''] ?? formatStatus(row.status)} />
-              <Text style={styles.compactAmount}>{formatCurrency(row.amount)}</Text>
-            </View>
-          )}
-        />
-      )}
+      <KolamListTableComposition
+        columns={columns}
+        emptyTitle={loading && !data ? 'Memuat...' : 'Belum ada pengajuan lembur.'}
+        getRowKey={(row, index) => row._id ?? `overtime-${index}`}
+        rows={loading && !data ? [] : rows}
+      />
     </>
   );
 }
-
 function MoneyCompactSection({
   empty,
   loading,
@@ -731,36 +717,43 @@ function MoneyCompactSection({
   rows: KolamPortalMoneyRow[];
   statusMap?: Record<string, string>;
 }) {
-  if (loading) {
-    return <EmptyLine text="Memuat..." />;
-  }
-  if (!rows.length) {
-    return <EmptyLine text={empty} />;
-  }
   return (
-    <CompactList
-      rows={rows}
-      renderRow={row => (
-        <View style={styles.compactRow}>
-          <View style={styles.compactTextBlock}>
-            <Text numberOfLines={1} style={styles.compactPrimary}>
-              {row.title ?? row.reason ?? row.type ?? row.periodKey ?? '-'}
-            </Text>
-            {row.reason && row.title ? (
-              <Text numberOfLines={1} style={styles.compactMuted}>{row.reason}</Text>
-            ) : row.status ? (
-              <Text style={styles.compactMuted}>{statusMap?.[row.status] ?? formatStatus(row.status)}</Text>
-            ) : null}
-          </View>
-          <Text style={styles.compactAmount}>
-            {formatCurrency(row.amount ?? row.totalAmount ?? row.netPayable)}
-          </Text>
-        </View>
-      )}
+    <KolamListTableComposition
+      columns={getMoneyColumns(statusMap)}
+      emptyTitle={loading ? 'Memuat...' : empty}
+      getRowKey={(row, index) => row._id ?? row.periodKey ?? `money-${index}`}
+      rows={loading ? [] : rows}
     />
   );
 }
 
+function getMoneyColumns(statusMap?: Record<string, string>): Array<KolamListTableColumn<KolamPortalMoneyRow>> {
+  return [
+    {
+      id: 'title',
+      label: 'Keterangan',
+      flex: 1.8,
+      render: row => <CellText strong>{row.title ?? row.reason ?? row.type ?? row.periodKey ?? '-'}</CellText>,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      flex: 0.9,
+      render: row =>
+        row.status ? (
+          <StatusBadge value={row.status} label={statusMap?.[row.status] ?? formatStatus(row.status)} />
+        ) : (
+          <CellText>-</CellText>
+        ),
+    },
+    {
+      id: 'amount',
+      label: 'Jumlah',
+      flex: 1,
+      render: row => <CellText>{formatCurrency(row.amount ?? row.totalAmount ?? row.netPayable)}</CellText>,
+    },
+  ];
+}
 function PortalAccountSettings({
   loading,
   onRefresh,
@@ -923,24 +916,6 @@ function AccountEditableField({
         style={[styles.accountInput, readOnly ? styles.accountInputReadOnly : null]}
         value={value ?? ''}
       />
-    </View>
-  );
-}
-
-function CompactList<TRow>({
-  renderRow,
-  rows,
-}: {
-  renderRow: (row: TRow) => React.ReactNode;
-  rows: TRow[];
-}) {
-  return (
-    <View style={styles.compactList}>
-      {rows.map((row, index) => (
-        <View key={getRowId(row) ?? `compact-${index}`} style={styles.compactListItem}>
-          {renderRow(row)}
-        </View>
-      ))}
     </View>
   );
 }
@@ -1398,62 +1373,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  compactList: {
-    borderColor: V.colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    maxHeight: 220,
-    overflow: 'hidden',
-  },
-  compactListItem: {
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-  },
-  compactRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'space-between',
-  },
-  compactRowLine: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  compactWrapLine: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  compactTextBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
   compactPrimary: {
     color: V.colors.fg,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 17,
   },
-  compactPeriod: {
-    minWidth: 58,
-  },
   compactMuted: {
     color: V.colors.mutedFg,
     flexShrink: 1,
     fontSize: 12,
     lineHeight: 17,
-  },
-  compactAmount: {
-    color: V.colors.fg,
-    flexShrink: 0,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 17,
-    marginLeft: 'auto',
   },
   cellText: {
     color: V.colors.fg,
