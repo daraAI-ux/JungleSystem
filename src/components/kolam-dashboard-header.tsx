@@ -33,30 +33,19 @@ export function KolamDashboardHeader({
   title: string;
 }) {
   const hasCopy = Boolean(moduleIcon || title.trim() || subtitle.trim());
-  const centerShellCopy = title.trim() === 'Bantuan';
 
   return (
-    <KolamHeaderFrame
-      style={centerShellCopy ? styles.centeredHeader : undefined}
-      variant="dashboardHeader">
+    <KolamHeaderFrame variant="dashboardHeader">
       {hasCopy ? (
-        <View
-          style={centerShellCopy ? styles.centeredHeaderCopy : undefined}>
-          <KolamDashboardHeaderCopy
-            centered={centerShellCopy}
-            moduleIcon={moduleIcon}
-            subtitle={subtitle}
-            title={title}
-          />
-        </View>
+        <KolamDashboardHeaderCopy
+          moduleIcon={moduleIcon}
+          subtitle={subtitle}
+          title={title}
+        />
       ) : (
         <View style={styles.headerCopy} />
       )}
-      <View
-        style={[
-          styles.headerControls,
-          centerShellCopy ? styles.centeredHeaderControls : null,
-        ]}>
+      <View style={styles.headerControls}>
         <View style={styles.headerSyncControls}>
           <KolamDashboardSyncIndicatorBadge indicator={syncIndicator} />
           {onRefresh ? (

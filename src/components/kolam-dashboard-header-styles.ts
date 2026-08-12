@@ -17,37 +17,6 @@ export const dashboardHeaderStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  centeredHeader: {
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  centeredHeaderCopy: {
-    alignItems: 'center',
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  centeredHeaderControls: {
-    bottom: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  centeredHeaderIdentity: {
-    alignItems: 'center',
-    flex: 0,
-    justifyContent: 'center',
-    minWidth: 0,
-    width: '100%',
-  },
-  centeredHeaderTextStack: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    maxWidth: '70%',
-  },
   headerCopyWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -75,17 +44,11 @@ export const dashboardHeaderStyles = StyleSheet.create({
       DASHBOARD_HEADER_VISUAL.title.fontWeight === 'bold' ? '700' : '600',
     letterSpacing: DASHBOARD_HEADER_VISUAL.title.appliedLetterSpacing,
   },
-  centeredHeaderTitle: {
-    textAlign: 'center',
-  },
   headerSubtitle: {
     marginTop: DASHBOARD_HEADER_VISUAL.description.marginTop,
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: DASHBOARD_HEADER_VISUAL.description.fontSize,
-  },
-  centeredHeaderSubtitle: {
-    textAlign: 'center',
   },
   headerControls: {
     flexDirection: 'row',
