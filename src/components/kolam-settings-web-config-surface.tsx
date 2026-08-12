@@ -7768,7 +7768,7 @@ function MarketplaceFeaturedPanel({
                     })
                   }
                   style={[
-                    styles.poStaffCheckbox,
+                    styles.marketplaceBioactiveCheckbox,
                     step.isActive !== false && styles.poStaffCheckboxActive,
                     disabled && styles.poStaffCheckboxDisabled,
                   ]}
@@ -10758,6 +10758,16 @@ const styles = StyleSheet.create({
     gap: 10,
     minWidth: 150,
     padding: 10,
+  },
+  marketplaceBioactiveCheckbox: {
+    alignItems: 'center',
+    borderColor: '#e5e7eb',
+    borderRadius: 6,
+    borderWidth: 1,
+    height: 22,
+    justifyContent: 'center',
+    padding: 2,
+    width: 22,
   },
   marketplaceBioactiveActions: {
     alignItems: 'center',
