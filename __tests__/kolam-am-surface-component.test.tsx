@@ -3300,6 +3300,13 @@ describe('KolamAmSurface', () => {
 
     expect(renderText(renderer!)).toContain('Phone Rack');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Back'})).toHaveLength(0);
+    await act(async () => {
+      renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Daftar'})[0].props.onPress();
+    });
+    const boxText = renderText(renderer!).join(' ');
+    expect(boxText).toContain('Box 01');
+    expect(boxText).toContain('Kelola device di box ini');
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Hardware Device Phone Rack'}).length).toBeGreaterThan(0);
     expect(onModuleRouteSelect).not.toHaveBeenCalled();
   });
 

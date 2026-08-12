@@ -2333,6 +2333,15 @@ function AmHardwarePage({
     setSelectedDeviceId(null);
   }, [initialRoute?.boxId, initialRoute?.deviceId, initialRoute?.rackId, onModuleRouteSelect]);
 
+  const handleHardwareDaftarPress = React.useCallback(() => {
+    if (selectedDeviceId) {
+      setSelectedDeviceId(null);
+      return;
+    }
+
+    resetHardwareRoute();
+  }, [resetHardwareRoute, selectedDeviceId]);
+
   const resetHardwareForm = React.useCallback((nextForm: 'rack' | 'box' | 'device' = hardwareForm) => {
     setHardwareForm(nextForm);
     setEditingHardwareId(null);
@@ -2616,7 +2625,7 @@ function AmHardwarePage({
                 <KolamDaftarButton
                   accessibilityLabel="AM Hardware Daftar"
                   size="sm"
-                  onPress={resetHardwareRoute}
+                  onPress={handleHardwareDaftarPress}
                 />
               ) : null}
               {!selectedRack ? (
