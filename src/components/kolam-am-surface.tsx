@@ -1615,6 +1615,10 @@ function AmServicesPage() {
     return () => clearInterval(interval);
   }, [detailLogSource, expandedServiceAccount, expandedTab, loadServiceLogs]);
 
+  const expandedServiceBanking = expandedServiceAccount
+    ? isTransferBanking(expandedServiceAccount.platform)
+    : false;
+
   return (
     <View style={styles.pageStack}>
       <View ref={toolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
@@ -1649,6 +1653,56 @@ function AmServicesPage() {
                 />
               </View>
             </View>
+            {expandedServiceAccount ? (
+              <View style={kolamTableToolbarStyles.actions}>
+                {!expandedServiceBanking ? (
+                  <KolamInteractionFrame
+                    accessibilityLabel={`AM ${expandedServiceAccount.label} Logs`}
+                    onPress={() => selectDetailTab(expandedServiceAccount, 'logs')}
+                    style={[
+                      styles.detailTab,
+                      expandedTab === 'logs' && styles.detailTabActive,
+                    ]}>
+                    <Text style={[
+                      styles.segmentText,
+                      expandedTab === 'logs' && styles.segmentTextActive,
+                    ]}>
+                      Log Live
+                    </Text>
+                  </KolamInteractionFrame>
+                ) : null}
+                <KolamInteractionFrame
+                  accessibilityLabel={`AM ${expandedServiceAccount.label} History`}
+                  onPress={() => selectDetailTab(expandedServiceAccount, 'history')}
+                  style={[
+                    styles.detailTab,
+                    expandedTab === 'history' && styles.detailTabActive,
+                  ]}>
+                  <Text style={[
+                    styles.segmentText,
+                    expandedTab === 'history' && styles.segmentTextActive,
+                  ]}>
+                    {expandedServiceBanking ? 'Riwayat Transfer' : 'Riwayat Task'}
+                  </Text>
+                </KolamInteractionFrame>
+                {!expandedServiceBanking && expandedServiceAccount.platform === 'tokopedia' ? (
+                  <KolamInteractionFrame
+                    accessibilityLabel={`AM ${expandedServiceAccount.label} Session`}
+                    onPress={() => selectDetailTab(expandedServiceAccount, 'session')}
+                    style={[
+                      styles.detailTab,
+                      expandedTab === 'session' && styles.detailTabActive,
+                    ]}>
+                    <Text style={[
+                      styles.segmentText,
+                      expandedTab === 'session' && styles.segmentTextActive,
+                    ]}>
+                      Session
+                    </Text>
+                  </KolamInteractionFrame>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         </View>
         {activeFilterPanel && panelAnchor ? (
@@ -1804,7 +1858,6 @@ function AmServicesPage() {
                   onHistoryPageChange={nextPage => changeServiceHistoryPage(account, nextPage)}
                   onLogPageChange={nextPage => changeServiceLogPage(account, nextPage)}
                   onLogSourceChange={source => changeServiceLogSource(account, source)}
-                  onSelectTab={tab => selectDetailTab(account, tab)}
                   onSessionApplied={fetchAccounts}
                   onSubmitServiceInput={inputType => submitServiceInput(account, inputType)}
                 />
@@ -2581,7 +2634,6 @@ function AmServiceDetailPanel({
   onHistoryPageChange,
   onLogPageChange,
   onLogSourceChange,
-  onSelectTab,
   onSessionApplied,
   onSubmitServiceInput,
   processRunning,
@@ -2611,7 +2663,6 @@ function AmServiceDetailPanel({
   onHistoryPageChange: (page: number) => void;
   onLogPageChange: (page: number) => void;
   onLogSourceChange: (source: 'realtime' | 'history') => void;
-  onSelectTab: (tab: AmServiceDetailTab) => void;
   onSessionApplied: () => void;
   onSubmitServiceInput: (inputType: 'otp' | 'password') => void;
   processRunning: boolean;
@@ -2641,38 +2692,8 @@ function AmServiceDetailPanel({
 
   return (
     <View style={styles.serviceDetailPanel}>
-      <View style={styles.detailHeader}>
-        <View style={styles.detailTabs}>
-          {!banking ? (
-            <KolamInteractionFrame
-              accessibilityLabel={`AM ${account.label} Logs`}
-              onPress={() => onSelectTab('logs')}
-              style={[styles.detailTab, activeTab === 'logs' && styles.detailTabActive]}>
-              <Text style={[styles.segmentText, activeTab === 'logs' && styles.segmentTextActive]}>
-                Log {processRunning ? 'Live' : ''}
-              </Text>
-            </KolamInteractionFrame>
-          ) : null}
-          <KolamInteractionFrame
-            accessibilityLabel={`AM ${account.label} History`}
-            onPress={() => onSelectTab('history')}
-            style={[styles.detailTab, activeTab === 'history' && styles.detailTabActive]}>
-            <Text style={[styles.segmentText, activeTab === 'history' && styles.segmentTextActive]}>
-              {banking ? 'Riwayat Transfer' : 'Riwayat Task'}
-            </Text>
-          </KolamInteractionFrame>
-          {!banking && account.platform === 'tokopedia' ? (
-            <KolamInteractionFrame
-              accessibilityLabel={`AM ${account.label} Session`}
-              onPress={() => onSelectTab('session')}
-              style={[styles.detailTab, activeTab === 'session' && styles.detailTabActive]}>
-              <Text style={[styles.segmentText, activeTab === 'session' && styles.segmentTextActive]}>
-                Session
-              </Text>
-            </KolamInteractionFrame>
-          ) : null}
-        </View>
-        {canClearSession ? (
+      {canClearSession ? (
+        <View style={[styles.detailHeader, styles.detailHeaderActionsOnly]}>
           <KolamDeleteButton
             accessibilityLabel={`AM Service Clear Session ${account._id}`}
             disabled={clearingSession}
@@ -2683,8 +2704,8 @@ function AmServiceDetailPanel({
             style={styles.serviceActionButton}
             onPress={onClearSession}
           />
-        ) : null}
-      </View>
+        </View>
+      ) : null}
       <AmInlineError title="Detail service AM belum bisa dibaca" error={detailError} />
       {isLoading ? <Text style={styles.loadingText}>Memuat detail layanan...</Text> : null}
       {!isLoading && activeTab === 'session' && account.platform === 'tokopedia' ? (
@@ -8145,6 +8166,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
+  },
+  detailHeaderActionsOnly: {
+    justifyContent: 'flex-end',
   },
   detailTabs: {
     flexDirection: 'row',
