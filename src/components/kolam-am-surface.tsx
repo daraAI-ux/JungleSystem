@@ -6668,7 +6668,6 @@ function AmUsersPage() {
                   }}
                 />
               ) : null}
-              <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
             </View>
           </View>
         </View>
