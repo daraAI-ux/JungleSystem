@@ -21,6 +21,7 @@ import type {UnifiedSurface} from '../domain/unified';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {formatRupiah, formatRupiahCompactCurrency} from '../lib/money';
 import {getAccessToken} from '../lib/api-client';
+import {KolamChevronIcon} from './kolam-chevron-icon';
 import {
   bulkDeleteAmActivityLogs,
   cancelAmTransfer,
@@ -1672,7 +1673,11 @@ function AmServicesPage() {
                 style={[styles.tableRow, expanded && styles.tableRowExpanded]}>
                 <View style={styles.expandCol}>
                   {!banking ? (
-                    <View style={[styles.expandIndicator, expanded && styles.expandIndicatorOpen]} />
+                    <KolamChevronIcon
+                      color={V.colors.mutedFg}
+                      direction={expanded ? 'down' : 'right'}
+                      size="menu-sm"
+                    />
                   ) : null}
                 </View>
                 <View style={styles.serviceCol}>
@@ -8018,20 +8023,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  expandIndicator: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 5,
-    borderBottomWidth: 5,
-    borderLeftWidth: 7,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: V.colors.mutedFg,
-    transform: [{rotate: '0deg'}],
-  },
-  expandIndicatorOpen: {
-    transform: [{rotate: '90deg'}],
   },
   serviceTitleRow: {
     minWidth: 0,
