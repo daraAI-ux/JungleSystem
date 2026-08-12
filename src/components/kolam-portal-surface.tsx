@@ -31,6 +31,7 @@ import {
 } from '../services/kolam-kpi-team-api';
 import { KolamButton } from './kolam-button';
 import { KolamCardFrame } from './kolam-card-frame';
+import { KolamControlTabList } from './kolam-control-tab-list';
 import { KolamDetailSummaryCard } from './kolam-detail-summary-card';
 import {
   KolamListTableComposition,
@@ -67,6 +68,13 @@ const TASK_STATUS: Record<string, string> = {
   cancelled: 'Batal',
 };
 
+type PortalWorkTab = 'attendance' | 'tasks';
+
+const PORTAL_WORK_TABS = [
+  { id: 'attendance', label: 'Absensi' },
+  { id: 'tasks', label: 'Tugas saya' },
+] as const;
+
 export function KolamPortalSurface({
   onRouteChange,
 }: {
@@ -79,6 +87,7 @@ export function KolamPortalSurface({
   const [loading, setLoading] = React.useState(true);
   const [attendancePage, setAttendancePage] = React.useState(1);
   const [taskPage, setTaskPage] = React.useState(1);
+  const [activeWorkTab, setActiveWorkTab] = React.useState<PortalWorkTab>('attendance');
   const isWide = width >= 1180;
   const isEmployee = authUser?.isEmployee;
   const shouldLoad = isEmployee !== false;
@@ -137,11 +146,15 @@ export function KolamPortalSurface({
 
               <PortalSummaryCards data={dataset} loading={loading} />
 
-              <PortalAttendanceSection
+              <PortalWorkTabsSection
+                activeTab={activeWorkTab}
                 data={dataset}
+                attendancePage={attendancePage}
                 loading={loading}
-                page={attendancePage}
-                setPage={setAttendancePage}
+                onTabChange={setActiveWorkTab}
+                setAttendancePage={setAttendancePage}
+                setTaskPage={setTaskPage}
+                taskPage={taskPage}
               />
 
               <View style={styles.threeGrid}>
@@ -156,12 +169,6 @@ export function KolamPortalSurface({
                 <PortalKasbonSection data={dataset} loading={loading} />
               </View>
 
-              <PortalTasksSection
-                data={dataset}
-                loading={loading}
-                page={taskPage}
-                setPage={setTaskPage}
-              />
             </>
           )}
         </View>
@@ -400,16 +407,24 @@ function PortalSummaryCards({
   );
 }
 
-function PortalAttendanceSection({
+function PortalWorkTabsSection({
+  activeTab,
+  attendancePage,
   data,
   loading,
-  page,
-  setPage,
+  onTabChange,
+  setAttendancePage,
+  setTaskPage,
+  taskPage,
 }: {
+  activeTab: PortalWorkTab;
+  attendancePage: number;
   data: KolamPortalDataset | null;
   loading: boolean;
-  page: number;
-  setPage: (page: number) => void;
+  onTabChange: (tab: PortalWorkTab) => void;
+  setAttendancePage: (page: number) => void;
+  setTaskPage: (page: number) => void;
+  taskPage: number;
 }) {
   const today = data?.todayAttendance;
   const day = today?.day;
@@ -419,8 +434,8 @@ function PortalAttendanceSection({
   const days = attendance?.days ?? [];
   const subtitle = getAttendanceRange(attendance ?? null);
   const pageSize = 10;
-  const rows = paginate(days, page, pageSize);
-  const columns: Array<KolamListTableColumn<KolamPortalAttendanceDay>> = [
+  const attendanceRows = paginate(days, attendancePage, pageSize);
+  const attendanceColumns: Array<KolamListTableColumn<KolamPortalAttendanceDay>> = [
     {
       id: 'date',
       label: 'Tgl',
@@ -451,9 +466,31 @@ function PortalAttendanceSection({
       render: row => <CellText>{formatDateTime(row.checkOutAt)}</CellText>,
     },
   ];
+  const tasks = data?.tasks ?? [];
+  const taskRows = paginate(tasks, taskPage, pageSize);
+  const taskColumns: Array<KolamListTableColumn<KolamPortalTaskRow>> = [
+    { id: 'title', label: 'Judul', flex: 1.8, render: row => <CellText strong>{row.title ?? '-'}</CellText> },
+    { id: 'project', label: 'Proyek', flex: 1, render: row => <CellText>{getTaskProject(row)}</CellText> },
+    { id: 'status', label: 'Status', flex: 0.9, render: row => <StatusBadge value={row.status} label={TASK_STATUS[row.status ?? ''] ?? formatStatus(row.status)} /> },
+  ];
+  const cardSubtitle =
+    activeTab === 'attendance'
+      ? subtitle
+      : tasks.length
+        ? `${tasks.length} item`
+        : undefined;
 
   return (
-    <PortalCard subtitle={subtitle} title="Absensi">
+    <PortalCard subtitle={cardSubtitle} title="Aktivitas">
+      <View style={styles.portalTableTabs}>
+        <KolamControlTabList
+          accessibilityLabel="Tab aktivitas portal"
+          items={[...PORTAL_WORK_TABS]}
+          onSelect={itemId => onTabChange(itemId as PortalWorkTab)}
+          selectedId={activeTab}
+        />
+      </View>
+      {activeTab === 'attendance' ? (
       <View style={styles.attendanceUnified}>
         <View style={styles.attendanceTodayRow}>
           {loading && !today ? (
@@ -512,14 +549,23 @@ function PortalAttendanceSection({
         <View style={styles.attendanceHistoryBlock}>
           <Text style={styles.attendanceHistoryTitle}>Riwayat</Text>
           <KolamListTableComposition
-            columns={columns}
+            columns={attendanceColumns}
             emptyTitle={loading ? 'Memuat...' : 'Belum ada data periode ini.'}
             getRowKey={(row, index) => row.dateKey ?? `attendance-${index}`}
-            pagination={{ onPageChange: setPage, page, pageSize, total: days.length }}
-            rows={rows}
+            pagination={{ onPageChange: setAttendancePage, page: attendancePage, pageSize, total: days.length }}
+            rows={attendanceRows}
           />
         </View>
       </View>
+      ) : (
+        <KolamListTableComposition
+          columns={taskColumns}
+          emptyTitle={loading && !data ? 'Memuat...' : 'Tidak ada tugas terbuka.'}
+          getRowKey={(row, index) => row._id ?? `task-${index}`}
+          pagination={{ onPageChange: setTaskPage, page: taskPage, pageSize, total: tasks.length }}
+          rows={taskRows}
+        />
+      )}
     </PortalCard>
   );
 }
@@ -731,39 +777,6 @@ function MoneyCompactSection({
         </View>
       )}
     />
-  );
-}
-
-function PortalTasksSection({
-  data,
-  loading,
-  page,
-  setPage,
-}: {
-  data: KolamPortalDataset | null;
-  loading: boolean;
-  page: number;
-  setPage: (page: number) => void;
-}) {
-  const tasks = data?.tasks ?? [];
-  const pageSize = 10;
-  const rows = paginate(tasks, page, pageSize);
-  const columns: Array<KolamListTableColumn<KolamPortalTaskRow>> = [
-    { id: 'title', label: 'Judul', flex: 1.8, render: row => <CellText strong>{row.title ?? '-'}</CellText> },
-    { id: 'project', label: 'Proyek', flex: 1, render: row => <CellText>{getTaskProject(row)}</CellText> },
-    { id: 'status', label: 'Status', flex: 0.9, render: row => <StatusBadge value={row.status} label={TASK_STATUS[row.status ?? ''] ?? formatStatus(row.status)} /> },
-  ];
-
-  return (
-    <PortalCard subtitle={tasks.length ? `${tasks.length} item` : undefined} title="Tugas saya">
-      <KolamListTableComposition
-        columns={columns}
-        emptyTitle={loading && !data ? 'Memuat...' : 'Tidak ada tugas terbuka.'}
-        getRowKey={(row, index) => row._id ?? `task-${index}`}
-        pagination={{ onPageChange: setPage, page, pageSize, total: tasks.length }}
-        rows={rows}
-      />
-    </PortalCard>
   );
 }
 
@@ -1262,6 +1275,10 @@ const styles = StyleSheet.create({
   portalCardBody: {
     minWidth: 0,
     padding: 12,
+  },
+  portalTableTabs: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
   },
   summaryCard: {
     minWidth: 340,
