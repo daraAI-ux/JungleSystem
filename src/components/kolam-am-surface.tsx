@@ -129,6 +129,7 @@ import {KolamButton} from './kolam-button';
 import {KolamDeleteButton} from './kolam-delete-button';
 import {KolamCancelButton} from './kolam-cancel-button';
 import {KolamEditButton} from './kolam-edit-button';
+import {KolamDetailSummaryCard} from './kolam-detail-summary-card';
 import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
@@ -5014,14 +5015,18 @@ function AmTransfersPage({
           </View>
         </View>
       ) : null}
-      <View style={styles.metricGrid}>
-        <AmMetricCard label="Total Transfer" value={String(transferStats.total)} meta="hasil halaman" />
-        <AmMetricCard label="Total Nominal" value={formatRupiah(transferStats.totalAmount)} meta="nominal halaman" />
-        <AmMetricCard label="Menunggu" value={String(transferStats.pending)} meta="menunggu eksekusi" />
-        <AmMetricCard label="Diproses" value={String(transferStats.processing)} meta="sedang berjalan" />
-        <AmMetricCard label="Berhasil" value={String(transferStats.success)} meta="berhasil" />
-        <AmMetricCard label="Gagal" value={String(transferStats.failed)} meta="perlu tindak lanjut" />
-      </View>
+      <KolamDetailSummaryCard
+        fieldColumns={3}
+        fields={[
+          {id: 'total', label: 'Total Transfer', value: String(transferStats.total)},
+          {id: 'amount', label: 'Total Nominal', value: formatRupiah(transferStats.totalAmount)},
+          {id: 'pending', label: 'Menunggu', value: String(transferStats.pending)},
+          {id: 'processing', label: 'Diproses', value: String(transferStats.processing)},
+          {id: 'success', label: 'Berhasil', value: String(transferStats.success)},
+          {id: 'failed', label: 'Gagal', value: String(transferStats.failed)},
+        ]}
+        title="Ringkasan Transfer"
+      />
       <View style={styles.tablePanel}>
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Akun</Text>
@@ -5538,12 +5543,16 @@ function AmMutasiPage({
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.metricGrid}>
-        <AmMetricCard label="Total Masuk" value={formatRupiah(incoming.total)} meta={`${incoming.count} mutasi`} />
-        <AmMetricCard label="Total Keluar" value={formatRupiah(outgoing.total)} meta={`${outgoing.count} mutasi`} />
-        <AmMetricCard label="Saldo Bersih" value={formatRupiah(netBalance)} meta="masuk - keluar" />
-        <AmMetricCard label="Total Transaksi" value={String(totalTransactions)} meta="jumlah ringkasan" />
-      </View>
+      <KolamDetailSummaryCard
+        fieldColumns={4}
+        fields={[
+          {id: 'incoming', label: 'Total Masuk', value: formatRupiah(incoming.total)},
+          {id: 'outgoing', label: 'Total Keluar', value: formatRupiah(outgoing.total)},
+          {id: 'balance', label: 'Saldo Bersih', value: formatRupiah(netBalance)},
+          {id: 'transactions', label: 'Total Transaksi', value: String(totalTransactions)},
+        ]}
+        title="Ringkasan Mutasi"
+      />
       <View ref={mutasiToolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
