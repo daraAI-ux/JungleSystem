@@ -5860,19 +5860,19 @@ function AmWebhooksPage() {
 
   const webhookLogColumns = React.useMemo<Array<KolamListTableColumn<AmWebhookLog>>>(() => [
     {
-      flex: 1.2,
+      flex: 1.15,
       id: 'event',
       label: 'Event',
       render: log => <Text numberOfLines={1} style={styles.cellText}>{log.event}</Text>,
     },
     {
-      flex: 1.7,
+      flex: 2.2,
       id: 'url',
       label: 'URL',
       render: log => <Text numberOfLines={1} style={styles.cellText}>{getWebhookLogEndpoint(log)}</Text>,
     },
     {
-      flex: 0.8,
+      flex: 0.55,
       id: 'status',
       label: 'Status',
       render: log => (
@@ -5883,19 +5883,33 @@ function AmWebhooksPage() {
       ),
     },
     {
-      align: 'right',
-      flex: 0.75,
+      flex: 0.55,
       id: 'duration',
       label: 'Durasi',
       render: log => <Text style={styles.cellText}>{log.duration} ms</Text>,
     },
     {
-      flex: 1,
+      flex: 1.1,
       id: 'createdAt',
       label: 'Waktu',
       render: log => <Text numberOfLines={1} style={styles.cellText}>{formatAmDate(log.createdAt)}</Text>,
     },
-  ], []);
+    {
+      align: 'right',
+      flex: 0.72,
+      id: 'detail',
+      label: '',
+      render: log => (
+        <KolamButton
+          accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
+          intent="outline"
+          label={selectedWebhookLog?._id === log._id ? 'Tutup' : 'Detail'}
+          size="sm"
+          onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
+        />
+      ),
+    },
+  ], [selectedWebhookLog]);
   const isWebhookActionLocked = isSubmitting || isTestingPing || actingConfigId !== null;
 
   return (
@@ -6045,15 +6059,6 @@ function AmWebhooksPage() {
           pageSize: logLimit,
           total: logTotal,
         } : undefined}
-        renderActions={log => (
-          <KolamButton
-            accessibilityLabel={`AM Webhook Log Detail ${log._id}`}
-            intent="outline"
-            label={selectedWebhookLog?._id === log._id ? 'Tutup' : 'Detail'}
-            size="sm"
-            onPress={() => setSelectedWebhookLog(current => current?._id === log._id ? null : log)}
-          />
-        )}
         rows={logs}
         showFooter={logTotal > 0}
       />
