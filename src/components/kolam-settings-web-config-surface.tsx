@@ -7629,22 +7629,32 @@ function MarketplaceCtaSectionPanel({
             placeholder="Tulis deskripsi CTA"
           />
           <View style={styles.marketplaceCtaGrid}>
-            <KolamTextFieldRow
-              variant="settingsForm"
-              label="Teks tombol"
-              description=""
-              value={ctaDraft.buttonText}
-              onChangeText={value => setCtaDraftField('buttonText', value)}
-              placeholder="Lihat semua spesies"
-            />
-            <KolamTextFieldRow
-              variant="settingsForm"
-              label="Tautan tombol"
-              description=""
-              value={ctaDraft.buttonLink}
-              onChangeText={value => setCtaDraftField('buttonLink', value)}
-              placeholder="/species"
-            />
+            <View style={styles.marketplaceCtaInlineField}>
+              <Text style={styles.marketplaceOverviewLabel}>Teks tombol</Text>
+              <Text style={styles.marketplaceOverviewMeta}>
+                Tulisan yang tampil pada tombol CTA.
+              </Text>
+              <TextInput
+                editable={!disabled}
+                onChangeText={value => setCtaDraftField('buttonText', value)}
+                placeholder="Lihat semua spesies"
+                style={styles.marketplaceFeaturedInput}
+                value={ctaDraft.buttonText}
+              />
+            </View>
+            <View style={styles.marketplaceCtaInlineField}>
+              <Text style={styles.marketplaceOverviewLabel}>Tautan tombol</Text>
+              <Text style={styles.marketplaceOverviewMeta}>
+                Alamat yang dibuka saat tombol diklik.
+              </Text>
+              <TextInput
+                editable={!disabled}
+                onChangeText={value => setCtaDraftField('buttonLink', value)}
+                placeholder="/species"
+                style={styles.marketplaceFeaturedInput}
+                value={ctaDraft.buttonLink}
+              />
+            </View>
           </View>
           <Pressable
             accessibilityRole="checkbox"
@@ -11445,6 +11455,12 @@ const styles = StyleSheet.create({
     gap: 7,
     justifyContent: 'center',
     padding: 16,
+  },
+  marketplaceCtaInlineField: {
+    flexBasis: 280,
+    flexGrow: 1,
+    gap: 6,
+    minWidth: 220,
   },
   marketplaceCtaPanel: {
     gap: 12,
