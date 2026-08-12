@@ -292,6 +292,44 @@ export function KolamPosFullWindowSurface({
             <View style={[kolamTableToolbarStyles.shell, styles.categoryBar]}>
               <View style={kolamTableToolbarStyles.row}>
                 <View style={kolamTableToolbarStyles.filters}>
+                  {isCatalogView ? (
+                    <ScrollView
+                      horizontal
+                      contentContainerStyle={styles.categoryPillList}
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.categoryScroll}>
+                      {catalogCategories.map(category => (
+                        <PosCategoryPill
+                          key={category}
+                          active={activeCategory === category}
+                          label={category}
+                          onPress={() => onCategoryChange?.(category)}
+                        />
+                      ))}
+                    </ScrollView>
+                  ) : null}
+                </View>
+                <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
+                  {isCatalogView ? (
+                    <>
+                    {catalogSearch || activeCategory ? (
+                      <KolamButton
+                        label="Hapus Filter"
+                        onPress={() => {
+                          onCatalogSearchChange('');
+                          onCategoryChange?.(null);
+                        }}
+                        style={styles.posToolbarActionButton}
+                        textStyle={styles.posToolbarActionButtonText}
+                      />
+                    ) : null}
+                    <PosCategoryPill
+                      active={!activeCategory}
+                      label="Semua"
+                      onPress={() => onCategoryChange?.(null)}
+                    />
+                    </>
+                  ) : null}
                   <View style={styles.posToolbarNav}>
                     <PosCategoryPill
                       active={isCatalogView && activeType !== 'species'}
@@ -325,43 +363,7 @@ export function KolamPosFullWindowSurface({
                       onPress={() => setActiveView('cashflow')}
                     />
                   </View>
-                  {isCatalogView ? (
-                    <ScrollView
-                      horizontal
-                      contentContainerStyle={styles.categoryPillList}
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.categoryScroll}>
-                      {catalogCategories.map(category => (
-                        <PosCategoryPill
-                          key={category}
-                          active={activeCategory === category}
-                          label={category}
-                          onPress={() => onCategoryChange?.(category)}
-                        />
-                      ))}
-                    </ScrollView>
-                  ) : null}
                 </View>
-                {isCatalogView ? (
-                  <View style={[kolamTableToolbarStyles.actions, styles.categoryActions]}>
-                    {catalogSearch || activeCategory ? (
-                    <KolamButton
-                      label="Hapus Filter"
-                      onPress={() => {
-                        onCatalogSearchChange('');
-                        onCategoryChange?.(null);
-                      }}
-                      style={styles.posToolbarActionButton}
-                      textStyle={styles.posToolbarActionButtonText}
-                    />
-                    ) : null}
-                    <PosCategoryPill
-                      active={!activeCategory}
-                      label="Semua"
-                      onPress={() => onCategoryChange?.(null)}
-                    />
-                  </View>
-                ) : null}
               </View>
             </View>
 
