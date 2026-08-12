@@ -31,7 +31,7 @@ import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamOverlaySurface} from './kolam-overlay-surface';
 import {KolamQuantityStepper} from './kolam-quantity-stepper';
 import {KolamRemoteImage} from './kolam-remote-image';
-import {KolamSidebarBrand} from './kolam-sidebar-brand';
+import {KolamSidebar} from './kolam-sidebar-widgets';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamTopNavigation} from './kolam-top-navigation';
 
@@ -126,7 +126,6 @@ export function KolamPosFullWindowSurface({
   isCreatingCustomer,
   isCreatingSale,
   onAddToCart,
-  onBackToCenter,
   onCatalogSearchChange,
   onCategoryChange,
   onClearCart,
@@ -272,9 +271,7 @@ export function KolamPosFullWindowSurface({
 
   return (
     <View style={styles.surface}>
-      <PosSidebar
-        onBackToCenter={onBackToCenter}
-      />
+      {shellChrome ? <KolamSidebar {...shellChrome.sidebar} /> : null}
       <View style={styles.posMain}>
         <View style={styles.posContent}>
           {shellChrome ? (
@@ -609,27 +606,6 @@ export function KolamPosFullWindowSurface({
           onSelectPaymentMethod={onSelectPaymentMethod}
         />
       ) : null}
-    </View>
-  );
-}
-
-function PosSidebar({onBackToCenter}: {onBackToCenter: () => void}) {
-  return (
-    <View style={styles.posSidebar}>
-      <KolamSidebarBrand collapsed={false} />
-      <ScrollView
-        style={styles.posSidebarScroll}
-        contentContainerStyle={styles.posSidebarContent}
-        showsVerticalScrollIndicator={false}>
-        <Text style={styles.posSidebarLabel}>POS</Text>
-        <KolamButton
-          label="Kembali"
-          intent="outline"
-          size="sm"
-          onPress={onBackToCenter}
-          style={styles.posBackButton}
-        />
-      </ScrollView>
     </View>
   );
 }
@@ -2241,33 +2217,6 @@ const styles = StyleSheet.create({
     borderRightColor: V.colors.border,
     borderRightWidth: 1,
     backgroundColor: V.colors.bg,
-  },
-  posSidebar: {
-    alignSelf: 'stretch',
-    width: V.layout.sidebarWidth,
-    height: '100%',
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    backgroundColor: V.colors.sidebar,
-    borderRightColor: V.colors.border,
-    borderRightWidth: 1,
-  },
-  posSidebarScroll: {
-    flex: 1,
-  },
-  posSidebarContent: {
-    paddingBottom: 12,
-  },
-  posSidebarLabel: {
-    paddingHorizontal: 12,
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  posBackButton: {
-    marginTop: 10,
   },
   categoryBar: {
     marginBottom: 12,
