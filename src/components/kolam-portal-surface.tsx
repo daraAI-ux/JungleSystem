@@ -1342,11 +1342,11 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   portalCardTitleWrap: {
-    alignItems: 'baseline',
-    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flexDirection: 'column',
     flexShrink: 1,
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 2,
+    minWidth: 0,
   },
   portalCardTitle: {
     color: V.colors.fg,
