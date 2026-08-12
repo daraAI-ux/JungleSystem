@@ -3911,7 +3911,7 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack 1'}).props.onPress();
     });
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Box'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Box'}).props.onPress();
     });
     inputs = renderer!.root.findAllByType(TextInput);
     await act(async () => {
@@ -3926,6 +3926,9 @@ describe('KolamAmSurface', () => {
       description: 'New box notes',
     });
 
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 1'}).props.onPress();
+    });
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Segment Device'}).props.onPress();
     });
@@ -3996,10 +3999,6 @@ describe('KolamAmSurface', () => {
     expect(createAmDevice).toHaveBeenLastCalledWith({
       boxId: 'box-1',
       connectionType: 'browser',
-    });
-
-    await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Box Box 1'}).props.onPress();
     });
 
     await act(async () => {

@@ -1995,6 +1995,7 @@ function AmHardwarePage({
   const [hardwareForm, setHardwareForm] = React.useState<'rack' | 'box' | 'device'>('rack');
   const [editingHardwareId, setEditingHardwareId] = React.useState<string | null>(null);
   const [isRackModalOpen, setIsRackModalOpen] = React.useState(false);
+  const [isBoxModalOpen, setIsBoxModalOpen] = React.useState(false);
   const [formLocation, setFormLocation] = React.useState('');
   const [formDescription, setFormDescription] = React.useState('');
   const [formServerIp, setFormServerIp] = React.useState('');
@@ -2236,6 +2237,7 @@ function AmHardwarePage({
   const editBox = React.useCallback((box: AmBox) => {
     setHardwareForm('box');
     setEditingHardwareId(box._id);
+    setIsBoxModalOpen(true);
     setFormRackId(resolveRackId(box.rackId));
     setFormDescription(box.description ?? '');
     setFormStatus(box.status === 'inactive' ? 'inactive' : 'active');
@@ -2351,6 +2353,9 @@ function AmHardwarePage({
       if (hardwareForm === 'rack') {
         setIsRackModalOpen(false);
       }
+      if (hardwareForm === 'box') {
+        setIsBoxModalOpen(false);
+      }
       await fetchHardware();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Gagal menyimpan hardware AM.');
@@ -2423,6 +2428,24 @@ function AmHardwarePage({
           {selectedDevice ? <Text style={styles.breadcrumbText}>/ {selectedDevice.name}</Text> : null}
         </View>
       ) : null}
+      {selectedRack && !selectedBox ? (
+        <View style={styles.amHardwareHeader}>
+          <View style={styles.amHardwareHeaderCopy}>
+            <Text style={styles.panelTitle}>{selectedRack.name}</Text>
+            <Text style={styles.panelText}>Kelola box di rack ini. Setiap box dapat memuat hingga 24 device.</Text>
+          </View>
+          <KolamButton
+            accessibilityLabel="AM Hardware Add Box"
+            label="Add Box"
+            size="sm"
+            onPress={() => {
+              resetHardwareForm('box');
+              setFormRackId(selectedRack._id);
+              setIsBoxModalOpen(true);
+            }}
+          />
+        </View>
+      ) : null}
       {error ? (
         <View style={styles.errorPanel}>
           <Text style={styles.errorTitle}>Hardware AM belum bisa dibaca</Text>
@@ -2450,7 +2473,7 @@ function AmHardwarePage({
           onConfirm={() => deleteHardware(deletingHardware.kind, deletingHardware.id)}
         />
       ) : null}
-      {selectedRack ? (
+      {selectedBox ? (
       <View style={styles.tablePanel}>
         <View style={styles.formGrid}>
           <AmSegmentGroup
@@ -2640,6 +2663,43 @@ function AmHardwarePage({
             value={formLocation}
             onChangeText={setFormLocation}
           />
+          <AmTextInput
+            label="Deskripsi"
+            placeholder="Opsional"
+            value={formDescription}
+            onChangeText={setFormDescription}
+          />
+        </View>
+      </KolamModalDialog>
+      <KolamModalDialog
+        accessibilityLabel={editingHardwareId ? 'AM Hardware Edit Box Modal' : 'AM Hardware Add Box Modal'}
+        maxWidth="86%"
+        onClose={() => {
+          setIsBoxModalOpen(false);
+          resetHardwareForm('box');
+        }}
+        title={editingHardwareId ? 'Edit Box' : 'Add Box'}
+        visible={isBoxModalOpen && hardwareForm === 'box'}
+        width={420}
+        footer={
+          <>
+            <KolamCancelButton
+              label="Cancel"
+              onPress={() => {
+                setIsBoxModalOpen(false);
+                resetHardwareForm('box');
+              }}
+            />
+            <KolamSaveButton
+              accessibilityLabel="AM Hardware Save"
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Menyimpan' : editingHardwareId ? 'Save' : 'Create'}
+              muted={isSubmitting}
+              onPress={saveHardware}
+            />
+          </>
+        }>
+        <View style={styles.formGrid}>
           <AmTextInput
             label="Deskripsi"
             placeholder="Opsional"
@@ -3550,42 +3610,50 @@ function AmHardwareBoxGrid({
   onSelectBox: (box: AmBox) => void;
 }) {
   return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Box</Text>
+    <View style={styles.tablePanel}>
+      <View style={styles.tableHeader}>
+        <Text style={[styles.tableHeaderText, styles.deviceNameCol]}>Nama</Text>
+        <Text style={[styles.tableHeaderText, styles.amountCol]}>Device</Text>
+        <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
+        <Text style={[styles.tableHeaderText, styles.recipientCol]}>Deskripsi</Text>
+        <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
+      </View>
       {isLoading && !boxes.length ? <Text style={styles.loadingText}>Memuat box AM...</Text> : null}
       {!isLoading && !boxes.length ? <Text style={styles.loadingText}>Box belum ada di rack ini</Text> : null}
-      <View style={styles.cardGrid}>
-        {boxes.map(box => (
-          <KolamInteractionFrame
-            key={box._id}
-            accessibilityLabel={`AM Hardware Box ${box.name}`}
-            accessibilityRole="button"
-            onPress={() => onSelectBox(box)}
-            style={styles.hardwareCard}>
-            <Text style={styles.rowTitle}>{box.name}</Text>
-            <Text style={styles.rowMeta}>{box.description || 'Deskripsi belum diisi'}</Text>
-            <Text style={styles.rowMeta}>Device {box.deviceCount ?? 0} / 24</Text>
+      {boxes.map(box => (
+        <KolamInteractionFrame
+          key={box._id}
+          accessibilityLabel={`AM Hardware Box ${box.name}`}
+          accessibilityRole="button"
+          onPress={() => onSelectBox(box)}
+          style={styles.tableRow}>
+          <View style={styles.deviceNameCol}>
+            <Text style={styles.cellText} numberOfLines={1}>{box.name}</Text>
+          </View>
+          <Text style={[styles.cellText, styles.amountCol]}>{box.deviceCount ?? 0} / 24</Text>
+          <View style={styles.statusCol}>
             <AmStatusChip label={box.status} tone={box.status === 'active' ? 'success' : 'muted'} />
-            <View style={styles.inlineActions}>
-              <KolamEditButton
-                accessibilityLabel={`AM Hardware Edit Box ${box._id}`}
-                intent="outline"
-                size="sm"
-                onPress={() => onEditBox(box)}
-              />
-              <KolamButton
-                accessibilityLabel={`AM Hardware Delete Box ${box._id}`}
-                disabled={actingHardwareId === box._id}
-                label={actingHardwareId === box._id ? '...' : 'Hapus'}
-                intent="danger"
-                muted={actingHardwareId === box._id}
-                size="sm"
-                onPress={() => onDeleteBox(box)}
-              />
-            </View>
-          </KolamInteractionFrame>
-        ))}
-      </View>
+          </View>
+          <Text style={[styles.cellText, styles.recipientCol]} numberOfLines={1}>
+            {box.description || 'No description'}
+          </Text>
+          <View style={styles.actionCol}>
+            <KolamTableRowActionMenu
+              accessibilityLabel={`AM Hardware Box Actions ${box._id}`}
+              actions={[
+                {label: 'View Devices', onPress: () => onSelectBox(box)},
+                {label: 'Edit', onPress: () => onEditBox(box)},
+                {
+                  disabled: actingHardwareId === box._id,
+                  label: actingHardwareId === box._id ? '...' : 'Delete',
+                  onPress: () => onDeleteBox(box),
+                  tone: 'danger',
+                },
+              ]}
+            />
+          </View>
+        </KolamInteractionFrame>
+      ))}
     </View>
   );
 }
