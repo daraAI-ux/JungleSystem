@@ -7612,22 +7612,37 @@ function MarketplaceCtaSectionPanel({
             </Pressable>
           </View>
 
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Judul"
-            description=""
-            value={ctaDraft.title}
-            onChangeText={value => setCtaDraftField('title', value)}
-            placeholder="Jelajahi Dunia Species"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            label="Deskripsi"
-            description=""
-            value={ctaDraft.description}
-            onChangeText={value => setCtaDraftField('description', value)}
-            placeholder="Tulis deskripsi CTA"
-          />
+          <View style={styles.marketplaceCtaInlineField}>
+            <Text style={styles.marketplaceOverviewLabel}>Judul</Text>
+            <Text style={styles.marketplaceOverviewMeta}>
+              Judul utama yang tampil di bagian CTA.
+            </Text>
+            <TextInput
+              editable={!disabled}
+              onChangeText={value => setCtaDraftField('title', value)}
+              placeholder="Jelajahi Dunia Species"
+              style={styles.marketplaceFeaturedInput}
+              value={ctaDraft.title}
+            />
+          </View>
+          <View style={styles.marketplaceCtaInlineField}>
+            <Text style={styles.marketplaceOverviewLabel}>Deskripsi</Text>
+            <Text style={styles.marketplaceOverviewMeta}>
+              Kalimat pendukung di bawah judul CTA.
+            </Text>
+            <TextInput
+              editable={!disabled}
+              multiline
+              onChangeText={value => setCtaDraftField('description', value)}
+              placeholder="Tulis deskripsi CTA"
+              style={[
+                styles.marketplaceFeaturedInput,
+                styles.marketplaceCtaDescriptionInput,
+              ]}
+              textAlignVertical="top"
+              value={ctaDraft.description}
+            />
+          </View>
           <View style={styles.marketplaceCtaGrid}>
             <View style={styles.marketplaceCtaInlineField}>
               <Text style={styles.marketplaceOverviewLabel}>Teks tombol</Text>
@@ -11417,6 +11432,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+  },
+  marketplaceCtaDescriptionInput: {
+    height: 72,
+    paddingVertical: 8,
   },
   marketplaceCtaFooter: {
     alignItems: 'center',
