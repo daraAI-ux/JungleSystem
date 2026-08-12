@@ -68,6 +68,7 @@ import type {
   KolamStaffAttendanceWorkSite,
   KolamTeamChatRoom,
   KolamUserPickerRow,
+  KolamYoutubeSection,
 } from '../services/kolam-api';
 import type {KolamCategory} from '../domain/kolam-category';
 import type {
@@ -5813,6 +5814,7 @@ export function KolamSettingsWebConfigSurface({
                 }
                 onSaveBioactiveEcosystem={onSaveMarketplaceBioactiveEcosystem}
                 onSaveCta={onSaveMarketplaceLandingCta}
+                onSaveYoutube={onSaveMarketplaceLandingYoutube}
                 onUploadAnnouncementImage={onUploadMarketplaceAnnouncementImage}
                 onUploadBioactiveStepImage={
                   onUploadMarketplaceBioactiveStepImage
@@ -5829,12 +5831,15 @@ export function KolamSettingsWebConfigSurface({
                 overview={marketplaceLandingOverview}
                 saveStatus={marketplaceLandingSaveStatus}
                 setCtaDraftField={setMarketplaceLandingCtaDraftField}
+                setYoutubeDraftField={setMarketplaceLandingYoutubeDraftField}
                 categories={marketplaceCategories}
+                youtubeDraft={marketplaceLandingYoutubeDraft}
               />
               {(marketplaceLandingTabId !== 'hero' &&
                 marketplaceLandingTabId !== 'featured' &&
                 marketplaceLandingTabId !== 'category' &&
-                marketplaceLandingTabId !== 'cta') ||
+                marketplaceLandingTabId !== 'cta' &&
+                marketplaceLandingTabId !== 'youtube') ||
               marketplaceHeroEditorOpen ? (
                 <MarketplaceLandingControlsPanel
                 activeTabId={marketplaceLandingTabId}
@@ -6962,6 +6967,7 @@ function MarketplaceLandingOverviewPanel({
   onSaveFeaturedCollections,
   onSaveBioactiveEcosystem,
   onSaveCta,
+  onSaveYoutube,
   onUploadAnnouncementImage,
   onUploadBioactiveStepImage,
   onUploadCategoryBannerImage,
@@ -6972,6 +6978,8 @@ function MarketplaceLandingOverviewPanel({
   overview,
   saveStatus,
   setCtaDraftField,
+  setYoutubeDraftField,
+  youtubeDraft,
 }: {
   activeTabId:
     | 'hero'
@@ -6987,6 +6995,7 @@ function MarketplaceLandingOverviewPanel({
   categories: KolamCategory[];
   ctaDraft: MarketplaceLandingCtaDraft;
   disabled: boolean;
+  youtubeDraft: MarketplaceLandingYoutubeDraft;
   onDeleteAnnouncementBanner: (banner: KolamAnnouncementBanner) => void;
   onDeleteCategoryBanner: (banner: KolamCategoryBanner) => void;
   onDeleteFeaturedCollection: (index: number) => void;
@@ -7018,6 +7027,7 @@ function MarketplaceLandingOverviewPanel({
   onSaveFeaturedCollections: () => void;
   onSaveBioactiveEcosystem: () => void;
   onSaveCta: () => void;
+  onSaveYoutube: () => void;
   onUploadAnnouncementImage: (banner: KolamAnnouncementBanner) => void;
   onUploadBioactiveStepImage: (index: number) => void;
   onUploadCategoryBannerImage: (banner: KolamCategoryBanner) => void;
@@ -7030,6 +7040,10 @@ function MarketplaceLandingOverviewPanel({
   setCtaDraftField: <Key extends keyof MarketplaceLandingCtaDraft>(
     key: Key,
     value: MarketplaceLandingCtaDraft[Key],
+  ) => void;
+  setYoutubeDraftField: <Key extends keyof MarketplaceLandingYoutubeDraft>(
+    key: Key,
+    value: MarketplaceLandingYoutubeDraft[Key],
   ) => void;
 }) {
   const featuredCollections =
@@ -7123,6 +7137,7 @@ function MarketplaceLandingOverviewPanel({
     activeTabId !== 'hero' &&
     activeTabId !== 'category' &&
     activeTabId !== 'cta' &&
+    activeTabId !== 'youtube' &&
     activeTabId !== 'featured';
 
   return (
@@ -7177,6 +7192,18 @@ function MarketplaceLandingOverviewPanel({
           onUploadBackground={onUploadCtaBackground}
           saveStatus={saveStatus}
           setCtaDraftField={setCtaDraftField}
+        />
+      ) : activeTabId === 'youtube' ? (
+        <MarketplaceYoutubeSectionPanel
+          assetStatus={assetStatus}
+          disabled={disabled}
+          message={overview.message}
+          onSave={onSaveYoutube}
+          onUploadBackground={onUploadYoutubeBackground}
+          saveStatus={saveStatus}
+          setYoutubeDraftField={setYoutubeDraftField}
+          youtubeDraft={youtubeDraft}
+          youtubeSection={overview.youtubeSection}
         />
       ) : (
         <>
@@ -7249,18 +7276,6 @@ function MarketplaceLandingOverviewPanel({
             },
           ]}
         />
-        {activeTabId === 'youtube' ? (
-          <View style={styles.marketplaceAssetActions}>
-            <MarketplaceAssetButton
-              disabled={disabled}
-              id="youtube-background"
-              label="Unggah latar YouTube"
-              onPress={onUploadYoutubeBackground}
-              status={assetStatus}
-              upload
-            />
-          </View>
-        ) : null}
         {activeTabId === 'announcement' ? (
           <MarketplaceAssetRows
             disabled={disabled}
@@ -7680,6 +7695,192 @@ function MarketplaceCtaSectionPanel({
             disabled={disabled}
             label="Tampilkan di landing page"
             onPress={() => setCtaDraftField('isActive', !ctaDraft.isActive)}
+            variant="settingsForm"
+          />
+          {message ? (
+            <Text
+              style={
+                saveStatus === 'error'
+                  ? styles.marketplaceOverviewError
+                  : styles.marketplaceOverviewMeta
+              }
+            >
+              {message}
+            </Text>
+          ) : null}
+          <View style={styles.marketplaceCtaFooter}>
+            <KolamActionControlButton
+              disabled={disabled}
+              intent="primary"
+              label="Simpan perubahan"
+              loading={saveStatus === 'saving'}
+              loadingLabel="Menyimpan..."
+              onPress={onSave}
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function MarketplaceYoutubeSectionPanel({
+  assetStatus,
+  disabled,
+  message,
+  onSave,
+  onUploadBackground,
+  saveStatus,
+  setYoutubeDraftField,
+  youtubeDraft,
+  youtubeSection,
+}: {
+  assetStatus: Partial<
+    Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
+  >;
+  disabled: boolean;
+  message: string;
+  onSave: () => void;
+  onUploadBackground: () => void;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setYoutubeDraftField: <Key extends keyof MarketplaceLandingYoutubeDraft>(
+    key: Key,
+    value: MarketplaceLandingYoutubeDraft[Key],
+  ) => void;
+  youtubeDraft: MarketplaceLandingYoutubeDraft;
+  youtubeSection: KolamYoutubeSection | null;
+}) {
+  const backgroundUri = resolveMarketplaceLandingImageUri(
+    youtubeSection?.backgroundImage,
+  );
+
+  return (
+    <View style={styles.marketplaceCtaPanel}>
+      <View style={styles.marketplaceCtaCard}>
+        <View style={styles.marketplaceCtaHeader}>
+          <KolamCopyStack
+            items={[
+              {
+                id: 'title',
+                text: 'Pengaturan YouTube',
+                style: styles.marketplaceOverviewTitle,
+              },
+              {
+                id: 'detail',
+                text: 'Atur kartu YouTube di Blog & Video.',
+                style: styles.marketplaceOverviewMeta,
+              },
+            ]}
+          />
+          <Text
+            style={[
+              styles.marketplaceHeroSlideStatus,
+              youtubeDraft.isActive
+                ? null
+                : styles.marketplaceHeroSlideStatusDraft,
+            ]}
+          >
+            {youtubeDraft.isActive ? 'Aktif' : 'Tersembunyi'}
+          </Text>
+        </View>
+
+        <View style={styles.marketplaceCtaStack}>
+          <View style={styles.marketplaceCtaFieldGroup}>
+            <View style={styles.marketplaceCtaFieldHeader}>
+              <Text style={styles.marketplaceOverviewLabel}>
+                Gambar latar
+              </Text>
+              <MarketplaceAssetButton
+                disabled={disabled}
+                id="youtube-background"
+                label={backgroundUri ? 'Ganti gambar' : 'Pilih gambar'}
+                onPress={onUploadBackground}
+                status={assetStatus}
+                upload
+              />
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              disabled={disabled}
+              onPress={onUploadBackground}
+              style={[
+                styles.marketplaceCtaImageBox,
+                styles.marketplaceYoutubeImageBox,
+              ]}
+            >
+              {backgroundUri ? (
+                <Image
+                  resizeMode="cover"
+                  source={{uri: backgroundUri}}
+                  style={styles.marketplaceCtaImage}
+                />
+              ) : (
+                <View style={styles.marketplaceCtaImageEmpty}>
+                  <SvgXml
+                    height={38}
+                    width={38}
+                    xml={getMarketplaceLandingTabIconXml('youtube', true)}
+                  />
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    Pilih gambar latar YouTube.
+                  </Text>
+                  <Text style={styles.marketplaceOverviewMeta}>
+                    Rekomendasi: 600 x 338px
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          <View style={styles.marketplaceCtaInlineField}>
+            <Text style={styles.marketplaceOverviewLabel}>Tautan YouTube</Text>
+            <Text style={styles.marketplaceOverviewMeta}>
+              Tautan channel atau video YouTube.
+            </Text>
+            <TextInput
+              editable={!disabled}
+              onChangeText={value => setYoutubeDraftField('link', value)}
+              placeholder="https://www.youtube.com/@DuniaAnura"
+              style={styles.marketplaceFeaturedInput}
+              value={youtubeDraft.link}
+            />
+          </View>
+          <View style={styles.marketplaceCtaGrid}>
+            <View style={styles.marketplaceCtaInlineField}>
+              <Text style={styles.marketplaceOverviewLabel}>Judul</Text>
+              <Text style={styles.marketplaceOverviewMeta}>
+                Judul kartu YouTube.
+              </Text>
+              <TextInput
+                editable={!disabled}
+                onChangeText={value => setYoutubeDraftField('title', value)}
+                placeholder="Dunia Anura"
+                style={styles.marketplaceFeaturedInput}
+                value={youtubeDraft.title}
+              />
+            </View>
+            <View style={styles.marketplaceCtaInlineField}>
+              <Text style={styles.marketplaceOverviewLabel}>Subjudul</Text>
+              <Text style={styles.marketplaceOverviewMeta}>
+                Teks pendamping judul YouTube.
+              </Text>
+              <TextInput
+                editable={!disabled}
+                onChangeText={value => setYoutubeDraftField('subtitle', value)}
+                placeholder="YouTube"
+                style={styles.marketplaceFeaturedInput}
+                value={youtubeDraft.subtitle}
+              />
+            </View>
+          </View>
+          <KolamToggleRow
+            active={youtubeDraft.isActive}
+            description="Tampilkan bagian YouTube untuk pengunjung."
+            disabled={disabled}
+            label="Tampilkan di landing page"
+            onPress={() =>
+              setYoutubeDraftField('isActive', !youtubeDraft.isActive)
+            }
             variant="settingsForm"
           />
           {message ? (
@@ -11462,6 +11663,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     width: '100%',
+  },
+  marketplaceYoutubeImageBox: {
+    aspectRatio: 16 / 9,
   },
   marketplaceCtaImageEmpty: {
     alignItems: 'center',
