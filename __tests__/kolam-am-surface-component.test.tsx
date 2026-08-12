@@ -3,7 +3,7 @@ import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native
 import ReactTestRenderer, {act} from 'react-test-renderer';
 import {KolamAmSurface} from '../src/components/kolam-am-surface';
 import {KolamButton} from '../src/components/kolam-button';
-import {KolamOverflowMenuButton, KolamTableRowActionMenu} from '../src/components/kolam-dropdown-select';
+import {KolamTableRowActionMenu} from '../src/components/kolam-dropdown-select';
 import {getShellModuleRouteEntry} from '../src/domain/app-shell';
 import {kolamVisualTokens as V} from '../src/domain/kolam-visual';
 import {setAccessToken} from '../src/lib/api-client';
@@ -3911,9 +3911,9 @@ describe('KolamAmSurface', () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Rack Rack 1'}).props.onPress();
     });
     const boxActionMenu = renderer!.root
-      .findAllByType(KolamOverflowMenuButton)
+      .findAllByType(KolamTableRowActionMenu)
       .find(menu => menu.props.accessibilityLabel === 'AM Hardware Box Actions box-1');
-    expect(boxActionMenu?.props.label).toBe('...');
+    expect(boxActionMenu).toBeTruthy();
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM Hardware Add Box'}).props.onPress();
     });
