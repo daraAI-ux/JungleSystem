@@ -4192,7 +4192,7 @@ describe('KolamAmSurface', () => {
     expect(getAmRoles).toHaveBeenCalledTimes(1);
     expect(getAmActivityLogs).toHaveBeenCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       search: undefined,
       type: undefined,
       status: undefined,
@@ -4245,7 +4245,7 @@ describe('KolamAmSurface', () => {
           username: null,
         },
       ],
-      meta: {total: 75, limit: 50, page: 1, totalPages: 2},
+      meta: {total: 75, limit: 10, page: 1, totalPages: 8},
     });
     jest.mocked(getAmActivityLogStats).mockResolvedValue({
       since: '2025-12-25T00:00:00.000Z',
@@ -4283,15 +4283,18 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Semua tipe');
     expect(joinedText).toContain('Semua status');
     expect(joinedText).toContain('Semua metode');
-    expect(text).toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Durasi', 'Aksi']));
-    expect(text).not.toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Duration', 'Aksi']));
+    expect(text).toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Durasi']));
+    expect(text).not.toEqual(expect.arrayContaining(['Waktu', 'Tipe', 'Duration']));
     expect(text).toEqual(expect.arrayContaining(['API', 'Halaman', 'GET']));
     expect(joinedText).toContain('/dashboard');
-    expect(joinedText.replace(/\s+/g, ' ')).toContain('Menampilkan 1 - 50 dari 75 item');
+    expect(joinedText).toContain('Menampilkan');
+    expect(joinedText.replace(/\s+/g, ' ')).toContain('1 - 10');
+    expect(joinedText).toContain('75');
+    expect(joinedText).toContain('hasil');
     expect(joinedText).toContain('Hapus sesuai filter (75)');
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       search: undefined,
       type: undefined,
       status: undefined,
@@ -4365,7 +4368,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       search: 'alice',
       type: undefined,
       status: undefined,
@@ -4381,7 +4384,7 @@ describe('KolamAmSurface', () => {
 
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       search: 'alice',
       type: undefined,
       status: undefined,
@@ -4413,12 +4416,12 @@ describe('KolamAmSurface', () => {
     expect(renderText(renderer!).join(' ')).toContain('75 log dihapus');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Activity Logs Next Page'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
     });
 
     expect(getAmActivityLogs).toHaveBeenLastCalledWith({
       page: 2,
-      limit: 50,
+      limit: 10,
       search: 'alice',
       type: undefined,
       status: undefined,
@@ -4476,7 +4479,7 @@ describe('KolamAmSurface', () => {
           username: 'audit',
         },
       ],
-      meta: {total: 1, limit: 50, page: 1, totalPages: 1},
+      meta: {total: 1, limit: 10, page: 1, totalPages: 1},
     });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -4495,7 +4498,7 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('/activity-log');
     expect(getAmActivityLogs).toHaveBeenCalledWith({
       page: 1,
-      limit: 50,
+      limit: 10,
       search: undefined,
       type: undefined,
       status: undefined,

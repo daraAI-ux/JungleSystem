@@ -176,7 +176,7 @@ const AM_TRANSFER_PAGE_LIMIT = 10;
 const AM_MUTASI_PAGE_LIMIT = 10;
 const AM_WEBHOOK_LOG_PAGE_LIMIT = 10;
 const AM_USER_PAGE_LIMIT = 100;
-const AM_ACTIVITY_LOG_PAGE_LIMIT = 50;
+const AM_ACTIVITY_LOG_PAGE_LIMIT = 10;
 const AM_WEBHOOK_LOG_DIRECTIONS = ['all', 'outgoing'];
 const AM_WEBHOOK_LOG_DIRECTION_LABELS: Record<string, string> = {
   all: 'Semua arah',
@@ -7016,12 +7016,90 @@ function AmActivityLogPage() {
     });
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
-  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
-  const rangeTo = total ? Math.min(page * limit, total) : 0;
   const hasActiveFilters =
     Boolean(search.trim()) || type !== 'all' || status !== 'all' || method !== 'all';
   const selectedDeleteCount = selectedLogIds.size || (selectedLog ? 1 : 0);
+  const activityLogTableColumns = React.useMemo<Array<KolamListTableColumn<AmActivityLog>>>(() => [
+    {
+      flex: 1.15,
+      id: 'time',
+      label: 'Waktu',
+      render: log => <Text style={styles.cellText}>{formatAmDate(log.timestamp)}</Text>,
+    },
+    {
+      flex: 1.1,
+      id: 'user',
+      label: 'User',
+      render: log => (
+        <View>
+          <Text style={styles.cellText} numberOfLines={1}>{log.username ?? log.userId?.username ?? 'anonim'}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>{log.userId?.fullName ?? '-'}</Text>
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.7,
+      id: 'type',
+      label: 'Tipe',
+      render: log => (
+        <AmStatusChip
+          label={formatActivityLogTypeLabel(log.type)}
+          tone={log.type === 'api' ? 'warning' : 'muted'}
+        />
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.78,
+      id: 'method',
+      label: 'Metode',
+      render: log => log.method ? (
+        <AmStatusChip
+          label={log.method}
+          tone={getActivityLogMethodTone(log.method)}
+        />
+      ) : (
+        <Text style={styles.cellText}>-</Text>
+      ),
+    },
+    {
+      flex: 1.7,
+      id: 'path',
+      label: 'Path',
+      render: log => (
+        <View>
+          <Text style={styles.monoText} numberOfLines={1}>{log.path}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>{log.action}</Text>
+        </View>
+      ),
+    },
+    {
+      flex: 0.85,
+      id: 'ip',
+      label: 'IP',
+      render: log => <Text style={styles.cellText} numberOfLines={1}>{log.ip || '-'}</Text>,
+    },
+    {
+      align: 'center',
+      flex: 0.72,
+      id: 'status',
+      label: 'Status',
+      render: log => (
+        <AmStatusChip
+          label={log.statusCode ? String(log.statusCode) : log.status}
+          tone={log.status === 'success' ? 'success' : 'danger'}
+        />
+      ),
+    },
+    {
+      align: 'right',
+      flex: 0.7,
+      id: 'duration',
+      label: 'Durasi',
+      render: log => <Text style={styles.cellText}>{formatAmDuration(log.duration)}</Text>,
+    },
+  ], []);
 
   if (!accessLoaded) {
     return (
@@ -7191,97 +7269,38 @@ function AmActivityLogPage() {
           <AmStatsListPanel emptyText="Belum ada path" items={stats.topPaths} title="Path Teratas" />
         </View>
       ) : null}
-      <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Waktu</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>User</Text>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Tipe</Text>
-          <Text style={[styles.tableHeaderText, styles.typeCol]}>Metode</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Path</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>IP</Text>
-          <Text style={[styles.tableHeaderText, styles.statusCol]}>Status</Text>
-          <Text style={[styles.tableHeaderText, styles.amountCol]}>Durasi</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
-        </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={logs} loadingText="Memuat log aktivitas..." emptyText="Tidak ada log" />
-        {logs.map(log => (
-          <View key={log._id} style={styles.tableRow}>
-            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(log.timestamp)}</Text>
-            <View style={styles.accountCol}>
-              <Text style={styles.cellText} numberOfLines={1}>{log.username ?? log.userId?.username ?? 'anonim'}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{log.userId?.fullName ?? '-'}</Text>
-            </View>
-            <View style={styles.typeCol}>
-              <AmStatusChip
-                label={formatActivityLogTypeLabel(log.type)}
-                tone={log.type === 'api' ? 'warning' : 'muted'}
-              />
-            </View>
-            <View style={styles.typeCol}>
-              {log.method ? (
-                <AmStatusChip
-                  label={log.method}
-                  tone={getActivityLogMethodTone(log.method)}
-                />
-              ) : (
-                <Text style={styles.cellText}>-</Text>
-              )}
-            </View>
-            <View style={styles.recipientCol}>
-              <Text style={styles.monoText} numberOfLines={1}>{log.path}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{log.action}</Text>
-            </View>
-            <Text style={[styles.cellText, styles.amountCol]} numberOfLines={1}>{log.ip || '-'}</Text>
-            <View style={styles.statusCol}>
-              <AmStatusChip label={log.statusCode ? String(log.statusCode) : log.status} tone={log.status === 'success' ? 'success' : 'danger'} />
-            </View>
-            <Text style={[styles.cellText, styles.amountCol]}>{formatAmDuration(log.duration)}</Text>
-            <View style={styles.actionCol}>
-              <View style={styles.statusActionStack}>
-                <KolamButton
-                  accessibilityLabel={`AM Activity Log Select ${log._id}`}
-                  label={selectedLogIds.has(log._id) ? 'Dipilih' : 'Pilih'}
-                  intent="outline"
-                  size="sm"
-                  onPress={() => toggleSelectedLogId(log._id)}
-                />
-                <KolamButton
-                  accessibilityLabel={`AM Activity Log Detail ${log._id}`}
-                  label="Detail"
-                  intent="outline"
-                  size="sm"
-                  onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
-                />
-              </View>
-            </View>
+      <KolamListTableComposition
+        columns={activityLogTableColumns}
+        emptyTitle="Tidak ada log"
+        getRowKey={log => log._id}
+        loading={isLoading}
+        pagination={total > 0 ? {
+          onPageChange: setPage,
+          page,
+          pageSize: limit,
+          total,
+        } : undefined}
+        renderActions={log => (
+          <View style={styles.statusActionStack}>
+            <KolamButton
+              accessibilityLabel={`AM Activity Log Select ${log._id}`}
+              label={selectedLogIds.has(log._id) ? 'Dipilih' : 'Pilih'}
+              intent="outline"
+              size="sm"
+              onPress={() => toggleSelectedLogId(log._id)}
+            />
+            <KolamButton
+              accessibilityLabel={`AM Activity Log Detail ${log._id}`}
+              label="Detail"
+              intent="outline"
+              size="sm"
+              onPress={() => setSelectedLog(current => current?._id === log._id ? null : log)}
+            />
           </View>
-        ))}
-        {total > 0 ? (
-          <View style={styles.paginationBar}>
-            <Text style={styles.paginationText}>
-              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
-            </Text>
-            <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel="AM Activity Logs Previous Page"
-                disabled={page <= 1 || isLoading}
-                label="Sebelumnya"
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.max(1, current - 1))}
-              />
-              <KolamButton
-                accessibilityLabel="AM Activity Logs Next Page"
-                disabled={page >= totalPages || isLoading}
-                label={`Halaman ${page}/${totalPages}`}
-                intent="outline"
-                size="sm"
-                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
-              />
-            </View>
-          </View>
-        ) : null}
-      </View>
+        )}
+        rows={logs}
+        showFooter={total > 0}
+      />
       {selectedLog ? (
         <AmActivityLogDetailPanel
           isDeleting={isDeleting}
