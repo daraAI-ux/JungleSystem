@@ -297,6 +297,7 @@ function getAmRouteModuleIcon(
   if (item.id === 'dashboard') return 'automation';
   if (item.id === 'services') return 'amService';
   if (item.id === 'hardware') return 'amHardware';
+  if (item.id === 'webhooks') return 'amWebhook';
   return undefined;
 }
 
