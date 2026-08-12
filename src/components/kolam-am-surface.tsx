@@ -5582,7 +5582,7 @@ function AmMutasiPage({
       render: item => <Text style={[styles.cellText, styles.mutasiCenteredText]}>{formatMutasiSignedAmount(item)}</Text>,
     },
     {
-      flex: 1.85,
+      flex: 2.22,
       id: 'description',
       label: 'Deskripsi',
       render: item => (
@@ -5592,7 +5592,7 @@ function AmMutasiPage({
       ),
     },
     {
-      flex: 1.2,
+      flex: 0.96,
       id: 'device',
       label: 'Device',
       render: item => (
@@ -5603,7 +5603,7 @@ function AmMutasiPage({
       ),
     },
     {
-      flex: 0.86,
+      flex: 0.73,
       id: 'time',
       label: 'Waktu',
       render: item => <Text style={styles.cellText}>{formatAmDate(item.detectedAt)}</Text>,
