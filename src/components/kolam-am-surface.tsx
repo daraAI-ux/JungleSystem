@@ -6217,10 +6217,11 @@ function AmWebhooksPage() {
                 size="sm"
                 onPress={() => setConfirmClearWebhookLogs(true)}
               />
-              <KolamDaftarButton
+              <KolamButton
                 accessibilityLabel="AM Webhook Register"
                 disabled={isWebhookActionLocked}
                 intent={isWebhookFormOpen && !editingConfigId ? 'warning' : 'outline'}
+                label={isWebhookFormOpen && !editingConfigId ? 'Tutup' : 'Buat Webhook'}
                 muted={isWebhookActionLocked}
                 size="sm"
                 onPress={isWebhookFormOpen && !editingConfigId ? resetWebhookForm : openCreateWebhookForm}
