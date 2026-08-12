@@ -7978,6 +7978,7 @@ function MarketplaceLandingControlsPanel({
   ) => void;
   youtubeDraft: MarketplaceLandingYoutubeDraft;
 }) {
+  const heroFieldWidth = 760;
   const heroCanSave =
     !!heroDraft.title.trim() && (!!heroDraft.id || !!heroDraft.imageLocalUri);
   const categoryCanSave =
@@ -8010,6 +8011,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Eyebrow"
             description=""
             value={heroDraft.eyebrow}
@@ -8018,6 +8020,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Judul"
             description=""
             value={heroDraft.title}
@@ -8026,6 +8029,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Subtitle"
             description=""
             value={heroDraft.subtitle}
@@ -8034,6 +8038,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Deskripsi"
             description=""
             value={heroDraft.description}
@@ -8044,6 +8049,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Link"
             description=""
             value={heroDraft.link}
@@ -8052,6 +8058,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Teks link"
             description=""
             value={heroDraft.linkText}
@@ -8060,6 +8067,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Link kedua"
             description=""
             value={heroDraft.secondaryLink}
@@ -8068,6 +8076,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Teks link kedua"
             description=""
             value={heroDraft.secondaryLinkText}
@@ -8078,6 +8087,7 @@ function MarketplaceLandingControlsPanel({
           />
           <KolamTextFieldRow
             variant="settingsForm"
+            fieldWidth={heroFieldWidth}
             label="Urutan"
             description=""
             value={heroDraft.order}
