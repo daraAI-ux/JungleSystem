@@ -6592,9 +6592,6 @@ function AmUsersPage() {
     }
   }, [currentUser, editingUserId, fetchUsers, resetUserForm]);
 
-  const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
-  const rangeFrom = total ? (page - 1) * limit + 1 : 0;
-  const rangeTo = total ? Math.min(page * limit, total) : 0;
   const canCreateUser = hasAmPermission(currentUser, 'user:create');
   const canUpdateUser = hasAmPermission(currentUser, 'user:update');
   const canDeleteUser = hasAmPermission(currentUser, 'user:delete');
@@ -6603,6 +6600,37 @@ function AmUsersPage() {
     () => roles.filter(role => role.name !== 'Super Admin' || isAmSuperAdmin(currentUser)),
     [currentUser, roles],
   );
+  const userTableColumns = React.useMemo<Array<KolamListTableColumn<AmUser>>>(() => [
+    {
+      flex: 1.35,
+      id: 'fullName',
+      label: 'Nama Lengkap',
+      render: user => <Text style={styles.cellText} numberOfLines={1}>{user.fullName}</Text>,
+    },
+    {
+      flex: 1,
+      id: 'username',
+      label: 'Username',
+      render: user => <Text style={styles.cellText} numberOfLines={1}>@{user.username}</Text>,
+    },
+    {
+      flex: 0.95,
+      id: 'role',
+      label: 'Role',
+      render: user => (
+        <AmStatusChip
+          label={user.role?.name ?? 'Tidak diketahui'}
+          tone={getUserRoleTone(user.role?.name)}
+        />
+      ),
+    },
+    {
+      flex: 0.9,
+      id: 'created',
+      label: 'Dibuat',
+      render: user => <Text style={styles.cellText}>{formatAmDate(user.createdAt)}</Text>,
+    },
+  ], []);
   if (currentUser && !hasAmPermission(currentUser, 'user:read')) {
     return (
       <View style={styles.pageStack}>
@@ -6732,84 +6760,43 @@ function AmUsersPage() {
           </View>
         </View>
       ) : null}
-      <View style={styles.tablePanel}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.accountWideCol]}>Nama Lengkap</Text>
-          <Text style={[styles.tableHeaderText, styles.accountCol]}>Username</Text>
-          <Text style={[styles.tableHeaderText, styles.recipientCol]}>Role</Text>
-          <Text style={[styles.tableHeaderText, styles.dateCol]}>Dibuat</Text>
-          <Text style={[styles.tableHeaderText, styles.actionCol]}>Aksi</Text>
-        </View>
-        <AmLoadingOrEmpty isLoading={isLoading} items={users} loadingText="Memuat user AM..." emptyText="User tidak ditemukan" />
-        {!isLoading && !users.length ? (
-          <Text style={styles.rowMeta}>
-            {search.trim() ? 'Coba kata pencarian lain.' : 'Buat user untuk mulai.'}
-          </Text>
-        ) : null}
-        {users.map(user => (
-          <View key={user._id} style={styles.tableRow}>
-            <Text style={[styles.cellText, styles.accountWideCol]} numberOfLines={1}>{user.fullName}</Text>
-            <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>@{user.username}</Text>
-            <View style={styles.recipientCol}>
-              <AmStatusChip
-                label={user.role?.name ?? 'Tidak diketahui'}
-                tone={getUserRoleTone(user.role?.name)}
-              />
-            </View>
-            <Text style={[styles.cellText, styles.dateCol]}>{formatAmDate(user.createdAt)}</Text>
-            <View style={styles.actionCol}>
-              <View style={styles.inlineActions}>
-                {canUpdateUser ? (
-                  <KolamEditButton
-                    accessibilityLabel={`AM User Edit ${user._id}`}
-                    intent="outline"
-                    size="sm"
-                    onPress={() => editUser(user)}
-                  />
-                ) : null}
-                {canDeleteUser ? (
-                  <KolamButton
-                    accessibilityLabel={`AM User Delete ${user._id}`}
-                    disabled={actingUserId === user._id}
-                    label={actingUserId === user._id ? '...' : 'Hapus'}
-                    intent="danger"
-                    muted={actingUserId === user._id}
-                    size="sm"
-                    onPress={() => requestDeleteUser(user)}
-                  />
-                ) : null}
-              </View>
-            </View>
-          </View>
-        ))}
-        {total ? (
-          <View style={styles.paginationBar}>
-            <Text style={styles.paginationText}>
-              Menampilkan {rangeFrom}-{rangeTo} dari {total} item
-            </Text>
-            <View style={styles.inlineActions}>
-              <KolamButton
-                accessibilityLabel="AM Users Previous Page"
-                disabled={page <= 1 || isLoading}
+      <KolamListTableComposition
+        columns={userTableColumns}
+        emptyTitle={search.trim() ? 'User tidak ditemukan' : 'Belum ada user'}
+        getRowKey={user => user._id}
+        loading={isLoading}
+        pagination={total > 0 ? {
+          onPageChange: setPage,
+          page,
+          pageSize: limit,
+          total,
+        } : undefined}
+        renderActions={user => (
+          <View style={styles.inlineActions}>
+            {canUpdateUser ? (
+              <KolamEditButton
+                accessibilityLabel={`AM User Edit ${user._id}`}
                 intent="outline"
-                label="Sebelumnya"
-                muted={page <= 1 || isLoading}
                 size="sm"
-                onPress={() => setPage(current => Math.max(1, current - 1))}
+                onPress={() => editUser(user)}
               />
+            ) : null}
+            {canDeleteUser ? (
               <KolamButton
-                accessibilityLabel="AM Users Next Page"
-                disabled={page >= totalPages || isLoading}
-                intent="outline"
-                label={`Halaman ${page}/${totalPages}`}
-                muted={page >= totalPages || isLoading}
+                accessibilityLabel={`AM User Delete ${user._id}`}
+                disabled={actingUserId === user._id}
+                label={actingUserId === user._id ? '...' : 'Hapus'}
+                intent="danger"
+                muted={actingUserId === user._id}
                 size="sm"
-                onPress={() => setPage(current => Math.min(totalPages, current + 1))}
+                onPress={() => requestDeleteUser(user)}
               />
-            </View>
+            ) : null}
           </View>
-        ) : null}
-      </View>
+        )}
+        rows={users}
+        showFooter={total > 0}
+      />
     </View>
   );
 }

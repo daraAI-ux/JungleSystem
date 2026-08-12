@@ -5101,15 +5101,14 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     let text = renderText(renderer!).join(' ');
-    expect(text).toContain('User tidak ditemukan');
-    expect(text).toContain('Buat user untuk mulai.');
+    expect(text).toContain('Belum ada user');
 
     await act(async () => {
       renderer!.root.findAllByType(TextInput)[0].props.onChangeText('missing');
     });
 
     text = renderText(renderer!).join(' ');
-    expect(text).toContain('Coba kata pencarian lain.');
+    expect(text).toContain('User tidak ditemukan');
 
     await act(async () => {
       renderer!.root.findByProps({accessibilityLabel: 'AM User Create'}).props.onPress();
@@ -5155,8 +5154,8 @@ describe('KolamAmSurface', () => {
     await updateAmRoute(renderer!, 'admin/users');
 
     const text = renderText(renderer!).join(' ').replace(/\s+/g, ' ');
-    expect(text).toContain('Menampilkan 1 - 100 dari 145 item');
-    expect(text).toContain('Halaman 1/2');
+    expect(text).toMatch(/Menampilkan\s+dari\s+hasil\s+1\s*-\s*100\s+145/);
+    expect(text).toContain('2');
     expect(text).toContain('Super Admin');
     expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Admin'})).toHaveLength(0);
 
@@ -5166,7 +5165,7 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Users Next Page'}).props.onPress();
+      renderer!.root.findByProps({accessibilityLabel: 'Halaman berikutnya'}).props.onPress();
     });
 
     expect(getAmUsers).toHaveBeenCalledWith({
