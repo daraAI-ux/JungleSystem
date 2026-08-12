@@ -5932,7 +5932,7 @@ function AmWebhooksPage() {
                 <Text style={styles.metricLabel}>Log Pengiriman</Text>
                 <Text style={styles.cellText}>{logTotal || logs.length} total, {logs.filter(log => !log.success).length} gagal</Text>
               </View>
-              <View ref={webhookDirectionTriggerRef} collapsable={false}>
+              <View ref={webhookDirectionTriggerRef} collapsable={false} style={styles.amWebhookDirectionFilterSlot}>
                 <KolamTableFilterTrigger
                   active={activeWebhookFilterPanel === 'direction' || logDirectionFilter !== 'all'}
                   label={AM_WEBHOOK_LOG_DIRECTION_LABELS[logDirectionFilter] ?? formatAmDisplayLabel(logDirectionFilter)}
@@ -8472,6 +8472,9 @@ const styles = StyleSheet.create({
     minWidth: 160,
     paddingHorizontal: 8,
     paddingVertical: 4,
+  },
+  amWebhookDirectionFilterSlot: {
+    marginLeft: 'auto',
   },
   amServicesFilterTrigger: {
     overflow: 'visible',
