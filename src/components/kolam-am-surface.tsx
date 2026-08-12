@@ -2339,8 +2339,14 @@ function AmHardwarePage({
       return;
     }
 
+    if (selectedBoxId) {
+      setSelectedBoxId(null);
+      setSelectedDeviceId(null);
+      return;
+    }
+
     resetHardwareRoute();
-  }, [resetHardwareRoute, selectedDeviceId]);
+  }, [resetHardwareRoute, selectedBoxId, selectedDeviceId]);
 
   const resetHardwareForm = React.useCallback((nextForm: 'rack' | 'box' | 'device' = hardwareForm) => {
     setHardwareForm(nextForm);
