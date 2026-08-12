@@ -580,6 +580,53 @@ describe('KolamAmSurface', () => {
     expect(recordAmPageView).toHaveBeenCalledWith('/');
   });
 
+  it('limits the dashboard recent mutation table to 10 rows with the shared footer', async () => {
+    const recentMutasi = Array.from({length: 12}, (_, index) => ({
+      _id: `mutasi-limit-${index + 1}`,
+      accountId: {
+        _id: `account-limit-${index + 1}`,
+        label: `Limit Bank ${index + 1}`,
+        platform: 'bca',
+        accountNumber: String(100 + index),
+      },
+      amount: 100000 + index,
+      createdAt: '',
+      description: `Mutation ${index + 1}`,
+      detectedAt: '2026-01-01T00:05:00.000Z',
+      deviceId: {_id: 'device-1', name: 'Phone 1'},
+      notificationHash: null,
+      transferId: null,
+      type: index % 2 === 0 ? 'masuk' : 'keluar',
+      updatedAt: '',
+    }));
+    (getAmDashboard as jest.Mock).mockResolvedValueOnce({
+      ...mockDashboardData,
+      recentMutasi,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamAmSurface dataset={seedUnifiedDataset} />,
+      );
+    });
+    renderers.push(renderer!);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const text = renderText(renderer!);
+    const joinedText = text.join(' ');
+
+    expect(text).toContain('Mutasi Terbaru');
+    expect(text).toContain('Nominal');
+    expect(text).toContain('Tanggal');
+    expect(joinedText).toMatch(/Menampilkan\s+dari\s+hasil\s+1\s+-\s+10\s+10/);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Dashboard Mutation mutasi-limit-10'}).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Dashboard Mutation mutasi-limit-11'})).toHaveLength(0);
+  });
+
   it('leaves the AM dashboard root open for the shell ScrollView', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 

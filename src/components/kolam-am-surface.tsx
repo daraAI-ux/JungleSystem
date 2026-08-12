@@ -128,7 +128,9 @@ import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
+import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
+import {KolamListTablePaginationFooter} from './kolam-list-table-composition';
 import {KolamSearchField} from './kolam-search-field';
 import {KolamSwitch} from './kolam-switch';
 
@@ -760,6 +762,8 @@ function AmRecentMutasiPanel({
   mutasi: AmMutasi[];
   onOpenRoute: (route: string, templateRoute?: string) => void;
 }) {
+  const rows = mutasi.slice(0, 10);
+
   return (
     <View style={styles.dashboardRecentPanel}>
       <View style={styles.sectionHeaderRow}>
@@ -773,35 +777,72 @@ function AmRecentMutasiPanel({
         />
       </View>
       <Text style={styles.panelText}>Transaksi masuk dan keluar terbaru.</Text>
-      <View style={styles.recentList}>
-        {mutasi.map(item => (
-          <KolamInteractionFrame
-            key={item._id}
-            accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
-            onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
-            style={styles.recentListRow}>
-            <View style={styles.recentListMain}>
-              <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(item.accountId)}</Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAccountType(item.accountId)}</Text>
-            </View>
-            <View style={styles.recentListMeta}>
-              <AmStatusChip
-                label={item.type === 'masuk' ? 'Masuk' : 'Keluar'}
-                tone={item.type === 'masuk' ? 'success' : 'danger'}
-              />
-              <Text
-                style={[styles.cellText, styles.amountText, item.type === 'masuk' ? styles.amountPositive : styles.amountDanger]}
-                numberOfLines={1}>
-                {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
+      <KolamCatalogListTableShell
+        footer={
+          <KolamListTablePaginationFooter
+            onPageChange={() => undefined}
+            page={1}
+            pageSize={10}
+            siblingCount={0}
+            total={rows.length}
+          />
+        }
+        showFooter={rows.length > 0}>
+        {rows.length > 0 ? (
+          <View style={styles.dashboardMutasiTable}>
+            <View style={styles.dashboardMutasiTableHeader}>
+              <Text style={[styles.tableHeaderText, styles.dashboardMutasiAccountCol]}>Akun</Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardMutasiTypeCol]}>Tipe</Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardMutasiAmountCol]}>
+                Nominal
               </Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>{formatAmDate(item.detectedAt)}</Text>
+              <Text style={[styles.tableHeaderText, styles.dashboardMutasiDateCol]}>
+                Tanggal
+              </Text>
             </View>
-          </KolamInteractionFrame>
-        ))}
-      </View>
+            {rows.map(item => (
+              <KolamInteractionFrame
+                key={item._id}
+                accessibilityLabel={`AM Dashboard Mutation ${item._id}`}
+                onPress={() => onOpenRoute(`mutasi/${item._id}`, 'mutasi/:id')}
+                style={styles.dashboardMutasiTableRow}>
+                <View style={styles.dashboardMutasiAccountCol}>
+                  <Text style={styles.cellText} numberOfLines={1}>
+                    {formatBankAccount(item.accountId)}
+                  </Text>
+                  <Text style={styles.rowMeta} numberOfLines={1}>
+                    {formatAccountType(item.accountId)}
+                  </Text>
+                </View>
+                <View style={styles.dashboardMutasiTypeCol}>
+                  <AmStatusChip
+                    label={item.type === 'masuk' ? 'Masuk' : 'Keluar'}
+                    tone={item.type === 'masuk' ? 'success' : 'danger'}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.cellText,
+                    styles.dashboardMutasiAmountCol,
+                    styles.amountText,
+                    item.type === 'masuk' ? styles.amountPositive : styles.amountDanger,
+                  ]}
+                  numberOfLines={1}>
+                  {item.type === 'masuk' ? '+' : '-'}{formatRupiah(item.amount)}
+                </Text>
+                <Text
+                  style={[styles.rowMeta, styles.dashboardMutasiDateCol]}
+                  numberOfLines={1}>
+                  {formatAmDate(item.detectedAt)}
+                </Text>
+              </KolamInteractionFrame>
+            ))}
+          </View>
+        ) : null}
+      </KolamCatalogListTableShell>
       <AmLoadingOrEmpty
         isLoading={false}
-        items={mutasi}
+        items={rows}
         loadingText="Memuat mutasi terbaru..."
         emptyText="Mutasi terbaru tidak ditemukan"
       />
@@ -7427,6 +7468,50 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 4,
     overflow: 'hidden',
+  },
+  dashboardMutasiTable: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+  },
+  dashboardMutasiTableHeader: {
+    width: '100%',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  dashboardMutasiTableRow: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: V.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  dashboardMutasiAccountCol: {
+    flex: 1.4,
+    minWidth: 0,
+  },
+  dashboardMutasiTypeCol: {
+    flex: 0.7,
+    minWidth: 0,
+  },
+  dashboardMutasiAmountCol: {
+    flex: 0.95,
+    minWidth: 0,
+    textAlign: 'right',
+  },
+  dashboardMutasiDateCol: {
+    flex: 1,
+    minWidth: 0,
+    textAlign: 'right',
   },
   overviewGrid: {
     width: '100%',
