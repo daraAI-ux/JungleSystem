@@ -7963,7 +7963,7 @@ function MarketplaceLandingControlsPanel({
   ) => void;
   youtubeDraft: MarketplaceLandingYoutubeDraft;
 }) {
-  const heroFieldWidth = 760;
+  const heroFieldWidth = 610;
   const heroCanSave =
     !!heroDraft.title.trim() && (!!heroDraft.id || !!heroDraft.imageLocalUri);
   const categoryCanSave =
@@ -7979,139 +7979,141 @@ function MarketplaceLandingControlsPanel({
   return (
     <View style={styles.marketplaceControls}>
       {activeTabId === 'hero' ? (
-        <View
-          style={[
-            styles.marketplaceControlCard,
-            styles.marketplaceHeroEditorCard,
-          ]}
+        <KolamModalDialog
+          description="Hero slide marketplace"
+          footer={
+            <>
+              <KolamActionControlButton
+                disabled={disabled}
+                label={
+                  heroDraft.imageLocalUri ? 'Gambar dipilih' : 'Pilih gambar'
+                }
+                onPress={onPickHeroImage}
+              />
+              <KolamActionControlButton
+                disabled={disabled || !heroCanSave}
+                label="Simpan hero"
+                loading={saveStatus === 'saving'}
+                loadingLabel="Menyimpan..."
+                intent="primary"
+                onPress={onSaveHero}
+              />
+              <KolamActionControlButton
+                disabled={disabled}
+                label="Tutup"
+                tone="positive"
+                onPress={onClearHeroDraft}
+              />
+            </>
+          }
+          maxHeight="88%"
+          maxWidth="92%"
+          onClose={onClearHeroDraft}
+          title={heroDraft.id ? 'Edit hero' : 'Hero baru'}
+          visible
+          width={860}
         >
-          <KolamCopyStack
-            items={[
-              {
-                id: 'hero-title',
-                text: heroDraft.id ? 'Edit hero' : 'Hero baru',
-                style: styles.marketplaceOverviewLabel,
-              },
-            ]}
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Eyebrow"
-            description=""
-            value={heroDraft.eyebrow}
-            onChangeText={value => setHeroDraftField('eyebrow', value)}
-            placeholder="Marketplace"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Judul"
-            description=""
-            value={heroDraft.title}
-            onChangeText={value => setHeroDraftField('title', value)}
-            placeholder="Judul"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Subtitle"
-            description=""
-            value={heroDraft.subtitle}
-            onChangeText={value => setHeroDraftField('subtitle', value)}
-            placeholder="Subtitle"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Deskripsi"
-            description=""
-            value={heroDraft.description}
-            onChangeText={value => setHeroDraftField('description', value)}
-            placeholder="Deskripsi"
-            multiline
-            numberOfLines={3}
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Link"
-            description=""
-            value={heroDraft.link}
-            onChangeText={value => setHeroDraftField('link', value)}
-            placeholder="/products"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Teks link"
-            description=""
-            value={heroDraft.linkText}
-            onChangeText={value => setHeroDraftField('linkText', value)}
-            placeholder="Belanja"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Link kedua"
-            description=""
-            value={heroDraft.secondaryLink}
-            onChangeText={value => setHeroDraftField('secondaryLink', value)}
-            placeholder="/about"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Teks link kedua"
-            description=""
-            value={heroDraft.secondaryLinkText}
-            onChangeText={value =>
-              setHeroDraftField('secondaryLinkText', value)
-            }
-            placeholder="Tentang"
-          />
-          <KolamTextFieldRow
-            variant="settingsForm"
-            fieldWidth={heroFieldWidth}
-            label="Urutan"
-            description=""
-            value={heroDraft.order}
-            onChangeText={value => setHeroDraftField('order', value)}
-            placeholder="0"
-          />
-          <KolamToggleRow
-            variant="settingsForm"
-            label="Aktif"
-            description=""
-            active={heroDraft.isActive}
-            onPress={() =>
-              !disabled && setHeroDraftField('isActive', !heroDraft.isActive)
-            }
-          />
-          <View style={styles.notificationSoundActions}>
-            <KolamActionControlButton
-              disabled={disabled}
-              label={
-                heroDraft.imageLocalUri ? 'Gambar dipilih' : 'Pilih gambar'
+          <ScrollView
+            contentContainerStyle={styles.marketplaceHeroEditorModalContent}
+            keyboardShouldPersistTaps="handled"
+            style={styles.marketplaceHeroEditorModalScroll}
+          >
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Eyebrow"
+              description=""
+              value={heroDraft.eyebrow}
+              onChangeText={value => setHeroDraftField('eyebrow', value)}
+              placeholder="Marketplace"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Judul"
+              description=""
+              value={heroDraft.title}
+              onChangeText={value => setHeroDraftField('title', value)}
+              placeholder="Judul"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Subtitle"
+              description=""
+              value={heroDraft.subtitle}
+              onChangeText={value => setHeroDraftField('subtitle', value)}
+              placeholder="Subtitle"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Deskripsi"
+              description=""
+              value={heroDraft.description}
+              onChangeText={value => setHeroDraftField('description', value)}
+              placeholder="Deskripsi"
+              multiline
+              numberOfLines={3}
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Link"
+              description=""
+              value={heroDraft.link}
+              onChangeText={value => setHeroDraftField('link', value)}
+              placeholder="/products"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Teks link"
+              description=""
+              value={heroDraft.linkText}
+              onChangeText={value => setHeroDraftField('linkText', value)}
+              placeholder="Belanja"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Link kedua"
+              description=""
+              value={heroDraft.secondaryLink}
+              onChangeText={value => setHeroDraftField('secondaryLink', value)}
+              placeholder="/about"
+            />
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Teks link kedua"
+              description=""
+              value={heroDraft.secondaryLinkText}
+              onChangeText={value =>
+                setHeroDraftField('secondaryLinkText', value)
               }
-              onPress={onPickHeroImage}
+              placeholder="Tentang"
             />
-            <KolamActionControlButton
-              disabled={disabled || !heroCanSave}
-              label="Simpan hero"
-              loading={saveStatus === 'saving'}
-              loadingLabel="Menyimpan..."
-              intent="primary"
-              onPress={onSaveHero}
+            <KolamTextFieldRow
+              variant="settingsForm"
+              fieldWidth={heroFieldWidth}
+              label="Urutan"
+              description=""
+              value={heroDraft.order}
+              onChangeText={value => setHeroDraftField('order', value)}
+              placeholder="0"
             />
-            <KolamActionControlButton
-              disabled={disabled}
-              label="Tutup"
-              tone="positive"
-              onPress={onClearHeroDraft}
+            <KolamToggleRow
+              variant="settingsForm"
+              label="Aktif"
+              description=""
+              active={heroDraft.isActive}
+              onPress={() =>
+                !disabled && setHeroDraftField('isActive', !heroDraft.isActive)
+              }
             />
-          </View>
-        </View>
+          </ScrollView>
+        </KolamModalDialog>
       ) : null}
       {activeTabId === 'category' ? (
         <View style={styles.marketplaceControlCard}>
@@ -10234,11 +10236,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  marketplaceHeroEditorCard: {
-    borderTopWidth: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    marginTop: -4,
+  marketplaceHeroEditorModalContent: {
+    gap: 6,
+    paddingBottom: 4,
+  },
+  marketplaceHeroEditorModalScroll: {
+    flexShrink: 1,
   },
   marketplaceHeroEmpty: {
     alignItems: 'center',
