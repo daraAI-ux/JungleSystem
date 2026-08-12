@@ -7116,7 +7116,6 @@ function AmActivityLogPage() {
                   onPress={() => setShowDeleteFilterConfirm(true)}
                 />
               ) : null}
-              <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" muted={isLoading} size="sm" onPress={fetchLogs} />
             </View>
           </View>
         </View>
