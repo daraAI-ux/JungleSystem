@@ -5762,7 +5762,6 @@ function AmWebhooksPage() {
               </View>
             </View>
             <View style={kolamTableToolbarStyles.actions}>
-              <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading || isWebhookActionLocked} intent="outline" muted={isLoading || isWebhookActionLocked} size="sm" onPress={fetchWebhooks} />
               <KolamButton accessibilityLabel="Test Ping" disabled={isWebhookActionLocked} label={isTestingPing ? 'Menguji...' : 'Uji Ping'} intent="outline" muted={isWebhookActionLocked} size="sm" onPress={testPing} />
               <KolamButton
                 accessibilityLabel="AM Webhook Register"
