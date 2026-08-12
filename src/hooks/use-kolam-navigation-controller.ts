@@ -128,11 +128,17 @@ export function useKolamNavigationController({
 
     const defaultAmRoute =
       module === 'am' ? getShellModuleRouteEntry('am', '/') : null;
+    const bantuanNavigationItem =
+      module === 'bantuan'
+        ? getKolamNavigationItemByRuntimeRoute('/bantuan')
+        : null;
 
     setActiveModule(module);
     setActiveNavigationItem(
       module === 'settings'
         ? getSettingsNavigationItem()
+        : bantuanNavigationItem
+          ? bantuanNavigationItem
         : null,
     );
     setActivePluginRoute(null);

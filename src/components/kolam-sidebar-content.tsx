@@ -9,6 +9,7 @@ import type { AccessScope } from '../domain/auth';
 import {
   getShellModuleRouteEntry,
   getShellModulesByArea,
+  shellModules,
   type AppModule,
   type ShellModule,
   type ShellModuleRouteEntry,
@@ -63,10 +64,9 @@ export function KolamSidebarContent({
   const activeArea = getActiveSidebarArea(activeModule, accessScope);
   const activeAmRoute =
     activeArea === 'am' ? activeModuleRoute?.route ?? activeRoute : activeRoute;
-  const primaryModules = [
-    ...getShellModulesByArea('kolam'),
-    ...(accessScope.am ? getShellModulesByArea('am') : []),
-  ];
+  const primaryModules = shellModules.filter(
+    module => module.area === 'kolam' || (module.area === 'am' && accessScope.am),
+  );
   const amBackModules = getShellModulesByArea('kolam').filter(
     module => module.id !== 'checkout',
   );

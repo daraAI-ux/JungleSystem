@@ -11,6 +11,7 @@ export type AppModule =
   | 'cashflow'
   | 'customer'
   | 'am'
+  | 'bantuan'
   | 'plugins'
   | 'preparation';
 
@@ -291,6 +292,15 @@ export const shellModules: ShellModule[] = [
       'admin/activity-log',
       ':catchAll',
     ],
+  },
+  {
+    id: 'bantuan',
+    area: 'kolam',
+    label: 'Bantuan',
+    iconKind: 'plugin',
+    sourceRepo: 'E:\\Projects\\DA-Bantuan-Plugin',
+    summary: 'Dokumentasi operasional, modul, plugin, AM, dan DARA.',
+    routes: ['bantuan', 'bantuan/:slug'],
   },
 ];
 
