@@ -12050,6 +12050,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 2,
+    marginBottom: 14,
   },
   marketplaceLandingTabLabel: {
     color: '#6b7280',
