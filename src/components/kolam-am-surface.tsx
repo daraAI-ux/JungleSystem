@@ -4728,54 +4728,52 @@ function AmTransfersPage({
   );
   const transferTableColumns = React.useMemo<Array<KolamListTableColumn<AmTransfer>>>(() => [
     {
-      flex: 1.25,
-      id: 'account',
-      label: 'Akun',
-      render: transfer => <Text style={styles.cellText} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>,
-    },
-    {
-      flex: 1.3,
-      id: 'recipient',
-      label: 'Penerima',
-      render: transfer => (
-        <View>
-          <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
-          <Text style={styles.rowMeta} numberOfLines={1}>{transfer.recipientName || '-'}</Text>
-        </View>
-      ),
-    },
-    {
-      flex: 0.65,
-      id: 'bank',
-      label: 'Bank',
-      render: transfer => (
-        <Text style={styles.cellText} numberOfLines={1}>
-          {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}
-        </Text>
-      ),
-    },
-    {
-      align: 'right',
-      flex: 0.95,
-      id: 'amount',
-      label: 'Nominal',
-      render: transfer => (
-        <View>
-          <Text style={styles.cellText}>{formatRupiah(transfer.amount)}</Text>
-          {transfer.fee > 0 ? (
-            <Text style={styles.rowMeta}>Fee {formatRupiah(transfer.fee)}</Text>
-          ) : null}
-        </View>
-      ),
-    },
-    {
-      flex: 0.75,
+      align: 'center',
+      flex: 0.66,
       id: 'status',
       label: 'Status',
       render: transfer => <AmStatusChip label={transfer.status} tone={getTransferTone(transfer.status)} />,
     },
     {
-      flex: 1.3,
+      align: 'center',
+      flex: 0.95,
+      id: 'account',
+      label: 'Akun',
+      render: transfer => (
+        <View style={styles.amCenteredStackCell}>
+          <Text style={[styles.cellText, styles.amCenteredText]} numberOfLines={1}>{formatBankAccount(transfer.accountId)}</Text>
+        </View>
+      ),
+    },
+    {
+      align: 'center',
+      flex: 0.92,
+      id: 'amount',
+      label: 'Nominal',
+      render: transfer => (
+        <View style={styles.amCenteredStackCell}>
+          <Text style={[styles.cellText, styles.amCenteredText]}>{formatRupiah(transfer.amount)}</Text>
+          {transfer.fee > 0 ? (
+            <Text style={[styles.rowMeta, styles.amCenteredText]}>Fee {formatRupiah(transfer.fee)}</Text>
+          ) : null}
+        </View>
+      ),
+    },
+    {
+      flex: 2.22,
+      id: 'recipient',
+      label: 'Penerima',
+      render: transfer => (
+        <View style={styles.transferRecipientCell}>
+          <Text style={styles.cellText} numberOfLines={1}>{transfer.recipientAccount || '-'}</Text>
+          <Text style={styles.rowMeta} numberOfLines={1}>
+            {transfer.recipientName || '-'} {transfer.transferType === 'virtual-account' ? 'VA' : transfer.recipientBank ?? '-'}
+          </Text>
+        </View>
+      ),
+    },
+    {
+      flex: 0.96,
       id: 'device',
       label: 'Device',
       render: transfer => (
@@ -4786,7 +4784,7 @@ function AmTransfersPage({
       ),
     },
     {
-      flex: 0.9,
+      flex: 0.73,
       id: 'created',
       label: 'Dibuat',
       render: transfer => <Text style={styles.cellText}>{formatAmDate(transfer.createdAt)}</Text>,
@@ -8652,6 +8650,20 @@ const styles = StyleSheet.create({
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
+  },
+  amCenteredStackCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    maxWidth: '100%',
+    minWidth: 0,
+  },
+  amCenteredText: {
+    textAlign: 'center',
+  },
+  transferRecipientCell: {
+    minWidth: 0,
+    paddingLeft: 8,
+    width: '100%',
   },
   mutasiAccountCell: {
     alignItems: 'center',
