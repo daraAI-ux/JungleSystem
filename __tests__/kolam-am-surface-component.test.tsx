@@ -4662,8 +4662,11 @@ describe('KolamAmSurface', () => {
     expect(joinedText).toContain('Semua device');
     expect(joinedText).not.toContain('All Accounts');
     expect(joinedText).not.toContain('All Devices');
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Masuk'}).length).toBeGreaterThan(0);
-    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Segment Keluar'}).length).toBeGreaterThan(0);
+    await act(async () => {
+      renderer!.root.findByProps({label: 'Semua tipe'}).props.onPress();
+    });
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Filter Masuk'}).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByProps({accessibilityLabel: 'AM Filter Keluar'}).length).toBeGreaterThan(0);
     expect(text).toContain('BCA Main');
     expect(joinedText).toContain('Phone 1');
     expect(joinedText).toContain('Box Green / Rack Mutasi');
@@ -4708,7 +4711,10 @@ describe('KolamAmSurface', () => {
     });
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment BCA Main - 123'}).props.onPress();
+      renderer!.root.findByProps({label: 'Semua akun'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Filter BCA Main - 123'}).props.onPress();
     });
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({
@@ -4721,7 +4727,10 @@ describe('KolamAmSurface', () => {
     expect(getAmMutasiSummary).toHaveBeenLastCalledWith('account-1');
 
     await act(async () => {
-      renderer!.root.findByProps({accessibilityLabel: 'AM Segment Phone 1'}).props.onPress();
+      renderer!.root.findByProps({label: 'Semua device'}).props.onPress();
+    });
+    await act(async () => {
+      renderer!.root.findByProps({accessibilityLabel: 'AM Filter Phone 1'}).props.onPress();
     });
 
     expect(getAmMutasi).toHaveBeenLastCalledWith({

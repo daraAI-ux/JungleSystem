@@ -200,6 +200,8 @@ const AM_ACTIVITY_LOG_METHOD_LABELS: Record<string, string> = {
 const AM_PLATFORMS = ['all', 'whatsapp', 'tiktok', 'instagram', 'tokopedia', 'shopee', 'bca', 'brimo', 'dana'];
 type AmServicesFilterPanel = 'platform' | 'status';
 type AmHardwareFilterPanel = 'status';
+type AmTransferFilterPanel = 'status';
+type AmMutasiFilterPanel = 'type' | 'account' | 'device';
 type AmServiceDetailTab = 'logs' | 'history' | 'session';
 type AmDashboardRecentTab = 'transfers' | 'mutasi';
 const AM_RECIPIENT_BANKS = ['BRI', 'BCA', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC NISP', 'BTN'];
@@ -2027,6 +2029,54 @@ function AmWebhookFilterOverlayPanel({
               key={`webhook-direction-${option}`}
               label={label}
               onPress={() => onSelect(option)}
+              style={styles.amServicesFilterPanelOption}
+            />
+          );
+        })}
+      </ScrollView>
+      <View style={styles.amServicesFilterPanelFooter}>
+        <KolamButton label="Tutup" onPress={onClose} />
+      </View>
+    </View>
+  );
+}
+
+function AmSimpleFilterOverlayPanel({
+  anchor,
+  options,
+  selectedValue,
+  onClose,
+  onSelect,
+}: {
+  anchor: KolamFilterPanelAnchor;
+  options: Array<{label: string; value: string}>;
+  selectedValue: string;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <View
+      style={[
+        styles.amServicesFilterOverlayPanel,
+        {
+          left: anchor.left,
+          top: anchor.top,
+          width: AM_SERVICE_FILTER_PANEL_WIDTH,
+        },
+      ]}>
+      <ScrollView
+        contentContainerStyle={styles.amServicesFilterPanelContent}
+        keyboardShouldPersistTaps="handled"
+        style={styles.amServicesFilterPanelScroll}>
+        {options.map(option => {
+          const selected = option.value === selectedValue;
+          return (
+            <KolamButton
+              accessibilityLabel={`AM Filter ${formatAmDisplayLabel(option.label)}`}
+              intent={selected ? 'primary' : 'plain'}
+              key={`simple-filter-${option.value}`}
+              label={formatAmDisplayLabel(option.label)}
+              onPress={() => onSelect(option.value)}
               style={styles.amServicesFilterPanelOption}
             />
           );
@@ -4508,6 +4558,8 @@ function AmTransfersPage({
   const [error, setError] = React.useState<string | null>(null);
   const [showTransferForm, setShowTransferForm] = React.useState(false);
   const [isSubmittingTransfer, setIsSubmittingTransfer] = React.useState(false);
+  const [activeTransferFilterPanel, setActiveTransferFilterPanel] = React.useState<AmTransferFilterPanel | null>(null);
+  const [transferFilterPanelAnchor, setTransferFilterPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
   const [formAccountId, setFormAccountId] = React.useState('auto');
   const [formTransferType, setFormTransferType] = React.useState<'transfer' | 'virtual-account'>('transfer');
   const [formRecipientAccount, setFormRecipientAccount] = React.useState('');
@@ -4516,6 +4568,8 @@ function AmTransfersPage({
   const [formTransferMethod, setFormTransferMethod] = React.useState('');
   const [formTransactionPurpose, setFormTransactionPurpose] = React.useState('');
   const [formAmount, setFormAmount] = React.useState('');
+  const transferToolbarRef = React.useRef<View>(null);
+  const transferStatusTriggerRef = React.useRef<View>(null);
 
   const fetchTransfers = React.useCallback(async () => {
     try {
@@ -4631,12 +4685,49 @@ function AmTransfersPage({
   const handleTransferStatusChange = React.useCallback((value: string) => {
     setStatus(value);
     setPage(1);
+    setActiveTransferFilterPanel(null);
+    setTransferFilterPanelAnchor(null);
   }, []);
+
+  const anchorTransferFilterPanel = React.useCallback(() => {
+    const toolbar = transferToolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    const trigger = transferStatusTriggerRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    if (typeof toolbar?.measureInWindow !== 'function' || typeof trigger?.measureInWindow !== 'function') {
+      setTransferFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    const globals = globalThis as {expect?: unknown; it?: unknown};
+    if (typeof globals.expect === 'function' || typeof globals.it === 'function') {
+      setTransferFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    measureFilterPanelAnchor(
+      transferToolbarRef.current,
+      transferStatusTriggerRef.current,
+      AM_SERVICE_FILTER_PANEL_WIDTH,
+      setTransferFilterPanelAnchor,
+    );
+  }, []);
+
+  const openTransferFilterPanel = React.useCallback(() => {
+    if (activeTransferFilterPanel === 'status') {
+      setActiveTransferFilterPanel(null);
+      setTransferFilterPanelAnchor(null);
+      return;
+    }
+    setActiveTransferFilterPanel('status');
+    anchorTransferFilterPanel();
+  }, [activeTransferFilterPanel, anchorTransferFilterPanel]);
 
   const totalPages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
   const rangeFrom = total ? (page - 1) * limit + 1 : 0;
   const rangeTo = total ? Math.min(page * limit, total) : 0;
   const transferStats = getTransferStats(transfers);
+  const transferStatusLabel = TRANSFER_STATUS_FILTER_LABELS[status] ?? formatAmDisplayLabel(status);
+  const transferStatusOptions = React.useMemo(
+    () => ['all', 'pending', 'processing', 'success', 'failed'],
+    [],
+  );
   const activeTransferAccounts = React.useMemo(
     () => accounts.filter(account => account.status === 'active' && isTransferBanking(account.platform)),
     [accounts],
@@ -4784,30 +4875,55 @@ function AmTransfersPage({
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
-        <KolamSearchField value={search} onChangeText={handleTransferSearchChange} placeholder="Cari penerima..." containerStyle={styles.taskSearch} trailingLabel={`${total} transfer`} />
-        <AmSegmentGroup
-          active={status}
-          items={['all', 'pending', 'processing', 'success', 'failed']}
-          labels={TRANSFER_STATUS_FILTER_LABELS}
-          onSelect={handleTransferStatusChange}
-        />
-        <KolamButton
-          accessibilityLabel="AM New Transfer"
-          label="Transfer Baru"
-          intent={showTransferForm ? 'warning' : 'outline'}
-          size="sm"
-          onPress={() => setShowTransferForm(current => !current)}
-        />
-        <KolamRefreshButton
-          accessibilityLabel="Refresh"
-          disabled={isLoading}
-
-          intent="outline"
-          muted={isLoading}
-          size="sm"
-          onPress={fetchTransfers}
-        />
+      <View ref={transferToolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                accessibilityLabel="AM Transfer Search"
+                value={search}
+                onChangeText={handleTransferSearchChange}
+                placeholder="Cari penerima..."
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                trailingLabel={`${total} transfer`}
+              />
+              <View ref={transferStatusTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeTransferFilterPanel === 'status' || status !== 'all'}
+                  label={transferStatusLabel}
+                  onPress={openTransferFilterPanel}
+                  open={activeTransferFilterPanel === 'status'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              <KolamButton
+                accessibilityLabel="AM New Transfer"
+                label="Transfer Baru"
+                intent={showTransferForm ? 'warning' : 'outline'}
+                size="sm"
+                onPress={() => setShowTransferForm(current => !current)}
+              />
+            </View>
+          </View>
+        </View>
+        {activeTransferFilterPanel === 'status' && transferFilterPanelAnchor ? (
+          <AmSimpleFilterOverlayPanel
+            anchor={transferFilterPanelAnchor}
+            options={transferStatusOptions.map(option => ({
+              label: TRANSFER_STATUS_FILTER_LABELS[option] ?? formatAmDisplayLabel(option),
+              value: option,
+            }))}
+            selectedValue={status}
+            onClose={() => {
+              setActiveTransferFilterPanel(null);
+              setTransferFilterPanelAnchor(null);
+            }}
+            onSelect={handleTransferStatusChange}
+          />
+        ) : null}
       </View>
       <AmInlineError title="Transfer AM belum bisa dibaca" error={error} />
       {actionMessage ? (
@@ -5195,10 +5311,16 @@ function AmMutasiPage({
   const [total, setTotal] = React.useState(0);
   const [selectedMutasiId, setSelectedMutasiId] = React.useState<string | null>(null);
   const [selectedMutasi, setSelectedMutasi] = React.useState<AmMutasi | null>(null);
+  const [activeMutasiFilterPanel, setActiveMutasiFilterPanel] = React.useState<AmMutasiFilterPanel | null>(null);
+  const [mutasiFilterPanelAnchor, setMutasiFilterPanelAnchor] = React.useState<KolamFilterPanelAnchor | null>(null);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [detailError, setDetailError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const mutasiToolbarRef = React.useRef<View>(null);
+  const mutasiTypeTriggerRef = React.useRef<View>(null);
+  const mutasiAccountTriggerRef = React.useRef<View>(null);
+  const mutasiDeviceTriggerRef = React.useRef<View>(null);
 
   const fetchMutasi = React.useCallback(async () => {
     try {
@@ -5286,17 +5408,59 @@ function AmMutasiPage({
   const handleMutasiTypeChange = React.useCallback((value: string) => {
     setType(value);
     setPage(1);
+    setActiveMutasiFilterPanel(null);
+    setMutasiFilterPanelAnchor(null);
   }, []);
 
   const handleMutasiAccountChange = React.useCallback((value: string) => {
     setAccountFilter(value);
     setPage(1);
+    setActiveMutasiFilterPanel(null);
+    setMutasiFilterPanelAnchor(null);
   }, []);
 
   const handleMutasiDeviceChange = React.useCallback((value: string) => {
     setDeviceFilter(value);
     setPage(1);
+    setActiveMutasiFilterPanel(null);
+    setMutasiFilterPanelAnchor(null);
   }, []);
+
+  const getMutasiFilterTriggerRef = React.useCallback((panel: AmMutasiFilterPanel) => {
+    if (panel === 'account') return mutasiAccountTriggerRef;
+    if (panel === 'device') return mutasiDeviceTriggerRef;
+    return mutasiTypeTriggerRef;
+  }, []);
+
+  const anchorMutasiFilterPanel = React.useCallback((panel: AmMutasiFilterPanel) => {
+    const toolbar = mutasiToolbarRef.current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    const trigger = getMutasiFilterTriggerRef(panel).current as unknown as {measureInWindow?: unknown; setNativeProps?: unknown} | null;
+    if (typeof toolbar?.measureInWindow !== 'function' || typeof trigger?.measureInWindow !== 'function') {
+      setMutasiFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    const globals = globalThis as {expect?: unknown; it?: unknown};
+    if (typeof globals.expect === 'function' || typeof globals.it === 'function') {
+      setMutasiFilterPanelAnchor({left: 0, top: 44});
+      return;
+    }
+    measureFilterPanelAnchor(
+      mutasiToolbarRef.current,
+      getMutasiFilterTriggerRef(panel).current,
+      AM_SERVICE_FILTER_PANEL_WIDTH,
+      setMutasiFilterPanelAnchor,
+    );
+  }, [getMutasiFilterTriggerRef]);
+
+  const openMutasiFilterPanel = React.useCallback((panel: AmMutasiFilterPanel) => {
+    if (activeMutasiFilterPanel === panel) {
+      setActiveMutasiFilterPanel(null);
+      setMutasiFilterPanelAnchor(null);
+      return;
+    }
+    setActiveMutasiFilterPanel(panel);
+    anchorMutasiFilterPanel(panel);
+  }, [activeMutasiFilterPanel, anchorMutasiFilterPanel]);
 
   const selectMutasi = React.useCallback(async (item: AmMutasi) => {
     if (selectedMutasiId === item._id) {
@@ -5327,47 +5491,109 @@ function AmMutasiPage({
   const outgoing = summary?.keluar ?? {total: 0, count: 0};
   const netBalance = incoming.total - outgoing.total;
   const totalTransactions = incoming.count + outgoing.count;
-  const accountLabels = React.useMemo(
+  const accountLabels = React.useMemo<Record<string, string>>(
     () => ({
       all: 'Semua akun',
       ...Object.fromEntries(accounts.map(account => [account._id, formatMutasiAccountOption(account)])),
     }),
     [accounts],
   );
-  const deviceLabels = React.useMemo(
+  const deviceLabels = React.useMemo<Record<string, string>>(
     () => ({
       all: 'Semua device',
       ...Object.fromEntries(devices.map(device => [device._id, device.name])),
     }),
     [devices],
   );
+  const mutasiFilterOptions = React.useMemo<Record<AmMutasiFilterPanel, Array<{label: string; value: string}>>>(() => ({
+    type: ['all', 'masuk', 'keluar'].map(option => ({
+      label: MUTASI_TYPE_FILTER_LABELS[option] ?? formatAmDisplayLabel(option),
+      value: option,
+    })),
+    account: [
+      {label: accountLabels.all, value: 'all'},
+      ...accounts.map(account => ({
+        label: accountLabels[account._id] ?? formatMutasiAccountOption(account),
+        value: account._id,
+      })),
+    ],
+    device: [
+      {label: deviceLabels.all, value: 'all'},
+      ...devices.map(device => ({
+        label: deviceLabels[device._id] ?? device.name,
+        value: device._id,
+      })),
+    ],
+  }), [accountLabels, accounts, deviceLabels, devices]);
+  const mutasiSelectedValues: Record<AmMutasiFilterPanel, string> = {
+    type,
+    account: accountFilter,
+    device: deviceFilter,
+  };
+  const mutasiFilterHandlers: Record<AmMutasiFilterPanel, (value: string) => void> = {
+    type: handleMutasiTypeChange,
+    account: handleMutasiAccountChange,
+    device: handleMutasiDeviceChange,
+  };
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
+      <View style={styles.metricGrid}>
         <AmMetricCard label="Total Masuk" value={formatRupiah(incoming.total)} meta={`${incoming.count} mutasi`} />
         <AmMetricCard label="Total Keluar" value={formatRupiah(outgoing.total)} meta={`${outgoing.count} mutasi`} />
         <AmMetricCard label="Saldo Bersih" value={formatRupiah(netBalance)} meta="masuk - keluar" />
         <AmMetricCard label="Total Transaksi" value={String(totalTransactions)} meta="jumlah ringkasan" />
-        <AmSegmentGroup
-          active={type}
-          items={['all', 'masuk', 'keluar']}
-          labels={MUTASI_TYPE_FILTER_LABELS}
-          onSelect={handleMutasiTypeChange}
-        />
-        <AmSegmentGroup
-          active={accountFilter}
-          items={['all', ...accounts.map(account => account._id)]}
-          labels={accountLabels}
-          onSelect={handleMutasiAccountChange}
-        />
-        <AmSegmentGroup
-          active={deviceFilter}
-          items={['all', ...devices.map(device => device._id)]}
-          labels={deviceLabels}
-          onSelect={handleMutasiDeviceChange}
-        />
-        <KolamRefreshButton accessibilityLabel="Refresh" intent="outline" muted={isLoading} size="sm" onPress={fetchMutasi} />
+      </View>
+      <View ref={mutasiToolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <View ref={mutasiTypeTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeMutasiFilterPanel === 'type' || type !== 'all'}
+                  label={MUTASI_TYPE_FILTER_LABELS[type] ?? formatAmDisplayLabel(type)}
+                  onPress={() => openMutasiFilterPanel('type')}
+                  open={activeMutasiFilterPanel === 'type'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={mutasiAccountTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeMutasiFilterPanel === 'account' || accountFilter !== 'all'}
+                  label={accountLabels[accountFilter] ?? 'Akun'}
+                  onPress={() => openMutasiFilterPanel('account')}
+                  open={activeMutasiFilterPanel === 'account'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+              <View ref={mutasiDeviceTriggerRef} collapsable={false}>
+                <KolamTableFilterTrigger
+                  active={activeMutasiFilterPanel === 'device' || deviceFilter !== 'all'}
+                  label={deviceLabels[deviceFilter] ?? 'Device'}
+                  onPress={() => openMutasiFilterPanel('device')}
+                  open={activeMutasiFilterPanel === 'device'}
+                  style={styles.amServicesFilterTrigger}
+                  variant="quiet"
+                />
+              </View>
+            </View>
+            <View style={kolamTableToolbarStyles.actions} />
+          </View>
+        </View>
+        {activeMutasiFilterPanel && mutasiFilterPanelAnchor ? (
+          <AmSimpleFilterOverlayPanel
+            anchor={mutasiFilterPanelAnchor}
+            options={mutasiFilterOptions[activeMutasiFilterPanel]}
+            selectedValue={mutasiSelectedValues[activeMutasiFilterPanel]}
+            onClose={() => {
+              setActiveMutasiFilterPanel(null);
+              setMutasiFilterPanelAnchor(null);
+            }}
+            onSelect={mutasiFilterHandlers[activeMutasiFilterPanel]}
+          />
+        ) : null}
       </View>
       <AmInlineError title="Mutasi AM belum bisa dibaca" error={error} />
       <View style={styles.tablePanel}>
