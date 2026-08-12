@@ -6615,26 +6615,34 @@ function AmUsersPage() {
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.filterBar}>
-        <KolamSearchField
-          value={search}
-          onChangeText={handleUserSearchChange}
-          placeholder="Cari nama atau username..."
-          containerStyle={styles.taskSearch}
-          trailingLabel={`${total} user`}
-        />
-        {canCreateUser && !isCreateUserFormOpen && !editingUserId ? (
-          <KolamButton
-            accessibilityLabel="AM User Create"
-          label="Buat User"
-            size="sm"
-            onPress={() => {
-              resetUserForm();
-              setIsCreateUserFormOpen(true);
-            }}
-          />
-        ) : null}
-        <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
+      <View style={styles.amServicesToolbarWrap}>
+        <View style={kolamTableToolbarStyles.shell}>
+          <View style={kolamTableToolbarStyles.row}>
+            <View style={kolamTableToolbarStyles.filters}>
+              <KolamSearchField
+                accessibilityLabel="AM User Search"
+                value={search}
+                onChangeText={handleUserSearchChange}
+                placeholder="Cari nama atau username..."
+                containerStyle={kolamTableToolbarStyles.searchInput}
+                trailingLabel={`${total} user`}
+              />
+            </View>
+            <View style={kolamTableToolbarStyles.actions}>
+              {canCreateUser && !isCreateUserFormOpen && !editingUserId ? (
+                <KolamDaftarButton
+                  accessibilityLabel="AM User Create"
+                  size="sm"
+                  onPress={() => {
+                    resetUserForm();
+                    setIsCreateUserFormOpen(true);
+                  }}
+                />
+              ) : null}
+              <KolamRefreshButton accessibilityLabel="Refresh" disabled={isLoading} intent="outline" muted={isLoading} size="sm" onPress={fetchUsers} />
+            </View>
+          </View>
+        </View>
       </View>
       <AmInlineError title="Pengguna AM belum bisa dibaca" error={error} />
       {actionMessage ? (
