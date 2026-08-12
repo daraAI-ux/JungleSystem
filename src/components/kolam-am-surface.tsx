@@ -127,6 +127,7 @@ import {KolamEditButton} from './kolam-edit-button';
 import {KolamModuleIcon} from './kolam-module-icon';
 import {KolamRefreshButton} from './kolam-refresh-button';
 import {KolamResetButton} from './kolam-reset-button';
+import {KolamSaveButton} from './kolam-save-button';
 import {KolamConfirmDialog} from './kolam-confirm-dialog';
 import {KolamCatalogListTableShell} from './kolam-catalog-list-table-shell';
 import {KolamInteractionFrame} from './kolam-interaction-frame';
@@ -1624,7 +1625,7 @@ function AmServicesPage() {
           <Text style={styles.warningText}>Bersihkan session {sessionToClear.label}?</Text>
           <Text style={styles.panelText}>Service akan dihentikan dan login berikutnya perlu session baru.</Text>
           <View style={styles.inlineActions}>
-            <KolamButton
+            <KolamDeleteButton
               accessibilityLabel={`AM Service Confirm Clear Session ${sessionToClear._id}`}
               disabled={actingServiceId === sessionToClear._id}
               intent="danger"
@@ -1633,7 +1634,7 @@ function AmServicesPage() {
               size="sm"
               onPress={() => clearServiceSession(sessionToClear)}
             />
-            <KolamButton
+            <KolamCancelButton
               accessibilityLabel="AM Service Cancel Clear Session"
               disabled={actingServiceId === sessionToClear._id}
               intent="outline"
@@ -2646,7 +2647,7 @@ function AmServiceDetailPanel({
           ) : null}
         </View>
         {canClearSession ? (
-          <KolamButton
+          <KolamDeleteButton
             accessibilityLabel={`AM Service Clear Session ${account._id}`}
             disabled={clearingSession}
             intent="danger"
@@ -3081,7 +3082,7 @@ function AmTokopediaSessionPanel({
               size="sm"
               onPress={() => setCaptchaAutoSolve(current => !current)}
             />
-            <KolamButton
+            <KolamSaveButton
               accessibilityLabel={`AM Tokopedia Captcha Save ${account._id}`}
               disabled={!canRunSessionAction || acting === 'captcha'}
               label={acting === 'captcha' ? 'Menyimpan' : 'Simpan Captcha'}
@@ -3127,7 +3128,7 @@ function AmTokopediaSessionPanel({
           onChangeText={setCookiesJson}
         />
         <View style={styles.inlineActions}>
-          <KolamButton
+          <KolamSaveButton
             accessibilityLabel={`AM Tokopedia Save Cookies ${account._id}`}
             disabled={!canRunSessionAction || acting === 'upload-cookies' || !cookiesJson.trim() || Boolean(cookiesPreview.error)}
             label={acting === 'upload-cookies' ? 'Menyimpan' : 'Simpan Session'}
@@ -3135,7 +3136,7 @@ function AmTokopediaSessionPanel({
             size="sm"
             onPress={uploadManualCookies}
           />
-          <KolamButton
+          <KolamCancelButton
             accessibilityLabel={`AM Tokopedia Clear Cookies ${account._id}`}
             disabled={!cookiesJson.trim()}
             intent="outline"
