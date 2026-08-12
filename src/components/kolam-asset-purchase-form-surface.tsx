@@ -31,6 +31,7 @@ import { KolamFormTextField } from './kolam-form-text-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const PHOTO_MAX = 5;
 
@@ -266,14 +267,13 @@ function AssetPurchaseFormBody({
               ) : null}
               {form.photos.length < PHOTO_MAX ? (
                 <View style={styles.photoActions}>
-                  <KolamButton
+                  <KolamUploadButton
                     disabled={
                       controller.submitting || controller.uploadingPhotos
                     }
-                    intent="secondary"
-                    label={
-                      controller.uploadingPhotos ? 'Mengunggah…' : 'Unggah Foto'
-                    }
+                    label="Unggah Foto"
+                    loading={controller.uploadingPhotos}
+                    loadingLabel="Mengunggah…"
                     onPress={() => {
                       void pickPhoto();
                     }}

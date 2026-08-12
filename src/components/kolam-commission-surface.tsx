@@ -24,6 +24,7 @@ import { KolamProfileAvatarContent } from './kolam-profile-avatar-content';
 import { KolamSearchField } from './kolam-search-field';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {KolamUploadButton} from './kolam-upload-button';
 
 export function KolamCommissionSurface({
   onRouteChange,
@@ -350,14 +351,11 @@ function CommissionListBody({
                     Bukti transfer
                   </Text>
                 ) : (
-                  <KolamButton
+                  <KolamUploadButton
                     disabled={controller.uploadingProofId === item.id}
-                    intent="secondary"
-                    label={
-                      controller.uploadingProofId === item.id
-                        ? 'Mengunggah...'
-                        : 'Unggah bukti'
-                    }
+                    label="Unggah bukti"
+                    loading={controller.uploadingProofId === item.id}
+                    loadingLabel="Mengunggah..."
                     onPress={() => {
                       void controller.onUploadTransferProof(item);
                     }}

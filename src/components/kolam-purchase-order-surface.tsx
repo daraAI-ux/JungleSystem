@@ -71,8 +71,8 @@ import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
-import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
+import {KolamUploadButton} from './kolam-upload-button';
 import { settingsWebFormStyles } from './kolam-settings-web-form-styles';
 
 type POStatusFilterPanel = 'status' | 'payment' | null;
@@ -1264,9 +1264,8 @@ function KolamPurchaseOrderDetail({
               style={styles.toolbarButton}
             />
             {canUploadVendorInvoice ? (
-              <KolamButton
+              <KolamUploadButton
                 disabled={controller.mutating}
-                icon={<KolamUploadArrowIcon color={V.colors.primaryFg} size={16} />}
                 label={po.vendorInvoice ? 'Ganti invoice vendor' : 'Unggah invoice vendor'}
                 onPress={async () => {
                   const uri = await controller.onPickImage();
@@ -1274,8 +1273,7 @@ function KolamPurchaseOrderDetail({
                     void controller.onUploadVendorInvoice(uri);
                   }
                 }}
-                style={[styles.toolbarButton, styles.poToolbarActionButton]}
-                textStyle={styles.poToolbarActionButtonText}
+                style={styles.toolbarButton}
               />
             ) : null}
             {canSyncMarketplace ? (
@@ -2757,13 +2755,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 34,
     paddingHorizontal: 10,
-  },
-  poToolbarActionButton: {
-    backgroundColor: '#374151',
-    borderColor: '#374151',
-  },
-  poToolbarActionButtonText: {
-    color: V.colors.primaryFg,
   },
   toolbarStatusSelect: {
     flexGrow: 1,

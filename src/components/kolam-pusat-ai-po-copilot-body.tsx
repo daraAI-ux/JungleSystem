@@ -24,6 +24,7 @@ import { KolamDashboardMetricSparkline } from './kolam-dashboard-metric-sparklin
 import { KolamDropdownSelect } from './kolam-dropdown-select';
 import { KolamEmptyState } from './kolam-empty-state';
 import { KolamSwitch } from './kolam-switch';
+import {KolamUploadButton} from './kolam-upload-button';
 import { poCopilotStyles as styles } from './kolam-pusat-ai-po-copilot-styles';
 
 export function KolamPusatAiPoCopilotBody({
@@ -332,18 +333,17 @@ function BotProfileSection({
               <Text style={styles.botAvatarPhText}>BOT</Text>
             </View>
           )}
-          <Pressable
-            accessibilityRole="button"
+          <KolamUploadButton
             disabled={controller.photoUploading}
+            label="Unggah foto bot"
+            loading={controller.photoUploading}
+            loadingLabel="Mengunggah…"
             onPress={() => {
               void controller.onPickBotPhoto();
             }}
             style={styles.botUpload}
-          >
-            <Text style={styles.botUploadText}>
-              {controller.photoUploading ? 'Mengunggah…' : 'Unggah foto bot'}
-            </Text>
-          </Pressable>
+            textStyle={styles.botUploadText}
+          />
           <View style={styles.botNameField}>
             <Text style={styles.botNameLabel}>Nama PIC bot</Text>
             <TextInput

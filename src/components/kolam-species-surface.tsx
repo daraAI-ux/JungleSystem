@@ -102,7 +102,7 @@ import {
 } from './kolam-filter-panel-anchor';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
+import {KolamUploadButton} from './kolam-upload-button';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
 type SpeciesListFilterPanel = 'taxonomy' | 'category' | 'stock';
@@ -5371,9 +5371,8 @@ function SpeciesVoiceUploadPanel({
           <Text style={styles.voiceUploadBadge}>MP3</Text>
           <Text style={styles.voiceUploadTitle}>Voice (MP3)</Text>
         </View>
-        <KolamButton
+        <KolamUploadButton
           disabled={controller.saving}
-          icon={<KolamUploadArrowIcon size={14} />}
           label={uploadLabel}
           onPress={() => {
             void controller.onPickVoice();

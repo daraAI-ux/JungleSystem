@@ -40,6 +40,7 @@ import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {KolamUploadButton} from './kolam-upload-button';
 import { appConfig } from '../config/app';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -1836,7 +1837,7 @@ export function KolamSettingsWebConfigSurface({
           />
         </View>
         <View style={styles.notificationSoundActionCell}>
-          <KolamActionControlButton
+          <KolamUploadButton
             label="Unggah"
             loading={status === 'uploading'}
             loadingLabel="Mengunggah..."
@@ -7256,6 +7257,7 @@ function MarketplaceLandingOverviewPanel({
               label="Unggah latar YouTube"
               onPress={onUploadYoutubeBackground}
               status={assetStatus}
+              upload
             />
           </View>
         ) : null}
@@ -7580,6 +7582,7 @@ function MarketplaceCtaSectionPanel({
                 label={backgroundUri ? 'Ganti gambar' : 'Pilih gambar'}
                 onPress={onUploadBackground}
                 status={assetStatus}
+                upload
               />
             </View>
             <Pressable
@@ -8114,6 +8117,7 @@ function MarketplaceFeaturedPanel({
                     label="Unggah gambar"
                     onPress={() => onUploadFeaturedCollectionImage(index)}
                     status={assetStatus}
+                    upload
                   />
                   {row.image ? (
                     <Image
@@ -8231,6 +8235,7 @@ function MarketplaceFeaturedPanel({
                   label="Unggah"
                   onPress={() => onUploadBioactiveStepImage(index)}
                   status={assetStatus}
+                  upload
                 />
               </View>
             </View>
@@ -8502,6 +8507,7 @@ function MarketplaceAssetRows<Item>({
                   label="Unggah gambar"
                   onPress={() => onUpload(item)}
                   status={status}
+                  upload
                 />
                 <MarketplaceAssetButton
                   disabled={disabled}
@@ -8598,6 +8604,7 @@ function MarketplaceIndexedAssetRows<Item>({
                   label="Unggah gambar"
                   onPress={() => onUpload(index)}
                   status={status}
+                  upload
                 />
                 <MarketplaceAssetButton
                   disabled={disabled}
@@ -8636,6 +8643,7 @@ function MarketplaceAssetButton({
   onPress,
   status,
   style,
+  upload = false,
 }: {
   accessibilityLabel?: string;
   disabled: boolean;
@@ -8648,12 +8656,27 @@ function MarketplaceAssetButton({
     Record<string, 'idle' | 'uploading' | 'deleting' | 'reordering'>
   >;
   style?: React.ComponentProps<typeof KolamActionControlButton>['style'];
+  upload?: boolean;
 }) {
   const actionStatus = status[id];
   const busy =
     actionStatus === 'uploading' ||
     actionStatus === 'deleting' ||
     actionStatus === 'reordering';
+  if (upload) {
+    return (
+      <KolamUploadButton
+        accessibilityLabel={accessibilityLabel}
+        disabled={disabled || busy}
+        label={label}
+        loading={busy}
+        loadingLabel={getMarketplaceAssetLoadingLabel(actionStatus)}
+        onPress={onPress}
+        style={style}
+      />
+    );
+  }
+
   return (
     <KolamActionControlButton
       accessibilityLabel={accessibilityLabel}
@@ -9769,7 +9792,7 @@ function FinancialSettingsPanel({
                         setPaymentMethodFormOpen(true);
                       }}
                     />
-                    <KolamActionControlButton
+                    <KolamUploadButton
                       disabled={disabled || busy}
                       label={method.paymentIcon ? 'Ganti foto' : 'Unggah foto'}
                       onPress={() => onUploadPaymentMethodPhoto(method.id)}

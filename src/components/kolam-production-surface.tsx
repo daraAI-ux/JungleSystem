@@ -73,6 +73,7 @@ import { KolamSwitch } from './kolam-switch';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const PRODUCTION_STATUS_OPTIONS: KolamProductionStatus[] = [
   'waiting_for_po',
@@ -855,7 +856,7 @@ function KolamProductionForm({
                 </View>
               ))}
             </View>
-            <KolamButton
+            <KolamUploadButton
               disabled={controller.mutating}
               label="Unggah foto"
               onPress={() => {

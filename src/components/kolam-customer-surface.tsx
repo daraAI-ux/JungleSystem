@@ -90,6 +90,7 @@ import {KolamNotesField} from './kolam-notes-field';
 import {KolamPdfDownloadButton} from './kolam-pdf-download-button';
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const CUSTOMER_LIST_COLUMNS = [
   {id: 'customer', label: 'Pelanggan', flex: 1.55, align: 'left'},
@@ -1747,9 +1748,11 @@ function CustomerPictureSummaryBox({
     <View style={styles.customerSummaryPictureBox}>
       <View style={styles.photoSectionHeader}>
         <SectionTitle description="" title="Foto" />
-        <KolamButton
+        <KolamUploadButton
           disabled={photoSaving}
-          label={photoSaving ? 'Memproses...' : 'Unggah Foto'}
+          label="Unggah Foto"
+          loading={photoSaving}
+          loadingLabel="Memproses..."
           onPress={() => void onUploadPhoto()}
         />
       </View>

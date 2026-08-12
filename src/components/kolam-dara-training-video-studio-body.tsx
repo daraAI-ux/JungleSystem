@@ -43,6 +43,7 @@ import {KolamFormTextField} from './kolam-form-text-field';
 import {openKolamMediaPreview} from './kolam-media-preview-dialog';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSwitch} from './kolam-switch';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const VIDEO_STUDIO_JOB_HISTORY_LIMIT = 5;
 
@@ -442,10 +443,11 @@ export function KolamDaraTrainingVideoStudioBody({
                   }}
                   size="sm"
                 />
-                <KolamButton
+                <KolamUploadButton
                   disabled={!selectedFile?.uri || busy || !canManage}
-                  intent="secondary"
-                  label={busy ? 'Unggah…' : 'Unggah RAW'}
+                  label="Unggah RAW"
+                  loading={busy}
+                  loadingLabel="Unggah…"
                   onPress={() => {
                     void handleUpload();
                   }}

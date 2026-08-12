@@ -15,6 +15,7 @@ import {KolamDropdownSelect} from './kolam-dropdown-select';
 import {KolamListTableComposition} from './kolam-list-table-composition';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import {KolamUploadButton} from './kolam-upload-button';
 
 /** FE `HrOvertimePanel`. */
 export function KolamHrOvertimeBody({
@@ -197,9 +198,8 @@ export function KolamHrOvertimeBody({
                   <Text style={styles.linkText}>Lihat bukti</Text>
                 </Pressable>
               ) : (
-                <KolamButton
+                <KolamUploadButton
                   disabled={controller.mutating}
-                  intent="outline"
                   label="Unggah bukti"
                   onPress={() => {
                     void controller.onUploadProof(row.id);

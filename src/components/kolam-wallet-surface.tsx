@@ -69,6 +69,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSwitch } from './kolam-switch';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
+import {KolamUploadButton} from './kolam-upload-button';
 
 type WalletProofPick = {
   name: string;
@@ -1862,9 +1863,8 @@ function WalletProofPicker({
         Bukti {required ? '(wajib)' : '(opsional)'}
       </Text>
       <View style={styles.proofActions}>
-        <KolamButton
+        <KolamUploadButton
           disabled={proofs.length >= 3}
-          intent="secondary"
           label="Unggah Bukti"
           onPress={() => {
             void pickProof();

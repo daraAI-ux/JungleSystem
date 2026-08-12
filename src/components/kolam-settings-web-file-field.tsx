@@ -11,7 +11,7 @@ import { KolamCardFrame } from './kolam-card-frame';
 import { KolamInteractionFrame } from './kolam-interaction-frame';
 import { KolamRemoteImage } from './kolam-remote-image';
 import { settingsWebFormStyles as styles } from './kolam-settings-web-form-styles';
-import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
+import {KolamUploadButton} from './kolam-upload-button';
 import { KolamUploadCameraIcon } from './kolam-upload-camera-icon';
 import { KolamUploadDeleteIcon } from './kolam-upload-delete-icon';
 
@@ -351,20 +351,18 @@ export function KolamSettingsWebFileField({
         {...dropzoneProps}
         ref={dropzoneRef}
         style={styles.settingsWebUploadDropzone}>
-        <KolamInteractionFrame
-          {...dropzoneProps}
-          accessibilityLabel={hint}
-          disabled={disabled}
-          onPress={onUpload}
-          style={styles.settingsWebUploadPreviewButton}
-        >
-          <KolamUploadArrowIcon />
+        <View style={styles.settingsWebUploadPreviewButton}>
           <View style={styles.settingsWebUploadPromptRow}>
             <Text style={styles.settingsWebUploadPrompt}>{hint}</Text>
-            <Text style={styles.settingsWebUploadLink}>{actionLabel}</Text>
             <Text style={styles.settingsWebUploadPrompt}> untuk mengunggah</Text>
           </View>
-        </KolamInteractionFrame>
+          <KolamUploadButton
+            accessibilityLabel={hint}
+            disabled={disabled}
+            label={actionLabel}
+            onPress={onUpload}
+          />
+        </View>
       </View>
       <Text style={styles.settingsWebUploadHint}>{fileTypeLabel}</Text>
       {logoUri ? (

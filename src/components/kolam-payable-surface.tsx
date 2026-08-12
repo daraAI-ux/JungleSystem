@@ -46,6 +46,7 @@ import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamTableFilterTrigger } from './kolam-table-filter-trigger';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
 import { KolamToolbarDateFilter } from './kolam-toolbar-date-filter';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const FILTER_PANEL_WIDTH = 220;
 
@@ -929,16 +930,17 @@ function PayableDetail({
                   ))}
                 </View>
               ) : null}
-              <KolamButton
+              <KolamUploadButton
                 disabled={controller.uploadingProof}
-                intent="secondary"
                 label={
                   controller.uploadingProof
-                    ? 'Mengunggah...'
+                    ? 'Unggah Bukti'
                     : payment?.proofs.length
                     ? 'Tambah Bukti'
                     : 'Unggah Bukti'
                 }
+                loading={controller.uploadingProof}
+                loadingLabel="Mengunggah..."
                 onPress={() => {
                   void controller.onUploadPayableProof(item);
                 }}
@@ -1121,16 +1123,17 @@ function InstallmentDetailCard({
           </>
         ) : null}
         {isPaid ? (
-          <KolamButton
+          <KolamUploadButton
             disabled={!canPay || isUploading}
-            intent="secondary"
             label={
               isUploading
-                ? 'Mengunggah...'
+                ? 'Unggah Bukti'
                 : installment.proofs.length
                 ? 'Tambah Bukti'
                 : 'Unggah Bukti'
             }
+            loading={isUploading}
+            loadingLabel="Mengunggah..."
             onPress={() => {
               void onUploadProof(item, installment);
             }}

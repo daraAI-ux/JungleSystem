@@ -76,6 +76,7 @@ import {KolamPusatAiTransaksiCopilotBody} from './kolam-pusat-ai-transaksi-copil
 import {KolamRemoteImage} from './kolam-remote-image';
 import {KolamStatusBadge} from './kolam-status-badge';
 import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
+import {KolamUploadButton} from './kolam-upload-button';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 
 /** FE Log DARA violet tint (panel-local; not a global token). */
@@ -374,10 +375,11 @@ function OwnerCopilotDaraAvatarCard({
           <Text style={styles.ownerNotice}>{controller.notice}</Text>
         ) : null}
       </View>
-      <KolamButton
+      <KolamUploadButton
         disabled={controller.avatarUploading}
-        intent="secondary"
-        label={controller.avatarUploading ? 'Mengunggah...' : 'Unggah avatar'}
+        label="Unggah avatar"
+        loading={controller.avatarUploading}
+        loadingLabel="Mengunggah..."
         onPress={() => {
           void controller.onPickDaraAvatar();
         }}

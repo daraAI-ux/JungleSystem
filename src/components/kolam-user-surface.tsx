@@ -84,6 +84,7 @@ import {KolamSurfacePanelTabs} from './kolam-surface-panel-tabs';
 import type {KolamSurfacePanelTab} from './kolam-surface-panel-types';
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {KolamToggleRow} from './kolam-toggle-row';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const SEARCH_DEBOUNCE_MS = 350;
 const USER_DEDUCTION_TABLE_PAGE_SIZE = 10;
@@ -3137,9 +3138,11 @@ function KolamUserEditSurface({
                   style={styles.ktpPreviewImage}
                 />
               ) : null}
-              <KolamButton
+              <KolamUploadButton
                 disabled={formDisabled || uploadingKtp}
-                label={uploadingKtp ? 'Mengunggah...' : 'Unggah'}
+                label="Unggah"
+                loading={uploadingKtp}
+                loadingLabel="Mengunggah..."
                 onPress={handleUploadKtp}
                 style={styles.ktpUploadButton}
               />

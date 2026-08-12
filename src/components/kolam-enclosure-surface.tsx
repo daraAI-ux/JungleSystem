@@ -101,6 +101,7 @@ import {
 import {KolamTableFilterTrigger} from './kolam-table-filter-trigger';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
 import {KolamToggleRow} from './kolam-toggle-row';
+import {KolamUploadButton} from './kolam-upload-button';
 import {KolamEnclosureDetailSurface} from './kolam-enclosure-detail';
 
 type EnclosureFilterPanel = 'type' | 'livestock' | null;
@@ -656,7 +657,7 @@ function KolamEnclosureEditSurface({
             )}
           </View>
           <View style={styles.detailActions}>
-            <KolamButton
+            <KolamUploadButton
               disabled={controller.operationLoading}
               label="Unggah"
               onPress={() => void onPickCover()}

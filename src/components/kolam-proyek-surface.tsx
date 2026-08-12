@@ -83,6 +83,7 @@ import { KolamSearchField } from './kolam-search-field';
 import { KolamSettingsWebFieldLabel } from './kolam-settings-web-field-label';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
+import {KolamUploadButton} from './kolam-upload-button';
 import {
   pickNativeAssetFile,
   pickNativeImageFile,
@@ -1142,14 +1143,11 @@ function KolamProyekDetailRead({
                                   {canUploadRow || canConfirmRow ? (
                                     <View style={styles.dpActionRow}>
                                       {canUploadRow ? (
-                                        <KolamButton
+                                        <KolamUploadButton
                                           disabled={controller.acting}
-                                          intent="outline"
-                                          label={
-                                            controller.acting
-                                              ? 'Mengunggah…'
-                                              : 'Unggah bukti'
-                                          }
+                                          label="Unggah bukti"
+                                          loading={controller.acting}
+                                          loadingLabel="Mengunggah…"
                                           onPress={() => {
                                             void (async () => {
                                               const picked =

@@ -39,6 +39,7 @@ import {KolamInteractionFrame} from './kolam-interaction-frame';
 import {KolamNotesDisplay, KolamNotesField} from './kolam-notes-field';
 import {KolamSettingsWebFieldLabel} from './kolam-settings-web-field-label';
 import {kolamTableToolbarStyles} from './kolam-table-toolbar-styles';
+import {KolamUploadButton} from './kolam-upload-button';
 
 type DownloadSurfaceMode = 'catalog' | 'admin';
 
@@ -688,10 +689,11 @@ function UploadVersionForm({
         </View>
       ) : null}
       <View style={styles.formActions}>
-        <KolamButton
+        <KolamUploadButton
           disabled={acting || !version.trim() || files.length === 0}
-          intent="primary"
-          label={acting ? 'Mengunggah...' : 'Unggah versi'}
+          label="Unggah versi"
+          loading={acting}
+          loadingLabel="Mengunggah..."
           onPress={() => {
             submit().catch(() => undefined);
           }}

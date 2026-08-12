@@ -7,6 +7,7 @@ import {KolamDeleteButton} from './kolam-delete-button';
 import { KolamContentFrame } from './kolam-content-frame';
 import { KolamDeleteConfirmDialog } from './kolam-delete-confirm-dialog';
 import { KolamTextField } from './kolam-text-field';
+import {KolamUploadButton} from './kolam-upload-button';
 
 export interface KolamEntityDetailAsset {
   fileSize: number;
@@ -112,7 +113,7 @@ export function KolamEntityDetailAssetsPanel({
   const uploadActions = (
     <View style={[styles.assetUploadActions, inlineTitleUploadActions ? styles.assetUploadActionsInline : null]}>
       <KolamButton disabled={busy} label="Pilih file" onPress={chooseFile} />
-      <KolamButton disabled={busy || !assetTitle.trim() || !assetFile} label={busy ? 'Mengunggah...' : 'Unggah file'} onPress={handleUpload} />
+      <KolamUploadButton disabled={busy || !assetTitle.trim() || !assetFile} label="Unggah file" loading={busy} loadingLabel="Mengunggah..." onPress={handleUpload} />
     </View>
   );
 

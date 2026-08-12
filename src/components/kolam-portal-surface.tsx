@@ -44,6 +44,7 @@ import {
 } from './kolam-list-table-composition';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { KolamSurfacePanelTabs } from './kolam-surface-panel-tabs';
+import {KolamUploadButton} from './kolam-upload-button';
 
 const DEDUCTION_STATUS: Record<string, string> = {
   pending: 'Menunggu',
@@ -923,9 +924,11 @@ function PortalAccountSettings({
             <Text style={styles.accountLabel}>Foto profil</Text>
             <Text style={styles.smallMuted}>JPG/PNG maks. 2MB</Text>
           </View>
-          <KolamButton
+          <KolamUploadButton
             disabled={loading || saving || uploadingPhoto}
-            label={uploadingPhoto ? 'Mengunggah' : 'Unggah'}
+            label="Unggah"
+            loading={uploadingPhoto}
+            loadingLabel="Mengunggah"
             onPress={handleUploadPhoto}
           />
         </View>

@@ -126,7 +126,7 @@ import { KolamRemoteImage } from './kolam-remote-image';
 import { KolamSaveButton } from './kolam-save-button';
 import { KolamStatusBadge } from './kolam-status-badge';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
-import { KolamUploadArrowIcon } from './kolam-upload-arrow-icon';
+import {KolamUploadButton} from './kolam-upload-button';
 
 /**
  * FE `SalesInvoice` Batch A: header, status strip, 2-col info/items | shipping/history,
@@ -478,15 +478,11 @@ export function KolamSalesOpsDetail({
               />
             ) : null}
             {canUploadProof ? (
-              <KolamButton
+              <KolamUploadButton
                 disabled={controller.mutating}
-                icon={
-                  <KolamUploadArrowIcon color={V.colors.primaryFg} size={16} />
-                }
                 label="Unggah bukti"
                 onPress={handleUploadPaymentProof}
                 style={styles.paymentProofUploadButton}
-                textStyle={styles.paymentProofUploadButtonText}
               />
             ) : null}
             <View style={styles.toolbarDownloadCluster}>
@@ -2952,12 +2948,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   paymentProofUploadButton: {
-    backgroundColor: '#374151',
-    borderColor: '#374151',
     flexShrink: 0,
-  },
-  paymentProofUploadButtonText: {
-    color: V.colors.primaryFg,
   },
   actionButtons: {
     flexDirection: 'row',
