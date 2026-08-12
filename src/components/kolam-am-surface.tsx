@@ -7183,12 +7183,6 @@ function AmActivityLogPage() {
 
   return (
     <View style={styles.pageStack}>
-      <View style={styles.emptyPanel}>
-        <Text style={styles.panelTitle}>Log Aktivitas</Text>
-        <Text style={styles.panelText}>
-          Catatan page/API request AM. Otomatis hapus setelah 90 hari. Super Admin bisa hapus manual per baris terpilih atau sesuai filter.
-        </Text>
-      </View>
       <View ref={toolbarRef} collapsable={false} style={styles.amServicesToolbarWrap}>
         <View style={kolamTableToolbarStyles.shell}>
           <View style={kolamTableToolbarStyles.row}>
