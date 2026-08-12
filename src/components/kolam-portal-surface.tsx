@@ -139,10 +139,7 @@ export function KolamPortalSurface({
                 </KolamCardFrame>
               ) : null}
 
-              <View style={styles.twelveGrid}>
-                <KpiPortalCard onRouteChange={onRouteChange} />
-                <PortalSummaryCards data={dataset} loading={loading} />
-              </View>
+              <PortalSummaryCards data={dataset} loading={loading} />
 
               <PortalAttendanceSection
                 data={dataset}
@@ -175,6 +172,9 @@ export function KolamPortalSurface({
 
         <View style={[styles.sideColumn, isWide ? styles.sideColumnWide : null]}>
           <PortalAccountSettings loading={loading} onRefresh={refresh} />
+          {isEmployee === false ? null : (
+            <KpiPortalCard onRouteChange={onRouteChange} />
+          )}
         </View>
       </View>
     </ScrollView>
@@ -258,7 +258,7 @@ function KpiPortalCard({
 
   if (loading) {
     return (
-      <PortalCard style={styles.col5} subtitle="Memuat..." title="KPI kinerja">
+      <PortalCard style={styles.sidebarCard} subtitle="Memuat..." title="KPI kinerja">
         <View style={styles.kpiLoadingBar} />
       </PortalCard>
     );
@@ -266,7 +266,7 @@ function KpiPortalCard({
 
   if (failed || !summary) {
     return (
-      <PortalCard style={styles.col5} title="KPI kinerja">
+      <PortalCard style={styles.sidebarCard} title="KPI kinerja">
         <EmptyLine text="Ringkasan KPI tidak tersedia." />
       </PortalCard>
     );
@@ -292,7 +292,7 @@ function KpiPortalCard({
           />
         </View>
       }
-      style={styles.col5}
+      style={styles.sidebarCard}
       subtitle={summary.scoringEnabled ? summary.period.week : undefined}
       title="KPI kinerja"
     >
@@ -1165,6 +1165,10 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     minWidth: 340,
+    width: '100%',
+  },
+  sidebarCard: {
+    width: '100%',
   },
   kpiActionRow: {
     alignItems: 'center',
