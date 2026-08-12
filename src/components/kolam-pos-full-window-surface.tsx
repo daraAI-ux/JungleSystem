@@ -740,13 +740,13 @@ function PosCategoryPill({
   onPress: () => void;
 }) {
   return (
-    <KolamInteractionFrame
+    <KolamButton
+      intent={active ? 'primary' : 'outline'}
+      label={label}
       onPress={onPress}
-      style={[styles.categoryPill, active && styles.categoryPillActive]}>
-      <Text style={[styles.categoryText, active && styles.categoryTextActive]}>
-        {label}
-      </Text>
-    </KolamInteractionFrame>
+      size="sm"
+      style={styles.categoryPill}
+    />
   );
 }
 
@@ -2367,22 +2367,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   categoryPill: {
-    minHeight: 32,
-    justifyContent: 'center',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    backgroundColor: V.colors.muted,
-  },
-  categoryPillActive: {
-    backgroundColor: POS_ACTION_BUTTON_BG,
-  },
-  categoryText: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  categoryTextActive: {
-    color: V.colors.primaryFg,
+    flexShrink: 0,
   },
   posToolbarActionButton: {
     backgroundColor: POS_ACTION_BUTTON_BG,
