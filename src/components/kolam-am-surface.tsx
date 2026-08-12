@@ -1702,7 +1702,7 @@ function AmServicesPage() {
                   <Text style={styles.rowMeta} numberOfLines={1}>{formatServiceDeviceLocation(device)}</Text>
                 </View>
                 <Text style={[styles.cellText, styles.accountCol]} numberOfLines={1}>
-                  {account.accountNumber ?? account.username ?? getCredentialString(account.credentials, 'phoneNumber') ?? '-'}
+                  {formatServiceAccountDisplay(account)}
                 </Text>
               <View style={styles.statusCol}>
                 <View style={styles.statusActionStack}>
@@ -6820,12 +6820,33 @@ function parseOptionalRupiah(value: string) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function getCredentialString(
-  credentials: Record<string, unknown>,
+function getObjectString(
+  source: unknown,
   key: string,
 ) {
-  const value = credentials[key];
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+  const value = (source as Record<string, unknown>)[key];
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function getCredentialString(
+  credentials: unknown,
+  key: string,
+) {
+  return getObjectString(credentials, key);
+}
+
+function formatServiceAccountDisplay(account: AmServiceAccount) {
+  return (
+    getObjectString(account, 'accountNumber') ??
+    getObjectString(account, 'account_number') ??
+    getObjectString(account, 'username') ??
+    getCredentialString(account.credentials, 'phoneNumber') ??
+    getCredentialString(account.credentials, 'phone_number') ??
+    getObjectString(account.meta, 'phoneNumber') ??
+    getObjectString(account.meta, 'phone_number') ??
+    '-'
+  );
 }
 
 function getServiceCredentialLogin(account: AmServiceAccount) {

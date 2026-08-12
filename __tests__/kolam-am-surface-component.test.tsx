@@ -1527,13 +1527,14 @@ describe('KolamAmSurface', () => {
             udid: null,
           },
           status: 'inactive',
-          username: 'old-user',
+          username: '',
           accountNumber: '',
-          credentials: {phoneNumber: '0812'},
+          account_number: 'ACC-LEGACY',
+          credentials: {phone_number: '0812'},
           meta: {},
           createdAt: '',
           updatedAt: '',
-        },
+        } as any,
       ],
       meta: {total: 1, limit: 20},
     });
@@ -1551,6 +1552,7 @@ describe('KolamAmSurface', () => {
     const text = renderText(renderer!);
 
     expect(text).toContain('Tokopedia Old');
+    expect(text).toContain('ACC-LEGACY');
     expect(text).toContain('Berhenti');
     expect(text).not.toContain('Create Service Account');
     expect(text).not.toContain('Edit Service Account');
