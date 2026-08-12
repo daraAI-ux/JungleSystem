@@ -35,6 +35,18 @@ export type KolamPortalAttendancePeriod = {
   days?: KolamPortalAttendanceDay[];
 };
 
+export type KolamPortalTodayAttendance = {
+  dateKey?: string;
+  holiday?: boolean;
+  day?: KolamPortalAttendanceDay | null;
+  settings?: {
+    workStartTime?: string;
+    requireGps?: boolean;
+    requireFace?: boolean;
+  };
+  faceEnrolled?: boolean;
+};
+
 export type KolamPortalPayrollSlip = {
   _id?: string;
   slipCode?: string;
@@ -43,6 +55,32 @@ export type KolamPortalPayrollSlip = {
   takeHomePay?: number;
   grossBruto?: number;
   finalizedAt?: string;
+};
+
+export type KolamPortalPayrollCommissionPeriod = {
+  periodKey: string;
+  slip: {
+    _id?: string;
+    slipCode?: string;
+    periodKey?: string;
+    takeHomePay?: number;
+  } | null;
+  commission: {
+    monthKey?: string;
+    totalNet?: number;
+    pendingNet?: number;
+    releasedNet?: number;
+    rowCount?: number;
+  } | null;
+};
+
+export type KolamPortalPayrollCommissionOverview = {
+  periods: KolamPortalPayrollCommissionPeriod[];
+  totals?: {
+    commissionPendingNet?: number;
+    commissionReleasedNet?: number;
+    slipCount?: number;
+  };
 };
 
 export type KolamPortalMoneyRow = {
@@ -88,6 +126,8 @@ export type KolamPortalDataset = {
   payrollSlips: KolamPortalPayrollSlip[];
   summary: KolamPortalSummary | null;
   tasks: KolamPortalTaskRow[];
+  todayAttendance: KolamPortalTodayAttendance | null;
+  payrollCommission: KolamPortalPayrollCommissionOverview | null;
 };
 
 async function requestKolamPortal<T>(path: string): Promise<T> {
@@ -127,9 +167,25 @@ async function getPortalAttendance(): Promise<KolamPortalAttendancePeriod | null
   return unwrapData<KolamPortalAttendancePeriod | null>(payload, null);
 }
 
+async function getTodayAttendance(): Promise<KolamPortalTodayAttendance | null> {
+  const payload = await apiRequest<unknown>({
+    baseUrl: appConfig.kolamApiBaseUrl,
+    path: '/staff-attendance/today',
+    sourceHeader: appConfig.kolamSourceHeader,
+  });
+  return unwrapData<KolamPortalTodayAttendance | null>(payload, null);
+}
+
 async function listPortalPayrollSlips(): Promise<KolamPortalPayrollSlip[]> {
   const payload = await requestKolamPortal<unknown>('/employee-portal/payroll-slips');
   return unwrapList<KolamPortalPayrollSlip>(payload);
+}
+
+async function getPayrollAndCommission(): Promise<KolamPortalPayrollCommissionOverview | null> {
+  const payload = await requestKolamPortal<unknown>(
+    '/employee-portal/payroll-and-commission',
+  );
+  return unwrapData<KolamPortalPayrollCommissionOverview | null>(payload, null);
 }
 
 async function listPortalDeductions(): Promise<KolamPortalMoneyRow[]> {
@@ -189,6 +245,8 @@ export async function loadKolamPortalDataset(): Promise<KolamPortalDataset> {
     commissions,
     tasks,
     overtime,
+    todayAttendance,
+    payrollCommission,
   ] = await Promise.allSettled([
     getPortalSummary(),
     getPortalAttendance(),
@@ -199,6 +257,8 @@ export async function loadKolamPortalDataset(): Promise<KolamPortalDataset> {
     listPortalCommissions(),
     listPortalTasks(),
     listPortalOvertime(),
+    getTodayAttendance(),
+    getPayrollAndCommission(),
   ]);
 
   const errorMessage = [
@@ -211,6 +271,8 @@ export async function loadKolamPortalDataset(): Promise<KolamPortalDataset> {
     commissions,
     tasks,
     overtime,
+    todayAttendance,
+    payrollCommission,
   ]
     .map(getRejectedReason)
     .find(Boolean);
@@ -226,5 +288,9 @@ export async function loadKolamPortalDataset(): Promise<KolamPortalDataset> {
     payrollSlips: payrollSlips.status === 'fulfilled' ? payrollSlips.value : [],
     summary: summary.status === 'fulfilled' ? summary.value : null,
     tasks: tasks.status === 'fulfilled' ? tasks.value : [],
+    todayAttendance:
+      todayAttendance.status === 'fulfilled' ? todayAttendance.value : null,
+    payrollCommission:
+      payrollCommission.status === 'fulfilled' ? payrollCommission.value : null,
   };
 }

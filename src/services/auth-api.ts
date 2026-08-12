@@ -33,6 +33,7 @@ export interface SignedInUser {
   profilePhotoUrl?: string | null;
   timezone?: string;
   roleKey?: string;
+  isEmployee?: boolean;
   csActive?: boolean;
   accessPos?: boolean;
   accessInventory?: boolean;
@@ -85,6 +86,7 @@ interface SignInResponse {
     }>;
   };
   roleKey?: string | null;
+  isEmployee?: boolean;
 }
 
 interface BackendUserPayload {
@@ -109,6 +111,7 @@ interface BackendUserPayload {
       actions?: string[];
     }>;
   };
+  isEmployee?: boolean;
 }
 
 interface RefreshAuthResponse {
@@ -241,6 +244,7 @@ function mapSignedInUser(
     profilePhotoUrl: resolveProfilePhotoUrl(payload.profile_picture),
     timezone: payload.timezone,
     roleKey,
+    isEmployee: payload.isEmployee,
     csActive: payload.csActive,
     accessPos: payload.access_pos,
     accessInventory: payload.access_inventory,
