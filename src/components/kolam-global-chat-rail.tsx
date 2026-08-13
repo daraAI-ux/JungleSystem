@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   type TextInputKeyPressEventData,
+  type TextInputSelectionChangeEventData,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -275,6 +276,145 @@ interface KolamInboxComposerAccess {
   blockedReason: string | null;
   disabled: boolean;
   lockedBy: string | null;
+}
+
+type KolamComposerKeyModifiers = {
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+};
+
+type KolamComposerSelection = {
+  end: number;
+  start: number;
+};
+
+type KolamComposerEnterAction = 'newline' | 'other' | 'shift' | 'submit';
+
+function clampComposerSelection(
+  value: string,
+  selection: KolamComposerSelection | null,
+): KolamComposerSelection {
+  if (!selection) {
+    return {end: value.length, start: value.length};
+  }
+
+  const start = Math.max(0, Math.min(selection.start, value.length));
+  const end = Math.max(start, Math.min(selection.end, value.length));
+  return {end, start};
+}
+
+function insertComposerNewline(
+  value: string,
+  selection: KolamComposerSelection | null,
+) {
+  const caret = clampComposerSelection(value, selection);
+  return {
+    selection: {end: caret.start + 1, start: caret.start + 1},
+    text: `${value.slice(0, caret.start)}\n${value.slice(caret.end)}`,
+  };
+}
+
+function isComposerNewlineEnter(
+  nativeEvent: TextInputKeyPressEventData & KolamComposerKeyModifiers,
+  shiftHeld: boolean,
+) {
+  if (nativeEvent.key !== 'Enter') {
+    return false;
+  }
+
+  return Boolean(
+    nativeEvent.shiftKey ||
+      nativeEvent.ctrlKey ||
+      nativeEvent.metaKey ||
+      shiftHeld,
+  );
+}
+
+function useKolamComposerEnterKey(
+  value: string,
+  onChangeText: (next: string) => void,
+) {
+  const selectionRef = React.useRef<KolamComposerSelection | null>(null);
+  const hasSelectionRef = React.useRef(false);
+  const shiftHeldRef = React.useRef(false);
+  const skipSubmitRef = React.useRef(false);
+  const [selection, setSelection] = React.useState<
+    KolamComposerSelection | undefined
+  >(undefined);
+
+  const handleSelectionChange = React.useCallback(
+    (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+      hasSelectionRef.current = true;
+      selectionRef.current = event.nativeEvent.selection;
+      setSelection(current => (current ? undefined : current));
+    },
+    [],
+  );
+
+  const handleKeyPress = React.useCallback(
+    (
+      event: NativeSyntheticEvent<TextInputKeyPressEventData>,
+    ): KolamComposerEnterAction => {
+      const nativeEvent = event.nativeEvent as TextInputKeyPressEventData &
+        KolamComposerKeyModifiers;
+
+      if (nativeEvent.key === 'Shift') {
+        shiftHeldRef.current = true;
+        return 'shift';
+      }
+
+      if (
+        nativeEvent.key !== 'Enter' &&
+        nativeEvent.key !== 'Control' &&
+        nativeEvent.key !== 'Meta' &&
+        nativeEvent.key !== 'Alt'
+      ) {
+        if (!nativeEvent.shiftKey) {
+          shiftHeldRef.current = false;
+        }
+        return 'other';
+      }
+
+      if (!isComposerNewlineEnter(nativeEvent, shiftHeldRef.current)) {
+        if (nativeEvent.key !== 'Enter') {
+          return 'other';
+        }
+        event.preventDefault();
+        skipSubmitRef.current = false;
+        return 'submit';
+      }
+
+      event.preventDefault();
+      skipSubmitRef.current = true;
+      const next = insertComposerNewline(
+        value,
+        hasSelectionRef.current ? selectionRef.current : null,
+      );
+      hasSelectionRef.current = true;
+      selectionRef.current = next.selection;
+      setSelection(next.selection);
+      onChangeText(next.text);
+      return 'newline';
+    },
+    [onChangeText, value],
+  );
+
+  const consumeSkipSubmit = React.useCallback(() => {
+    if (!skipSubmitRef.current) {
+      return false;
+    }
+    skipSubmitRef.current = false;
+    return true;
+  }, []);
+
+  return {
+    consumeSkipSubmit,
+    handleKeyPress,
+    handleSelectionChange,
+    selection,
+  };
 }
 
 interface KolamTeamChatCreateRoomDraft {
@@ -2959,9 +3099,16 @@ function KolamTeamChatDaraWindow({
     ],
   );
 
+  const composerEnter = useKolamComposerEnterKey(
+    composerText,
+    onComposerTextChange,
+  );
   const handleSubmitComposer = React.useCallback(() => {
+    if (composerEnter.consumeSkipSubmit()) {
+      return;
+    }
     onSend().catch(() => undefined);
-  }, [onSend]);
+  }, [composerEnter, onSend]);
   const handlePickMention = React.useCallback(
     (username: string) => {
       const tag = `@${username} `;
@@ -2978,18 +3125,11 @@ function KolamTeamChatDaraWindow({
   );
   const handleComposerKeyPress = React.useCallback(
     (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-      const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & {
-        shiftKey?: boolean;
-      };
-
-      if (nativeEvent.key !== 'Enter' || nativeEvent.shiftKey) {
-        return;
+      if (composerEnter.handleKeyPress(event) === 'submit') {
+        onSend().catch(() => undefined);
       }
-
-      event.preventDefault();
-      onSend().catch(() => undefined);
     },
-    [onSend],
+    [composerEnter, onSend],
   );
 
   return (
@@ -3086,11 +3226,15 @@ function KolamTeamChatDaraWindow({
             multiline
             onChangeText={onComposerTextChange}
             onKeyPress={handleComposerKeyPress}
+            onSelectionChange={composerEnter.handleSelectionChange}
             onSubmitEditing={handleSubmitComposer}
             placeholder={
               composerDisabled ? 'Chat DARA sedang dimuat' : 'Tulis pesan...'
             }
             placeholderTextColor={V.colors.mutedFg}
+            {...(composerEnter.selection
+              ? {selection: composerEnter.selection}
+              : null)}
             style={[styles.composerInput, styles.teamDaraComposerInput]}
             submitBehavior="submit"
             value={composerText}
@@ -4375,24 +4519,24 @@ function KolamChatRailDetailPanel({
     onSend,
   ]);
 
+  const composerEnter = useKolamComposerEnterKey(
+    composerText,
+    handleComposerInputChange,
+  );
   const handleSubmitComposer = React.useCallback(() => {
+    if (composerEnter.consumeSkipSubmit()) {
+      return;
+    }
     handleSendFromComposer();
-  }, [handleSendFromComposer]);
+  }, [composerEnter, handleSendFromComposer]);
 
   const handleComposerKeyPress = React.useCallback(
     (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-      const nativeEvent = event.nativeEvent as TextInputKeyPressEventData & {
-        shiftKey?: boolean;
-      };
-
-      if (nativeEvent.key !== 'Enter' || nativeEvent.shiftKey) {
-        return;
+      if (composerEnter.handleKeyPress(event) === 'submit') {
+        handleSendFromComposer().catch(() => undefined);
       }
-
-      event.preventDefault();
-      handleSendFromComposer().catch(() => undefined);
     },
-    [handleSendFromComposer],
+    [composerEnter, handleSendFromComposer],
   );
 
   const handleStartEditMessage = React.useCallback(
@@ -4992,6 +5136,7 @@ function KolamChatRailDetailPanel({
               multiline
               onChangeText={handleComposerInputChange}
               onKeyPress={handleComposerKeyPress}
+              onSelectionChange={composerEnter.handleSelectionChange}
               onSubmitEditing={handleSubmitComposer}
               placeholder={
                 mode === 'team-chat' &&
@@ -5002,6 +5147,9 @@ function KolamChatRailDetailPanel({
                   : 'Tulis pesan...'
               }
               placeholderTextColor={V.colors.mutedFg}
+              {...(composerEnter.selection
+                ? {selection: composerEnter.selection}
+                : null)}
               style={styles.composerInput}
               submitBehavior="submit"
               value={composerText}

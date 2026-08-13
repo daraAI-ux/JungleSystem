@@ -1277,8 +1277,16 @@ describe('KolamGlobalChatRail', () => {
       });
     });
 
-    expect(preventDefaultForShiftEnter).not.toHaveBeenCalled();
+    expect(preventDefaultForShiftEnter).toHaveBeenCalled();
     expect(sendMessage).not.toHaveBeenCalled();
+    expect(
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(
+          node =>
+            node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+        )!.props.value,
+    ).toBe('Apa prioritas hari ini?\n');
 
     const preventDefaultForEnter = jest.fn();
     await ReactTestRenderer.act(async () => {
@@ -2137,14 +2145,27 @@ describe('KolamGlobalChatRail', () => {
 
     await ReactTestRenderer.act(async () => {
       await input!.props.onChangeText('Baris satu');
-      await input!.props.onKeyPress({
+    });
+
+    const updatedInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
+
+    await ReactTestRenderer.act(async () => {
+      await updatedInput!.props.onKeyPress({
         nativeEvent: {key: 'Enter', shiftKey: true},
         preventDefault,
       });
     });
 
-    expect(preventDefault).not.toHaveBeenCalled();
+    expect(preventDefault).toHaveBeenCalled();
     expect(sendMessage).not.toHaveBeenCalled();
+    expect(
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox')!
+        .props.value,
+    ).toBe('Baris satu\n');
   });
 
   it('picks and sends an inbox image from the composer when reply gate allows it', async () => {
@@ -3755,6 +3776,77 @@ describe('KolamGlobalChatRail', () => {
       .findAllByType(TextInput)
       .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
     expect(composerInput!.props.value).toBe('Halo @maya ');
+  });
+
+  it('inserts a newline in the team chat composer on Shift+Enter', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [
+        {
+          _id: 'room-1',
+          name: 'Operasional',
+          category: 'general',
+          lastMessagePreview: 'Barang siap dikirim',
+          unreadCount: 0,
+        },
+      ],
+      totalUnread: 0,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      loading: false,
+      messages: [],
+      presence: {onlineCount: 1, typingUserIds: [], viewingCount: 1},
+      sendMessage,
+      signalTyping: jest.fn(),
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Pilih room Operasional');
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
+    const input = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
+    const preventDefault = jest.fn();
+
+    await ReactTestRenderer.act(async () => {
+      await input!.props.onChangeText('Baris satu');
+    });
+
+    const updatedInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat');
+
+    await ReactTestRenderer.act(async () => {
+      await updatedInput!.props.onKeyPress({
+        nativeEvent: {key: 'Enter', shiftKey: true},
+        preventDefault,
+      });
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(
+      renderer!.root
+        .findAllByType(TextInput)
+        .find(node => node.props.accessibilityLabel === 'Tulis pesan team chat')!
+        .props.value,
+    ).toBe('Baris satu\n');
   });
 
   it('shows a DARA thinking bubble after sending a team message that mentions DARA', async () => {
