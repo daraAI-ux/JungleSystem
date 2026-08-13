@@ -101,7 +101,6 @@ import {
   updateKolamSitemapConfig,
   updateKolamYoutubeSection,
   updateKolamWebSetting,
-  updateKolamWebSettingVersion,
   syncKolamRegions,
   uploadKolamDaraAvatar,
   uploadKolamMarketplaceContentImage,
@@ -3491,6 +3490,12 @@ export function useKolamSettingsPanelController(
       }
 
       const updated = await updateKolamWebSetting({
+        versions: {
+          kolam: webSettingDraft.versionKolam.trim(),
+          enclonura: webSettingDraft.versionEnclonura.trim(),
+          pos: webSettingDraft.versionPos.trim(),
+          marketplace: webSettingDraft.versionMarketplace.trim(),
+        },
         companyName: cleanOptionalString(webSettingDraft.companyName),
         companyTagline: cleanOptionalString(webSettingDraft.companyTagline),
         address: cleanOptionalString(webSettingDraft.address),
@@ -3663,20 +3668,6 @@ export function useKolamSettingsPanelController(
           webSettingDraft.chatStoreEnabled,
         ),
       });
-
-      await Promise.all(
-        [
-          ['kolam', webSettingDraft.versionKolam],
-          ['enclonura', webSettingDraft.versionEnclonura],
-          ['pos', webSettingDraft.versionPos],
-          ['marketplace', webSettingDraft.versionMarketplace],
-        ].map(([app, version]) =>
-          updateKolamWebSettingVersion({
-            app: app as 'kolam' | 'enclonura' | 'pos' | 'marketplace',
-            version: version.trim(),
-          }),
-        ),
-      );
 
       const nextVersions = {
         versions: {
