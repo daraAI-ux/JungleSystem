@@ -1371,6 +1371,131 @@ describe('KolamGlobalChatRail', () => {
     ).toBe(false);
   });
 
+  it('clears the DARA window thinking bubble when a new AI message appears', async () => {
+    const sendMessage = jest.fn().mockResolvedValue(undefined);
+    let daraMessages: Array<{
+      attachments: unknown[];
+      author: string;
+      body: string;
+      embeds: unknown[];
+      id: string;
+      linkPreviews: unknown[];
+      mine: boolean;
+      reactions: unknown[];
+      senderIsAi?: boolean;
+    }> = [];
+    useDetailMock.mockImplementation((input: {selectedId: string | null}) => {
+      const detail = getDefaultDetailMock();
+      if (input.selectedId === 'room-dara-wait') {
+        return {
+          ...detail,
+          messages: daraMessages,
+          sendMessage,
+        } as ReturnType<typeof getDefaultDetailMock>;
+      }
+
+      return detail;
+    });
+    openTeamChatDirectMock.mockResolvedValue({
+      _id: 'room-dara-wait',
+      category: 'direct',
+      directPeerName: 'DARA',
+      isDaraDirect: true,
+    });
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    const daraHeaderButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Buka jendela DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      daraHeaderButton!.props.onPress();
+    });
+
+    const daraInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await daraInput!.props.onChangeText('cek stok');
+    });
+
+    const updatedDaraInput = renderer!.root
+      .findAllByType(TextInput)
+      .find(
+        node =>
+          node.props.accessibilityLabel === 'Tulis pesan DARA team chat',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      await updatedDaraInput!.props.onKeyPress({
+        nativeEvent: {key: 'Enter'},
+        preventDefault: jest.fn(),
+      });
+    });
+
+    expect(
+      renderer!.root
+        .findAll(
+          node =>
+            node.props?.accessibilityLabel === 'DARA thinking bubble',
+        )
+        .some(Boolean),
+    ).toBe(true);
+
+    daraMessages = [
+      {
+        attachments: [],
+        author: 'DARA',
+        body: 'Stok aman.',
+        embeds: [],
+        id: 'msg-ai-new',
+        linkPreviews: [],
+        mine: false,
+        reactions: [],
+        senderIsAi: true,
+      },
+    ];
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(
+        <KolamGlobalChatRail mode="team-chat" onClose={() => undefined} />,
+      );
+    });
+
+    expect(
+      renderer!.root
+        .findAll(
+          node =>
+            node.props?.accessibilityLabel === 'DARA thinking bubble',
+        )
+        .some(Boolean),
+    ).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.unmount();
+    });
+  });
+
   it('renders a scrollable read-only inbox conversation list without loading message details', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [

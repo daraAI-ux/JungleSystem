@@ -150,6 +150,7 @@ export interface KolamChatRailDetailState {
     patch: Partial<KolamChatMessage>,
   ) => void;
   upsertInboxMessageFromLive: (message: KolamChatMessage) => void;
+  upsertTeamChatMessageFromLive: (message: KolamTeamChatMessage) => void;
   reactToMessage: (messageId: string, emoji: string) => Promise<void>;
   redialCall: () => Promise<void>;
   refreshCall: () => Promise<void>;
@@ -670,6 +671,26 @@ export function useKolamChatRailDetail({
     [conversation, mode],
   );
 
+  const upsertTeamChatMessageFromLive = useCallback(
+    (message: KolamTeamChatMessage) => {
+      if (mode !== 'team-chat' || !selectedId || !message?._id) {
+        return;
+      }
+
+      const nextMessage = mapTeamChatMessage(message, currentUserId);
+      setMessages(current => {
+        if (current.some(item => item.id === nextMessage.id)) {
+          return current.map(item =>
+            item.id === nextMessage.id ? { ...item, ...nextMessage } : item,
+          );
+        }
+
+        return [...current, nextMessage];
+      });
+    },
+    [currentUserId, mode, selectedId],
+  );
+
   const editMessage = useCallback(
     async (messageId: string, text: string) => {
       const body = text.trim();
@@ -1026,6 +1047,7 @@ export function useKolamChatRailDetail({
     toggleCallHand,
     unmuteCallParticipant,
     upsertInboxMessageFromLive,
+    upsertTeamChatMessageFromLive,
     updatePresenceFromLive,
   };
 }

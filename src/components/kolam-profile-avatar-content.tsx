@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
   Image,
+  PixelRatio,
   StyleSheet,
   type ImageStyle,
   type StyleProp,
@@ -40,11 +41,17 @@ export function KolamProfileAvatarContent({
       );
     }
 
+    const layoutSize = getAvatarLayoutSize(imageStyle);
+
     return (
       <Image
         accessibilityIgnoresInvertColors
         resizeMode="cover"
-        source={{uri: visibleImageUrl}}
+        source={{
+          height: layoutSize,
+          uri: visibleImageUrl,
+          width: layoutSize,
+        }}
         style={imageStyle}
         onError={() => setFailedImageUrl(visibleImageUrl)}
       />
@@ -97,6 +104,14 @@ function useAvatarSvgXml(sourceUri: string | null | undefined) {
   }, [sourceUri]);
 
   return svgXml;
+}
+
+function getAvatarLayoutSize(imageStyle: StyleProp<ImageStyle>) {
+  const flat = StyleSheet.flatten(imageStyle);
+  const width = typeof flat?.width === 'number' ? flat.width : 32;
+  const height = typeof flat?.height === 'number' ? flat.height : width;
+  const layout = Math.max(width, height);
+  return Math.max(64, Math.round(PixelRatio.getPixelSizeForLayoutSize(layout)));
 }
 
 function isSvgUri(uri: string) {

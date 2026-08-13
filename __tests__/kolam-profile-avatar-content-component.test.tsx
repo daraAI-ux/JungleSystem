@@ -20,8 +20,13 @@ describe('KolamProfileAvatarContent', () => {
     });
 
     expect(renderer!.root.findByType(Image).props.source).toEqual({
+      height: expect.any(Number),
       uri: 'https://cdn.example.com/staff.jpg',
+      width: expect.any(Number),
     });
+    expect(renderer!.root.findByType(Image).props.source.width).toBeGreaterThanOrEqual(
+      64,
+    );
   });
 
   it('renders SVG avatars as native vector XML', async () => {

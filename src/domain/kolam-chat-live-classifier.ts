@@ -66,6 +66,16 @@ export function classifyKolamChatLiveEvent(
   };
 }
 
+function readLiveTargetId(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
+}
+
 export function getKolamChatLiveEventTargetId({
   contract,
   payload,
@@ -75,12 +85,39 @@ export function getKolamChatLiveEventTargetId({
   }
 
   const record = payload as Record<string, unknown>;
-  const id =
-    contract.stream === 'team-chat'
-      ? record.roomId ?? record.id
-      : record.conversationId ?? record.id;
+  if (contract.stream === 'team-chat') {
+    const nested =
+      record.data && typeof record.data === 'object'
+        ? (record.data as Record<string, unknown>)
+        : undefined;
+    const message =
+      (record.message && typeof record.message === 'object'
+        ? (record.message as Record<string, unknown>)
+        : undefined) ??
+      (nested?.message && typeof nested.message === 'object'
+        ? (nested.message as Record<string, unknown>)
+        : undefined);
+    const roomFromMessage = message
+      ? readLiveTargetId(message.room) ||
+        (message.room && typeof message.room === 'object'
+          ? readLiveTargetId((message.room as {_id?: unknown})._id)
+          : undefined)
+      : undefined;
+    const envelopeId = readLiveTargetId(record.id);
 
-  return typeof id === 'string' ? id : undefined;
+    return (
+      readLiveTargetId(record.roomId) ||
+      readLiveTargetId(record.room) ||
+      readLiveTargetId(nested?.roomId) ||
+      readLiveTargetId(nested?.room) ||
+      roomFromMessage ||
+      (envelopeId && !envelopeId.includes(':') ? envelopeId : undefined)
+    );
+  }
+
+  return (
+    readLiveTargetId(record.conversationId) || readLiveTargetId(record.id)
+  );
 }
 
 function getIsForSelectedDetail({

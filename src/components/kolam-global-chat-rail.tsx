@@ -18,7 +18,10 @@ import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
-import { classifyKolamChatLiveEvent } from '../domain/kolam-chat-live-classifier';
+import {
+  classifyKolamChatLiveEvent,
+  getKolamChatLiveEventTargetId,
+} from '../domain/kolam-chat-live-classifier';
 import { resolveKolamTeamChatBotAvatarRawUrl } from '../domain/kolam-team-chat-bot-display';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
 import {
@@ -60,6 +63,7 @@ import type {
   KolamTeamChatCreateRoomCategory,
   KolamTeamChatEmbed,
   KolamTeamChatLinkPreview,
+  KolamTeamChatMessage,
   KolamTeamChatPresence,
   KolamTeamChatReplyPreview,
   KolamTeamChatUserRef,
@@ -214,6 +218,7 @@ const PLATFORM_GLOW_UNKNOWN: KolamPlatformGlowState = {
 const DARA_THINKING_ACTIVE_EVENTS = new Set([
   'dara.thinking',
   'dara.thinking.chunk',
+  'dara.processing',
 ]);
 const DARA_THINKING_DONE_EVENTS = new Set(['dara.thinking.done']);
 const CHAT_ADMIN_ROLE_KEYS = new Set([
@@ -334,6 +339,214 @@ interface KolamDaraThinkingLiveSignal {
 
 type KolamDaraThinkingLivePatch = Omit<KolamDaraThinkingLiveSignal, 'key'>;
 
+const KOLAM_DARA_TYPING_WORD_MS = 55;
+
+type KolamDaraStreamEntry = {
+  fullText: string;
+  messageId: string;
+};
+
+function useKolamTypingEffect(
+  text: string,
+  options: {
+    enabled?: boolean;
+    onDone?: () => void;
+    onUpdate?: (visible: string) => void;
+    signal?: AbortSignal | null;
+  } = {},
+) {
+  const {enabled = true, onDone, onUpdate, signal = null} = options;
+  const onDoneRef = React.useRef(onDone);
+  const onUpdateRef = React.useRef(onUpdate);
+  onDoneRef.current = onDone;
+  onUpdateRef.current = onUpdate;
+
+  const [visibleText, setVisibleText] = React.useState(enabled ? '' : text);
+  const [isDone, setIsDone] = React.useState(!enabled);
+
+  React.useEffect(() => {
+    if (!enabled || !text) {
+      setVisibleText(text || '');
+      setIsDone(true);
+      return undefined;
+    }
+
+    setIsDone(false);
+    setVisibleText('');
+
+    const units = text.match(/\S+\s*/g) || (text ? [text] : []);
+    let index = 0;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const finish = () => {
+      setVisibleText(text);
+      setIsDone(true);
+      onDoneRef.current?.();
+    };
+
+    const tick = () => {
+      if (cancelled || signal?.aborted) {
+        finish();
+        return;
+      }
+      if (index >= units.length) {
+        finish();
+        return;
+      }
+      index += 1;
+      const next = units.slice(0, index).join('');
+      setVisibleText(next);
+      onUpdateRef.current?.(next);
+      timer = setTimeout(tick, KOLAM_DARA_TYPING_WORD_MS);
+      (timer as {unref?: () => void}).unref?.();
+    };
+
+    timer = setTimeout(tick, KOLAM_DARA_TYPING_WORD_MS);
+    (timer as {unref?: () => void}).unref?.();
+
+    const onAbort = () => {
+      cancelled = true;
+      finish();
+    };
+    signal?.addEventListener('abort', onAbort);
+
+    return () => {
+      cancelled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      signal?.removeEventListener('abort', onAbort);
+    };
+  }, [enabled, signal, text]);
+
+  return {
+    isDone: !enabled || isDone,
+    visibleText: enabled ? visibleText : text,
+  };
+}
+
+function useKolamDaraStreaming(onTick?: () => void) {
+  const [entry, setEntry] = React.useState<KolamDaraStreamEntry | null>(null);
+  const [doneIds, setDoneIds] = React.useState<Set<string>>(() => new Set());
+  const [abortSignal, setAbortSignal] = React.useState<AbortSignal | null>(
+    null,
+  );
+  const historySealedRef = React.useRef(false);
+  const entryIdRef = React.useRef<string | null>(null);
+  const abortRef = React.useRef<AbortController | null>(null);
+  const onTickRef = React.useRef(onTick);
+  onTickRef.current = onTick;
+
+  const markDone = React.useCallback((messageId: string) => {
+    setDoneIds(current => new Set(current).add(messageId));
+    setEntry(null);
+    entryIdRef.current = null;
+    abortRef.current = null;
+    setAbortSignal(null);
+    onTickRef.current?.();
+  }, []);
+
+  const beginAiReply = React.useCallback((messageId: string, fullText: string) => {
+    const text = String(fullText || '').trim();
+    if (!messageId || !text) {
+      return;
+    }
+    if (entryIdRef.current === messageId) {
+      return;
+    }
+    if (entryIdRef.current && entryIdRef.current !== messageId) {
+      setDoneIds(current => new Set(current).add(messageId));
+      return;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    entryIdRef.current = messageId;
+    setAbortSignal(controller.signal);
+    setEntry({fullText: text, messageId});
+  }, []);
+
+  const sealHistory = React.useCallback((ids: string[]) => {
+    if (historySealedRef.current) {
+      return;
+    }
+    historySealedRef.current = true;
+    setDoneIds(current => {
+      const next = new Set(current);
+      ids.forEach(id => {
+        if (id) {
+          next.add(id);
+        }
+      });
+      return next;
+    });
+  }, []);
+
+  const resetContext = React.useCallback(() => {
+    historySealedRef.current = false;
+    setDoneIds(new Set());
+    entryIdRef.current = null;
+    setEntry(null);
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setAbortSignal(null);
+  }, []);
+
+  const {isDone, visibleText} = useKolamTypingEffect(entry?.fullText ?? '', {
+    enabled: Boolean(entry?.fullText),
+    signal: abortSignal,
+    onUpdate: () => onTickRef.current?.(),
+    onDone: () => {
+      const id = entryIdRef.current;
+      if (id) {
+        markDone(id);
+      }
+    },
+  });
+
+  const getVisibleText = React.useCallback(
+    (messageId: string, fallback: string) => {
+      if (entry?.messageId === messageId) {
+        return visibleText;
+      }
+      return fallback;
+    },
+    [entry, visibleText],
+  );
+
+  const isStreaming = React.useCallback(
+    (messageId: string) =>
+      entry?.messageId === messageId && Boolean(entry?.fullText) && !isDone,
+    [entry, isDone],
+  );
+
+  const shouldAnimate = React.useCallback(
+    (messageId: string) => !doneIds.has(messageId),
+    [doneIds],
+  );
+
+  return {
+    beginAiReply,
+    getVisibleText,
+    isStreaming,
+    resetContext,
+    sealHistory,
+    shouldAnimate,
+  };
+}
+
+function getDaraStreamedMessageBody(
+  message: KolamChatRailDetailMessage,
+  stream: ReturnType<typeof useKolamDaraStreaming>,
+) {
+  if (message.senderIsAi && stream.isStreaming(message.id)) {
+    return stream.getVisibleText(message.id, message.body);
+  }
+  return message.body;
+}
+
 function normalizeDaraAvatarPath(value?: string | null) {
   const raw = String(value ?? '').trim();
   if (!raw) {
@@ -443,6 +656,7 @@ export function KolamGlobalChatRail({
   const [daraWindowThinkingLiveSignal, setDaraWindowThinkingLiveSignal] =
     React.useState<KolamDaraThinkingLiveSignal | null>(null);
   const daraWindowThinkingSignalKeyRef = React.useRef(0);
+  const daraWindowWaitKnownIdsRef = React.useRef<Set<string>>(new Set());
   const [liveStatus, setLiveStatus] =
     React.useState<KolamChatLiveStreamStatus>('idle');
   const [liveLastEventAt, setLiveLastEventAt] = React.useState<number | null>(
@@ -535,6 +749,11 @@ export function KolamGlobalChatRail({
     refreshDetail: detail.refresh,
     refreshList: data.refresh,
   });
+  const { syncFromLiveClassification: syncDaraWindowFromLive } =
+    useKolamChatRailLiveSync({
+      refreshDetail: () => daraWindowDetail.refresh({ quiet: true }),
+      refreshList: () => undefined,
+    });
   const soundSettings = useKolamNotificationSoundSettings();
   const notificationSoundService = React.useMemo(
     () =>
@@ -659,22 +878,28 @@ export function KolamGlobalChatRail({
         event,
         daraWindowRoomId,
       );
+      const isDaraThinkingEvent =
+        DARA_THINKING_ACTIVE_EVENTS.has(classification.eventName) ||
+        DARA_THINKING_DONE_EVENTS.has(classification.eventName);
       const isForDaraWindowDetail =
         mode === 'team-chat' &&
         daraHeaderMenuOpen &&
         Boolean(daraWindowRoomId) &&
         classification.stream === 'team-chat' &&
-        (!classification.targetId ||
-          classification.targetId === daraWindowRoomId) &&
+        classification.targetId === daraWindowRoomId &&
+        !isDaraThinkingEvent &&
+        classification.eventName !== 'message.created' &&
         classification.refreshTargets.some(target =>
           ['team-room-detail', 'team-room-list'].includes(target),
         );
 
       syncFromLiveClassification(classification);
       if (isForDaraWindowDetail) {
-        Promise.resolve(daraWindowDetail.refresh({ quiet: true })).catch(
-          () => undefined,
-        );
+        syncDaraWindowFromLive({
+          ...classification,
+          refreshDetail: true,
+          refreshList: false,
+        });
       }
 
       if (daraThinkingPatch) {
@@ -684,12 +909,30 @@ export function KolamGlobalChatRail({
           key: daraThinkingSignalKeyRef.current,
         });
       }
-      if (daraWindowThinkingPatch) {
+      if (daraWindowThinkingPatch?.state === 'active') {
         daraWindowThinkingSignalKeyRef.current += 1;
         setDaraWindowThinkingLiveSignal({
           ...daraWindowThinkingPatch,
           key: daraWindowThinkingSignalKeyRef.current,
         });
+      }
+
+      const teamMessageCreated = getTeamChatMessageCreatedFromLiveEvent(event);
+      const teamLiveRoomId = getTeamChatLiveRoomId(event, teamMessageCreated);
+      if (teamMessageCreated && mode === 'team-chat') {
+        if (teamLiveRoomId && teamLiveRoomId === selectedItemId) {
+          detail.upsertTeamChatMessageFromLive(teamMessageCreated);
+        }
+        if (
+          daraHeaderMenuOpen &&
+          daraWindowRoomId &&
+          teamLiveRoomId === daraWindowRoomId
+        ) {
+          daraWindowDetail.upsertTeamChatMessageFromLive(teamMessageCreated);
+          if (isLiveTeamChatAiMessage(teamMessageCreated)) {
+            setDaraWindowThinkingLiveSignal(null);
+          }
+        }
       }
 
       if (
@@ -773,6 +1016,7 @@ export function KolamGlobalChatRail({
       daraHeaderMenuOpen,
       daraWindowDetail,
       daraWindowRoomId,
+      syncDaraWindowFromLive,
       detail,
       mode,
       notificationSoundService,
@@ -1323,6 +1567,16 @@ export function KolamGlobalChatRail({
     }
 
     playSendBeep();
+    daraWindowWaitKnownIdsRef.current = new Set(
+      daraWindowDetail.messages.map(message => message.id),
+    );
+    daraWindowThinkingSignalKeyRef.current += 1;
+    setDaraWindowThinkingLiveSignal({
+      key: daraWindowThinkingSignalKeyRef.current,
+      line: DARA_THINKING_DEFAULT_LINE,
+      roomId: daraWindowRoomId || '',
+      state: 'active',
+    });
 
     if (daraPendingAttachment) {
       await daraWindowDetail.sendAttachment(daraPendingAttachment, body);
@@ -1340,7 +1594,55 @@ export function KolamGlobalChatRail({
     daraPendingAttachment,
     daraWindowBusy,
     daraWindowDetail,
+    daraWindowRoomId,
     playSendBeep,
+  ]);
+  const daraWindowThinkingActive =
+    daraWindowThinkingLiveSignal?.state === 'active';
+  const daraWindowMessages = daraWindowDetail.messages;
+  const refreshDaraWindow = daraWindowDetail.refresh;
+
+  React.useEffect(() => {
+    if (!daraWindowThinkingActive) {
+      return;
+    }
+
+    const knownIds = daraWindowWaitKnownIdsRef.current;
+    const hasNewAiMessage = daraWindowMessages.some(
+      message => message.senderIsAi && !knownIds.has(message.id),
+    );
+    if (hasNewAiMessage) {
+      setDaraWindowThinkingLiveSignal(null);
+    }
+  }, [daraWindowMessages, daraWindowThinkingActive]);
+
+  React.useEffect(() => {
+    if (
+      !daraWindowThinkingActive ||
+      !daraHeaderMenuOpen ||
+      !daraWindowRoomId
+    ) {
+      return undefined;
+    }
+
+    const pollTimer = setInterval(() => {
+      Promise.resolve(refreshDaraWindow({quiet: true})).catch(() => undefined);
+    }, 4000);
+    const maxWaitTimer = setTimeout(() => {
+      setDaraWindowThinkingLiveSignal(null);
+    }, 180000);
+    (pollTimer as {unref?: () => void}).unref?.();
+    (maxWaitTimer as {unref?: () => void}).unref?.();
+
+    return () => {
+      clearInterval(pollTimer);
+      clearTimeout(maxWaitTimer);
+    };
+  }, [
+    daraHeaderMenuOpen,
+    daraWindowRoomId,
+    daraWindowThinkingActive,
+    refreshDaraWindow,
   ]);
 
   return (
@@ -1661,6 +1963,7 @@ export function KolamGlobalChatRail({
           errorMessage={daraWindowError}
           imageUrl={daraAvatarState.imageUrl}
           onClose={handleCloseDaraWindow}
+          roomId={daraWindowRoomId}
           onComposerTextChange={handleDaraComposerTextChange}
           onEmojiPick={handlePickDaraEmoji}
           onEmojiToggle={() => setDaraEmojiPickerOpen(current => !current)}
@@ -2605,6 +2908,7 @@ function KolamTeamChatDaraWindow({
   onPendingAttachmentPick,
   onSend,
   pendingAttachment,
+  roomId,
 }: {
   busy: boolean;
   composerText: string;
@@ -2621,6 +2925,7 @@ function KolamTeamChatDaraWindow({
   onPendingAttachmentPick: () => void | Promise<void>;
   onSend: () => Promise<void>;
   pendingAttachment: NativeImagePickerResult | null;
+  roomId: string | null;
 }) {
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const panelSize = React.useMemo(
@@ -2729,6 +3034,7 @@ function KolamTeamChatDaraWindow({
           errorMessage={errorMessage}
           imageUrl={imageUrl}
           loading={busy}
+          roomId={roomId}
         />
       </View>
 
@@ -2825,15 +3131,23 @@ function KolamTeamChatDaraWindowMessages({
   errorMessage,
   imageUrl,
   loading,
+  roomId,
 }: {
   daraThinkingLine: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   errorMessage?: string;
   imageUrl: string | null;
   loading: boolean;
+  roomId: string | null;
 }) {
   const messages = detail.messages;
   const displayedError = errorMessage || detail.errorMessage;
+  const [daraStreamTick, setDaraStreamTick] = React.useState(0);
+  const daraStream = useKolamDaraStreaming(() => {
+    setDaraStreamTick(current => current + 1);
+  });
+  const daraWaitKnownIdsRef = React.useRef<Set<string>>(new Set());
+  const daraThinkingActiveRef = React.useRef(false);
   const messageScrollRef = React.useRef<React.ElementRef<
     typeof ScrollView
   > | null>(null);
@@ -2843,8 +3157,56 @@ function KolamTeamChatDaraWindowMessages({
   );
 
   React.useEffect(() => {
+    daraWaitKnownIdsRef.current = new Set();
+    daraThinkingActiveRef.current = false;
+    daraStream.resetContext();
+    // Reset only when the DARA window room changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resetContext is stable
+  }, [roomId]);
+
+  React.useEffect(() => {
+    const thinking = Boolean(daraThinkingLine);
+    if (thinking && !daraThinkingActiveRef.current) {
+      daraWaitKnownIdsRef.current = new Set(
+        messages.map(message => message.id),
+      );
+    }
+    daraThinkingActiveRef.current = thinking;
+  }, [daraThinkingLine, messages]);
+
+  React.useEffect(() => {
+    if (loading || detail.loading || daraThinkingLine) {
+      return;
+    }
+
+    const ids = messages.map(message => message.id);
+    daraWaitKnownIdsRef.current = new Set(ids);
+    daraStream.sealHistory(ids);
+  }, [daraStream, daraThinkingLine, detail.loading, loading, messages]);
+
+  React.useEffect(() => {
+    if (loading || detail.loading) {
+      return;
+    }
+
+    const knownIds = daraWaitKnownIdsRef.current;
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index];
+      if (!message.senderIsAi || !message.body) {
+        continue;
+      }
+      if (knownIds.has(message.id) || !daraStream.shouldAnimate(message.id)) {
+        continue;
+      }
+
+      daraStream.beginAiReply(message.id, message.body);
+      break;
+    }
+  }, [daraStream, detail.loading, loading, messages]);
+
+  React.useEffect(() => {
     messageScrollRef.current?.scrollToEnd({ animated: false });
-  }, [messageScrollKey]);
+  }, [daraStreamTick, daraThinkingLine, messageScrollKey]);
 
   if (loading || detail.loading) {
     return (
@@ -2864,7 +3226,7 @@ function KolamTeamChatDaraWindowMessages({
     );
   }
 
-  if (messages.length === 0) {
+  if (messages.length === 0 && !daraThinkingLine) {
     return (
       <View style={styles.teamDaraWindowPlaceholder}>
         <Text style={styles.teamDaraWindowPlaceholderTitle}>
@@ -2897,7 +3259,9 @@ function KolamTeamChatDaraWindowMessages({
               styles.teamDaraWindowMessageBubble,
               message.mine
                 ? styles.teamDaraWindowMessageMine
-                : styles.teamDaraWindowMessageOther,
+                : message.senderIsAi
+                  ? styles.teamDaraWindowMessageAi
+                  : styles.teamDaraWindowMessageOther,
             ]}
           >
             <View style={styles.teamMessageAuthorRow}>
@@ -2911,7 +3275,11 @@ function KolamTeamChatDaraWindowMessages({
               </View>
               <Text style={styles.messageAuthor}>{message.author}</Text>
             </View>
-            {message.body ? <KolamTeamMentionText body={message.body} /> : null}
+            {getDaraStreamedMessageBody(message, daraStream) ? (
+              <KolamTeamMentionText
+                body={getDaraStreamedMessageBody(message, daraStream)}
+              />
+            ) : null}
             {message.attachments.length > 0 ? (
               <KolamChatAttachmentList attachments={message.attachments} />
             ) : null}
@@ -2925,7 +3293,10 @@ function KolamTeamChatDaraWindowMessages({
         )}
       />
       {daraThinkingLine ? (
-        <KolamDaraThinkingBubble line={daraThinkingLine} />
+        <KolamDaraThinkingBubble
+          imageUrl={imageUrl}
+          line={daraThinkingLine}
+        />
       ) : null}
     </ScrollView>
   );
@@ -3714,6 +4085,11 @@ function KolamChatRailDetailPanel({
   const [marketplaceSearch, setMarketplaceSearch] = React.useState('');
   const [contactDetailsOpen, setContactDetailsOpen] = React.useState(false);
   const [daraThinkingLine, setDaraThinkingLine] = React.useState('');
+  const [daraStreamTick, setDaraStreamTick] = React.useState(0);
+  const daraStream = useKolamDaraStreaming(() => {
+    setDaraStreamTick(current => current + 1);
+  });
+  const daraWaitKnownIdsRef = React.useRef<Set<string>>(new Set());
   const [editingMessageId, setEditingMessageId] = React.useState<string | null>(
     null,
   );
@@ -3804,6 +4180,8 @@ function KolamChatRailDetailPanel({
     setMarketplaceSearch('');
     setMarketplacePickerState({ items: [], loading: false });
     setDaraThinkingLine('');
+    daraWaitKnownIdsRef.current = new Set();
+    daraStream.resetContext();
     setEditingMessageId(null);
     setOpenTeamActionMessageId(null);
     setEditingDraft('');
@@ -3873,15 +4251,37 @@ function KolamChatRailDetailPanel({
   }, [marketplaceAttachPlatform, marketplacePickerOpen, marketplaceSearch]);
 
   React.useEffect(() => {
-    if (
-      daraThinkingLine &&
-      detail.messages.some(
-        message => !message.mine && message.author === 'DARA',
-      )
-    ) {
-      setDaraThinkingLine('');
+    if (mode !== 'team-chat' || detail.loading || daraThinkingLine) {
+      return;
     }
-  }, [daraThinkingLine, detail.messages]);
+
+    const ids = detail.messages.map(message => message.id);
+    daraWaitKnownIdsRef.current = new Set(ids);
+    daraStream.sealHistory(ids);
+  }, [daraStream, daraThinkingLine, detail.loading, detail.messages, mode]);
+
+  React.useEffect(() => {
+    if (mode !== 'team-chat' || detail.loading) {
+      return;
+    }
+
+    const knownIds = daraWaitKnownIdsRef.current;
+    for (let index = detail.messages.length - 1; index >= 0; index -= 1) {
+      const message = detail.messages[index];
+      if (!message.senderIsAi || !message.body) {
+        continue;
+      }
+      if (knownIds.has(message.id) || !daraStream.shouldAnimate(message.id)) {
+        continue;
+      }
+
+      daraStream.beginAiReply(message.id, message.body);
+      if (daraThinkingLine) {
+        setDaraThinkingLine('');
+      }
+      break;
+    }
+  }, [daraStream, daraThinkingLine, detail.loading, detail.messages, mode]);
 
   const scrollMessagesToEnd = React.useCallback(() => {
     messageScrollRef.current?.scrollToEnd({ animated: false });
@@ -3889,7 +4289,12 @@ function KolamChatRailDetailPanel({
 
   React.useEffect(() => {
     scrollMessagesToEnd();
-  }, [displayedMessageScrollKey, scrollMessagesToEnd, selectedItem.id]);
+  }, [
+    displayedMessageScrollKey,
+    daraStreamTick,
+    scrollMessagesToEnd,
+    selectedItem.id,
+  ]);
 
   React.useEffect(() => {
     if (
@@ -3952,12 +4357,16 @@ function KolamChatRailDetailPanel({
         daraReplyEnabled: detail.teamRoomMetadata.daraReplyEnabled,
       })
     ) {
+      daraWaitKnownIdsRef.current = new Set(
+        detail.messages.map(message => message.id),
+      );
       setDaraThinkingLine(DARA_THINKING_DEFAULT_LINE);
     }
 
     await onSend();
   }, [
     composerText,
+    detail.messages,
     detail.teamRoomMetadata.daraReplyEnabled,
     inboxComposerBlocked,
     onSend,
@@ -4283,9 +4692,12 @@ function KolamChatRailDetailPanel({
                     <View
                       style={[
                         styles.messageBubble,
-                        message.mine
-                          ? styles.messageBubbleMine
-                          : styles.messageBubbleOther,
+                        message.senderIsAi ||
+                        isInboxDetailAiMessage(message)
+                          ? styles.messageBubbleAi
+                          : message.mine
+                            ? styles.messageBubbleMine
+                            : styles.messageBubbleOther,
                       ]}
                     >
                       <View style={styles.teamMessageAuthorRow}>
@@ -4392,8 +4804,16 @@ function KolamChatRailDetailPanel({
                           {mode === 'team-chat' ? (
                             <View style={styles.teamMessageContentActionRow}>
                               <View style={styles.teamMessageContentStack}>
-                                {message.body ? (
-                                  <KolamTeamMentionText body={message.body} />
+                                {getDaraStreamedMessageBody(
+                                  message,
+                                  daraStream,
+                                ) ? (
+                                  <KolamTeamMentionText
+                                    body={getDaraStreamedMessageBody(
+                                      message,
+                                      daraStream,
+                                    )}
+                                  />
                                 ) : null}
                                 {message.attachments.length > 0 ? (
                                   <KolamChatAttachmentList
@@ -4470,7 +4890,10 @@ function KolamChatRailDetailPanel({
           ) : null}
 
           {daraThinkingLine ? (
-            <KolamDaraThinkingBubble line={daraThinkingLine} />
+            <KolamDaraThinkingBubble
+              imageUrl={daraAvatarUrl}
+              line={daraThinkingLine}
+            />
           ) : null}
         </View>
 
@@ -5680,19 +6103,31 @@ function KolamChatReplyComposerStrip({
   );
 }
 
-function KolamDaraThinkingBubble({ line }: { line: string }) {
+function KolamDaraThinkingBubble({
+  imageUrl,
+  line,
+}: {
+  imageUrl?: string | null;
+  line: string;
+}) {
   return (
     <View
       accessibilityLabel="DARA thinking bubble"
       style={styles.daraThinkingRow}
     >
-      <View style={styles.daraThinkingAvatar}>
-        <Text style={styles.daraThinkingAvatarText}>DA</Text>
+      <View style={styles.teamMessageAvatar}>
+        <KolamProfileAvatarContent
+          imageStyle={styles.teamMessageAvatarImage}
+          imageUrl={imageUrl || resolveDaraAvatarImageUrl()}
+          initials="DA"
+          textStyle={styles.teamMessageAvatarText}
+        />
       </View>
       <View style={styles.daraThinkingCopy}>
         <Text style={styles.daraThinkingAuthor}>DARA</Text>
         <Text style={styles.daraThinkingText}>
           {line || DARA_THINKING_DEFAULT_LINE}
+          <Text style={styles.daraThinkingDots}>...</Text>
         </Text>
       </View>
     </View>
@@ -7771,6 +8206,90 @@ function getInboxMessageCreatedFromLiveEvent(event: KolamChatLiveEvent) {
   return message?._id ? message : null;
 }
 
+function unwrapTeamChatLivePayload(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== 'object') {
+    return {};
+  }
+
+  const record = payload as Record<string, unknown>;
+  const nested = record.data;
+  if (
+    nested &&
+    typeof nested === 'object' &&
+    !record.roomId &&
+    !record.message &&
+    ((nested as Record<string, unknown>).roomId ||
+      (nested as Record<string, unknown>).message)
+  ) {
+    return nested as Record<string, unknown>;
+  }
+
+  return record;
+}
+
+function getTeamChatMessageCreatedFromLiveEvent(event: KolamChatLiveEvent) {
+  if (
+    event.contract.stream !== 'team-chat' ||
+    event.contract.eventName !== 'message.created'
+  ) {
+    return null;
+  }
+
+  const payload = unwrapTeamChatLivePayload(event.payload);
+  const message =
+    payload.message && typeof payload.message === 'object'
+      ? (payload.message as KolamTeamChatMessage)
+      : null;
+  if (!message) {
+    return null;
+  }
+
+  const messageId =
+    readLiveString(message._id) ||
+    readLiveString((message as {id?: unknown}).id);
+  if (!messageId) {
+    return null;
+  }
+
+  return {
+    ...message,
+    _id: messageId,
+  };
+}
+
+function getTeamChatLiveRoomId(
+  event: KolamChatLiveEvent,
+  message?: KolamTeamChatMessage | null,
+) {
+  const payload = unwrapTeamChatLivePayload(event.payload);
+  const roomFromMessage =
+    readLiveString(message?.room) ||
+    readLiveString(
+      message?.room && typeof message.room === 'object'
+        ? (message.room as {_id?: unknown})._id
+        : undefined,
+    );
+
+  return (
+    readLiveString(payload.roomId) ||
+    readLiveString(payload.room) ||
+    roomFromMessage ||
+    readLiveString(getKolamChatLiveEventTargetId(event))
+  );
+}
+
+function isLiveTeamChatAiMessage(message: KolamTeamChatMessage) {
+  const botKey = message.botKey?.trim().toLowerCase();
+  const botName = message.botName?.trim().toLowerCase();
+
+  return (
+    message.senderType === 'ai' ||
+    Boolean(botKey) ||
+    botName === 'dara' ||
+    botName?.includes('dara') === true
+  );
+}
+
 function readLiveString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
@@ -7791,10 +8310,7 @@ function getDaraThinkingLivePatch(
     return null;
   }
 
-  const payload =
-    event.payload && typeof event.payload === 'object'
-      ? (event.payload as Record<string, unknown>)
-      : {};
+  const payload = unwrapTeamChatLivePayload(event.payload);
   const roomId = getStringRecordValue(payload, ['roomId', 'room_id', 'room']);
   if (roomId && roomId !== selectedItemId) {
     return null;
@@ -8771,6 +9287,13 @@ const styles = StyleSheet.create({
   teamDaraWindowMessageOther: {
     alignSelf: 'flex-start',
     backgroundColor: V.colors.bg,
+  },
+  teamDaraWindowMessageAi: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderWidth: 0,
+    padding: 0,
   },
   teamDaraComposerShell: {
     minHeight: 58,
@@ -10179,6 +10702,12 @@ const styles = StyleSheet.create({
   messageBubbleOther: {
     backgroundColor: V.colors.bg,
   },
+  messageBubbleAi: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingVertical: 2,
+    borderRadius: 0,
+  },
   teamMessageAuthorRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -10187,22 +10716,20 @@ const styles = StyleSheet.create({
   teamMessageAvatar: {
     alignItems: 'center',
     backgroundColor: V.colors.bg,
-    borderColor: V.colors.border,
-    borderRadius: 9,
-    borderWidth: 1,
-    height: 18,
+    borderRadius: 16,
+    height: 32,
     justifyContent: 'center',
     overflow: 'hidden',
-    width: 18,
+    width: 32,
   },
   teamMessageAvatarImage: {
-    height: 18,
-    width: 18,
+    height: 32,
+    width: 32,
   },
   teamMessageAvatarText: {
     color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '800',
   },
   messageAuthor: {
@@ -10394,29 +10921,12 @@ const styles = StyleSheet.create({
     color: V.colors.info,
   },
   daraThinkingRow: {
+    alignSelf: 'flex-start',
     maxWidth: '86%',
-    padding: 9,
-    borderRadius: V.radius.lg,
-    borderColor: V.colors.primary,
-    borderWidth: 1,
-    backgroundColor: V.colors.primarySoft,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-  },
-  daraThinkingAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: V.colors.primary,
-  },
-  daraThinkingAvatarText: {
-    color: V.colors.primaryFg,
-    fontFamily: V.fontFamily,
-    fontSize: 9,
-    fontWeight: '900',
+    paddingVertical: 4,
   },
   daraThinkingCopy: {
     minWidth: 0,
@@ -10424,16 +10934,25 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   daraThinkingAuthor: {
-    color: V.colors.primary,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '800',
   },
   daraThinkingText: {
-    color: V.colors.fg,
+    color: V.colors.mutedFg,
     fontFamily: V.fontFamily,
     fontSize: 12,
-    fontWeight: '800',
+    fontStyle: 'italic',
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  daraThinkingDots: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    fontStyle: 'italic',
+    fontWeight: '700',
   },
   attachmentList: {
     gap: 6,

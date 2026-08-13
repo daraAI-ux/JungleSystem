@@ -131,6 +131,26 @@ describe('kolam chat live classifier', () => {
     );
   });
 
+  it('resolves team chat room id from nested payload or message.room', () => {
+    expect(
+      classifyKolamChatLiveEvent({
+        contract: contract('team-chat', 'message.created'),
+        payload: {
+          data: {roomId: 'room-nested', message: {_id: 'msg-1'}},
+        },
+      }).targetId,
+    ).toBe('room-nested');
+
+    expect(
+      classifyKolamChatLiveEvent({
+        contract: contract('team-chat', 'message.created'),
+        payload: {
+          message: {_id: 'msg-1', room: 'room-from-message'},
+        },
+      }).targetId,
+    ).toBe('room-from-message');
+  });
+
   it('refreshes selected detail for sync.required without a target id', () => {
     const classification = classifyKolamChatLiveEvent(
       {
