@@ -9750,6 +9750,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   filterDropdownTrigger: {
+    minWidth: 0,
+    width: '100%',
     minHeight: 26,
     paddingHorizontal: 6,
     paddingVertical: 3,
@@ -9757,6 +9759,7 @@ const styles = StyleSheet.create({
     backgroundColor: V.colors.bg,
   },
   filterDropdownText: {
+    maxWidth: 52,
     fontSize: 9,
     fontWeight: '900',
   },
