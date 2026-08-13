@@ -2,6 +2,7 @@
 #include "KolamWindowsDeviceIdentity.h"
 
 #include <algorithm>
+#include <atomic>
 #include <bcrypt.h>
 #include <cstdlib>
 #include <iomanip>
@@ -248,6 +249,54 @@ std::string SignMacAddresses(std::vector<std::string> const &macs) {
 
 } // namespace
 
+namespace {
+std::atomic_bool g_shiftDown{false};
+std::atomic_bool g_shiftEnterChord{false};
+HHOOK g_composerKeyboardHook = nullptr;
+
+bool IsPhysicalShiftDown() noexcept {
+  return (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0 ||
+      (GetAsyncKeyState(VK_LSHIFT) & 0x8000) != 0 ||
+      (GetAsyncKeyState(VK_RSHIFT) & 0x8000) != 0;
+}
+
+LRESULT CALLBACK KolamComposerKeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
+  if (code == HC_ACTION && lParam != 0) {
+    const auto *info = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
+    const bool keyDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
+    const bool keyUp = wParam == WM_KEYUP || wParam == WM_SYSKEYUP;
+
+    if (info->vkCode == VK_SHIFT || info->vkCode == VK_LSHIFT || info->vkCode == VK_RSHIFT) {
+      if (keyDown) {
+        g_shiftDown.store(true, std::memory_order_relaxed);
+      } else if (keyUp) {
+        g_shiftDown.store(IsPhysicalShiftDown(), std::memory_order_relaxed);
+      }
+    } else if (info->vkCode == VK_RETURN && keyDown) {
+      if (g_shiftDown.load(std::memory_order_relaxed) || IsPhysicalShiftDown()) {
+        // Latch at physical key-down — JS Enter handlers often run after Shift is up.
+        g_shiftEnterChord.store(true, std::memory_order_relaxed);
+      }
+    }
+  }
+
+  return CallNextHookEx(g_composerKeyboardHook, code, wParam, lParam);
+}
+} // namespace
+
+void InstallKolamComposerKeyboardHook() noexcept {
+  if (g_composerKeyboardHook != nullptr) {
+    return;
+  }
+
+  // Must install on the UI thread that pumps messages (WinMain), not the JS thread.
+  g_composerKeyboardHook = SetWindowsHookExW(
+      WH_KEYBOARD_LL,
+      KolamComposerKeyboardProc,
+      GetModuleHandleW(nullptr),
+      0);
+}
+
 ::React::JSValueObject KolamWindowsDeviceIdentity::getDeviceIdentity() noexcept {
   const auto macs = ReadMacAddresses();
   ::React::JSValueArray macAddresses;
@@ -268,7 +317,13 @@ std::string SignMacAddresses(std::vector<std::string> const &macs) {
 }
 
 bool KolamWindowsDeviceIdentity::isShiftKeyDown() noexcept {
-  return (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+  return g_shiftEnterChord.load(std::memory_order_relaxed) ||
+      g_shiftDown.load(std::memory_order_relaxed) ||
+      IsPhysicalShiftDown();
+}
+
+bool KolamWindowsDeviceIdentity::consumeShiftEnterChord() noexcept {
+  return g_shiftEnterChord.exchange(false, std::memory_order_relaxed);
 }
 
 } // namespace KolamWindows

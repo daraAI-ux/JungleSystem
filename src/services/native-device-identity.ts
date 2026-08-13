@@ -12,6 +12,7 @@ type NativeDeviceIdentityModule = {
     | NativeDeviceIdentityPayload
     | Promise<NativeDeviceIdentityPayload>;
   isShiftKeyDown?: () => boolean;
+  consumeShiftEnterChord?: () => boolean;
 };
 
 type NativeDeviceIdentityPayload = {
@@ -130,6 +131,29 @@ export function isKolamWindowsShiftKeyDown(
 
   try {
     return Boolean(bridge?.isShiftKeyDown?.());
+  } catch {
+    return false;
+  }
+}
+
+/** Clears the Shift+Enter latch captured at physical key-down. */
+export function consumeKolamWindowsShiftEnterChord(
+  nativeModules: Record<string, NativeDeviceIdentityModule | undefined> = NativeModules as Record<
+    string,
+    NativeDeviceIdentityModule | undefined
+  >,
+  platformOS: string = Platform.OS,
+): boolean {
+  if (platformOS !== 'windows') {
+    return false;
+  }
+
+  const bridge =
+    nativeModules.KolamWindowsDeviceIdentity ??
+    nativeModules.KolamDeviceIdentity;
+
+  try {
+    return Boolean(bridge?.consumeShiftEnterChord?.());
   } catch {
     return false;
   }

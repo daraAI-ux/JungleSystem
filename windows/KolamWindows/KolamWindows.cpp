@@ -151,6 +151,7 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
     presenter.Maximize();
   }
   EnableKolamFileDrop();
+  KolamWindows::InstallKolamComposerKeyboardHook();
   KolamWindows::RegisterKolamAppNotifications();
 
   // Get the ReactViewOptions so we can set the initial RN component to load

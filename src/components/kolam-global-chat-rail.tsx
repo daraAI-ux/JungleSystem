@@ -48,7 +48,7 @@ import { showKolamChatDesktopToastFromLive } from '../services/kolam-windows-toa
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
-import { isKolamWindowsShiftKeyDown } from '../services/native-device-identity';
+import { isKolamWindowsShiftKeyDown, consumeKolamWindowsShiftEnterChord } from '../services/native-device-identity';
 import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
@@ -348,6 +348,7 @@ function useKolamComposerEnterKey(
 
   const applyNewline = React.useCallback(() => {
     skipSubmitRef.current = true;
+    consumeKolamWindowsShiftEnterChord();
     const next = insertComposerNewline(
       value,
       hasSelectionRef.current ? selectionRef.current : null,
