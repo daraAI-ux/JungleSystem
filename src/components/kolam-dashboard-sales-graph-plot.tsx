@@ -70,20 +70,17 @@ function KolamDashboardSalesGraphLinePlot({
             strokeLinejoin="round"
             strokeWidth={3}
           />
-          <KolamMappedList
-            items={chartPoints}
-            getKey={point => point.id}
-            renderItem={point => (
-              <Circle
-                cx={point.x}
-                cy={point.y}
-                fill={V.colors.primary}
-                r={DASHBOARD_SALES_GRAPH_VISUAL.point.dotSize / 2}
-                stroke={V.colors.bg}
-                strokeWidth={DASHBOARD_SALES_GRAPH_VISUAL.point.dotBorderWidth}
-              />
-            )}
-          />
+          {chartPoints.map(point => (
+            <Circle
+              key={point.id}
+              cx={point.x}
+              cy={point.y}
+              fill={V.colors.primary}
+              r={DASHBOARD_SALES_GRAPH_VISUAL.point.dotSize / 2}
+              stroke={V.colors.bg}
+              strokeWidth={DASHBOARD_SALES_GRAPH_VISUAL.point.dotBorderWidth}
+            />
+          ))}
         </Svg>
       </View>
       <View style={styles.salesGraphLineLabels}>
