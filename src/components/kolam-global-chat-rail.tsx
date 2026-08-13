@@ -1435,6 +1435,7 @@ export function KolamGlobalChatRail({
               onComposerTextChange={handleComposerTextChange}
               onPendingAttachmentClear={() => setPendingAttachment(null)}
               onPendingAttachmentPick={handleChooseAttachment}
+              onCopyConversationId={handleCopyChatId}
               onReplyCancel={() => setReplyTarget(null)}
               onReplyToMessage={setReplyTarget}
               onBack={handleBackToList}
@@ -1511,18 +1512,6 @@ export function KolamGlobalChatRail({
                             }
                             style={styles.rowUnreadBadge}
                           />
-                        ) : null}
-                        {mode === 'inbox' ? (
-                          <KolamPressable
-                            accessibilityLabel={`Salin chat ID ${item.id}`}
-                            onPress={event => {
-                              event.stopPropagation?.();
-                              handleCopyChatId(item.id);
-                            }}
-                            style={styles.rowCopyIdButton}
-                          >
-                            <Text style={styles.rowCopyIdButtonText}>ID</Text>
-                          </KolamPressable>
                         ) : null}
                         <Text style={styles.rowTime}>{item.timeLabel}</Text>
                       </View>
@@ -3574,6 +3563,7 @@ function KolamChatRailDetailPanel({
   labels,
   mode,
   onComposerTextChange,
+  onCopyConversationId,
   onPendingAttachmentClear,
   onPendingAttachmentPick,
   onReplyCancel,
@@ -3600,6 +3590,7 @@ function KolamChatRailDetailPanel({
   labels: KolamChatLabel[];
   mode: KolamGlobalChatRailMode;
   onComposerTextChange: (value: string) => void;
+  onCopyConversationId: (conversationId: string) => void;
   onPendingAttachmentClear: () => void;
   onPendingAttachmentPick: () => void;
   onReplyCancel: () => void;
@@ -4116,6 +4107,7 @@ function KolamChatRailDetailPanel({
               detail={detail}
               detailsOpen={contactDetailsOpen}
               labels={labels}
+              onCopyConversationId={onCopyConversationId}
               onDetailsToggle={() => setContactDetailsOpen(current => !current)}
             />
           ) : null}
@@ -5785,12 +5777,14 @@ function KolamInboxActionStrip({
   detail,
   detailsOpen,
   labels,
+  onCopyConversationId,
   onDetailsToggle,
 }: {
   currentUserId?: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   detailsOpen: boolean;
   labels: KolamChatLabel[];
+  onCopyConversationId: (conversationId: string) => void;
   onDetailsToggle: () => void;
 }) {
   const [labelPickerOpen, setLabelPickerOpen] = React.useState(false);
@@ -5872,6 +5866,18 @@ function KolamInboxActionStrip({
           ]}
         >
           <Text style={styles.callButtonGhostText}>Detail kontak</Text>
+        </KolamPressable>
+        <KolamPressable
+          accessibilityLabel={`Copy conversation ID ${conversation._id}`}
+          disabled={detail.sending}
+          onPress={() => onCopyConversationId(conversation._id)}
+          style={[
+            styles.callButton,
+            styles.callButtonGhost,
+            detail.sending && styles.callButtonDisabled,
+          ]}
+        >
+          <Text style={styles.callButtonGhostText}>Copy ID</Text>
         </KolamPressable>
         <KolamPressable
           accessibilityLabel="Toggle inbox conversation status"
@@ -11402,24 +11408,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     fontSize: 10,
     lineHeight: 14,
-  },
-  rowCopyIdButton: {
-    minHeight: 22,
-    paddingHorizontal: 8,
-    borderRadius: V.radius.sm,
-    borderColor: V.colors.border,
-    borderWidth: 1,
-    backgroundColor: V.colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  rowCopyIdButtonText: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-    lineHeight: 12,
   },
   rowUnread: {
     borderColor: 'rgba(220, 38, 38, 0.28)',

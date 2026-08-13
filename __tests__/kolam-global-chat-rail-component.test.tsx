@@ -528,7 +528,7 @@ describe('KolamGlobalChatRail', () => {
     );
   });
 
-  it('copies the inbox chat ID from the conversation card without opening it', async () => {
+  it('copies the active inbox conversation ID from the detail actions', async () => {
     useReadonlyDataMock.mockReturnValue({
       conversations: [
         {
@@ -544,6 +544,16 @@ describe('KolamGlobalChatRail', () => {
       rooms: [],
       totalUnread: 0,
     });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-copy-1',
+        assignedStaffId: {_id: 'staff-1'},
+        isAiHandled: false,
+        status: 'open',
+      },
+      loading: false,
+    });
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
     await ReactTestRenderer.act(async () => {
@@ -552,26 +562,32 @@ describe('KolamGlobalChatRail', () => {
       );
     });
 
+    const selectButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Pilih conversation Buyer Tokopedia',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      selectButton!.props.onPress();
+    });
+
     const copyButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(
-        node => node.props.accessibilityLabel === 'Salin chat ID conv-copy-1',
-    );
+        node =>
+          node.props.accessibilityLabel ===
+          'Copy conversation ID conv-copy-1',
+      );
 
     await ReactTestRenderer.act(async () => {
-      copyButton!.props.onPress({stopPropagation: jest.fn()});
+      copyButton!.props.onPress();
     });
 
     expect(copyTextToClipboardMock).toHaveBeenCalledWith('conv-copy-1');
-    expect(
-      renderer!.root
-        .findAllByType(KolamPressable)
-        .some(
-          node =>
-            node.props.accessibilityLabel ===
-            'Pilih conversation Buyer Tokopedia',
-        ),
-    ).toBe(true);
+    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['Copy ID']));
   });
 
   it('opens chat settings shortcuts from the inbox header menu', async () => {
