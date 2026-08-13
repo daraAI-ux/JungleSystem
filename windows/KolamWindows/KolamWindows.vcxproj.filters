@@ -42,6 +42,9 @@
     <ClInclude Include="KolamWindowsSQLiteStore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="KolamWindowsPackageUpdate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="AutolinkedNativeModules.g.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -69,6 +72,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="KolamWindowsSQLiteStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KolamWindowsPackageUpdate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AutolinkedNativeModules.g.cpp">

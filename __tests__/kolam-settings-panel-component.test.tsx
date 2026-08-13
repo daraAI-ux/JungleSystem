@@ -11,6 +11,7 @@ import {
 import { getCurrentUser } from '../src/services/auth-api';
 import { getSyncActivityEntries } from '../src/domain/sync-activity';
 import { seedUnifiedDataset } from '../src/services/unified-data';
+import { resetKolamPackageUpdateStoreForTests } from '../src/domain/kolam-package-update-store';
 
 jest.mock('react-native-webview', () => {
   const React = require('react');
@@ -56,6 +57,7 @@ function flattenText(value: React.ReactNode): string[] {
 
 describe('KolamSettingsPanel', () => {
   beforeEach(() => {
+    resetKolamPackageUpdateStoreForTests();
     globalThis.fetch = jest.fn();
     mockedGetCurrentUser.mockResolvedValue({
       roleKey: 'super-admin',

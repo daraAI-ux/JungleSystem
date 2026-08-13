@@ -5,6 +5,7 @@ import {KolamImagePreviewHost} from './kolam-image-preview-dialog';
 import {KolamLoginScreen} from './kolam-login-screen';
 import {KolamMaintenanceLockScreen} from './kolam-maintenance-lock-screen';
 import {KolamMediaPreviewHost} from './kolam-media-preview-dialog';
+import {KolamPackageUpdateSessionHost} from './kolam-package-update-session-host';
 import {KolamWorkspaceSurface} from './kolam-workspace-surface';
 import {
   useKolamAuthContext,
@@ -38,6 +39,7 @@ export function KolamAppRoot() {
 const KolamSignedInLayout = React.memo(function KolamSignedInLayout() {
   return (
     <View style={{flex: 1}}>
+      <KolamPackageUpdateSessionHost />
       <KolamShellWorkspaceHost />
       <KolamImagePreviewHost />
       <KolamMediaPreviewHost />
