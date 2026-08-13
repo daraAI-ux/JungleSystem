@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Image,
   Linking,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -2167,84 +2166,6 @@ describe('KolamGlobalChatRail', () => {
         .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox')!
         .props.value,
     ).toBe('Baris satu\n');
-  });
-
-  it('uses Windows submitKeyEvents so Shift+Enter can insert a native newline', async () => {
-    const originalOs = Platform.OS;
-    Object.defineProperty(Platform, 'OS', {
-      configurable: true,
-      value: 'windows',
-    });
-
-    try {
-      useReadonlyDataMock.mockReturnValue({
-        conversations: [
-          {
-            _id: 'conv-1',
-            platform: 'whatsapp',
-            contactId: {displayName: 'Buyer WA'},
-            lastMessagePreview: 'Halo',
-            unreadCount: 0,
-          },
-        ],
-        loading: false,
-        refresh: jest.fn(),
-        rooms: [],
-        totalUnread: 0,
-      });
-      useDetailMock.mockReturnValue({
-        ...getDefaultDetailMock(),
-        conversation: {
-          _id: 'conv-1',
-          assignedStaffId: {
-            _id: 'staff-1',
-            first_name: 'Staff',
-          },
-          isAiHandled: false,
-          status: 'open',
-        },
-        loading: false,
-        messages: [],
-        presence: {onlineCount: 0, typingUserIds: [], viewingCount: 0},
-        refresh: jest.fn(),
-        sendAttachment: jest.fn(),
-        sendInboxImage: jest.fn(),
-        sendMessage: jest.fn(),
-        signalTyping: jest.fn(),
-        sending: false,
-        updatePresenceFromLive: jest.fn(),
-      });
-
-      let renderer: ReactTestRenderer.ReactTestRenderer;
-      await ReactTestRenderer.act(async () => {
-        renderer = ReactTestRenderer.create(
-          <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
-        );
-      });
-
-      const selectButton = renderer!.root
-        .findAllByType(KolamPressable)
-        .find(
-          node => node.props.accessibilityLabel === 'Pilih conversation Buyer WA',
-        );
-      await ReactTestRenderer.act(async () => {
-        selectButton!.props.onPress();
-      });
-
-      const input = renderer!.root
-        .findAllByType(TextInput)
-        .find(node => node.props.accessibilityLabel === 'Tulis pesan inbox');
-
-      expect(input!.props.submitBehavior).toBe('newline');
-      expect(input!.props.submitKeyEvents).toEqual([
-        {code: 'Enter', shiftKey: false},
-      ]);
-    } finally {
-      Object.defineProperty(Platform, 'OS', {
-        configurable: true,
-        value: originalOs,
-      });
-    }
   });
 
   it('picks and sends an inbox image from the composer when reply gate allows it', async () => {

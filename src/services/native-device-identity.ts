@@ -11,6 +11,7 @@ type NativeDeviceIdentityModule = {
   getDeviceIdentity?: () =>
     | NativeDeviceIdentityPayload
     | Promise<NativeDeviceIdentityPayload>;
+  isShiftKeyDown?: () => boolean;
 };
 
 type NativeDeviceIdentityPayload = {
@@ -110,3 +111,27 @@ function normalizeOptionalString(value: unknown): string | undefined {
   const text = String(value ?? '').trim();
   return text || undefined;
 }
+
+/** Sync probe — RNW TextInput often omits shiftKey on Enter key events. */
+export function isKolamWindowsShiftKeyDown(
+  nativeModules: Record<string, NativeDeviceIdentityModule | undefined> = NativeModules as Record<
+    string,
+    NativeDeviceIdentityModule | undefined
+  >,
+  platformOS: string = Platform.OS,
+): boolean {
+  if (platformOS !== 'windows') {
+    return false;
+  }
+
+  const bridge =
+    nativeModules.KolamWindowsDeviceIdentity ??
+    nativeModules.KolamDeviceIdentity;
+
+  try {
+    return Boolean(bridge?.isShiftKeyDown?.());
+  } catch {
+    return false;
+  }
+}
+

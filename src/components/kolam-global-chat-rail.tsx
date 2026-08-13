@@ -5,7 +5,6 @@ import {
   Linking,
   Modal,
   type NativeSyntheticEvent,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -49,6 +48,7 @@ import { showKolamChatDesktopToastFromLive } from '../services/kolam-windows-toa
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
+import { isKolamWindowsShiftKeyDown } from '../services/native-device-identity';
 import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
@@ -286,27 +286,6 @@ type KolamComposerKeyModifiers = {
   shiftKey?: boolean;
 };
 
-type KolamWindowsComposerSubmitKeyEvent = {
-  code: string;
-  shiftKey?: boolean;
-};
-
-/**
- * RNW Fabric: Enter without Shift submits; Shift+Enter inserts a native newline.
- * Core RN typings omit submitKeyEvents, but Microsoft.ReactNative 0.84 implements it.
- */
-const KOLAM_WINDOWS_COMPOSER_TEXT_INPUT_PROPS: {
-  submitBehavior: 'newline';
-  submitKeyEvents: KolamWindowsComposerSubmitKeyEvent[];
-} = {
-  submitBehavior: 'newline',
-  submitKeyEvents: [{code: 'Enter', shiftKey: false}],
-};
-
-function usesKolamWindowsComposerSubmitKeys() {
-  return Platform.OS === 'windows';
-}
-
 type KolamComposerSelection = {
   end: number;
   start: number;
@@ -350,7 +329,8 @@ function isComposerNewlineEnter(
     nativeEvent.shiftKey ||
       nativeEvent.ctrlKey ||
       nativeEvent.metaKey ||
-      shiftHeld,
+      shiftHeld ||
+      isKolamWindowsShiftKeyDown(),
   );
 }
 
@@ -365,6 +345,18 @@ function useKolamComposerEnterKey(
   const [selection, setSelection] = React.useState<
     KolamComposerSelection | undefined
   >(undefined);
+
+  const applyNewline = React.useCallback(() => {
+    skipSubmitRef.current = true;
+    const next = insertComposerNewline(
+      value,
+      hasSelectionRef.current ? selectionRef.current : null,
+    );
+    hasSelectionRef.current = true;
+    selectionRef.current = next.selection;
+    setSelection(next.selection);
+    onChangeText(next.text);
+  }, [onChangeText, value]);
 
   const handleSelectionChange = React.useCallback(
     (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
@@ -397,7 +389,7 @@ function useKolamComposerEnterKey(
         nativeEvent.key !== 'Meta' &&
         nativeEvent.key !== 'Alt'
       ) {
-        if (!nativeEvent.shiftKey) {
+        if (!nativeEvent.shiftKey && !isKolamWindowsShiftKeyDown()) {
           shiftHeldRef.current = false;
         }
         return 'other';
@@ -407,36 +399,16 @@ function useKolamComposerEnterKey(
         if (nativeEvent.key !== 'Enter') {
           return 'other';
         }
-        // Windows: Enter-without-Shift is owned by submitKeyEvents → onSubmitEditing.
-        // Do not also return 'submit' here or the message is sent twice.
-        if (usesKolamWindowsComposerSubmitKeys()) {
-          skipSubmitRef.current = false;
-          return 'other';
-        }
         event.preventDefault();
         skipSubmitRef.current = false;
         return 'submit';
       }
 
-      skipSubmitRef.current = true;
-      // Windows: submitBehavior="newline" inserts the line break natively.
-      // Manual insert would duplicate "\n" when shiftKey is present on the event.
-      if (usesKolamWindowsComposerSubmitKeys()) {
-        return 'newline';
-      }
-
       event.preventDefault();
-      const next = insertComposerNewline(
-        value,
-        hasSelectionRef.current ? selectionRef.current : null,
-      );
-      hasSelectionRef.current = true;
-      selectionRef.current = next.selection;
-      setSelection(next.selection);
-      onChangeText(next.text);
+      applyNewline();
       return 'newline';
     },
-    [onChangeText, value],
+    [applyNewline],
   );
 
   const consumeSkipSubmit = React.useCallback(() => {
@@ -447,10 +419,19 @@ function useKolamComposerEnterKey(
     return true;
   }, []);
 
+  const insertNewlineIfShiftHeld = React.useCallback(() => {
+    if (!isKolamWindowsShiftKeyDown() && !shiftHeldRef.current) {
+      return false;
+    }
+    applyNewline();
+    return true;
+  }, [applyNewline]);
+
   return {
     consumeSkipSubmit,
     handleKeyPress,
     handleSelectionChange,
+    insertNewlineIfShiftHeld,
     selection,
   };
 }
@@ -3156,6 +3137,9 @@ function KolamTeamChatDaraWindow({
     if (composerEnter.consumeSkipSubmit()) {
       return;
     }
+    if (composerEnter.insertNewlineIfShiftHeld()) {
+      return;
+    }
     onSend().catch(() => undefined);
   }, [composerEnter, onSend]);
   const handlePickMention = React.useCallback(
@@ -3285,9 +3269,7 @@ function KolamTeamChatDaraWindow({
               ? {selection: composerEnter.selection}
               : null)}
             style={[styles.composerInput, styles.teamDaraComposerInput]}
-            {...(usesKolamWindowsComposerSubmitKeys()
-              ? KOLAM_WINDOWS_COMPOSER_TEXT_INPUT_PROPS
-              : {submitBehavior: 'submit' as const})}
+            submitBehavior="submit"
             value={composerText}
           />
           <View style={styles.composerToolbar}>
@@ -4578,6 +4560,9 @@ function KolamChatRailDetailPanel({
     if (composerEnter.consumeSkipSubmit()) {
       return;
     }
+    if (composerEnter.insertNewlineIfShiftHeld()) {
+      return;
+    }
     handleSendFromComposer();
   }, [composerEnter, handleSendFromComposer]);
 
@@ -5198,9 +5183,7 @@ function KolamChatRailDetailPanel({
                 ? {selection: composerEnter.selection}
                 : null)}
               style={styles.composerInput}
-              {...(usesKolamWindowsComposerSubmitKeys()
-                ? KOLAM_WINDOWS_COMPOSER_TEXT_INPUT_PROPS
-                : {submitBehavior: 'submit' as const})}
+              submitBehavior="submit"
               value={composerText}
             />
             <View style={styles.composerToolbar}>

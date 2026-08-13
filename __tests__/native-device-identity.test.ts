@@ -1,6 +1,7 @@
 import {appConfig} from '../src/config/app';
 import {
   bootstrapNativeDeviceIdentity,
+  isKolamWindowsShiftKeyDown,
   normalizeNativeDeviceIdentity,
   readNativeDeviceIdentity,
 } from '../src/services/native-device-identity';
@@ -135,6 +136,41 @@ describe('native device identity bootstrap', () => {
         },
       }),
     ).resolves.toBe('missing');
+  });
+
+  it('reads Shift key state from the Windows device identity bridge', () => {
+    expect(
+      isKolamWindowsShiftKeyDown(
+        {
+          KolamWindowsDeviceIdentity: {
+            isShiftKeyDown: () => true,
+          },
+        },
+        'windows',
+      ),
+    ).toBe(true);
+
+    expect(
+      isKolamWindowsShiftKeyDown(
+        {
+          KolamWindowsDeviceIdentity: {
+            isShiftKeyDown: () => false,
+          },
+        },
+        'windows',
+      ),
+    ).toBe(false);
+
+    expect(
+      isKolamWindowsShiftKeyDown(
+        {
+          KolamWindowsDeviceIdentity: {
+            isShiftKeyDown: () => true,
+          },
+        },
+        'ios',
+      ),
+    ).toBe(false);
   });
 });
 
