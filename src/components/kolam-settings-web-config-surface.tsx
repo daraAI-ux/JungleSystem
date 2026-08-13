@@ -2118,53 +2118,6 @@ export function KolamSettingsWebConfigSurface({
           <View style={styles.umumTopRow}>
             <View style={styles.umumCard}>
               <KolamSettingsWebFormSectionHeader
-                description="Nomor versi per aplikasi. Disimpan lewat endpoint version WebSetting."
-                title="Versi aplikasi"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={umumFieldWidth}
-                label="Versi Kolam"
-                description="App Kolam"
-                value={draft.versionKolam}
-                onChangeText={value => setDraftField('versionKolam', value)}
-                placeholder="1.0.0"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={umumFieldWidth}
-                label="Versi Enclonura"
-                description="App Enclonura"
-                value={draft.versionEnclonura}
-                onChangeText={value => setDraftField('versionEnclonura', value)}
-                placeholder="1.0.0"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={umumFieldWidth}
-                label="Versi POS"
-                description="App POS"
-                value={draft.versionPos}
-                onChangeText={value => setDraftField('versionPos', value)}
-                placeholder="1.0.0"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={umumFieldWidth}
-                label="Versi Marketplace"
-                description="App marketplace"
-                value={draft.versionMarketplace}
-                onChangeText={value =>
-                  setDraftField('versionMarketplace', value)
-                }
-                placeholder="1.0.0"
-              />
-            </View>
-          </View>
-
-          <View style={styles.umumTopRow}>
-            <View style={styles.umumCard}>
-              <KolamSettingsWebFormSectionHeader
                 description="Logo, nama, tagline, kontak, dan alamat perusahaan untuk branding storefront."
                 title="Identitas perusahaan"
               />
@@ -2415,6 +2368,51 @@ export function KolamSettingsWebConfigSurface({
             </>
           ) : null}
           <View style={styles.umumTopRow}>
+            <View style={styles.umumCard}>
+              <KolamSettingsWebFormSectionHeader
+                description="Nomor versi per aplikasi. Disimpan lewat endpoint version WebSetting."
+                title="Versi aplikasi"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi Kolam"
+                description="App Kolam"
+                value={draft.versionKolam}
+                onChangeText={value => setDraftField('versionKolam', value)}
+                placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi Enclonura"
+                description="App Enclonura"
+                value={draft.versionEnclonura}
+                onChangeText={value => setDraftField('versionEnclonura', value)}
+                placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi POS"
+                description="App POS"
+                value={draft.versionPos}
+                onChangeText={value => setDraftField('versionPos', value)}
+                placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi Marketplace"
+                description="App marketplace"
+                value={draft.versionMarketplace}
+                onChangeText={value =>
+                  setDraftField('versionMarketplace', value)
+                }
+                placeholder="1.0.0"
+              />
+            </View>
+
             <View style={styles.umumCard}>
               <KolamSettingsWebFormSectionHeader
                 description="Tautan sosial media yang tampil di storefront."
