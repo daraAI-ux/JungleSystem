@@ -18,6 +18,7 @@ import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
 import { KOLAM_ALL_PLATFORM_LOGO_SVG } from '../assets/marketplace/all-logo-svg';
+import { KOLAM_INSTAGRAM_LOGO_SVG } from '../assets/marketplace/instagram-logo-svg';
 import { KOLAM_TIKTOK_LOGO_SVG } from '../assets/marketplace/tiktok-logo-svg';
 import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
@@ -2423,19 +2424,12 @@ function KolamPlatformFilterLogo({
 
   if (platform === 'instagram') {
     return (
-      <View
-        style={[styles.instagramLogo, offline && styles.instagramLogoOffline]}
-      >
-        <View
-          style={[styles.instagramLens, offline && styles.instagramLensOffline]}
-        />
-        <View
-          style={[
-            styles.instagramFlash,
-            offline && styles.instagramFlashOffline,
-          ]}
-        />
-      </View>
+      <SvgXml
+        height={21}
+        style={offline && styles.platformLogoImageOffline}
+        width={21}
+        xml={KOLAM_INSTAGRAM_LOGO_SVG}
+      />
     );
   }
 
@@ -9863,43 +9857,6 @@ const styles = StyleSheet.create({
     height: 11,
     borderRadius: 6,
     backgroundColor: '#111111',
-  },
-  instagramLogo: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderColor: '#e1306c',
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff0f6',
-  },
-  instagramLogoOffline: {
-    borderColor: '#9ca3af',
-    backgroundColor: '#f3f4f6',
-    opacity: 0.62,
-  },
-  instagramLens: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderColor: '#e1306c',
-    borderWidth: 2,
-  },
-  instagramLensOffline: {
-    borderColor: '#9ca3af',
-  },
-  instagramFlash: {
-    position: 'absolute',
-    right: 3,
-    top: 3,
-    width: 3,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: '#e1306c',
-  },
-  instagramFlashOffline: {
-    backgroundColor: '#9ca3af',
   },
   filterResetButton: {
     minHeight: 28,
