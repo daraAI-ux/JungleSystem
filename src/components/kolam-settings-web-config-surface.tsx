@@ -2160,7 +2160,9 @@ export function KolamSettingsWebConfigSurface({
                 placeholder="1.0.0"
               />
             </View>
+          </View>
 
+          <View style={styles.umumTopRow}>
             <View style={styles.umumCard}>
               <KolamSettingsWebFormSectionHeader
                 description="Logo, nama, tagline, kontak, dan alamat perusahaan untuk branding storefront."
@@ -2226,121 +2228,6 @@ export function KolamSettingsWebConfigSurface({
                 value={draft.address}
                 onChangeText={value => setDraftField('address', value)}
                 placeholder="Jl. Contoh No. 1"
-              />
-            </View>
-          </View>
-          {showStoreShippingSettings ? (
-            <>
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Alamat asal"
-                description="Alamat asal pengiriman."
-                multiline
-                numberOfLines={4}
-                value={draft.originAddressLine1}
-                onChangeText={value =>
-                  setDraftField('originAddressLine1', value)
-                }
-                placeholder="Jl. Taman Ratu Raya No.34"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Kota asal"
-                description="Kota asal pengiriman."
-                value={draft.originCity}
-                onChangeText={value => setDraftField('originCity', value)}
-                placeholder="Jakarta Barat"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Provinsi asal"
-                description="Provinsi asal pengiriman."
-                value={draft.originProvince}
-                onChangeText={value => setDraftField('originProvince', value)}
-                placeholder="DKI Jakarta"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Kode pos asal"
-                description="Kode pos asal pengiriman."
-                value={draft.originPostalCode}
-                onChangeText={value => setDraftField('originPostalCode', value)}
-                placeholder="11550"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Latitude asal"
-                description="Koordinat latitude origin."
-                value={draft.originLatitude}
-                onChangeText={value => setDraftField('originLatitude', value)}
-                placeholder="-6.1687829"
-              />
-              <KolamTextFieldRow
-                variant="settingsForm"
-                fieldWidth={settingsFieldWidth}
-                label="Longitude asal"
-                description="Koordinat longitude origin."
-                value={draft.originLongitude}
-                onChangeText={value => setDraftField('originLongitude', value)}
-                placeholder="106.7676678"
-              />
-            </>
-          ) : null}
-          <View style={styles.umumTopRow}>
-            <View style={styles.umumCard}>
-              <KolamSettingsWebFormSectionHeader
-                description="Tautan sosial media yang tampil di storefront."
-                title="Sosial media"
-              />
-              <SocialMediaFieldRow
-                accentColor="#1877f2"
-                fieldWidth={umumFieldWidth}
-                label="Facebook"
-                logoXml={getSocialMediaLogoXml('facebook')}
-                onChangeText={value => setDraftField('facebook', value)}
-                placeholder="https://facebook.com/..."
-                value={draft.facebook}
-              />
-              <SocialMediaFieldRow
-                accentColor="#e4405f"
-                fieldWidth={umumFieldWidth}
-                label="Instagram"
-                logoXml={getSocialMediaLogoXml('instagram')}
-                onChangeText={value => setDraftField('instagram', value)}
-                placeholder="https://instagram.com/..."
-                value={draft.instagram}
-              />
-              <SocialMediaFieldRow
-                accentColor="#000000"
-                fieldWidth={umumFieldWidth}
-                label="Twitter / X"
-                logoXml={getSocialMediaLogoXml('x')}
-                onChangeText={value => setDraftField('twitter', value)}
-                placeholder="https://twitter.com/..."
-                value={draft.twitter}
-              />
-              <SocialMediaFieldRow
-                accentColor="#ff0000"
-                fieldWidth={umumFieldWidth}
-                label="YouTube"
-                logoXml={getSocialMediaLogoXml('youtube')}
-                onChangeText={value => setDraftField('youtube', value)}
-                placeholder="https://youtube.com/..."
-                value={draft.youtube}
-              />
-              <SocialMediaFieldRow
-                accentColor="#111827"
-                fieldWidth={umumFieldWidth}
-                label="TikTok"
-                logoXml={getSocialMediaLogoXml('tiktok')}
-                onChangeText={value => setDraftField('tiktok', value)}
-                placeholder="https://tiktok.com/..."
-                value={draft.tiktok}
               />
             </View>
 
@@ -2463,6 +2350,121 @@ export function KolamSettingsWebConfigSurface({
                   </Text>
                 )}
               </View>
+            </View>
+          </View>
+          {showStoreShippingSettings ? (
+            <>
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={settingsFieldWidth}
+                label="Alamat asal"
+                description="Alamat asal pengiriman."
+                multiline
+                numberOfLines={4}
+                value={draft.originAddressLine1}
+                onChangeText={value =>
+                  setDraftField('originAddressLine1', value)
+                }
+                placeholder="Jl. Taman Ratu Raya No.34"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={settingsFieldWidth}
+                label="Kota asal"
+                description="Kota asal pengiriman."
+                value={draft.originCity}
+                onChangeText={value => setDraftField('originCity', value)}
+                placeholder="Jakarta Barat"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={settingsFieldWidth}
+                label="Provinsi asal"
+                description="Provinsi asal pengiriman."
+                value={draft.originProvince}
+                onChangeText={value => setDraftField('originProvince', value)}
+                placeholder="DKI Jakarta"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={settingsFieldWidth}
+                label="Kode pos asal"
+                description="Kode pos asal pengiriman."
+                value={draft.originPostalCode}
+                onChangeText={value => setDraftField('originPostalCode', value)}
+                placeholder="11550"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={settingsFieldWidth}
+                label="Latitude asal"
+                description="Koordinat latitude origin."
+                value={draft.originLatitude}
+                onChangeText={value => setDraftField('originLatitude', value)}
+                placeholder="-6.1687829"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={settingsFieldWidth}
+                label="Longitude asal"
+                description="Koordinat longitude origin."
+                value={draft.originLongitude}
+                onChangeText={value => setDraftField('originLongitude', value)}
+                placeholder="106.7676678"
+              />
+            </>
+          ) : null}
+          <View style={styles.umumTopRow}>
+            <View style={styles.umumCard}>
+              <KolamSettingsWebFormSectionHeader
+                description="Tautan sosial media yang tampil di storefront."
+                title="Sosial media"
+              />
+              <SocialMediaFieldRow
+                accentColor="#1877f2"
+                fieldWidth={umumFieldWidth}
+                label="Facebook"
+                logoXml={getSocialMediaLogoXml('facebook')}
+                onChangeText={value => setDraftField('facebook', value)}
+                placeholder="https://facebook.com/..."
+                value={draft.facebook}
+              />
+              <SocialMediaFieldRow
+                accentColor="#e4405f"
+                fieldWidth={umumFieldWidth}
+                label="Instagram"
+                logoXml={getSocialMediaLogoXml('instagram')}
+                onChangeText={value => setDraftField('instagram', value)}
+                placeholder="https://instagram.com/..."
+                value={draft.instagram}
+              />
+              <SocialMediaFieldRow
+                accentColor="#000000"
+                fieldWidth={umumFieldWidth}
+                label="Twitter / X"
+                logoXml={getSocialMediaLogoXml('x')}
+                onChangeText={value => setDraftField('twitter', value)}
+                placeholder="https://twitter.com/..."
+                value={draft.twitter}
+              />
+              <SocialMediaFieldRow
+                accentColor="#ff0000"
+                fieldWidth={umumFieldWidth}
+                label="YouTube"
+                logoXml={getSocialMediaLogoXml('youtube')}
+                onChangeText={value => setDraftField('youtube', value)}
+                placeholder="https://youtube.com/..."
+                value={draft.youtube}
+              />
+              <SocialMediaFieldRow
+                accentColor="#111827"
+                fieldWidth={umumFieldWidth}
+                label="TikTok"
+                logoXml={getSocialMediaLogoXml('tiktok')}
+                onChangeText={value => setDraftField('tiktok', value)}
+                placeholder="https://tiktok.com/..."
+                value={draft.tiktok}
+              />
             </View>
           </View>
           {showNotificationSettings ? (
