@@ -2040,7 +2040,7 @@ function KolamInboxFilterPanel({
   );
   const labelOptions = React.useMemo(
     () => [
-      { label: 'Semua label', value: 'all' },
+      { label: 'Label', value: 'all' },
       ...labels.map(label => ({
         label: label.name,
         value: label._id,
@@ -2087,6 +2087,7 @@ function KolamInboxFilterPanel({
           menuPlacement="inline"
           onChange={status => onChange({ ...filter, status })}
           options={statusOptions}
+          showLabelInTrigger={false}
           style={styles.filterDropdown}
           triggerStyle={styles.filterDropdownTrigger}
           triggerTextStyle={styles.filterDropdownText}
@@ -2098,6 +2099,7 @@ function KolamInboxFilterPanel({
           menuPlacement="inline"
           onChange={assignment => onChange({ ...filter, assignment })}
           options={assignmentOptions}
+          showLabelInTrigger={false}
           style={styles.filterDropdown}
           triggerStyle={styles.filterDropdownTrigger}
           triggerTextStyle={styles.filterDropdownText}
@@ -2110,6 +2112,7 @@ function KolamInboxFilterPanel({
           onChange={labelId => onChange({ ...filter, labelId })}
           options={labelOptions}
           searchable={labels.length > 6}
+          showLabelInTrigger={false}
           style={styles.filterDropdown}
           triggerStyle={styles.filterDropdownTrigger}
           triggerTextStyle={styles.filterDropdownText}
@@ -8024,7 +8027,7 @@ function formatInboxStatusFilterLabel(
     return 'Ditutup';
   }
 
-  return 'Semua';
+  return 'Status';
 }
 
 function formatInboxAssignmentFilterLabel(
@@ -8038,7 +8041,7 @@ function formatInboxAssignmentFilterLabel(
     return 'Belum tugas';
   }
 
-  return 'Semua';
+  return 'Tugas';
 }
 
 function formatInboxPlatform(platform?: string) {
@@ -9739,7 +9742,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   filterDropdownStack: {
-    gap: 6,
+    flexDirection: 'column',
+    gap: 4,
   },
   filterDropdown: {
     width: '100%',
