@@ -75,4 +75,43 @@
     <Error Condition="!Exists('$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Composition.Package.props')" Text="$([System.String]::Format('$(ErrorText)', '$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Composition.Package.props'))" />
     <Error Condition="!Exists('$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Composition.Package.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.Composition.Package.targets'))" />
   </Target>
+  <!--
+    Package.appxmanifest registers RNSVG at KolamWindows\RNSVG.dll (Release MSIX layout).
+    Debug WAP still stages the DLL under RNSVG\RNSVG.dll, which triggers APPX0703.
+    Mirror the DLL into KolamWindows\ so Debug deploy and Release packaging share one Path.
+  -->
+  <Target Name="EnsureRNSVGInKolamWindowsPayload"
+          AfterTargets="_ConvertItems"
+          BeforeTargets="_CopyPackageFiles_InputsOutputs;BeforeGenerateAppxManifest">
+    <PropertyGroup>
+      <_RNSVGPayloadSource Condition="Exists('$(SolutionDir)x64\$(Configuration)\RNSVG\RNSVG.dll')">$(SolutionDir)x64\$(Configuration)\RNSVG\RNSVG.dll</_RNSVGPayloadSource>
+      <_RNSVGPayloadSource Condition="'$(_RNSVGPayloadSource)' == '' and Exists('$(SolutionDir)x64\$(Configuration)\RNSVG.dll')">$(SolutionDir)x64\$(Configuration)\RNSVG.dll</_RNSVGPayloadSource>
+      <_RNSVGPayloadTargetPath>KolamWindows\RNSVG.dll</_RNSVGPayloadTargetPath>
+      <_RNSVGPayloadDest>$(OutDir)$(_RNSVGPayloadTargetPath)</_RNSVGPayloadDest>
+      <_RNSVGPayloadAppxDest>$(OutDir)AppX\$(_RNSVGPayloadTargetPath)</_RNSVGPayloadAppxDest>
+    </PropertyGroup>
+    <Error Condition="'$(_RNSVGPayloadSource)' == ''"
+           Text="RNSVG.dll not found under $(SolutionDir)x64\$(Configuration)\ for KolamWindows package payload." />
+    <Copy SourceFiles="$(_RNSVGPayloadSource)"
+          DestinationFiles="$(_RNSVGPayloadDest)"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(_RNSVGPayloadSource)"
+          DestinationFiles="$(_RNSVGPayloadAppxDest)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(OutDir)AppX')" />
+    <ItemGroup>
+      <WapProjPackageFile Include="$(_RNSVGPayloadSource)">
+        <TargetPath>$(_RNSVGPayloadTargetPath)</TargetPath>
+        <CopyToTargetPath>$(_RNSVGPayloadDest)</CopyToTargetPath>
+      </WapProjPackageFile>
+      <_FileToCopy Include="$(_RNSVGPayloadSource)">
+        <TargetPath>$(_RNSVGPayloadTargetPath)</TargetPath>
+        <CopyToTargetPath>$(_RNSVGPayloadDest)</CopyToTargetPath>
+      </_FileToCopy>
+      <AppxPackagePayload Include="$(_RNSVGPayloadSource)">
+        <TargetPath>$(_RNSVGPayloadTargetPath)</TargetPath>
+      </AppxPackagePayload>
+    </ItemGroup>
+    <Message Importance="high" Text="Ensured package payload $(_RNSVGPayloadTargetPath) from $(_RNSVGPayloadSource)" />
+  </Target>
 </Project>
