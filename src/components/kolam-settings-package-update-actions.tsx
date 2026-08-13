@@ -3,8 +3,14 @@ import {StyleSheet, Text, View, type DimensionValue} from 'react-native';
 import {useKolamPackageUpdateController} from '../hooks/use-kolam-package-update-controller';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamButton} from './kolam-button';
+import {KolamFormTextField} from './kolam-form-text-field';
+import {textFieldRowStyles} from './kolam-text-field-row-styles';
 
-export function KolamSettingsPackageUpdateActions() {
+export function KolamSettingsPackageUpdateActions({
+  fieldWidth = 240,
+}: {
+  fieldWidth?: number;
+} = {}) {
   const update = useKolamPackageUpdateController();
   const busy =
     update.phase === 'checking' ||
@@ -14,10 +20,30 @@ export function KolamSettingsPackageUpdateActions() {
     update.phase === 'downloading' || update.phase === 'installing';
 
   return (
-    <View style={styles.row}>
-      {update.currentVersion ? (
-        <Text style={styles.version}>{update.currentVersion}</Text>
-      ) : null}
+    <View style={[styles.column, {width: fieldWidth}]}>
+      <KolamFormTextField
+        editable={false}
+        placeholder="—"
+        style={[textFieldRowStyles.input, {width: fieldWidth}]}
+        value={update.currentVersion}
+      />
+      <View style={styles.row}>
+        <KolamButton
+          disabled={busy}
+          label="Periksa"
+          onPress={() => {
+            void update.check();
+          }}
+        />
+        <KolamButton
+          disabled={!update.canInstall}
+          intent="primary"
+          label="Pasang"
+          onPress={() => {
+            void update.install();
+          }}
+        />
+      </View>
       {showProgress ? (
         <View style={styles.progressBlock}>
           <View
@@ -37,40 +63,19 @@ export function KolamSettingsPackageUpdateActions() {
       {update.errorMessage ? (
         <Text style={styles.error}>{update.errorMessage}</Text>
       ) : null}
-      <KolamButton
-        disabled={busy}
-        label="Periksa"
-        onPress={() => {
-          void update.check();
-        }}
-      />
-      <KolamButton
-        disabled={!update.canInstall}
-        intent="primary"
-        label="Pasang"
-        onPress={() => {
-          void update.install();
-        }}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  column: {
+    gap: 8,
+  },
   row: {
     alignItems: 'center',
-    borderBottomColor: V.colors.border,
-    borderBottomWidth: 1,
     flexDirection: 'row',
-    flexShrink: 0,
+    flexWrap: 'wrap',
     gap: 8,
-    minHeight: 40,
-    paddingLeft: 12,
-    paddingRight: 4,
-  },
-  version: {
-    color: V.colors.mutedFg,
-    fontSize: 12,
   },
   progressBlock: {
     alignItems: 'center',
@@ -80,9 +85,9 @@ const styles = StyleSheet.create({
   progressTrack: {
     backgroundColor: V.colors.muted,
     borderRadius: 2,
+    flex: 1,
     height: 4,
     overflow: 'hidden',
-    width: 64,
   },
   progressFill: {
     backgroundColor: V.colors.primary,
@@ -96,6 +101,5 @@ const styles = StyleSheet.create({
   error: {
     color: V.colors.danger,
     fontSize: 12,
-    maxWidth: 160,
   },
 });

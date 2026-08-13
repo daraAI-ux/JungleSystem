@@ -196,9 +196,12 @@ describe('KolamSettingsPanel', () => {
       text.indexOf('Versi Enclonura'),
     );
     expect(text.indexOf('Versi Enclonura')).toBeLessThan(
-      text.indexOf('Versi POS'),
+      text.indexOf('Versi POS (deprecated)'),
     );
-    expect(text.indexOf('Versi POS')).toBeLessThan(
+    expect(text.indexOf('Versi POS (deprecated)')).toBeLessThan(
+      text.indexOf('Versi JungleSystem'),
+    );
+    expect(text.indexOf('Versi JungleSystem')).toBeLessThan(
       text.indexOf('Versi Marketplace'),
     );
     expect(text.indexOf('Versi Marketplace')).toBeLessThan(

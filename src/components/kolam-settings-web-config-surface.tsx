@@ -38,6 +38,7 @@ import { KolamSettingsWebFormSectionHeader } from './kolam-settings-web-form-sec
 import { KolamSettingsWebFormSections } from './kolam-settings-web-widgets';
 import { KolamTextFieldRow } from './kolam-text-field-row';
 import { KolamTextFieldRowCopy } from './kolam-text-field-row-copy';
+import { KolamSettingsPackageUpdateActions } from './kolam-settings-package-update-actions';
 import { KolamRupiahField } from './kolam-rupiah-field';
 import { KolamToggleRow } from './kolam-toggle-row';
 import { kolamTableToolbarStyles } from './kolam-table-toolbar-styles';
@@ -2394,11 +2395,22 @@ export function KolamSettingsWebConfigSurface({
               <KolamTextFieldRow
                 variant="settingsForm"
                 fieldWidth={umumFieldWidth}
-                label="Versi POS"
+                label="Versi POS (deprecated)"
                 description="App POS"
                 value={draft.versionPos}
                 onChangeText={value => setDraftField('versionPos', value)}
                 placeholder="1.0.0"
+              />
+              <KolamTextFieldRow
+                variant="settingsForm"
+                fieldWidth={umumFieldWidth}
+                label="Versi JungleSystem"
+                description="App JungleSystem"
+                onChangeText={() => undefined}
+                renderInput={() => (
+                  <KolamSettingsPackageUpdateActions fieldWidth={umumFieldWidth} />
+                )}
+                value=""
               />
               <KolamTextFieldRow
                 variant="settingsForm"
