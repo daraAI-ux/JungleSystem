@@ -22,6 +22,7 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Web.Http.h>
 #include <winrt/Windows.Web.Http.Filters.h>
+#include <winrt/Windows.Web.Http.Headers.h>
 
 namespace KolamWindows {
 namespace {
@@ -295,10 +296,12 @@ winrt::fire_and_forget KolamWindowsPackageUpdate::DownloadMsixAsync(
       co_return;
     }
 
-    auto contentLength = response.Content().Headers().ContentLength();
     uint64_t total = expectedSize;
-    if (contentLength && *contentLength > 0) {
-      total = *contentLength;
+    if (auto contentLength = response.Content().Headers().ContentLength()) {
+      auto length = contentLength.Value();
+      if (length > 0) {
+        total = length;
+      }
     }
 
     auto input = co_await response.Content().ReadAsInputStreamAsync();
@@ -479,12 +482,10 @@ void KolamWindowsPackageUpdate::restartApp(
 winrt::fire_and_forget KolamWindowsPackageUpdate::RestartAppAsync(
     ::React::ReactPromise<::React::JSValueObject> result) {
   try {
-    auto status = co_await winrt::Windows::ApplicationModel::Core::CoreApplication::
-        RequestRestartAsync(L"");
-    if (status == winrt::Windows::ApplicationModel::Core::AppRestartFailureReason::Ok) {
-      result.Resolve(::React::JSValueObject{{"ok", true}, {"restarted", true}});
-      co_return;
-    }
+    co_await winrt::Windows::ApplicationModel::Core::CoreApplication::RequestRestartAsync(
+        L"");
+    result.Resolve(::React::JSValueObject{{"ok", true}, {"restarted", true}});
+    co_return;
   } catch (...) {
   }
 
