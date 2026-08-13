@@ -1,12 +1,17 @@
 ﻿import React from 'react';
 import {pluginRegistry} from '../domain/unified';
+import {StyleSheet, View} from 'react-native';
+import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
 import {useKolamOverviewController} from '../hooks/use-kolam-overview-controller';
 import {type KolamUnifiedOverviewPanelProps} from './kolam-unified-overview-panel-types';
+import {KolamDashboardSalesGraphCard} from './kolam-dashboard-widgets';
 import {KolamUnifiedDashboardCountSection} from './kolam-unified-dashboard-count-section';
 import {KolamUnifiedDashboardLayoutSection} from './kolam-unified-dashboard-layout-section';
 import {KolamUnifiedMetricsSection} from './kolam-unified-metrics-section';
 import {KolamUnifiedModulePanel} from './kolam-unified-module-panel';
 import {KolamUnifiedRuntimeFooter} from './kolam-unified-source-widgets';
+
+const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
 
 export function KolamUnifiedOverviewPanel({
   module,
@@ -44,6 +49,14 @@ export function KolamUnifiedOverviewPanel({
         dashboardSections={dashboardSections}
         onDashboardRoute={onDashboardRoute}
       />
+      {dashboardSections.isKolamDashboard && dashboardSections.salesGraph ? (
+        <View style={styles.dashboardSalesGraphSection}>
+          <KolamDashboardSalesGraphCard
+            graph={dashboardSections.salesGraph}
+            onRangeSelect={onSalesGraphRangeSelect}
+          />
+        </View>
+      ) : null}
       <KolamUnifiedMetricsSection
         context={context}
         dashboardSections={dashboardSections}
@@ -59,4 +72,9 @@ export function KolamUnifiedOverviewPanel({
   );
 }
 
+const styles = StyleSheet.create({
+  dashboardSalesGraphSection: {
+    marginBottom: DASHBOARD_LAYOUT_VISUAL.main.gapY,
+  },
+});
 
