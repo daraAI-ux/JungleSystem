@@ -492,7 +492,6 @@ function WalletListCard({
   onRouteChange?: (route: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const growth = item.currentBalance - item.initialBalance;
   const accountLabel = item.provider
     ? `${item.provider}${item.accountNumber ? ` · ${item.accountNumber}` : ''}`
     : `ID Dompet: ${item.id.slice(-8)}`;
@@ -566,22 +565,6 @@ function WalletListCard({
             ]}
           >
             {formatRupiah(item.currentBalance)}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.growthPill,
-            growth > 0
-              ? styles.growthPositive
-              : growth < 0
-                ? styles.growthNegative
-                : styles.growthNeutral,
-          ]}
-        >
-          <Text style={styles.growthLabel}>Pertumbuhan</Text>
-          <Text style={styles.growthValue}>
-            {growth > 0 ? '+' : ''}
-            {formatRupiah(growth)}
           </Text>
         </View>
       </View>
@@ -2227,34 +2210,6 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 20,
     fontWeight: '700',
-  },
-  growthPill: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  growthPositive: {
-    backgroundColor: V.colors.successSoft,
-  },
-  growthNegative: {
-    backgroundColor: V.colors.dangerSoft,
-  },
-  growthNeutral: {
-    backgroundColor: V.colors.muted,
-  },
-  growthLabel: {
-    color: V.colors.mutedFg,
-    fontFamily: V.fontFamily,
-    fontSize: 10,
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  growthValue: {
-    color: V.colors.fg,
-    fontFamily: V.fontFamily,
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'right',
   },
   walletCardMetaGrid: {
     flexDirection: 'row',
