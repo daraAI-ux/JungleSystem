@@ -82,11 +82,33 @@ $env:JUNGLESYSTEM_PACKAGE_CERTIFICATE_THUMBPRINT="<thumbprint>"
 npm run build:msix -- -Version 3.1.4
 ```
 
-Jangan commit `.pfx`, password, `.env`, atau secret lain.
+Jangan commit `.pfx`, password, `.env`, atau secret lain. File sertifikat
+dev disimpan di luar repo, contoh `E:\Data\Dunia-Anura\certs\`.
+
+Buat sertifikat self-signed `CN=user` sekali, lalu pakai terus sampai ada
+sertifikat produksi:
+
+```powershell
+$certDir = "E:\Data\Dunia-Anura\certs"
+New-Item -ItemType Directory -Force -Path $certDir | Out-Null
+$cert = New-SelfSignedCertificate `
+  -Type Custom `
+  -Subject "CN=user" `
+  -KeyUsage DigitalSignature `
+  -FriendlyName "JungleSystem Dev" `
+  -CertStoreLocation "Cert:\CurrentUser\My" `
+  -TextExtension @(
+    "2.5.29.37={text}1.3.6.1.5.5.7.3.3",
+    "2.5.29.19={text}"
+  )
+Export-PfxCertificate -Cert $cert -FilePath "$certDir\JungleSystem-dev.pfx" -Password $securePassword
+Export-Certificate -Cert $cert -FilePath "$certDir\JungleSystem-dev.cer"
+Import-Certificate -FilePath "$certDir\JungleSystem-dev.cer" -CertStoreLocation "Cert:\CurrentUser\TrustedPeople"
+```
 
 PC klien perlu Developer Mode/sideload enabled dan certificate signer dipercaya
-di `Trusted People` atau store yang sesuai. Untuk produksi, pakai certificate
-code-signing tetap dan sama untuk semua rilis.
+di `Trusted People` (`Cert:\CurrentUser\TrustedPeople` atau Local Machine).
+Untuk produksi, pakai certificate code-signing tetap dan sama untuk semua rilis.
 
 ## App Installer Opsional
 

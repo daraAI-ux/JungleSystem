@@ -99,6 +99,10 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
+  <PropertyGroup>
+    <!-- RNSVG.winmd is tagged UAP; keep the Win32 project reference so cppwinrt emits winrt/RNSVG.h. -->
+    <FindInvalidProjectReferences>false</FindInvalidProjectReferences>
+  </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
     <ClInclude Include="KolamWindows.h" />

@@ -63,10 +63,6 @@
     <ProjectReference Include="..\KolamWindows\KolamWindows.vcxproj">
       <SkipGetTargetFrameworkProperties>True</SkipGetTargetFrameworkProperties>
     </ProjectReference>
-    <ProjectReference Include="..\..\node_modules\react-native-svg\windows\RNSVG\RNSVG.vcxproj">
-      <Project>{7acf84ec-efba-4043-8e14-40b159508902}</Project>
-      <SkipGetTargetFrameworkProperties>True</SkipGetTargetFrameworkProperties>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
   <ImportGroup Label="ReactNativeWindowsTargets">

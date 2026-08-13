@@ -92,6 +92,9 @@ windows/**/*.ProjectImports.zip
 # testing
 /coverage
 
+# MSIX release artifacts (built locally; do not commit)
+/dist/
+
 # Yarn
 .yarn/*
 !.yarn/patches

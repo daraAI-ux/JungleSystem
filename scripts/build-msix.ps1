@@ -190,6 +190,8 @@ if (-not $SkipBuild) {
     "/p:SolutionDir=$solutionDir",
     "/p:ReactNativeWindowsDir=$reactNativeWindowsDir",
     "/p:UseFabric=true",
+    "/p:WindowsTargetPlatformVersion=10.0.22621.0",
+    "/p:RunCodegenWindows=false",
     "/p:GenerateAppxPackageOnBuild=true",
     "/p:UapAppxPackageBuildMode=SideloadOnly",
     "/p:AppxBundle=Never",
@@ -214,11 +216,12 @@ if (-not $SkipBuild) {
   }
 }
 
-$artifact = Get-ChildItem -LiteralPath $appPackagesRoot -Recurse -File -Include "*.msix", "*.msixbundle" |
+$artifact = Get-ChildItem -LiteralPath $appPackagesRoot -Recurse -File |
   Where-Object {
+    ($_.Extension -eq '.msix' -or $_.Extension -eq '.msixbundle') -and
     $_.Name -match [regex]::Escape($packageVersion) -and
     $_.Name -match $Platform -and
-    $_.Name -match $Configuration
+    $_.FullName -notmatch '\\Dependencies\\'
   } |
   Sort-Object LastWriteTime -Descending |
   Select-Object -First 1

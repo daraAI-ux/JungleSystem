@@ -10,6 +10,7 @@
       See https://microsoft.github.io/react-native-windows/docs/new-architecture
     -->
     <RnwNewArch>true</RnwNewArch>
+    <UseFabric>true</UseFabric>
 
     <!--
       Changes compilation to assume use of Microsoft.ReactNative NuGet packages
