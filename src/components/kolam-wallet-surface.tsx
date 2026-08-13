@@ -534,10 +534,12 @@ function WalletListCard({
               <Text numberOfLines={1} style={styles.walletCardName}>
                 {item.name}
               </Text>
-              <KolamStatusBadge
-                intent={getKolamWalletTypeIntent(item.type)}
-                label={formatKolamWalletTypeLabel(item.type)}
-              />
+              {item.type === 'main' ? null : (
+                <KolamStatusBadge
+                  intent={getKolamWalletTypeIntent(item.type)}
+                  label={formatKolamWalletTypeLabel(item.type)}
+                />
+              )}
             </View>
             <Text numberOfLines={1} style={styles.metaText}>
               {accountLabel}
