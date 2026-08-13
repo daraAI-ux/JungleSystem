@@ -1,4 +1,5 @@
 import React from 'react';
+import type {StyleProp, ViewStyle} from 'react-native';
 import type {DashboardRailSection} from '../domain/dashboard-rail';
 import {KolamCardFrame} from './kolam-card-frame';
 import {KolamDashboardRailEmptyState} from './kolam-dashboard-rail-empty-state';
@@ -7,14 +8,16 @@ import {KolamDashboardRailRow} from './kolam-dashboard-rail-row';
 import {KolamMappedList} from './kolam-mapped-list';
 
 export function KolamDashboardRailCard({
+  cardStyle,
   onOpenRoute,
   section,
 }: {
+  cardStyle?: StyleProp<ViewStyle>;
   onOpenRoute?: (route: string) => void;
   section: DashboardRailSection;
 }) {
   return (
-    <KolamCardFrame variant="dashboardRail">
+    <KolamCardFrame style={cardStyle} variant="dashboardRail">
       <KolamDashboardRailHeader
         onOpenRoute={onOpenRoute}
         section={section}

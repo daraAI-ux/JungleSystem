@@ -1,8 +1,5 @@
 ﻿import React from 'react';
-import {
-  KolamDashboardPendingOrders,
-  KolamDashboardRightRail,
-} from './kolam-dashboard-widgets';
+import {KolamDashboardPendingOrders} from './kolam-dashboard-widgets';
 import {KolamListFrame} from './kolam-list-frame';
 import {KolamShellFrame} from './kolam-shell-frame';
 import type {KolamUnifiedDashboardLayoutSectionProps} from './kolam-unified-overview-panel-types';
@@ -25,10 +22,6 @@ export function KolamUnifiedDashboardLayoutSection({
 
   return (
     <KolamShellFrame variant="dashboardLayout">
-      <KolamDashboardRightRail
-        onOpenRoute={onDashboardRoute}
-        sections={dashboardSections.railSections}
-      />
       <KolamShellFrame variant="dashboardMain">
         <KolamListFrame variant="operationalStack">
           <KolamDashboardPendingOrders

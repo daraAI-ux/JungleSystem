@@ -4,7 +4,10 @@ import {StyleSheet, View} from 'react-native';
 import {getDashboardLayoutVisualContract} from '../domain/dashboard-layout';
 import {useKolamOverviewController} from '../hooks/use-kolam-overview-controller';
 import {type KolamUnifiedOverviewPanelProps} from './kolam-unified-overview-panel-types';
-import {KolamDashboardSalesGraphCard} from './kolam-dashboard-widgets';
+import {
+  KolamDashboardRightRail,
+  KolamDashboardSalesGraphCard,
+} from './kolam-dashboard-widgets';
 import {KolamUnifiedDashboardCountSection} from './kolam-unified-dashboard-count-section';
 import {KolamUnifiedDashboardLayoutSection} from './kolam-unified-dashboard-layout-section';
 import {KolamUnifiedMetricsSection} from './kolam-unified-metrics-section';
@@ -50,11 +53,21 @@ export function KolamUnifiedOverviewPanel({
         onDashboardRoute={onDashboardRoute}
       />
       {dashboardSections.isKolamDashboard && dashboardSections.salesGraph ? (
-        <View style={styles.dashboardSalesGraphSection}>
-          <KolamDashboardSalesGraphCard
-            graph={dashboardSections.salesGraph}
-            onRangeSelect={onSalesGraphRangeSelect}
-          />
+        <View style={styles.dashboardSalesSummarySection}>
+          <View style={styles.dashboardSalesGraphPane}>
+            <KolamDashboardSalesGraphCard
+              graph={dashboardSections.salesGraph}
+              onRangeSelect={onSalesGraphRangeSelect}
+            />
+          </View>
+          <View style={styles.dashboardSalesRailPane}>
+            <KolamDashboardRightRail
+              cardStyle={styles.dashboardSalesRailCard}
+              listStyle={styles.dashboardSalesRailList}
+              onOpenRoute={onDashboardRoute}
+              sections={dashboardSections.railSections}
+            />
+          </View>
         </View>
       ) : null}
       <KolamUnifiedMetricsSection
@@ -73,8 +86,32 @@ export function KolamUnifiedOverviewPanel({
 }
 
 const styles = StyleSheet.create({
-  dashboardSalesGraphSection: {
+  dashboardSalesSummarySection: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: DASHBOARD_LAYOUT_VISUAL.layout.gapY,
     marginBottom: DASHBOARD_LAYOUT_VISUAL.main.gapY,
+  },
+  dashboardSalesGraphPane: {
+    flex: 3,
+    minWidth: 520,
+  },
+  dashboardSalesRailPane: {
+    flex: 1,
+    minWidth: 220,
+  },
+  dashboardSalesRailList: {
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+    gap: DASHBOARD_LAYOUT_VISUAL.inventoryRail.gridGap,
+    marginBottom: 0,
+  },
+  dashboardSalesRailCard: {
+    flex: 0,
+    flexBasis: 'auto',
+    minWidth: 0,
+    width: '100%',
   },
 });
 
