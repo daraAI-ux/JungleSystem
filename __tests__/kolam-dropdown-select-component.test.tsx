@@ -5,6 +5,7 @@ import {
   KolamDropdownSelect,
   KolamOverflowMenuButton,
 } from '../src/components/kolam-dropdown-select';
+import {hideKolamOverflowMenuOverlay} from '../src/components/kolam-overflow-menu-overlay-host';
 
 function getRenderedText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -24,6 +25,10 @@ function findPressableByLabel(
 }
 
 describe('KolamDropdownSelect', () => {
+  afterEach(() => {
+    hideKolamOverflowMenuOverlay();
+  });
+
   it('closes an open overlay dropdown when another overlay dropdown opens', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
 
@@ -72,6 +77,10 @@ describe('KolamDropdownSelect', () => {
 });
 
 describe('KolamOverflowMenuButton', () => {
+  afterEach(() => {
+    hideKolamOverflowMenuOverlay();
+  });
+
   it('closes an open overflow menu when another overflow menu opens', async () => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     const requestAnimationFrameHost = globalThis as typeof globalThis & {

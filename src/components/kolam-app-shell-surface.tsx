@@ -13,6 +13,7 @@ import {
   KolamSidebar,
   KolamTopNavigation,
 } from './kolam-shell-widgets';
+import { closeAllKolamOpenMenus } from './kolam-dropdown-select';
 import { KolamWorkspaceScrollProvider } from './kolam-workspace-scroll-context';
 
 type KolamDashboardHeaderProps = React.ComponentProps<
@@ -50,15 +51,6 @@ function KolamAppShellSurfaceComponent({
   topNavigation,
   workspaceTabs,
 }: KolamAppShellSurfaceProps) {
-  if (isPosFullWindowShellRoute(sidebar)) {
-    return (
-      <KolamShellFrame variant="appShell">
-        <StatusBar barStyle="dark-content" />
-        {children}
-      </KolamShellFrame>
-    );
-  }
-
   const workspaceScrollPolicy = getKolamWorkspaceScrollPolicy({
     activeModule: sidebar.activeModule,
     route: sidebar.activeRoute,
@@ -70,12 +62,29 @@ function KolamAppShellSurfaceComponent({
     },
     [],
   );
+
+  React.useEffect(() => {
+    closeAllKolamOpenMenus();
+    shellScrollRef.current?.scrollTo({animated: false, x: 0, y: 0});
+  }, [workspaceScrollPolicy.routePath]);
+
+  if (isPosFullWindowShellRoute(sidebar)) {
+    return (
+      <KolamShellFrame variant="appShell">
+        <StatusBar barStyle="dark-content" />
+        {children}
+      </KolamShellFrame>
+    );
+  }
+
   const ownsWorkspaceScroll = workspaceScrollPolicy.scrollOwner === 'workspace';
   const pageContentStyle = [
     styles.mainContent,
     workspaceScrollPolicy.layout === 'centered' && styles.dashboardPageContent,
   ];
-  const shellScrollKey = rightRail ? 'right-rail-open' : 'right-rail-closed';
+  const shellScrollKey = `${workspaceScrollPolicy.routePath}:${
+    rightRail ? 'right-rail-open' : 'right-rail-closed'
+  }`;
 
   return (
     <KolamShellFrame variant="appShell">
@@ -93,7 +102,10 @@ function KolamAppShellSurfaceComponent({
           source={BODY_BACKGROUND_SOURCE}
           style={styles.bodyBackground}
         >
-          <View style={styles.bodyBackgroundOverlay} />
+          <View
+            pointerEvents="none"
+            style={styles.bodyBackgroundOverlay}
+          />
           <KolamWorkspaceScrollProvider
             policy={workspaceScrollPolicy}
             scrollTo={scrollShellTo}

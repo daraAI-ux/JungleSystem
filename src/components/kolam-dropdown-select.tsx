@@ -64,6 +64,11 @@ function clearActiveOpenMenu(id: string) {
   }
 }
 
+export function closeAllKolamOpenMenus() {
+  setActiveOpenMenu(null);
+  hideKolamOverflowMenuOverlay();
+}
+
 export function KolamDropdownSelect<TValue extends string = string>({
   accessibilityLabel,
   label,
@@ -173,6 +178,12 @@ export function KolamDropdownSelect<TValue extends string = string>({
       rowLayer?.setMenuOpen(false);
     };
   }, [open, rowLayer]);
+
+  React.useEffect(() => {
+    return () => {
+      clearActiveOpenMenu(openMenuIdRef.current);
+    };
+  }, []);
 
   const menu = (
     <View
@@ -331,6 +342,13 @@ export function KolamOverflowMenuButton({
     });
   }, [onOpenChange, rowLayer]);
 
+  React.useEffect(() => {
+    return () => {
+      hideKolamOverflowMenuOverlay(openMenuIdRef.current);
+      clearActiveOpenMenu(openMenuIdRef.current);
+    };
+  }, []);
+
   const setMenuOpen = (next: boolean) => {
     if (next) {
       setActiveOpenMenu(openMenuIdRef.current);
@@ -351,7 +369,9 @@ export function KolamOverflowMenuButton({
       return;
     }
 
+    let didMeasure = false;
     root.measureInWindow((_x, y, _width, height) => {
+      didMeasure = true;
       const estimatedMenuHeight = Math.max(48, actions.length * 35 + 14);
       const availableAbove = y;
       const availableBelow = viewport.height - (y + height);
@@ -397,6 +417,9 @@ export function KolamOverflowMenuButton({
       }
       setMenuOpen(true);
     });
+    if (!didMeasure) {
+      setMenuOpen(true);
+    }
   };
   const toggleMenu = () => {
     if (disabled) {

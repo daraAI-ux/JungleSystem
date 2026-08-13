@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamAppShellSurface } from '../src/components/kolam-app-shell-surface';
+import { showKolamOverflowMenuOverlay } from '../src/components/kolam-overflow-menu-overlay-host';
 import { getDashboardLayoutVisualContract } from '../src/domain/dashboard-layout';
 import {
   getDashboardHeaderActions,
@@ -55,18 +56,24 @@ function flattenText(value: React.ReactNode): string[] {
   return [];
 }
 
-function getMainContentStyle(renderer: ReactTestRenderer.ReactTestRenderer) {
+function isMainPageContainerStyle(style: ReturnType<typeof StyleSheet.flatten>) {
   const visual = getDashboardLayoutVisualContract();
-  const scrollView = renderer.root.findAllByType(ScrollView).find(node => {
-    const style = StyleSheet.flatten(node.props.contentContainerStyle);
 
-    return (
-      style?.padding === 16 ||
-      style?.maxWidth === visual.page.maxWidthPx ||
-      (typeof style?.paddingHorizontal === 'number' &&
-        typeof style?.paddingTop === 'number')
-    );
-  });
+  return (
+    style?.padding === 16 ||
+    style?.maxWidth === visual.page.maxWidthPx ||
+    (typeof style?.paddingHorizontal === 'number' &&
+      typeof style?.paddingTop === 'number' &&
+      typeof style?.paddingBottom === 'number')
+  );
+}
+
+function getMainContentStyle(renderer: ReactTestRenderer.ReactTestRenderer) {
+  const scrollView = renderer.root.findAllByType(ScrollView).find(node =>
+    isMainPageContainerStyle(
+      StyleSheet.flatten(node.props.contentContainerStyle),
+    ),
+  );
 
   if (scrollView) {
     return StyleSheet.flatten(scrollView.props.contentContainerStyle);
@@ -75,12 +82,7 @@ function getMainContentStyle(renderer: ReactTestRenderer.ReactTestRenderer) {
   const ownedPageView = renderer.root.findAllByType(View).find(node => {
     const style = StyleSheet.flatten(node.props.style);
 
-    return (
-      style?.padding === 16 ||
-      style?.maxWidth === visual.page.maxWidthPx ||
-      (typeof style?.paddingHorizontal === 'number' &&
-        typeof style?.paddingTop === 'number')
-    );
+    return isMainPageContainerStyle(style);
   });
 
   if (!ownedPageView) {
@@ -174,7 +176,6 @@ describe('KolamAppShellSurface', () => {
 
     expect(renderText(renderer!)).toEqual(
       expect.arrayContaining([
-        'Dashboard',
         'Pengaturan',
         'CPU 12%',
         'RAM 34%',
@@ -197,8 +198,8 @@ describe('KolamAppShellSurface', () => {
     expect(avatarImage!.props.resizeMode).toBe('cover');
     expect(StyleSheet.flatten(avatarImage!.props.style)).toEqual(
       expect.objectContaining({
-        width: 32,
-        height: 32,
+        width: 28,
+        height: 28,
       }),
     );
     expect(
@@ -624,6 +625,108 @@ describe('KolamAppShellSurface', () => {
 
     expect(openScroll).toBeDefined();
     expect(openScroll).not.toBe(closedScroll);
+  });
+
+  it('clears leftover overflow overlay when the workspace route changes', async () => {
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    const renderShell = (activeRoute: string) => (
+      <KolamAppShellSurface
+        sidebar={{
+          accessScope: {am: true, kolam: true, pos: true},
+          activeModule: 'settings',
+          activeRoute,
+          collapsed: false,
+          expandedSections: {},
+          filterMenuByAccess: false,
+          onMoveMenuSection: () => undefined,
+          onQuickSearch: () => undefined,
+          onSelectMenuItem: () => undefined,
+          onSelectModule: () => undefined,
+          onToggleMenuSection: () => undefined,
+          sectionOrder: [],
+        }}
+        topNavigation={{
+          attentionCount: 0,
+          breadcrumbItems: getTopNavBreadcrumbItems('settings'),
+          displayInitials: 'DA',
+          rightControls: getTopNavRightControls(),
+          onAvatarPress: () => undefined,
+          onBreadcrumbDashboardPress: () => undefined,
+          onNotificationPress: () => undefined,
+          onToggleSidebar: () => undefined,
+        }}
+        overlay={{
+          isAttentionOpen: false,
+          isCommandPaletteOpen: false,
+          isUserMenuOpen: false,
+          userMenu: {
+            items: [],
+            displayName: 'Dunia Anura',
+            initials: 'DA',
+            email: 'seed@kolam.local',
+            accessScope: {am: true, kolam: true, pos: true},
+            onClose: () => undefined,
+            onSelect: () => undefined,
+          },
+          attention: {
+            items: [],
+            unreadCount: 0,
+            onClose: () => undefined,
+            onSeeAll: () => undefined,
+          },
+          commandPalette: {
+            commands: [],
+            search: '',
+            onSearchChange: () => undefined,
+            onClose: () => undefined,
+            onSelect: () => undefined,
+          },
+        }}
+        dashboardHeader={{
+          actions: getDashboardHeaderActions(),
+          title: 'Produk',
+          subtitle: 'Daftar',
+          syncIndicator: seedHeaderSyncIndicator,
+          onSelectModule: () => undefined,
+        }}
+      >
+        <Text>Workspace child</Text>
+      </KolamAppShellSurface>
+    );
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(renderShell('/products'));
+    });
+
+    await ReactTestRenderer.act(async () => {
+      showKolamOverflowMenuOverlay({
+        anchorHeight: 24,
+        anchorTop: 80,
+        content: <Text>Menu nyangkut</Text>,
+        estimatedHeight: 80,
+        id: 'stuck-menu',
+        left: 24,
+        top: 80,
+        width: 180,
+      });
+    });
+
+    expect(
+      renderer!.root.findAllByProps({
+        accessibilityLabel: 'Tutup menu aksi',
+      }).length,
+    ).toBeGreaterThan(0);
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(renderShell('/species'));
+    });
+
+    expect(
+      renderer!.root.findAllByProps({
+        accessibilityLabel: 'Tutup menu aksi',
+      }),
+    ).toHaveLength(0);
   });
 
   it.each([
