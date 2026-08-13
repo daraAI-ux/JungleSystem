@@ -652,8 +652,23 @@ export function KolamGlobalChatRail({
         selectedItemId,
       });
       const daraThinkingPatch = getDaraThinkingLivePatch(event, selectedItemId);
+      const isForDaraWindowDetail =
+        mode === 'team-chat' &&
+        daraHeaderMenuOpen &&
+        Boolean(daraWindowRoomId) &&
+        classification.stream === 'team-chat' &&
+        (!classification.targetId ||
+          classification.targetId === daraWindowRoomId) &&
+        classification.refreshTargets.some(target =>
+          ['team-room-detail', 'team-room-list'].includes(target),
+        );
 
       syncFromLiveClassification(classification);
+      if (isForDaraWindowDetail) {
+        Promise.resolve(daraWindowDetail.refresh({ quiet: true })).catch(
+          () => undefined,
+        );
+      }
 
       if (daraThinkingPatch) {
         daraThinkingSignalKeyRef.current += 1;
@@ -670,6 +685,16 @@ export function KolamGlobalChatRail({
         const presence = getTeamChatPresenceFromLiveEvent(event);
         if (presence) {
           detail.updatePresenceFromLive(presence);
+        }
+      }
+      if (
+        isForDaraWindowDetail &&
+        classification.refreshPresence &&
+        classification.targetId === daraWindowRoomId
+      ) {
+        const presence = getTeamChatPresenceFromLiveEvent(event);
+        if (presence) {
+          daraWindowDetail.updatePresenceFromLive(presence);
         }
       }
 
@@ -700,6 +725,13 @@ export function KolamGlobalChatRail({
       ) {
         void detail.refreshCall();
       }
+      if (
+        isForDaraWindowDetail &&
+        classification.refreshCallState &&
+        classification.targetId === daraWindowRoomId
+      ) {
+        void daraWindowDetail.refreshCall();
+      }
 
       if (classification.soundIntent !== 'none') {
         if (
@@ -724,6 +756,9 @@ export function KolamGlobalChatRail({
     },
     [
       currentUserId,
+      daraHeaderMenuOpen,
+      daraWindowDetail,
+      daraWindowRoomId,
       detail,
       mode,
       notificationSoundService,
