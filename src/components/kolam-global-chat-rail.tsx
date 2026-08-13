@@ -18,6 +18,7 @@ import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
 import { KOLAM_ALL_PLATFORM_LOGO_SVG } from '../assets/marketplace/all-logo-svg';
+import { KOLAM_TIKTOK_LOGO_SVG } from '../assets/marketplace/tiktok-logo-svg';
 import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
 import {
@@ -156,7 +157,6 @@ const INBOX_ASSIGNMENT_FILTERS: KolamChatRailInboxAssignmentFilter[] = [
   'unassigned',
 ];
 const SHOPEE_LOGO = require('../assets/marketplace/shopee.jpg');
-const TIKTOK_LOGO = require('../assets/marketplace/tiktok.webp');
 const TOKOPEDIA_LOGO = require('../assets/marketplace/tokopedia.png');
 const WHATSAPP_LOGO = require('../assets/marketplace/whatsapp.png');
 const DARA_AVATAR_DEFAULT_PATH = '/images/dara-avatar.png';
@@ -2379,7 +2379,6 @@ function KolamPlatformFilterLogo({
   if (
     platform === 'tokopedia' ||
     platform === 'shopee' ||
-    platform === 'tiktok' ||
     platform === 'whatsapp'
   ) {
     return (
@@ -2390,14 +2389,23 @@ function KolamPlatformFilterLogo({
             ? TOKOPEDIA_LOGO
             : platform === 'shopee'
             ? SHOPEE_LOGO
-            : platform === 'tiktok'
-            ? TIKTOK_LOGO
             : WHATSAPP_LOGO
         }
         style={[
           styles.platformLogoImage,
           offline && styles.platformLogoImageOffline,
         ]}
+      />
+    );
+  }
+
+  if (platform === 'tiktok') {
+    return (
+      <SvgXml
+        height={21}
+        style={offline && styles.platformLogoImageOffline}
+        width={21}
+        xml={KOLAM_TIKTOK_LOGO_SVG}
       />
     );
   }
