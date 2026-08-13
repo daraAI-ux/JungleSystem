@@ -13,6 +13,7 @@
     "verify:shell-routes": "node scripts/verify-shell-routes.js",
     "verify:sources": "node scripts/verify-sources.js",
     "build:tiptap": "node scripts/build-tiptap-editor.js",
+    "build:msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msix.ps1",
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
