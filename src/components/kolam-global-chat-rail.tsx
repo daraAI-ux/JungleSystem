@@ -5796,6 +5796,14 @@ function KolamInboxActionStrip({
   const copyIdResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  React.useEffect(
+    () => () => {
+      if (copyIdResetTimerRef.current) {
+        clearTimeout(copyIdResetTimerRef.current);
+      }
+    },
+    [],
+  );
   const conversation = detail.conversation;
   if (!conversation) {
     return null;
@@ -5834,14 +5842,6 @@ function KolamInboxActionStrip({
     }, 1400);
     (copyIdResetTimerRef.current as { unref?: () => void }).unref?.();
   };
-  React.useEffect(
-    () => () => {
-      if (copyIdResetTimerRef.current) {
-        clearTimeout(copyIdResetTimerRef.current);
-      }
-    },
-    [],
-  );
 
   return (
     <View style={styles.inboxActionStrip}>
