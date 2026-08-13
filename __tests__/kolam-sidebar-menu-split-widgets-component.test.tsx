@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamMenuDock } from '../src/components/kolam-menu-dock-widgets';
+import { KolamMenuFolderIcon } from '../src/components/kolam-menu-folder-icon';
 import { KolamMenuSection } from '../src/components/kolam-menu-section-widgets';
 import { KolamMenuTitle } from '../src/components/kolam-menu-title';
 import { kolamNavigationSections } from '../src/domain/kolam-navigation';
@@ -55,5 +56,14 @@ describe('sidebar menu split widgets', () => {
         firstSection.items[0].label,
       ]),
     );
+    const folderIcons = renderer!.root.findAllByType(KolamMenuFolderIcon);
+
+    expect(folderIcons).toHaveLength(3);
+    expect(
+      folderIcons.filter(node => node.props.expanded === true),
+    ).toHaveLength(1);
+    expect(
+      folderIcons.filter(node => node.props.size === 'dock'),
+    ).toHaveLength(2);
   });
 });

@@ -7,15 +7,11 @@ import {
   type KolamNavigationItem,
   type KolamNavigationSection,
 } from '../domain/kolam-navigation';
-import { KolamChevronIcon } from './kolam-chevron-icon';
 import { KolamHeaderFrame } from './kolam-header-frame';
+import { KolamMenuFolderIcon } from './kolam-menu-folder-icon';
 import { KolamMenuSectionActions } from './kolam-menu-section-actions';
 import { KolamMenuSectionItems } from './kolam-menu-section-items';
 import { KolamMenuSectionToggle } from './kolam-menu-section-toggle';
-import {
-  getKolamChevronDirection,
-  KOLAM_NAVIGATION_CHROME,
-} from './kolam-menu-navigation-utils';
 
 export function KolamMenuSection({
   activeRoute,
@@ -39,16 +35,7 @@ export function KolamMenuSection({
     <View style={styles.kolamMenuSection}>
       <KolamHeaderFrame variant="menuSection">
         <KolamMenuSectionToggle
-          icon={
-            <KolamChevronIcon
-              direction={getKolamChevronDirection(
-                expanded
-                  ? KOLAM_NAVIGATION_CHROME.disclosureExpandedIconKind
-                  : KOLAM_NAVIGATION_CHROME.disclosureCollapsedIconKind,
-              )}
-              size="menu"
-            />
-          }
+          icon={<KolamMenuFolderIcon expanded={expanded} />}
           label={section.title}
           onPress={() => {
             if (primaryItem) {

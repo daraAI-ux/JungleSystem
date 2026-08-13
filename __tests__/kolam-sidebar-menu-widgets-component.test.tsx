@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
+import { KolamMenuFolderIcon } from '../src/components/kolam-menu-folder-icon';
 import { KolamMenuGroup } from '../src/components/kolam-sidebar-menu-widgets';
 import {
   filterKolamNavigationSectionsByAccess,
@@ -61,14 +62,15 @@ describe('KolamMenuGroup', () => {
       );
     });
 
-    const visibleDockInitials = filterKolamNavigationSectionsByAccess(
+    const visibleDockSections = filterKolamNavigationSectionsByAccess(
       kolamSidebarNavigationSections,
       { am: false, kolam: true, pos: true },
-    ).map(section => section.title.charAt(0));
+    );
 
-    expect(renderText(expanded!)).toContain('Kolam Menu');
-    expect(renderText(collapsed!)).toEqual(
-      expect.arrayContaining(visibleDockInitials),
+    expect(renderText(expanded!)).toContain('Inventori');
+    expect(renderText(collapsed!)).toEqual([]);
+    expect(collapsed!.root.findAllByType(KolamMenuFolderIcon)).toHaveLength(
+      visibleDockSections.length,
     );
   });
 });
