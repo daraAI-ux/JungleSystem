@@ -57,6 +57,7 @@ import {
   createKolamHeroSlide,
   createKolamRole,
   blockKolamActivityLogIp,
+  deleteKolamActivityLogs,
   deleteKolamRole,
   getKolamActivityLogs,
   getKolamActivityLogStats,
@@ -1048,6 +1049,8 @@ export function useKolamSettingsPanelController(
   const [activityReloadKey, setActivityReloadKey] = useState(0);
   const [activityLogBlockIpTarget, setActivityLogBlockIpTarget] =
     useState('');
+  const [activityLogDeleteOpen, setActivityLogDeleteOpen] = useState(false);
+  const [activityLogDeleting, setActivityLogDeleting] = useState(false);
   const [activityLogFilters, setActivityLogFilters] =
     useState<SettingsActivityLogFilterState>(emptyActivityLogFilters);
   const [webTitle, setWebTitle] = useState(
@@ -1931,6 +1934,33 @@ export function useKolamSettingsPanelController(
   };
   const refreshActivityLogs = () => {
     setActivityReloadKey(current => current + 1);
+  };
+  const requestDeleteAllActivityLogs = () => {
+    setActivityLogDeleteOpen(true);
+  };
+  const cancelDeleteAllActivityLogs = () => {
+    if (activityLogDeleting) {
+      return;
+    }
+    setActivityLogDeleteOpen(false);
+  };
+  const confirmDeleteAllActivityLogs = async () => {
+    if (activityLogDeleting) {
+      return;
+    }
+    setActivityLogDeleting(true);
+    try {
+      const result = await deleteKolamActivityLogs();
+      setActivityLogDeleteOpen(false);
+      setActivityPage(1);
+      setSelectedActivityLogId('');
+      setActivityLogMessage(`${result.data.deletedCount} log dihapus.`);
+      refreshActivityLogs();
+    } catch (error) {
+      setActivityLogMessage(getActivityLogErrorMessage(error));
+    } finally {
+      setActivityLogDeleting(false);
+    }
   };
   const requestBlockActivityLogIp = (ip: string) => {
     if (!ip || ip === '-') {
@@ -4773,6 +4803,8 @@ export function useKolamSettingsPanelController(
     activeSurfaceId,
     activityEntries,
     activityLogFilters,
+    activityLogDeleteOpen,
+    activityLogDeleting,
     activityLogMessage,
     activityLogStatus,
     activityPagination,
@@ -4840,6 +4872,9 @@ export function useKolamSettingsPanelController(
     selectedActivityLogId,
     setSelectedActivityLogId,
     activityLogBlockIpTarget,
+    requestDeleteAllActivityLogs,
+    cancelDeleteAllActivityLogs,
+    confirmDeleteAllActivityLogs,
     requestBlockActivityLogIp,
     cancelBlockActivityLogIp,
     confirmBlockActivityLogIp,

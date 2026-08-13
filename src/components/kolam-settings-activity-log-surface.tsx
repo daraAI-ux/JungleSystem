@@ -31,14 +31,20 @@ const ACTIVITY_LOG_FILTER_PANEL_WIDTH = 240;
 export function KolamSettingsActivityLogSurface({
   blockIpTarget = '',
   columns,
+  deleteAllOpen = false,
+  deletingAll = false,
   filterControls,
   filterValues = emptyActivityLogFilterValues,
+  message = '',
   onBlockActivityLogIp = noopBlockActivityLogIp,
   onCancelBlockActivityLogIp = noopRefresh,
+  onCancelDeleteAllActivityLogs = noopRefresh,
   onConfirmBlockActivityLogIp = noopRefresh,
+  onConfirmDeleteAllActivityLogs = noopRefresh,
   onPageChange,
   onFilterChange = noopFilterChange,
-  onRefresh = noopRefresh,
+  onRefresh: _onRefresh = noopRefresh,
+  onRequestDeleteAllActivityLogs = noopRefresh,
   onSelectActivityLog,
   pagination,
   rows,
@@ -49,17 +55,23 @@ export function KolamSettingsActivityLogSurface({
 }: {
   blockIpTarget?: string;
   columns: SettingsActivityLogTableColumn[];
+  deleteAllOpen?: boolean;
+  deletingAll?: boolean;
   filterControls: SettingsActivityLogFilterControl[];
   filterValues?: SettingsActivityLogFilterState;
+  message?: string;
   onBlockActivityLogIp?: (ip: string) => void;
   onCancelBlockActivityLogIp?: () => void;
+  onCancelDeleteAllActivityLogs?: () => void;
   onConfirmBlockActivityLogIp?: () => void;
+  onConfirmDeleteAllActivityLogs?: () => void;
   onPageChange: (page: number) => void;
   onFilterChange?: (
     key: keyof SettingsActivityLogFilterState,
     value: string,
   ) => void;
   onRefresh?: () => void;
+  onRequestDeleteAllActivityLogs?: () => void;
   onSelectActivityLog: (activityLogId: string) => void;
   pagination: SettingsActivityLogPagination;
   rows: SettingsActivityLogRow[];
@@ -169,9 +181,17 @@ export function KolamSettingsActivityLogSurface({
                 );
               })}
             </View>
-            <View style={kolamTableToolbarStyles.actions} />
+            <View style={kolamTableToolbarStyles.actions}>
+              <ActivityLogIconButton
+                accessibilityLabel="Hapus semua log"
+                icon="trash"
+                onPress={onRequestDeleteAllActivityLogs}
+                tone="danger"
+              />
+            </View>
           </View>
         </View>
+        {message ? <Text style={styles.messageText}>{message}</Text> : null}
         {activeFilterControl && panelAnchor ? (
           <View
             style={[
@@ -275,6 +295,15 @@ export function KolamSettingsActivityLogSurface({
         title="Blokir IP"
         visible={Boolean(blockIpTarget)}
       />
+      <KolamConfirmDialog
+        confirmLabel={deletingAll ? 'Menghapus...' : 'Hapus semua'}
+        destructive
+        message="Semua catatan activity log akan dihapus permanen. Tindakan ini tidak bisa dibatalkan."
+        onCancel={onCancelDeleteAllActivityLogs}
+        onConfirm={onConfirmDeleteAllActivityLogs}
+        title="Hapus semua log?"
+        visible={deleteAllOpen}
+      />
     </>
   );
 }
@@ -363,13 +392,19 @@ function ActivityLogIconButton({
   active = false,
   icon,
   onPress,
+  tone = 'default',
 }: {
   accessibilityLabel: string;
   active?: boolean;
-  icon: 'eye' | 'shield';
+  icon: 'eye' | 'shield' | 'trash';
   onPress: () => void;
+  tone?: 'default' | 'danger';
 }) {
-  const color = active ? V.colors.primary : V.colors.fg;
+  const color = active
+    ? V.colors.primary
+    : tone === 'danger'
+    ? V.colors.danger
+    : V.colors.fg;
 
   return (
     <KolamInteractionFrame
@@ -380,6 +415,8 @@ function ActivityLogIconButton({
     >
       {icon === 'shield' ? (
         <ActivityLogShieldIcon color={color} />
+      ) : icon === 'trash' ? (
+        <ActivityLogTrashIcon color={color} />
       ) : (
         <ActivityLogEyeIcon color={color} />
       )}
@@ -433,6 +470,43 @@ function ActivityLogEyeIcon({color}: {color: string}) {
   );
 }
 
+function ActivityLogTrashIcon({color}: {color: string}) {
+  return (
+    <Svg height={17} viewBox="0 0 24 24" width={17}>
+      <Path
+        d="M4 7h16"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeWidth={2}
+      />
+      <Path
+        d="M9 7V5.4C9 4.6 9.6 4 10.4 4h3.2c.8 0 1.4.6 1.4 1.4V7"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <Path
+        d="M6.5 7.5 7.4 19c.1.7.7 1 1.3 1h6.6c.7 0 1.2-.4 1.3-1l.9-11.5"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <Path
+        d="M10 11v5M14 11v5"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeWidth={2}
+      />
+    </Svg>
+  );
+}
+
 function getActivityLogFilterLabel(
   control: SettingsActivityLogFilterControl,
   value: string,
@@ -462,6 +536,12 @@ function noopBlockActivityLogIp(_ip: string) {}
 const styles = StyleSheet.create({
   toolbarWrap: {
     zIndex: 100000,
+  },
+  messageText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 12,
+    marginTop: 8,
   },
   filterOverlayPanel: {
     backgroundColor: V.colors.bg,
