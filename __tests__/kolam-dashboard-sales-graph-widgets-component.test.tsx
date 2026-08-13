@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import {Path} from 'react-native-svg';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamDashboardSalesGraphCard} from '../src/components/kolam-dashboard-sales-graph-widgets';
 import {KolamDashboardSalesGraphEmptyIcon} from '../src/components/kolam-dashboard-sales-graph-empty-icon';
@@ -92,11 +93,9 @@ describe('KolamDashboardSalesGraphCard', () => {
       }),
     );
     expect(inlineFrameVariants).toEqual(
-      expect.arrayContaining([
-        'dashboardSalesGraphPoint',
-        'dashboardSalesGraphAreaTrack',
-      ]),
+      expect.not.arrayContaining(['dashboardSalesGraphAreaTrack']),
     );
+    expect(renderer!.root.findAllByType(Path)).toHaveLength(1);
     expect(rangeGroup.props.variant).toBe('range');
     expect(rangeStyle).toEqual(
       expect.objectContaining({

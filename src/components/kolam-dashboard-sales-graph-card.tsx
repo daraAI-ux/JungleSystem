@@ -22,7 +22,7 @@ export function KolamDashboardSalesGraphCard({
         onRangeSelect={onRangeSelect}
       />
       {graph.points.length ? (
-        <KolamDashboardSalesGraphPlot points={graph.points} />
+        <KolamDashboardSalesGraphPlot mode="line" points={graph.points} />
       ) : (
         <KolamDashboardSalesGraphEmptyState />
       )}
