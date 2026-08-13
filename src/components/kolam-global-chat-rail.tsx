@@ -440,6 +440,9 @@ export function KolamGlobalChatRail({
   const [daraThinkingLiveSignal, setDaraThinkingLiveSignal] =
     React.useState<KolamDaraThinkingLiveSignal | null>(null);
   const daraThinkingSignalKeyRef = React.useRef(0);
+  const [daraWindowThinkingLiveSignal, setDaraWindowThinkingLiveSignal] =
+    React.useState<KolamDaraThinkingLiveSignal | null>(null);
+  const daraWindowThinkingSignalKeyRef = React.useRef(0);
   const [liveStatus, setLiveStatus] =
     React.useState<KolamChatLiveStreamStatus>('idle');
   const [liveLastEventAt, setLiveLastEventAt] = React.useState<number | null>(
@@ -652,6 +655,10 @@ export function KolamGlobalChatRail({
         selectedItemId,
       });
       const daraThinkingPatch = getDaraThinkingLivePatch(event, selectedItemId);
+      const daraWindowThinkingPatch = getDaraThinkingLivePatch(
+        event,
+        daraWindowRoomId,
+      );
       const isForDaraWindowDetail =
         mode === 'team-chat' &&
         daraHeaderMenuOpen &&
@@ -675,6 +682,13 @@ export function KolamGlobalChatRail({
         setDaraThinkingLiveSignal({
           ...daraThinkingPatch,
           key: daraThinkingSignalKeyRef.current,
+        });
+      }
+      if (daraWindowThinkingPatch) {
+        daraWindowThinkingSignalKeyRef.current += 1;
+        setDaraWindowThinkingLiveSignal({
+          ...daraWindowThinkingPatch,
+          key: daraWindowThinkingSignalKeyRef.current,
         });
       }
 
@@ -804,6 +818,7 @@ export function KolamGlobalChatRail({
     setPendingAttachment(null);
     setReplyTarget(null);
     setDaraThinkingLiveSignal(null);
+    setDaraWindowThinkingLiveSignal(null);
     setLabelsManagerOpen(false);
     setCreateRoomOpen(false);
     setCreateRoomDraft({ category: 'meeting', description: '', name: '' });
@@ -1260,6 +1275,7 @@ export function KolamGlobalChatRail({
     setDaraComposerText('');
     setDaraPendingAttachment(null);
     setDaraEmojiPickerOpen(false);
+    setDaraWindowThinkingLiveSignal(null);
     daraWindowDetail.signalTyping(false);
   }, [daraWindowDetail]);
   const handleDaraComposerTextChange = React.useCallback(
@@ -1632,6 +1648,7 @@ export function KolamGlobalChatRail({
           busy={daraWindowBusy}
           composerText={daraComposerText}
           detail={daraWindowDetail}
+          daraThinkingLiveSignal={daraWindowThinkingLiveSignal}
           emojiPickerOpen={daraEmojiPickerOpen}
           errorMessage={daraWindowError}
           imageUrl={daraAvatarState.imageUrl}
@@ -2567,6 +2584,7 @@ function getDaraWindowPanelSize(windowWidth: number, windowHeight: number) {
 function KolamTeamChatDaraWindow({
   busy,
   composerText,
+  daraThinkingLiveSignal,
   detail,
   emojiPickerOpen,
   errorMessage,
@@ -2582,6 +2600,7 @@ function KolamTeamChatDaraWindow({
 }: {
   busy: boolean;
   composerText: string;
+  daraThinkingLiveSignal: KolamDaraThinkingLiveSignal | null;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   emojiPickerOpen: boolean;
   errorMessage?: string;
@@ -2604,6 +2623,7 @@ function KolamTeamChatDaraWindow({
   const attachmentLabel = pendingAttachment
     ? getPendingChatAttachmentLabel(pendingAttachment)
     : '';
+  const daraThinkingLine = getDaraWindowThinkingLine(daraThinkingLiveSignal);
   const mentionQuery = getTrailingMentionQuery(composerText);
   const mentionOptions = React.useMemo(
     () =>
@@ -2680,7 +2700,9 @@ function KolamTeamChatDaraWindow({
           </View>
           <View style={styles.teamDaraHeaderCopy}>
             <Text style={styles.teamDaraHeaderTitle}>DARA</Text>
-            <Text style={styles.teamDaraHeaderMeta}>Assistant Team Chat</Text>
+            <Text style={styles.teamDaraHeaderMeta}>
+              {daraThinkingLine || 'Assistant Team Chat'}
+            </Text>
           </View>
         </View>
         <KolamPressable
@@ -2695,6 +2717,7 @@ function KolamTeamChatDaraWindow({
       <View style={styles.teamDaraWindowBody}>
         <KolamTeamChatDaraWindowMessages
           detail={detail}
+          daraThinkingLine={daraThinkingLine}
           errorMessage={errorMessage}
           imageUrl={imageUrl}
           loading={busy}
@@ -2789,11 +2812,13 @@ function KolamTeamChatDaraWindow({
 }
 
 function KolamTeamChatDaraWindowMessages({
+  daraThinkingLine,
   detail,
   errorMessage,
   imageUrl,
   loading,
 }: {
+  daraThinkingLine: string;
   detail: ReturnType<typeof useKolamChatRailDetail>;
   errorMessage?: string;
   imageUrl: string | null;
@@ -2891,6 +2916,9 @@ function KolamTeamChatDaraWindowMessages({
           </View>
         )}
       />
+      {daraThinkingLine ? (
+        <KolamDaraThinkingBubble line={daraThinkingLine} />
+      ) : null}
     </ScrollView>
   );
 }
@@ -7780,6 +7808,16 @@ function getDaraThinkingLivePatch(
     roomId: roomId || selectedItemId,
     state: 'active',
   };
+}
+
+function getDaraWindowThinkingLine(
+  signal: KolamDaraThinkingLiveSignal | null,
+) {
+  if (!signal || signal.state !== 'active') {
+    return '';
+  }
+
+  return signal.line || DARA_THINKING_DEFAULT_LINE;
 }
 
 function getDaraThinkingLine(payload: Record<string, unknown>) {
