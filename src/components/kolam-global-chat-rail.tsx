@@ -12036,8 +12036,8 @@ const styles = StyleSheet.create({
     height: 76,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: 0.08,
-    transform: [{ scale: 2.15 }],
+    opacity: 0.13,
+    transform: [{ scale: 2.35 }],
   },
   rowPlatformLogoShell: {
     width: 30,
