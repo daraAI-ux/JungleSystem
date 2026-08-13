@@ -40,15 +40,7 @@ struct KolamWindowsPackageUpdate {
   REACT_EVENT(InstallProgress)
   std::function<void(::React::JSValueObject const &)> InstallProgress;
 
-  winrt::fire_and_forget DownloadMsixAsync(
-      ::React::JSValueObject options,
-      ::React::ReactPromise<::React::JSValueObject> result);
-  winrt::fire_and_forget InstallMsixAsync(
-      ::React::JSValueObject options,
-      ::React::ReactPromise<::React::JSValueObject> result);
-  winrt::fire_and_forget RestartAppAsync(
-      ::React::ReactPromise<::React::JSValueObject> result);
-
+ private:
   winrt::Microsoft::ReactNative::ReactContext m_context;
   std::mutex m_mutex;
   std::wstring m_lastDownloadPath;

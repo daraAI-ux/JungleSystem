@@ -9,6 +9,7 @@
 #include "KolamWindowsToastNotification.h"
 #include "KolamWindowsSQLiteStore.h"
 #include "KolamWindowsSecureTokenStore.h"
+#include "KolamWindowsPackageUpdate.h"
 
 #include "AutolinkedNativeModules.g.h"
 

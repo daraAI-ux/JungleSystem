@@ -2,6 +2,7 @@
 #include "KolamWindowsPackageUpdate.h"
 
 #include <algorithm>
+#include <appmodel.h>
 #include <cctype>
 #include <cmath>
 #include <cwctype>
@@ -179,6 +180,25 @@ std::string FormatFullVersion(
   };
 }
 
+std::wstring ReadAppModelString(LONG(WINAPI *reader)(UINT32 *, PWSTR)) {
+  UINT32 length = 0;
+  LONG status = reader(&length, nullptr);
+  if (status != ERROR_INSUFFICIENT_BUFFER || length == 0) {
+    return {};
+  }
+
+  std::wstring value(length, L'\0');
+  status = reader(&length, value.data());
+  if (status != ERROR_SUCCESS) {
+    return {};
+  }
+
+  while (!value.empty() && value.back() == L'\0') {
+    value.pop_back();
+  }
+  return value;
+}
+
 bool PathIsUnderFolder(std::wstring const &path, std::wstring const &folder) {
   if (path.empty() || folder.empty()) {
     return false;
@@ -211,51 +231,41 @@ winrt::Windows::Foundation::Uri MakeFileUri(std::wstring const &path) {
   return winrt::Windows::Foundation::Uri(L"file://" + normalized);
 }
 
-} // namespace
+struct PackageUpdateRuntime {
+  winrt::Microsoft::ReactNative::ReactContext context;
+  std::function<void(::React::JSValueObject const &)> downloadProgress;
+  std::function<void(::React::JSValueObject const &)> installProgress;
+  std::mutex *mutex{nullptr};
+  std::wstring *lastDownloadPath{nullptr};
+  std::atomic_bool *busy{nullptr};
+};
 
-void KolamWindowsPackageUpdate::Initialize(
-    winrt::Microsoft::ReactNative::ReactContext const &reactContext) noexcept {
-  m_context = reactContext;
-}
-
-::React::JSValueObject KolamWindowsPackageUpdate::getPackageInfo() noexcept {
-  try {
-    auto package = winrt::Windows::ApplicationModel::Package::Current();
-    auto id = package.Id();
-    auto version = id.Version();
-    return ::React::JSValueObject{
-        {"packaged", true},
-        {"name", WideToUtf8(id.Name().c_str())},
-        {"publisher", WideToUtf8(id.Publisher().c_str())},
-        {"familyName", WideToUtf8(id.FamilyName().c_str())},
-        {"version",
-         FormatFullVersion(version.Major, version.Minor, version.Build, version.Revision)},
-        {"publicVersion", FormatPublicVersion(version.Major, version.Minor, version.Build)},
-    };
-  } catch (...) {
-    return UnpackagedInfo();
+void ClearBusy(PackageUpdateRuntime const &runtime) noexcept {
+  if (runtime.busy) {
+    runtime.busy->store(false);
   }
 }
 
-void KolamWindowsPackageUpdate::addListener(std::string /*eventName*/) noexcept {}
-
-void KolamWindowsPackageUpdate::removeListeners(int /*count*/) noexcept {}
-
-void KolamWindowsPackageUpdate::downloadMsix(
-    ::React::JSValueObject options,
-    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
-  if (m_busy.exchange(true)) {
-    result.Reject("Sibuk.");
+void EmitOnJs(
+    winrt::Microsoft::ReactNative::ReactContext const &context,
+    std::function<void(::React::JSValueObject const &)> handler,
+    ::React::JSValueObject payload) {
+  if (!handler) {
     return;
   }
 
-  DownloadMsixAsync(std::move(options), std::move(result));
+  context.JSDispatcher().Post([handler = std::move(handler), payload = std::move(payload)]() {
+    if (handler) {
+      handler(payload);
+    }
+  });
 }
 
-winrt::fire_and_forget KolamWindowsPackageUpdate::DownloadMsixAsync(
+winrt::fire_and_forget DownloadMsixAsync(
+    PackageUpdateRuntime runtime,
     ::React::JSValueObject options,
     ::React::ReactPromise<::React::JSValueObject> result) {
-  auto busy = std::shared_ptr<void>(nullptr, [this](void *) { m_busy.store(false); });
+  auto busy = std::shared_ptr<void>(nullptr, [runtime](void *) { ClearBusy(runtime); });
 
   try {
     co_await winrt::resume_background();
@@ -335,18 +345,16 @@ winrt::fire_and_forget KolamWindowsPackageUpdate::DownloadMsixAsync(
           percent = 100;
         }
       }
-      if (percent != lastPercent && DownloadProgress) {
+      if (percent != lastPercent && runtime.downloadProgress) {
         lastPercent = percent;
-        auto payload = ::React::JSValueObject{
-            {"received", static_cast<double>(received)},
-            {"total", static_cast<double>(total)},
-            {"percent", percent},
-        };
-        m_context.JSDispatcher().Post([this, payload = std::move(payload)]() {
-          if (DownloadProgress) {
-            DownloadProgress(payload);
-          }
-        });
+        EmitOnJs(
+            runtime.context,
+            runtime.downloadProgress,
+            ::React::JSValueObject{
+                {"received", static_cast<double>(received)},
+                {"total", static_cast<double>(total)},
+                {"percent", percent},
+            });
       }
     }
 
@@ -371,9 +379,9 @@ winrt::fire_and_forget KolamWindowsPackageUpdate::DownloadMsixAsync(
     }
 
     auto path = std::wstring(file.Path().c_str());
-    {
-      std::lock_guard<std::mutex> lock(m_mutex);
-      m_lastDownloadPath = path;
+    if (runtime.mutex && runtime.lastDownloadPath) {
+      std::lock_guard<std::mutex> lock(*runtime.mutex);
+      *runtime.lastDownloadPath = path;
     }
 
     result.Resolve(::React::JSValueObject{
@@ -389,30 +397,20 @@ winrt::fire_and_forget KolamWindowsPackageUpdate::DownloadMsixAsync(
   }
 }
 
-void KolamWindowsPackageUpdate::installMsix(
-    ::React::JSValueObject options,
-    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
-  if (m_busy.exchange(true)) {
-    result.Reject("Sibuk.");
-    return;
-  }
-
-  InstallMsixAsync(std::move(options), std::move(result));
-}
-
-winrt::fire_and_forget KolamWindowsPackageUpdate::InstallMsixAsync(
+winrt::fire_and_forget InstallMsixAsync(
+    PackageUpdateRuntime runtime,
     ::React::JSValueObject options,
     ::React::ReactPromise<::React::JSValueObject> result) {
-  auto busy = std::shared_ptr<void>(nullptr, [this](void *) { m_busy.store(false); });
+  auto busy = std::shared_ptr<void>(nullptr, [runtime](void *) { ClearBusy(runtime); });
 
   try {
     co_await winrt::resume_background();
 
     std::wstring path;
     auto requested = ReadString(options, "path");
-    {
-      std::lock_guard<std::mutex> lock(m_mutex);
-      path = m_lastDownloadPath;
+    if (runtime.mutex && runtime.lastDownloadPath) {
+      std::lock_guard<std::mutex> lock(*runtime.mutex);
+      path = *runtime.lastDownloadPath;
     }
 
     if (!requested.empty()) {
@@ -440,23 +438,23 @@ winrt::fire_and_forget KolamWindowsPackageUpdate::InstallMsixAsync(
             winrt::Windows::Management::Deployment::DeploymentOptions::
                 ForceUpdateFromAnyVersion);
 
+    auto installProgress = runtime.installProgress;
+    auto context = runtime.context;
     operation.Progress(
-        [this](
+        [context, installProgress](
             winrt::Windows::Foundation::IAsyncOperationWithProgress<
                 winrt::Windows::Management::Deployment::DeploymentResult,
                 winrt::Windows::Management::Deployment::DeploymentProgress> const &,
             winrt::Windows::Management::Deployment::DeploymentProgress const progress) {
-          if (!InstallProgress) {
+          if (!installProgress) {
             return;
           }
-          auto payload = ::React::JSValueObject{
-              {"percent", static_cast<int>(progress.percentage)},
-          };
-          m_context.JSDispatcher().Post([this, payload = std::move(payload)]() {
-            if (InstallProgress) {
-              InstallProgress(payload);
-            }
-          });
+          EmitOnJs(
+              context,
+              installProgress,
+              ::React::JSValueObject{
+                  {"percent", static_cast<int>(progress.percentage)},
+              });
         });
 
     auto deployment = co_await operation;
@@ -474,35 +472,131 @@ winrt::fire_and_forget KolamWindowsPackageUpdate::InstallMsixAsync(
   }
 }
 
-void KolamWindowsPackageUpdate::restartApp(
-    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
-  RestartAppAsync(std::move(result));
-}
-
-winrt::fire_and_forget KolamWindowsPackageUpdate::RestartAppAsync(
-    ::React::ReactPromise<::React::JSValueObject> result) {
+void RestartApp(::React::ReactPromise<::React::JSValueObject> result) noexcept {
   try {
-    co_await winrt::Windows::ApplicationModel::Core::CoreApplication::RequestRestartAsync(
-        L"");
-    result.Resolve(::React::JSValueObject{{"ok", true}, {"restarted", true}});
-    co_return;
-  } catch (...) {
-  }
+    auto aumid = ReadAppModelString(GetCurrentApplicationUserModelId);
+    if (aumid.empty()) {
+      result.Reject("Gagal restart.");
+      return;
+    }
 
-  try {
-    auto aumid = winrt::Windows::ApplicationModel::AppInfo::Current().AppUserModelId();
-    auto target = std::wstring(L"shell:AppsFolder\\") + aumid.c_str();
+    auto target = std::wstring(L"shell:AppsFolder\\") + aumid;
     auto launched = ShellExecuteW(
         nullptr, L"open", target.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(launched) <= 32) {
       result.Reject("Gagal restart.");
-      co_return;
+      return;
     }
     result.Resolve(::React::JSValueObject{{"ok", true}, {"restarted", true}});
     ExitProcess(0);
   } catch (...) {
     result.Reject("Gagal restart.");
   }
+}
+
+} // namespace
+
+void KolamWindowsPackageUpdate::Initialize(
+    winrt::Microsoft::ReactNative::ReactContext const &reactContext) noexcept {
+  m_context = reactContext;
+}
+
+::React::JSValueObject KolamWindowsPackageUpdate::getPackageInfo() noexcept {
+  try {
+    UINT32 fullNameLength = 0;
+    LONG status = GetCurrentPackageFullName(&fullNameLength, nullptr);
+    if (status == APPMODEL_ERROR_NO_PACKAGE) {
+      return UnpackagedInfo();
+    }
+
+    UINT32 idLength = 0;
+    status = GetCurrentPackageId(&idLength, nullptr);
+    if (status != ERROR_INSUFFICIENT_BUFFER || idLength == 0) {
+      return UnpackagedInfo();
+    }
+
+    std::vector<BYTE> buffer(idLength);
+    status = GetCurrentPackageId(&idLength, buffer.data());
+    if (status != ERROR_SUCCESS) {
+      return UnpackagedInfo();
+    }
+
+    auto *id = reinterpret_cast<PACKAGE_ID *>(buffer.data());
+    auto familyName = ReadAppModelString(GetCurrentPackageFamilyName);
+    auto version = id->version;
+    return ::React::JSValueObject{
+        {"packaged", true},
+        {"name", id->name ? WideToUtf8(id->name) : std::string("JungleSystem")},
+        {"publisher", id->publisher ? WideToUtf8(id->publisher) : std::string()},
+        {"familyName", WideToUtf8(familyName)},
+        {"version",
+         FormatFullVersion(version.Major, version.Minor, version.Build, version.Revision)},
+        {"publicVersion", FormatPublicVersion(version.Major, version.Minor, version.Build)},
+    };
+  } catch (...) {
+    return UnpackagedInfo();
+  }
+}
+
+void KolamWindowsPackageUpdate::addListener(std::string /*eventName*/) noexcept {}
+
+void KolamWindowsPackageUpdate::removeListeners(int /*count*/) noexcept {}
+
+void KolamWindowsPackageUpdate::downloadMsix(
+    ::React::JSValueObject options,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  if (m_busy.exchange(true)) {
+    result.Reject("Sibuk.");
+    return;
+  }
+
+  try {
+    DownloadMsixAsync(
+        PackageUpdateRuntime{
+            m_context,
+            DownloadProgress,
+            InstallProgress,
+            &m_mutex,
+            &m_lastDownloadPath,
+            &m_busy,
+        },
+        std::move(options),
+        std::move(result));
+  } catch (...) {
+    m_busy.store(false);
+    result.Reject("Gagal unduh.");
+  }
+}
+
+void KolamWindowsPackageUpdate::installMsix(
+    ::React::JSValueObject options,
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  if (m_busy.exchange(true)) {
+    result.Reject("Sibuk.");
+    return;
+  }
+
+  try {
+    InstallMsixAsync(
+        PackageUpdateRuntime{
+            m_context,
+            DownloadProgress,
+            InstallProgress,
+            &m_mutex,
+            &m_lastDownloadPath,
+            &m_busy,
+        },
+        std::move(options),
+        std::move(result));
+  } catch (...) {
+    m_busy.store(false);
+    result.Reject("Gagal pasang.");
+  }
+}
+
+void KolamWindowsPackageUpdate::restartApp(
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  RestartApp(std::move(result));
 }
 
 } // namespace KolamWindows
