@@ -195,9 +195,6 @@ export function getDashboardRailSections(
   const outOfStockItems = liveLatest
     ? getLiveOutOfStockItems(liveLatest.outOfStockProducts)
     : getOutOfStockItems(dataset.catalog);
-  const lowStockItems = liveLatest
-    ? getLiveLowStockItems(liveLatest.lowStockProducts)
-    : getLowStockItems(dataset.catalog);
   const topSellingItems = liveLatest
     ? getLiveTopSellingItems(liveLatest.topSellingProducts)
     : getTopSellingProductItems(dataset.catalog, dataset.recentSales);
@@ -220,24 +217,6 @@ export function getDashboardRailSections(
       emptyIconKind: 'circle-check',
       items: outOfStockItems,
       tone: 'danger',
-    },
-    {
-      id: 'low-stock',
-      title: 'Stok Menipis',
-      description: describeCount(
-        lowStockItems.length,
-        'produk stok menipis',
-        'produk stok menipis',
-        'Semua stok dalam batas aman',
-      ),
-      actionLabel: 'Lihat semua',
-      actionRoute: '/products?stockStatus=low_stock',
-      actionIconKind: 'chevron',
-      emptyTitle: 'Semua stok dalam batas aman',
-      iconKind: 'triangle-warning',
-      emptyIconKind: 'circle-check',
-      items: lowStockItems,
-      tone: 'warning',
     },
     {
       id: 'top-sales',
@@ -266,14 +245,6 @@ function getLiveOutOfStockItems(
   return products
     .slice(0, dashboardRailVisualContract.list.maxItems)
     .map(product => mapLiveStockProduct(product, 'danger', '0'));
-}
-
-function getLiveLowStockItems(
-  products: KolamDashboardLatest['lowStockProducts'],
-): DashboardRailItem[] {
-  return products
-    .slice(0, dashboardRailVisualContract.list.maxItems)
-    .map(product => mapLiveStockProduct(product, 'warning', `${product.stock}`));
 }
 
 function getLiveTopSellingItems(
@@ -331,23 +302,6 @@ function getOutOfStockItems(catalog: CatalogItem[]): DashboardRailItem[] {
       thumbnailUrl: null,
       trailingIconKind: 'chevron',
       tone: 'danger',
-    }));
-}
-
-function getLowStockItems(catalog: CatalogItem[]): DashboardRailItem[] {
-  return catalog
-    .filter(item => item.stock > 0 && item.stock <= item.lowStockThreshold)
-    .sort((a, b) => a.stock - b.stock)
-    .slice(0, dashboardRailVisualContract.list.maxItems)
-    .map(item => ({
-      id: item.id,
-      label: item.name,
-      value: `${item.stock}`,
-      meta: `${item.category} - ${item.type}`,
-      route: `/products/${item.id}`,
-      thumbnailUrl: null,
-      trailingIconKind: 'chevron',
-      tone: 'warning',
     }));
 }
 

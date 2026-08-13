@@ -60,7 +60,6 @@ describe('Kolam dashboard sections controller hook', () => {
     ]);
     expect(controller.railSections.map(section => section.title)).toEqual([
       'Stok Habis',
-      'Stok Menipis',
       'Produk Terlaris',
     ]);
     expect(controller.salesGraph?.title).toBe('Ringkasan Penjualan');

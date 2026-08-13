@@ -10,12 +10,10 @@ describe('getDashboardRailSections', () => {
 
     expect(sections.map(section => section.id)).toEqual([
       'out-of-stock',
-      'low-stock',
       'top-sales',
     ]);
     expect(sections.map(section => section.title)).toEqual([
       'Stok Habis',
-      'Stok Menipis',
       'Produk Terlaris',
     ]);
     expect(sections.every(section => section.actionLabel === 'Lihat semua')).toBe(true);
@@ -28,11 +26,9 @@ describe('getDashboardRailSections', () => {
     expect(sections.every(section => section.emptyTitle.length > 0)).toBe(true);
     expect(sections.map(section => section.iconKind)).toEqual([
       'circle-x',
-      'triangle-warning',
       'trending',
     ]);
     expect(sections.map(section => section.emptyIconKind)).toEqual([
-      'circle-check',
       'circle-check',
       'trending',
     ]);
@@ -44,8 +40,7 @@ describe('getDashboardRailSections', () => {
         .flatMap(section => section.items)
         .every(item => item.trailingIconKind === 'chevron'),
     ).toBe(true);
-    expect(sections[1].items.every(item => item.tone === 'warning')).toBe(true);
-    expect(sections[2].items[0]).toEqual(
+    expect(sections[1].items[0]).toEqual(
       expect.objectContaining({
         label: 'Sponge Filter Medium',
         value: 'Terjual 2',
@@ -54,7 +49,7 @@ describe('getDashboardRailSections', () => {
         tone: 'success',
       }),
     );
-    expect(sections[2].items.map(item => item.label)).not.toContain(
+    expect(sections[1].items.map(item => item.label)).not.toContain(
       'POS-20260711-001',
     );
   });
@@ -106,16 +101,6 @@ describe('getDashboardRailSections', () => {
     );
     expect(sections[1].items[0]).toEqual(
       expect.objectContaining({
-        id: 'product-live-low',
-        label: 'Live Low Stock',
-        value: '2',
-        route: '/products/product-live-low',
-        thumbnailUrl: 'https://amfibi.dunia-anura.com/media/low.jpg',
-        tone: 'warning',
-      }),
-    );
-    expect(sections[2].items[0]).toEqual(
-      expect.objectContaining({
         id: 'product-live-top',
         label: 'Live Top Product',
         value: 'Terjual 11',
@@ -157,7 +142,6 @@ describe('getDashboardRailSections', () => {
 
     expect(sections[0].items).toHaveLength(3);
     expect(sections[1].items).toHaveLength(3);
-    expect(sections[2].items).toHaveLength(3);
     expect(sections[0].items.map(item => item.label)).toEqual([
       'Live Empty Stock 1',
       'Live Empty Stock 2',
@@ -179,7 +163,7 @@ describe('getDashboardRailSections', () => {
       },
     });
 
-    expect(sections[2]).toEqual(
+    expect(sections[1]).toEqual(
       expect.objectContaining({
         id: 'top-sales',
         emptyTitle: 'Belum ada data penjualan',

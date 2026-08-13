@@ -48,7 +48,7 @@ describe('KolamDashboardRightRail', () => {
     expect(text).toEqual(
       expect.arrayContaining([sections[0].title, sections[0].actionLabel]),
     );
-    expect(text).not.toContain(sections[2].description);
+    expect(text).not.toContain(sections[1].description);
     expect(renderer!.root.findAllByType(KolamDashboardRailIconShell)).toEqual(
       [],
     );
@@ -148,7 +148,7 @@ describe('KolamDashboardRightRail', () => {
     expect(text).not.toContain('Live Empty Stock 4');
   });
 
-  it('renders live rail trailing values as danger circle, warning badge, and success text', async () => {
+  it('renders live rail trailing values as danger circle and success text', async () => {
     const sections = getDashboardRailSections({
       ...seedUnifiedDataset,
       kolam: {
@@ -196,9 +196,6 @@ describe('KolamDashboardRightRail', () => {
     const dangerValue = textNodes.find(node =>
       flattenText(node.props.children).includes('0'),
     );
-    const warningValue = textNodes.find(node =>
-      flattenText(node.props.children).includes('2'),
-    );
     const successValue = textNodes.find(node =>
       flattenText(node.props.children).includes('Terjual 11'),
     );
@@ -220,13 +217,6 @@ describe('KolamDashboardRightRail', () => {
         backgroundColor: V.colors.dangerSoft,
         fontWeight: '600',
         textAlign: 'center',
-      }),
-    );
-    expect(StyleSheet.flatten(warningValue?.props.style)).toEqual(
-      expect.objectContaining({
-        color: V.colors.warning,
-        backgroundColor: V.colors.warningSoft,
-        fontWeight: '500',
       }),
     );
     expect(StyleSheet.flatten(successValue?.props.style)).toEqual(
