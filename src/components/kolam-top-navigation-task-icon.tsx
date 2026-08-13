@@ -1,16 +1,18 @@
 import React from 'react';
 import Svg, {Path} from 'react-native-svg';
 import {KOLAM_TASK_TOPBAR_ICON_SVG} from '../assets/icons/task-topbar-icon-svg';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
 
 const TASK_ICON_PATHS = getSvgPathData(KOLAM_TASK_TOPBAR_ICON_SVG);
+const ICON_SIZE = 17;
 
 export function KolamTopNavigationTaskIcon({
-  color = '#1a1a1a',
+  color = V.colors.mutedFg,
 }: {
   color?: string;
 }) {
   return (
-    <Svg height={20} viewBox="0 0 810 809.999993" width={20}>
+    <Svg height={ICON_SIZE} viewBox="0 0 810 809.999993" width={ICON_SIZE}>
       {TASK_ICON_PATHS.map(path => (
         <Path key={path} d={path} fill={color} fillRule="nonzero" />
       ))}

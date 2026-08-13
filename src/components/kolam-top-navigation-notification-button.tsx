@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet} from 'react-native';
+import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamNotificationBadge} from './kolam-notification-badge';
 import {KolamNotificationBellIcon} from './kolam-notification-bell-icon';
 import {KolamPressable} from './kolam-pressable';
@@ -16,7 +17,7 @@ export function KolamTopNavigationNotificationButton({
       accessibilityLabel="Notifikasi"
       onPress={onNotificationPress}
       style={styles.button}>
-      <KolamNotificationBellIcon />
+      <KolamNotificationBellIcon color={V.colors.mutedFg} />
       <KolamNotificationBadge attentionCount={attentionCount} />
     </KolamPressable>
   );

@@ -36,7 +36,9 @@ describe('KolamTopNavigationNotificationButton', () => {
     });
 
     expect(renderer!.root.findAllByType(KolamIconButton)).toHaveLength(0);
-    expect(renderer!.root.findByType(KolamNotificationBellIcon)).toBeTruthy();
+    expect(renderer!.root.findByType(KolamNotificationBellIcon).props.color).toBe(
+      '#64748b',
+    );
     expect(
       renderer!.root.findByType(KolamNotificationBadge).props.attentionCount,
     ).toBe(7);
@@ -54,6 +56,8 @@ describe('KolamTopNavigationNotificationButton', () => {
     expect(renderer!.root.findByType(SvgXml).props).toEqual(
       expect.objectContaining({height: 20, width: 20}),
     );
+    expect(renderer!.root.findByType(SvgXml).props.xml).toContain('#64748b');
+    expect(renderer!.root.findByType(SvgXml).props.xml).not.toContain('#d11131');
 
     button.props.onPress();
     expect(onNotificationPress).toHaveBeenCalledTimes(1);
@@ -119,6 +123,7 @@ describe('KolamTopNavigationChatButton', () => {
     expect(icon.props.width).toBe(20);
     expect(icon.props.viewBox).toBe('0 0 810 809.999993');
     expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByType(Path)[0].props.fill).toBe('#64748b');
   });
 
   it('renders the inbox icon as the native vector headset artwork', async () => {
@@ -136,6 +141,7 @@ describe('KolamTopNavigationChatButton', () => {
     expect(icon.props.width).toBe(20);
     expect(icon.props.viewBox).toBe('0 0 810 809.999993');
     expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByType(Path)[0].props.fill).toBe('#64748b');
   });
 });
 
@@ -161,6 +167,7 @@ describe('KolamTopNavigationCashflowHost', () => {
     expect(icon.props.width).toBe(20);
     expect(icon.props.viewBox).toBe('0 0 810 809.999993');
     expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByType(Path)[0].props.fill).toBe('#64748b');
     expect(renderer!.root.findByType(KolamIconButton).props.variant).toBe(
       'ghost',
     );
@@ -195,10 +202,11 @@ describe('KolamTopNavigationDownloadIcon', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(20);
-    expect(icon.props.width).toBe(20);
+    expect(icon.props.height).toBe(17);
+    expect(icon.props.width).toBe(17);
     expect(icon.props.viewBox).toBe('0 0 810 809.999993');
     expect(renderer!.root.findAllByType(Path)).toHaveLength(2);
+    expect(renderer!.root.findAllByType(Path)[0].props.fill).toBe('#64748b');
   });
 
   it('keeps the downloads topbar control on the app-downloads route', async () => {
@@ -236,10 +244,11 @@ describe('KolamTopNavigationMediaIcon', () => {
 
     const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(20);
-    expect(icon.props.width).toBe(20);
+    expect(icon.props.height).toBe(17);
+    expect(icon.props.width).toBe(17);
     expect(icon.props.viewBox).toBe('0 0 810 809.999993');
     expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByType(Path)[0].props.fill).toBe('#64748b');
   });
 
   it('keeps the media topbar control on the media route', async () => {
@@ -275,11 +284,13 @@ describe('KolamTopNavigationTaskIcon', () => {
       renderer = ReactTestRenderer.create(<KolamTopNavigationTaskIcon />);
     });
 
-    const icon = renderer!.root.findByType(SvgXml);
+    const icon = renderer!.root.findByType(Svg);
 
-    expect(icon.props.height).toBe(20);
-    expect(icon.props.width).toBe(20);
-    expect(icon.props.xml).toContain('<svg');
+    expect(icon.props.height).toBe(17);
+    expect(icon.props.width).toBe(17);
+    expect(icon.props.viewBox).toBe('0 0 810 809.999993');
+    expect(renderer!.root.findAllByType(Path).length).toBeGreaterThan(0);
+    expect(renderer!.root.findAllByType(Path)[0].props.fill).toBe('#64748b');
   });
 
   it('keeps the task topbar control on the task manager route', async () => {

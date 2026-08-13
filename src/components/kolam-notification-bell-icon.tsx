@@ -6,8 +6,12 @@ export interface KolamNotificationBellIconProps {
   color?: string;
 }
 
-export function KolamNotificationBellIcon(
-  _props: KolamNotificationBellIconProps,
-) {
-  return <SvgXml height={20} width={20} xml={KOLAM_BEL_TOPBAR_ICON_SVG} />;
+export function KolamNotificationBellIcon({
+  color,
+}: KolamNotificationBellIconProps) {
+  const xml = color
+    ? KOLAM_BEL_TOPBAR_ICON_SVG.replace(/#d11131/gi, color)
+    : KOLAM_BEL_TOPBAR_ICON_SVG;
+
+  return <SvgXml height={20} width={20} xml={xml} />;
 }
