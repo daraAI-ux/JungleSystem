@@ -1877,14 +1877,6 @@ export function KolamGlobalChatRail({
                   >
                     {mode === 'inbox' && item.platform ? (
                       <View
-                        pointerEvents={'none'}
-                        style={styles.rowPlatformWatermark}
-                      >
-                        <KolamPlatformFilterLogo platform={item.platform} />
-                      </View>
-                    ) : null}
-                    {mode === 'inbox' && item.platform ? (
-                      <View
                         accessibilityLabel={`Logo platform ${item.metaLabel}`}
                         style={styles.rowPlatformLogoShell}
                       >
@@ -12016,7 +12008,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   row: {
-    position: 'relative',
     minHeight: 76,
     padding: 10,
     borderRadius: V.radius.lg,
@@ -12026,18 +12017,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    overflow: 'hidden',
-  },
-  rowPlatformWatermark: {
-    position: 'absolute',
-    right: 12,
-    top: 6,
-    width: 76,
-    height: 76,
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.36,
-    transform: [{ scale: 2.15 }],
   },
   rowPlatformLogoShell: {
     width: 30,
