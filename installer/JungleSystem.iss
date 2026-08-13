@@ -28,18 +28,17 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\windows\KolamWindows\KolamWindows.ico
+WizardImageFile=images\wizard-side.png
+WizardSmallImageFile=images\wizard-small.png
 OutputDir={#OutputDir}
 OutputBaseFilename=JungleSystem_{#AppVersion}_x64_Setup
 CloseApplications=no
 RestartIfNeededByRun=no
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "indonesian"; MessagesFile: "languages\Indonesian.isl"
 
 [Messages]
-SetupAppTitle=JungleSystem
-SetupWindowTitle=JungleSystem
-WizardInstalling=JungleSystem
 InstallingLabel=Menyalin paket
 FinishedHeadingLabel=Selesai
 FinishedLabel=JungleSystem sudah terpasang.

@@ -184,9 +184,10 @@ Catat:
 ## Fallback EXE
 
 `JungleSystem_<version>_x64_Setup.exe` adalah wrapper Inno di atas MSIX yang
-sama. Wizard hanya menampilkan progress dan status langkah (menyalin paket,
+sama. Wizard berbahasa Indonesia, progress, dan status langkah (menyalin paket,
 memasang sertifikat, memasang JungleSystem, pintasan Desktop, selesai). Tidak
-ada halaman lisensi/persetujuan.
+ada halaman lisensi/persetujuan. Gambar samping memakai logo JungleSystem
+(`installer/images/`, 164x314 dan 55x55).
 
 Butuh Admin (UAC Windows). Silent:
 
