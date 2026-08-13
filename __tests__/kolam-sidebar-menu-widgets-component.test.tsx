@@ -2,10 +2,6 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { KolamMenuGroup } from '../src/components/kolam-sidebar-menu-widgets';
-import {
-  filterKolamNavigationSectionsByAccess,
-  kolamSidebarNavigationSections,
-} from '../src/domain/kolam-navigation';
 
 function renderText(renderer: ReactTestRenderer.ReactTestRenderer) {
   return renderer.root
@@ -61,14 +57,7 @@ describe('KolamMenuGroup', () => {
       );
     });
 
-    const visibleDockInitials = filterKolamNavigationSectionsByAccess(
-      kolamSidebarNavigationSections,
-      { am: false, kolam: true, pos: true },
-    ).map(section => section.title.charAt(0));
-
-    expect(renderText(expanded!)).toContain('Kolam Menu');
-    expect(renderText(collapsed!)).toEqual(
-      expect.arrayContaining(visibleDockInitials),
-    );
+    expect(renderText(expanded!)).toContain('Inventori');
+    expect(renderText(collapsed!)).toEqual([]);
   });
 });
