@@ -10,8 +10,14 @@ Identity MSIX wajib stabil antar rilis:
 
 - Name: `JungleSystem`
 - Publisher: `CN=user`
+- PublisherDisplayName: `CV. Dunia Anura Indonesia`
 - DisplayName: `JungleSystem`
-- Version: empat angka, contoh `1.0.0.0`, `1.0.1.0`
+- Public version: tiga angka, contoh `3.1.4`, `3.1.5`
+- MSIX Identity Version: empat angka, contoh `3.1.4.0`, `3.1.5.0`
+
+Nama artifact, folder output, release manifest, dan release notes memakai public
+version tiga angka. Manifest MSIX tetap memakai empat angka karena itu format
+wajib Windows.
 
 Jangan mengubah `Publisher` kecuali sudah ada code-signing certificate produksi
 resmi dan rilis berikutnya akan memakai publisher itu terus. Publisher yang
@@ -29,7 +35,7 @@ Output utama setiap rilis:
 Default output lokal:
 
 ```powershell
-dist\junglesystem\<version>\
+dist\junglesystem\<public-version>\
 ```
 
 Folder `dist/` tidak perlu di-commit.
@@ -45,7 +51,7 @@ npm run build:msix
 Bump versi sekaligus build:
 
 ```powershell
-npm run build:msix -- -Version 1.0.1.0
+npm run build:msix -- -Version 3.1.5
 ```
 
 Build tanpa signing hanya untuk diagnosa packaging:
@@ -66,14 +72,14 @@ Contoh env untuk file PFX di luar repo:
 ```powershell
 $env:JUNGLESYSTEM_PACKAGE_CERTIFICATE_PATH="D:\certs\JungleSystem-dev.pfx"
 $env:JUNGLESYSTEM_PACKAGE_CERTIFICATE_PASSWORD="<password proses>"
-npm run build:msix -- -Version 1.0.1.0
+npm run build:msix -- -Version 3.1.4
 ```
 
 Atau pakai thumbprint certificate yang sudah ada di store:
 
 ```powershell
 $env:JUNGLESYSTEM_PACKAGE_CERTIFICATE_THUMBPRINT="<thumbprint>"
-npm run build:msix -- -Version 1.0.1.0
+npm run build:msix -- -Version 3.1.4
 ```
 
 Jangan commit `.pfx`, password, `.env`, atau secret lain.
@@ -87,10 +93,10 @@ code-signing tetap dan sama untuk semua rilis.
 Jika URL HTTPS final sudah ada, set env berikut sebelum build:
 
 ```powershell
-$env:JUNGLESYSTEM_MSIX_URL="https://example.com/app-downloads/JungleSystem_1.0.1.0_x64.msix"
+$env:JUNGLESYSTEM_MSIX_URL="https://example.com/app-downloads/JungleSystem_3.1.4_x64.msix"
 $env:JUNGLESYSTEM_APPINSTALLER_URL="https://example.com/app-downloads/JungleSystem.appinstaller"
-$env:JUNGLESYSTEM_RELEASE_NOTES="Rilis JungleSystem 1.0.1.0"
-npm run build:msix -- -Version 1.0.1.0
+$env:JUNGLESYSTEM_RELEASE_NOTES="Rilis JungleSystem 3.1.4"
+npm run build:msix -- -Version 3.1.4
 ```
 
 Script akan membuat `JungleSystem.appinstaller` dengan `MainPackage` x64.
@@ -102,16 +108,16 @@ Script akan membuat `JungleSystem.appinstaller` dengan `MainPackage` x64.
 ```json
 {
   "appId": "JungleSystem",
-  "version": "1.0.1.0",
+  "version": "3.1.4",
   "minOs": "10.0.17763.0",
-  "url": "https://example.com/app-downloads/JungleSystem_1.0.1.0_x64.msix",
+  "url": "https://example.com/app-downloads/JungleSystem_3.1.4_x64.msix",
   "sha512": "...",
   "sha256": "...",
   "size": 123456789,
   "appinstallerUrl": "https://example.com/app-downloads/JungleSystem.appinstaller",
-  "artifact": "JungleSystem_1.0.1.0_x64.msix",
+  "artifact": "JungleSystem_3.1.4_x64.msix",
   "appinstaller": "JungleSystem.appinstaller",
-  "releaseNotes": "Rilis JungleSystem 1.0.1.0"
+  "releaseNotes": "Rilis JungleSystem 3.1.4"
 }
 ```
 
@@ -123,7 +129,7 @@ sama dengan rilis sebelumnya.
 Install MSIX:
 
 ```powershell
-Add-AppxPackage .\JungleSystem_1.0.1.0_x64.msix
+Add-AppxPackage .\JungleSystem_3.1.4_x64.msix
 ```
 
 Install via App Installer jika tersedia:

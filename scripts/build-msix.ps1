@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')]
+  [ValidatePattern('^\d+\.\d+\.\d+(\.\d+)?$')]
   [string]$Version,
 
   [ValidateSet('Release')]
@@ -66,6 +66,22 @@ function Set-PackageVersion([string]$Path, [string]$NextVersion) {
   Set-Content -LiteralPath $Path -Value $next -Encoding UTF8
 }
 
+function ConvertTo-PackageVersion([string]$InputVersion) {
+  if ($InputVersion -match '^\d+\.\d+\.\d+$') {
+    return "$InputVersion.0"
+  }
+
+  return $InputVersion
+}
+
+function ConvertTo-PublicVersion([string]$PackageVersion) {
+  if ($PackageVersion -match '^(\d+\.\d+\.\d+)\.0$') {
+    return $Matches[1]
+  }
+
+  return $PackageVersion
+}
+
 function Get-MSBuildPath {
   $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
   if (Test-Path -LiteralPath $vswhere) {
@@ -126,7 +142,7 @@ $solutionPath = Join-Path $repoRoot "windows\KolamWindows.sln"
 $appPackagesRoot = Join-Path $repoRoot "windows\KolamWindows.Package\AppPackages"
 
 if ($Version) {
-  Set-PackageVersion -Path $manifestPath -NextVersion $Version
+  Set-PackageVersion -Path $manifestPath -NextVersion (ConvertTo-PackageVersion -InputVersion $Version)
 }
 
 $manifest = Read-PackageManifest $manifestPath
@@ -143,7 +159,8 @@ if ($manifest.Version -notmatch '^\d+\.\d+\.\d+\.\d+$') {
   throw "MSIX Version must use four numbers. Current value: $($manifest.Version)."
 }
 
-$releaseVersion = $manifest.Version
+$packageVersion = $manifest.Version
+$releaseVersion = ConvertTo-PublicVersion -PackageVersion $packageVersion
 $outputDir = Join-Path $repoRoot (Join-Path $OutputRoot $releaseVersion)
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
@@ -199,7 +216,7 @@ if (-not $SkipBuild) {
 
 $artifact = Get-ChildItem -LiteralPath $appPackagesRoot -Recurse -File -Include "*.msix", "*.msixbundle" |
   Where-Object {
-    $_.Name -match [regex]::Escape($releaseVersion) -and
+    $_.Name -match [regex]::Escape($packageVersion) -and
     $_.Name -match $Platform -and
     $_.Name -match $Configuration
   } |
@@ -207,7 +224,7 @@ $artifact = Get-ChildItem -LiteralPath $appPackagesRoot -Recurse -File -Include 
   Select-Object -First 1
 
 if (-not $artifact) {
-  throw "No $Configuration $Platform MSIX artifact for version $releaseVersion found under $appPackagesRoot."
+  throw "No $Configuration $Platform MSIX artifact for version $packageVersion found under $appPackagesRoot."
 }
 
 $extension = $artifact.Extension.ToLowerInvariant()
@@ -226,7 +243,7 @@ if ($PackageUrl -and $AppInstallerUrl) {
     -Path $appInstallerPath `
     -PackageName $manifest.Name `
     -Publisher $manifest.Publisher `
-    -PackageVersion $releaseVersion `
+    -PackageVersion $packageVersion `
     -PackageUri $PackageUrl `
     -SelfUri $AppInstallerUrl
 }
