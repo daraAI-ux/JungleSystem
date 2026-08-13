@@ -27,9 +27,11 @@ ArchitecturesInstallIn64BitMode=x64compatible
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+WizardSizePercent=100,100
+WizardImageStretch=yes
+WizardImageBackColor=$00121A0A
 SetupIconFile=..\windows\KolamWindows\KolamWindows.ico
 WizardImageFile=images\wizard-side.png
-WizardSmallImageFile=images\wizard-small.png
 OutputDir={#OutputDir}
 OutputBaseFilename=JungleSystem_{#AppVersion}_x64_Setup
 CloseApplications=no
@@ -50,6 +52,19 @@ Source: "{#PayloadDir}\JungleSystem-dev.cer"; DestDir: "{tmp}"; Flags: ignorever
 Source: "{#PayloadDir}\install-junglesystem.ps1"; DestDir: "{tmp}"; Flags: ignoreversion
 
 [Code]
+procedure InitializeWizard;
+begin
+  WizardForm.WizardSmallBitmapImage.Visible := False;
+  WizardForm.WizardBitmapImage.Stretch := True;
+  WizardForm.WizardBitmapImage2.Stretch := True;
+  if WizardForm.WizardBitmapImage.Parent <> nil then
+    WizardForm.WizardBitmapImage.Height :=
+      WizardForm.WizardBitmapImage.Parent.ClientHeight - WizardForm.WizardBitmapImage.Top;
+  if WizardForm.WizardBitmapImage2.Parent <> nil then
+    WizardForm.WizardBitmapImage2.Height :=
+      WizardForm.WizardBitmapImage2.Parent.ClientHeight - WizardForm.WizardBitmapImage2.Top;
+end;
+
 function RunStep(const Status, Args: String): Boolean;
 var
   ResultCode: Integer;
