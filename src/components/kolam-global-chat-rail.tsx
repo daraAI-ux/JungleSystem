@@ -35,6 +35,7 @@ import { useKolamChatRailReadonlyData } from '../hooks/use-kolam-chat-rail-reado
 import { useKolamNotificationSoundSettings } from '../hooks/use-kolam-notification-sound-settings';
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
+import { copyTextToClipboard } from '../lib/native-clipboard';
 import type {
   KolamChatAnalytics,
   KolamChatContactDetails,
@@ -543,6 +544,9 @@ export function KolamGlobalChatRail({
     setComposerText('');
     setPendingAttachment(null);
     setReplyTarget(null);
+  }, []);
+  const handleCopyChatId = React.useCallback((conversationId: string) => {
+    void copyTextToClipboard(conversationId);
   }, []);
   const handleRequestDeleteTeamRoom = React.useCallback(
     (item: KolamChatRailItem) => {
@@ -1507,6 +1511,18 @@ export function KolamGlobalChatRail({
                             }
                             style={styles.rowUnreadBadge}
                           />
+                        ) : null}
+                        {mode === 'inbox' ? (
+                          <KolamPressable
+                            accessibilityLabel={`Salin chat ID ${item.id}`}
+                            onPress={event => {
+                              event.stopPropagation?.();
+                              handleCopyChatId(item.id);
+                            }}
+                            style={styles.rowCopyIdButton}
+                          >
+                            <Text style={styles.rowCopyIdButtonText}>ID</Text>
+                          </KolamPressable>
                         ) : null}
                         <Text style={styles.rowTime}>{item.timeLabel}</Text>
                       </View>
@@ -11386,6 +11402,24 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     fontSize: 10,
     lineHeight: 14,
+  },
+  rowCopyIdButton: {
+    minHeight: 22,
+    paddingHorizontal: 8,
+    borderRadius: V.radius.sm,
+    borderColor: V.colors.border,
+    borderWidth: 1,
+    backgroundColor: V.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  rowCopyIdButtonText: {
+    color: V.colors.mutedFg,
+    fontFamily: V.fontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    lineHeight: 12,
   },
   rowUnread: {
     borderColor: 'rgba(220, 38, 38, 0.28)',

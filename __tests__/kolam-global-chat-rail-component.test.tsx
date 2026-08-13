@@ -39,11 +39,13 @@ import {
   pickNativeImageFile,
 } from '../src/services/native-file-picker';
 import {fetchKolamShippingDeliveryStats} from '../src/services/kolam-dara-shipping-copilot-api';
+import {copyTextToClipboard} from '../src/lib/native-clipboard';
 
 const mockSoundPlay = jest.fn();
 const openUrlMock = jest
   .spyOn(Linking, 'openURL')
   .mockResolvedValue(undefined);
+const copyTextToClipboardMock = jest.mocked(copyTextToClipboard);
 
 jest.mock('react-native-webview', () => {
   const mockReact = require('react');
@@ -137,6 +139,10 @@ jest.mock('../src/components/kolam-remote-image', () => {
 jest.mock('../src/services/native-file-picker', () => ({
   pickNativeAssetFile: jest.fn(),
   pickNativeImageFile: jest.fn(),
+}));
+
+jest.mock('../src/lib/native-clipboard', () => ({
+  copyTextToClipboard: jest.fn(async () => true),
 }));
 
 const useAuthContextMock = useKolamAuthContext as jest.MockedFunction<
@@ -288,6 +294,7 @@ describe('KolamGlobalChatRail', () => {
   beforeEach(() => {
     mockSoundPlay.mockClear();
     openUrlMock.mockClear();
+    copyTextToClipboardMock.mockClear();
     createTeamChatRoomMock.mockClear();
     createChatLabelMock.mockClear();
     updateChatLabelMock.mockClear();
@@ -519,6 +526,52 @@ describe('KolamGlobalChatRail', () => {
         to: expect.any(String),
       }),
     );
+  });
+
+  it('copies the inbox chat ID from the conversation card without opening it', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-copy-1',
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Apakah masih tersedia?',
+          unreadCount: 0,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 0,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    const copyButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Salin chat ID conv-copy-1',
+    );
+
+    await ReactTestRenderer.act(async () => {
+      copyButton!.props.onPress({stopPropagation: jest.fn()});
+    });
+
+    expect(copyTextToClipboardMock).toHaveBeenCalledWith('conv-copy-1');
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(
+          node =>
+            node.props.accessibilityLabel ===
+            'Pilih conversation Buyer Tokopedia',
+        ),
+    ).toBe(true);
   });
 
   it('opens chat settings shortcuts from the inbox header menu', async () => {
