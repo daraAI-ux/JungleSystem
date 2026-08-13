@@ -94,6 +94,7 @@ windows/**/*.ProjectImports.zip
 
 # MSIX release artifacts (built locally; do not commit)
 /dist/
+/installer/payload/
 
 # Yarn
 .yarn/*

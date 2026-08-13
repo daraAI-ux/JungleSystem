@@ -183,10 +183,26 @@ Catat:
 
 ## Fallback EXE
 
-Fallback `.exe` hanya dipakai jika MSIX blocked oleh policy/certificate/sideload.
-EXE boleh berupa Inno/NSIS wrapper yang memanggil `Add-AppxPackage` terhadap
-MSIX yang sama. Jika fallback ini dibuat, dokumentasikan silent flag seperti
-`/S` dan apakah butuh elevation.
+`JungleSystem_<version>_x64_Setup.exe` adalah wrapper Inno di atas MSIX yang
+sama. Wizard hanya menampilkan progress dan status langkah (menyalin paket,
+memasang sertifikat, memasang JungleSystem, pintasan Desktop, selesai). Tidak
+ada halaman lisensi/persetujuan.
+
+Butuh Admin (UAC Windows). Silent:
+
+```powershell
+.\JungleSystem_3.1.4_x64_Setup.exe /VERYSILENT /NORESTART
+```
+
+Bangun Setup setelah MSIX signed ada:
+
+```powershell
+npm run build:setup
+```
+
+Cert `.cer` diambil dari luar repo (`JUNGLESYSTEM_DEV_CER_PATH` atau
+`E:\Data\Dunia-Anura\certs\JungleSystem-dev.cer`). Jangan commit `.pfx` atau
+password. Setup menyematkan `.cer` publik saja.
 
 Jangan memakai Squirrel, `.nupkg`, electron-updater, atau endpoint Electron
 lama `/desktop/kolam-da`.
