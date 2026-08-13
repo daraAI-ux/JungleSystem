@@ -579,7 +579,7 @@ describe('KolamGlobalChatRail', () => {
       .find(
         node =>
           node.props.accessibilityLabel ===
-          'Copy conversation ID conv-copy-1',
+          'Salin conversation ID conv-copy-1',
       );
 
     await ReactTestRenderer.act(async () => {
@@ -587,7 +587,7 @@ describe('KolamGlobalChatRail', () => {
     });
 
     expect(copyTextToClipboardMock).toHaveBeenCalledWith('conv-copy-1');
-    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['Copy ID']));
+    expect(renderText(renderer!)).toEqual(expect.arrayContaining(['Disalin']));
   });
 
   it('opens chat settings shortcuts from the inbox header menu', async () => {

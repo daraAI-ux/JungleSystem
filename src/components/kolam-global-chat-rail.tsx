@@ -546,7 +546,7 @@ export function KolamGlobalChatRail({
     setReplyTarget(null);
   }, []);
   const handleCopyChatId = React.useCallback((conversationId: string) => {
-    void copyTextToClipboard(conversationId);
+    return copyTextToClipboard(conversationId);
   }, []);
   const handleRequestDeleteTeamRoom = React.useCallback(
     (item: KolamChatRailItem) => {
@@ -3590,7 +3590,7 @@ function KolamChatRailDetailPanel({
   labels: KolamChatLabel[];
   mode: KolamGlobalChatRailMode;
   onComposerTextChange: (value: string) => void;
-  onCopyConversationId: (conversationId: string) => void;
+  onCopyConversationId: (conversationId: string) => Promise<boolean>;
   onPendingAttachmentClear: () => void;
   onPendingAttachmentPick: () => void;
   onReplyCancel: () => void;
@@ -5784,12 +5784,18 @@ function KolamInboxActionStrip({
   detail: ReturnType<typeof useKolamChatRailDetail>;
   detailsOpen: boolean;
   labels: KolamChatLabel[];
-  onCopyConversationId: (conversationId: string) => void;
+  onCopyConversationId: (conversationId: string) => Promise<boolean>;
   onDetailsToggle: () => void;
 }) {
   const [labelPickerOpen, setLabelPickerOpen] = React.useState(false);
   const [handoverNoteOpen, setHandoverNoteOpen] = React.useState(false);
   const [handoverNoteDraft, setHandoverNoteDraft] = React.useState('');
+  const [copyIdState, setCopyIdState] = React.useState<
+    'idle' | 'copied' | 'failed'
+  >('idle');
+  const copyIdResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const conversation = detail.conversation;
   if (!conversation) {
     return null;
@@ -5816,6 +5822,26 @@ function KolamInboxActionStrip({
     setHandoverNoteDraft('');
     setHandoverNoteOpen(false);
   };
+  const handleCopyConversationId = async () => {
+    const copied = await onCopyConversationId(conversation._id);
+    setCopyIdState(copied ? 'copied' : 'failed');
+    if (copyIdResetTimerRef.current) {
+      clearTimeout(copyIdResetTimerRef.current);
+    }
+    copyIdResetTimerRef.current = setTimeout(() => {
+      setCopyIdState('idle');
+      copyIdResetTimerRef.current = null;
+    }, 1400);
+    (copyIdResetTimerRef.current as { unref?: () => void }).unref?.();
+  };
+  React.useEffect(
+    () => () => {
+      if (copyIdResetTimerRef.current) {
+        clearTimeout(copyIdResetTimerRef.current);
+      }
+    },
+    [],
+  );
 
   return (
     <View style={styles.inboxActionStrip}>
@@ -5868,16 +5894,25 @@ function KolamInboxActionStrip({
           <Text style={styles.callButtonGhostText}>Detail kontak</Text>
         </KolamPressable>
         <KolamPressable
-          accessibilityLabel={`Copy conversation ID ${conversation._id}`}
+          accessibilityLabel={`Salin conversation ID ${conversation._id}`}
           disabled={detail.sending}
-          onPress={() => onCopyConversationId(conversation._id)}
+          onPress={() => {
+            void handleCopyConversationId();
+          }}
           style={[
             styles.callButton,
             styles.callButtonGhost,
+            copyIdState === 'copied' && styles.callButtonActive,
             detail.sending && styles.callButtonDisabled,
           ]}
         >
-          <Text style={styles.callButtonGhostText}>Copy ID</Text>
+          <Text style={styles.callButtonGhostText}>
+            {copyIdState === 'copied'
+              ? 'Disalin'
+              : copyIdState === 'failed'
+              ? 'Gagal'
+              : 'Salin ID'}
+          </Text>
         </KolamPressable>
         <KolamPressable
           accessibilityLabel="Toggle inbox conversation status"

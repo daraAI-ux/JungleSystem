@@ -21,6 +21,7 @@
     "test:windows": "jest --config jest.config.windows.js"
   },
   "dependencies": {
+    "@react-native-clipboard/clipboard": "^1.16.3",
     "@tiptap/core": "^3.28.0",
     "@tiptap/extension-color": "^3.28.0",
     "@tiptap/extension-highlight": "^3.28.0",
