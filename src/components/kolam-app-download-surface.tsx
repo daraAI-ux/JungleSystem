@@ -273,33 +273,36 @@ export function KolamAppDownloadSurface() {
             }
           />
         ) : (
-          apps.map(app => (
-            <KolamAppDownloadCard
-              app={app}
-              compact={compact}
-              expandedVersionId={expandedVersions[app.id] ?? ''}
-              key={app.id}
-              onCopyMd5={async md5 => {
-                await copyTextToClipboard(md5);
-                setMessage('MD5 disalin');
-              }}
-              onDownload={async ({artifact, version}) => {
-                setMessage(null);
-                const url = getKolamAppDownloadArtifactUrl({
-                  appId: app.id,
-                  artifact,
-                  versionId: version.id,
-                });
-                await Linking.openURL(url);
-              }}
-              onSelectVersion={versionId => {
-                setExpandedVersions(current => ({
-                  ...current,
-                  [app.id]: versionId,
-                }));
-              }}
-            />
-          ))
+          <View style={styles.appGrid}>
+            {apps.map(app => (
+              <View key={app.id} style={styles.appGridItem}>
+                <KolamAppDownloadCard
+                  app={app}
+                  compact={compact}
+                  expandedVersionId={expandedVersions[app.id] ?? ''}
+                  onCopyMd5={async md5 => {
+                    await copyTextToClipboard(md5);
+                    setMessage('MD5 disalin');
+                  }}
+                  onDownload={async ({artifact, version}) => {
+                    setMessage(null);
+                    const url = getKolamAppDownloadArtifactUrl({
+                      appId: app.id,
+                      artifact,
+                      versionId: version.id,
+                    });
+                    await Linking.openURL(url);
+                  }}
+                  onSelectVersion={versionId => {
+                    setExpandedVersions(current => ({
+                      ...current,
+                      [app.id]: versionId,
+                    }));
+                  }}
+                />
+              </View>
+            ))}
+          </View>
         )}
       </KolamDetailScrollSurface>
 
@@ -1039,6 +1042,16 @@ const styles = StyleSheet.create({
   },
   appCardCompact: {
     padding: 14,
+  },
+  appGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  appGridItem: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 360,
   },
   appDescription: {
     color: V.colors.mutedFg,
