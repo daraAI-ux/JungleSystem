@@ -1,5 +1,11 @@
 import React from 'react';
-import {ScrollView, StatusBar, StyleSheet, View} from 'react-native';
+import {
+  ImageBackground,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native';
 import type {RuntimeDeviceIdentityStatus} from '../domain/runtime-identity';
 import {KolamAuthPanel} from './kolam-auth-panel';
 import {KolamJungleSystemLogo} from './kolam-jungle-system-logo';
@@ -10,6 +16,8 @@ type SyncStatusProps = {
   message: string;
 };
 
+const LOGIN_BACKGROUND_SOURCE = require('../assets/images/background-junglesystem.jpg');
+
 export function KolamLoginScreen({
   auth,
 }: {
@@ -19,23 +27,29 @@ export function KolamLoginScreen({
 }) {
   return (
     <View style={styles.screen} accessibilityLabel="JungleSystem login screen">
-      <StatusBar barStyle="dark-content" />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
-        <View style={styles.layout}>
-          <View style={styles.brandHeader}>
-            <KolamJungleSystemLogo
-              accessibilityLabel="Logo JungleSystem"
-              style={styles.logo}
-            />
+      <StatusBar barStyle="light-content" />
+      <ImageBackground
+        resizeMode="cover"
+        source={LOGIN_BACKGROUND_SOURCE}
+        style={styles.background}>
+        <View style={styles.backgroundOverlay} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.layout}>
+            <View style={styles.brandHeader}>
+              <KolamJungleSystemLogo
+                accessibilityLabel="Logo JungleSystem"
+                style={styles.logo}
+              />
+            </View>
+            <View style={styles.authCard}>
+              <KolamAuthPanel {...auth} variant="login" />
+            </View>
           </View>
-          <View style={styles.authCard}>
-            <KolamAuthPanel {...auth} variant="login" />
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -43,7 +57,14 @@ export function KolamLoginScreen({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#f7faf7',
+    backgroundColor: '#0f1f17',
+  },
+  background: {
+    flex: 1,
+  },
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(4, 10, 7, 0.34)',
   },
   scroll: {
     flex: 1,
