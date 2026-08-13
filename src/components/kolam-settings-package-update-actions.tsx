@@ -1,9 +1,9 @@
 import React from 'react';
 import {StyleSheet, Text, View, type DimensionValue} from 'react-native';
 import {useKolamPackageUpdateController} from '../hooks/use-kolam-package-update-controller';
+import {isKolamPackageUpdateEmptyRelease} from '../domain/kolam-package-update';
 import {kolamVisualTokens as V} from '../domain/kolam-visual';
 import {KolamButton} from './kolam-button';
-import {KolamFormTextField} from './kolam-form-text-field';
 import {textFieldRowStyles} from './kolam-text-field-row-styles';
 
 export function KolamSettingsPackageUpdateActions({
@@ -18,15 +18,13 @@ export function KolamSettingsPackageUpdateActions({
     update.phase === 'installing';
   const showProgress =
     update.phase === 'downloading' || update.phase === 'installing';
+  const emptyRelease = isKolamPackageUpdateEmptyRelease(update.errorMessage);
 
   return (
     <View style={[styles.column, {width: fieldWidth}]}>
-      <KolamFormTextField
-        editable={false}
-        placeholder="—"
-        style={[textFieldRowStyles.input, {width: fieldWidth}]}
-        value={update.currentVersion}
-      />
+      <View style={[textFieldRowStyles.input, styles.versionBox, {width: fieldWidth}]}>
+        <Text style={styles.versionText}>{update.currentVersion || '—'}</Text>
+      </View>
       <View style={styles.row}>
         <KolamButton
           disabled={busy}
@@ -61,7 +59,9 @@ export function KolamSettingsPackageUpdateActions({
         </View>
       ) : null}
       {update.errorMessage ? (
-        <Text style={styles.error}>{update.errorMessage}</Text>
+        <Text style={emptyRelease ? styles.status : styles.error}>
+          {update.errorMessage}
+        </Text>
       ) : null}
     </View>
   );
@@ -70,6 +70,18 @@ export function KolamSettingsPackageUpdateActions({
 const styles = StyleSheet.create({
   column: {
     gap: 8,
+  },
+  versionBox: {
+    justifyContent: 'center',
+  },
+  versionText: {
+    color: V.colors.fg,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  status: {
+    color: V.colors.mutedFg,
+    fontSize: 12,
   },
   row: {
     alignItems: 'center',

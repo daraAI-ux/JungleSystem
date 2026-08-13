@@ -109,6 +109,10 @@ export function isKolamPackageHttpsUrl(value: string): boolean {
   return /^https:\/\//i.test(value.trim());
 }
 
+export function isKolamPackageUpdateEmptyRelease(message: string): boolean {
+  return message.trim() === 'Tidak ada rilis';
+}
+
 export function kolamPackageUpdateErrorMessage(
   error: unknown,
   fallback = 'Gagal cek',
@@ -122,8 +126,12 @@ export function kolamPackageUpdateErrorMessage(
 
   if (error instanceof Error) {
     const message = error.message.trim();
-    if (message === 'Tidak ada rilis') {
-      return message;
+    if (
+      message === 'Tidak ada rilis' ||
+      /release not found/i.test(message) ||
+      /\b404\b/.test(message)
+    ) {
+      return 'Tidak ada rilis';
     }
     if (/hash/i.test(message)) {
       return 'Hash tidak cocok';
@@ -134,8 +142,11 @@ export function kolamPackageUpdateErrorMessage(
     if (/pasang|install|deploy/i.test(message)) {
       return 'Gagal pasang';
     }
-    if (message) {
-      return message.length > 48 ? fallback : message;
+    if (/update manifest error|^error$/i.test(message)) {
+      return fallback;
+    }
+    if (message && message.length <= 48 && !/^error\b/i.test(message)) {
+      return message;
     }
   }
 

@@ -69,19 +69,27 @@ export function getKolamWindowsPackageUpdateBridge():
 }
 
 export function getKolamWindowsPackageInfo(): KolamPackageInfo {
-  const info = getKolamWindowsPackageUpdateBridge()?.getPackageInfo?.();
-  if (!info) {
+  try {
+    const info = getKolamWindowsPackageUpdateBridge()?.getPackageInfo?.();
+    if (!info) {
+      return EMPTY_PACKAGE_INFO;
+    }
+
+    return {
+      familyName: typeof info.familyName === 'string' ? info.familyName : '',
+      name:
+        typeof info.name === 'string' && info.name.trim()
+          ? info.name
+          : 'JungleSystem',
+      packaged: Boolean(info.packaged),
+      publicVersion:
+        typeof info.publicVersion === 'string' ? info.publicVersion : '',
+      publisher: typeof info.publisher === 'string' ? info.publisher : '',
+      version: typeof info.version === 'string' ? info.version : '',
+    };
+  } catch {
     return EMPTY_PACKAGE_INFO;
   }
-
-  return {
-    familyName: typeof info.familyName === 'string' ? info.familyName : '',
-    name: typeof info.name === 'string' && info.name.trim() ? info.name : 'JungleSystem',
-    packaged: Boolean(info.packaged),
-    publicVersion: typeof info.publicVersion === 'string' ? info.publicVersion : '',
-    publisher: typeof info.publisher === 'string' ? info.publisher : '',
-    version: typeof info.version === 'string' ? info.version : '',
-  };
 }
 
 export async function downloadKolamWindowsMsix(options: {
@@ -132,30 +140,34 @@ export function subscribeKolamWindowsPackageUpdateProgress(handlers: {
     return () => undefined;
   }
 
-  const emitter = new NativeEventEmitter(
-    bridge as unknown as ConstructorParameters<typeof NativeEventEmitter>[0],
-  );
-  const download = emitter.addListener(
-    'DownloadProgress',
-    (payload: {percent?: number; received?: number; total?: number}) => {
-      handlers.onDownload?.({
-        percent: Number(payload?.percent) || 0,
-        received: Number(payload?.received) || 0,
-        total: Number(payload?.total) || 0,
-      });
-    },
-  );
-  const install = emitter.addListener(
-    'InstallProgress',
-    (payload: {percent?: number}) => {
-      handlers.onInstall?.({
-        percent: Number(payload?.percent) || 0,
-      });
-    },
-  );
+  try {
+    const emitter = new NativeEventEmitter(
+      bridge as unknown as ConstructorParameters<typeof NativeEventEmitter>[0],
+    );
+    const download = emitter.addListener(
+      'DownloadProgress',
+      (payload: {percent?: number; received?: number; total?: number}) => {
+        handlers.onDownload?.({
+          percent: Number(payload?.percent) || 0,
+          received: Number(payload?.received) || 0,
+          total: Number(payload?.total) || 0,
+        });
+      },
+    );
+    const install = emitter.addListener(
+      'InstallProgress',
+      (payload: {percent?: number}) => {
+        handlers.onInstall?.({
+          percent: Number(payload?.percent) || 0,
+        });
+      },
+    );
 
-  return () => {
-    download.remove();
-    install.remove();
-  };
+    return () => {
+      download.remove();
+      install.remove();
+    };
+  } catch {
+    return () => undefined;
+  }
 }

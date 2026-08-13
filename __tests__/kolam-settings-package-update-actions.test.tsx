@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, TextInput} from 'react-native';
+import {Text} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import {KolamSettingsPackageUpdateActions} from '../src/components/kolam-settings-package-update-actions';
 import {resetKolamPackageUpdateStoreForTests} from '../src/domain/kolam-package-update-store';
@@ -75,9 +75,7 @@ describe('KolamSettingsPackageUpdateActions', () => {
     expect(texts(renderer!)).toEqual(
       expect.arrayContaining(['Periksa', 'Pasang']),
     );
-    expect(
-      renderer!.root.findAllByType(TextInput).some(node => node.props.value === '3.1.4'),
-    ).toBe(true);
+    expect(texts(renderer!)).toEqual(expect.arrayContaining(['3.1.4']));
     expect(labels(renderer!)).toEqual(expect.arrayContaining(['Periksa', 'Pasang']));
 
     const pasang = renderer!.root.find(

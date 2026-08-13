@@ -28,12 +28,13 @@ export async function fetchKolamPackageLatestRelease(
     headers: {Accept: 'application/json'},
   });
 
-  if (response.status === 404) {
+  const status = Number(response.status);
+  if (status === 404) {
     throw new KolamPackageUpdateRequestError(404, 'Tidak ada rilis');
   }
 
   if (!response.ok) {
-    throw new KolamPackageUpdateRequestError(response.status, 'Gagal cek');
+    throw new KolamPackageUpdateRequestError(status, 'Gagal cek');
   }
 
   const payload = (await response.json()) as unknown;

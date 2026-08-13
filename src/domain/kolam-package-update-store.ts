@@ -53,9 +53,22 @@ export function resetKolamPackageUpdateStoreForTests() {
 }
 
 export function hydrateKolamPackageUpdateInfo() {
-  const info = getKolamWindowsPackageInfo();
-  patchState(packageInfoPatch(info));
-  return info;
+  try {
+    const info = getKolamWindowsPackageInfo();
+    patchState(packageInfoPatch(info));
+    return info;
+  } catch {
+    const info = {
+      familyName: '',
+      name: 'JungleSystem',
+      packaged: false,
+      publicVersion: '',
+      publisher: '',
+      version: '',
+    };
+    patchState(packageInfoPatch(info));
+    return info;
+  }
 }
 
 export async function startKolamPackageUpdateAutoCheck() {

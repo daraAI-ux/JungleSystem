@@ -86,5 +86,11 @@ describe('kolam package update domain', () => {
     expect(kolamPackageUpdateErrorMessage(new Error('Gagal unduh'))).toBe(
       'Gagal unduh',
     );
+    expect(
+      kolamPackageUpdateErrorMessage(new Error('Release not found')),
+    ).toBe('Tidak ada rilis');
+    expect(
+      kolamPackageUpdateErrorMessage(new Error('Update manifest error')),
+    ).toBe('Gagal cek');
   });
 });
