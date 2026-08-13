@@ -5,6 +5,7 @@ import {
   Linking,
   Modal,
   type NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -285,6 +286,27 @@ type KolamComposerKeyModifiers = {
   shiftKey?: boolean;
 };
 
+type KolamWindowsComposerSubmitKeyEvent = {
+  code: string;
+  shiftKey?: boolean;
+};
+
+/**
+ * RNW Fabric: Enter without Shift submits; Shift+Enter inserts a native newline.
+ * Core RN typings omit submitKeyEvents, but Microsoft.ReactNative 0.84 implements it.
+ */
+const KOLAM_WINDOWS_COMPOSER_TEXT_INPUT_PROPS: {
+  submitBehavior: 'newline';
+  submitKeyEvents: KolamWindowsComposerSubmitKeyEvent[];
+} = {
+  submitBehavior: 'newline',
+  submitKeyEvents: [{code: 'Enter', shiftKey: false}],
+};
+
+function usesKolamWindowsComposerSubmitKeys() {
+  return Platform.OS === 'windows';
+}
+
 type KolamComposerSelection = {
   end: number;
   start: number;
@@ -360,7 +382,11 @@ function useKolamComposerEnterKey(
       const nativeEvent = event.nativeEvent as TextInputKeyPressEventData &
         KolamComposerKeyModifiers;
 
-      if (nativeEvent.key === 'Shift') {
+      if (
+        nativeEvent.key === 'Shift' ||
+        nativeEvent.key === 'ShiftLeft' ||
+        nativeEvent.key === 'ShiftRight'
+      ) {
         shiftHeldRef.current = true;
         return 'shift';
       }
@@ -381,13 +407,25 @@ function useKolamComposerEnterKey(
         if (nativeEvent.key !== 'Enter') {
           return 'other';
         }
+        // Windows: Enter-without-Shift is owned by submitKeyEvents → onSubmitEditing.
+        // Do not also return 'submit' here or the message is sent twice.
+        if (usesKolamWindowsComposerSubmitKeys()) {
+          skipSubmitRef.current = false;
+          return 'other';
+        }
         event.preventDefault();
         skipSubmitRef.current = false;
         return 'submit';
       }
 
-      event.preventDefault();
       skipSubmitRef.current = true;
+      // Windows: submitBehavior="newline" inserts the line break natively.
+      // Manual insert would duplicate "\n" when shiftKey is present on the event.
+      if (usesKolamWindowsComposerSubmitKeys()) {
+        return 'newline';
+      }
+
+      event.preventDefault();
       const next = insertComposerNewline(
         value,
         hasSelectionRef.current ? selectionRef.current : null,
@@ -3247,7 +3285,9 @@ function KolamTeamChatDaraWindow({
               ? {selection: composerEnter.selection}
               : null)}
             style={[styles.composerInput, styles.teamDaraComposerInput]}
-            submitBehavior="submit"
+            {...(usesKolamWindowsComposerSubmitKeys()
+              ? KOLAM_WINDOWS_COMPOSER_TEXT_INPUT_PROPS
+              : {submitBehavior: 'submit' as const})}
             value={composerText}
           />
           <View style={styles.composerToolbar}>
@@ -5158,7 +5198,9 @@ function KolamChatRailDetailPanel({
                 ? {selection: composerEnter.selection}
                 : null)}
               style={styles.composerInput}
-              submitBehavior="submit"
+              {...(usesKolamWindowsComposerSubmitKeys()
+                ? KOLAM_WINDOWS_COMPOSER_TEXT_INPUT_PROPS
+                : {submitBehavior: 'submit' as const})}
               value={composerText}
             />
             <View style={styles.composerToolbar}>
