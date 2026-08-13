@@ -2,7 +2,6 @@
 import {pluginRegistry} from '../domain/unified';
 import {useKolamOverviewController} from '../hooks/use-kolam-overview-controller';
 import {type KolamUnifiedOverviewPanelProps} from './kolam-unified-overview-panel-types';
-import {KolamDashboardCustomerVisitConfirmations} from './kolam-dashboard-widgets';
 import {KolamUnifiedDashboardCountSection} from './kolam-unified-dashboard-count-section';
 import {KolamUnifiedDashboardLayoutSection} from './kolam-unified-dashboard-layout-section';
 import {KolamUnifiedMetricsSection} from './kolam-unified-metrics-section';
@@ -14,7 +13,6 @@ export function KolamUnifiedOverviewPanel({
   dataset,
   plugins = pluginRegistry,
   pluginSearch = '',
-  onCustomerVisitConfirm,
   onDashboardRoute,
   onPluginSearchChange,
   onPluginRouteSelect,
@@ -24,7 +22,6 @@ export function KolamUnifiedOverviewPanel({
 }: KolamUnifiedOverviewPanelProps) {
   const {
     context,
-    customerVisitPanel,
     dashboardSections,
     showRuntimeFooter,
     surfaces,
@@ -43,20 +40,13 @@ export function KolamUnifiedOverviewPanel({
 
   return (
     <>
-      <KolamUnifiedMetricsSection
-        context={context}
-        dashboardSections={dashboardSections}
-      />
-      {customerVisitPanel.isVisible ? (
-        <KolamDashboardCustomerVisitConfirmations
-          descriptor={customerVisitPanel.descriptor}
-          onConfirm={onCustomerVisitConfirm}
-          rows={customerVisitPanel.rows}
-        />
-      ) : null}
       <KolamUnifiedDashboardCountSection
         dashboardSections={dashboardSections}
         onDashboardRoute={onDashboardRoute}
+      />
+      <KolamUnifiedMetricsSection
+        context={context}
+        dashboardSections={dashboardSections}
       />
       <KolamUnifiedDashboardLayoutSection
         dashboardSections={dashboardSections}
