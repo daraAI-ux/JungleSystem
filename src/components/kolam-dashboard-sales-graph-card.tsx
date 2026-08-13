@@ -1,4 +1,5 @@
 import React from 'react';
+import type {StyleProp, ViewStyle} from 'react-native';
 import type {
   DashboardSalesGraph,
   DashboardSalesGraphRange,
@@ -11,12 +12,14 @@ import {KolamDashboardSalesGraphPlot} from './kolam-dashboard-sales-graph-plot';
 export function KolamDashboardSalesGraphCard({
   graph,
   onRangeSelect,
+  style,
 }: {
   graph: DashboardSalesGraph;
   onRangeSelect?: (range: DashboardSalesGraphRange) => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <KolamCardFrame variant="dashboardSalesGraph">
+    <KolamCardFrame style={style} variant="dashboardSalesGraph">
       <KolamDashboardSalesGraphHeader
         graph={graph}
         onRangeSelect={onRangeSelect}

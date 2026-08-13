@@ -58,6 +58,7 @@ export function KolamUnifiedOverviewPanel({
             <KolamDashboardSalesGraphCard
               graph={dashboardSections.salesGraph}
               onRangeSelect={onSalesGraphRangeSelect}
+              style={styles.dashboardSalesGraphCard}
             />
           </View>
           <View style={styles.dashboardSalesRailPane}>
@@ -98,6 +99,9 @@ const styles = StyleSheet.create({
   dashboardSalesGraphPane: {
     flex: 3,
     minWidth: 520,
+  },
+  dashboardSalesGraphCard: {
+    flex: 1,
   },
   dashboardSalesRailPane: {
     flex: 1,
