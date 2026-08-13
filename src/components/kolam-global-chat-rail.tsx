@@ -9742,21 +9742,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   filterDropdownStack: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     gap: 4,
   },
   filterDropdown: {
-    width: '100%',
+    flex: 1,
+    minWidth: 0,
   },
   filterDropdownTrigger: {
-    minHeight: 32,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: V.radius.md,
+    minHeight: 26,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: V.radius.sm,
     backgroundColor: V.colors.bg,
   },
   filterDropdownText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
   },
   filterChipRow: {
