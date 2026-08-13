@@ -33,6 +33,7 @@ import { useKolamChatPlatformHealth } from '../hooks/use-kolam-chat-platform-hea
 import { useKolamChatRailLiveSync } from '../hooks/use-kolam-chat-rail-live-sync';
 import { useKolamChatRailReadonlyData } from '../hooks/use-kolam-chat-rail-readonly-data';
 import { useKolamNotificationSoundSettings } from '../hooks/use-kolam-notification-sound-settings';
+import { playKolamChatSendBeep } from '../services/kolam-chat-send-beep';
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
@@ -537,6 +538,9 @@ export function KolamGlobalChatRail({
       }),
     [],
   );
+  const playSendBeep = React.useCallback(() => {
+    void playKolamChatSendBeep().catch(() => undefined);
+  }, []);
   const detailOpen = selectedItem !== null;
   const handleBackToList = React.useCallback(() => {
     setSelectedItemId(null);
@@ -1029,6 +1033,7 @@ export function KolamGlobalChatRail({
       setReplyTarget(null);
       setComposerText('');
       detail.signalTyping(false);
+      playSendBeep();
       return;
     }
 
@@ -1040,7 +1045,15 @@ export function KolamGlobalChatRail({
     setReplyTarget(null);
     setComposerText('');
     detail.signalTyping(false);
-  }, [composerText, detail, mode, pendingAttachment, replyTarget]);
+    playSendBeep();
+  }, [
+    composerText,
+    detail,
+    mode,
+    pendingAttachment,
+    playSendBeep,
+    replyTarget,
+  ]);
 
   const handleComposerTextChange = React.useCallback(
     (value: string) => {
@@ -1247,17 +1260,20 @@ export function KolamGlobalChatRail({
       setDaraPendingAttachment(null);
       setDaraComposerText('');
       daraWindowDetail.signalTyping(false);
+      playSendBeep();
       return;
     }
 
     await daraWindowDetail.sendMessage(body);
     setDaraComposerText('');
     daraWindowDetail.signalTyping(false);
+    playSendBeep();
   }, [
     daraComposerText,
     daraPendingAttachment,
     daraWindowBusy,
     daraWindowDetail,
+    playSendBeep,
   ]);
 
   return (
