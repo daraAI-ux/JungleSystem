@@ -17,6 +17,7 @@ import { SvgXml } from 'react-native-svg';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
+import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
 import {
   classifyKolamChatLiveEvent,
@@ -2402,16 +2403,12 @@ function KolamPlatformFilterLogo({
 
   if (platform === 'store') {
     return (
-      <View
-        style={[styles.storeLogoBag, offline && styles.storeLogoBagOffline]}
-      >
-        <View
-          style={[
-            styles.storeLogoHandle,
-            offline && styles.storeLogoHandleOffline,
-          ]}
-        />
-      </View>
+      <SvgXml
+        height={21}
+        style={offline && styles.platformLogoImageOffline}
+        width={21}
+        xml={KOLAM_WEBSTORE_LOGO_SVG}
+      />
     );
   }
 
@@ -9821,40 +9818,6 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: V.colors.mutedFg,
-  },
-  storeLogoBag: {
-    width: 18,
-    height: 16,
-    marginTop: 4,
-    borderRadius: 4,
-    borderColor: '#0f9f6e',
-    borderWidth: 2,
-    backgroundColor: '#e8fff5',
-  },
-  storeLogoBagOffline: {
-    borderColor: '#9ca3af',
-    backgroundColor: '#f3f4f6',
-    opacity: 0.62,
-  },
-  storeLogoHandle: {
-    position: 'absolute',
-    top: -6,
-    left: 4,
-    width: 7,
-    height: 7,
-    borderTopColor: '#0f9f6e',
-    borderLeftColor: '#0f9f6e',
-    borderRightColor: '#0f9f6e',
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-  },
-  storeLogoHandleOffline: {
-    borderTopColor: '#9ca3af',
-    borderLeftColor: '#9ca3af',
-    borderRightColor: '#9ca3af',
   },
   tiktokLogo: {
     width: 20,
