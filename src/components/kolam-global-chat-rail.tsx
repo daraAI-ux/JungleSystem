@@ -17,6 +17,7 @@ import { SvgXml } from 'react-native-svg';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
+import { KOLAM_ALL_PLATFORM_LOGO_SVG } from '../assets/marketplace/all-logo-svg';
 import { KOLAM_WEBSTORE_LOGO_SVG } from '../assets/marketplace/web-logo-svg';
 import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
 import {
@@ -2431,12 +2432,12 @@ function KolamPlatformFilterLogo({
   }
 
   return (
-    <View style={styles.allPlatformLogo}>
-      <View style={styles.allPlatformDot} />
-      <View style={styles.allPlatformDot} />
-      <View style={styles.allPlatformDot} />
-      <View style={styles.allPlatformDot} />
-    </View>
+    <SvgXml
+      height={19}
+      style={offline && styles.platformLogoImageOffline}
+      width={19}
+      xml={KOLAM_ALL_PLATFORM_LOGO_SVG}
+    />
   );
 }
 
@@ -9805,19 +9806,6 @@ const styles = StyleSheet.create({
   },
   platformLogoImageOffline: {
     opacity: 0.28,
-  },
-  allPlatformLogo: {
-    width: 15,
-    height: 15,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 3,
-  },
-  allPlatformDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: V.colors.mutedFg,
   },
   tiktokLogo: {
     width: 20,
