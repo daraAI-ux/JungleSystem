@@ -3064,6 +3064,181 @@ describe('KolamGlobalChatRail', () => {
     );
   });
 
+  it('renders inbound web, marketplace, youtube, and clickable link cards', async () => {
+    useReadonlyDataMock.mockReturnValue({
+      conversations: [
+        {
+          _id: 'conv-cards',
+          assignedStaffId: null,
+          platform: 'tokopedia',
+          contactId: {displayName: 'Buyer Tokopedia'},
+          lastMessagePreview: 'Katalog',
+          unreadCount: 1,
+        },
+      ],
+      loading: false,
+      refresh: jest.fn(),
+      rooms: [],
+      totalUnread: 1,
+    });
+    useDetailMock.mockReturnValue({
+      ...getDefaultDetailMock(),
+      conversation: {
+        _id: 'conv-cards',
+        assignedStaffId: null,
+        isAiHandled: true,
+        labelIds: [],
+        platform: 'tokopedia',
+        status: 'open',
+      },
+      loading: false,
+      messages: [
+        {
+          attachments: [],
+          content: {
+            text: '[Product] LIBERTY Luce — Rp150.000 — 12 terjual\nhttps://images.tokopedia.net/img/luce.jpg\n[Link] /id/products/liberty-luce',
+            type: 'text',
+          },
+          embeds: [],
+          id: 'msg-tokped-product',
+          author: 'Buyer Tokopedia',
+          body: '[Product] LIBERTY Luce — Rp150.000 — 12 terjual\nhttps://images.tokopedia.net/img/luce.jpg\n[Link] /id/products/liberty-luce',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-07-28T08:00:00.000Z',
+        },
+        {
+          attachments: [],
+          content: {
+            card: {
+              detailHref: '/id/products/nemo',
+              entityType: 'product',
+              imageUrl: '/uploads/products/nemo.jpg',
+              name: 'Nemo Clownfish',
+              price: 85000,
+              stock: 4,
+            },
+            text: '[Product] Nemo Clownfish — Rp85.000 — Stok 4\n/uploads/products/nemo.jpg\n[Link] /id/products/nemo',
+            type: 'product_card',
+          },
+          embeds: [],
+          id: 'msg-web-product',
+          author: 'Buyer Web',
+          body: '[Product] Nemo Clownfish — Rp85.000 — Stok 4\n/uploads/products/nemo.jpg\n[Link] /id/products/nemo',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-07-28T08:01:00.000Z',
+        },
+        {
+          attachments: [],
+          content: {
+            text: 'https://youtu.be/dQw4w9WgXcQ',
+            type: 'text',
+          },
+          embeds: [],
+          id: 'msg-yt-only',
+          author: 'Buyer Tokopedia',
+          body: 'https://youtu.be/dQw4w9WgXcQ',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-07-28T08:02:00.000Z',
+        },
+        {
+          attachments: [],
+          content: {
+            text: 'Cek stok di https://dunia-anura.com/id/products/nemo ya',
+            type: 'text',
+          },
+          embeds: [],
+          id: 'msg-plain-link',
+          author: 'Buyer Tokopedia',
+          body: 'Cek stok di https://dunia-anura.com/id/products/nemo ya',
+          linkPreviews: [],
+          mine: false,
+          reactions: [],
+          replyPreview: null,
+          sentAt: '2026-07-28T08:03:00.000Z',
+        },
+      ],
+      sending: false,
+    });
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <KolamGlobalChatRail mode="inbox" onClose={() => undefined} />,
+      );
+    });
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .find(
+          node =>
+            node.props.accessibilityLabel ===
+            'Pilih conversation Buyer Tokopedia',
+        )!
+        .props.onPress();
+    });
+
+    expect(renderText(renderer!)).toEqual(
+      expect.arrayContaining([
+        'Tokopedia',
+        'LIBERTY Luce',
+        'Rp150.000',
+        'Product',
+        'Nemo Clownfish',
+        'YouTube',
+        'Buka di YouTube',
+        'Cek stok di ',
+        'https://dunia-anura.com/id/products/nemo',
+        ' ya',
+      ]),
+    );
+
+    const tokpedCard = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Buka card LIBERTY Luce',
+      );
+    const webCard = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(
+        node => node.props.accessibilityLabel === 'Buka card Nemo Clownfish',
+      );
+    const youtubeCard = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Buka YouTube inbox');
+    const plainLink = renderer!.root
+      .findAllByType(Text)
+      .find(
+        node =>
+          node.props.accessibilityLabel ===
+          'Buka tautan https://dunia-anura.com/id/products/nemo',
+      );
+
+    await ReactTestRenderer.act(async () => {
+      tokpedCard!.props.onPress();
+      webCard!.props.onPress();
+      youtubeCard!.props.onPress();
+      plainLink!.props.onPress();
+    });
+
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://dunia-anura.com/id/products/liberty-luce',
+    );
+    expect(openUrlMock).toHaveBeenCalledWith(
+      'https://dunia-anura.com/id/products/nemo',
+    );
+    expect(openUrlMock).toHaveBeenCalledWith('https://youtu.be/dQw4w9WgXcQ');
+  });
+
   it('toggles inbox labels from the selected conversation action strip', async () => {
     const setInboxLabels = jest.fn().mockResolvedValue(undefined);
     useReadonlyDataMock.mockReturnValue({

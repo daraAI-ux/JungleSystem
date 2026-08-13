@@ -471,7 +471,18 @@ interface KolamChatRailItem {
 
 type KolamTeamMentionTextPart =
   | { type: 'text'; value: string }
-  | { type: 'mention'; raw: string; username: string };
+  | { type: 'mention'; raw: string; username: string }
+  | { type: 'url'; value: string };
+
+const KOLAM_CHAT_URL_RE = /(https?:\/\/[^\s<>"']+)/gi;
+const KOLAM_YOUTUBE_HOSTS = new Set([
+  'm.youtube.com',
+  'www.youtu.be',
+  'www.youtube.com',
+  'youtu.be',
+  'youtube.com',
+]);
+const KOLAM_MARKETPLACE_SITE_URL = 'https://dunia-anura.com';
 
 interface KolamDaraThinkingLiveSignal {
   key: number;
@@ -5004,7 +5015,10 @@ function KolamChatRailDetailPanel({
                             message.content ||
                             message.replyContent ||
                             message.daraMeta ? (
-                            <KolamInboxRichMessageContent message={message} />
+                            <KolamInboxRichMessageContent
+                              message={message}
+                              platform={detail.conversation?.platform}
+                            />
                           ) : null}
                           {mode === 'inbox' && message.attachments.length > 0 ? (
                             <KolamChatAttachmentList
@@ -5560,12 +5574,65 @@ function KolamTeamMentionPicker({
   );
 }
 
+function KolamChatLinkifiedText({
+  text,
+  style,
+}: {
+  text: string;
+  style?: React.ComponentProps<typeof Text>['style'];
+}) {
+  const parts = splitChatLinkText(text);
+  if (parts.length === 1 && parts[0]?.type === 'text') {
+    return <Text style={[styles.messageBody, style]}>{text}</Text>;
+  }
+
+  return (
+    <Text style={[styles.messageBody, style]}>
+      {parts.map((part, index) => {
+        if (part.type === 'url') {
+          return (
+            <Text
+              accessibilityLabel={`Buka tautan ${part.value}`}
+              accessibilityRole="link"
+              key={`u-${index}`}
+              onPress={() => openInboxExternalUrl(part.value)}
+              style={styles.messageBodyLink}
+            >
+              {part.value}
+            </Text>
+          );
+        }
+
+        return (
+          <Text key={`t-${index}`} style={style}>
+            {part.value}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+}
+
 function KolamTeamMentionText({ body }: { body: string }) {
   const parts = splitTeamChatMentionText(body);
 
   return (
     <View style={styles.messageBodyFlow}>
       {parts.map((part, index) => {
+        if (part.type === 'url') {
+          return (
+            <Text
+              accessibilityLabel={`Buka tautan ${part.value}`}
+              accessibilityRole="link"
+              key={`u-${index}`}
+              onPress={() => openInboxExternalUrl(part.value)}
+              style={[styles.messageBodyText, styles.messageBodyLink]}
+            >
+              {part.value}
+            </Text>
+          );
+        }
+
         if (part.type === 'text') {
           return (
             <Text key={`t-${index}`} style={styles.messageBodyText}>
@@ -5919,15 +5986,17 @@ function getTeamChatEditedLabel(
 
 function KolamInboxRichMessageContent({
   message,
+  platform,
 }: {
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
+  platform?: string | null;
 }) {
   const [lightboxUri, setLightboxUri] = React.useState<string | null>(null);
   const content = message.content;
   const replyContent = message.replyContent;
   const image = resolveInboxImageContent(content, message.body);
   const youtube = resolveInboxYoutube(content, message.body);
-  const card = resolveInboxCard(content, message.body);
+  const card = resolveInboxCard(content, message.body, platform);
   const linkedCard = resolveInboxLinkedCard(message.body);
 
   return (
@@ -5968,7 +6037,7 @@ function KolamInboxRichMessageContent({
           />
         </>
       ) : (
-        <Text style={styles.messageBody}>{message.body}</Text>
+        <KolamChatLinkifiedText text={message.body} />
       )}
       {message.daraMeta ? <KolamInboxDaraMeta meta={message.daraMeta} /> : null}
     </View>
@@ -6013,19 +6082,33 @@ function KolamInboxYoutubeCard({
 }: {
   youtube: { title?: string; url: string; videoId?: string };
 }) {
+  const thumbnailUri = youtube.videoId
+    ? `https://i.ytimg.com/vi/${youtube.videoId}/hqdefault.jpg`
+    : null;
+
   return (
     <KolamPressable
       accessibilityLabel="Buka YouTube inbox"
       onPress={() => openInboxExternalUrl(youtube.url)}
       style={styles.inboxRichCard}
     >
-      <View style={styles.inboxRichCardIcon}>
-        <Text style={styles.inboxRichCardIconText}>YT</Text>
-      </View>
+      {thumbnailUri ? (
+        <KolamRemoteImage
+          accessibilityLabel="Thumbnail YouTube inbox"
+          resizeMode="cover"
+          scope="chat-inbox-youtube"
+          sourceUri={thumbnailUri}
+          style={styles.inboxRichCardImage}
+        />
+      ) : (
+        <View style={styles.inboxRichCardIcon}>
+          <Text style={styles.inboxRichCardIconText}>YT</Text>
+        </View>
+      )}
       <View style={styles.inboxRichCardCopy}>
         <Text style={styles.chatPreviewKicker}>YouTube</Text>
         <Text numberOfLines={2} style={styles.chatPreviewTitle}>
-          {youtube.title || youtube.videoId || 'Video YouTube'}
+          {youtube.title || 'Buka di YouTube'}
         </Text>
         <Text numberOfLines={1} style={styles.chatPreviewUrl}>
           {youtube.url}
@@ -7114,8 +7197,9 @@ function KolamChatLinkPreview({
   const siteName = preview.siteName?.trim();
 
   return (
-    <View
-      accessibilityLabel={`Link preview ${title}`}
+    <KolamPressable
+      accessibilityLabel={`Buka tautan ${title}`}
+      onPress={() => openInboxExternalUrl(preview.url)}
       style={styles.chatPreviewCard}
     >
       {imageUri ? (
@@ -7143,7 +7227,7 @@ function KolamChatLinkPreview({
           {preview.url}
         </Text>
       </View>
-    </View>
+    </KolamPressable>
   );
 }
 
@@ -7164,12 +7248,8 @@ function KolamChatEmbedCard({ embed }: { embed: KolamTeamChatEmbed }) {
   const title = embed.title?.trim() || embed.refId;
   const subtitle = embed.subtitle?.trim();
   const href = getTeamChatEmbedHref(embed);
-
-  return (
-    <View
-      accessibilityLabel={`Embed ${label} ${title}`}
-      style={styles.chatEmbedCard}
-    >
+  const card = (
+    <>
       <View style={styles.chatEmbedIcon}>
         <Text style={styles.chatEmbedIconText}>
           {getTeamChatEmbedInitial(label)}
@@ -7193,6 +7273,27 @@ function KolamChatEmbedCard({ embed }: { embed: KolamTeamChatEmbed }) {
           </Text>
         ) : null}
       </View>
+    </>
+  );
+
+  if (href) {
+    return (
+      <KolamPressable
+        accessibilityLabel={`Buka tautan ${label} ${title}`}
+        onPress={() => openInboxExternalUrl(href)}
+        style={styles.chatEmbedCard}
+      >
+        {card}
+      </KolamPressable>
+    );
+  }
+
+  return (
+    <View
+      accessibilityLabel={`Embed ${label} ${title}`}
+      style={styles.chatEmbedCard}
+    >
+      {card}
     </View>
   );
 }
@@ -7735,26 +7836,36 @@ function resolveInboxYoutube(
     | undefined,
   body: string,
 ) {
-  if (content?.youtube?.videoId || content?.youtube?.url) {
+  const videoId = content?.youtube?.videoId?.trim();
+  if (videoId) {
     return {
-      title: content.youtube.title,
+      title: content.youtube?.title?.trim() || undefined,
       url:
-        content.youtube.url ||
-        `https://www.youtube.com/watch?v=${content.youtube.videoId}`,
-      videoId: content.youtube.videoId,
+        content.youtube?.url?.trim() ||
+        `https://www.youtube.com/watch?v=${videoId}`,
+      videoId,
     };
   }
 
-  const text = content?.text || body;
-  const videoId = extractYoutubeVideoId(text);
-  if (!videoId) {
+  const text = String(content?.text || body || '').trim();
+  if (!text) {
     return null;
   }
 
-  return {
-    url: text.trim(),
-    videoId,
-  };
+  if (content?.type === 'youtube' || isYoutubeOnlyMessage(text)) {
+    const resolved = extractYoutubeVideoId(text);
+    if (!resolved) {
+      return null;
+    }
+    return {
+      url: text.startsWith('http')
+        ? text
+        : `https://www.youtube.com/watch?v=${resolved}`,
+      videoId: resolved,
+    };
+  }
+
+  return null;
 }
 
 function resolveInboxCard(
@@ -7762,6 +7873,7 @@ function resolveInboxCard(
     | ReturnType<typeof useKolamChatRailDetail>['messages'][number]['content']
     | undefined,
   body: string,
+  platform?: string | null,
 ): KolamInboxResolvedCard | null {
   const card = content?.card;
   if (card?.name || card?.marketplace?.listingName) {
@@ -7772,47 +7884,32 @@ function resolveInboxCard(
         ? 'species'
         : 'product';
     return {
-      actionUrl: normalizeInboxActionUrl(card.detailHref || card.imageUrl),
+      actionUrl: toMarketplaceAbsoluteHref(card.detailHref),
       imageUrl: normalizeChatMediaUri(card.imageUrl) ?? undefined,
       kind,
       label: getInboxCardLabel(kind, card.marketplace?.platform),
       marketplaceId: getInboxMarketplaceCardId(card.marketplace),
       priceLabel:
         card.priceLabel ||
-        (typeof card.price === 'number' ? formatRupiah(card.price) : undefined),
+        (typeof card.price === 'number' && card.price > 0
+          ? formatRupiah(card.price)
+          : undefined),
       sku: card.marketplace?.sku?.trim() || undefined,
       stock: typeof card.stock === 'number' ? card.stock : undefined,
       title: card.marketplace?.listingName || card.name || 'Item',
     };
   }
 
-  if (
-    content?.type === 'product_card' ||
-    content?.type === 'species_card' ||
-    content?.type === 'marketplace_product_card'
-  ) {
-    const title = content.text?.trim();
-    if (title) {
-      return {
-        kind:
-          content.type === 'species_card'
-            ? 'species'
-            : content.type === 'marketplace_product_card'
-            ? 'marketplace'
-            : 'product',
-        label: getInboxCardLabel(
-          content.type === 'species_card'
-            ? 'species'
-            : content.type === 'marketplace_product_card'
-            ? 'marketplace'
-            : 'product',
-        ),
-        title,
-      };
-    }
+  const legacy = parseInboxLegacyProductText(
+    content?.text || body,
+    platform,
+    content?.type === 'species_card' ? 'species' : undefined,
+  );
+  if (legacy) {
+    return legacy;
   }
 
-  return parseInboxLegacyProductText(body);
+  return null;
 }
 
 function parseInboxLegacyImageText(text: string) {
@@ -7827,6 +7924,8 @@ function parseInboxLegacyImageText(text: string) {
 
 function parseInboxLegacyProductText(
   text: string,
+  platform?: string | null,
+  entityType?: 'product' | 'species',
 ): KolamInboxResolvedCard | null {
   const trimmed = text.trim();
   if (!trimmed.startsWith('[Product]')) {
@@ -7834,31 +7933,78 @@ function parseInboxLegacyProductText(
   }
 
   const lines = trimmed.split('\n').map(line => line.trim());
-  const head = lines[0]?.replace(/^\[Product\]\s*/, '') ?? '';
-  const parts = head
-    .split(/\s*[-—]\s*/)
+  const head = lines[0] || '';
+  let imageUrl: string | undefined;
+  let detailHref: string | undefined;
+  for (const line of lines.slice(1)) {
+    if (line.startsWith('[Link]')) {
+      const href = line.replace(/^\[Link\]\s*/, '').trim();
+      if (href) {
+        detailHref = toMarketplaceAbsoluteHref(href);
+      }
+      continue;
+    }
+    if (!imageUrl && /^https?:\/\//i.test(line)) {
+      imageUrl = line;
+    }
+  }
+
+  const segments = head
+    .replace(/^\[Product\]\s*/, '')
+    .split(/\s*—\s*/)
     .map(part => part.trim())
     .filter(Boolean);
-  if (parts.length === 0) {
+  if (segments.length === 0) {
     return null;
   }
 
-  const imageLine = lines
-    .slice(1)
-    .find(line => /^https?:\/\//i.test(line) && !line.startsWith('[Link]'));
-  const priceLabel = parts.find(part => /^Rp/i.test(part));
-  const extra = parts
-    .slice(1)
-    .filter(part => part !== priceLabel && !/(sold|terjual)/i.test(part));
+  const extra: string[] = [];
+  let priceLabel: string | undefined;
+  for (const segment of segments.slice(1)) {
+    if (/^Rp/i.test(segment)) {
+      priceLabel = segment;
+    } else if (!/(sold|terjual)/i.test(segment)) {
+      extra.push(segment);
+    }
+  }
+
+  const marketplacePlatform =
+    platform === 'shopee' || platform === 'tokopedia' ? platform : undefined;
+  const kind =
+    entityType === 'species'
+      ? 'species'
+      : marketplacePlatform
+      ? 'marketplace'
+      : 'product';
 
   return {
-    actionUrl: normalizeInboxActionUrl(imageLine),
-    imageUrl: normalizeChatMediaUri(imageLine) ?? undefined,
-    kind: 'product',
-    label: 'Product',
+    actionUrl: detailHref,
+    imageUrl: normalizeChatMediaUri(imageUrl) ?? undefined,
+    kind,
+    label: getInboxCardLabel(kind, marketplacePlatform),
     priceLabel,
-    title: [parts[0], ...extra].filter(Boolean).join(' - '),
+    title: extra.length ? `${segments[0]} — ${extra.join(' — ')}` : segments[0],
   };
+}
+
+function toMarketplaceAbsoluteHref(pathOrUrl?: string | null) {
+  const href = pathOrUrl?.trim();
+  if (!href) {
+    return undefined;
+  }
+  if (/^https?:\/\//i.test(href)) {
+    return href;
+  }
+  const path = href.startsWith('/') ? href : `/${href}`;
+  return `${KOLAM_MARKETPLACE_SITE_URL}${path}`;
+}
+
+function isYoutubeOnlyMessage(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed || /\s/.test(trimmed)) {
+    return false;
+  }
+  return Boolean(extractYoutubeVideoId(trimmed));
 }
 
 function resolveInboxLinkedCard(body: string): KolamInboxLinkedCardData | null {
@@ -7944,13 +8090,36 @@ function normalizeChatMediaUri(uri?: string | null) {
 }
 
 function extractYoutubeVideoId(text: string) {
-  const value = text.trim();
-  const match =
-    value.match(/[?&]v=([a-zA-Z0-9_-]{6,})/) ??
-    value.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/) ??
-    value.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{6,})/);
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return null;
+  }
 
-  return match?.[1] ?? null;
+  try {
+    const url = new URL(
+      trimmed.startsWith('http') ? trimmed : `https://${trimmed}`,
+    );
+    const host = url.hostname.toLowerCase();
+    if (!KOLAM_YOUTUBE_HOSTS.has(host)) {
+      return null;
+    }
+    if (host === 'youtu.be' || host === 'www.youtu.be') {
+      const id = url.pathname.replace(/^\//, '').split('/')[0];
+      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+    }
+    const fromQuery = url.searchParams.get('v');
+    if (fromQuery && /^[a-zA-Z0-9_-]{11}$/.test(fromQuery)) {
+      return fromQuery;
+    }
+    const shorts = url.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]{11})/);
+    if (shorts?.[1]) {
+      return shorts[1];
+    }
+    const embed = url.pathname.match(/^\/embed\/([a-zA-Z0-9_-]{11})/);
+    return embed?.[1] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function getInboxCardLabel(
@@ -8713,7 +8882,56 @@ function splitTeamChatMentionText(body: string): KolamTeamMentionTextPart[] {
     parts.push({ type: 'text', value: text.slice(last) });
   }
 
+  const withLinks: KolamTeamMentionTextPart[] = [];
+  for (const part of parts.length > 0 ? parts : [{ type: 'text' as const, value: text }]) {
+    if (part.type !== 'text') {
+      withLinks.push(part);
+      continue;
+    }
+    withLinks.push(...splitChatLinkText(part.value));
+  }
+
+  return withLinks;
+}
+
+function splitChatLinkText(value: string): Array<
+  | { type: 'text'; value: string }
+  | { type: 'url'; value: string }
+> {
+  const text = String(value ?? '');
+  if (!text) {
+    return [];
+  }
+
+  const parts: Array<
+    | { type: 'text'; value: string }
+    | { type: 'url'; value: string }
+  > = [];
+  const pattern = new RegExp(KOLAM_CHAT_URL_RE.source, 'gi');
+  let last = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const start = match.index;
+    if (start > last) {
+      parts.push({ type: 'text', value: text.slice(last, start) });
+    }
+    parts.push({
+      type: 'url',
+      value: trimChatUrl(match[0]),
+    });
+    last = start + match[0].length;
+  }
+
+  if (last < text.length) {
+    parts.push({ type: 'text', value: text.slice(last) });
+  }
+
   return parts.length > 0 ? parts : [{ type: 'text', value: text }];
+}
+
+function trimChatUrl(value: string) {
+  return value.replace(/[),.;!?]+$/g, '');
 }
 
 function shouldShowDaraThinking({
@@ -10816,6 +11034,10 @@ const styles = StyleSheet.create({
     fontFamily: V.fontFamily,
     fontSize: 12,
     lineHeight: 17,
+  },
+  messageBodyLink: {
+    color: '#2563eb',
+    textDecorationLine: 'underline',
   },
   messageBodyFlow: {
     alignItems: 'center',
