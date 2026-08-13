@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { ImageBackground, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { getDashboardLayoutVisualContract } from '../domain/dashboard-layout';
 import {
   getKolamWorkspaceScrollPolicy,
@@ -24,6 +24,7 @@ type KolamOverlaySurfaceProps = React.ComponentProps<
 type KolamSidebarProps = React.ComponentProps<typeof KolamSidebar>;
 type KolamTopNavigationProps = React.ComponentProps<typeof KolamTopNavigation>;
 const DASHBOARD_LAYOUT_VISUAL = getDashboardLayoutVisualContract();
+const BODY_BACKGROUND_SOURCE = require('../assets/images/bg-body.png');
 
 const MemoKolamSidebar = React.memo(KolamSidebar);
 const MemoKolamTopNavigation = React.memo(KolamTopNavigation);
@@ -87,30 +88,37 @@ function KolamAppShellSurfaceComponent({
         {workspaceTabs}
         <MemoKolamOverlaySurface {...overlay} />
 
-        <KolamWorkspaceScrollProvider
-          policy={workspaceScrollPolicy}
-          scrollTo={scrollShellTo}
+        <ImageBackground
+          resizeMode="cover"
+          source={BODY_BACKGROUND_SOURCE}
+          style={styles.bodyBackground}
         >
-          {ownsWorkspaceScroll ? (
-            <View
-              style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}
-            >
-              <MemoKolamDashboardHeader {...dashboardHeader} />
-              <View style={styles.ownedListWorkspace}>{children}</View>
-            </View>
-          ) : (
-            <ScrollView
-              key={shellScrollKey}
-              ref={shellScrollRef}
-              keyboardShouldPersistTaps="handled"
-              style={styles.mainScroll}
-              contentContainerStyle={[pageContentStyle, styles.scrollContent]}
-            >
-              <MemoKolamDashboardHeader {...dashboardHeader} />
-              {children}
-            </ScrollView>
-          )}
-        </KolamWorkspaceScrollProvider>
+          <View style={styles.bodyBackgroundOverlay} />
+          <KolamWorkspaceScrollProvider
+            policy={workspaceScrollPolicy}
+            scrollTo={scrollShellTo}
+          >
+            {ownsWorkspaceScroll ? (
+              <View
+                style={[styles.mainScroll, pageContentStyle, styles.ownedListPage]}
+              >
+                <MemoKolamDashboardHeader {...dashboardHeader} />
+                <View style={styles.ownedListWorkspace}>{children}</View>
+              </View>
+            ) : (
+              <ScrollView
+                key={shellScrollKey}
+                ref={shellScrollRef}
+                keyboardShouldPersistTaps="handled"
+                style={styles.mainScroll}
+                contentContainerStyle={[pageContentStyle, styles.scrollContent]}
+              >
+                <MemoKolamDashboardHeader {...dashboardHeader} />
+                {children}
+              </ScrollView>
+            )}
+          </KolamWorkspaceScrollProvider>
+        </ImageBackground>
       </KolamShellFrame>
 
       {rightRail}
@@ -162,6 +170,13 @@ export { isCatalogTableListRoute };
 const styles = StyleSheet.create({
   mainScroll: {
     flex: 1,
+  },
+  bodyBackground: {
+    flex: 1,
+  },
+  bodyBackgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(247, 250, 247, 0.58)',
   },
   mainContent: {
     padding: V.layout.contentPadding,
