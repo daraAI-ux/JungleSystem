@@ -17,6 +17,7 @@ import { SvgXml } from 'react-native-svg';
 import { useKolamAuthContext } from '../context/kolam-app-contexts';
 import { KOLAM_CALL_ICON_SVG } from '../assets/icons/call-icon-svg';
 import { KOLAM_DELETE_ROOM_ICON_SVG } from '../assets/icons/delete-room-icon-svg';
+import { tryClaimKolamChatLiveAlert } from '../domain/kolam-chat-desktop-toast';
 import { classifyKolamChatLiveEvent } from '../domain/kolam-chat-live-classifier';
 import { resolveKolamTeamChatBotAvatarRawUrl } from '../domain/kolam-team-chat-bot-display';
 import { kolamVisualTokens as V } from '../domain/kolam-visual';
@@ -34,6 +35,7 @@ import { useKolamChatRailLiveSync } from '../hooks/use-kolam-chat-rail-live-sync
 import { useKolamChatRailReadonlyData } from '../hooks/use-kolam-chat-rail-readonly-data';
 import { useKolamNotificationSoundSettings } from '../hooks/use-kolam-notification-sound-settings';
 import { playKolamChatSendBeep } from '../services/kolam-chat-send-beep';
+import { showKolamChatDesktopToastFromLive } from '../services/kolam-windows-toast-notification';
 import { getKolamFileUrl } from '../lib/file-url';
 import { formatRupiah } from '../lib/money';
 import { copyTextToClipboard } from '../lib/native-clipboard';
@@ -699,12 +701,26 @@ export function KolamGlobalChatRail({
         void detail.refreshCall();
       }
 
-      Promise.resolve(
-        notificationSoundService.play({
-          intent: classification.soundIntent,
-          webSetting: soundSettings.webSetting,
-        }),
-      ).catch(() => undefined);
+      if (classification.soundIntent !== 'none') {
+        if (
+          tryClaimKolamChatLiveAlert({
+            stream: classification.stream,
+            targetId: classification.targetId,
+          })
+        ) {
+          Promise.resolve(
+            notificationSoundService.play({
+              intent: classification.soundIntent,
+              webSetting: soundSettings.webSetting,
+            }),
+          ).catch(() => undefined);
+        }
+        showKolamChatDesktopToastFromLive({
+          classification,
+          currentUserId,
+          payload: event.payload,
+        });
+      }
     },
     [
       currentUserId,
@@ -1015,6 +1031,8 @@ export function KolamGlobalChatRail({
       return;
     }
 
+    playSendBeep();
+
     const sendOptions = replyTarget
       ? { replyToMessageId: replyTarget.id }
       : undefined;
@@ -1033,7 +1051,6 @@ export function KolamGlobalChatRail({
       setReplyTarget(null);
       setComposerText('');
       detail.signalTyping(false);
-      playSendBeep();
       return;
     }
 
@@ -1045,7 +1062,6 @@ export function KolamGlobalChatRail({
     setReplyTarget(null);
     setComposerText('');
     detail.signalTyping(false);
-    playSendBeep();
   }, [
     composerText,
     detail,
@@ -1255,19 +1271,19 @@ export function KolamGlobalChatRail({
       return;
     }
 
+    playSendBeep();
+
     if (daraPendingAttachment) {
       await daraWindowDetail.sendAttachment(daraPendingAttachment, body);
       setDaraPendingAttachment(null);
       setDaraComposerText('');
       daraWindowDetail.signalTyping(false);
-      playSendBeep();
       return;
     }
 
     await daraWindowDetail.sendMessage(body);
     setDaraComposerText('');
     daraWindowDetail.signalTyping(false);
-    playSendBeep();
   }, [
     daraComposerText,
     daraPendingAttachment,

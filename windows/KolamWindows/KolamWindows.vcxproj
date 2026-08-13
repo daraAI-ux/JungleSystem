@@ -8,7 +8,8 @@
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{4CBFCB37-4F87-4204-AFD3-5F7CC7130239}</ProjectGuid>
-    <ProjectName>KolamWindows</ProjectName>
+    <ProjectName>JungleSystem</ProjectName>
+    <TargetName>JungleSystem</TargetName>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>KolamWindows</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -83,7 +84,7 @@
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>shell32.lib;user32.lib;windowsapp.lib;iphlpapi.lib;bcrypt.lib;ws2_32.lib;winsqlite3.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shell32.lib;user32.lib;windowsapp.lib;iphlpapi.lib;bcrypt.lib;ws2_32.lib;winsqlite3.lib;winmm.lib;propsys.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
@@ -104,6 +105,7 @@
     <ClInclude Include="KolamWindowsDeviceIdentity.h" />
     <ClInclude Include="KolamWindowsFilePicker.h" />
     <ClInclude Include="KolamWindowsNotificationSound.h" />
+    <ClInclude Include="KolamWindowsToastNotification.h" />
     <ClInclude Include="KolamWindowsSecureTokenStore.h" />
     <ClInclude Include="KolamWindowsSQLiteStore.h" />
     <ClInclude Include="resource.h" />
@@ -116,6 +118,7 @@
     <ClCompile Include="KolamWindowsDeviceIdentity.cpp" />
     <ClCompile Include="KolamWindowsFilePicker.cpp" />
     <ClCompile Include="KolamWindowsNotificationSound.cpp" />
+    <ClCompile Include="KolamWindowsToastNotification.cpp" />
     <ClCompile Include="KolamWindowsSecureTokenStore.cpp" />
     <ClCompile Include="KolamWindowsSQLiteStore.cpp" />
     <ClCompile Include="AutolinkedNativeModules.g.cpp" />

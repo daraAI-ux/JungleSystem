@@ -1,24 +1,9 @@
-import {
-  playKolamChatSendBeep,
-  resolveKolamChatSendBeepUri,
-} from '../src/services/kolam-chat-send-beep';
+import {KOLAM_DEFAULT_NOTIFICATION_BEEP_URI} from '../src/services/kolam-notification-sound-service';
+import {playKolamChatSendBeep} from '../src/services/kolam-chat-send-beep';
 import type {KolamNotificationSoundAdapter} from '../src/services/kolam-notification-sound-service';
 
 describe('kolam chat send beep', () => {
-  it('resolves the local send beep asset URI', () => {
-    const resolveAssetSource = jest.fn(() => ({
-      height: 0,
-      scale: 1,
-      uri: 'asset:/chat-send-beep.wav',
-      width: 0,
-    }));
-
-    expect(resolveKolamChatSendBeepUri(resolveAssetSource)).toBe(
-      'asset:/chat-send-beep.wav',
-    );
-  });
-
-  it('plays the send beep through the supplied adapter', async () => {
+  it('plays the same default beep URI as Settings tes suara', async () => {
     const adapter: KolamNotificationSoundAdapter = {
       play: jest.fn().mockResolvedValue(undefined),
     };
@@ -26,23 +11,20 @@ describe('kolam chat send beep', () => {
     await expect(
       playKolamChatSendBeep({
         adapter,
-        resolveAssetSource: () => ({
-          height: 0,
-          scale: 1,
-          uri: 'asset:/chat-send-beep.wav',
-          width: 0,
-        }),
-        volume: 0.3,
+        volume: 0.5,
       }),
     ).resolves.toEqual({
       played: true,
-      uri: 'asset:/chat-send-beep.wav',
+      uri: KOLAM_DEFAULT_NOTIFICATION_BEEP_URI,
     });
 
-    expect(adapter.play).toHaveBeenCalledWith('asset:/chat-send-beep.wav', {
-      intent: 'assigned',
-      volume: 0.3,
-    });
+    expect(adapter.play).toHaveBeenCalledWith(
+      KOLAM_DEFAULT_NOTIFICATION_BEEP_URI,
+      {
+        intent: 'assigned',
+        volume: 0.5,
+      },
+    );
   });
 
   it('does not throw when playback is unavailable', async () => {
@@ -50,16 +32,9 @@ describe('kolam chat send beep', () => {
       play: jest.fn().mockRejectedValue(new Error('no runtime')),
     };
 
-    await expect(
-      playKolamChatSendBeep({
-        adapter,
-        resolveAssetSource: () => ({
-          height: 0,
-          scale: 1,
-          uri: 'asset:/chat-send-beep.wav',
-          width: 0,
-        }),
-      }),
-    ).resolves.toEqual({played: false, reason: 'playback-failed'});
+    await expect(playKolamChatSendBeep({adapter})).resolves.toEqual({
+      played: false,
+      reason: 'playback-failed',
+    });
   });
 });

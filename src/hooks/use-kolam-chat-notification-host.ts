@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {tryClaimKolamChatLiveAlert} from '../domain/kolam-chat-desktop-toast';
 import {classifyKolamChatLiveEvent} from '../domain/kolam-chat-live-classifier';
 import type {KolamChatLiveStreamKind} from '../domain/kolam-chat-live-contract';
 import {
@@ -13,6 +14,10 @@ import {
 } from '../services/kolam-api';
 import {createKolamNotificationSoundService} from '../services/kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from '../services/kolam-notification-sound-runtime';
+import {
+  showKolamChatDesktopToastForUnread,
+  showKolamChatDesktopToastFromLive,
+} from '../services/kolam-windows-toast-notification';
 
 export type KolamChatUnreadCounts = {
   inbox: number;
@@ -100,7 +105,7 @@ export function useKolamChatNotificationHost({
       }
 
       lastSoundAtRef.current = Date.now();
-      // Same path as Settings test (custom file / default) — do not force local beep.
+      // Same path as Settings test (custom file / default).
       Promise.resolve(
         notificationSoundService.play({
           intent,
@@ -136,11 +141,13 @@ export function useKolamChatNotificationHost({
           : current.team,
     };
 
+    const previous = previousUnreadRef.current;
+    const visibleRailMode = visibleRailModeRef.current;
     const intents = resolveKolamChatUnreadRiseSoundIntents({
       lastSoundAtMs: lastSoundAtRef.current || null,
       next,
-      previous: previousUnreadRef.current,
-      visibleRailMode: visibleRailModeRef.current,
+      previous,
+      visibleRailMode,
     });
     previousUnreadRef.current = next;
     unreadCountsRef.current = next;
@@ -152,6 +159,14 @@ export function useKolamChatNotificationHost({
     intents.forEach(intent => {
       playSoundIntent(intent);
     });
+    if (previous) {
+      if (next.inbox > previous.inbox && visibleRailMode !== 'inbox') {
+        showKolamChatDesktopToastForUnread('inbox');
+      }
+      if (next.team > previous.team && visibleRailMode !== 'team-chat') {
+        showKolamChatDesktopToastForUnread('team-chat');
+      }
+    }
   }, [enabled, playSoundIntent]);
 
   useEffect(() => {
@@ -178,8 +193,23 @@ export function useKolamChatNotificationHost({
         selectedItemId: null,
       });
 
-      if (visibleRailMode !== event.contract.stream) {
-        playSoundIntent(classification.soundIntent);
+      if (
+        visibleRailMode !== event.contract.stream &&
+        classification.soundIntent !== 'none'
+      ) {
+        if (
+          tryClaimKolamChatLiveAlert({
+            stream: classification.stream,
+            targetId: classification.targetId,
+          })
+        ) {
+          playSoundIntent(classification.soundIntent);
+        }
+        showKolamChatDesktopToastFromLive({
+          classification,
+          currentUserId,
+          payload: event.payload,
+        });
       }
 
       if (classification.refreshTargets.includes('unread-badge')) {

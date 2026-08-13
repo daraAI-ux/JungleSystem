@@ -22,6 +22,9 @@
     <UseExperimentalNuget>true</UseExperimentalNuget>
 
     <ReactExperimentalFeaturesSet>true</ReactExperimentalFeaturesSet>
+
+    <!-- Clipboard (WinAppSDK 1.8) fails Appx transitive-dep verify without this. -->
+    <WindowsAppSDKVerifyTransitiveDependencies>false</WindowsAppSDKVerifyTransitiveDependencies>
   </PropertyGroup>
 
 </Project>

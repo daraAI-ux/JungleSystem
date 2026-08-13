@@ -6,6 +6,7 @@
 #include "KolamWindowsDeviceIdentity.h"
 #include "KolamWindowsFilePicker.h"
 #include "KolamWindowsNotificationSound.h"
+#include "KolamWindowsToastNotification.h"
 #include "KolamWindowsSQLiteStore.h"
 #include "KolamWindowsSecureTokenStore.h"
 
@@ -91,6 +92,10 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   // Initialize WinRT
   winrt::init_apartment(winrt::apartment_type::single_threaded);
 
+  if (KolamWindows::ConsumeKolamToastActivationAndYield()) {
+    return 0;
+  }
+
   // Enable per monitor DPI scaling
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
@@ -145,6 +150,7 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
     presenter.Maximize();
   }
   EnableKolamFileDrop();
+  KolamWindows::RegisterKolamAppNotifications();
 
   // Get the ReactViewOptions so we can set the initial RN component to load
   auto viewOptions{reactNativeWin32App.ReactViewOptions()};

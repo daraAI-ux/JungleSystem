@@ -18,6 +18,7 @@ import {useKolamAuthController} from '../hooks/use-kolam-auth-controller';
 import {useKolamCashflowController} from '../hooks/use-kolam-cashflow-controller';
 import {useKolamCashflowPreview} from '../hooks/use-kolam-cashflow-preview';
 import {useKolamChatNotificationHost} from '../hooks/use-kolam-chat-notification-host';
+import {useKolamWindowsToastActivation} from '../hooks/use-kolam-windows-toast-activation';
 import {useKolamCheckoutController} from '../hooks/use-kolam-checkout-controller';
 import {useKolamCustomerController} from '../hooks/use-kolam-customer-controller';
 import {useKolamNavigationController} from '../hooks/use-kolam-navigation-controller';
@@ -432,6 +433,28 @@ export function KolamAppStateProvider({
         : null,
     enabled: Boolean(authUser),
     visibleRailMode: activeChatRail,
+  });
+  const handleToastActivation = React.useCallback(
+    (activation: {stream: 'inbox' | 'team-chat'; targetId: string}) => {
+      const targetId = String(activation.targetId || '').trim();
+      const hasThread =
+        targetId &&
+        targetId !== 'unread-inbox' &&
+        targetId !== 'unread-team';
+
+      if (activation.stream === 'team-chat') {
+        setChatRailInitialSelectedId(hasThread ? targetId : null);
+        setActiveChatRail('team-chat');
+        return;
+      }
+
+      openInboxChatRail(hasThread ? targetId : undefined);
+    },
+    [openInboxChatRail],
+  );
+  useKolamWindowsToastActivation({
+    enabled: Boolean(authUser),
+    onActivate: handleToastActivation,
   });
   const notificationCenter = useKolamNotificationCenterController({
     enabled: Boolean(authUser),

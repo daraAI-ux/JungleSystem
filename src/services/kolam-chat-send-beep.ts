@@ -1,15 +1,13 @@
-import {Image, type ImageSourcePropType} from 'react-native';
+import {NativeModules, Platform} from 'react-native';
 
-import type {KolamNotificationSoundAdapter} from './kolam-notification-sound-service';
+import {
+  KOLAM_DEFAULT_NOTIFICATION_BEEP_URI,
+  type KolamNotificationSoundAdapter,
+} from './kolam-notification-sound-service';
 import {createKolamRuntimeNotificationSoundAdapter} from './kolam-notification-sound-runtime';
-
-declare const require: (moduleName: string) => unknown;
-
-const KOLAM_CHAT_SEND_BEEP_ASSET = require('../assets/sounds/chat-send-beep.wav') as ImageSourcePropType;
 
 export type KolamChatSendBeepOptions = {
   adapter?: KolamNotificationSoundAdapter;
-  resolveAssetSource?: typeof Image.resolveAssetSource;
   volume?: number;
 };
 
@@ -20,35 +18,45 @@ export type KolamChatSendBeepResult =
     }
   | {
       played: false;
-      reason: 'missing-uri' | 'playback-failed';
+      reason: 'playback-failed';
     };
+
+type KolamSendBeepNativeBridge = {
+  playNotificationSound?: (
+    uri: string,
+    options: {intent: string; volume: number},
+  ) => Promise<unknown> | unknown;
+};
 
 export async function playKolamChatSendBeep({
   adapter = createKolamRuntimeNotificationSoundAdapter(),
-  resolveAssetSource = Image.resolveAssetSource,
-  volume = 0.28,
+  volume = 0.5,
 }: KolamChatSendBeepOptions = {}): Promise<KolamChatSendBeepResult> {
-  const uri = resolveKolamChatSendBeepUri(resolveAssetSource);
-  if (!uri) {
-    return {played: false, reason: 'missing-uri'};
-  }
+  const uri = KOLAM_DEFAULT_NOTIFICATION_BEEP_URI;
+  const payload = {intent: 'assigned' as const, volume};
 
   try {
-    await adapter.play(uri, {
-      intent: 'assigned',
-      volume,
-    });
+    const native = getKolamSendBeepNativeBridge();
+    if (native?.playNotificationSound) {
+      await native.playNotificationSound(uri, payload);
+      return {played: true, uri};
+    }
+
+    await adapter.play(uri, payload);
     return {played: true, uri};
   } catch {
     return {played: false, reason: 'playback-failed'};
   }
 }
 
-export function resolveKolamChatSendBeepUri(
-  resolveAssetSource: typeof Image.resolveAssetSource = Image.resolveAssetSource,
-) {
-  const source = resolveAssetSource(KOLAM_CHAT_SEND_BEEP_ASSET);
-  return typeof source?.uri === 'string' && source.uri.trim()
-    ? source.uri
-    : null;
+function getKolamSendBeepNativeBridge(): KolamSendBeepNativeBridge | null {
+  if (Platform.OS !== 'windows') {
+    return null;
+  }
+
+  const bridge = (
+    NativeModules as Record<string, KolamSendBeepNativeBridge | undefined>
+  ).KolamWindowsNotificationSound;
+
+  return typeof bridge?.playNotificationSound === 'function' ? bridge : null;
 }

@@ -141,9 +141,20 @@
           "Microsoft.WindowsAppSDK.InteractiveExperiences": "1.8.260430001"
         }
       },
+      "clipboard": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.ReactNative": "[0.84.0, )",
+          "Microsoft.ReactNative.Cxx": "[0.84.0, )",
+          "Microsoft.VCRTForwarders.140": "[1.0.2-rc, )",
+          "Microsoft.WindowsAppSDK": "[1.8.260508005, )",
+          "boost": "[1.84.0, )"
+        }
+      },
       "kolamwindows": {
         "type": "Project",
         "dependencies": {
+          "Clipboard": "[1.0.0, )",
           "Microsoft.JavaScript.Hermes": "[0.0.0-2605.6002-2279da22, )",
           "Microsoft.ReactNative": "[0.84.0, )",
           "Microsoft.ReactNative.Cxx": "[0.84.0, )",
