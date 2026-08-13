@@ -70,10 +70,12 @@ export function KolamUnifiedOverviewPanel({
           </View>
         </View>
       ) : null}
-      <KolamUnifiedMetricsSection
-        context={context}
-        dashboardSections={dashboardSections}
-      />
+      {dashboardSections.isKolamDashboard ? null : (
+        <KolamUnifiedMetricsSection
+          context={context}
+          dashboardSections={dashboardSections}
+        />
+      )}
       <KolamUnifiedDashboardLayoutSection
         dashboardSections={dashboardSections}
         modulePanel={modulePanel}
