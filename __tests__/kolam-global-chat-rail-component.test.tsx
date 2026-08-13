@@ -2327,7 +2327,7 @@ describe('KolamGlobalChatRail', () => {
         'Lampirkan gambar inbox',
         'Buka emoji chat',
         'Buka template chat',
-        'Balas pesan Buyer',
+        'Aksi pesan Buyer',
       ]),
     );
     expect(labels).not.toEqual(
@@ -2639,6 +2639,14 @@ describe('KolamGlobalChatRail', () => {
       selectButton!.props.onPress();
     });
 
+    const actionButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Aksi pesan Buyer');
+
+    await ReactTestRenderer.act(async () => {
+      actionButton!.props.onPress();
+    });
+
     const replyButton = renderer!.root
       .findAllByType(KolamPressable)
       .find(node => node.props.accessibilityLabel === 'Balas pesan Buyer');
@@ -2735,6 +2743,11 @@ describe('KolamGlobalChatRail', () => {
         .findAllByType(KolamPressable)
         .some(node => node.props.accessibilityLabel === 'Balas pesan Buyer'),
     ).toBe(false);
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Aksi pesan Buyer'),
+    ).toBe(false);
   });
 
   it('edits only current staff outgoing inbox text messages', async () => {
@@ -2818,6 +2831,20 @@ describe('KolamGlobalChatRail', () => {
     expect(
       renderText(renderer!).some(text => text.includes('Diedit oleh Staff')),
     ).toBe(true);
+    expect(
+      renderer!.root
+        .findAllByType(KolamPressable)
+        .some(node => node.props.accessibilityLabel === 'Edit pesan Buyer'),
+    ).toBe(false);
+
+    const actionButton = renderer!.root
+      .findAllByType(KolamPressable)
+      .find(node => node.props.accessibilityLabel === 'Aksi pesan Staff');
+
+    await ReactTestRenderer.act(async () => {
+      actionButton!.props.onPress();
+    });
+
     expect(
       renderer!.root
         .findAllByType(KolamPressable)

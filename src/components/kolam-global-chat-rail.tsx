@@ -4958,10 +4958,10 @@ function KolamChatRailDetailPanel({
                           </View>
                         </View>
                       ) : (
-                        <>
-                          {mode === 'team-chat' ? (
-                            <View style={styles.teamMessageContentActionRow}>
-                              <View style={styles.teamMessageContentStack}>
+                        <View style={styles.teamMessageContentActionRow}>
+                          <View style={styles.teamMessageContentStack}>
+                            {mode === 'team-chat' ? (
+                              <>
                                 {getDaraStreamedMessageBody(
                                   message,
                                   daraStream,
@@ -4986,62 +4986,55 @@ function KolamChatRailDetailPanel({
                                 {message.embeds.length > 0 ? (
                                   <KolamChatEmbedList embeds={message.embeds} />
                                 ) : null}
-                              </View>
-                              <KolamChatReactionControls
-                                canEdit={canEdit}
-                                disabled={detail.sending}
+                              </>
+                            ) : message.body ||
+                              message.content ||
+                              message.replyContent ||
+                              message.daraMeta ? (
+                              <KolamInboxRichMessageContent
                                 message={message}
-                                onClose={() => setOpenTeamActionMessageId(null)}
-                                onEdit={() => handleStartEditMessage(message)}
-                                onReact={emoji =>
-                                  detail.reactToMessage(message.id, emoji)
-                                }
-                                onReply={() =>
-                                  onReplyToMessage({
-                                    author: message.author,
-                                    body: getTeamChatReplyTargetBody(message),
-                                    id: message.id,
-                                  })
-                                }
-                                onToggle={() =>
-                                  setOpenTeamActionMessageId(current =>
-                                    current === message.id ? null : message.id,
-                                  )
-                                }
-                                open={openTeamActionMessageId === message.id}
+                                platform={detail.conversation?.platform}
                               />
-                            </View>
-                          ) : message.body ||
-                            message.content ||
-                            message.replyContent ||
-                            message.daraMeta ? (
-                            <KolamInboxRichMessageContent
-                              message={message}
-                              platform={detail.conversation?.platform}
-                            />
-                          ) : null}
-                          {mode === 'inbox' && message.attachments.length > 0 ? (
-                            <KolamChatAttachmentList
-                              attachments={message.attachments}
-                            />
-                          ) : null}
-                          {mode === 'inbox' ? (
-                            <KolamInboxMessageActions
+                            ) : null}
+                            {mode === 'inbox' &&
+                            message.attachments.length > 0 ? (
+                              <KolamChatAttachmentList
+                                attachments={message.attachments}
+                              />
+                            ) : null}
+                          </View>
+                          {(canReply || canEdit || mode === 'team-chat') &&
+                          !isEditing ? (
+                            <KolamChatReactionControls
                               canEdit={canEdit}
+                              canReact={mode === 'team-chat'}
                               canReply={canReply}
                               disabled={detail.sending}
                               message={message}
+                              onClose={() => setOpenTeamActionMessageId(null)}
                               onEdit={() => handleStartEditMessage(message)}
+                              onReact={emoji =>
+                                detail.reactToMessage(message.id, emoji)
+                              }
                               onReply={() =>
                                 onReplyToMessage({
                                   author: message.author,
-                                  body: getInboxReplyTargetBody(message),
+                                  body:
+                                    mode === 'team-chat'
+                                      ? getTeamChatReplyTargetBody(message)
+                                      : getInboxReplyTargetBody(message),
                                   id: message.id,
                                 })
                               }
+                              onToggle={() =>
+                                setOpenTeamActionMessageId(current =>
+                                  current === message.id ? null : message.id,
+                                )
+                              }
+                              open={openTeamActionMessageId === message.id}
                             />
                           ) : null}
-                        </>
+                        </View>
                       )}
                     </View>
                   );
@@ -7298,60 +7291,10 @@ function KolamChatEmbedCard({ embed }: { embed: KolamTeamChatEmbed }) {
   );
 }
 
-function KolamInboxMessageActions({
-  canEdit,
-  canReply,
-  disabled,
-  message,
-  onEdit,
-  onReply,
-}: {
-  canEdit: boolean;
-  canReply: boolean;
-  disabled: boolean;
-  message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
-  onEdit: () => void;
-  onReply: () => void;
-}) {
-  if (!canEdit && !canReply) {
-    return null;
-  }
-
-  return (
-    <View style={styles.messageActionRow}>
-      {canReply ? (
-        <KolamPressable
-          accessibilityLabel={`Balas pesan ${message.author}`}
-          disabled={disabled}
-          onPress={onReply}
-          style={[
-            styles.replyActionButton,
-            disabled && styles.attachButtonDisabled,
-          ]}
-        >
-          <Text style={styles.replyActionText}>Balas</Text>
-        </KolamPressable>
-      ) : null}
-      {canEdit ? (
-        <KolamPressable
-          accessibilityLabel={`Edit pesan ${message.author}`}
-          disabled={disabled}
-          onPress={onEdit}
-          style={[
-            styles.replyActionButton,
-            styles.editActionButton,
-            disabled && styles.attachButtonDisabled,
-          ]}
-        >
-          <Text style={styles.replyActionText}>Edit</Text>
-        </KolamPressable>
-      ) : null}
-    </View>
-  );
-}
-
 function KolamChatReactionControls({
   canEdit,
+  canReact = true,
+  canReply = true,
   disabled,
   message,
   onClose,
@@ -7362,6 +7305,8 @@ function KolamChatReactionControls({
   open,
 }: {
   canEdit: boolean;
+  canReact?: boolean;
+  canReply?: boolean;
   disabled: boolean;
   message: ReturnType<typeof useKolamChatRailDetail>['messages'][number];
   onClose: () => void;
@@ -7371,6 +7316,10 @@ function KolamChatReactionControls({
   onToggle: () => void;
   open: boolean;
 }) {
+  if (!canReply && !canEdit && !canReact) {
+    return null;
+  }
+
   return (
     <View style={styles.reactionControls}>
       <View style={styles.teamBubbleActionRow}>
@@ -7390,66 +7339,72 @@ function KolamChatReactionControls({
 
         {open ? (
           <View style={styles.teamBubbleActionMenu}>
-            <View style={styles.reactionPalette}>
-              <KolamMappedList
-                items={TEAM_CHAT_REACTIONS}
-                getKey={emoji => emoji}
-                renderItem={emoji => (
+            {canReact ? (
+              <View style={styles.reactionPalette}>
+                <KolamMappedList
+                  items={TEAM_CHAT_REACTIONS}
+                  getKey={emoji => emoji}
+                  renderItem={emoji => (
+                    <KolamPressable
+                      accessibilityLabel={`Reaksi ${emoji}`}
+                      disabled={disabled}
+                      onPress={() => {
+                        onReact(emoji);
+                        onClose();
+                      }}
+                      style={[
+                        styles.reactionButton,
+                        disabled && styles.reactionButtonDisabled,
+                      ]}
+                    >
+                      <Text style={styles.reactionButtonText}>{emoji}</Text>
+                    </KolamPressable>
+                  )}
+                />
+              </View>
+            ) : null}
+            {canReply || canEdit ? (
+              <View style={styles.messageActionRow}>
+                {canReply ? (
                   <KolamPressable
-                    accessibilityLabel={`Reaksi ${emoji}`}
+                    accessibilityLabel={`Balas pesan ${message.author}`}
                     disabled={disabled}
                     onPress={() => {
-                      onReact(emoji);
+                      onReply();
                       onClose();
                     }}
                     style={[
-                      styles.reactionButton,
-                      disabled && styles.reactionButtonDisabled,
+                      styles.replyActionButton,
+                      disabled && styles.attachButtonDisabled,
                     ]}
                   >
-                    <Text style={styles.reactionButtonText}>{emoji}</Text>
+                    <Text style={styles.replyActionText}>Balas</Text>
                   </KolamPressable>
-                )}
-              />
-            </View>
-            <View style={styles.messageActionRow}>
-              <KolamPressable
-                accessibilityLabel={`Balas pesan ${message.author}`}
-                disabled={disabled}
-                onPress={() => {
-                  onReply();
-                  onClose();
-                }}
-                style={[
-                  styles.replyActionButton,
-                  disabled && styles.attachButtonDisabled,
-                ]}
-              >
-                <Text style={styles.replyActionText}>Balas</Text>
-              </KolamPressable>
-              {canEdit ? (
-                <KolamPressable
-                  accessibilityLabel={`Edit pesan ${message.author}`}
-                  disabled={disabled}
-                  onPress={() => {
-                    onEdit();
-                    onClose();
-                  }}
-                  style={[
-                    styles.replyActionButton,
-                    styles.editActionButton,
-                    disabled && styles.attachButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.replyActionText}>Edit</Text>
-                </KolamPressable>
-              ) : null}
-            </View>
+                ) : null}
+                {canEdit ? (
+                  <KolamPressable
+                    accessibilityLabel={`Edit pesan ${message.author}`}
+                    disabled={disabled}
+                    onPress={() => {
+                      onEdit();
+                      onClose();
+                    }}
+                    style={[
+                      styles.replyActionButton,
+                      styles.editActionButton,
+                      disabled && styles.attachButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.replyActionText}>Edit</Text>
+                  </KolamPressable>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         ) : null}
       </View>
 
-      {message.reactions.length > 0 ? (
+      {canReact && message.reactions.length > 0 ? (
         <View style={styles.reactionPills}>
           <KolamMappedList
             items={message.reactions}
