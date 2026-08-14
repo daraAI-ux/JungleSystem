@@ -17,7 +17,6 @@ export function KolamSettingsRoleTabList({
       items={items}
       getItem={tab => ({
         count: tab.permissionCount,
-        flag: tab.fullAccess ? 'Full' : undefined,
         id: tab.id,
         label: tab.label,
       })}
