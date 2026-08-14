@@ -1,9 +1,10 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {
   getKolamTeamChatCallStartedById,
   isKolamTeamChatCallRingingForMe,
   pickPrimaryKolamTeamChatCall,
   secondsUntilKolamTeamChatCallRing,
+  withKolamTeamChatCallMyParticipantStatus,
 } from '../domain/kolam-team-chat-call';
 import {
   declineKolamTeamChatCall,
@@ -13,7 +14,10 @@ import {
   joinKolamTeamChatCall,
   type KolamTeamChatCall,
 } from '../services/kolam-api';
-import {createKolamGroupCallRingtoneController} from '../services/kolam-group-call-ringtone';
+import {
+  getSharedKolamGroupCallRingtoneController,
+  stopSharedKolamGroupCallRingtone,
+} from '../services/kolam-group-call-ringtone';
 import {
   type KolamChatLiveEvent,
   useKolamChatLiveStream,
@@ -66,7 +70,7 @@ export function useKolamTeamChatGroupCallGate({
   >();
   const [, setTick] = useState(0);
   const liveCallRef = useRef<KolamTeamChatCall | null>(null);
-  const ringtone = useMemo(() => createKolamGroupCallRingtoneController(), []);
+  const ringtone = getSharedKolamGroupCallRingtoneController();
   const soundSettings = useKolamNotificationSoundSettings({
     enabled: Boolean(enabled && userId),
   });
@@ -88,6 +92,7 @@ export function useKolamTeamChatGroupCallGate({
   const mergeCall = useCallback((call: KolamTeamChatCall | null | undefined) => {
     if (!call || call.status === 'ended') {
       setLiveCall(null);
+      stopSharedKolamGroupCallRingtone();
       return;
     }
     setLiveCall(call);
@@ -97,7 +102,7 @@ export function useKolamTeamChatGroupCallGate({
     if (!enabled || !userId) {
       setFeatureEnabled(false);
       setLiveCall(null);
-      ringtone.stop();
+      stopSharedKolamGroupCallRingtone();
       return;
     }
 
@@ -112,7 +117,7 @@ export function useKolamTeamChatGroupCallGate({
       );
       if (!nextEnabled) {
         setLiveCall(null);
-        ringtone.stop();
+        stopSharedKolamGroupCallRingtone();
         return;
       }
 
@@ -121,7 +126,7 @@ export function useKolamTeamChatGroupCallGate({
     } catch {
       // Best-effort; keep last known live call.
     }
-  }, [enabled, mergeCall, ringtone, userId]);
+  }, [enabled, mergeCall, userId]);
 
   useEffect(() => {
     void refreshMyCalls();
@@ -146,6 +151,7 @@ export function useKolamTeamChatGroupCallGate({
       if (event.contract.eventName === 'call.updated') {
         const {call} = readLiveCallPayload(event.payload);
         if (!call) {
+          void refreshMyCalls();
           return;
         }
         mergeCall(call);
@@ -169,6 +175,7 @@ export function useKolamTeamChatGroupCallGate({
     }
 
     const id = setInterval(() => setTick(tick => tick + 1), 1000);
+    (id as {unref?: () => void}).unref?.();
     return () => clearInterval(id);
   }, [liveCall?._id, liveCall?.status]);
 
@@ -176,24 +183,27 @@ export function useKolamTeamChatGroupCallGate({
 
   useEffect(() => {
     if (!enabled || !featureEnabled || !ringingMe) {
-      ringtone.stop();
+      stopSharedKolamGroupCallRingtone();
       return;
     }
 
     ringtone.start();
     return () => {
-      ringtone.stop();
+      stopSharedKolamGroupCallRingtone();
     };
   }, [enabled, featureEnabled, ringingMe, ringtone]);
 
   useEffect(() => {
     return () => {
-      ringtone.stop();
+      stopSharedKolamGroupCallRingtone();
     };
-  }, [ringtone]);
+  }, []);
 
   const runAction = useCallback(
-    async (action: () => Promise<KolamTeamChatCall>) => {
+    async (
+      action: () => Promise<KolamTeamChatCall>,
+      options?: {forceMyStatus?: 'joined' | 'declined'},
+    ) => {
       if (busy) {
         return;
       }
@@ -201,7 +211,16 @@ export function useKolamTeamChatGroupCallGate({
       setBusy(true);
       setErrorMessage(undefined);
       try {
-        const call = await action();
+        let call = await action();
+        if (options?.forceMyStatus && userId) {
+          call =
+            withKolamTeamChatCallMyParticipantStatus(
+              call,
+              userId,
+              options.forceMyStatus,
+            ) ?? call;
+        }
+        stopSharedKolamGroupCallRingtone();
         mergeCall(call.status === 'ended' ? null : call);
       } catch (error) {
         setErrorMessage(
@@ -211,32 +230,36 @@ export function useKolamTeamChatGroupCallGate({
         setBusy(false);
       }
     },
-    [busy, mergeCall],
+    [busy, mergeCall, userId],
   );
 
   const joinCall = useCallback(async () => {
     if (!liveCall) {
       return;
     }
-    ringtone.stop();
-    await runAction(() => joinKolamTeamChatCall(liveCall._id));
-  }, [liveCall, ringtone, runAction]);
+    stopSharedKolamGroupCallRingtone();
+    await runAction(() => joinKolamTeamChatCall(liveCall._id), {
+      forceMyStatus: 'joined',
+    });
+  }, [liveCall, runAction]);
 
   const declineCall = useCallback(async () => {
     if (!liveCall) {
       return;
     }
-    ringtone.stop();
-    await runAction(() => declineKolamTeamChatCall(liveCall._id));
-  }, [liveCall, ringtone, runAction]);
+    stopSharedKolamGroupCallRingtone();
+    await runAction(() => declineKolamTeamChatCall(liveCall._id), {
+      forceMyStatus: 'declined',
+    });
+  }, [liveCall, runAction]);
 
   const endCall = useCallback(async () => {
     if (!liveCall) {
       return;
     }
-    ringtone.stop();
+    stopSharedKolamGroupCallRingtone();
     await runAction(() => endKolamTeamChatCall(liveCall._id));
-  }, [liveCall, ringtone, runAction]);
+  }, [liveCall, runAction]);
 
   const countdown = liveCall?.ringExpiresAt
     ? secondsUntilKolamTeamChatCallRing(liveCall.ringExpiresAt)

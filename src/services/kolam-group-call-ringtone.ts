@@ -3,25 +3,38 @@ import {
   type KolamNotificationSoundServiceOptions,
 } from './kolam-notification-sound-service';
 import type {KolamWebSetting} from './kolam-api';
-import {createKolamRuntimeNotificationSoundAdapter} from './kolam-notification-sound-runtime';
+import {
+  createKolamRuntimeNotificationSoundAdapter,
+  stopKolamRuntimeNotificationSound,
+} from './kolam-notification-sound-runtime';
 
 export type KolamGroupCallRingtoneWebSetting = Pick<
   KolamWebSetting,
   'groupCallRingtone'
 > | null;
 
+type KolamGroupCallRingtonePlayer = {
+  play: (
+    request: Parameters<
+      ReturnType<typeof createKolamNotificationSoundService>['play']
+    >[0],
+  ) => Promise<unknown>;
+};
+
 const RING_INTERVAL_MS = 2_400;
 
 /**
  * SoT `playGroupCallRingtone` / `stopGroupCallRingtone` — loop while invitee is ringing.
- * Native MediaPlayer is one-shot; we re-trigger on an interval (no native rebuild).
+ * Native MediaPlayer is one-shot; we re-trigger on an interval (no native rebuild for loop).
+ * `stop()` must also halt in-flight native playback (needs rebuilt Windows bridge).
  */
 export function createKolamGroupCallRingtoneController(
   options: {
     createSoundService?: (
       serviceOptions?: KolamNotificationSoundServiceOptions,
-    ) => ReturnType<typeof createKolamNotificationSoundService>;
+    ) => KolamGroupCallRingtonePlayer;
     intervalMs?: number;
+    stopPlayback?: () => Promise<void> | void;
   } = {},
 ) {
   const soundService = (
@@ -33,11 +46,19 @@ export function createKolamGroupCallRingtoneController(
       }))
   )({cooldownMs: 0});
 
+  const stopPlayback =
+    options.stopPlayback ?? (() => stopKolamRuntimeNotificationSound());
+
   let timer: ReturnType<typeof setInterval> | null = null;
+  let generation = 0;
   let webSetting: KolamGroupCallRingtoneWebSetting = null;
   let ringtonePath: string | undefined;
 
-  const playOnce = () => {
+  const playOnce = (playGeneration: number) => {
+    if (playGeneration !== generation) {
+      return;
+    }
+
     Promise.resolve(
       soundService.play({
         bypassCooldown: true,
@@ -66,17 +87,36 @@ export function createKolamGroupCallRingtoneController(
       if (timer) {
         return;
       }
-      playOnce();
-      timer = setInterval(playOnce, options.intervalMs ?? RING_INTERVAL_MS);
+      const playGeneration = generation;
+      playOnce(playGeneration);
+      timer = setInterval(() => playOnce(playGeneration), options.intervalMs ?? RING_INTERVAL_MS);
     },
     stop() {
+      generation += 1;
       if (timer) {
         clearInterval(timer);
         timer = null;
       }
+      Promise.resolve(stopPlayback()).catch(() => undefined);
     },
     get isRunning() {
       return timer != null;
     },
   };
+}
+
+let sharedRingtoneController: ReturnType<
+  typeof createKolamGroupCallRingtoneController
+> | null = null;
+
+/** Process-wide controller so rail Join and gate overlay share one ringtone. */
+export function getSharedKolamGroupCallRingtoneController() {
+  if (!sharedRingtoneController) {
+    sharedRingtoneController = createKolamGroupCallRingtoneController();
+  }
+  return sharedRingtoneController;
+}
+
+export function stopSharedKolamGroupCallRingtone() {
+  getSharedKolamGroupCallRingtoneController().stop();
 }

@@ -21,6 +21,10 @@ struct KolamWindowsNotificationSound {
       ::React::JSValueObject options,
       ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
 
+  REACT_METHOD(stopNotificationSound)
+  void stopNotificationSound(
+      ::React::ReactPromise<::React::JSValueObject> &&result) noexcept;
+
  private:
   winrt::Microsoft::ReactNative::ReactContext m_context;
 };

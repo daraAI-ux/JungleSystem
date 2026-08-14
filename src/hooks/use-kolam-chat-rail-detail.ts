@@ -66,8 +66,10 @@ import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bo
 import {
   formatKolamTeamChatCallHandoverNotice,
   getKolamTeamChatCallParticipantUserId,
+  withKolamTeamChatCallMyParticipantStatus,
 } from '../domain/kolam-team-chat-call';
 import { copyTextToClipboard } from '../lib/native-clipboard';
+import { stopSharedKolamGroupCallRingtone } from '../services/kolam-group-call-ringtone';
 
 const EMPTY_TEAM_CHAT_PRESENCE: KolamTeamChatPresence = {
   onlineCount: 0,
@@ -1043,22 +1045,45 @@ export function useKolamChatRailDetail({
       return;
     }
 
-    await runCallAction(() => joinKolamTeamChatCall(activeCall._id));
-  }, [activeCall, runCallAction]);
+    stopSharedKolamGroupCallRingtone();
+    await runCallAction(async () => {
+      const call = await joinKolamTeamChatCall(activeCall._id);
+      stopSharedKolamGroupCallRingtone();
+      return (
+        withKolamTeamChatCallMyParticipantStatus(
+          call,
+          currentUserId,
+          'joined',
+        ) ?? call
+      );
+    });
+  }, [activeCall, currentUserId, runCallAction]);
 
   const declineCall = useCallback(async () => {
     if (!activeCall) {
       return;
     }
 
-    await runCallAction(() => declineKolamTeamChatCall(activeCall._id));
-  }, [activeCall, runCallAction]);
+    stopSharedKolamGroupCallRingtone();
+    await runCallAction(async () => {
+      const call = await declineKolamTeamChatCall(activeCall._id);
+      stopSharedKolamGroupCallRingtone();
+      return (
+        withKolamTeamChatCallMyParticipantStatus(
+          call,
+          currentUserId,
+          'declined',
+        ) ?? call
+      );
+    });
+  }, [activeCall, currentUserId, runCallAction]);
 
   const endCall = useCallback(async () => {
     if (!activeCall) {
       return;
     }
 
+    stopSharedKolamGroupCallRingtone();
     await runCallAction(() => endKolamTeamChatCall(activeCall._id));
   }, [activeCall, runCallAction]);
 

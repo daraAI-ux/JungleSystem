@@ -7,6 +7,7 @@ import {
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
   pickPrimaryKolamTeamChatCall,
+  withKolamTeamChatCallMyParticipantStatus,
 } from '../src/domain/kolam-team-chat-call';
 import type {KolamTeamChatCall} from '../src/services/kolam-api';
 
@@ -138,5 +139,16 @@ describe('kolam-team-chat-call domain', () => {
     expect(formatKolamTeamChatCallHandoverNotice('abcdefghijklmnop')).toBe(
       'Handover token: abcdefghijkl…',
     );
+  });
+
+  it('forces local participant status after join so ringing stops', () => {
+    const call: KolamTeamChatCall = {
+      _id: 'c-1',
+      participants: [{status: 'ringing', userId: 'me'}],
+      status: 'ringing',
+    };
+    const joined = withKolamTeamChatCallMyParticipantStatus(call, 'me', 'joined');
+    expect(isKolamTeamChatCallRingingForMe(joined, 'me')).toBe(false);
+    expect(joined?.participants?.[0]?.status).toBe('joined');
   });
 });

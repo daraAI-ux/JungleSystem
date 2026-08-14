@@ -201,3 +201,29 @@ export function formatKolamTeamChatCallHandoverNotice(token: string): string {
 
   return `Handover token: ${trimmed.slice(0, 12)}…`;
 }
+
+/** After local join/decline, force participant status so ringtone gating updates immediately. */
+export function withKolamTeamChatCallMyParticipantStatus(
+  call: KolamTeamChatCall | null | undefined,
+  userId: string | null | undefined,
+  status: KolamTeamChatCallParticipant['status'],
+): KolamTeamChatCall | null {
+  if (!call || !userId) {
+    return call ?? null;
+  }
+
+  const participants = Array.isArray(call.participants)
+    ? [...call.participants]
+    : [];
+  const index = participants.findIndex(
+    participant => getKolamTeamChatCallParticipantUserId(participant) === userId,
+  );
+
+  if (index >= 0) {
+    participants[index] = {...participants[index], status};
+  } else {
+    participants.push({status, userId});
+  }
+
+  return {...call, participants};
+}

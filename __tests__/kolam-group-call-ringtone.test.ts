@@ -1,4 +1,7 @@
-import {createKolamGroupCallRingtoneController} from '../src/services/kolam-group-call-ringtone';
+import {
+  createKolamGroupCallRingtoneController,
+  stopSharedKolamGroupCallRingtone,
+} from '../src/services/kolam-group-call-ringtone';
 
 describe('kolam group call ringtone controller', () => {
   beforeEach(() => {
@@ -6,14 +9,21 @@ describe('kolam group call ringtone controller', () => {
   });
 
   afterEach(() => {
+    stopSharedKolamGroupCallRingtone();
     jest.useRealTimers();
   });
 
   it('loops group-call playback while started and stops cleanly', async () => {
-    const play = jest.fn().mockResolvedValue({played: true, intent: 'group-call', uri: 'x'});
+    const play = jest.fn().mockResolvedValue({
+      played: true,
+      intent: 'group-call',
+      uri: 'x',
+    });
+    const stopPlayback = jest.fn().mockResolvedValue(undefined);
     const controller = createKolamGroupCallRingtoneController({
       createSoundService: () => ({play}),
       intervalMs: 1000,
+      stopPlayback,
     });
 
     controller.setRingtonePath('/media/ring.wav');
@@ -31,6 +41,7 @@ describe('kolam group call ringtone controller', () => {
     expect(play).toHaveBeenCalledTimes(2);
 
     controller.stop();
+    expect(stopPlayback).toHaveBeenCalled();
     await jest.advanceTimersByTimeAsync(2000);
     expect(play).toHaveBeenCalledTimes(2);
   });

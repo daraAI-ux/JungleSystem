@@ -30,6 +30,10 @@ export type KolamNotificationSoundNativeBridge = {
     | Promise<KolamNotificationSoundNativeResult | void>
     | KolamNotificationSoundNativeResult
     | void;
+  stopNotificationSound?: () =>
+    | Promise<KolamNotificationSoundNativeResult | void>
+    | KolamNotificationSoundNativeResult
+    | void;
 };
 
 export type KolamNotificationSoundNativePayload = {
@@ -39,6 +43,7 @@ export type KolamNotificationSoundNativePayload = {
 
 export type KolamRuntimeAudioElement = {
   currentTime?: number;
+  pause?: () => void;
   play: () => Promise<void> | void;
   volume?: number;
 };
@@ -67,6 +72,19 @@ export function createKolamRuntimeNotificationSoundAdapter(
       }
     },
   };
+}
+
+export async function stopKolamRuntimeNotificationSound(
+  options: KolamRuntimeNotificationSoundAdapterOptions = {},
+): Promise<KolamNotificationSoundRuntimePath | 'noop'> {
+  const nativeBridge = getKolamNotificationSoundNativeBridge(options);
+  if (nativeBridge?.stopNotificationSound) {
+    await nativeBridge.stopNotificationSound();
+    return 'native-windows';
+  }
+
+  // Without rebuilt native stop, replace active MediaPlayer by pausing web Audio only.
+  return 'noop';
 }
 
 export async function playKolamRuntimeNotificationSound(
@@ -128,7 +146,8 @@ export function getKolamNotificationSoundNativeBridge({
 
   if (
     typeof bridge?.playNotificationSound === 'function' ||
-    typeof bridge?.playSound === 'function'
+    typeof bridge?.playSound === 'function' ||
+    typeof bridge?.stopNotificationSound === 'function'
   ) {
     return bridge;
   }

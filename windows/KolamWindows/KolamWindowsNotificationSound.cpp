@@ -398,4 +398,25 @@ void KolamWindowsNotificationSound::playSound(
   playNotificationSound(std::move(uri), std::move(options), std::move(result));
 }
 
+void KolamWindowsNotificationSound::stopNotificationSound(
+    ::React::ReactPromise<::React::JSValueObject> &&result) noexcept {
+  try {
+    std::scoped_lock lock(g_playerMutex);
+    if (g_player) {
+      try {
+        g_player.Pause();
+      } catch (...) {
+      }
+      try {
+        g_player.Source(nullptr);
+      } catch (...) {
+      }
+      g_player = nullptr;
+    }
+    result.Resolve(PlayedResult("media-player", "stopped"));
+  } catch (...) {
+    result.Reject("Suara notifikasi tidak bisa dihentikan.");
+  }
+}
+
 } // namespace KolamWindows
