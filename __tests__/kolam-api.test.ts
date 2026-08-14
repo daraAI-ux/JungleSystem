@@ -46,6 +46,7 @@ import {
   getKolamMyActiveTeamChatCalls,
   getKolamRoomActiveTeamChatCall,
   getKolamTeamChatCallConfig,
+  getKolamTeamChatCallMediaToken,
   getKolamTeamChatMembers,
   getKolamTeamChatMessages,
   getKolamUserPickerRows,
@@ -1696,7 +1697,19 @@ describe('Kolam Settings API contracts', () => {
   it('maps team chat call endpoints', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        jsonResponse({success: true, data: {enabled: true, groupCallRingtone: 'bell'}}),
+        jsonResponse({
+          success: true,
+          data: {
+            enabled: true,
+            groupCallRingtone: 'bell',
+            media: {
+              enabled: true,
+              url: 'wss://lk.example',
+              maxParticipants: 8,
+              audioOnly: true,
+            },
+          },
+        }),
       )
       .mockResolvedValueOnce(
         jsonResponse({success: true, data: [{_id: 'call-1', status: 'active'}]}),
@@ -1741,9 +1754,30 @@ describe('Kolam Settings API contracts', () => {
             platform: 'google-meet',
           },
         }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: {
+            url: 'wss://lk.example',
+            token: 'jwt-1',
+            roomName: 'tc-call-call-2',
+            identity: 'user-1',
+            expiresAt: '2026-08-14T12:02:00.000Z',
+          },
+        }),
       );
 
-    await expect(getKolamTeamChatCallConfig()).resolves.toMatchObject({enabled: true});
+    await expect(getKolamTeamChatCallConfig()).resolves.toMatchObject({
+      enabled: true,
+      groupCallRingtone: 'bell',
+      media: {
+        enabled: true,
+        url: 'wss://lk.example',
+        maxParticipants: 8,
+        audioOnly: true,
+      },
+    });
     await expect(getKolamMyActiveTeamChatCalls()).resolves.toEqual([
       expect.objectContaining({_id: 'call-1'}),
     ]);
@@ -1781,6 +1815,12 @@ describe('Kolam Settings API contracts', () => {
       call: {_id: 'call-2', status: 'active'},
       handoverToken: 'token-abc-123456',
       platform: 'google-meet',
+    });
+    await expect(getKolamTeamChatCallMediaToken('call-2')).resolves.toMatchObject({
+      url: 'wss://lk.example',
+      token: 'jwt-1',
+      roomName: 'tc-call-call-2',
+      identity: 'user-1',
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -1820,6 +1860,11 @@ describe('Kolam Settings API contracts', () => {
         method: 'POST',
         body: JSON.stringify({platform: 'google-meet'}),
       }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      14,
+      `${appConfig.kolamApiBaseUrl}/team-chat/calls/call-2/media-token`,
+      expect.objectContaining({method: 'POST'}),
     );
   });
 

@@ -66,6 +66,7 @@ import { resolveKolamTeamChatBotDisplayName } from '../domain/kolam-team-chat-bo
 import {
   formatKolamTeamChatCallHandoverNotice,
   getKolamTeamChatCallParticipantUserId,
+  isKolamTeamChatCallMediaReady,
   withKolamTeamChatCallMyParticipantStatus,
 } from '../domain/kolam-team-chat-call';
 import { copyTextToClipboard } from '../lib/native-clipboard';
@@ -136,6 +137,8 @@ export interface KolamChatRailDetailState {
   assignInboxToMe: (handoverNote?: string) => Promise<void>;
   callBusy: boolean;
   callConfig: KolamTeamChatCallConfig;
+  /** LiveKit ready — native bridge may connect; never request media-token if false. */
+  mediaReady: boolean;
   callErrorMessage?: string;
   callNoticeMessage?: string;
   conversation: KolamChatConversation | null;
@@ -1171,6 +1174,7 @@ export function useKolamChatRailDetail({
     callBusy,
     callConfig,
     callErrorMessage,
+    mediaReady: isKolamTeamChatCallMediaReady(callConfig),
     callNoticeMessage,
     conversation,
     clearTeamMessageSearch,

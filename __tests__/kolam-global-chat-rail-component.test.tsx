@@ -284,6 +284,7 @@ function getDefaultDetailMock() {
     assignInboxToMe: jest.fn(),
     callBusy: false,
     callConfig: {enabled: false},
+    mediaReady: false,
     conversation: null,
     declineCall: jest.fn(),
     editMessage: jest.fn(),

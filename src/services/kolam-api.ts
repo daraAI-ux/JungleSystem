@@ -516,9 +516,26 @@ export interface KolamTeamChatCallHandoverResult {
   platform?: string;
 }
 
+export interface KolamTeamChatCallMediaConfig {
+  enabled: boolean;
+  url?: string;
+  maxParticipants?: number;
+  audioOnly?: boolean;
+}
+
 export interface KolamTeamChatCallConfig {
   enabled: boolean;
   groupCallRingtone?: string;
+  media?: KolamTeamChatCallMediaConfig;
+}
+
+/** LiveKit self-host token — only after participant status `joined`. */
+export interface KolamTeamChatCallMediaToken {
+  url: string;
+  token: string;
+  roomName: string;
+  identity: string;
+  expiresAt: string;
 }
 
 export interface KolamChatAnalyticsParams {
@@ -2762,7 +2779,21 @@ export async function getKolamTeamChatCallConfig(): Promise<KolamTeamChatCallCon
     DataResponse<KolamTeamChatCallConfig> | KolamTeamChatCallConfig
   >('/team-chat/calls/config');
 
-  return unwrapData(response);
+  return normalizeKolamTeamChatCallConfig(unwrapData(response));
+}
+
+/**
+ * LiveKit media JWT. Call only when `isKolamTeamChatCallMediaReady(config)`
+ * and local participant status is `joined` — otherwise BE returns 503/403.
+ */
+export async function getKolamTeamChatCallMediaToken(
+  callId: string,
+): Promise<KolamTeamChatCallMediaToken> {
+  const response = await kolamPost<
+    DataResponse<KolamTeamChatCallMediaToken> | KolamTeamChatCallMediaToken
+  >(`/team-chat/calls/${encodeURIComponent(callId)}/media-token`, {});
+
+  return normalizeKolamTeamChatCallMediaToken(unwrapData(response));
 }
 
 export async function getKolamMyActiveTeamChatCalls(): Promise<
@@ -3024,6 +3055,51 @@ function normalizeKolamTeamChatMembersPayload(
     bots: Array.isArray(payload?.bots) ? payload.bots : [],
     daraReplyEnabled: payload?.daraReplyEnabled !== false,
     canManageAiRoomAccess: payload?.canManageAiRoomAccess === true,
+  };
+}
+
+function normalizeKolamTeamChatCallConfig(
+  payload: KolamTeamChatCallConfig | null | undefined,
+): KolamTeamChatCallConfig {
+  const mediaRaw =
+    payload?.media && typeof payload.media === 'object'
+      ? payload.media
+      : null;
+  const mediaUrl =
+    typeof mediaRaw?.url === 'string' && mediaRaw.url.trim()
+      ? mediaRaw.url.trim()
+      : undefined;
+
+  return {
+    enabled: payload?.enabled === true,
+    groupCallRingtone:
+      typeof payload?.groupCallRingtone === 'string'
+        ? payload.groupCallRingtone
+        : undefined,
+    media: mediaRaw
+      ? {
+          enabled: mediaRaw.enabled === true,
+          url: mediaUrl,
+          maxParticipants:
+            typeof mediaRaw.maxParticipants === 'number' &&
+            Number.isFinite(mediaRaw.maxParticipants)
+              ? mediaRaw.maxParticipants
+              : 8,
+          audioOnly: mediaRaw.audioOnly !== false,
+        }
+      : undefined,
+  };
+}
+
+function normalizeKolamTeamChatCallMediaToken(
+  payload: KolamTeamChatCallMediaToken | null | undefined,
+): KolamTeamChatCallMediaToken {
+  return {
+    url: typeof payload?.url === 'string' ? payload.url.trim() : '',
+    token: typeof payload?.token === 'string' ? payload.token : '',
+    roomName: typeof payload?.roomName === 'string' ? payload.roomName : '',
+    identity: typeof payload?.identity === 'string' ? payload.identity : '',
+    expiresAt: typeof payload?.expiresAt === 'string' ? payload.expiresAt : '',
   };
 }
 

@@ -1,8 +1,41 @@
 import type {
   KolamTeamChatCall,
+  KolamTeamChatCallConfig,
   KolamTeamChatCallParticipant,
   KolamTeamChatUserRef,
 } from '../services/kolam-api';
+
+/** Signaling on + LiveKit media configured — safe to request media-token. */
+export function isKolamTeamChatCallMediaReady(
+  config: KolamTeamChatCallConfig | null | undefined,
+): boolean {
+  if (config?.enabled !== true || config.media?.enabled !== true) {
+    return false;
+  }
+
+  const url = config.media.url;
+  return typeof url === 'string' && url.trim().length > 0;
+}
+
+/**
+ * Client must not call POST .../media-token when media is off (BE returns 503)
+ * or when local participant is not yet `joined` (BE returns 403).
+ */
+export function canRequestKolamTeamChatCallMediaToken({
+  call,
+  config,
+  userId,
+}: {
+  call: KolamTeamChatCall | null | undefined;
+  config: KolamTeamChatCallConfig | null | undefined;
+  userId?: string | null;
+}): boolean {
+  if (!isKolamTeamChatCallMediaReady(config)) {
+    return false;
+  }
+
+  return getKolamTeamChatCallMyParticipantStatus(call, userId) === 'joined';
+}
 
 export function getKolamTeamChatCallParticipantUserId(
   participant: KolamTeamChatCallParticipant | null | undefined,

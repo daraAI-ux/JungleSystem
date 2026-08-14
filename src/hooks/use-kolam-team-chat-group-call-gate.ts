@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {
   getKolamTeamChatCallStartedById,
+  isKolamTeamChatCallMediaReady,
   isKolamTeamChatCallRingingForMe,
   pickPrimaryKolamTeamChatCall,
   secondsUntilKolamTeamChatCallRing,
@@ -13,6 +14,7 @@ import {
   getKolamTeamChatCallConfig,
   joinKolamTeamChatCall,
   type KolamTeamChatCall,
+  type KolamTeamChatCallConfig,
 } from '../services/kolam-api';
 import {
   getSharedKolamGroupCallRingtoneController,
@@ -62,6 +64,9 @@ export function useKolamTeamChatGroupCallGate({
   userId?: string | null;
 }) {
   const [featureEnabled, setFeatureEnabled] = useState(false);
+  const [callConfig, setCallConfig] = useState<KolamTeamChatCallConfig>({
+    enabled: false,
+  });
   const [liveCall, setLiveCall] = useState<KolamTeamChatCall | null>(null);
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
@@ -101,6 +106,7 @@ export function useKolamTeamChatGroupCallGate({
   const refreshMyCalls = useCallback(async () => {
     if (!enabled || !userId) {
       setFeatureEnabled(false);
+      setCallConfig({enabled: false});
       setLiveCall(null);
       stopSharedKolamGroupCallRingtone();
       return;
@@ -109,6 +115,7 @@ export function useKolamTeamChatGroupCallGate({
     try {
       const config = await getKolamTeamChatCallConfig();
       const nextEnabled = config.enabled === true;
+      setCallConfig(config);
       setFeatureEnabled(nextEnabled);
       setGroupCallRingtone(
         typeof config.groupCallRingtone === 'string'
@@ -277,6 +284,7 @@ export function useKolamTeamChatGroupCallGate({
 
   return {
     busy,
+    callConfig,
     canEnd,
     countdown,
     declineCall,
@@ -285,6 +293,8 @@ export function useKolamTeamChatGroupCallGate({
     featureEnabled,
     joinCall,
     liveCall: liveCall && liveCall.status !== 'ended' ? liveCall : null,
+    /** LiveKit ready — native bridge (Batch B) may connect; do not call media-token if false. */
+    mediaReady: isKolamTeamChatCallMediaReady(callConfig),
     online,
     ringingMe,
   };

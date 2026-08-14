@@ -1,9 +1,11 @@
 import {
   canManageKolamTeamChatCall,
   canMuteKolamTeamChatCallParticipants,
+  canRequestKolamTeamChatCallMediaToken,
   formatKolamTeamChatCallHandoverNotice,
   formatKolamTeamChatCallOnlineLabel,
   getKolamTeamChatCallParticipantUserId,
+  isKolamTeamChatCallMediaReady,
   isKolamTeamChatCallParticipantMuted,
   isKolamTeamChatCallRingingForMe,
   pickPrimaryKolamTeamChatCall,
@@ -150,5 +152,57 @@ describe('kolam-team-chat-call domain', () => {
     const joined = withKolamTeamChatCallMyParticipantStatus(call, 'me', 'joined');
     expect(isKolamTeamChatCallRingingForMe(joined, 'me')).toBe(false);
     expect(joined?.participants?.[0]?.status).toBe('joined');
+  });
+
+  it('gates LiveKit media-token on config.media and joined status', () => {
+    expect(
+      isKolamTeamChatCallMediaReady({
+        enabled: true,
+        media: {enabled: false, url: 'wss://lk.example'},
+      }),
+    ).toBe(false);
+    expect(
+      isKolamTeamChatCallMediaReady({
+        enabled: true,
+        media: {enabled: true, url: 'wss://lk.example'},
+      }),
+    ).toBe(true);
+
+    const joined: KolamTeamChatCall = {
+      _id: 'c-1',
+      participants: [{status: 'joined', userId: 'me'}],
+      status: 'active',
+    };
+    const ringing: KolamTeamChatCall = {
+      _id: 'c-1',
+      participants: [{status: 'ringing', userId: 'me'}],
+      status: 'ringing',
+    };
+    const readyConfig = {
+      enabled: true,
+      media: {enabled: true, url: 'wss://lk.example', maxParticipants: 8, audioOnly: true},
+    };
+
+    expect(
+      canRequestKolamTeamChatCallMediaToken({
+        call: joined,
+        config: readyConfig,
+        userId: 'me',
+      }),
+    ).toBe(true);
+    expect(
+      canRequestKolamTeamChatCallMediaToken({
+        call: ringing,
+        config: readyConfig,
+        userId: 'me',
+      }),
+    ).toBe(false);
+    expect(
+      canRequestKolamTeamChatCallMediaToken({
+        call: joined,
+        config: {enabled: true, media: {enabled: false}},
+        userId: 'me',
+      }),
+    ).toBe(false);
   });
 });
